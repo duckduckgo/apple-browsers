@@ -78,13 +78,24 @@ extension MainViewController {
             ]
         }
 
-        let other: [UIKeyCommand] = [
+        let tabCommands: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardCloseTab), input: "w", modifierFlags: .command,
                          discoverabilityTitle: UserText.keyCommandCloseTab),
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "t", modifierFlags: .command,
                          discoverabilityTitle: UserText.keyCommandNewTab),
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "n", modifierFlags: .command,
-                         discoverabilityTitle: UserText.keyCommandNewTab),
+                         discoverabilityTitle: UserText.keyCommandNewTab)
+        ]
+
+        var newFireTabCommands: [UIKeyCommand] = []
+        if fireModeCapability.isFireModeEnabled {
+            newFireTabCommands.append(
+                UIKeyCommand(title: "", action: #selector(keyboardNewFireTab), input: "n", modifierFlags: [.command, .shift],
+                             discoverabilityTitle: UserText.keyCommandNewFireTab)
+            )
+        }
+
+        let other: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardNextTab), input: "]", modifierFlags: [.shift, .command],
                          discoverabilityTitle: UserText.keyCommandNextTab),
             UIKeyCommand(title: "", action: #selector(keyboardPreviousTab), input: "[", modifierFlags: [.shift, .command],
@@ -110,7 +121,7 @@ extension MainViewController {
             UIKeyCommand(title: "", action: #selector(keyboardEscape), input: UIKeyCommand.inputEscape, modifierFlags: [])
         ]
 
-        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, other].flatMap { $0 }
+        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, tabCommands, newFireTabCommands, other].flatMap { $0 }
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
@@ -171,6 +182,16 @@ extension MainViewController {
         } else {
             keyboardFind()
         }
+    }
+
+    @objc func keyboardNewFireTab() {
+        guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
+        guard fireModeCapability.isFireModeEnabled else { return }
+
+        tabManager.setBrowsingMode(.fire, source: .keyCommand)
+        performCancel()
+        newTab()
     }
     
     @objc func keyboardCloseTab() {

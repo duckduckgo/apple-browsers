@@ -39,7 +39,7 @@ class SaveLoginViewController: UIViewController {
     private let domainLastShownOn: String?
     private let backfilled: Bool
     private let experimentPixels: AutofillOnboardingExperimentPixelFiring
-    private let experimentImpressionTracker: AutofillOnboardingExperimentImpressionTracker
+    private let dismissExperimentImpressionTracker: AutofillOnboardingDismissExperimentImpressionTracker
     var viewModel: SaveLoginViewModel?
 
     internal init(credentialManager: SaveAutofillLoginManager,
@@ -48,14 +48,14 @@ class SaveLoginViewController: UIViewController {
                   domainLastShownOn: String? = nil,
                   backfilled: Bool,
                   experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter(),
-                  experimentImpressionTracker: AutofillOnboardingExperimentImpressionTracker = AutofillOnboardingExperimentImpressionTracker()) {
+                  dismissExperimentImpressionTracker: AutofillOnboardingDismissExperimentImpressionTracker = AutofillOnboardingDismissExperimentImpressionTracker()) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.domainLastShownOn = domainLastShownOn
         self.backfilled = backfilled
         self.experimentPixels = experimentPixels
-        self.experimentImpressionTracker = experimentImpressionTracker
+        self.dismissExperimentImpressionTracker = dismissExperimentImpressionTracker
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -87,7 +87,7 @@ class SaveLoginViewController: UIViewController {
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
 
         switch viewModel.layoutType {
-        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
+        case .newUser:
             Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDismissed, withAdditionalParameters: backfilledParameter)
             experimentPixels.fireDismissTap()
         case .saveLogin:
@@ -108,6 +108,7 @@ class SaveLoginViewController: UIViewController {
         let saveViewModel = SaveLoginViewModel(credentialManager: credentialManager,
                                               appSettings: appSettings,
                                               featureFlagger: featureFlagger,
+                                              experimentPixels: experimentPixels,
                                               domainLastShownOn: domainLastShownOn)
         saveViewModel.delegate = self
         self.viewModel = saveViewModel
@@ -120,9 +121,9 @@ class SaveLoginViewController: UIViewController {
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
 
         switch saveViewModel.layoutType {
-        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
+        case .newUser:
             Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDisplayed, withAdditionalParameters: backfilledParameter)
-            experimentImpressionTracker.recordImpression()
+            dismissExperimentImpressionTracker.recordImpression()
         case .saveLogin:
             Pixel.fire(pixel: .autofillLoginsSaveLoginModalDisplayed, withAdditionalParameters: backfilledParameter)
         case .savePassword:
@@ -147,8 +148,8 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
 
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
         switch viewModel.layoutType {
-        case .saveLogin, .savePassword, .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
-            if viewModel.layoutType.isNewUserVariant {
+        case .saveLogin, .savePassword, .newUser:
+            if case .newUser = viewModel.layoutType {
                 Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalConfirmed, withAdditionalParameters: backfilledParameter)
                 fireOnboardingExperimentConversionPixels()
             } else if case .savePassword = viewModel.layoutType {
@@ -195,13 +196,13 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
         experimentPixels.fireSaveTap()
 
         // Impression count
-        let impressions = experimentImpressionTracker.impressionCount
+        let impressions = dismissExperimentImpressionTracker.impressionCount
         if impressions > 0 {
             experimentPixels.fireImpressionCount(impressions)
         }
 
         // Days since enrollment
-        let subfeatureID = AutofillSubfeature.onboardingExperiment.rawValue
+        let subfeatureID = AutofillSubfeature.onboardingDismissExperiment.rawValue
         if let enrollmentDate = featureFlagger.allActiveExperiments[subfeatureID]?.enrollmentDate {
             let daysSinceEnrollment = Calendar.current.dateComponents([.day], from: enrollmentDate, to: Date()).day ?? 0
             experimentPixels.fireDaysToConversion(max(daysSinceEnrollment, 0))

@@ -125,6 +125,11 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
+    /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
+    /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
+    private(set) lazy var voiceSessionTracker: VoiceSessionTracker = VoiceSessionTracker(windowControllersManager: self)
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
@@ -482,7 +487,7 @@ extension WindowControllersManager {
     /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
-            showTab(with: .url(.internalFeedbackForm, source: .ui))
+            Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
         } else {
             FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
         }
@@ -676,5 +681,17 @@ extension WindowControllersManager: OnboardingNavigating {
         guard let mainVC = lastKeyMainWindowController?.mainViewController else { return }
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue = ""
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
+    }
+}
+
+extension WindowControllersManager: TabAndWindowCountProviding {
+    var tabCount: Int {
+        mainWindowControllers.reduce(0) { total, controller in
+            total + controller.mainViewController.tabCollectionViewModel.allTabsCount
+        }
+    }
+
+    var windowCount: Int {
+        mainWindowControllers.count
     }
 }

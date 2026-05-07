@@ -19,12 +19,24 @@
 
 import Foundation
 import Core
+import Onboarding
 
 protocol TutorialSettings: AnyObject {
 
     var lastVersionSeen: Int { get }
     var hasSeenOnboarding: Bool { get set }
     var hasSkippedOnboarding: Bool { get set }
+
+    /// The configured onboarding flow type for the current user.
+    ///
+    /// This property is optional to distinguish between three states:
+    /// - `nil`: Flow has not yet been determined (first launch, before configuration)
+    /// - `.default`: Flow has been explicitly set to default onboarding
+    /// - `.duckAI`: Flow has been explicitly set to Duck.ai tailored onboarding
+    ///
+    /// Once set, this value persists and should not change, even if the app is reopened
+    /// with a different launch context. This prevents flow switching mid-onboarding.
+    var onboardingFlowType: OnboardingFlowType? { get set }
 
 }
 
@@ -39,6 +51,7 @@ final class DefaultTutorialSettings: TutorialSettings {
         static let lastVersionSeen = "com.duckduckgo.tutorials.lastVersionSeen"
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
         static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
+        static let onboardingFlowType = "com.duckduckgo.tutorials.onboardingFlowType"
     }
 
     private func userDefaults() -> UserDefaults {
@@ -68,6 +81,18 @@ final class DefaultTutorialSettings: TutorialSettings {
         }
         set {
             userDefaults().set(newValue, forKey: Keys.hasSkippedOnboarding)
+        }
+    }
+
+    public var onboardingFlowType: OnboardingFlowType? {
+        get {
+            guard let rawValue = userDefaults().string(forKey: Keys.onboardingFlowType) else {
+                return nil
+            }
+            return OnboardingFlowType(rawValue: rawValue)
+        }
+        set {
+            userDefaults().set(newValue?.rawValue, forKey: Keys.onboardingFlowType)
         }
     }
 

@@ -28,7 +28,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let verticalPadding: CGFloat = 8
+        static let verticalPadding: CGFloat = 6
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
@@ -43,7 +43,6 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onSelectedToolClearTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
@@ -57,6 +56,18 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isSubmitEnabled: Bool = false {
         didSet { updateSubmitButtonState() }
+    }
+
+    private var isFireTab: Bool = false
+
+    func refreshFireMode(fireMode: Bool) {
+        isFireTab = fireMode
+        // Apply fire-mode dark trait to content children only; submit keeps OS trait so `.fireModeAccent` tracks the OS.
+        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
+        [toolsButton, imageButton, modelChipButton, selectedToolChipView, stopButton].forEach {
+            $0.overrideUserInterfaceStyle = style
+        }
+        updateSubmitButtonAppearance()
     }
 
     var isSubmitButtonHidden: Bool = false {
@@ -75,6 +86,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateChipVisibility() }
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        didSet { updateReasoningButtonAppearance() }
+    }
+
     var modelPickerMenu: UIMenu? {
         get { modelChipButton.menu }
         set {
@@ -83,11 +98,27 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    var reasoningPickerMenu: UIMenu? {
+        get { reasoningButton.menu }
+        set {
+            reasoningButton.menu = newValue
+            reasoningButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
     var toolsMenu: UIMenu? {
         get { toolsButton.menu }
         set {
             toolsButton.menu = newValue
             toolsButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    var attachmentMenu: UIMenu? {
+        get { imageButton.menu }
+        set {
+            imageButton.menu = newValue
+            imageButton.showsMenuAsPrimaryAction = (newValue != nil)
         }
     }
 
@@ -102,6 +133,11 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isToolsButtonHidden: Bool {
         get { toolsButton.isHidden }
         set { toolsButton.isHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { reasoningButton.isHidden }
+        set { reasoningButton.isHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -127,8 +163,22 @@ final class UnifiedToggleInputToolbarView: UIView {
     private(set) lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: #selector(attachTapped)
+        action: nil
     )
+
+    private lazy var reasoningButton: UIButton = {
+        let button = makeToolButton(
+            image: DesignSystemImages.Glyphs.Size24.lightning,
+            accessibilityLabel: UserText.aiChatToolbarReasoningButtonAccessibilityLabel,
+            action: nil
+        )
+        button.isHidden = true
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.Reasoning"
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
 
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
@@ -156,6 +206,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         config.cornerStyle = .capsule
 
         let button = UIButton(configuration: config)
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.ModelChip"
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -216,13 +270,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         return view
     }()
 
-    private lazy var submitButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var submitButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(designSystemColor: .accent)
-        button.layer.cornerRadius = Constants.toolButtonSize / 2
-        button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -235,13 +286,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
-    private lazy var stopButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-        button.layer.cornerRadius = 14
-        button.clipsToBounds = true
+    private lazy var stopButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.stopSquare, for: .normal)
+        button.setColors(
+            foreground: UIColor(designSystemColor: .textPrimary),
+            background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+        )
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
         button.setContentHuggingPriority(.required, for: .horizontal)
@@ -249,6 +301,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
         button.isHidden = true
+
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -282,7 +335,7 @@ private extension UnifiedToggleInputToolbarView {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -339,6 +392,16 @@ private extension UnifiedToggleInputToolbarView {
         modelChipButton.configuration?.title = modelName
     }
 
+    private func updateReasoningButtonAppearance() {
+        guard let mode = selectedReasoningMode else {
+            reasoningButton.setImage(nil, for: .normal)
+            return
+        }
+
+        reasoningButton.setImage(mode.unifiedToggleInputButtonImage, for: .normal)
+        reasoningButton.tintColor = mode.unifiedToggleInputButtonTintColor
+    }
+
     private func updateChipVisibility() {
         modelChipButton.isHidden = modelChipExplicitlyHidden
         selectedToolChipView.isHidden = (selectedTool == nil)
@@ -353,13 +416,9 @@ private extension UnifiedToggleInputToolbarView {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         submitButton.setImage(icon, for: .normal)
-        submitButton.isEnabled = isSubmitEnabled || showVoice
-        submitButton.backgroundColor = (isSubmitEnabled || showVoice)
-            ? UIColor(designSystemColor: .accent)
-            : UIColor(designSystemColor: .controlsFillPrimary)
-        submitButton.tintColor = (isSubmitEnabled || showVoice)
-            ? .white
-            : UIColor(designSystemColor: .iconsSecondary)
+        let isActive = isSubmitEnabled || showVoice
+        submitButton.isEnabled = isActive
+        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
     }
 
     func updateGeneratingVisibility() {
@@ -372,7 +431,6 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
 
-    @objc private func attachTapped() { onAttachTapped?() }
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {

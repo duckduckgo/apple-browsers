@@ -17,7 +17,10 @@
         "description": "Fired when user pressed the button to clear data in Data Clearing Settings",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion"]
     },
     "mf": {

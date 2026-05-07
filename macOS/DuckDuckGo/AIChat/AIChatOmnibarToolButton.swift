@@ -71,6 +71,11 @@ final class AIChatOmnibarToolButton: NSView {
         set { iconImageView.image = newValue }
     }
 
+    var font: NSFont {
+        get { textLabel.font ?? .systemFont(ofSize: 12, weight: .medium) }
+        set { textLabel.font = newValue }
+    }
+
     var tintColor: NSColor? {
         didSet {
             updateAppearance()

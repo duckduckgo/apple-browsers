@@ -39,10 +39,10 @@
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
+        "DownloadsUITests\/testFireWindowWithInProgressDownloadShowsWarning()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
-        "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()",
-        "PermissionsTests"
+        "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",

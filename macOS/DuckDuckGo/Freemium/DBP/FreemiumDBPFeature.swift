@@ -42,6 +42,9 @@ protocol FreemiumDBPFeature {
     /// Whether the feature flag is enabled in privacy config (synchronous, no async dependencies).
     var isFeatureFlagEnabled: Bool { get }
 
+    /// Availability ignoring only purchase capability — feature flag, auth, and storefront still apply.
+    var isAvailableIgnoringPurchaseCapability: Bool { get }
+
     /// Publishes updates to `isAvailable` when dependencies like privacy config or subscription status change.
     var isAvailablePublisher: AnyPublisher<Bool, Never> { get }
 
@@ -70,6 +73,10 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// Synchronous — no async dependencies (unlike `isAvailable` which depends on product availability).
     var isFeatureFlagEnabled: Bool {
         featureFlagOverride ?? privacyConfigurationManager.freemiumIsEnabled
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront
     }
 
     /// Publishes `true` when feature availability changes.

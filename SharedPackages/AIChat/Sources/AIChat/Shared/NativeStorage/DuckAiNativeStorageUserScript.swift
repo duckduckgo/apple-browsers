@@ -31,9 +31,33 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     public let featureName: String = "duckAiNativeStorage"
     public let messageOriginPolicy: MessageOriginPolicy
 
-    private let handler: DuckAiNativeStorageHandling
+    private static let unavailableFireModeHandler: DuckAiNativeStorageHandling = NullDuckAiNativeStorageHandler()
+
+    private let diskHandler: DuckAiNativeStorageHandling
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
+    private var didLogUnavailableFireModeHandler = false
+
+    /// Returns the fire-mode storage state for the surrounding webview.
+    /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
+    /// fire-mode handler, and `.unavailable` resolves to empty storage rather than
+    /// falling back to disk.
+    public var fireModeStorageProvider: (() -> DuckAiFireModeStorage)?
+
+    private var handler: DuckAiNativeStorageHandling {
+        switch fireModeStorageProvider?() ?? .notFireMode {
+        case .notFireMode:
+            return diskHandler
+        case .unavailable:
+            if !didLogUnavailableFireModeHandler {
+                didLogUnavailableFireModeHandler = true
+                Logger.aiChat.error("[NativeStorage] Fire-mode handler unavailable; using null storage to preserve mode isolation")
+            }
+            return Self.unavailableFireModeHandler
+        case .available(let fireModeHandler):
+            return fireModeHandler
+        }
+    }
 
     // MARK: - Initialization
 
@@ -42,7 +66,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         originRules: [HostnameMatchingRule],
         pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) {
-        self.handler = handler
+        self.diskHandler = handler
         self.pixelFiring = pixelFiring
         self.messageOriginPolicy = .only(rules: originRules)
         super.init()

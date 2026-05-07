@@ -91,7 +91,7 @@ class AtbIntegrationTests: XCTestCase {
 
     private func search(forText text: String) {
 
-        let searchentrySearchField = app.searchFields.element
+        let searchentrySearchField = app.descendants(matching: .any)["searchEntry"]
         XCTAssertTrue(searchentrySearchField.waitForExistence(timeout: Constants.defaultTimeout))
         searchentrySearchField.tap()
         searchentrySearchField.typeText("\(text)\r")

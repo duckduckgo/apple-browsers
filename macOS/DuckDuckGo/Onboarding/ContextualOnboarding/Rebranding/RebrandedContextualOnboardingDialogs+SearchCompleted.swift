@@ -24,7 +24,9 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingSearchDoneDialog: View {
-        let title = UserText.ContextualOnboarding.onboardingFirstSearchDoneTitle
+        @Environment(\.onboardingTheme) private var theme
+
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFirstSearchDoneTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFirstSearchDoneMessage)
         let cta = UserText.ContextualOnboarding.onboardingGotItButton
 
@@ -34,34 +36,44 @@ extension OnboardingRebranding {
         let viewModel: OnboardingSiteSuggestionsViewModel
         let gotItAction: () -> Void
         let onManualDismiss: () -> Void
+        /// Fires when the bubble transitions in-place to the follow-up content,
+        /// so the host can swap the background illustration to match.
+        let onContentTransition: (() -> Void)?
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
-                VStack {
-                    if showNextScreen {
-                        OnboardingTrySiteDialogContent(viewModel: viewModel)
-                    } else {
-                        Onboarding.ContextualDaxDialogContent(
-                            orientation: .horizontalStack(alignment: .center),
-                            title: title,
-                            titleFont: OnboardingDialogsContants.titleFont,
-                            message: message,
-                            messageFont: OnboardingDialogsContants.messageFont,
-                            customActionView: AnyView(
-                                OnboardingPrimaryCTAButton(title: cta) {
-                                    gotItAction()
-                                    withAnimation {
-                                        if shouldFollowUp {
-                                            showNextScreen = true
-                                        }
-                                    }
+            // The follow-up tryASite screen needs its own Dax overlay and bubble tail, so render
+            // OnboardingTrySiteDialog directly rather than swapping content inside this plain bubble.
+            if showNextScreen {
+                OnboardingRebranding.OnboardingTrySiteDialog(
+                    viewModel: viewModel,
+                    onManualDismiss: onManualDismiss
+                )
+                .transition(.opacity)
+            } else {
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: nil,
+                    onDismiss: onManualDismiss
+                ) {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: .horizontalStack(alignment: .center),
+                        title: title,
+                        message: message
+                    ) {
+                        Button(cta) {
+                            gotItAction()
+                            if shouldFollowUp {
+                                onContentTransition?()
+                                withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
+                                    showNextScreen = true
                                 }
-                            )
-                        )
+                            }
+                        }
+                        .buttonStyle(theme.primaryButtonStyle.style)
                     }
                 }
+                .contextualOnboardingPanelLayout()
+                .transition(.opacity)
             }
-            .padding()
         }
     }
 

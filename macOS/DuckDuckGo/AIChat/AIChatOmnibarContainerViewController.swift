@@ -19,6 +19,7 @@
 import Cocoa
 import QuartzCore
 import Combine
+import DesignResourcesKit
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
@@ -72,11 +73,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = HitTestableContainerView()
-    private let submitButton = MouseOverButton()
+    private let submitButton = AIChatSubmitButton()
     private let imageUploadButton = AIChatOmnibarToolButton()
     private let toolsButton = AIChatOmnibarToolButton()
     private let imageGenActiveButton = AIChatOmnibarToolButton()
     private let webSearchActiveButton = AIChatOmnibarToolButton()
+    private let reasoningPickerButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
 
@@ -94,6 +96,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Tracks ongoing resize tasks by attachment ID. Used to ensure resizes complete before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
+    /// When true, the attachments view is being reinstalled from the current tab's shared state (on tab switch).
+    /// Used to suppress the `onAttachmentsChanged` → `persistAttachmentsToActiveTab` writeback during that window.
+    private var isRestoringAttachmentsFromSharedState = false
+    /// True while `cleanup()` is tearing down the panel. The clear-attachments call inside cleanup must not
+    /// persist an empty list back to shared state — on a tab-switch dismissal, cleanup runs before the controller's
+    /// `$selectedTabViewModel` sink has swapped `sharedTextState` to the incoming tab, so any persist at this point
+    /// would zero out the *outgoing* tab's attachments.
+    private var isCleaningUp = false
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
@@ -111,6 +121,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
     private var imageGenModeCancellable: AnyCancellable?
+    /// KVO on the submit button's hover/press state — drives the layer fill through the
+    /// accent / accent-alt three-state palette. Direct-layer fill (rather than the
+    /// `MouseOverButton.backgroundColor` sub-layer) keeps the icon visible.
+    private var submitButtonMouseOverObservation: NSKeyValueObservation?
+    private var submitButtonMouseDownObservation: NSKeyValueObservation?
     private var toolsLeadingToUploadButton: NSLayoutConstraint?
     private var toolsLeadingToContainer: NSLayoutConstraint?
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
@@ -134,9 +149,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Called when a tool button receives a Tab key press. Wire this to advance focus to the next visible button.
     var onToolButtonTabPressed: (() -> Void)?
 
-    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this order.
+    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this
+    /// order, then proceeds to the model picker. Reasoning picker is last so focus flows
+    /// left-to-right through the left-side tools, then the reasoning chip (which sits visually
+    /// adjacent to the model picker), then the model picker itself.
     private var focusableToolButtons: [AIChatOmnibarToolButton] {
-        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton]
+        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton, reasoningPickerButton]
     }
 
     var isImageUploadButtonAvailableForFocus: Bool {
@@ -162,11 +180,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         view.window?.makeFirstResponder(modelPickerButton)
     }
 
-    /// Advances focus to the next tool button after the given one, or to model picker, or back to text view.
+    /// Advances focus to the next tool button after the given one, or to model picker, then to the
+    /// voice-mode submit button (when active), and finally back to the text view.
     private func advanceFocusAfter(_ button: AIChatOmnibarToolButton) {
         let buttons = focusableToolButtons
         guard let index = buttons.firstIndex(of: button) else {
-            onToolButtonTabPressed?()
+            advanceFocusToVoiceSubmitOrText()
             return
         }
         // Find next visible button after current
@@ -174,9 +193,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             view.window?.makeFirstResponder(nextButton)
             return
         }
-        // No more tool buttons — try model picker, then text view
+        // No more tool buttons — try model picker, then voice-mode submit button, then text view
         if isModelPickerButtonAvailableForFocus {
             makeModelPickerButtonFirstResponder()
+        } else {
+            advanceFocusToVoiceSubmitOrText()
+        }
+    }
+
+    /// Used as the final hop in the tab cycle. The voice-mode submit button is the only state in
+    /// which the submit button participates in keyboard navigation — submit mode skips it because
+    /// Enter on the textarea already handles submission.
+    private func advanceFocusToVoiceSubmitOrText() {
+        if submitButtonMode == .voice && submitButton.isEnabled {
+            view.window?.makeFirstResponder(submitButton)
         } else {
             onToolButtonTabPressed?()
         }
@@ -243,7 +273,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         subscribeToImageGenModeChanges()
         setupAttachmentsProvider()
         subscribeToModelUpdates()
+        observeSubmitButtonHoverState()
         applyThemeStyle()
+    }
+
+    /// Observe `MouseOverButton.isMouseOver` / `isMouseDown` so the submit button's fill
+    /// animates through `accent{,Alt}{Primary,Secondary,Tertiary}` on hover/press without
+    /// using the sub-layer-based `backgroundColor` property (which would obscure the icon).
+    private func observeSubmitButtonHoverState() {
+        submitButtonMouseOverObservation = submitButton.observe(\.isMouseOver, options: [.new]) { [weak self] _, _ in
+            self?.applySubmitButtonFill()
+        }
+        submitButtonMouseDownObservation = submitButton.observe(\.isMouseDown, options: [.new]) { [weak self] _, _ in
+            self?.applySubmitButtonFill()
+        }
     }
 
     override func viewDidLayout() {
@@ -289,37 +332,119 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 guard let self else { return }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
+                // Re-evaluate the submit button so voice mode is suppressed/restored when
+                // image-generation toggles (voice mode is hidden while image-gen is active).
+                self.updateSubmitButtonState(for: self.omnibarController.currentText)
             }
     }
+
+    /// What the submit button does on click. Driven by whether the input has text — empty
+    /// triggers a voice-chat tab open, otherwise the existing submit flow runs.
+    private enum SubmitButtonMode {
+        case submit
+        case voice
+    }
+
+    private var submitButtonMode: SubmitButtonMode = .submit
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let hasBlockingExcess = canSendImages && attachmentsContainerView.hasExcessAttachments
-        applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+
+        // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
+        // aren't in image-generation mode (where the button must keep its image-flow semantics).
+        // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
+        if !hasText && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+            submitButtonMode = .voice
+            submitButton.image = DesignSystemImages.Glyphs.Size16.voice
+            submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
+            submitButton.setAccessibilityLabel(UserText.aiChatVoiceChatButtonTooltip)
+            // Voice has no Enter-on-empty shortcut, so the button must be tab-reachable.
+            submitButton.refusesFirstResponder = false
+            applySubmitButtonAppearance(enabled: true)
+        } else {
+            submitButtonMode = .submit
+            submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+            submitButton.toolTip = UserText.aiChatSendButtonTooltip
+            submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
+            // Enter on the textarea handles submit; skip the button in tab order.
+            submitButton.refusesFirstResponder = true
+            applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+        }
     }
 
     private func applySubmitButtonAppearance(enabled: Bool) {
         submitButton.isEnabled = enabled
-
+        // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
+        // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
         NSAppearance.withAppAppearance {
             if enabled {
-                submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentPrimary).cgColor
-                submitButton.normalTintColor = .white
-                submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
+                if submitButtonMode == .voice {
+                    submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
+                } else {
+                    submitButton.normalTintColor = NSColor(designSystemColor: .accentContentPrimary)
+                }
             } else {
-                submitButton.layer?.backgroundColor = NSColor.clear.cgColor
                 submitButton.normalTintColor = NSColor.secondaryLabelColor
-                submitButton.mouseOverTintColor = NSColor.secondaryLabelColor
             }
+            submitButton.mouseOverTintColor = nil
+            submitButton.mouseDownTintColor = nil
+        }
+        // Fill. Driven via the view's main `layer.backgroundColor` directly so it renders BEHIND
+        // the NSButton image content. We deliberately do NOT use `MouseOverButton`'s
+        // `backgroundColor` property — that property drives a sub-layer added on top of the view's
+        // main layer, and CALayer sub-layers always render above the parent layer's contents,
+        // which would obscure the icon. The hover/press transitions are handled by KVO on
+        // `isMouseOver` / `isMouseDown` (see `observeSubmitButtonHoverState`).
+        applySubmitButtonFill()
+    }
+
+    /// Sets `submitButton.layer.backgroundColor` to the appropriate state-aware color. Called
+    /// from `applySubmitButtonAppearance(enabled:)` and from the KVO observers on the hover/press
+    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill.
+    private func applySubmitButtonFill() {
+        let designSystemColor: DesignSystemColor?
+        if !submitButton.isEnabled {
+            designSystemColor = nil
+        } else if submitButtonMode == .voice {
+            if submitButton.isMouseDown {
+                designSystemColor = .accentAltTertiary
+            } else if submitButton.isMouseOver {
+                designSystemColor = .accentAltSecondary
+            } else {
+                designSystemColor = .accentAltPrimary
+            }
+        } else {
+            if submitButton.isMouseDown {
+                designSystemColor = .accentTertiary
+            } else if submitButton.isMouseOver {
+                designSystemColor = .accentSecondary
+            } else {
+                designSystemColor = .accentPrimary
+            }
+        }
+        NSAppearance.withAppAppearance {
+            submitButton.layer?.backgroundColor = designSystemColor.map { NSColor(designSystemColor: $0).cgColor } ?? NSColor.clear.cgColor
         }
     }
 
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled
-            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+    }
+
+    private var isImageGenerationItemVisible: Bool {
+        omnibarController.isImageGenerationEnabled
+    }
+
+    private var isWebSearchItemVisible: Bool {
+        omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var shouldShowWebSearchChip: Bool {
+        shouldShowToolsButton && omnibarController.isWebSearchMode && omnibarController.selectedModelSupportsWebSearch
     }
 
     private var shouldShowImageUpload: Bool {
@@ -339,7 +464,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        webSearchActiveButton.isHidden = !shouldShowWebSearchChip
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
@@ -352,6 +477,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         updateToolsLeadingConstraint()
         updateToolModeUI()
+        updateReasoningPickerVisibility()
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -438,12 +564,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.bezelStyle = .shadowlessSquare
         submitButton.isBordered = false
         submitButton.wantsLayer = true
+        // The `MouseOverButton`-managed hover/press sub-layer reads `cornerRadius` from this property
+        // when rendering its background — needed so the voice-chat fill renders rounded.
+        submitButton.cornerRadius = Constants.submitButtonCornerRadius
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
+        // Tab from the (voice-mode) submit button hands focus back to the textarea — same callback
+        // the model picker uses, so the loop closes consistently regardless of which button is last.
+        submitButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
 
+        // Conservative initial state — arrow icon. `updateSubmitButtonState(for:)` fires
+        // immediately on subscribe and swaps to voice mode if the flag is on and input is empty.
         submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
         submitButton.imagePosition = .imageOnly
         submitButton.toolTip = UserText.aiChatSendButtonTooltip
+        submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
         containerView.addSubview(submitButton)
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
@@ -490,18 +625,37 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         webSearchActiveButton.isHidden = true
         containerView.addSubview(webSearchActiveButton)
 
+        reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
+        reasoningPickerButton.target = self
+        reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.font = .systemFont(ofSize: 12, weight: .regular)
+        reasoningPickerButton.toolTip = UserText.aiChatReasoningEffortPickerButtonTooltip
+        reasoningPickerButton.setAccessibilityLabel(UserText.aiChatReasoningEffortPickerButtonTooltip)
+        reasoningPickerButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.reasoningPickerButton) }
+        reasoningPickerButton.isHidden = true
+        containerView.addSubview(reasoningPickerButton)
+
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
         modelPickerButton.action = #selector(modelPickerButtonClicked)
         modelPickerButton.modelName = persistedModelShortName
         modelPickerButton.toolTip = UserText.aiChatModelPickerButtonTooltip
         modelPickerButton.setAccessibilityLabel(UserText.aiChatModelPickerButtonTooltip)
-        modelPickerButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
+        // Tab from the model picker advances to the voice-mode submit button (when active), or
+        // falls back to the textarea if voice mode is off.
+        modelPickerButton.onTabPressed = { [weak self] in self?.advanceFocusToVoiceSubmitOrText() }
         containerView.addSubview(modelPickerButton)
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
         attachmentsContainerView.onAttachmentsChanged = { [weak self] in
-            self?.updateAttachmentsLayout()
+            guard let self else { return }
+            self.updateAttachmentsLayout()
+            /// Skip the persist write during restore (tab switch reinstall — would echo back the list we just read)
+            /// and during cleanup (panel teardown — at that moment the controller's `sharedTextState` may still be
+            /// pointing at the outgoing tab, and persisting an empty list would wipe that tab's saved attachments).
+            if !self.isRestoringAttachmentsFromSharedState && !self.isCleaningUp {
+                self.omnibarController.persistAttachmentsToActiveTab(self.attachmentsContainerView.attachments)
+            }
         }
         attachmentsContainerView.onAttachmentWillRemove = { [weak self] id in
             PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -534,6 +688,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
+
+            reasoningPickerButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
             imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
@@ -592,6 +750,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageGenActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             webSearchActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            reasoningPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
@@ -657,8 +816,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
 
+    /// Whether suggestions are collapsed due to the address bar being unfocused while in duck.ai mode.
+    private var isSuggestionsCollapsedByUnfocus: Bool = false
+
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty
+        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty || isSuggestionsCollapsedByUnfocus
+    }
+
+    /// Collapses/expands the suggestions row without affecting tools, submit button, or model picker.
+    /// Used to reflect unfocused duck.ai mode, where the panel stays on screen but suggestions are hidden.
+    func setSuggestionsCollapsedByUnfocus(_ collapsed: Bool) {
+        guard isSuggestionsCollapsedByUnfocus != collapsed else { return }
+        isSuggestionsCollapsedByUnfocus = collapsed
+        suggestionsView.isHidden = shouldSuppressSuggestions
+        suggestionsHeight = -1
+        updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
@@ -687,8 +860,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         observeWindowFrameChanges()
     }
 
+    /// Shows or hides the drop shadow that extends below the panel. The panel itself stays visible.
+    /// Used to mirror the address-bar shadow behaviour: on focus the shadow is drawn, on unfocus it's removed.
+    func setShadowVisible(_ visible: Bool) {
+        if visible {
+            addShadowToWindow()
+        } else {
+            shadowView.removeFromSuperview()
+        }
+    }
+
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
+        isCleaningUp = true
+        defer { isCleaningUp = false }
         backgroundView.stopListening()
         shadowView.removeFromSuperview()
         windowFrameObserver?.cancel()
@@ -703,6 +888,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
 
         omnibarController.cleanup()
+
+        // Reset cached height state so the next open doesn't reuse stale values from the previous session.
+        // Without this, switching tabs after suggestions loaded leaves `lastKnownSuggestionsHeight` > 0,
+        // and the next activation sizes the panel as if suggestions were still present.
+        isSuggestionsCollapsedByUnfocus = false
+        lastKnownSuggestionsHeight = 0
+        suggestionsHeight = 0
+        suggestionsHeightConstraint?.constant = 0
     }
 
     private func addShadowToWindow() {
@@ -738,7 +931,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func submitButtonClicked() {
-        omnibarController.submit()
+        switch submitButtonMode {
+        case .submit:
+            omnibarController.submit()
+        case .voice:
+            omnibarController.openNewVoiceChat()
+        }
     }
 
     @objc private func toolsButtonClicked() {
@@ -775,7 +973,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(createImageItem)
         }
 
-        if omnibarController.isWebSearchEnabled {
+        if isWebSearchItemVisible {
             let webSearchItem = NSMenuItem()
             webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatWebSearchButtonLabel,
@@ -908,6 +1106,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 await task.value
             }
         }
+        omnibarController.onActiveTabAttachmentsRestoreRequested = { [weak self] attachments in
+            self?.restoreAttachmentsFromSharedState(attachments)
+        }
+    }
+
+    /// Reinstalls the attachments view from the incoming tab's persisted list on tab switch.
+    /// Any in-flight resize tasks are cancelled because they were associated with the outgoing tab's
+    /// view instances; the persisted attachments already hold the best-available image we had for them.
+    private func restoreAttachmentsFromSharedState(_ attachments: [AIChatImageAttachment]) {
+        isRestoringAttachmentsFromSharedState = true
+        defer { isRestoringAttachmentsFromSharedState = false }
+
+        for task in resizeTasks.values {
+            task.cancel()
+        }
+        resizeTasks.removeAll()
+
+        attachmentsContainerView.removeAllAttachments()
+        for attachment in attachments {
+            attachmentsContainerView.addAttachment(attachment)
+        }
     }
 
     private func clearAttachments() {
@@ -983,6 +1202,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                // Refresh tool button visibility so the Web Search chip reflects the loaded
+                // model's `supportedTools` (belt-and-braces — the controller also clears
+                // `activeToolMode` when the persisted model doesn't support web search).
+                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+                updateReasoningPickerVisibility()
             }
     }
 
@@ -1031,7 +1255,63 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.updateSelectedModel(model.id)
         modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
+        // Refresh tool button visibility so the tools button disappears / reappears when the
+        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
+        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        updateReasoningPickerVisibility()
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    // MARK: - Reasoning Picker
+
+    @objc private func reasoningPickerButtonClicked() {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let currentEffort = omnibarController.displayedReasoningEffort
+        for effort in omnibarController.pickerReasoningEfforts {
+            let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
+            item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
+            item.target = self
+            item.representedObject = effort
+            item.image = effort.icon
+            if effort == currentEffort {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
+    }
+
+    @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
+        guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
+        omnibarController.updateSelectedReasoningEffort(effort)
+        updateReasoningPickerAppearance(effort)
+        PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    private func updateReasoningPickerVisibility() {
+        guard omnibarController.isReasoningEffortEnabled else {
+            reasoningPickerButton.isHidden = true
+            return
+        }
+        let efforts = omnibarController.pickerReasoningEfforts
+        reasoningPickerButton.isHidden = efforts.count <= 1 || omnibarController.isImageGenerationMode
+        guard let fallback = efforts.first else { return }
+        // Display only. The controller owns stale-effort cleanup (on model switch and on models
+        // refetch) so we never write to persistence from here — a saved value that isn't supported
+        // by the current model is ignored for display and not attached to submissions.
+        // `displayedReasoningEffort` maps stored bucket-equivalents (e.g. `.medium` → `.high`)
+        // to the picker's representation so the chip label/icon stay in sync with what's
+        // actually submitted.
+        updateReasoningPickerAppearance(omnibarController.displayedReasoningEffort ?? fallback)
+    }
+
+    private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {
+        reasoningPickerButton.label = effort.title
+        reasoningPickerButton.image = effort.icon
     }
 
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
@@ -1065,8 +1345,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
-        // Colour is set dynamically by applySubmitButtonAppearance based on enabled state
-        applySubmitButtonAppearance(enabled: !omnibarController.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        // Colour is set dynamically by applySubmitButtonAppearance based on enabled state.
+        // Route through `updateSubmitButtonState(for:)` so voice mode is preserved on theme
+        // changes — calling `applySubmitButtonAppearance` directly with the legacy
+        // hasText-only enabled flag would re-disable the voice button on every theme refresh.
+        updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
         toolsButton.tintColor = toolButtonTintColor
@@ -1081,6 +1364,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.tintColor = toolButtonTintColor
+        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
+        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
         modelPickerButton.tintColor = toolButtonTintColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
@@ -1104,5 +1390,53 @@ extension AIChatOmnibarContainerViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         applyTheme(theme: theme)
+    }
+}
+
+// MARK: - AIChatSubmitButton
+
+/// Specialised submit button that participates in the omnibar's tab cycle when in voice
+/// mode. In submit mode the textarea's Enter handles submission, so the button is skipped
+/// in keyboard navigation; in voice mode there is no Enter shortcut on empty input, so users
+/// need to be able to Tab onto this button and press Enter/Space to start the voice session.
+///
+/// Mirrors the keyboard handling in `AIChatOmnibarToolButton`: Tab calls a callback (so the
+/// container VC can route focus back to the textarea), Enter/Space triggers the button's
+/// action via `NSButton`'s built-in behavior.
+final class AIChatSubmitButton: MouseOverButton {
+
+    /// Set by the container VC. When non-nil, `Tab` advances focus via this callback instead
+    /// of the default first-responder chain.
+    var onTabPressed: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 48: // Tab
+            if let onTabPressed {
+                onTabPressed()
+            } else {
+                super.keyDown(with: event)
+            }
+        case 49, 36: // Space, Return — trigger the button's action manually.
+            // NSButton's default keyDown doesn't reliably fire the action when the button
+            // uses a custom layer-drawn appearance (`bezelStyle = .shadowlessSquare`, no border).
+            if isEnabled, let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    // The visible button is a rounded layer drawn by `MouseOverButton`'s hover tracking area.
+    // AppKit's default focus ring fits the image content, which makes it hug the icon instead
+    // of the rounded button frame. Overriding the mask + bounds makes the focus ring match the
+    // button's actual shape.
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
     }
 }

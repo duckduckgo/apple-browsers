@@ -251,6 +251,11 @@ extension TabExtensionsBuilder {
         add {
             FindInPageTabExtension()
         }
+        if args.isTabBurner {
+            add {
+                SubscriptionPromoTabExtension()
+            }
+        }
         add {
             DownloadsTabExtension(downloadManager: dependencies.downloadManager,
                                   downloadsPreferences: dependencies.downloadsPreferences,
@@ -303,7 +308,9 @@ extension TabExtensionsBuilder {
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
-                               isLoadedInSidebar: args.isTabLoadedInSidebar)
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               isTabBurner: args.isTabBurner,
+                               burnerMode: args.burnerMode)
         }
 
         add {

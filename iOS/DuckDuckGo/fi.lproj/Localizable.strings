@@ -208,10 +208,27 @@
 "ai-features.settings.title" = "Tekoälyominaisuudet";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Valitse kuva";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ota kuva";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laajennettu päättely";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastaa nopeasti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Nopea";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Monimutkaisia tehtäviä varten";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Perustelut";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
@@ -876,6 +893,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ei kiitos";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ei nyt";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Tallenna salasanasi turvallisesti laitteeseen DuckDuckGon salasanojen ja automaattisen täytön avulla.";
 
@@ -1254,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Tuo kirjanmerkit DuckDuckGohon";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Avaa Chrome, siirry sitten Salasananhallintaan ja seuraa alla olevia ohjeita:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Asetukset** > **Vie tiedot**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Paina **Jatka**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Valitse kohteeksi **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Tuo Chromesta";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Onko vienti valmis?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Sinun on avattava Salasanat-sovellus ja seurattava tuontiohjeita.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Napauta **···** > **Vie tiedot toiseen sovellukseen**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Napauta **Valitse kaikki** > **Jatka**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Valitse kohteeksi **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Tuo Salasanoista";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Vie ensin salasanasi ja kirjanmerkkisi Safarista ja palaa sitten tänne lataamaan tiedosto.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Vie Safarista";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Tuo Safarista";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Lataa viety tiedosto...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip-tiedostosta ei löytynyt tuettuja tietoja. Tarkista Safarin vientiohjeet ja yritä uudelleen.";
 
@@ -1263,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Tiedostoa %@ ei voitu lukea. Tiedostossa olevissa tiedoissa voi olla ongelma.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Selvä";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Tiedostoa %@ ei voitu lukea. Kokeile ladata toinen tiedosto tai toista tuontitapaa.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Tiedosto voi olla vioittunut";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip-tiedostosta ei löytynyt tuettuja tietoja. Tarkista vientiohjeet ja yritä uudelleen.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Tietoja ei löytynyt";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Valittua tiedostoa ei tueta. Valitse toinen tiedosto ja yritä uudelleen.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Tiedostoa ei tueta";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1271,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Tuo DuckDuckGo'hon";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Valitse **Vie** ja valitse seuraavassa näytössä **Kirjanmerkit** ja **Tallenna latauksiin**.";
@@ -1282,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Siirry Chromessa kohtaan **Google Password Manager** ja sitten **Asetukset**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valitse **Vie salasanat** ja sitten **Tallenna tiedostoihin**. Tallenna lopuksi tiedosto kansioon, jonka muistat.";
+"data.import.passwords.instructions.chrome.step2" = "Valitse **Vie tiedot**, sitten **···** ja lopuksi **Lataa CSV-tiedostona** ja tallenna tiedosto kansioon, jonka muistat.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Näin viet salasanat";
@@ -1310,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Tuo salasanat DuckDuckGohon";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Avaa asetukset ja vie";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Muista napauttaa\n \"Vie tiedostoihin\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Salasanat-sovellus";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Tuo kohteesta";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synkronoi kohteesta";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo toisella laitteella";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Kirjanmerkit";
@@ -1346,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Salasanat";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Haluatko tuoda kirjanmerkkisi myös Safarista?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Jatka";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ei nyt";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Haluatko tuoda myös salasanasi?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viime kuukausi";
@@ -2178,7 +2303,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Vianmääritys verkkosivustoille";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire-välilehdet on eristetty muista selaintiedoista, ja niiden tiedot poltetaan, kun suljet ne kaikki. Niillä on sama seurantasuoja kuin muillakin välilehdillä.";
+"fire.mode.empty.state.description" = "Fire-välilehdet on eristetty muista selaintiedoista. Niiden tiedot poltetaan, kun suljet ne kaikki. Ne antavat sinulle saman seurantasuojan kuin muutkin välilehdet.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Uusi Fire-välilehti";
@@ -2190,7 +2315,7 @@
 "fire.mode.menu.promotion.badge" = "Uusi";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Selaa tallentamatta paikallista historiaa tai kirjaudu sivustoille eri tilillä.";
+"fire.mode.ntp.promotion.description" = "Uutta! Selaa tallentamatta paikallista historiaa tai kirjaudu sivustoille käyttämällä eri tiliä.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Ei nyt";
@@ -2200,6 +2325,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Kokeile Fire-välilehtiä";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Kokeile Fire-välilehtiä selataksesi ilman paikallisen historian tallentamista.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Uutta: Fire-välilehdet";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-välilehti";
@@ -2325,6 +2456,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Hae tai anna osoite";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uusi Fire-välilehti";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uusi välilehti";
@@ -2712,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ei nyt";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia.\nVoit tehdä muutoksia kohdassa Asetukset > Tekoälyominaisuudet.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Haluatko helpon pääsyn yksityiseen tekoälykeskusteluun osoiterivillä?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Haku ja Duck.ai";
@@ -4174,7 +4314,7 @@
 "sync.delete.all.confirm.action" = "Poista palvelimen tiedot";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kaikkien laitteiden yhteys katkaistaan, ja synkronoidut tietosi poistetaan palvelimelta.";
+"sync.delete.all.confirm.message" = "Varmuuskopiosi poistetaan palvelimelta. Kaikkien laitteiden synkronointi katkaistaan, mutta mitään ei poisteta mistään laitteesta.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Poista palvelimen tiedot?";
@@ -4241,6 +4381,30 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Poistetaanko laite?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koodi kopioitu";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Laite synkronoitu onnistuneesti!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synkronointi ja varmuuskopiointi käytössä";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Palautuskoodi kopioitu";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Synkronointia ja varmuuskopiointia ei voitu ottaa käyttöön";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kytke pois päältä";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tämä ei vaikuta tämän laitteen kirjanmerkkeihisi ja salasanoihisi.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Poistetaanko synkronointi ja varmuuskopiointi käytöstä?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Poista";

@@ -1,0 +1,90 @@
+{
+    // Defined in https://app.asana.com/1/137249556945/project/1204186595873227/task/1214156660588025
+    "m_ios_wide_post_idle_session": {
+        "description": "Wide pixel sent at the end of a post-idle session on iOS (NTP-after-idle or LUT-after-idle).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventErrorDescription",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-post-idle-session"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["post_idle_session"]
+            },
+
+            // Feature data
+            {
+                "key": "feature.data.ext.surface",
+                "type": "string",
+                "description": "Which post-idle surface was shown",
+                "enum": ["ntp", "lut"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason the session ended",
+                "enum": [
+                    "bar_used",
+                    "return_to_page_tapped",
+                    "tab_switcher_selected",
+                    "app_backgrounded",
+                    "favorite_selected",
+                    "chat_selected",
+                    "app_terminated"
+                ]
+            },
+            {
+                "key": "feature.data.ext.session_duration_ms",
+                "type": "integer",
+                "description": "Duration from surface shown to session end (in ms)."
+            },
+            {
+                "key": "feature.data.ext.time_to_first_interaction_ms",
+                "type": "integer",
+                "description": "Duration from surface shown to first user interaction or terminal action (in ms)."
+            },
+            {
+                "key": "feature.data.ext.page_engaged",
+                "type": "boolean",
+                "description": "Whether the user scrolled or activated an in-page link during the session."
+            },
+            {
+                "key": "feature.data.ext.toggle_used",
+                "type": "boolean",
+                "description": "Whether the user toggled between search and Duck.ai during the session."
+            },
+            {
+                "key": "feature.data.ext.back_pressed",
+                "type": "boolean",
+                "description": "Whether the user pressed back/cancel during the session."
+            }
+        ]
+    }
+}

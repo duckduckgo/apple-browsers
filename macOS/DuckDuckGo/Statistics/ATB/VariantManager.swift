@@ -23,6 +23,11 @@ import Foundation
 import os.log
 import Persistence
 
+enum AttributionXattr {
+    static let variant = "com.duckduckgo.variant"
+    static let origin = "com.duckduckgo.origin"
+}
+
 func getXattr(named name: String, from path: String) -> String? {
     let length = getxattr(path, name, nil, 0, 0, 0)
     guard length > 0 else { return nil }
@@ -164,22 +169,19 @@ final class CampaignVariant {
     private var isCampaignVariant: Bool
 
     private let statisticsStore: StatisticsStore
-    private let loadFromFile: () -> String?
+    private let loadVariant: () -> String?
 
-    init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadFromFile: @escaping () -> String? = {
-        if let url = Bundle.main.url(forResource: "variant", withExtension: "txt") {
-            return try? String(contentsOf: url)
-        }
-        return nil
+    init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadVariant: @escaping () -> String? = {
+        getXattr(named: AttributionXattr.variant, from: Bundle.main.bundlePath)
     }) {
         self.statisticsStore = statisticsStore
-        self.loadFromFile = loadFromFile
+        self.loadVariant = loadVariant
     }
 
     // Should only be called during the first installation
     func getAndEnableVariant() -> String? {
         assert(statisticsStore.variant == nil)
-        if let string = loadFromFile() {
+        if let string = loadVariant() {
             isCampaignVariant = true
             return string.trimmingWhitespace()
         }

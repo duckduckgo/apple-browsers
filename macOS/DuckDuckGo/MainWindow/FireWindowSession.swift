@@ -81,10 +81,8 @@ struct FireWindowSessionRef: Hashable {
     @MainActor
     init?(window: NSWindow?) {
         guard let window else { return nil }
-        guard let mainWindowController = window.windowController as? MainWindowController else {
-            assertionFailure("\(window) has no MainWindowController")
-            return nil
-        }
+        // Some windows (e.g. the detached AI Chat sidebar) don't use MainWindowController and aren't part of any fire session.
+        guard let mainWindowController = window.windowController as? MainWindowController else { return nil }
         guard let fireWindowSession = mainWindowController.fireWindowSession else { return nil }
         self.fireWindowSession = fireWindowSession
         self.identifier = ObjectIdentifier(fireWindowSession)

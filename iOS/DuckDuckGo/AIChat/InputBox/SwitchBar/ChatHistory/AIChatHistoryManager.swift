@@ -63,6 +63,10 @@ final class AIChatHistoryManager {
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
+    /// Query string of the most recently completed (non-cancelled) fetch. Callers compare
+    /// this against the current text to detect "fetcher hasn't caught up yet" and treat
+    /// derived state (e.g. `hasSuggestions`) as still-pending.
+    private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
     private var currentFetchTask: Task<Void, Never>?
 
@@ -129,6 +133,10 @@ final class AIChatHistoryManager {
         historyViewController?.setEscapeHatch(model, onTapped: onTapped)
     }
 
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        historyViewController?.additionalTopInset = inset
+    }
+
     func setSectionTitle(_ title: String?) {
         pendingSectionTitle = title
         historyViewController?.setScrollableTitle(title)
@@ -141,6 +149,7 @@ final class AIChatHistoryManager {
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P) where P.Output == String, P.Failure == Never {
         textPublisher
             .debounce(for: .milliseconds(Constants.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self else { return }
                 self.fetchSuggestionsIfNeeded(query: text)
@@ -163,6 +172,7 @@ final class AIChatHistoryManager {
             guard !Task.isCancelled else { return }
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
             hasCompletedInitialFetch = true
+            lastCompletedFetchQuery = query
             let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
             onFetchCompleted?(query, hasSuggestions)
         }
@@ -172,6 +182,7 @@ final class AIChatHistoryManager {
     func tearDown() {
         currentFetchTask?.cancel()
         currentFetchTask = nil
+        lastCompletedFetchQuery = nil
         cancellables.removeAll()
 
         if let historyVC = historyViewController {

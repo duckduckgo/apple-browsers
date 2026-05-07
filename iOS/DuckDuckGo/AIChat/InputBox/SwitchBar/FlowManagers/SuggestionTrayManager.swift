@@ -50,7 +50,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
-    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager)
+    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
 }
 
@@ -76,6 +76,8 @@ final class SuggestionTrayManager: NSObject {
     }
 
     var shouldDisplayFavoritesOverlay: Bool {
+        // Fire tabs render a dedicated empty state (managed by DaxLogoManager), so favorites must not sit behind it.
+        guard !switchBarHandler.isFireTab else { return false }
         let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
         let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 
@@ -121,6 +123,14 @@ final class SuggestionTrayManager: NSObject {
 
     func setFavoritesSectionTitle(_ title: String?) {
         suggestionTrayViewController?.setFavoritesSectionTitle(title)
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        suggestionTrayViewController?.setEscapeHatch(model)
+    }
+
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        suggestionTrayViewController?.additionalTopInset = inset
     }
 
     /// Installs the suggestion tray in the provided container view
@@ -339,7 +349,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
     }
 
-    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
-        delegate?.suggestionTrayManagerDidRequestFireMode(self)
+    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestTryFireMode(self)
     }
 }

@@ -259,7 +259,6 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
 }
 
 private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding {
-
     @MainActor var mode: NewTabPageDataModel.OmnibarMode = .ai
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> { modeSubject.eraseToAnyPublisher() }
@@ -275,9 +274,16 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showViewAllAiChats: Bool = false
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var isAIChatToolsEnabled: Bool = false
+    var isImageGenerationEnabled: Bool = false
+    var isWebSearchEnabled: Bool = false
     var selectedModelId: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
     var selectedModelShortName: String?
+    var isReasoningEffortEnabled: Bool = false
+    var selectedReasoningEffort: String?
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Just(nil).eraseToAnyPublisher() }
+    var isVoiceChatAccessEnabled: Bool = false
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

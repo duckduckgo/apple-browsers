@@ -46,7 +46,9 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var emptyView: UIView = {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            }
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
@@ -377,6 +379,10 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appDidBecomeActiveCallback() {
+        // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
+        // Avoid intrusive re-auth while user remains in that flow.
+        guard !isInNewImportFlow else { return }
+
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
             authenticate()
@@ -385,7 +391,17 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appWillResignActiveCallback() {
+        // Keep the import flow uninterrupted when users background to export data.
+        guard !isInNewImportFlow else { return }
         viewModel.lockUI()
+    }
+
+    private var isInNewImportFlow: Bool {
+        guard let navigationController else { return false }
+
+        return navigationController.viewControllers.contains { viewController in
+            viewController is DataImportHubViewController || viewController is ImportSourceDetailViewController
+        }
     }
 
     @objc private func authenticatorInvalidateContext() {
@@ -418,7 +434,9 @@ final class AutofillLoginListViewController: UIViewController {
     private func importFileAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            }
         }
     }
 
@@ -429,17 +447,36 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: source,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        return dataImportViewController
+    }
+
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = .passwords) {
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: source,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     private func segueToImportViaSync() {
@@ -461,6 +498,12 @@ final class AutofillLoginListViewController: UIViewController {
                 mainVC.segueToSettingsSync(with: source)
             }
         }
+    }
+
+    private func handleDataImportCompletion() {
+        clearTableHeaderView()
+        importPromoPresented = false
+        viewModel.updateData()
     }
 
     private func segueToExtensionManagement() {
@@ -1214,9 +1257,7 @@ extension AutofillLoginListViewController: AutofillExtensionSettingsViewControll
 extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
-        clearTableHeaderView()
-        importPromoPresented = false
-        viewModel.updateData()
+        handleDataImportCompletion()
     }
 }
 

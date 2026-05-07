@@ -165,20 +165,40 @@ final class AutofillSettingsViewController: UIViewController {
             source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
-    
-    private func segueToFileImport() {
+
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(vault: viewModel.secureVault,
                                                   reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
-        Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
+        return dataImportViewController
+    }
+
+    private func segueToFileImport() {
+        let entryPoint: DataImportViewModel.ImportScreen = .settings
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: entryPoint) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
+        case .hub:
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: entryPoint,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
     
     private func segueToImportViaSync() {
@@ -201,6 +221,11 @@ final class AutofillSettingsViewController: UIViewController {
                 mainVC.segueToSettingsSync(with: source)
             }
         }
+    }
+
+    private func handleDataImportCompletion() {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        segueToPasswords()
     }
 
     private func segueToExtensionManagement() {
@@ -243,8 +268,7 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
 extension AutofillSettingsViewController: DataImportViewControllerDelegate {
     
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
-        AppDependencyProvider.shared.autofillLoginSession.startSession()
-        segueToPasswords()
+        handleDataImportCompletion()
     }
     
 }

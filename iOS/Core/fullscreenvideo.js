@@ -27,21 +27,35 @@
 
     // YouTube Mobile won't exit fullscreen correctly if requestFullscreen is overridden. Reference: https://github.com/brave/brave-ios/pull/2002
     const isMobile = /mobile/i.test(navigator.userAgent)
+    const isIPad = /ipad/i.test(navigator.userAgent)
+    const isIPhone = isMobile && !isIPad
 
-    if (!browserHasExistingFullScreenSupport && canEnterFullscreen && !isMobile) {
+    if (!browserHasExistingFullScreenSupport && canEnterFullscreen && !isIPhone) {
         Object.defineProperty(document, 'fullscreenEnabled', {
             value: true
         })
 
-        HTMLElement.prototype.requestFullscreen = function () {
-            const video = this.querySelector('video')
-
-            if (video) {
-                video.webkitEnterFullscreen()
-                return true
+        // Reddit and similar sites embed the <video> inside a Web Component's shadow root,
+        // which a plain querySelector won't pierce.
+        const findVideo = function (root) {
+            if (root instanceof HTMLVideoElement) return root
+            const direct = root.querySelector('video')
+            if (direct) return direct
+            const elements = [root, ...root.querySelectorAll('*')]
+            for (let i = 0; i < elements.length; i++) {
+                if (elements[i].shadowRoot) {
+                    const found = findVideo(elements[i].shadowRoot)
+                    if (found) return found
+                }
             }
+            return null
+        }
 
-            return false
+        HTMLElement.prototype.requestFullscreen = function () {
+            const video = findVideo(this)
+            if (!video) return false
+            video.webkitEnterFullscreen()
+            return true
         }
     }
 })()

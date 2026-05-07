@@ -58,14 +58,16 @@ extension MainViewController {
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         } else {
             OnboardingIntroViewController.legacy(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         }
         controller.delegate = self
@@ -187,7 +189,7 @@ extension MainViewController {
         present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher() async {
+    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
         Logger.lifecycle.debug(#function)
 
         // Guard against concurrent presentations
@@ -237,6 +239,8 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
+        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -382,6 +386,27 @@ extension MainViewController {
         } else {
             presentSyncViaSettings()
         }
+    }
+
+    func presentDataImportSummary(_ summary: DataImportSummary,
+                                  importScreen: DataImportViewModel.ImportScreen = .passwords) {
+        let presenter = topMostPresentedViewController(startingFrom: self)
+
+        guard !(presenter is DataImportSummaryViewController) else {
+            Logger.autofill.debug("Data import summary already presented")
+            return
+        }
+
+        let summaryViewController = DataImportSummaryViewController(summary: summary,
+                                                                    importScreen: importScreen,
+                                                                    syncService: syncService) { [weak self] source in
+            guard let self else { return }
+            dismissPresentedDataImportSummaryIfNeeded {
+                self.segueToSettingsSync(with: source)
+            }
+        } onCompletion: { }
+
+        presenter.present(summaryViewController, animated: true)
     }
 
     func segueToFeedback() {
@@ -541,7 +566,25 @@ extension MainViewController {
             ViewHighlighter.hideAll()
         }
     }
-    
+
+    private func dismissPresentedDataImportSummaryIfNeeded(completion: @escaping () -> Void) {
+        let topMostViewController = topMostPresentedViewController(startingFrom: self)
+        guard topMostViewController is DataImportSummaryViewController else {
+            completion()
+            return
+        }
+
+        topMostViewController.dismiss(animated: true, completion: completion)
+    }
+
+    private func topMostPresentedViewController(startingFrom rootViewController: UIViewController) -> UIViewController {
+        var currentViewController = rootViewController
+        while let presentedViewController = currentViewController.presentedViewController {
+            currentViewController = presentedViewController
+        }
+        return currentViewController
+    }
+
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear

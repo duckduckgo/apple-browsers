@@ -413,6 +413,14 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
+    class MockOnboardingManager: OnboardingManaging {
+        let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
+
+        let userHasSeenAddToDockPromoDuringOnboarding: Bool = false
+
+        func configureOnboardingFlow(from url: URL?) {}
+    }
+
     final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
         func isEligibleForRestorePrompt() -> Bool {
             false
@@ -432,7 +440,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
                     daxDialogsManager: MockDaxDialogDisabling(),
-                    restorePromptHandler: MockRestorePromptHandler()
+                    restorePromptHandler: MockRestorePromptHandler(),
+                    onboardingManager: MockOnboardingManager()
                 )
             )
             .preferredColorScheme($0)

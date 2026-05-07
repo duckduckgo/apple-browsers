@@ -199,6 +199,54 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
     }
 
+    var isReasoningEffortEnabled: Bool {
+        // Reasoning effort depends on the model picker being available — if tools aren't
+        // enabled, there's no model picker and reasoning has nothing to attach to.
+        isAIChatToolsEnabled && featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
+    }
+
+    var selectedReasoningEffort: String? {
+        get {
+            guard isReasoningEffortEnabled else { return nil }
+            return aiChatPreferencesPersistor.selectedReasoningEffort
+        }
+        set {
+            guard isReasoningEffortEnabled else { return }
+            guard newValue != aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+            aiChatPreferencesPersistor.selectedReasoningEffort = newValue
+            if newValue != nil {
+                PixelKit.fire(AIChatPixel.aiChatNtpReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+        }
+    }
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        aiChatPreferencesPersistor.selectedReasoningEffortPublisher
+    }
+
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
+    }
+
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
+    }
+
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
+    /// Re-emits the current `isVoiceChatAccessEnabled` value whenever the feature-flagger reports
+    /// any change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP swaps in
+    /// or out of voice-chat mode without a reload.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isVoiceChatAccessEnabled }
+            .prepend(isVoiceChatAccessEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

@@ -42,7 +42,7 @@ extension WKBackForwardListItem {
     ///
     /// See: https://app.asana.com/1/137249556945/project/1201037661562251/task/1214602405943382
     var safeURL: URL? {
-        (self as NSObject).value(forKey: "URL") as? URL
+        (self as NSObject).value(forKey: #keyPath(WKBackForwardListItem.url)) as? URL
     }
 
 }

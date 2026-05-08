@@ -36,7 +36,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment) -> Void)?
-    var onFileValidationFailed: ((String, FileMetadata?) -> Void)?
+    var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
 
     func makeAttachmentMenu(

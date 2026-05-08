@@ -1310,21 +1310,19 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func addInvalidFileAttachment(
-        metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata?,
+        metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata,
         validationMessage: String
     ) {
-        if let metadata {
-            viewController.addAttachment(.invalidFile(
-                UnifiedToggleInputInvalidFileAttachment(
-                    fileName: metadata.fileName,
-                    mimeType: metadata.mimeType,
-                    fileSizeBytes: metadata.fileSizeBytes ?? 0,
-                    validationMessage: validationMessage
-                )
-            ))
-            persistDraftToStore()
-            updateAttachButtonPresentation()
-        }
+        viewController.addAttachment(.invalidFile(
+            UnifiedToggleInputInvalidFileAttachment(
+                fileName: metadata.fileName,
+                mimeType: metadata.mimeType,
+                fileSizeBytes: metadata.fileSizeBytes ?? 0,
+                validationMessage: validationMessage
+            )
+        ))
+        persistDraftToStore()
+        updateAttachButtonPresentation()
         presentAttachmentValidationError(validationMessage)
     }
 

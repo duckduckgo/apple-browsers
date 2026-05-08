@@ -19,6 +19,7 @@
 
 import AIChat
 import Foundation
+import UniformTypeIdentifiers
 
 struct UTIAttachmentPolicy {
 
@@ -270,10 +271,10 @@ private extension UTIAttachmentPolicy {
     }
 
     var acceptedFileTypeNames: [String] {
-        model?.supportedFileTypes.compactMap(Self.fileTypeName(for:)) ?? []
+        model?.supportedFileTypes.map(Self.fileTypeName(for:)) ?? []
     }
 
-    static func fileTypeName(for mimeType: String) -> String? {
+    static func fileTypeName(for mimeType: String) -> String {
         switch mimeType {
         case "application/pdf":
             return "PDF"
@@ -286,7 +287,12 @@ private extension UTIAttachmentPolicy {
         case "image/gif":
             return "GIF"
         default:
-            return nil
+            if let filenameExtension = UTType(mimeType: mimeType)?.preferredFilenameExtension {
+                return filenameExtension.uppercased()
+            }
+
+            let subtype = mimeType.split(separator: "/").last.map(String.init) ?? mimeType
+            return (subtype.split(separator: ".").last.map(String.init) ?? subtype).uppercased()
         }
     }
 }

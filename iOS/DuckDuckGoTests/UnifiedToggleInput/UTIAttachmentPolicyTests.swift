@@ -308,6 +308,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileSubmissionValidationMessage(), UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: ["PNG", "JPG", "PDF"]))
     }
 
+    func test_fileSubmissionValidation_usesFallbackNameForUnknownAcceptedType() {
+        let policy = makePolicy(
+            pendingAttachments: [makeFileAttachment(mimeType: "text/plain")],
+            model: makeModel(supportedFileTypes: ["text/csv"])
+        )
+
+        XCTAssertEqual(policy.fileSubmissionValidationMessage(), UserText.aiChatAttachmentUnsupportedFileType(acceptedFileType: "CSV"))
+    }
+
     func test_fileSubmissionValidation_rejectsUnsupportedPendingFileWithSingleAcceptedType() {
         let policy = makePolicy(
             pendingAttachments: [makeFileAttachment(mimeType: "text/plain")]

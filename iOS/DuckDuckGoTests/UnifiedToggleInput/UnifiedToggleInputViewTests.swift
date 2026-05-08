@@ -70,9 +70,9 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         sut.onFileValidationFailed = { message, metadata in
             XCTAssertEqual(message, UserText.aiChatAttachmentFileUnreadable)
-            XCTAssertEqual(metadata?.fileName, "missing-unreadable.pdf")
-            XCTAssertEqual(metadata?.mimeType, "application/pdf")
-            XCTAssertNil(metadata?.fileSizeBytes)
+            XCTAssertEqual(metadata.fileName, "missing-unreadable.pdf")
+            XCTAssertEqual(metadata.mimeType, "application/pdf")
+            XCTAssertNil(metadata.fileSizeBytes)
             expectation.fulfill()
         }
 

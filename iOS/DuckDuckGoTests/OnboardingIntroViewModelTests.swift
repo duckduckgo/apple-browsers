@@ -138,14 +138,14 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let restorePromptHandlerMock = MockRestorePromptHandler()
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
         let sut = makeSUT(
-            currentOnboardingStep: .addressBarPositionSelection,
+            currentOnboardingStep: .searchExperienceSelection,
             restorePromptHandler: restorePromptHandlerMock
         )
         sut.restoreSyncAccountAction()
         XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
 
         // WHEN
-        sut.selectAddressBarPositionAction()
+        sut.selectSearchExperienceAction()
 
         // THEN
         XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)

@@ -29,8 +29,6 @@ extension PromoServiceFactory {
             initiated: .app,
             promoType: PromoType(.remoteMessage),
             context: .newTabPage,
-            coexistingPromoIDs: [], // No coexistence with internal promos; coexistence between external promos is handled externally
-            setsGlobalCooldown: true,
             delegate: delegate
         )
     }
@@ -43,8 +41,6 @@ extension PromoServiceFactory {
             initiated: .app,
             promoType: PromoType(.remoteMessage),
             context: .global,
-            coexistingPromoIDs: [], // No coexistence with internal promos; coexistence between external promos is handled externally
-            setsGlobalCooldown: true,
             delegate: delegate
         )
     }

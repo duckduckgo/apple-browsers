@@ -37,14 +37,16 @@ protocol Promo {
     var context: PromoContext { get }
 
     /// IDs of promos that can be visible simultaneously with this one.
+    ///
     /// Promos can appear together when all visible promos that would conflict
     /// are in this set and this promo is in all of theirs (mutual coexistence).
     /// This should be used only in very rare cases that are pre-validated (e.g. with a PFR).
+    /// External promos can always coexist with each other, but must use this property to coexist with internal promos.
     /// Default: empty (no coexistence exceptions).
     var coexistingPromoIDs: Set<String> { get }
 
     /// When false, this promo can show even if the global cooldown for its PromoInitiated type hasn't elapsed.
-    /// Default: true.
+    /// Default: true for internal promos; false for external promos.
     var respectsGlobalCooldown: Bool { get }
 
     /// When false, dismissing this promo does not count toward the global cooldown for its PromoInitiated type.

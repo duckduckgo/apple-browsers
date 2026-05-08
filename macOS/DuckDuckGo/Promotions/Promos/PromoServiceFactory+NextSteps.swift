@@ -26,8 +26,6 @@ extension PromoServiceFactory {
         initiated: .app,
         promoType: PromoType(.nextSteps),
         context: .newTabPage,
-        coexistingPromoIDs: [],
-        setsGlobalCooldown: true,
         delegate: nil
     )
 }

@@ -27,7 +27,6 @@ extension PromoServiceFactory {
         initiated: .app,
         promoType: PromoType(.remoteMessage, customTimeoutInterval: .days(7), customTimeoutResult: .ignored(cooldown: .days(28))),
         context: .newTabPage,
-        coexistingPromoIDs: [],
         delegate: nil
     )
 }

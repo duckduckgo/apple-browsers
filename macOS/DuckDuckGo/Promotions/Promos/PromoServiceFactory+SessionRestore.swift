@@ -27,7 +27,6 @@ extension PromoServiceFactory {
             initiated: .app,
             promoType: PromoType(.semiModal),
             context: .global,
-            coexistingPromoIDs: [],
             setsGlobalCooldown: false,
             delegate: delegate
         )

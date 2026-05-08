@@ -154,14 +154,14 @@ If the test or its production target changed in the last few commits, that's alm
 When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks under `iOS/SharedTestUtils/`, `macOS/SharedTestUtils/`, etc.) between this PR's last green run and main HEAD:
 
 ```bash
-# Find this PR's last green run, capture the SHA
-gh run list --branch=<pr_branch> --status=success --limit=1 --json headSha,createdAt
+# Find this PR's last green run for the failed workflow, capture the SHA
+gh run list --branch=<pr_branch> --workflow="<workflow_name>" --status=success --limit=1 --json headSha,createdAt
 
 # What landed in main between that SHA and HEAD?
 git log --oneline <last_green_sha>..HEAD -- <suspected_shared_paths>
 ```
 
-A diff in a helper or mock used by the failing test is a strong signal: the PR's CI passed in isolation, but a parallel-merged PR shifted the contract underneath it. The failing test is then often a real test-side mismatch, not a production bug.
+Use the workflow name identified in Step 1. A diff in a helper or mock used by the failing test is a strong signal: the PR's CI passed in isolation, but a parallel-merged PR shifted the contract underneath it. The failing test is then often a real test-side mismatch, not a production bug.
 
 **Workflow history (flaky / environmental failures):**
 
@@ -169,13 +169,13 @@ When local git shows no relevant changes, or the failure looks intermittent:
 
 ```bash
 # Last green runs of the same workflow on main
-gh run list --workflow={workflow_name} --branch=main --status=success --limit=5 --json headSha,createdAt,displayTitle
+gh run list --workflow="{workflow_name}" --branch=main --status=success --limit=5 --json headSha,createdAt,displayTitle
 
 # Recent runs to see the fail/pass pattern
-gh run list --workflow={workflow_name} --branch=main --limit=20 --json conclusion,headSha,createdAt
+gh run list --workflow="{workflow_name}" --branch=main --limit=20 --json conclusion,headSha,createdAt
 
 # Runs on this PR branch - did the test fail across all pushes (deterministic) or only some (flaky)?
-gh run list --branch={pr_branch} --workflow={workflow_name} --limit=10
+gh run list --branch={pr_branch} --workflow="{workflow_name}" --limit=10
 ```
 
 The diff between the last green SHA and the failing SHA brackets the regression - useful when git log on individual files doesn't surface the cause (env shifts, indirect dependencies, build-config tweaks).

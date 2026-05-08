@@ -67,7 +67,8 @@ struct SettingsYouTubeAdBlockingView: View {
                     .padding(.vertical, 8)
                 }
 
-                Section {
+                Section(footer: Text(LocalizedStringKey(UserText.youTubeAdBlockingToggleFooter))
+                    .tint(Color(designSystemColor: .accent))) {
                     SettingsCellView(
                         label: UserText.youTubeAdBlockingToggle,
                         accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)

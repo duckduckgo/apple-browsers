@@ -110,6 +110,12 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         duckPlayerPreferences.openLearnMoreContingencyURL()
     }
 
+    @MainActor
+    func openLearnMoreURL() {
+        guard let url = URL(string: "https://duckduckgo.com") else { return }
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
+
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
          pixelFiring: PixelFiring? = nil) {

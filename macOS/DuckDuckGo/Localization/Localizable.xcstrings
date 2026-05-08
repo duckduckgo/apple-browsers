@@ -88448,6 +88448,18 @@
         }
       }
     },
+    "preferences.youtube-ad-blocking.learn-more" : {
+      "comment" : "Learn more button shown below the YouTube ad blocking toggle description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn More"
+          }
+        }
+      }
+    },
     "preferences.youtube-ad-blocking.toggle" : {
       "comment" : "Toggle label for enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
@@ -88504,6 +88516,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блокировать рекламу на YouTube"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.toggle.footer" : {
+      "comment" : "Description shown below the YouTube ad blocking toggle",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
           }
         }
       }

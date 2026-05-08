@@ -93,6 +93,14 @@ extension Preferences {
                     Spacer().frame(height: 4)
 
                     ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: $model.youTubeAdBlockingEnabled)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        TextMenuItemCaption(UserText.youTubeAdBlockingToggleFooter)
+                        TextButton(UserText.youTubeAdBlockingLearnMoreButton) {
+                            model.openLearnMoreURL()
+                        }
+                    }
+                    .padding(.leading, 19)
                 }
 
                 // Duck Player Section

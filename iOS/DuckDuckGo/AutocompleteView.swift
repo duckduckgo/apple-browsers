@@ -180,9 +180,8 @@ private struct SuggestionView: View {
                                    title: phrase,
                                    query: query,
                                    indicator: tapAheadImage,
-                                   onTapIndicator: {
-                    autocompleteModel.onTapAhead(model)
-                }).accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
+                                   onTapIndicator: { autocompleteModel.onTapAhead(model) })
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
 
             case .website(let url):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),

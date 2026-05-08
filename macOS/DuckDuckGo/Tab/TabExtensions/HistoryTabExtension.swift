@@ -102,7 +102,10 @@ final class HistoryTabExtension: NSObject {
                 case .tracker:
                     self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
                 case .trackerWithSurrogate:
-                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                    // `surrogateInjected` is always paired with `resourceObserved` (the `.tracker`
+                    // case above) for the same URL by the TrackerProtection subfeature, so counting
+                    // it again here would double-count `numberOfTrackersBlocked`.
+                    break
                 case .thirdPartyRequest:
                     break
                 }

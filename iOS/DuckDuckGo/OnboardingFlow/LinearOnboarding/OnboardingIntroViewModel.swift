@@ -112,6 +112,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let tutorialSettings: TutorialSettings
     private let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
 
+    private var pendingOnboardingIntroActions: (() -> Void)?
+
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
                      daxDialogsManager: ContextualDaxDialogDisabling,
@@ -278,7 +280,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     func restoreSyncAccountAction() {
         pixelReporter.measureAutoRestoreOnboardingRestoreCTAAction()
         restorePromptHandler.restoreSyncAccount()
-        contextualDaxDialogs.disableContextualDaxDialogs()
+        pendingOnboardingIntroActions = { [weak self] in
+            self?.contextualDaxDialogs.disableContextualDaxDialogs()
+        }
     }
 
     func restorePromptSkipAction() {
@@ -336,7 +340,7 @@ private extension OnboardingIntroViewModel {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else {
             assertionFailure("Onboarding Step index not found.")
             DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
-            onCompletingOnboardingIntro?()
+            completeOnboardingIntro()
             return
         }
 
@@ -348,7 +352,7 @@ private extension OnboardingIntroViewModel {
             if currentIntroStep != .duckAIQueryExperimentSelection {
                 DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
             }
-            onCompletingOnboardingIntro?()
+            completeOnboardingIntro()
             return
         }
 
@@ -357,6 +361,16 @@ private extension OnboardingIntroViewModel {
         currentIntroStep = nextIntroStep
         persistPendingOnboardingStep(for: currentIntroStep)
         setViewState(introStep: currentIntroStep)
+    }
+
+    func completeOnboardingIntro() {
+        performPendingOnboardingIntroActions()
+        onCompletingOnboardingIntro?()
+    }
+
+    func performPendingOnboardingIntroActions() {
+        pendingOnboardingIntroActions?()
+        pendingOnboardingIntroActions = nil
     }
 
     func restorePendingOnboardingStepIfNeeded() {

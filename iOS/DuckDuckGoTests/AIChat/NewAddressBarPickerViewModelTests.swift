@@ -25,7 +25,7 @@ import Core
 final class NewAddressBarPickerViewModelTests: XCTestCase {
     private var aiChatSettings: ObservingMockAIChatSettingsProvider!
     private var pixelFiringMock: PixelFiringMock.Type!
-    private var dismissCallCount: Int!
+    private var confirmCalls: [Bool]!
     private var sut: NewAddressBarPickerViewModel!
 
     override func setUp() {
@@ -33,11 +33,13 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         aiChatSettings = ObservingMockAIChatSettingsProvider()
         pixelFiringMock = PixelFiringMock.self
         pixelFiringMock.tearDown()
-        dismissCallCount = 0
+        confirmCalls = []
         sut = NewAddressBarPickerViewModel(
             aiChatSettings: aiChatSettings,
             dailyPixelFiring: pixelFiringMock,
-            onDismiss: { [weak self] in self?.dismissCallCount += 1 }
+            onConfirm: { [weak self] isDuckAISelected in
+                self?.confirmCalls.append(isDuckAISelected)
+            }
         )
     }
 
@@ -45,7 +47,7 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         pixelFiringMock.tearDown()
         aiChatSettings = nil
         pixelFiringMock = nil
-        dismissCallCount = nil
+        confirmCalls = nil
         sut = nil
         super.tearDown()
     }
@@ -60,7 +62,7 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         XCTAssertEqual(aiChatSettings.lastEnableAIChatSearchInputValue, true)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerV2Confirmed.name)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.params?[PixelParameters.selection], "search_and_ai")
-        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(confirmCalls, [true])
     }
 
     func testWhenConfirmAndSearchOnlySelectedThenDisablesAIAndFiresConfirmPixelWithSearchOnly() {
@@ -69,7 +71,7 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         XCTAssertEqual(aiChatSettings.lastEnableAIChatSearchInputValue, false)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerV2Confirmed.name)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.params?[PixelParameters.selection], "search_only")
-        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(confirmCalls, [false])
     }
 }
 

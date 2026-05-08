@@ -25,9 +25,12 @@ import Core
 final class NewAddressBarPickerViewController: UIViewController {
     
     private let aiChatSettings: AIChatSettingsProvider
-    
-    init(aiChatSettings: AIChatSettingsProvider) {
+    private let omniBarFocuser: OmniBarFocuserProvider?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         omniBarFocuser: OmniBarFocuserProvider? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.omniBarFocuser = omniBarFocuser
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -65,11 +68,23 @@ final class NewAddressBarPickerViewController: UIViewController {
     }
 
     private func buildContentView() -> NewAddressBarPickerRefreshContentView {
-        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] in
-            self?.dismiss(animated: true)
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isToggleEnabled in
+            self?.dismissAndFocusOmnibarIfNeeded(isToggleEnabled: isToggleEnabled)
         }
 
         return NewAddressBarPickerRefreshContentView(viewModel: viewModel)
+    }
+
+    private func dismissAndFocusOmnibarIfNeeded(animated: Bool = true, isToggleEnabled: Bool) {
+        let omniBarFocuser = self.omniBarFocuser
+
+        dismiss(animated: animated) {
+            guard isToggleEnabled, let omniBarFocuser else {
+                return
+            }
+
+            omniBarFocuser.focusOmniBar()
+        }
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

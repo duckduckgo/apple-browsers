@@ -88527,7 +88527,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+            "value" : "When this is on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information."
           }
         }
       }

@@ -67,8 +67,7 @@ struct SettingsYouTubeAdBlockingView: View {
                     .padding(.vertical, 8)
                 }
 
-                Section(footer: Text(LocalizedStringKey(UserText.youTubeAdBlockingToggleFooter))
-                    .tint(Color(designSystemColor: .accent))) {
+                Section(footer: Text(footerAttributedString)) {
                     SettingsCellView(
                         label: UserText.youTubeAdBlockingToggle,
                         accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
@@ -91,6 +90,18 @@ struct SettingsYouTubeAdBlockingView: View {
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }
+    }
+
+    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com")
+
+    private var footerAttributedString: AttributedString {
+        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
+        base.append(AttributedString(" "))
+        var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
+        link.foregroundColor = Color(designSystemColor: .accent)
+        link.link = Self.learnMoreURL
+        base.append(link)
+        return base
     }
 }
 

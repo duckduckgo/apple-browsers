@@ -33,7 +33,10 @@ let package = Package(
         .target(name: "ICSParser"),
         .testTarget(
             name: "ICSParserTests",
-            dependencies: ["ICSParser"]
+            dependencies: ["ICSParser"],
+            resources: [
+                .copy("Resources")
+            ]
         ),
     ]
 )

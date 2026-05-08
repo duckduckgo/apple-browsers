@@ -16,11 +16,72 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Testing
 @testable import ICSParser
 
-@available(iOS 16, macOS 13, *)
-@Test("ping returns pong", .timeLimit(.minutes(1)))
-func ping_returnsPong() {
-    #expect(ICSParser.ping() == "pang")
+@Suite("ICSParser integration")
+struct ICSParserTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses a single timed UTC event", .timeLimit(.minutes(1)))
+    func parsesSingleTimedEvent() throws {
+        let events = try ICSParser.parse(data: fixture("single-event"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.title == "Single Event Test")
+        #expect(event.location == "Test Location")
+        #expect(event.url == URL(string: "https://duckduckgo.com"))
+        #expect(event.notes == "Single event used to validate basic UTC date parsing.")
+        #expect(event.isAllDay == false)
+        #expect(event.startDate == iso("2026-06-01T14:00:00Z"))
+        #expect(event.endDate == iso("2026-06-01T15:00:00Z"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses an all-day event with VALUE=DATE", .timeLimit(.minutes(1)))
+    func parsesAllDayEvent() throws {
+        let events = try ICSParser.parse(data: fixture("all-day"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.title == "All Day Event")
+        #expect(event.isAllDay == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Unescapes commas, semicolons, and newlines in text values", .timeLimit(.minutes(1)))
+    func unescapesTextValues() throws {
+        let events = try ICSParser.parse(data: fixture("multi-line-description"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.notes == "Line one.\nLine two with a comma, and a semicolon; included.\nLine three.")
+        #expect(event.location == "Building A, Room 42")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Returns every parsed event when the file has multiple VEVENTs", .timeLimit(.minutes(1)))
+    func returnsAllEventsForMultiVEvent() throws {
+        let events = try ICSParser.parse(data: fixture("multi-vevent"))
+        #expect(events.count == 3)
+        #expect(events.map(\.title) == ["First Event", "Second Event", "Third Event"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws notVCalendar for non-VCALENDAR input", .timeLimit(.minutes(1)))
+    func throwsForNonVCalendar() {
+        #expect(throws: ICSParser.Error.notVCalendar) {
+            try ICSParser.parse(string: "not a calendar file")
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func fixture(_ name: String) -> Data {
+        let url = Bundle.module.url(forResource: name, withExtension: "ics", subdirectory: "Resources")!
+        return (try? Data(contentsOf: url))!
+    }
+
+    private func iso(_ string: String) -> Date {
+        ISO8601DateFormatter().date(from: string)!
+    }
 }

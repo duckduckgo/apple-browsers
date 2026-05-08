@@ -21,16 +21,11 @@ import AIChat
 import Bookmarks
 import Combine
 import DesignResourcesKit
-import ObjectiveC
-import os
 import Subscription
 import Suggestions
 import UIKit
 
 // MARK: - Unified Toggle Input Setup
-
-private let aiTabToolbarLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
-private var toolbarIsHiddenObservationKey: UInt8 = 0
 
 extension MainViewController {
 
@@ -123,15 +118,13 @@ extension MainViewController {
     }
 
     /// Derives the toolbar's hidden state from `currentTab?.isAITab`. Idempotent — call from any
-    /// path that flips the current tab. Direct mutations of `toolbar.isHidden` on AI tabs are
-    /// tripwired by `installAITabToolbarObserverIfNeeded`.
+    /// path that flips the current tab.
     func reconcileToolbarVisibilityForCurrentTab() {
         // The reconciler exists to keep the toolbar hidden on AI tabs (and re-show it on the way
         // out). Both legs are unified-toggle-input concerns, so when the feature is off we have
         // nothing to reconcile and shouldn't fight other subsystems for the toolbar.
         guard unifiedToggleInputFeature.isAvailable else { return }
 
-        installAITabToolbarObserverIfNeeded()
         if isCurrentTabUsingUnifiedInputAIChrome {
             viewCoordinator.toolbar.isHidden = true
         } else {
@@ -150,10 +143,6 @@ extension MainViewController {
         coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
-        let tabURL = tab.url ?? tab.link?.url
-        aiTabToolbarLogger.debug(
-            "refreshUnifiedToggleInput action=\(String(describing: action), privacy: .public) isAITab=\(tab.isAITab, privacy: .public) hasChatID=\((tabURL?.duckAIChatID != nil), privacy: .public) coordState=\(String(describing: coordinator.displayState), privacy: .public)"
-        )
 
         switch action {
         case .unbindInactiveNonAITab:
@@ -481,21 +470,6 @@ extension MainViewController {
 }
 
 private extension MainViewController {
-
-    func installAITabToolbarObserverIfNeeded() {
-        if objc_getAssociatedObject(self, &toolbarIsHiddenObservationKey) != nil {
-            return
-        }
-
-        let observation = viewCoordinator.toolbar.observe(\.isHidden, options: [.new]) { [weak self] _, change in
-            guard let self, change.newValue == false, self.currentTab?.isAITab == true else { return }
-
-            let stack = Thread.callStackSymbols.dropFirst(5).prefix(25).joined(separator: "\n")
-            aiTabToolbarLogger.error("BUG: toolbar.isHidden became false on AI tab stack=\(stack, privacy: .public)")
-        }
-
-        objc_setAssociatedObject(self, &toolbarIsHiddenObservationKey, observation, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-    }
 
     func syncPreservedAITabPresentation(coordinator: UnifiedToggleInputCoordinator) {
         let renderState = coordinator.computeRenderState()

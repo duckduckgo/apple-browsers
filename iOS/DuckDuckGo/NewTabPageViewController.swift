@@ -284,6 +284,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
+        // If linear onboarding is not completed do not attempt to present any Dax dialog.
+        guard DefaultTutorialSettings().hasSeenOnboarding else { return }
+        // Present Dax dialog if needed.
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 

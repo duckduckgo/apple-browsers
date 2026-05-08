@@ -29,6 +29,7 @@ import UIKit
 /// Delegate protocol for handling interactions with the unified toggle input composite view.
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
@@ -766,17 +767,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func submitCurrentInput() {
-        let isAIChatMode = handler.currentToggleState == .aiChat
-        let trimmedText = handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
-        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
-        guard !hasInvalidAttachment else { return }
-
-        if trimmedText.isEmpty, isAIChatMode, hasValidAttachment {
-            handler.submitAIChatAttachmentOnlyPrompt()
-        } else {
-            handler.submitText(handler.currentText)
-        }
+        delegate?.unifiedToggleInputViewDidRequestSubmitCurrentInput(self)
     }
 }
 

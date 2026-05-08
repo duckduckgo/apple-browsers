@@ -1168,6 +1168,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         showExpanded(inputMode: inputMode)
     }
 
+    func unifiedToggleInputVCDidRequestSubmitCurrentInput(_ vc: UnifiedToggleInputViewController) {
+        submitCurrentInputFromCoordinator()
+    }
+
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
 
@@ -1182,17 +1186,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            if let validationMessage = attachmentPolicy.imageSubmissionValidationMessage() {
-                presentAttachmentValidationError(validationMessage)
-                return
-            }
-
-            if let validationMessage = attachmentPolicy.fileSubmissionValidationMessage() {
-                presentAttachmentValidationError(validationMessage)
-                return
-            }
-
-            if let validationMessage = attachmentPolicy.promptValidationMessage(for: text) {
+            if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
                 return
             }
@@ -1277,6 +1271,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 extension UnifiedToggleInputCoordinator {
 
     func submitCurrentInputFromFloatingSubmit() {
+        submitCurrentInputFromCoordinator()
+    }
+
+    func submitCurrentInputFromCoordinator() {
         let state = makeFloatingSubmitState()
         guard state.canSubmit else {
             if state.hasInvalidAttachment {
@@ -1285,7 +1283,12 @@ extension UnifiedToggleInputCoordinator {
             return
         }
 
-        if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let validationMessage = attachmentSubmissionValidationMessage(for: currentText, mode: inputMode) {
+            presentAttachmentValidationError(validationMessage)
+            return
+        }
+
+        if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, inputMode == .aiChat {
             viewController.handler.submitAIChatAttachmentOnlyPrompt()
         } else {
             viewController.handler.submitText(currentText)
@@ -1506,6 +1509,20 @@ private extension UnifiedToggleInputCoordinator {
 
     func presentAttachmentValidationError(_ message: String) {
         viewController.showAttachmentValidationError(message)
+    }
+
+    func attachmentSubmissionValidationMessage(for text: String, mode: TextEntryMode) -> String? {
+        guard mode == .aiChat else { return nil }
+
+        if let validationMessage = attachmentPolicy.imageSubmissionValidationMessage() {
+            return validationMessage
+        }
+
+        if let validationMessage = attachmentPolicy.fileSubmissionValidationMessage() {
+            return validationMessage
+        }
+
+        return attachmentPolicy.promptValidationMessage(for: text)
     }
 
     func syncAttachmentValidationError() {

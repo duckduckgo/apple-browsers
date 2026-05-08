@@ -28,6 +28,7 @@ import UIKit
 /// The view controller translates raw view events into these higher-level callbacks.
 protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidRequestSubmitCurrentInput(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
@@ -377,6 +378,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapWhileCollapsed(self)
+    }
+
+    func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidRequestSubmitCurrentInput(self)
     }
 
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode) {

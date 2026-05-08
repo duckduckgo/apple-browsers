@@ -291,6 +291,28 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
     }
 
+    func testWhenToolbarAttachmentOnlySubmitWouldExceedFileLimitThenPromptDoesNotSubmit() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+
+        XCTAssertNil(delegate.submittedPrompt)
+        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertEqual(
+            sut.viewController.attachmentValidationMessage,
+            UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3)
+        )
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
     func testWhenFileValidationFailsThenInvalidAttachmentIsAdded() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"

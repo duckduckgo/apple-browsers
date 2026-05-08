@@ -52,7 +52,6 @@ final class AIChatTabChatHeaderView: UIView {
     private var isSubscriptionActive: Bool = false
     private var isVoiceModeActive: Bool = false
     private var isNavigationVisible: Bool = false
-    private var isNavigationPairVisible: Bool = false
 
     private lazy var backButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.arrowLeft,
@@ -160,6 +159,16 @@ final class AIChatTabChatHeaderView: UIView {
         return container
     }()
 
+    /// Wraps both `titleContainer` (free upgrade plate) and `titleLabel` (paid nav title) so the
+    /// "row crowded by back+forward arrows" rule can hide the title slot via a single
+    /// `isHidden` toggle on this wrapper, leaving `configure(isSubscriptionActive:)` to swap
+    /// just the two children inside.
+    private lazy var titleHolder: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     private lazy var freePlanLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -259,7 +268,8 @@ final class AIChatTabChatHeaderView: UIView {
 
     func configure(isSubscriptionActive: Bool) {
         self.isSubscriptionActive = isSubscriptionActive
-        updateTitleVisibility()
+        titleContainer.isHidden = isSubscriptionActive
+        titleLabel.isHidden = !isSubscriptionActive
     }
 
     func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
@@ -267,26 +277,14 @@ final class AIChatTabChatHeaderView: UIView {
         let showsStandaloneBack = canGoBack && !canGoForward
         let showsStandaloneForward = canGoForward && !canGoBack
         isNavigationVisible = canGoBack || canGoForward
-        isNavigationPairVisible = showsNavPair
 
         backPill.isHidden = !showsStandaloneBack
         forwardPill.isHidden = !showsStandaloneForward
         navPairPill.isHidden = !showsNavPair
         updateLeftChatControlsVisibility()
-        updateTitleVisibility()
-    }
-
-    /// Both back+forward arrows in the left pill crowd the row, so the title is dropped in that
-    /// state regardless of plan. Otherwise `isSubscriptionActive` picks between the free upgrade
-    /// plate (`titleContainer`) and the paid `Duck.ai` nav-style label.
-    private func updateTitleVisibility() {
-        if isNavigationPairVisible {
-            titleContainer.isHidden = true
-            titleLabel.isHidden = true
-        } else {
-            titleContainer.isHidden = isSubscriptionActive
-            titleLabel.isHidden = !isSubscriptionActive
-        }
+        // Both arrows in the left pill crowd the row — drop the title slot. Hiding the wrapper
+        // hides both children regardless of the active subscription state.
+        titleHolder.isHidden = showsNavPair
     }
 
     /// Hides the chats / new-chat pill in voice mode (back/forward stay so the user can exit).
@@ -313,8 +311,9 @@ final class AIChatTabChatHeaderView: UIView {
         backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         addSubview(leftStack)
         addSubview(rightStack)
-        addSubview(titleContainer)
-        addSubview(titleLabel)
+        addSubview(titleHolder)
+        titleHolder.addSubview(titleLabel)
+        titleHolder.addSubview(titleContainer)
         addSubview(bottomSeparator)
 
         leftStack.addArrangedSubview(backPill)
@@ -347,10 +346,15 @@ final class AIChatTabChatHeaderView: UIView {
             rightStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
             rightStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            titleContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
-            titleContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleContainer.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
-            titleContainer.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
+            titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor),
+            titleHolder.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleHolder.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
+            titleHolder.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
+
+            titleContainer.topAnchor.constraint(equalTo: titleHolder.topAnchor),
+            titleContainer.leadingAnchor.constraint(equalTo: titleHolder.leadingAnchor),
+            titleContainer.trailingAnchor.constraint(equalTo: titleHolder.trailingAnchor),
+            titleContainer.bottomAnchor.constraint(equalTo: titleHolder.bottomAnchor),
 
             backPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             backPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -409,12 +413,10 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
 
-            // Same center as `titleContainer` so the visual position is identical when the
-            // subscription state flips between paid (label) and free (container).
-            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
+            titleLabel.centerXAnchor.constraint(equalTo: titleHolder.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: titleHolder.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
 
             freeChevronView.leadingAnchor.constraint(equalTo: freePlanLabel.trailingAnchor, constant: Constants.chevronSpacing),
             freeChevronView.centerYAnchor.constraint(equalTo: freePlanLabel.centerYAnchor),

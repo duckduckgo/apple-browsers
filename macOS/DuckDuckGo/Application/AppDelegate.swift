@@ -873,6 +873,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 duckAiNativeStorageHandler = nil
             }
             burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
+            DuckAiVoiceChatPermissionMigration(
+                permissionManager: permissionManager,
+                storageHandler: duckAiNativeStorageHandler
+            ).tryToMigrateVoiceChatPermission()
         } else {
             duckAiNativeStorageHandler = nil
             burnerDuckAiStorageRegistry = nil

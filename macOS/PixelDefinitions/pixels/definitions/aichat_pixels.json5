@@ -180,5 +180,22 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_voice_chat_permission_auto_granted": {
+        "description": "Fired at app launch when duck.ai's persisted microphone permission was auto-granted (set to .allow) because it was previously .deny or .ask. Voice consent is gated by Duck.ai's in-app prompt, not the WebKit permission UI.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from",
+                "description": "The persisted microphone permission decision before it was auto-granted",
+                "type": "string",
+                "enum": ["deny", "ask"]
+            },
+            "channel"
+        ]
     }
 }

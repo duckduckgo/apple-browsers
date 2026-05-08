@@ -354,6 +354,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
     case aiChatIsEnabled(isEnabled: Bool)
 
+    /// Event Trigger: At launch, duck.ai's persisted microphone permission was auto-granted
+    /// (set to `.allow`) because it was previously `.deny` or `.ask`.
+    case aiChatVoiceChatPermissionAutoGranted(from: AIChatVoiceChatPermissionAutoGrantedSource)
+
     // MARK: -
 
     var name: String {
@@ -561,6 +565,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_more_options_menu"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
+        case .aiChatVoiceChatPermissionAutoGranted:
+            return "aichat_voice_chat_permission_auto_granted"
         }
     }
 
@@ -681,6 +687,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncDecryptionError(let reason),
                 .aiChatSyncHistoryEnabledError(let reason):
             return ["reason": reason]
+        case .aiChatVoiceChatPermissionAutoGranted(let from):
+            return ["from": from.rawValue]
         }
     }
 
@@ -784,7 +792,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
-                .aiChatIsEnabled:
+                .aiChatIsEnabled,
+                .aiChatVoiceChatPermissionAutoGranted:
             return [.pixelSource]
         }
     }
@@ -814,4 +823,10 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
     case sidebarCloseButton = "sidebar-close-button"
     case contextMenu = "context-menu"
     case tabbarButton = "tabbar-button"
+}
+
+/// Prior persisted microphone permission state when duck.ai's permission is auto-granted to `.allow`
+enum AIChatVoiceChatPermissionAutoGrantedSource: String, CaseIterable {
+    case deny
+    case ask
 }

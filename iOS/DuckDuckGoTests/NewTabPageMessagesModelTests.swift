@@ -285,7 +285,38 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertNil(PixelFiringMock.lastParams)
     }
 
-    private func createSUT() -> NewTabPageMessagesModel {
+    // MARK: - openedAfterIdle
+
+    func testWhenOpenedAfterIdleIsTrueThenRefreshPassesOpenedAfterIdleTrue() {
+        let sut = createSUT(isOpenedAfterIdle: { true })
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, true)
+    }
+
+    func testWhenOpenedAfterIdleIsFalseThenRefreshPassesOpenedAfterIdleFalse() {
+        let sut = createSUT(isOpenedAfterIdle: { false })
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
+    }
+
+    func testWhenDefaultOpenedAfterIdleThenRefreshPassesFalse() {
+        let sut = createSUT()
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
+    }
+
+    // MARK: - Helpers
+
+    private func createSUT(isOpenedAfterIdle: @escaping () -> Bool = { false }) -> NewTabPageMessagesModel {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
@@ -293,7 +324,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
-                                imageLoader: MockRemoteMessagingImageLoader())
+                                imageLoader: MockRemoteMessagingImageLoader(),
+                                isOpenedAfterIdle: isOpenedAfterIdle)
     }
 }
 

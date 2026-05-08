@@ -18,6 +18,20 @@
 
 import Foundation
 
+public enum MessageTrigger: String, Codable {
+    case afterIdle = "after_idle"
+}
+
+public struct DisplayConditions: Codable, Equatable {
+    public let trigger: MessageTrigger?
+    public let dismissAfterDaysShown: Int?
+
+    public init(trigger: MessageTrigger? = nil, dismissAfterDaysShown: Int? = nil) {
+        self.trigger = trigger
+        self.dismissAfterDaysShown = dismissAfterDaysShown
+    }
+}
+
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
@@ -27,8 +41,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
-    /// If set, the message will be automatically dismissed after being shown for this many days.
-    public let dismissAfterDaysShown: Int?
+    public let displayConditions: DisplayConditions?
 
     public init(id: String,
                 surfaces: RemoteMessageSurfaceType,
@@ -36,14 +49,14 @@ public struct RemoteMessageModel: Equatable, Codable {
                 matchingRules: [Int],
                 exclusionRules: [Int],
                 isMetricsEnabled: Bool,
-                dismissAfterDaysShown: Int? = nil) {
+                displayConditions: DisplayConditions? = nil) {
         self.id = id
         self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
         self.isMetricsEnabled = isMetricsEnabled
-        self.dismissAfterDaysShown = dismissAfterDaysShown
+        self.displayConditions = displayConditions
     }
 
     enum CodingKeys: CodingKey {
@@ -53,7 +66,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         case matchingRules
         case exclusionRules
         case isMetricsEnabled
-        case dismissAfterDaysShown
+        case displayConditions
     }
 
     public init(from decoder: Decoder) throws {
@@ -64,7 +77,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
         self.isMetricsEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMetricsEnabled) ?? true
-        self.dismissAfterDaysShown = try container.decodeIfPresent(Int.self, forKey: .dismissAfterDaysShown)
+        self.displayConditions = try container.decodeIfPresent(DisplayConditions.self, forKey: .displayConditions)
     }
 
     mutating func localizeContent(translation: RemoteMessageResponse.JsonContentTranslation) {

@@ -120,6 +120,21 @@ struct JsonToRemoteMessageModelMapper {
                 return
             }
 
+            let displayConditions: DisplayConditions?
+            if let jsonConditions = message.displayConditions {
+                if let triggerString = jsonConditions.trigger {
+                    guard let trigger = MessageTrigger(rawValue: triggerString) else {
+                        Logger.remoteMessaging.debug("Unknown trigger '\(triggerString, privacy: .public)' for message \(message.id, privacy: .public), discarding")
+                        return
+                    }
+                    displayConditions = DisplayConditions(trigger: trigger, dismissAfterDaysShown: jsonConditions.dismissAfterDaysShown)
+                } else {
+                    displayConditions = DisplayConditions(trigger: nil, dismissAfterDaysShown: jsonConditions.dismissAfterDaysShown)
+                }
+            } else {
+                displayConditions = nil
+            }
+
             var remoteMessage = RemoteMessageModel(
                 id: message.id,
                 surfaces: surfaces,
@@ -127,7 +142,7 @@ struct JsonToRemoteMessageModelMapper {
                 matchingRules: message.matchingRules ?? [],
                 exclusionRules: message.exclusionRules ?? [],
                 isMetricsEnabled: message.isMetricsEnabled,
-                dismissAfterDaysShown: message.dismissAfterDaysShown
+                displayConditions: displayConditions
             )
 
             if let translation = getTranslation(from: message.translations, for: Locale.current) {

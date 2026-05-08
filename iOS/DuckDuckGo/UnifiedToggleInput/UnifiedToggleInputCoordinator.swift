@@ -989,7 +989,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return .expanded(showsToggle: false, showsToolbar: true)
         case .omnibar:
             let showsToggle = isToggleEnabled
-            let showsToolbar = isToggleEnabled && inputMode == .aiChat
+            // On a Duck.ai tab the expanded card should always carry the AI-chat toolbar
+            // (model selector, attachments, send) regardless of the user's toggle setting —
+            // otherwise toggle-off collapses the bar to a one-line input + dismiss arrow,
+            // which loses the chat affordances the user is engaged with.
+            let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
             return .expanded(showsToggle: showsToggle, showsToolbar: showsToolbar)
         }
     }

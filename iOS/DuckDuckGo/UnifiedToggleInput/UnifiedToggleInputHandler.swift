@@ -226,7 +226,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            // The search-go-to shortcut is the only way to reach search when the toggle is off,
+            // so it should be available in both the collapsed *and* expanded card — collapsing
+            // to it is the user's escape hatch out of an active chat surface.
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly

@@ -517,14 +517,15 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
-        
+
         if isToggleEnabled {
             let showToolbar = mode == .aiChat
             inputTopConstraint.constant = Constants.toggleBottomPadding
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
-            let usePadding = mode == .search
-            let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
+            // Toggle row is absent in both search and AI-chat-on-Duck.ai-tab; same balancing
+            // padding applies either way.
+            let padding = Constants.toggleDisabledSearchTopPadding
             inputTopConstraint.constant = padding
             toolbarBottomConstraint.constant = -padding
         }
@@ -657,10 +658,13 @@ final class UnifiedToggleInputView: UIView {
             self.cardBottomConstraint.constant = -bottomMargin
             self.toggleTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search
+            // Toggle row absent (user-disabled) → the input would sit flush against the card
+            // edges; apply a matching top + toolbar-bottom inset so the content reads as
+            // vertically balanced regardless of mode (search or AI chat with toolbar shown).
+            let toggleDisabledPadding = expanded && !self.isToggleEnabled
             let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
-            self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
-            self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding
+            self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+            self.toolbarBottomConstraint.constant = toggleDisabledPadding
                 ? -Constants.toggleDisabledSearchTopPadding
                 : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
             self.toggleView.alpha = (expanded && showsToggle) ? 1 : 0

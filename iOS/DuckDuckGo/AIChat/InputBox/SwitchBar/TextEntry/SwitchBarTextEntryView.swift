@@ -25,6 +25,14 @@ import Core
 
 class SwitchBarTextEntryView: UIView {
 
+    enum VoiceButtonAppearance {
+        case automatic
+        case microphone
+        case aiVoicePlain
+        /// Suppress the in-pill voice button (e.g. when an external flank already provides it).
+        case hidden
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -49,6 +57,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let handler: SwitchBarHandling
+    var voiceButtonAppearance: VoiceButtonAppearance {
+        didSet {
+            guard voiceButtonAppearance != oldValue else { return }
+            updateButtonState()
+        }
+    }
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -143,8 +157,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling, voiceButtonAppearance: VoiceButtonAppearance = .automatic) {
         self.handler = handler
+        self.voiceButtonAppearance = voiceButtonAppearance
         super.init(frame: .zero)
 
         setupView()
@@ -325,8 +340,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
+        // Update handler-side flags first so `handler.buttonState` reflects the new appearance.
+        updateVoiceButtonStyle()
         let newButtonState = handler.buttonState
-        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
             // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
@@ -345,6 +361,21 @@ class SwitchBarTextEntryView: UIView {
 
     private func updatePlaceholderAlignment() {
         placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
+    private func updateVoiceButtonStyle() {
+        handler.hidesVoiceButton = voiceButtonAppearance == .hidden
+        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        switch voiceButtonAppearance {
+        case .automatic:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
+        case .microphone:
+            buttonsView.voiceButtonStyle = .microphone
+        case .aiVoicePlain:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
+        case .hidden:
+            break
+        }
     }
 
     private func adjustTextViewContentInset() {
@@ -582,6 +613,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }

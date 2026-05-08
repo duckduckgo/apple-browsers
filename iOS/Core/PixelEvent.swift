@@ -1751,6 +1751,9 @@ extension Pixel {
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
 
+        // MARK: - Freemium Personal Information Removal
+        case freemiumPIRSettingsEntryPointClicked
+
         // MARK: - Data Broker Protection Notifications
         case dbpNotificationOpenedFirstScanComplete
         case dbpNotificationOpenedFirstFreemiumScanComplete
@@ -3501,6 +3504,9 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
+
+        // MARK: Freemium Personal Information Removal
+        case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
 
         // MARK: Data Broker Protection Notifications
         case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"

@@ -201,7 +201,9 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate,
+                                                            freemiumPIRDebugSettings: self.dependencies.freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: self.dependencies.freemiumDBPUserStateManager)
                 }
             }) : nil,
             webExtensionsDebugScreen,
@@ -265,14 +267,16 @@ extension DebugScreensViewModel {
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                             daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
                         )
                     } else {
                         OnboardingIntroViewController.legacy(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                             daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
                         )
                     }
                     controller.delegate = capturedController

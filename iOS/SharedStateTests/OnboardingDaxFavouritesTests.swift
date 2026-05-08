@@ -25,6 +25,7 @@ import History
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import DataBrokerProtection_iOS
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities
@@ -80,6 +81,13 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingDaxFavouritesTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         let fireproofing = MockFireproofing()
         let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -188,6 +196,14 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: featureFlagger,
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
@@ -199,7 +215,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
-            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            onboardingManager: OnboardingManagerMock()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

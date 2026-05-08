@@ -221,6 +221,21 @@ struct FreemiumPIRCurrentUserMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct FreemiumPIREligibleMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRDidActivateMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRFirstScanResultMatchingAttribute: SingleValueMatching {
+    var value: String?
+    var fallback: Bool?
+}
+
 struct PIRCurrentUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?

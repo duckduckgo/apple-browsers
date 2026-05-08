@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Agora não";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "As funcionalidades de IA são privadas e opcionais.\nPodes fazer alterações em Definições > Funcionalidades de IA.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Queres acesso fácil ao chat privado com IA na barra de endereços?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Pesquisa e Duck.ai";
 

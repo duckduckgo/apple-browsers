@@ -435,6 +435,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .aiTab(.expanded)
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
+        viewController.handler.resetInteractionState()
 
         let renderState = computeRenderState()
 
@@ -493,6 +494,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
+        viewController.handler.resetInteractionState()
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -503,9 +505,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         fetchModels()
 
+        let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
+            shouldSelectAllText = true
+        } else {
+            shouldSelectAllText = false
         }
 
         let expandedHeight = editingHeight()
@@ -522,8 +528,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if textState == .prefilledSelected {
-                viewController.selectAllText()
+            if shouldSelectAllText {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, case .omnibar(.active) = displayState else { return }
+                    viewController.selectAllText()
+                }
             }
         }
     }
@@ -650,6 +659,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false) where isAwaitingTopOmnibarKeyboardPresentation:
             return
+        case (.omnibar(.active), false) where viewController.isInputFirstResponder:
+            // A hardware keyboard is connected (or the keyboard frame went off-screen)
+            // while the user is still actively editing. Treat the input as in-use and
+            // skip the dismissal — otherwise the bar collapses on every keystroke.
+            cancelTopOmnibarKeyboardPresentationFallback()
         case (.omnibar(.active), false):
             cancelTopOmnibarKeyboardPresentationFallback()
             transitionOmnibarToInactive()

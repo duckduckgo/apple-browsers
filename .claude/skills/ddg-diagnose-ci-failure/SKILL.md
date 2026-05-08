@@ -9,13 +9,13 @@ Investigate a GitHub Actions workflow failure, classify it, trace test failures 
 
 ## Inputs
 
-The skill resolves any of the following to a single GitHub Actions run to investigate. The repo is always `duckduckgo/apple-browsers`. Resolve the input first, then start at Step 1 with the resulting `run_id`.
+The skill resolves any of the following to a single GitHub Actions run to investigate. The repo is always `duckduckgo/apple-browsers`. Resolve the input first, then start at Step 1 with the resulting `run_id` and any optional `job_id` or `attempt_number`.
 
 ### Actions run URL
 
 Example: `https://github.com/duckduckgo/apple-browsers/actions/runs/25519433222` (optionally with `/job/<id>` or `/attempts/N`).
 
-Extract `run_id` (and `job_id` if present). Use directly.
+Extract `run_id`, `job_id` if present, and `attempt_number` if the URL includes `/attempts/N`. Use directly. Do not discard the attempt number: all later `gh run view` commands for this run must include `--attempt {attempt_number}` so logs and status match the supplied attempt instead of defaulting to the latest attempt.
 
 ### PR URL
 
@@ -77,23 +77,28 @@ Requires `gh` authenticated. If `gh auth status` fails, ask the user to run `gh 
 
 ## Step 1: Fetch Run Data
 
-Once the input is resolved to a `run_id` (see Inputs above; carry `job_id` through if the original URL had one), gather data in two passes.
+Once the input is resolved to a `run_id` (see Inputs above; carry `job_id` through if the original URL had one), gather data in two passes. If an `attempt_number` was supplied, define `attempt_arg` as `--attempt {attempt_number}` and include it in every `gh run view` command for this run. Otherwise, omit `attempt_arg`. If a `job_id` was supplied, define `job_arg` as `--job {job_id}` and include it in every `gh run view` log command. Otherwise, omit `job_arg`.
 
 ### 1a: Structured overview
 
 ```bash
-gh run view {run_id} --json status,conclusion,name,headBranch,event,jobs,startedAt,updatedAt
+gh run view {run_id} {attempt_arg} --json status,conclusion,name,headBranch,event,jobs,startedAt,updatedAt
 ```
 
-Identify which jobs failed, the branch/trigger event, and the workflow name (you'll need it for regression timeline lookups in Step 3).
+Identify which jobs failed, the branch/trigger event, and the workflow name (you'll need it for regression timeline lookups in Step 3). If a `job_id` was supplied, treat that job as the selected failure even when other jobs in the run also failed.
 
 ### 1b: Failed step logs
 
 ```bash
-gh run view {run_id} --log-failed 2>&1 | tail -n 1000
+log_file="$(mktemp -t ddg-ci-failed-log.XXXXXX)"
+gh run view {run_id} {attempt_arg} {job_arg} --log-failed 2>&1 | tee "$log_file" | tail -n 1000
 ```
 
-CI logs are organized as `{job-name}\t{step-name}\t{line}`. Errors almost always cluster at the end - 1000 lines is usually enough; bump to 3000 if the failure context is cut off. If `tail` surfaces a test-name inventory rather than failure markers (common when the log is large), grep the persisted log for `failed|FAIL|XCTAssert|<failure|error:` to jump straight to the actual failure context. If a `job_id` was in the URL, focus there.
+CI logs are organized as `{job-name}\t{step-name}\t{line}`. Errors almost always cluster at the end - 1000 lines is usually enough; bump to 3000 if the failure context is cut off. If `tail` surfaces a test-name inventory rather than failure markers (common when the log is large), grep the persisted log to jump straight to the actual failure context:
+
+```bash
+grep -Ein -C 6 'failed|FAIL|XCTAssert|<failure|error:' "$log_file" | head -n 200
+```
 
 ### 1c: Artifacts (primary source for test failures)
 

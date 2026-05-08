@@ -20,9 +20,6 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
-import os
-
-private let aiHeaderVoiceDiagLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
 
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapChatList()
@@ -196,9 +193,6 @@ final class AIChatTabChatHeaderView: UIView {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = UserText.aiChatHeaderPaidTitle
-        // Match the standard navigation-bar title font size — the paid label stands alone
-        // (no upgrade caption stacked underneath), so it can carry the heavier headline weight
-        // that a UINavigationBar title uses.
         label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
@@ -264,8 +258,6 @@ final class AIChatTabChatHeaderView: UIView {
 
     func configure(isSubscriptionActive: Bool) {
         self.isSubscriptionActive = isSubscriptionActive
-        // Free plan: highlightable upgrade affordance (Free Plan / Upgrade + chevron).
-        // Paid plan: plain "Duck.ai" nav title — completely outside the UIControl.
         titleContainer.isHidden = isSubscriptionActive
         titleLabel.isHidden = !isSubscriptionActive
     }
@@ -285,25 +277,17 @@ final class AIChatTabChatHeaderView: UIView {
         titleContainer.isHidden = showsNavPair
     }
 
-    /// Hides the chats / new-chat pair pill while the active tab is in Duck AI voice mode —
-    /// those buttons are unusable there (no chat list to navigate to, no compose surface).
-    /// Back / forward arrows are left to `setNavAvailable` so they still appear when the tab
-    /// has navigation history available — the user can still bail out of voice via back.
+    /// Hides the chats / new-chat pill in voice mode (back/forward stay so the user can exit).
     func setVoiceModeActive(_ active: Bool) {
+        guard isVoiceModeActive != active else { return }
         isVoiceModeActive = active
         updateLeftChatControlsVisibility()
     }
 
     private func updateLeftChatControlsVisibility() {
         leftPairPill.isHidden = isVoiceModeActive
-        // Compose / new-chat is suppressed whenever back or forward chrome is visible — the row
-        // would feel cluttered with both navigation and a "new chat" affordance side by side, and
-        // "new chat" is reachable via the menu when nav is in play.
+        // Compose / new-chat is suppressed when nav arrows are visible — the row gets cluttered.
         newChatButton.isHidden = isNavigationVisible
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        let ts = formatter.string(from: Date())
-        aiHeaderVoiceDiagLogger.error("[voiceDiag \(ts, privacy: .public)] header voice=\(self.isVoiceModeActive, privacy: .public) navVisible=\(self.isNavigationVisible, privacy: .public) leftPairPillHidden=\(self.leftPairPill.isHidden, privacy: .public) newChatHidden=\(self.newChatButton.isHidden, privacy: .public) inWindow=\(self.window != nil, privacy: .public)")
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -413,9 +397,8 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
 
-            // Paid title sits outside the highlightable container — it's a regular nav-style
-            // label, not a tap target. Same center as the free-plan container so the visual
-            // position is identical when the subscription state flips.
+            // Same center as `titleContainer` so the visual position is identical when the
+            // subscription state flips between paid (label) and free (container).
             titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),

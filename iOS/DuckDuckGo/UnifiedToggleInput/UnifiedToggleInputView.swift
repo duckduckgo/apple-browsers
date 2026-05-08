@@ -523,8 +523,6 @@ final class UnifiedToggleInputView: UIView {
             inputTopConstraint.constant = Constants.toggleBottomPadding
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
-            // Toggle row is absent in both search and AI-chat-on-Duck.ai-tab; same balancing
-            // padding applies either way.
             let padding = Constants.toggleDisabledSearchTopPadding
             inputTopConstraint.constant = padding
             toolbarBottomConstraint.constant = -padding
@@ -658,9 +656,8 @@ final class UnifiedToggleInputView: UIView {
             self.cardBottomConstraint.constant = -bottomMargin
             self.toggleTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            // Toggle row absent (user-disabled) → the input would sit flush against the card
-            // edges; apply a matching top + toolbar-bottom inset so the content reads as
-            // vertically balanced regardless of mode (search or AI chat with toolbar shown).
+            // No toggle row → balance the card with matching top/bottom inset so content
+            // doesn't sit flush against the edges.
             let toggleDisabledPadding = expanded && !self.isToggleEnabled
             let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
             self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)

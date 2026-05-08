@@ -31,7 +31,6 @@ import UIKit
 
 private let aiTabToolbarLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
 private var toolbarIsHiddenObservationKey: UInt8 = 0
-private var navBarContainerHiddenObservationKey: UInt8 = 0
 private var aiChatVoiceSessionActiveKey: UInt8 = 0
 
 extension MainViewController {
@@ -104,19 +103,12 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// `true` when the current tab is an AI tab and either:
-    /// - the URL is a Duck AI voice-mode URL, *or*
-    /// - the duck.ai page has signalled it's in an active voice session via `voiceSessionStarted`.
-    ///
-    /// Both signals are needed because each one alone has a gap:
-    /// - The URL flips to `?mode=voice` even when the connection fails (rate limit / mic denied),
-    ///   so the URL catches "page is rendering voice UI" cases the notification misses.
-    /// - duck.ai uses `replaceState` mid-session to clean up the URL, so the URL alone would
-    ///   mistakenly say "no longer voice" while the user is still in an active voice session.
-    ///   The session flag holds true through that.
+    /// On AI tab, true when either the URL is a `?mode=voice` URL OR the page has dispatched
+    /// `voiceSessionStarted`. Both signals are needed: URL covers connection-failure cases the
+    /// notification misses; the session flag covers `replaceState` URL-cleanup mid-session.
     var isCurrentTabUsingVoiceMode: Bool {
         guard let currentTab, currentTab.isAITab else { return false }
-        return isCurrentTabAtVoiceModeURL || aiChatVoiceSessionActive
+        return tabIsAtVoiceModeURL(currentTab) || aiChatVoiceSessionActive
     }
 
     private var aiChatVoiceSessionActive: Bool {
@@ -124,34 +116,19 @@ extension MainViewController {
         set { objc_setAssociatedObject(self, &aiChatVoiceSessionActiveKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
     }
 
-    /// Single source of truth for the AI-tab voice-mode chrome reduction: hides the chats /
-    /// new-chat pair pill in the AI header and removes the bottom flanked UTI bar so the voice
-    /// WebView fills the available height. Idempotent — call from every refresh.
+    /// Reduces the AI-tab chrome (left pill + bottom UTI bar) when the user is in voice mode.
+    /// Idempotent; call from every refresh.
     func reconcileVoiceModeChromeForCurrentTab() {
         let active = isCurrentTabUsingVoiceMode
-        let ts = voiceDiagTimestamp()
-        aiTabToolbarLogger.error(
-            "[voiceDiag \(ts, privacy: .public)] reconcile active=\(active, privacy: .public) sessionActive=\(self.aiChatVoiceSessionActive, privacy: .public) urlVoice=\(self.isCurrentTabAtVoiceModeURL, privacy: .public) webViewURL=\(String(describing: self.currentTab?.webView.url), privacy: .public) reqFlag=\(self.currentTab?.isVoiceModeRequested == true, privacy: .public) isAITab=\(self.currentTab?.isAITab == true, privacy: .public)"
-        )
         aiChatTabChatHeaderView?.setVoiceModeActive(active)
         viewCoordinator.setAITabBottomChromeHidden(active)
     }
 
-    private func voiceDiagTimestamp() -> String {
-        let date = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        return formatter.string(from: date)
-    }
-
-    private var isCurrentTabAtVoiceModeURL: Bool {
-        guard let currentTab, currentTab.isAITab else { return false }
-        // Prefer `webView.url` — it updates synchronously when WK commits a navigation, while
-        // `currentTab.url` lags ~100ms behind because of the `asyncAfter` delay in
-        // `TabViewController`'s KVO handler. Falling back to the lagged value is fine for the
-        // brief window before `webView.url` is populated.
-        let url = currentTab.webView.url ?? currentTab.url ?? currentTab.tabModel.link?.url
-        return url?.isDuckAIVoiceMode == true || currentTab.isVoiceModeRequested
+    /// Reads `webView.url` first — it updates synchronously when WK commits, while `tab.url`
+    /// lags ~100ms (the `asyncAfter` in `TabViewController`'s URL KVO).
+    private func tabIsAtVoiceModeURL(_ tab: TabViewController) -> Bool {
+        let url = tab.webView.url ?? tab.url ?? tab.tabModel.link?.url
+        return url?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
     }
 
     /// Single source of truth for the bottom toolbar's hidden state in AI-tab/non-AI-tab
@@ -343,9 +320,7 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // The render state on AI tab in search mode depends on whether the user has typed
-        // anything (empty → keep chat web view; typed → swap in suggestions). React only on
-        // the empty↔non-empty boundary so we don't recompute on every keystroke.
+        // AI-tab search mode swaps suggestions in/out at the empty↔non-empty text boundary.
         coordinator.textChangePublisher
             .map { $0.isEmpty }
             .removeDuplicates()
@@ -415,9 +390,7 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // duck.ai's user script posts these when it actually enters / exits a voice session.
-        // We use them in tandem with URL detection — the page also `replaceState`s the URL off
-        // `?mode=voice` mid-session, which would otherwise falsely restore chrome.
+        // Tandem with URL detection: the page `replaceState`s `?mode=voice` mid-session.
         NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -501,9 +474,7 @@ private extension MainViewController {
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
         reconcileToolbarVisibilityForCurrentTab()
         reconcileVoiceModeChromeForCurrentTab()
-        // Reset the pending voice-mode signal once chrome has reconciled — subsequent refreshes
-        // can rely on `tab.url`'s `isDuckAIVoiceMode` (URL is the source of truth once committed).
-        // A stale flag only matters if voice navigation is cancelled before the URL commits.
+        // URL is now source of truth once committed; clear the pre-commit signal.
         tab.isVoiceModeRequested = false
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
@@ -563,18 +534,6 @@ private extension MainViewController {
         }
 
         objc_setAssociatedObject(self, &toolbarIsHiddenObservationKey, observation, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-
-        // Tripwire for the regression where the omnibar / navigationBarContainer disappears on
-        // a fresh app launch. Logs every transition with stack so we can identify the path that
-        // hides it incorrectly.
-        if objc_getAssociatedObject(self, &navBarContainerHiddenObservationKey) == nil {
-            let navObservation = viewCoordinator.navigationBarContainer.observe(\.isHidden, options: [.old, .new]) { [weak self] _, change in
-                guard let self else { return }
-                let stack = Thread.callStackSymbols.dropFirst(5).prefix(25).joined(separator: "\n")
-                aiTabToolbarLogger.error("[navBarDiag] navigationBarContainer.isHidden \(change.oldValue ?? false, privacy: .public)→\(change.newValue ?? false, privacy: .public) currentTabIsAITab=\(self.currentTab?.isAITab == true, privacy: .public) stack=\(stack, privacy: .public)")
-            }
-            objc_setAssociatedObject(self, &navBarContainerHiddenObservationKey, navObservation, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
     }
 
     func syncPreservedAITabPresentation(coordinator: UnifiedToggleInputCoordinator) {

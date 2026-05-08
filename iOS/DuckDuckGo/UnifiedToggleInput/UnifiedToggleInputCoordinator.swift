@@ -936,11 +936,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
             let isSearchOnAITab = isAITabState && inputMode == .search
-            // Don't slap the search NTP / dax-logo overlay on top of an active chat conversation
-            // when the user just toggles to search without typing — keep the chat web view
-            // visible underneath so the toggle feels like a *mode switch*, not a navigation.
-            // Suggestions take over the moment they start typing; clearing the text takes them
-            // back to the chat surface.
+            // Toggling to search on a chat tab without text is a *mode switch*; keep the chat
+            // web view visible. Suggestions take over once the user starts typing.
             let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
             isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
@@ -989,10 +986,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return .expanded(showsToggle: false, showsToolbar: true)
         case .omnibar:
             let showsToggle = isToggleEnabled
-            // On a Duck.ai tab the expanded card should always carry the AI-chat toolbar
-            // (model selector, attachments, send) regardless of the user's toggle setting —
-            // otherwise toggle-off collapses the bar to a one-line input + dismiss arrow,
-            // which loses the chat affordances the user is engaged with.
+            // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is user-disabled,
+            // so the user retains the model selector / attachments / send affordances.
             let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
             return .expanded(showsToggle: showsToggle, showsToolbar: showsToolbar)
         }

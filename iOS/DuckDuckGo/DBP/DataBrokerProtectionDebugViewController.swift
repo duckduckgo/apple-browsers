@@ -37,6 +37,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case healthOverview
         case database
         case debugActions
+        case freemiumPIR
         case environment
         case dbpMetadata
 
@@ -48,6 +49,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Database"
             case .debugActions:
                 return "Debug Actions"
+            case .freemiumPIR:
+                return "Freemium PIR"
             case .environment:
                 return "Environment"
             case .dbpMetadata:
@@ -62,6 +65,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .database:
                 return .subtitle
             case .debugActions:
+                return .rightDetail
+            case .freemiumPIR:
                 return .rightDetail
             case .environment:
                 return .subtitle
@@ -126,6 +131,20 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
 
+    enum FreemiumPIRRows: Int, CaseIterable {
+        case forceEligibility
+        case resetState
+
+        var title: String {
+            switch self {
+            case .forceEligibility:
+                return "Force Freemium PIR Eligibility"
+            case .resetState:
+                return "Reset Freemium PIR State"
+            }
+        }
+    }
+
     enum EnvironmentRows: Int, CaseIterable {
         case subscriptionEnvironment
         case dbpAPI
@@ -151,6 +170,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
     private weak var debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+    private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let healthOverviewPresenter: HealthOverviewSectionPresenter
@@ -210,10 +231,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     required init?(coder: NSCoder,
                    databaseDelegate: DBPIOSInterface.DatabaseDelegate?,
                    debuggingDelegate: DBPIOSInterface.DebuggingDelegate?,
-                   runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?) {
+                   runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
+                   freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) {
         self.databaseDelegate = databaseDelegate
         self.debuggingDelegate = debuggingDelegate
         self.runPrerequisitesDelegate = runPrequisitesDelegate
+        self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.healthOverviewPresenter = HealthOverviewSectionPresenter(runPrerequisitesDelegate: runPrequisitesDelegate,
                                                                       debuggingDelegate: debuggingDelegate,
                                                                       databaseDelegate: databaseDelegate)
@@ -511,6 +536,26 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             cell.accessoryView = nil
             return cell
 
+        case .freemiumPIR:
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
+
+            let row = FreemiumPIRRows(rawValue: indexPath.row)
+            cell.textLabel?.text = row?.title
+
+            switch row {
+            case .forceEligibility:
+                let isEligibilityForced = freemiumPIRDebugSettings.isEligibilityForced
+                cell.detailTextLabel?.text = isEligibilityForced ? "On" : "Off"
+            case .resetState:
+                cell.textLabel?.textColor = .systemRed
+                cell.detailTextLabel?.text = nil
+            case nil:
+                break
+            }
+
+            cell.accessoryView = nil
+            return cell
+
         case .environment:
             let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
@@ -566,6 +611,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .healthOverview: return healthOverviewRows.count
         case .database: return DatabaseRows.allCases.count
         case .debugActions: return DebugActionRows.allCases.count
+        case .freemiumPIR: return FreemiumPIRRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
         case .dbpMetadata: return DBPMetadataRows.allCases.count
         case .none: return 0
@@ -590,6 +636,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             }
             
             handleDebugAction(for: row)
+        case .freemiumPIR:
+            guard let row = FreemiumPIRRows(rawValue: indexPath.row) else { return }
+            handleFreemiumPIRAction(for: row)
         case .environment:
             guard let row = EnvironmentRows(rawValue: indexPath.row) else { return }
             handleEnvironmentAction(for: row)
@@ -614,7 +663,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func handleDebugAction(for row: DebugActionRows) {
         switch row {
         case .runPIRDebugMode:
-            let debugModeViewController = RunDBPDebugModeViewController()
+            let debugModeViewController = RunDBPDebugModeViewController(
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            )
             self.navigationController?.pushViewController(debugModeViewController, animated: true)
         case .forceBrokerJSONRefresh:
             Task { @MainActor in
@@ -637,6 +688,22 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .resetAllPIRNotifications:
             debuggingDelegate?.resetAllNotificationStatesForDebug()
             presentAlert(message: "All PIR notification states reset.")
+        }
+    }
+
+    // MARK: - Freemium PIR Rows
+
+    private func handleFreemiumPIRAction(for row: FreemiumPIRRows) {
+        switch row {
+        case .forceEligibility:
+            freemiumPIRDebugSettings.setEligibilityForced(true)
+            tableView.reloadSections(IndexSet(integer: Sections.freemiumPIR.rawValue), with: .none)
+        case .resetState:
+            freemiumPIRDebugSettings.reset()
+            freemiumDBPUserStateManager.resetAllState()
+            debuggingDelegate?.resetAllNotificationStatesForDebug()
+            tableView.reloadSections(IndexSet(integer: Sections.freemiumPIR.rawValue), with: .none)
+            presentAlert(message: "Freemium PIR state and all PIR notification state reset. PIR database data was not deleted.")
         }
     }
     

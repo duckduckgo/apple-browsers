@@ -73,7 +73,7 @@ final class DuckAIURLSuggestionsLoader {
             return
         }
 
-        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
+        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
             guard let self else { return }
             guard self.latestDispatchedQuery == query else { return }
             // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.

@@ -23,12 +23,15 @@ import Core
 
 extension CrashReportSender {
 
-    static let pixelEvents: EventMapping<CrashReportSenderError> = .init { event, _, _, _ in
+    static let pixelEvents: EventMapping<CrashReportSenderEvent> = .init { event, _, _, _ in
         switch event {
-        case CrashReportSenderError.crcidMissing:
+        case .submissionSucceeded:
+            break
+
+        case .failure(.crcidMissing):
             Pixel.fire(pixel: .crashReportCRCIDMissing)
 
-        case CrashReportSenderError.submissionFailed(let error):
+        case .failure(.submissionFailed(let error)):
             if let error {
                 Pixel.fire(pixel: .crashReportingSubmissionFailed,
                            withAdditionalParameters: ["HTTPStatusCode": "\(error.statusCode)"])

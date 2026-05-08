@@ -36,6 +36,9 @@ public enum SingleUseColor {
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
 
+    /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
+    case unifiedToggleInputStopButtonBackground
+
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
 

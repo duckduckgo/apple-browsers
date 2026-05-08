@@ -107,15 +107,31 @@ enum SwitchBarButtonState {
 }
 
 class SwitchBarButtonsView: UIView {
+    enum VoiceButtonStyle {
+        case microphone
+        case aiVoiceAccent
+        case aiVoicePlain
+    }
+
+    private enum Constants {
+        static let buttonSize: CGFloat = 44
+        static let separatorWidth: CGFloat = 1
+        static let separatorHeight: CGFloat = 20
+
+        static let stopButtonBackdropInset: CGFloat = 2
+        static let stopButtonBackdropCornerRadius: CGFloat = (buttonSize - (stopButtonBackdropInset * 2)) / 2
+        static let accessibilityPrefix = "Browser.OmniBar"
+    }
+
     var buttonState: SwitchBarButtonState = .noButtons {
         didSet {
             updateButtonsVisibility()
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
+    var voiceButtonStyle: VoiceButtonStyle = .microphone {
         didSet {
-            updateAIVoiceChatButtonAppearance()
+            updateVoiceButtonAppearance()
         }
     }
 
@@ -129,16 +145,16 @@ class SwitchBarButtonsView: UIView {
     private let clearButton = BrowserChromeButton(.secondary)
     private lazy var stopGeneratingButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.baseForegroundColor = .white
-        config.image = DesignSystemImages.Glyphs.Size16.stopSquare
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.image = DesignSystemImages.Glyphs.Size24.stopSquare
         config.contentInsets = .zero
         return UIButton(configuration: config)
     }()
     private let stopGeneratingBackdrop: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-        view.layer.cornerRadius = 14
+        view.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+        view.layer.cornerRadius = Constants.stopButtonBackdropCornerRadius
         view.clipsToBounds = true
         view.isUserInteractionEnabled = false
         return view
@@ -147,15 +163,6 @@ class SwitchBarButtonsView: UIView {
     private let aiChatShortcutButton = BrowserChromeButton(.primary)
     private let separatorView = UIView()
     private let searchGoToButton = BrowserChromeButton(.primary)
-
-    private enum Constants {
-        static let buttonSize: CGFloat = 44
-        static let separatorWidth: CGFloat = 1
-        static let separatorHeight: CGFloat = 20
-
-        static let stopButtonBackdropInset: CGFloat = 2
-        static let accessibilityPrefix = "Browser.OmniBar"
-    }
 
     init() {
         super.init(frame: CGRect(origin: .zero,
@@ -272,18 +279,26 @@ class SwitchBarButtonsView: UIView {
         searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
     }
 
-    private func updateAIVoiceChatButtonAppearance() {
-        if isAIVoiceChatEnabled {
+    private func updateVoiceButtonAppearance() {
+        switch voiceButtonStyle {
+        case .microphone:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+            voiceButton.backgroundColor = .clear
+            voiceButton.tintColor = nil
+            voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
+        case .aiVoiceAccent:
             voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
             voiceButton.backgroundColor = UIColor(designSystemColor: .accent)
             voiceButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             voiceButton.layer.cornerRadius = Constants.buttonSize / 2
             voiceButton.clipsToBounds = true
-        } else {
-            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+        case .aiVoicePlain:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
             voiceButton.backgroundColor = .clear
-            voiceButton.tintColor = nil
+            voiceButton.tintColor = UIColor(designSystemColor: .textPrimary)
             voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
         }
     }
 }

@@ -25,6 +25,12 @@ import Core
 
 class SwitchBarTextEntryView: UIView {
 
+    enum VoiceButtonAppearance {
+        case automatic
+        case microphone
+        case aiVoicePlain
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -49,6 +55,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let handler: SwitchBarHandling
+    var voiceButtonAppearance: VoiceButtonAppearance {
+        didSet {
+            guard voiceButtonAppearance != oldValue else { return }
+            updateButtonState()
+        }
+    }
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -135,8 +147,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling, voiceButtonAppearance: VoiceButtonAppearance = .automatic) {
         self.handler = handler
+        self.voiceButtonAppearance = voiceButtonAppearance
         super.init(frame: .zero)
 
         setupView()
@@ -297,8 +310,8 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = .default
+            textView.returnKeyType = .go
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -315,7 +328,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
-        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        updateVoiceButtonStyle()
 
         if newButtonState != currentButtonState {
             // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
@@ -328,6 +341,18 @@ class SwitchBarTextEntryView: UIView {
                     self.layoutIfNeeded()
                 }
             }
+        }
+    }
+
+    private func updateVoiceButtonStyle() {
+        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        switch voiceButtonAppearance {
+        case .automatic:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
+        case .microphone:
+            buttonsView.voiceButtonStyle = .microphone
+        case .aiVoicePlain:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
         }
     }
 
@@ -547,8 +572,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
+            textView.returnKeyType = currentMode == .aiChat ? .go : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -566,6 +591,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }
@@ -690,9 +719,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat && handler.isToggleEnabled {
-                return true
-            }
             fireKeyboardGoPressedPixel()
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

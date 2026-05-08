@@ -19,8 +19,33 @@
 
 import Foundation
 
+/// Composable description of which card components are visible at any given time. Replaces the
+/// previous boolean soup (`isExpanded` + `showToggle` + `alwaysShowToolbar`) with a single value
+/// callers compose explicitly.
+enum UnifiedToggleInputCardLayout: Equatable {
+    /// Single-line bar; toggle row and toolbar both hidden.
+    case collapsed
+    /// Multi-line card. Each component independently visible.
+    case expanded(showsToggle: Bool, showsToolbar: Bool)
+
+    var isExpanded: Bool {
+        if case .expanded = self { return true }
+        return false
+    }
+
+    var showsToggle: Bool {
+        if case .expanded(let showsToggle, _) = self { return showsToggle }
+        return false
+    }
+
+    var showsToolbar: Bool {
+        if case .expanded(_, let showsToolbar) = self { return showsToolbar }
+        return false
+    }
+}
+
 struct UTIViewConfig: Equatable {
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var isToolbarSubmitHidden: Bool

@@ -22,7 +22,7 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var isToolbarSubmitHidden: Bool
@@ -32,9 +32,11 @@ struct UTIRenderState: Equatable {
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
 
+    var isExpanded: Bool { cardLayout.isExpanded }
+
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
             isToolbarSubmitHidden: isToolbarSubmitHidden,
@@ -42,17 +44,6 @@ struct UTIRenderState: Equatable {
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins
         )
-    }
-
-    /// The inline dismiss (X inside the card) takes over whenever the expanded card is
-    /// anchored at the top. With the toggle enabled it sits in the toggle row; with the
-    /// toggle disabled it sits in the field row alongside the inline buttons.
-    var isInlineDismissActive: Bool {
-        cardPosition == .top && isExpanded
-    }
-
-    var isFloatingDismissVisible: Bool {
-        isContentVisible && !isInlineDismissActive
     }
 
 }

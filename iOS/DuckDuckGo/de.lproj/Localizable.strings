@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "KI-Funktionen";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Foto auswählen";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Foto machen";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Jetzt nicht";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Die KI-Funktionen sind privat und optional.\nUnter Einstellungen > AI-Funktionen kannst du Änderungen vornehmen.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Möchtest du über die Adressleiste einfach auf den privaten KI-Chat zugreifen?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Suche & Duck.ai";

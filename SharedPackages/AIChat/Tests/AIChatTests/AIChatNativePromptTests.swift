@@ -294,6 +294,7 @@ struct AIChatNativePromptTests {
         #expect(queryDict["autoSubmit"] as? Bool == true)
         #expect(queryDict["modelId"] == nil)
         #expect(queryDict["images"] == nil)
+        #expect(queryDict["files"] == nil)
         #expect(queryDict["toolChoice"] == nil)
         #expect(queryDict["mode"] == nil)
         #expect(queryDict["reasoningEffort"] == nil)
@@ -395,6 +396,68 @@ struct AIChatNativePromptTests {
         #expect(imagesArray.count == 2)
         #expect(imagesArray[0]["data"] == "img1")
         #expect(imagesArray[1]["data"] == "img2")
+    }
+
+    @Test
+    func encodingQueryWithFiles() throws {
+        let files = [
+            AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, files: files, modelId: "gpt-4o")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let filesArray = try #require(queryDict["files"] as? [[String: String]])
+        #expect(filesArray.count == 1)
+        #expect(filesArray[0]["data"] == "base64pdf")
+        #expect(filesArray[0]["fileName"] == "test.pdf")
+        #expect(filesArray[0]["mimeType"] == "application/pdf")
+    }
+
+    @Test
+    func encodingQueryWithImagesAndFiles() throws {
+        let images = [
+            AIChatNativePrompt.NativePromptImage(data: "base64image", format: "png")
+        ]
+        let files = [
+            AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these attachments", autoSubmit: true, images: images, files: files, modelId: "gpt-5-mini")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let imagesArray = try #require(queryDict["images"] as? [[String: String]])
+        let filesArray = try #require(queryDict["files"] as? [[String: String]])
+        #expect(imagesArray.count == 1)
+        #expect(filesArray.count == 1)
+        #expect(imagesArray[0]["data"] == "base64image")
+        #expect(filesArray[0]["data"] == "base64pdf")
+    }
+
+    @Test
+    func decodingQueryWithFiles() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Summarize this file",
+                    "autoSubmit": true,
+                    "files": [
+                        {
+                            "data": "base64pdf",
+                            "fileName": "test.pdf",
+                            "mimeType": "application/pdf"
+                        }
+                    ]
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let files = [AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")]
+        let expected = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, files: files)
+        #expect(prompt == expected)
     }
 
     @Test

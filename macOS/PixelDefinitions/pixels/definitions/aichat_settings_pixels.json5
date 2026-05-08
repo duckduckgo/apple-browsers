@@ -5,28 +5,28 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_settings_global-toggle_off": {
         "description": "Fired when the global toggle for all AI Chat features is turned off",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_settings_new-tab-page_on": {
         "description": "Fired when the New Tab Page shortcut for AI Chat is turned on",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_settings_new-tab-page_off": {
         "description": "Fired when the New Tab Page shortcut for AI Chat is turned off",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_settings_addressbar_on": {
         "description": "Fired when the Address Bar shortcut for AI Chat is turned on",
@@ -75,27 +75,27 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_onboarding_toggle_preference_off": {
         "description": "Fired when the user disables the Duck.ai toggle during onboarding",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_onboarding_finished_toggle_on": {
         "description": "Fired when the user completes onboarding with the Duck.ai toggle enabled",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_onboarding_finished_toggle_off": {
         "description": "Fired when the user completes onboarding with the Duck.ai toggle disabled",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

@@ -249,6 +249,19 @@ private extension AIChatContextChipView {
     }
 
     func setupConstraints() {
+        // The chip's host can collapse it via an external `height == 0` constraint while it's
+        // hidden. Internal top/bottom padding around the 24pt favicon/remove button would otherwise
+        // demand >= 44pt, so make them break gracefully when the host pins height to 0.
+        let faviconTop = faviconView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.faviconVerticalPadding)
+        faviconTop.priority = .defaultHigh
+        let faviconBottom = faviconView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.faviconVerticalPadding)
+        faviconBottom.priority = .defaultHigh
+
+        let removeTop = removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding)
+        removeTop.priority = .defaultHigh
+        let removeBottom = removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding)
+        removeBottom.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             widthAnchor.constraint(equalToConstant: Constants.chipWidth),
 
@@ -258,8 +271,8 @@ private extension AIChatContextChipView {
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading),
-            faviconView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.faviconVerticalPadding),
-            faviconView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.faviconVerticalPadding),
+            faviconTop,
+            faviconBottom,
             faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
             faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
 
@@ -268,8 +281,8 @@ private extension AIChatContextChipView {
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing),
 
             removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing),
-            removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding),
-            removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding),
+            removeTop,
+            removeBottom,
             removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
         ])

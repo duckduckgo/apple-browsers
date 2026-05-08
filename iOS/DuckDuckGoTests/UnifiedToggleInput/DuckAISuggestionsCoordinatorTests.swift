@@ -20,6 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class DuckAISuggestionsCoordinatorTests: XCTestCase {
 
     func test_hasSettled_returnsFalseWhenOnlyChatHasSettled() {

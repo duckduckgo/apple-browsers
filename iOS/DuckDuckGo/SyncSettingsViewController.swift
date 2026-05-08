@@ -746,7 +746,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func handleRecoveryKeyPollingTimeout(setupRole: SyncSetupRole) {
-        guard case .receiver(let setupSource, let codeSource) = setupRole else {
+        guard case .receiver(_, let codeSource) = setupRole else {
             return
         }
         guard case .deepLink = codeSource else {

@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI-funktioner";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vælg billede";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tag et billede";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ikke nu";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "AI-funktioner er private og valgfrie.\nDu kan foretage ændringer i Indstillinger > AI-funktioner.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Vil du have nem adgang til privat AI-chat i adresselinjen?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Søg & Duck.ai";

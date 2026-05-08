@@ -88,9 +88,13 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         button.setImage(icon, for: .normal)
         button.isEnabled = isActive
-        button.applySubmitStyle(isActive: isActive,
-                                isFireTab: isFireTab,
-                                activeForeground: UIColor(designSystemColor: .accentContentPrimary))
+        if showVoice {
+            button.applyAIVoiceChatStyle()
+        } else {
+            button.applySubmitStyle(isActive: isActive,
+                                    isFireTab: isFireTab,
+                                    activeForeground: UIColor(designSystemColor: .accentContentPrimary))
+        }
     }
 
     @objc private func buttonTapped() {

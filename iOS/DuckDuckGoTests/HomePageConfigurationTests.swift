@@ -47,4 +47,46 @@ struct HomePageConfigurationTests {
         #expect(storeMock.capturedSurfaces == .newTabPage)
     }
 
+    @Test("When refreshed with openedAfterIdle true, trigger is afterIdle")
+    func refreshWithOpenedAfterIdlePassesAfterIdleTrigger() {
+        // GIVEN
+        let storeMock = MockRemoteMessagingStore()
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        storeMock.capturedTrigger = nil
+
+        // WHEN
+        sut.refresh(openedAfterIdle: true)
+
+        // THEN
+        #expect(storeMock.capturedTrigger == .afterIdle)
+    }
+
+    @Test("When refreshed with openedAfterIdle false, trigger is nil")
+    func refreshWithOpenedAfterIdleFalsePassesNilTrigger() {
+        // GIVEN
+        let storeMock = MockRemoteMessagingStore()
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        storeMock.capturedTrigger = nil
+
+        // WHEN
+        sut.refresh(openedAfterIdle: false)
+
+        // THEN
+        #expect(storeMock.capturedTrigger == nil)
+    }
+
+    @Test("When refreshed without parameter, trigger is nil (backward compat)")
+    func refreshWithoutParameterPassesNilTrigger() {
+        // GIVEN
+        let storeMock = MockRemoteMessagingStore()
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        storeMock.capturedTrigger = nil
+
+        // WHEN
+        sut.refresh()
+
+        // THEN
+        #expect(storeMock.capturedTrigger == nil)
+    }
+
 }

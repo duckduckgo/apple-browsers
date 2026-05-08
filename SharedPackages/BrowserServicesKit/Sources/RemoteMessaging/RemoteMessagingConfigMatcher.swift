@@ -195,7 +195,7 @@ extension RemoteMessageModel {
             matchingRules: self.matchingRules,
             exclusionRules: self.exclusionRules,
             isMetricsEnabled: self.isMetricsEnabled,
-            dismissAfterDaysShown: self.dismissAfterDaysShown
+            displayConditions: self.displayConditions
         )
     }
 

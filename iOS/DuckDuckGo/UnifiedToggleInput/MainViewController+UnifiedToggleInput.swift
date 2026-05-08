@@ -410,14 +410,14 @@ private extension MainViewController {
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
         reconcileToolbarVisibilityForCurrentTab()
         reconcileVoiceModeChromeForCurrentTab()
-        // URL is now source of truth once committed; clear the pre-commit signal.
-        tab.isVoiceModeRequested = false
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
             return false
         }
 
+        // Clear after the link==nil bridge so an in-flight voice request survives the transient.
+        tab.isVoiceModeRequested = false
         ensureStandardChromeVisibleForAITabRefresh()
         tab.webView.scrollView.contentInset = .zero
         // We're swapping into AI-tab layout, not dismissing the omnibar in place.

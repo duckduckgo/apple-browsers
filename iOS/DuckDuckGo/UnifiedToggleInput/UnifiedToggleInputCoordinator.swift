@@ -26,8 +26,6 @@ import UniformTypeIdentifiers
 
 // MARK: - State Types
 
-private let utiLifecycleLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTILifecycle")
-
 enum InputTextState {
     case empty
     case prefilledSelected
@@ -482,7 +480,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
-        utiLifecycleLogger.debug("showCollapsed() prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
@@ -497,7 +494,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
-        utiLifecycleLogger.debug("showExpanded(inputMode=\(String(describing: inputMode), privacy: .public)) prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
@@ -531,8 +527,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
-        let stack = Thread.callStackSymbols.dropFirst(5).prefix(15).joined(separator: "\n")
-        utiLifecycleLogger.debug("hide() prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public) stack=\(stack, privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden

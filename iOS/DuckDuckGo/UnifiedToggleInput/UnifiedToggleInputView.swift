@@ -519,14 +519,14 @@ final class UnifiedToggleInputView: UIView {
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
 
+        let showToolbar = mode == .aiChat
         if isToggleEnabled {
-            let showToolbar = mode == .aiChat
             inputTopConstraint.constant = Constants.toggleBottomPadding
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
             let padding = Constants.toggleDisabledSearchTopPadding
             inputTopConstraint.constant = padding
-            toolbarBottomConstraint.constant = -padding
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -padding
         }
     }
 
@@ -665,7 +665,7 @@ final class UnifiedToggleInputView: UIView {
             let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
             self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)
             self.toolbarBottomConstraint.constant = toggleDisabledPadding
-                ? -Constants.toggleDisabledSearchTopPadding
+                ? (showToolbar ? 0 : -Constants.toggleDisabledSearchTopPadding)
                 : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
             self.toggleView.alpha = (expanded && showsToggle) ? 1 : 0
             self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)

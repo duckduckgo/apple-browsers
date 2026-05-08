@@ -330,6 +330,7 @@ extension MainViewFactory {
 
     private func createAITabCollapsedTopSeparator() {
         let separator = UIView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
         separator.backgroundColor = UIColor(designSystemColor: .lines)
         separator.isHidden = true
         separator.isUserInteractionEnabled = false

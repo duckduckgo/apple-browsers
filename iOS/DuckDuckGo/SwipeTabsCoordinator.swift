@@ -360,7 +360,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let tab = tabsModel.get(tabAt: indexPath.row)
+            let tab = tabsModel?.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)

@@ -246,6 +246,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .aiTab(.expanded)
     }
 
+    /// True when the current display state corresponds to the expanded card layout.
+    /// Synchronous (driven by `displayState`) so it's safe to read before the deferred
+    /// `applyCardLayout` runs from the intent handler.
+    var isInputPaneExpanded: Bool {
+        switch displayState {
+        case .aiTab(.expanded), .omnibar(.active): return true
+        default: return false
+        }
+    }
+
     var isInputEditing: Bool {
         isOmnibarSession || isAITabExpanded
     }
@@ -1516,7 +1526,7 @@ private extension UnifiedToggleInputCoordinator {
                 guard let self else { return }
                 let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
                     && viewController.inputMode == .aiChat
-                    && !viewController.isInputExpanded
+                    && !isInputPaneExpanded
                 if isCollapsedAIVoiceChatButton {
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {

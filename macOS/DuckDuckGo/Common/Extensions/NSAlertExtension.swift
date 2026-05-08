@@ -143,16 +143,6 @@ extension NSAlert {
         return alert
     }
 
-    static func youTubeAdBlockingAnalyticsOptIn() -> NSAlert {
-        let alert = NSAlert()
-        alert.icon = .feedbackAsk
-        alert.messageText = UserText.youTubeAdBlockingAnalyticsOptInAlertTitle
-        alert.informativeText = UserText.youTubeAdBlockingAnalyticsOptInAlertMessage
-        alert.addButton(withTitle: UserText.youTubeAdBlockingAnalyticsOptInAlertConfirmButton)
-        alert.addButton(withTitle: UserText.youTubeAdBlockingAnalyticsOptInAlertCancelButton)
-        return alert
-    }
-
     static func cannotOpenFileAlert() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.cannotOpenFileAlertHeader

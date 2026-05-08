@@ -4591,18 +4591,6 @@ https://duckduckgo.com/windows";
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Get DuckDuckGo for Windows!";
 
-/* Cancel button label of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.cancel" = "No Thanks";
-
-/* Confirm button label of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.confirm" = "Detect Video Issues";
-
-/* Description of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.message" = "Allow DuckDuckGo to anonymously auto-detect video playback issues. This helps to make ad blocking more reliable for everyone.";
-
-/* Title of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.title" = "Help make YouTube Ad Blocking better for everyone";
-
 /* Explanation text for YouTube Ad Blocking feature */
 "youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
 

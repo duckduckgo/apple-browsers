@@ -36,18 +36,6 @@ extension Preferences {
             return current != .disabled ? current : .alwaysAsk
         }
 
-        var youTubeAdBlockingEnabledBinding: Binding<Bool> {
-            .init {
-                model.youTubeAdBlockingEnabled
-            } set: { newValue in
-                let isTurningOn = newValue && !model.youTubeAdBlockingEnabled
-                model.youTubeAdBlockingEnabled = newValue
-                guard isTurningOn, model.isAnalyticsOptInPromptEnabled else { return }
-                let response = NSAlert.youTubeAdBlockingAnalyticsOptIn().runModal()
-                model.youTubeAnalyticsEnabled = (response == .alertFirstButtonReturn)
-            }
-        }
-
         var isDuckPlayerEnabledBinding: Binding<Bool> {
             .init {
                 model.duckPlayerMode != .disabled
@@ -104,7 +92,7 @@ extension Preferences {
 
                     Spacer().frame(height: 4)
 
-                    ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
+                    ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: $model.youTubeAdBlockingEnabled)
                 }
 
                 // Duck Player Section

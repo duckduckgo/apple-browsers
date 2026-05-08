@@ -802,5 +802,4 @@ public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .adBlockingExtension }
 
     case featureEnabled
-    case analyticsOptInPrompt
 }

@@ -27,22 +27,8 @@ struct SettingsYouTubeAdBlockingView: View {
     /// The ContingencyMessageView may be redrawn multiple times in the onAppear method if the user scrolls it outside the list bounds.
     /// This property ensures that the associated action is only triggered once per viewing session, preventing redundant executions.
     @State private var hasFiredSettingsDisplayedPixel = false
-    @State private var showAnalyticsOptInAlert = false
 
     @EnvironmentObject var viewModel: SettingsViewModel
-
-    private var youTubeAdBlockingEnabledBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.youTubeAdBlockingEnabled.wrappedValue },
-            set: { newValue in
-                let isTurningOn = newValue && !viewModel.youTubeAdBlockingEnabled.wrappedValue
-                viewModel.youTubeAdBlockingEnabled.wrappedValue = newValue
-                if isTurningOn, viewModel.isYouTubeAnalyticsOptInPromptEnabled {
-                    showAnalyticsOptInAlert = true
-                }
-            }
-        )
-    }
 
     var body: some View {
         List {
@@ -84,7 +70,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 Section {
                     SettingsCellView(
                         label: UserText.youTubeAdBlockingToggle,
-                        accessory: .toggle(isOn: youTubeAdBlockingEnabledBinding)
+                        accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
                     )
                 }
             }
@@ -103,16 +89,6 @@ struct SettingsYouTubeAdBlockingView: View {
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
-        }
-        .alert(UserText.youTubeAdBlockingAnalyticsOptInAlertTitle, isPresented: $showAnalyticsOptInAlert) {
-            Button(UserText.youTubeAdBlockingAnalyticsOptInAlertConfirmButton) {
-                viewModel.setYouTubeAnalyticsEnabled(true)
-            }
-            Button(UserText.youTubeAdBlockingAnalyticsOptInAlertCancelButton, role: .cancel) {
-                viewModel.setYouTubeAnalyticsEnabled(false)
-            }
-        } message: {
-            Text(UserText.youTubeAdBlockingAnalyticsOptInAlertMessage)
         }
     }
 }

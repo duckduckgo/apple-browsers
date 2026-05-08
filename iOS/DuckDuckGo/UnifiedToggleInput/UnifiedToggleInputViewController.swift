@@ -206,6 +206,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.addAttachment(attachment)
     }
 
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        loadViewIfNeeded()
+        inputBarView.replaceAttachment(id: id, with: attachment)
+    }
+
     func removeAttachment(id: UUID) {
         loadViewIfNeeded()
         inputBarView.removeAttachment(id: id)

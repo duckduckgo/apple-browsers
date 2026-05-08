@@ -323,6 +323,27 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
+    func testWhenModelChangeMakesInvalidFileValidThenAttachmentIsPromoted() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "unsupported-file-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "unsupported-file-model", supportsImageUpload: true, supportedFileTypes: []),
+            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])
+        ]
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        XCTAssertTrue(sut.viewController.currentAttachments.first?.isInvalid ?? false)
+        XCTAssertNotNil(sut.viewController.attachmentValidationMessage)
+
+        sut.updateSelectedModel("file-model")
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertFalse(sut.viewController.currentAttachments.first?.isInvalid ?? true)
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.pdf")
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
     func testWhenFloatingSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"

@@ -64,15 +64,23 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
         attachments.append(attachment)
-        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
-        thumbnail.onRemove = { [weak self] id in
-            self?.removeAttachment(id: id)
-        }
-        stackView.addArrangedSubview(thumbnail)
+        stackView.addArrangedSubview(makeThumbnail(for: attachment))
         onAttachmentsChanged?()
         if shouldAutoScroll {
             scheduleScrollToTrailingEdge()
         }
+    }
+
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        guard let index = attachments.firstIndex(where: { $0.id == id }) else { return }
+        attachments[index] = attachment
+        let thumbnailViews = stackView.arrangedSubviews.compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+        guard let view = thumbnailViews.first(where: { $0.attachmentId == id }),
+              let arrangedIndex = stackView.arrangedSubviews.firstIndex(of: view) else { return }
+        stackView.removeArrangedSubview(view)
+        view.removeFromSuperview()
+        stackView.insertArrangedSubview(makeThumbnail(for: attachment), at: arrangedIndex)
+        onAttachmentsChanged?()
     }
 
     func removeAttachment(id: UUID) {
@@ -116,6 +124,14 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -Constants.horizontalPadding),
             stackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
         ])
+    }
+
+    private func makeThumbnail(for attachment: UnifiedToggleInputAttachment) -> UnifiedToggleInputAttachmentThumbnailView {
+        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
+        thumbnail.onRemove = { [weak self] id in
+            self?.removeAttachment(id: id)
+        }
+        return thumbnail
     }
 
     private func scrollToTrailingEdge() {

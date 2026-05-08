@@ -27,19 +27,25 @@ struct UnifiedToggleInputInvalidFileAttachment: Identifiable {
     let mimeType: String
     let fileSizeBytes: Int
     let validationMessage: String
+    let sourceURL: URL?
+    let recoverableFileAttachment: AIChatFileAttachment?
 
     init(
         id: UUID = UUID(),
         fileName: String,
         mimeType: String,
         fileSizeBytes: Int,
-        validationMessage: String
+        validationMessage: String,
+        sourceURL: URL? = nil,
+        recoverableFileAttachment: AIChatFileAttachment? = nil
     ) {
         self.id = id
         self.fileName = fileName
         self.mimeType = mimeType
         self.fileSizeBytes = fileSizeBytes
         self.validationMessage = validationMessage
+        self.sourceURL = sourceURL
+        self.recoverableFileAttachment = recoverableFileAttachment
     }
 }
 

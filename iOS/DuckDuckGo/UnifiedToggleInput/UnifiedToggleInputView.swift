@@ -244,6 +244,10 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.addAttachment(attachment)
     }
 
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        attachmentsStrip.replaceAttachment(id: id, with: attachment)
+    }
+
     func removeAttachment(id: UUID) {
         attachmentsStrip.removeAttachment(id: id)
     }

@@ -30,14 +30,18 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let fileName: String
         let mimeType: String
         let fileSizeBytes: Int?
-        fileprivate let url: URL
+        let url: URL
     }
 
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
-    var onFilePicked: ((AIChatFileAttachment) -> Void)?
+    var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
     var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+
+    nonisolated static func recoverFileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
+        fileAttachment(from: metadata)
+    }
 
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
@@ -263,7 +267,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
                 return
             }
 
-            onFilePicked?(fileAttachment)
+            onFilePicked?(fileAttachment, metadata)
         }
     }
 

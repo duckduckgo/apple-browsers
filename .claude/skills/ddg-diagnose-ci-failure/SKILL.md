@@ -102,11 +102,30 @@ grep -Ein -C 6 'failed|FAIL|XCTAssert|<failure|error:' "$log_file" | head -n 200
 
 ### 1c: Artifacts (primary source for test failures)
 
-For any non-zero JUnit failure count, the XML is the authoritative source: precise failure counts, exact messages, and (when retries are configured) repeated `<testcase>` entries that disambiguate deterministic vs flaky failures (see Step 3d). Most test runs upload one (e.g. `unittests.xml`, `package-tests.xml`, `dbp-ios-unittests.xml`). List and download:
+For any non-zero JUnit failure count, the XML is the authoritative source: precise failure counts, exact messages, and (when retries are configured) repeated `<testcase>` entries that disambiguate deterministic vs flaky failures (see Step 3d). Most test runs upload one (e.g. `unittests.xml`, `package-tests.xml`, `dbp-ios-unittests.xml`).
+
+Use the REST API directly (`gh api`) rather than `gh run download` so the flow is stable across gh CLI versions and works correctly for non-latest attempts.
+
+List artifacts:
 
 ```bash
-gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/artifacts --jq '.artifacts[].name'
-gh run download {run_id} --repo duckduckgo/apple-browsers -n {artifact-name} -D /tmp/ci-artifacts/
+gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/artifacts \
+  --jq '.artifacts[] | {id, name, created_at}'
+```
+
+If `attempt_number` was supplied, the same name may appear once per attempt (re-runs add new artifacts to the same run rather than replacing them). Fetch the attempt's time window and pick the artifact whose `created_at` falls within it:
+
+```bash
+gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/attempts/{attempt_number} \
+  --jq '{run_started_at, updated_at}'
+```
+
+Download by artifact ID - this disambiguates duplicate names and avoids relying on `gh run download`'s name-matching behaviour:
+
+```bash
+mkdir -p /tmp/ci-artifacts/{name}
+gh api repos/duckduckgo/apple-browsers/actions/artifacts/{artifact_id}/zip > /tmp/artifact.zip
+unzip -o /tmp/artifact.zip -d /tmp/ci-artifacts/{name}/
 ```
 
 ## Step 2: Classify the Failure

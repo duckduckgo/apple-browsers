@@ -2225,6 +2225,23 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertNil(store.states["tab-A"]?.selectedTool)
     }
 
+    func test_handleExternalSubmission_prompt_clearsLastUsedSelectedTool() {
+        // Regression: the lastUsed snapshot was not cleared on submission, so a fresh tab seeded
+        // its state from `trackedLastUsed.selectedTool` and inherited the just-consumed tool
+        // selection — surfacing as a sticky chip on the newly-opened chat tab.
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportedTools: [.imageGeneration])]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+        XCTAssertEqual(store.lastUsed.selectedTool, .imageGeneration)
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertNil(store.lastUsed.selectedTool)
+    }
+
     // MARK: - Reasoning button visibility on tab switch
 
     func test_activateForTab_reasoningModel_showsReasoningButton() {
@@ -2333,13 +2350,17 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeModelWithTools(id: String, supportsImageUpload: Bool = false) -> AIChatModel {
+    private func makeModelWithTools(
+        id: String,
+        supportsImageUpload: Bool = false,
+        supportedTools: [AIChatRAGTool] = [.webSearch]
+    ) -> AIChatModel {
         AIChatModel(
             id: id,
             name: id,
             provider: .unknown,
             supportsImageUpload: supportsImageUpload,
-            supportedTools: [.webSearch],
+            supportedTools: supportedTools,
             entityHasAccess: true
         )
     }

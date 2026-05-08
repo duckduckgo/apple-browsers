@@ -404,7 +404,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cleared.text = ""
         cleared.attachments = []
         cleared.selectedTool = nil
-        stateStore.update(cleared, for: uid)
+        stateStore.recordUserChoice(cleared, for: uid)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
 

@@ -145,6 +145,23 @@
             "dbpActionId"
         ]
     },
+    "m_mac_dbp_optout_stage_email-get-data": {
+        "description": "Fired at the email get-data stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
+        ]
+    },
     "m_mac_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],

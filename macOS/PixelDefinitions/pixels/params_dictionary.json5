@@ -235,6 +235,8 @@
             "click",
             "expectation",
             "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",

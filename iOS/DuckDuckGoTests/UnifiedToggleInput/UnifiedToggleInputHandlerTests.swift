@@ -114,6 +114,79 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - isCurrentTextValidURL
+
+    func test_updateCurrentText_withValidURL_setsIsCurrentTextValidURLTrue() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        XCTAssertTrue(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withSearchTerm_setsIsCurrentTextValidURLFalse() {
+        sut.updateCurrentText("hello world")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_clearedFromURL_revertsIsCurrentTextValidURLToFalse() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        sut.updateCurrentText("")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withValidURL_publishesTrue() {
+        let expectation = expectation(description: "isCurrentTextValidURLPublisher emits true")
+        sut.isCurrentTextValidURLPublisher
+            .dropFirst()
+            .sink { isValid in
+                XCTAssertTrue(isValid)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.updateCurrentText("https://duckduckgo.com")
+        waitForExpectations(timeout: 1)
+    }
+
+    // MARK: - resetInteractionState
+
+    func test_resetInteractionState_clearsHasUserInteractedWithText() {
+        sut.markUserInteraction()
+        XCTAssertTrue(sut.hasUserInteractedWithText)
+
+        sut.resetInteractionState()
+
+        XCTAssertFalse(sut.hasUserInteractedWithText)
+    }
+
+    func test_resetInteractionState_publishesFalse() {
+        sut.markUserInteraction()
+
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher emits false after reset")
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { hasInteracted in
+                XCTAssertFalse(hasInteracted)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_resetInteractionState_alreadyFalse_doesNotPublishChange() {
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher does not fire when already false")
+        expectation.isInverted = true
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
     // MARK: - clearText
 
     func test_clearText_emptiesCurrentText() {

@@ -1508,7 +1508,7 @@ extension SettingsViewModel {
         updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionManager.getAccessToken() else {
+        guard (try? await subscriptionManager.getAccessToken()) != nil else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false

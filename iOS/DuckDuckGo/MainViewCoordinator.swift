@@ -379,6 +379,32 @@ class MainViewCoordinator {
         setNavigationChromeHidden(false)
     }
 
+    /// Hides the bottom `navigationBarContainer` (which carries the flanked UTI on AI tabs) and
+    /// re-anchors the content container to the safe area, giving the voice-mode WebView the full
+    /// height between the AI header and the home indicator. Restores the standard anchor when
+    /// `active == false`. Idempotent — safe to call from each AI-tab refresh tick.
+    func setAITabBottomChromeHidden(_ hidden: Bool) {
+        let logger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        let ts = formatter.string(from: Date())
+        let wasHidden = navigationBarContainer.isHidden
+        guard wasHidden != hidden else {
+            logger.error("[voiceDiag \(ts, privacy: .public)] bottomChrome noop hidden=\(hidden, privacy: .public)")
+            return
+        }
+        navigationBarContainer.isHidden = hidden
+        if hidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else if isNavigationChromeHidden {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        } else {
+            setContentContainerBottomAnchorMode(.toolbar)
+        }
+        let stack = Thread.callStackSymbols.dropFirst(1).prefix(4).joined(separator: " | ")
+        logger.error("[voiceDiag \(ts, privacy: .public)] bottomChrome applied hidden=\(hidden, privacy: .public) wasHidden=\(wasHidden, privacy: .public) navBarHiddenNow=\(self.navigationBarContainer.isHidden, privacy: .public) caller=\(stack, privacy: .public)")
+    }
+
     func showAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = false
         guard isNavigationChromeHidden else { return }

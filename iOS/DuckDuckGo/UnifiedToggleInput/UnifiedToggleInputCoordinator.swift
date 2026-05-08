@@ -935,8 +935,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isExpanded = true
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
-            isContentVisible = !isAIChatOnAITab
             let isSearchOnAITab = isAITabState && inputMode == .search
+            // Don't slap the search NTP / dax-logo overlay on top of an active chat conversation
+            // when the user just toggles to search without typing — keep the chat web view
+            // visible underneath so the toggle feels like a *mode switch*, not a navigation.
+            // Suggestions take over the moment they start typing; clearing the text takes them
+            // back to the chat surface.
+            let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
+            isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
             inactiveAppearance = isSearchKeyboardHidden
 

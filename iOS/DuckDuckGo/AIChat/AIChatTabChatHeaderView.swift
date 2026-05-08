@@ -20,6 +20,9 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
+import os
+
+private let aiHeaderVoiceDiagLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
 
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapChatList()
@@ -50,17 +53,21 @@ final class AIChatTabChatHeaderView: UIView {
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
     private var isSubscriptionActive: Bool = false
+    private var isVoiceModeActive: Bool = false
+    private var isNavigationVisible: Bool = false
 
     private lazy var backButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.arrowLeft,
         accessibilityLabel: UserText.keyCommandBrowserBack,
-        action: #selector(backTapped)
+        action: #selector(backTapped),
+        includeChrome: false
     )
 
     private lazy var forwardButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.arrowRight,
         accessibilityLabel: UserText.keyCommandBrowserForward,
-        action: #selector(forwardTapped)
+        action: #selector(forwardTapped),
+        includeChrome: false
     )
 
     private lazy var navBackButton: UIButton = makeIconButton(
@@ -99,6 +106,8 @@ final class AIChatTabChatHeaderView: UIView {
     )
 
     private lazy var leftPairPill: UIView = makePillContainer()
+    private lazy var backPill: UIView = makePillContainer()
+    private lazy var forwardPill: UIView = makePillContainer()
     private lazy var navPairPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
 
@@ -183,11 +192,14 @@ final class AIChatTabChatHeaderView: UIView {
         return label
     }()
 
-    private lazy var paidTitleLabel: UILabel = {
+    private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = UserText.aiChatHeaderPaidTitle
-        label.font = AIChatTabChatHeaderView.makeTitlePrimaryFont()
+        // Match the standard navigation-bar title font size — the paid label stands alone
+        // (no upgrade caption stacked underneath), so it can carry the heavier headline weight
+        // that a UINavigationBar title uses.
+        label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
@@ -204,19 +216,14 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    private lazy var paidTitleStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [paidTitleLabel])
-        stack.axis = .vertical
-        stack.alignment = .center
-        stack.spacing = 0
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.isUserInteractionEnabled = false
-        return stack
-    }()
-
     private static func makeTitlePrimaryFont() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .subheadline)
             .addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
+        return UIFont(descriptor: descriptor, size: descriptor.pointSize)
+    }
+
+    private static func makeNavigationTitleFont() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline)
         return UIFont(descriptor: descriptor, size: descriptor.pointSize)
     }
 
@@ -257,8 +264,10 @@ final class AIChatTabChatHeaderView: UIView {
 
     func configure(isSubscriptionActive: Bool) {
         self.isSubscriptionActive = isSubscriptionActive
-        freeTitleStack.isHidden = isSubscriptionActive
-        paidTitleStack.isHidden = !isSubscriptionActive
+        // Free plan: highlightable upgrade affordance (Free Plan / Upgrade + chevron).
+        // Paid plan: plain "Duck.ai" nav title — completely outside the UIControl.
+        titleContainer.isHidden = isSubscriptionActive
+        titleLabel.isHidden = !isSubscriptionActive
     }
 
     func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
@@ -266,13 +275,35 @@ final class AIChatTabChatHeaderView: UIView {
         let showsStandaloneBack = canGoBack && !canGoForward
         let showsStandaloneForward = canGoForward && !canGoBack
         let anyNavVisible = canGoBack || canGoForward
+        isNavigationVisible = anyNavVisible
 
-        backButton.isHidden = !showsStandaloneBack
-        forwardButton.isHidden = !showsStandaloneForward
+        backPill.isHidden = !showsStandaloneBack
+        forwardPill.isHidden = !showsStandaloneForward
         navPairPill.isHidden = !showsNavPair
-        newChatButton.isHidden = anyNavVisible
+        updateLeftChatControlsVisibility()
         // Hide free/paid title when both arrows occupy the left pill — the row gets crowded.
         titleContainer.isHidden = showsNavPair
+    }
+
+    /// Hides the chats / new-chat pair pill while the active tab is in Duck AI voice mode —
+    /// those buttons are unusable there (no chat list to navigate to, no compose surface).
+    /// Back / forward arrows are left to `setNavAvailable` so they still appear when the tab
+    /// has navigation history available — the user can still bail out of voice via back.
+    func setVoiceModeActive(_ active: Bool) {
+        isVoiceModeActive = active
+        updateLeftChatControlsVisibility()
+    }
+
+    private func updateLeftChatControlsVisibility() {
+        leftPairPill.isHidden = isVoiceModeActive
+        // Compose / new-chat is suppressed whenever back or forward chrome is visible — the row
+        // would feel cluttered with both navigation and a "new chat" affordance side by side, and
+        // "new chat" is reachable via the menu when nav is in play.
+        newChatButton.isHidden = isNavigationVisible
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        let ts = formatter.string(from: Date())
+        aiHeaderVoiceDiagLogger.error("[voiceDiag \(ts, privacy: .public)] header voice=\(self.isVoiceModeActive, privacy: .public) navVisible=\(self.isNavigationVisible, privacy: .public) leftPairPillHidden=\(self.leftPairPill.isHidden, privacy: .public) newChatHidden=\(self.newChatButton.isHidden, privacy: .public) inWindow=\(self.window != nil, privacy: .public)")
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -287,26 +318,28 @@ final class AIChatTabChatHeaderView: UIView {
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleContainer)
+        addSubview(titleLabel)
         addSubview(bottomSeparator)
 
-        leftStack.addArrangedSubview(backButton)
-        leftStack.addArrangedSubview(forwardButton)
+        leftStack.addArrangedSubview(backPill)
+        leftStack.addArrangedSubview(forwardPill)
         leftStack.addArrangedSubview(navPairPill)
         leftStack.addArrangedSubview(leftPairPill)
+        pillContentSuperview(for: backPill).addSubview(backButton)
+        pillContentSuperview(for: forwardPill).addSubview(forwardButton)
         pillContentSuperview(for: navPairPill).addSubview(navPairStack)
         pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
-        backButton.isHidden = true
-        forwardButton.isHidden = true
+        backPill.isHidden = true
+        forwardPill.isHidden = true
         navPairPill.isHidden = true
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [chatListButton, newChatButton, navBackButton, navForwardButton, tabSwitcherButton, appMenuButton] as [UIControl] {
+        for control in [backButton, forwardButton, chatListButton, newChatButton, navBackButton, navForwardButton, tabSwitcherButton, appMenuButton] as [UIControl] {
             control.addGestureRecognizer(StrictBoundsTouchObserver())
         }
 
         titleContainer.addSubview(freeTitleStack)
-        titleContainer.addSubview(paidTitleStack)
         titleContainer.addSubview(freeChevronView)
 
         NSLayoutConstraint.activate([
@@ -323,11 +356,21 @@ final class AIChatTabChatHeaderView: UIView {
             titleContainer.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
             titleContainer.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
 
-            backButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            backButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            backPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            backPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            forwardButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            forwardButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            backButton.centerXAnchor.constraint(equalTo: backPill.centerXAnchor),
+            backButton.centerYAnchor.constraint(equalTo: backPill.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            backButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+
+            forwardPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            forwardPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            forwardButton.centerXAnchor.constraint(equalTo: forwardPill.centerXAnchor),
+            forwardButton.centerYAnchor.constraint(equalTo: forwardPill.centerYAnchor),
+            forwardButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            forwardButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
             navBackButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
             navBackButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
@@ -370,10 +413,13 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
 
-            paidTitleStack.topAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.topAnchor),
-            paidTitleStack.leadingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.leadingAnchor),
-            paidTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
-            paidTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
+            // Paid title sits outside the highlightable container — it's a regular nav-style
+            // label, not a tap target. Same center as the free-plan container so the visual
+            // position is identical when the subscription state flips.
+            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
 
             freeChevronView.leadingAnchor.constraint(equalTo: freePlanLabel.trailingAnchor, constant: Constants.chevronSpacing),
             freeChevronView.centerYAnchor.constraint(equalTo: freePlanLabel.centerYAnchor),
@@ -398,6 +444,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector, includeChrome: Bool = true) -> UIButton {
+        let image = image.withRenderingMode(.alwaysTemplate)
         let button: UIButton
         if includeChrome, #available(iOS 26, *) {
             var config = UIButton.Configuration.prominentClearGlass()
@@ -409,9 +456,12 @@ final class AIChatTabChatHeaderView: UIView {
         } else {
             button = UIButton(type: .system)
             button.setImage(image, for: .normal)
+            button.automaticallyUpdatesConfiguration = false
+            button.configurationUpdateHandler = nil
         }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
+        button.imageView?.contentMode = .scaleAspectFit
         button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
         if includeChrome {
@@ -467,7 +517,8 @@ final class AIChatTabChatHeaderView: UIView {
 
     @available(iOS 26, *)
     private func makeGlassPillEffect() -> UIGlassEffect {
-        let effect = UIGlassEffect(style: .clear)
+        let glassStyle: UIGlassEffect.Style = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
+        let effect = UIGlassEffect(style: glassStyle)
         effect.isInteractive = true
         return effect
     }
@@ -475,14 +526,14 @@ final class AIChatTabChatHeaderView: UIView {
     private func updateGlassPillEffects() {
         guard #available(iOS 26, *) else { return }
 
-        for pill in [navPairPill, leftPairPill, rightPairPill] {
+        for pill in [backPill, forwardPill, navPairPill, leftPairPill, rightPairPill] {
             guard let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
             effectView.effect = makeGlassPillEffect()
         }
     }
 
     private func updateButtonShadows() {
-        let chromedViews: [UIView] = [backButton, forwardButton, navPairPill, leftPairPill, rightPairPill]
+        let chromedViews: [UIView] = [backPill, forwardPill, navPairPill, leftPairPill, rightPairPill]
         for view in chromedViews {
             applyGlassChromeShadow(to: view)
         }

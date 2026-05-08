@@ -25,6 +25,12 @@ public enum CodeEntrySource: String {
     case pastedCode
 }
 
+public enum CodeCollectionSource: String {
+    case connect
+    case exchange
+    case recovery
+}
+
 public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     var pasteboardString: String? { get }
@@ -34,7 +40,7 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     /// Returns true if we were able to use the code. Either way, stop validating.
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool
 
-    func codeCollectionCancelled()
+    func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
     func shareCode(_ code: String)
 
@@ -71,9 +77,11 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
+    private let source: CodeCollectionSource
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+    public init(codeForDisplayOrPasting: String, qrCodeString: String, source: CodeCollectionSource) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
+        self.source = source
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -119,7 +127,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func cancel() {
-        delegate?.codeCollectionCancelled()
+        delegate?.codeCollectionCancelled(source: source)
     }
 
     func showShareCodeSheet() {

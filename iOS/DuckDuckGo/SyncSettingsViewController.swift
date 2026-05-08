@@ -535,13 +535,13 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         refreshAutoRestoreDecisionState()
     }
 
-    func codeCollectionCancelled() {
+    func codeCollectionCancelled(source: CodeCollectionSource) {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         dismissPresentedViewController()
         Pixel.fire(pixel: .syncSetupEndedAbandoned,
-                   withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue],
+                   withAdditionalParameters: [PixelParameters.source: source.rawValue],
                    includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireSetupEndedAbandoned()
     }

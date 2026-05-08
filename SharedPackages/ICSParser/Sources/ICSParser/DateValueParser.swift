@@ -20,13 +20,14 @@ import Foundation
 
 /// Parses ICS date / date-time values from properties like DTSTART and DTEND.
 ///
-/// Supports the three forms defined in RFC 5545 §3.3.4 and §3.3.5:
+/// Supports the four forms defined in RFC 5545 §3.3.4 and §3.3.5:
 /// - Date only (`VALUE=DATE`, `YYYYMMDD`)
 /// - UTC date-time (`YYYYMMDDTHHMMSSZ`)
 /// - Floating local date-time (`YYYYMMDDTHHMMSS`)
+/// - TZID-anchored date-time (`TZID=Region/City:YYYYMMDDTHHMMSS`)
 ///
-/// Future commits add TZID resolution. For this commit, TZID parameters are detected but
-/// resolution defers to the floating-local interpretation.
+/// TZID resolution goes through `TimeZoneResolver`, which handles IANA and Outlook-style names.
+/// Unrecognised TZIDs surface as `ICSParser.Error.unrecognizedTimeZone`.
 enum DateValueParser {
 
     struct Parsed {
@@ -38,9 +39,11 @@ enum DateValueParser {
         let upperParam = paramPart.uppercased()
         let isDateOnly = upperParam.contains("VALUE=DATE") || (value.count == 8 && !value.contains("T"))
 
+        let timeZone = try resolveTimeZone(value: value, paramPart: paramPart)
+
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = value.hasSuffix("Z") ? TimeZone(identifier: "UTC") : TimeZone.current
+        formatter.timeZone = timeZone
 
         let formats: [String] = isDateOnly
             ? ["yyyyMMdd"]
@@ -53,5 +56,15 @@ enum DateValueParser {
             }
         }
         throw ICSParser.Error.malformedDate(field: field, raw: value)
+    }
+
+    private static func resolveTimeZone(value: String, paramPart: String) throws -> TimeZone {
+        if value.hasSuffix("Z") {
+            return TimeZone(identifier: "UTC") ?? .current
+        }
+        if let tzid = TimeZoneResolver.extractTZID(from: paramPart) {
+            return try TimeZoneResolver.resolve(tzid: tzid)
+        }
+        return .current
     }
 }

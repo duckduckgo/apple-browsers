@@ -74,6 +74,36 @@ struct ICSParserTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Resolves IANA TZID to the correct UTC instant", .timeLimit(.minutes(1)))
+    func resolvesIANATZID() throws {
+        let events = try ICSParser.parse(data: fixture("timezone-iana"))
+        try #require(events.count == 1)
+        let event = events[0]
+        // DTSTART = 2026-06-01 14:00 in America/New_York. June is EDT (UTC-4), so 18:00 UTC.
+        #expect(event.startDate == iso("2026-06-01T18:00:00Z"))
+        #expect(event.endDate == iso("2026-06-01T19:00:00Z"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Resolves Outlook-style TZID via the CLDR mapping", .timeLimit(.minutes(1)))
+    func resolvesOutlookTZID() throws {
+        let events = try ICSParser.parse(data: fixture("timezone-outlook"))
+        try #require(events.count == 1)
+        let event = events[0]
+        // "Eastern Standard Time" maps to America/New_York. Same UTC instant as the IANA fixture.
+        #expect(event.startDate == iso("2026-06-01T18:00:00Z"))
+        #expect(event.endDate == iso("2026-06-01T19:00:00Z"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws unrecognizedTimeZone for unknown TZIDs", .timeLimit(.minutes(1)))
+    func throwsForUnknownTZID() {
+        #expect(throws: ICSParser.Error.unrecognizedTimeZone(tzid: "Definitely Not A Real Timezone")) {
+            try ICSParser.parse(data: fixture("timezone-unrecognized"))
+        }
+    }
+
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {

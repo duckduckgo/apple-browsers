@@ -199,6 +199,18 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    public struct NativePromptFile: Codable, Equatable {
+        public let data: String
+        public let fileName: String
+        public let mimeType: String
+
+        public init(data: String, fileName: String, mimeType: String) {
+            self.data = data
+            self.fileName = fileName
+            self.mimeType = mimeType
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
@@ -206,6 +218,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let autoSubmit: Bool
         public let toolChoice: [String]?
         public let images: [NativePromptImage]?
+        public let files: [NativePromptFile]?
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
@@ -215,6 +228,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             case autoSubmit
             case toolChoice
             case images
+            case files
             case modelId
             case mode
             case reasoningEffort
@@ -225,6 +239,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             autoSubmit: Bool,
             toolChoice: [String]?,
             images: [NativePromptImage]?,
+            files: [NativePromptFile]?,
             modelId: String?,
             mode: String?,
             reasoningEffort: AIChatReasoningEffort?
@@ -233,6 +248,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.autoSubmit = autoSubmit
             self.toolChoice = toolChoice
             self.images = images
+            self.files = files
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
@@ -244,6 +260,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
             toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
             images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
+            files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
             modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
@@ -355,8 +372,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

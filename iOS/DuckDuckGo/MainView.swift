@@ -423,7 +423,6 @@ extension MainViewFactory {
     private func constrainContentContainer() {
         let contentContainer = coordinator.contentContainer!
         let toolbar = coordinator.toolbar!
-        let navigationBarContainer = coordinator.navigationBarContainer!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
         coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)

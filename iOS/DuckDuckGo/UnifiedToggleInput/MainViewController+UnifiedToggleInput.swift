@@ -123,22 +123,44 @@ extension MainViewController {
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
 
         let statusBackgroundPresentation: MainViewCoordinator.StatusBackgroundPresentation
-        let containerBackgroundColor: UIColor?
+        let rootBackgroundColor: UIColor
+        let navigationBarContainerColor: UIColor?
+        let inputContentContainerColor: UIColor
         let webViewBackgroundColor: UIColor?
 
         switch state {
         case .standardChrome:
             statusBackgroundPresentation = .standard
-            containerBackgroundColor = nil
+            rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+            navigationBarContainerColor = nil
+            inputContentContainerColor = .clear
             webViewBackgroundColor = nil
         case .aiTabSearchChromeHidden:
+            // Match the top status background so the area around the input card — and the area
+            // behind the keyboard's translucency — blend with the chat surface. The web view
+            // also takes the same colour so the brief moment after a frame change (before
+            // WKWebView's out-of-process renderer catches up) shows the same colour rather
+            // than the parent flashing through.
             statusBackgroundPresentation = .aiTabSearchChromeHidden
-            containerBackgroundColor = .clear
-            webViewBackgroundColor = .clear
+            rootBackgroundColor = UIColor(designSystemColor: .panel)
+            navigationBarContainerColor = rootBackgroundColor
+            inputContentContainerColor = .clear
+            webViewBackgroundColor = rootBackgroundColor
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
-            containerBackgroundColor = .clear
-            webViewBackgroundColor = .clear
+            inputContentContainerColor = .clear
+            // Only paint the chrome around the input with the contextual sheet tone while the
+            // input is engaged (first responder). In the idle/collapsed state we keep the chrome
+            // transparent so the chat surface beneath shows through unchanged.
+            if unifiedToggleInputCoordinator?.isInputEditing == true {
+                rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                navigationBarContainerColor = rootBackgroundColor
+                webViewBackgroundColor = rootBackgroundColor
+            } else {
+                rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+                navigationBarContainerColor = .clear
+                webViewBackgroundColor = .clear
+            }
         }
 
         viewCoordinator.setStatusBackgroundPresentation(statusBackgroundPresentation)
@@ -146,8 +168,9 @@ extension MainViewController {
             refreshStatusBarBackgroundAfterAIChrome()
         }
 
-        viewCoordinator.navigationBarContainer.backgroundColor = containerBackgroundColor
-        viewCoordinator.unifiedInputContentContainer?.backgroundColor = containerBackgroundColor ?? .clear
+        view.backgroundColor = rootBackgroundColor
+        viewCoordinator.navigationBarContainer.backgroundColor = navigationBarContainerColor
+        viewCoordinator.unifiedInputContentContainer?.backgroundColor = inputContentContainerColor
         viewCoordinator.unifiedToggleInputContainer.backgroundColor = .clear
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
 
@@ -447,10 +470,6 @@ extension MainViewController {
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
         }
 
-        if coordinator.isAITabState {
-            coordinator.applyDismissButtonVisibility()
-        }
-
         viewCoordinator.updateUnifiedToggleInputColors(
             inputView: coordinator.viewController.view
         )
@@ -619,8 +638,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -629,11 +648,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
-        if mode == .aiChat && voiceShortcutFeature.isAvailable {
-            onDuckAIVoiceModeRequested()
-        } else {
-            handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
-        }
+        handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+    }
+
+    func unifiedToggleInputDidRequestAIVoiceChat() {
+        onDuckAIVoiceModeRequested()
     }
 
     func unifiedToggleInputDidRequestAIChat() {

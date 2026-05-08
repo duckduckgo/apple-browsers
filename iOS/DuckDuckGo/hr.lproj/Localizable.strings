@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI značajke";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Odaberi fotografiju";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Snimi fotografiju";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne sada";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Značajke umjetne inteligencije privatne su i neobavezne.\nIzmjene možeš napraviti u izborniku Postavke > AI značajke.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Želiš li jednostavan pristup privatnom AI čavrljanju u adresnoj traci?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Pretraživanje i Duck.ai";

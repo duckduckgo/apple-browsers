@@ -61,30 +61,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var contentContainerView = UIView()
-    private lazy var floatingDismissButton: UIButton = {
-        let button: UIButton
-        if #available(iOS 26, *) {
-            var config = UIButton.Configuration.glass()
-            config.image = UIImage(systemName: "xmark")
-            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-            button = UIButton(configuration: config)
-        } else {
-            button = UIButton(type: .system)
-            let image = UIImage(systemName: "xmark")?
-                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-            button.setImage(image, for: .normal)
-            button.tintColor = UIColor(designSystemColor: .textPrimary)
-            button.backgroundColor = UIColor(designSystemColor: .surface)
-            button.layer.cornerRadius = 22
-            button.layer.shadowColor = UIColor.black.cgColor
-            button.layer.shadowOpacity = 0.1
-            button.layer.shadowRadius = 4
-            button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        }
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(handleFloatingDismissTap), for: .primaryActionTriggered)
-        return button
-    }()
 
     private var isLandscapeOrientation: Bool = false {
         didSet {
@@ -236,10 +212,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager?.animateProgrammaticModeChanges = true
     }
 
-    func setDismissButtonVisible(_ visible: Bool) {
-        floatingDismissButton.isHidden = !visible
-    }
-
     func setActive(_ active: Bool) {
         guard active != isContentActive else { return }
         isContentActive = active
@@ -268,15 +240,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateEscapeHatchTopInset()
     }
 
-    /// Bottom-bar Duck.ai unconditionally applies the +44pt clearance because the suggestions table starts at content y=0,
-    /// so cells need (x) dismiss-button clearance regardless of whether the hatch is present (without it, the first cell
-    /// slides under the floating dismiss button when the user is typing). Top-bar mirrors the Search-side tray's pull-up
-    /// rule, gating the negative offset on hatch presence.
+    /// Duck.ai suggestions tray uses the same escape-hatch-driven inset as the Search-side tray:
+    /// 0 when there's no hatch, +44pt to clear the hatch card in bottom-bar, -10pt pull-up in top-bar.
     private var duckAITopInset: CGFloat {
-        if isUsingTopBarPosition {
-            return escapeHatchModel != nil ? Metrics.escapeHatchTopBarTrayPullUp : 0
-        }
-        return Metrics.escapeHatchBaseTopInset
+        Self.computeSuggestionTrayEscapeHatchInset(
+            hasEscapeHatch: escapeHatchModel != nil,
+            isBottomBar: !isUsingTopBarPosition
+        )
     }
 
     /// Updates both surfaces' top insets so the (x) dismiss button doesn't overlap their content in bottom-bar mode.
@@ -291,10 +261,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool,
                                                       isBottomBar: Bool) -> CGFloat {
-        // Tray: bottom bar needs space for dismiss button; top bar gets a small pull-up.
-        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchBaseTopInset : 0
-        let trayTopBarPullUp: CGFloat = hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
-        return suggestionInsetBase + trayTopBarPullUp
+        // Top-bar tightening when the hatch is present; both surfaces handle their own
+        // breathing room around the hatch card internally, so no bottom-bar inset is needed.
+        return hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
     }
 
     func setText(_ text: String) {
@@ -354,7 +323,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setupView() {
         view.backgroundColor = Metrics.backgroundColor
         setUpContentContainer()
-        setUpFloatingDismissButton()
         setUpSwipeDownGesture()
     }
 
@@ -373,16 +341,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         ])
     }
 
-    private func setUpFloatingDismissButton() {
-        view.addSubview(floatingDismissButton)
-        NSLayoutConstraint.activate([
-            floatingDismissButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            floatingDismissButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            floatingDismissButton.widthAnchor.constraint(equalToConstant: 44),
-            floatingDismissButton.heightAnchor.constraint(equalToConstant: 44),
-        ])
-    }
-
     private func setUpSwipeDownGesture() {
         let swipeDownGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeDown))
         swipeDownGesture.direction = .down
@@ -395,6 +353,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installSuggestionsTray()
         installDaxLogoView()
     }
+
+    /// Suppresses suggestion-tray section headers per the unified-input redesign.
+    /// Flip to `true` to restore headers; selection logic below is preserved.
+    /// Consider removing this and the code it guards after release.
+    private static let areSectionHeadersEnabled = false
 
     private func updateSectionTitle() {
         let text = computedSectionTitleText()
@@ -419,7 +382,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
+    /// Returns the header label for the currently visible tray, or `""` when none applies
+    /// (and unconditionally while `areSectionHeadersEnabled` is `false`).
     private func computedSectionTitleText() -> String {
+        guard Self.areSectionHeadersEnabled else { return "" }
+
         let mode = switchBarHandler.currentToggleState
         let hasFavorites = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let hasAutocomplete = suggestionTrayManager?.shouldDisplaySuggestionTray == true && !hasFavorites
@@ -662,10 +629,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager?.containerViewController.view.layoutIfNeeded()
     }
 
-    @objc private func handleFloatingDismissTap() {
-        onDismissRequested?()
-    }
-
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
@@ -719,7 +682,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
-        static let escapeHatchBaseTopInset: CGFloat = 44
         static let escapeHatchLogoOffset: CGFloat = 120
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10

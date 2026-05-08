@@ -294,6 +294,7 @@ extension MainViewController {
             fireContext: .duckAIOnboarding,
             browsingMode: tabManager.currentBrowsingMode,
             onConfirm: { [weak self] fireRequest in
+                self?.contextualOnboardingPixelReporter.measureFireButtonOnboardingDeleteConfirmed()
                 self?.forgetAllWithAnimation(request: fireRequest) {
                     self?.experimentDuckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

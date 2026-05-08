@@ -26,12 +26,9 @@ struct OnboardingStepsHelper {
             .browserComparison,
             .addToDockPromo,
             .appIconSelection,
-            .addressBarPositionSelection
+            .addressBarPositionSelection,
+            .searchExperienceSelection
         ]
-    }
-
-    static func expectedIPhoneStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
-        expectedIPhoneSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
     }
 
     static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {

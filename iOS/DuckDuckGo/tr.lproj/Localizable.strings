@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI Özellikleri";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Fotoğraf Seç";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Şimdi Değil";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Yapay zekâ özellikleri gizli ve isteğe bağlıdır.\nAyarlar > AI Özellikleri'nden değişiklik yapabilirsiniz.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Adres çubuğundaki özel AI sohbetine kolay erişim ister misiniz?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Arama ve Duck.ai";

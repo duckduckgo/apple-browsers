@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Функции ИИ";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Выбрать фото";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Сделать фото";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Не сейчас";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно.\nИх можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Поиск и Duck.ai";

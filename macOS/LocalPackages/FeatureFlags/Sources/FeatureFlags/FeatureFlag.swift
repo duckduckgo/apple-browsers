@@ -234,8 +234,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
-    /// Autoconsent heuristic action experiment
-    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    /// Autoconsent heuristic action
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
     /// Enables Next Steps List widget with a single card displayed at a time on New Tab page
@@ -545,7 +545,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth)), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
-            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .aiChatMultiplePageContexts:

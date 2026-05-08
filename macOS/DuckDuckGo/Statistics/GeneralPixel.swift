@@ -32,6 +32,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case crashReportingFailedToReadContents
+    case crashReportSent
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -619,6 +620,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
+
+        case .crashReportSent:
+            return "m_mac_crash-report_sent"
 
         case .compileRulesWait(onboardingShown: let onboardingShown, waitTime: let waitTime, result: let result):
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
@@ -1542,6 +1546,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
                 .crashReportingFailedToReadContents,
+                .crashReportSent,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,

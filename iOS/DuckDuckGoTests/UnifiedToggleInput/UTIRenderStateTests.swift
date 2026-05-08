@@ -27,7 +27,7 @@ final class UTIRenderStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true)
     }
 
     override func tearDown() {
@@ -209,48 +209,19 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertEqual(state.contentInputMode, .aiChat)
     }
 
-    // MARK: - Inline / Floating Dismiss
+    // MARK: - Host-Driven Render Flags
 
-    func test_inlineDismiss_activeAtTopWhenExpanded() {
-        sut.activateFromOmnibar(cardPosition: .top)
-        XCTAssertTrue(sut.computeRenderState().isInlineDismissActive)
+    func test_omnibarHost_renderState_showsToggle() {
+        sut.activateFromOmnibar()
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.cardLayout.showsToggle)
     }
 
-    func test_inlineDismiss_hiddenAtBottomPosition() {
-        sut.activateFromOmnibar(cardPosition: .bottom)
-        XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)
-    }
-
-    func test_inlineDismiss_activeWhenToggleDisabledAtTop() {
-        // With the toggle setting off, the inline X now lives in the field row alongside the
-        // mic / Duck.ai shortcut; the floating X is no longer used for this state.
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
-        sut.activateFromOmnibar(cardPosition: .top)
-        XCTAssertTrue(sut.computeRenderState().isInlineDismissActive)
-    }
-
-    func test_floatingDismiss_hiddenAtTopWhenToggleDisabled() {
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
-        sut.activateFromOmnibar(cardPosition: .top)
-        XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
-    }
-
-    func test_inlineDismiss_hiddenWhenCollapsed() {
-        sut.showCollapsed()
-        XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)
-    }
-
-    func test_floatingDismiss_visibleAtBottomWithContent() {
-        sut.activateFromOmnibar(cardPosition: .bottom)
-        XCTAssertTrue(sut.computeRenderState().isFloatingDismissVisible)
-    }
-
-    func test_floatingDismiss_hiddenAtTopWhenInlineDismissActive() {
-        sut.activateFromOmnibar(cardPosition: .top)
-        XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
-    }
-
-    func test_floatingDismiss_hiddenWhenContentHidden() {
-        XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
+    func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
+        sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
     }
 }

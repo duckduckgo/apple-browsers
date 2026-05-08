@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Funkcje AI";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Wybierz zdjęcie";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Zrób zdjęcie";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Nie teraz";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkcje sztucznej inteligencji są prywatne i opcjonalne.\nMożesz dokonać zmian w obszarze Ustawienia > Funkcje AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chcesz mieć łatwy dostęp do prywatnego czatu AI na pasku adresu?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Wyszukiwanie i Duck.ai";

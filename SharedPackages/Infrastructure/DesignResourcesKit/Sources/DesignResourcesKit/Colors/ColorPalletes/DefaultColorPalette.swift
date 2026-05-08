@@ -274,6 +274,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: .x161616)
         case .unifiedToggleInputCardBackground:
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+        case .unifiedToggleInputStopButtonBackground:
+            return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .tabSwitcherTrackerCountBackground:
             return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
         case let .rebranding(rebrandingColor):

@@ -297,8 +297,8 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = .default
+            textView.returnKeyType = .go
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -547,8 +547,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
+            textView.returnKeyType = currentMode == .aiChat ? .go : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -566,6 +566,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }
@@ -690,9 +694,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat && handler.isToggleEnabled {
-                return true
-            }
             fireKeyboardGoPressedPixel()
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

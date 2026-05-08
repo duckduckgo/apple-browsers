@@ -29,7 +29,7 @@ extension CrashReportingFactory: AppStoreCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    crashReportSender: CrashReportSending,
-                                   crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                                   crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                                    fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                                    promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
         return AppStoreCrashCollection(internalUserDecider: internalUserDecider,

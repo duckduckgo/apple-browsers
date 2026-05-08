@@ -111,6 +111,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     var normalTabsModel: TabsModelManaging {
         tabsModelProvider.normalTabsModel
     }
+
+    var fireModeTabsModel: TabsModelManaging {
+        tabsModelProvider.fireModeTabsModel
+    }
     
     var allTabsModel: TabsModelReading {
         tabsModelProvider.aggregateTabsModel
@@ -407,9 +411,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let preferredMode = resolvedTextEntryMode()
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
+            tab = Tab(fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -469,7 +473,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
+        let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         _ = save()
     }
@@ -528,7 +532,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
+        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 

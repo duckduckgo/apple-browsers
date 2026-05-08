@@ -76,6 +76,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -182,6 +183,11 @@ final class SettingsViewModel: ObservableObject {
 
     var meetsLocaleRequirement: Bool {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
+    var canShowFreemiumPIRSettingsEntryPoint: Bool {
+        freemiumPIREligibilityChecker.canShowEntryPoint()
+            && dataBrokerProtectionViewControllerProvider != nil
     }
 
     var dbpMeetsProfileRunPrequisite: Bool {
@@ -904,6 +910,7 @@ final class SettingsViewModel: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -942,6 +949,7 @@ final class SettingsViewModel: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -1517,7 +1525,7 @@ extension SettingsViewModel {
         updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionManager.getAccessToken() else {
+        guard (try? await subscriptionManager.getAccessToken()) != nil else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false

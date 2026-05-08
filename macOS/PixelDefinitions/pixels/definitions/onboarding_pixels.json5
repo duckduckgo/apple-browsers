@@ -176,5 +176,83 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_mac_onboarding_search_custom_u": {
+        "description": "Fired when the user types into the address bar when the search suggestions dialog is shown during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_visit_site_custom_u": {
+        "description": "Fired when the user types into the address bar when the site suggestions dialog  is shown during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_fire_button_try_it_pressed_u": {
+        "description": "Fired when the “skip” button is clicked on the Fire Button dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_finished_u": {
+        "description": "Fired when the final onboarding dialog is displayed during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_fire_button_pressed_u": {
+        "description": "Fired when the Fire button is clicked from the Fire Button dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_privacy_dashboard_opened_u": {
+        "description": "Fired when the privacy dashboard is opened from the Trackers dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_second_site_visit_u": {
+        "description": "Fired on didFinishLoading on Tab only if it's not a search; the OnboardingPixelProvider sends it only the second time",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_try_search_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try search dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_search-result-dialog_dismiss-button-tapped_u": {
+        "description": "Fired when the search result dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_try_visit_site_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try visit site dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_trackers_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the trackers blocked dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_fire_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try fire button dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_end_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the final dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

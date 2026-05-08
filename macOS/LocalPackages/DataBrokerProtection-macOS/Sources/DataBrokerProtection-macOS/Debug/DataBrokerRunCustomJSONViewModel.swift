@@ -815,6 +815,9 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
     func fireOptOutEmailConfirm() {
     }
 
+    func fireOptOutEmailGetData() {
+    }
+
     func fireOptOutFillForm() {
     }
 

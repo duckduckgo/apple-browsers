@@ -92,7 +92,7 @@ final class SiteThemeColorManager {
             if let newColor = change.newValue as? UIColor {
                 colorCache[host] = newColor
                 if isCurrentTab {
-                    updateThemeColor(newColor)
+                    _ = updateThemeColor(newColor)
                 }
             } else {
                 self.resetThemeColor()

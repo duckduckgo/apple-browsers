@@ -28,7 +28,7 @@ public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
 
     public init(
         userNotificationService: DataBrokerProtectionUserNotificationService,
-        freemiumUserStateManager: FreemiumDBPUserStateManaging = DisabledFreemiumDBPUserStateManager()
+        freemiumUserStateManager: FreemiumDBPUserStateManaging
     ) {
         self.userNotificationService = userNotificationService
         self.freemiumUserStateManager = freemiumUserStateManager

@@ -353,6 +353,40 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
     }
 
+    func test_activateFromSearchTopPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
+    }
+
+    func test_activateFromSearchBottomPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
+    }
+
+    func test_activateFromSearchTopPosition_withVoiceSearchEnabled_showsInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .voiceOnly)
+    }
+
+    func test_activateFromSearchBottomPosition_withVoiceSearchEnabled_showsInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .voiceOnly)
+    }
+
     func test_activateFromOmnibar_setsExpandedTrue() {
         sut.activateFromOmnibar()
         XCTAssertTrue(sut.viewController.isInputExpanded)
@@ -1394,6 +1428,63 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
+    func test_inlineVoiceSearchTap_requestsVoiceSearch() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_collapsedAIVoiceChatButtonTap_requestsAIVoiceChat() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+    }
+
+    func test_initialCollapsedAIVoiceChatButton_usesPlainWaveformStyle() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+
+        let voiceButton = findButton(accessibilityIdentifier: "Browser.OmniBar.Button.VoiceSearch", in: sut.viewController.view)
+
+        XCTAssertEqual(voiceButton?.backgroundColor, .clear)
+        XCTAssertEqual(voiceButton?.layer.cornerRadius, 0)
+    }
+
+    func test_expandedAIChatInlineVoiceSearchTap_requestsVoiceSearch() {
+        sut.updateVoiceSearchAvailability(true)
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_expandedAIChatInlineVoiceSearchTap_whenVoiceSearchDisabled_ignoresStaleTap() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_aiVoiceChatTap_requestsAIVoiceChat() {
+        sut.viewController.handler.aiVoiceChatButtonTapped()
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+    }
+
     // MARK: - Toolbar Voice Chat State Sync
 
     func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
@@ -1459,6 +1550,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private func toolsMenuActions() -> [UIAction] {
         (sut.viewController.toolsMenu?.children ?? []).compactMap { $0 as? UIAction }
+    }
+
+    private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityIdentifier == accessibilityIdentifier {
+                return button
+            }
+            if let button = findButton(accessibilityIdentifier: accessibilityIdentifier, in: subview) {
+                return button
+            }
+        }
+        return nil
     }
 }
 
@@ -1588,6 +1691,8 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
+    var didRequestVoiceSearchCount = 0
+    var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
@@ -1599,7 +1704,8 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedFiles = files
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
-    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
+    func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
     func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
@@ -2160,6 +2266,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
             supportedReasoningEffort: supportedReasoningEffort
         )
     }
+
 }
 
 private final class MockAIChatPreferencesForPerTab: AIChatPreferencesPersisting {

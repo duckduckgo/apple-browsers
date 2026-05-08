@@ -97,7 +97,6 @@ class SaveLoginViewController: UIViewController {
         case .updateUsername:
             Pixel.fire(pixel: .autofillLoginsUpdateUsernameModalDismissed, withAdditionalParameters: backfilledParameter)
         case .updatePassword:
-            let isBackfilled = viewModel.isUpdatingEmptyPassword
             Pixel.fire(pixel: .autofillLoginsUpdatePasswordModalDismissed, withAdditionalParameters: backfilledParameter)
         }
         

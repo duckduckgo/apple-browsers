@@ -26,23 +26,23 @@ final class NewAddressBarPickerViewModel: ObservableObject {
 
     private let aiChatSettings: AIChatSettingsProvider
     private let dailyPixelFiring: DailyPixelFiring.Type
-    private let onDismiss: () -> Void
+    private let onConfirm: (Bool) -> Void
 
     init(
         aiChatSettings: AIChatSettingsProvider,
         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
-        onDismiss: @escaping () -> Void
+        onConfirm: @escaping (_ isDuckAISelected: Bool) -> Void
     ) {
         self.aiChatSettings = aiChatSettings
         self.dailyPixelFiring = dailyPixelFiring
-        self.onDismiss = onDismiss
+        self.onConfirm = onConfirm
         self.isDuckAISelected = true
     }
 
     func confirm() {
         aiChatSettings.enableAIChatSearchInputUserSettings(enable: isDuckAISelected)
         fireConfirmPixel()
-        onDismiss()
+        onConfirm(isDuckAISelected)
     }
 }
 

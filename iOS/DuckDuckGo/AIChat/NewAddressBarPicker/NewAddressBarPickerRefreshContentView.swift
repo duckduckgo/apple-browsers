@@ -26,20 +26,46 @@ import Onboarding
 
 struct NewAddressBarPickerRefreshContentView: View {
     @StateObject var viewModel: NewAddressBarPickerViewModel
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Metrics.stackSpacing) {
-                Header()
-                PickerCard(viewModel: viewModel)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: Metrics.stackSpacing) {
+                    Header()
+                    PickerCard(viewModel: viewModel)
+                        .id(Metrics.pickerCardID)
+
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: cardMaxWidth)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Metrics.topPadding)
+                .padding(.horizontal, Metrics.horizontalPadding)
             }
-            .frame(maxWidth: cardMaxWidth)
-            .frame(maxWidth: .infinity)
-            .padding(.top, Metrics.topPadding)
-            .padding(.horizontal, Metrics.horizontalPadding)
+            .background(BackgroundIllustration())
+            .modifier(ScrollBounceBehaviorModifier())
+            .onAppear {
+                centerPickerCardIfNeeded(proxy: proxy)
+            }
+            .onChange(of: verticalSizeClass) { newVerticalSizeClass in
+                centerPickerCardIfNeeded(proxy: proxy, newVerticalSizeClass: newVerticalSizeClass)
+            }
         }
-        .background(BackgroundIllustration())
-        .modifier(ScrollBounceBehaviorModifier())
+        .ignoresSafeArea(.container, edges: isVerticallyCompact() ? .vertical : [])
+    }
+
+    private func centerPickerCardIfNeeded(proxy: ScrollViewProxy, newVerticalSizeClass: UserInterfaceSizeClass? = nil) {
+        guard isVerticallyCompact(newVerticalSizeClass: newVerticalSizeClass) else {
+            return
+        }
+
+        proxy.scrollTo(Metrics.pickerCardID, anchor: .center)
+    }
+
+    private func isVerticallyCompact(newVerticalSizeClass: UserInterfaceSizeClass? = nil) -> Bool {
+        let targetClass = newVerticalSizeClass ?? verticalSizeClass
+        return targetClass == .compact
     }
 
     private var cardMaxWidth: CGFloat {
@@ -52,6 +78,7 @@ struct NewAddressBarPickerRefreshContentView: View {
         static let stackSpacing: CGFloat = 24
         static let topPadding: CGFloat = 24
         static let horizontalPadding: CGFloat = 16
+        static let pickerCardID = "pickerCard"
     }
 }
 
@@ -60,21 +87,15 @@ private struct Header: View {
         VStack(spacing: Metrics.spacing) {
             Image(uiImage: DesignSystemImages.Color.Size32.duckDuckAI)
 
-            HStack(spacing: Metrics.badgeSpacing) {
-                BadgeView(text: UserText.settingsItemNewBadge)
-                    .clipShape(Capsule())
-
-                Text(UserText.newAddressBarPickerTitle)
-                    .textCase(.uppercase)
-                    .daxFootnoteSemibold()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
+            Text(UserText.newAddressBarPickerTitle)
+                .textCase(.uppercase)
+                .daxFootnoteSemibold()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }
 
     private enum Metrics {
         static let spacing: CGFloat = 12
-        static let badgeSpacing: CGFloat = 8
     }
 }
 
@@ -83,43 +104,34 @@ private struct PickerCard: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     var body: some View {
-        VStack(spacing: Metrics.padding) {
-            Text(UserText.newAddressBarPickerRefreshHeadline)
-                .daxTitle2()
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        OnboardingBubbleView(tailPosition: nil) {
+            VStack(spacing: Metrics.spacing) {
+                Text(UserText.newAddressBarPickerRefreshHeadline)
+                    .daxTitle2()
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
+                RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
 
-            Text(UserText.newAddressBarPickerRefreshFooter)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(UserText.newAddressBarPickerRefreshFooter)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                viewModel.confirm()
-            } label: {
-                Text(UserText.newAddressBarPickerConfirm)
+                Button {
+                    viewModel.confirm()
+                } label: {
+                    Text(UserText.newAddressBarPickerConfirm)
+                }
+                .buttonStyle(onboardingTheme.primaryButtonStyle.style)
             }
-            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
         }
-        .padding(Metrics.padding)
-        .background(
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .strokeBorder(Color(designSystemColor: .accent).opacity(Metrics.borderOpacity), lineWidth: 1)
-        )
     }
 
     private enum Metrics {
-        static let padding: CGFloat = 20
-        static let cornerRadius: CGFloat = 16
-        static let borderOpacity: CGFloat = 0.3
+        static let spacing: CGFloat = 20
     }
 }
 

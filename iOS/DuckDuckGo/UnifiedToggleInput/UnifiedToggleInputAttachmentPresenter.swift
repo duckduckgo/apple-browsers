@@ -160,6 +160,8 @@ private extension UnifiedToggleInputAttachmentPresenter {
     }
 
     nonisolated static func fileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
+        guard !Task.isCancelled else { return nil }
+
         let hasScopedAccess = metadata.url.startAccessingSecurityScopedResource()
         defer {
             if hasScopedAccess {
@@ -169,6 +171,8 @@ private extension UnifiedToggleInputAttachmentPresenter {
 
         do {
             let data = try Data(contentsOf: metadata.url)
+            guard !Task.isCancelled else { return nil }
+
             let pdfInspection = Self.inspectPDF(data: data, mimeType: metadata.mimeType)
 
             return AIChatFileAttachment(

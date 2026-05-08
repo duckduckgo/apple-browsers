@@ -459,6 +459,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             setText(prefilledText)
             textState = .prefilledSelected
         }
+        updateFloatingSubmitState()
 
         intentSubject.send(.showExpanded)
         DispatchQueue.main.async { [weak self] in
@@ -528,6 +529,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else {
             shouldSelectAllText = false
         }
+        updateFloatingSubmitState()
 
         let expandedHeight = editingHeight()
 
@@ -1372,10 +1374,8 @@ private extension UnifiedToggleInputCoordinator {
               let metadata = fileMetadata(for: attachment) else { return }
 
         let attachmentID = attachment.id
-        invalidAttachmentRecoveryTasks[attachmentID] = Task { [weak self] in
-            let fileAttachment = await Task.detached(priority: .userInitiated) {
-                UnifiedToggleInputAttachmentPresenter.recoverFileAttachment(from: metadata, id: attachmentID)
-            }.value
+        invalidAttachmentRecoveryTasks[attachmentID] = Task.detached(priority: .userInitiated) { [weak self] in
+            let fileAttachment = UnifiedToggleInputAttachmentPresenter.recoverFileAttachment(from: metadata, id: attachmentID)
             guard !Task.isCancelled else { return }
             await self?.completeInvalidAttachmentRecovery(id: attachmentID, fileAttachment: fileAttachment)
         }

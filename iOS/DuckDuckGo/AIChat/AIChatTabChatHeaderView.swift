@@ -50,7 +50,9 @@ final class AIChatTabChatHeaderView: UIView {
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
     private struct ViewState: Equatable {
-        var isSubscriptionActive: Bool = false
+        /// `nil` until the first subscription-state check resolves, so we can render a blank
+        /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
+        var isSubscriptionActive: Bool?
         var isVoiceModeActive: Bool = false
         var canGoBack: Bool = false
         var canGoForward: Bool = false
@@ -307,8 +309,8 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func applyState() {
-        titleContainer.isHidden = state.isSubscriptionActive
-        titleLabel.isHidden = !state.isSubscriptionActive
+        titleContainer.isHidden = state.isSubscriptionActive != false
+        titleLabel.isHidden = state.isSubscriptionActive != true
         // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
         titleHolder.isHidden = state.showsNavPair
         backPill.isHidden = !state.showsStandaloneBack
@@ -565,7 +567,7 @@ final class AIChatTabChatHeaderView: UIView {
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
     @objc private func upgradeTapped() {
-        if !state.isSubscriptionActive {
+        if state.isSubscriptionActive == false {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
         }
     }

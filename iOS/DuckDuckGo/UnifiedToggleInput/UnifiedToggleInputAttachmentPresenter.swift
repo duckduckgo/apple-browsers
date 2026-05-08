@@ -150,6 +150,11 @@ private extension UnifiedToggleInputAttachmentPresenter {
         }
     }
 
+    nonisolated static func fallbackFileMetadata(from url: URL) -> FileMetadata {
+        let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+        return FileMetadata(fileName: url.lastPathComponent, mimeType: mimeType, fileSizeBytes: nil, url: url)
+    }
+
     nonisolated static func fileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
         let hasScopedAccess = metadata.url.startAccessingSecurityScopedResource()
         defer {
@@ -241,7 +246,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
                 Self.fileMetadata(from: url)
             }.value
             guard let metadata else {
-                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, nil)
+                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, Self.fallbackFileMetadata(from: url))
                 return
             }
 

@@ -68,8 +68,8 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             self?.removeAttachment(id: id)
         }
         stackView.addArrangedSubview(thumbnail)
-        scrollToTrailingEdge()
         onAttachmentsChanged?()
+        scheduleScrollToTrailingEdge()
     }
 
     func removeAttachment(id: UUID) {
@@ -119,5 +119,14 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         layoutIfNeeded()
         let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
         scrollView.setContentOffset(CGPoint(x: maximumOffset, y: 0), animated: false)
+    }
+
+    private func scheduleScrollToTrailingEdge() {
+        setNeedsLayout()
+        DispatchQueue.main.async { [weak self] in
+            self?.superview?.layoutIfNeeded()
+            self?.layoutIfNeeded()
+            self?.scrollToTrailingEdge()
+        }
     }
 }

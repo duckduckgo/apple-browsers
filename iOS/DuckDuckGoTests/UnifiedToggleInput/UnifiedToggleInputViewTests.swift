@@ -18,6 +18,8 @@
 //
 
 import XCTest
+import UIKit
+import UniformTypeIdentifiers
 @testable import DuckDuckGo
 
 final class UnifiedToggleInputViewTests: XCTestCase {
@@ -35,6 +37,51 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertTrue(sut.isToolbarSubmitEnabled)
     }
 
+    func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        sut.frame = .zero
+        sut.onAttachmentsChanged = {
+            sut.frame = CGRect(
+                x: 0,
+                y: 0,
+                width: 160,
+                height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight
+            )
+        }
+
+        (0..<6).forEach { index in
+            sut.addAttachment(makeInvalidFileAttachment(fileName: "attachment-\(index)-long-name.pdf"))
+        }
+        flushMainQueue()
+        sut.layoutIfNeeded()
+
+        let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        let expectedOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
+
+        XCTAssertGreaterThan(expectedOffset, 0)
+        XCTAssertEqual(scrollView.contentOffset.x, expectedOffset, accuracy: 1)
+    }
+
+    @MainActor
+    func test_documentPickerFailureIncludesFallbackMetadataForInvalidChip() async {
+        let sut = UnifiedToggleInputAttachmentPresenter()
+        let expectation = expectation(description: "file validation failed")
+        let missingURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("missing-unreadable.pdf")
+
+        sut.onFileValidationFailed = { message, metadata in
+            XCTAssertEqual(message, UserText.aiChatAttachmentFileUnreadable)
+            XCTAssertEqual(metadata?.fileName, "missing-unreadable.pdf")
+            XCTAssertEqual(metadata?.mimeType, "application/pdf")
+            XCTAssertNil(metadata?.fileSizeBytes)
+            expectation.fulfill()
+        }
+
+        let controller = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf])
+        sut.documentPicker(controller, didPickDocumentsAt: [missingURL])
+
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
@@ -44,15 +91,30 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     private func makeInvalidFileAttachment(
+        fileName: String = "invalid.pdf",
         validationMessage: String = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15)
     ) -> UnifiedToggleInputAttachment {
         .invalidFile(
             UnifiedToggleInputInvalidFileAttachment(
-                fileName: "invalid.pdf",
+                fileName: fileName,
                 mimeType: "application/pdf",
                 fileSizeBytes: 1_000,
                 validationMessage: validationMessage
             )
         )
+    }
+
+    private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
+        if let match = view as? T {
+            return match
+        }
+
+        for subview in view.subviews {
+            if let match = firstDescendant(of: type, in: subview) {
+                return match
+            }
+        }
+
+        return nil
     }
 }

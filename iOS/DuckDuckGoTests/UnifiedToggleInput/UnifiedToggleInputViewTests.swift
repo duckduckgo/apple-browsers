@@ -82,6 +82,38 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    func test_floatingSubmitEnablesAndSubmitsAttachmentOnlyState() throws {
+        let sut = UnifiedToggleInputFloatingSubmitViewController()
+        let delegate = SpyFloatingSubmitDelegate()
+        sut.delegate = delegate
+        sut.loadViewIfNeeded()
+
+        sut.updateState(UnifiedToggleInputFloatingSubmitState(
+            hasText: false,
+            hasValidAttachment: true,
+            hasInvalidAttachment: false
+        ))
+
+        XCTAssertTrue(sut.isSubmitButtonEnabled)
+        try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view)).sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.submitTapCount, 1)
+        XCTAssertEqual(delegate.voiceTapCount, 0)
+    }
+
+    func test_floatingSubmitDisablesWhenInvalidAttachmentIsPresent() {
+        let sut = UnifiedToggleInputFloatingSubmitViewController()
+        sut.isAIVoiceChatEnabled = true
+        sut.loadViewIfNeeded()
+
+        sut.updateState(UnifiedToggleInputFloatingSubmitState(
+            hasText: true,
+            hasValidAttachment: false,
+            hasInvalidAttachment: true
+        ))
+
+        XCTAssertFalse(sut.isSubmitButtonEnabled)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
@@ -116,5 +148,18 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         }
 
         return nil
+    }
+}
+
+private final class SpyFloatingSubmitDelegate: UnifiedToggleInputFloatingSubmitDelegate {
+    var submitTapCount = 0
+    var voiceTapCount = 0
+
+    func floatingSubmitDidTapSubmit() {
+        submitTapCount += 1
+    }
+
+    func floatingSubmitDidTapVoice() {
+        voiceTapCount += 1
     }
 }

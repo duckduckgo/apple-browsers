@@ -275,6 +275,22 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
     }
 
+    func testWhenFloatingSubmitHasFileAttachmentWithoutTextThenFileIsSubmitted() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+
+        sut.submitCurrentInputFromFloatingSubmit()
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "")
+        XCTAssertEqual(delegate.submittedFiles?.count, 1)
+    }
+
     func testWhenFileValidationFailsThenInvalidAttachmentIsAdded() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -305,6 +321,25 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertNil(delegate.submittedPrompt)
         XCTAssertNil(delegate.submittedFiles)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
+    func testWhenFloatingSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
+
+        sut.submitCurrentInputFromFloatingSubmit()
+
+        XCTAssertNil(delegate.submittedPrompt)
+        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertEqual(
+            sut.viewController.attachmentValidationMessage,
+            UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
+        )
     }
 
     func testWhenSwitchingToSearchThenBackToDuckAIAttachmentsArePreserved() {
@@ -530,6 +565,14 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     private func attachmentMenuTitles(for coordinator: UnifiedToggleInputCoordinator) -> [String] {
         coordinator.viewController.attachmentMenu?.children.map(\.title) ?? []
+    }
+
+    private func flushMainQueue() {
+        let expectation = expectation(description: "main queue flushed")
+        DispatchQueue.main.async {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
     }
 }
 

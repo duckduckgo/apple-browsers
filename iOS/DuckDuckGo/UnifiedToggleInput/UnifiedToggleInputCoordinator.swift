@@ -205,6 +205,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textChangeSubject.eraseToAnyPublisher()
     }
 
+    private let floatingSubmitStateSubject = CurrentValueSubject<UnifiedToggleInputFloatingSubmitState, Never>(.empty)
+    var floatingSubmitStatePublisher: AnyPublisher<UnifiedToggleInputFloatingSubmitState, Never> {
+        floatingSubmitStateSubject.eraseToAnyPublisher()
+    }
+
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
     var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
         modeChangeSubject.eraseToAnyPublisher()
@@ -339,7 +344,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func applyState(_ state: TabInputState) {
         isApplyingState = true
-        defer { isApplyingState = false }
+        defer {
+            isApplyingState = false
+            updateFloatingSubmitState()
+        }
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         setText(state.text)
@@ -478,6 +486,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetToolsSelection()
         clearAttachments()
         setText("")
+        updateFloatingSubmitState()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -552,6 +561,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
+        updateFloatingSubmitState()
 
         if resetView {
             let renderState = computeRenderState()
@@ -574,6 +584,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(computeRenderState().viewConfig, animated: false)
             refreshToolsPresentation()
             modeChangeSubject.send(.search)
+            updateFloatingSubmitState()
         }
     }
 
@@ -594,6 +605,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textState = text.isEmpty ? .empty : .userTyped
         viewController.text = text
         persistDraftToStore()
+        updateFloatingSubmitState()
     }
 
     // MARK: - Input Management
@@ -630,6 +642,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             syncAttachmentValidationErrorForCurrentMode()
         }
         recordUserChoiceToStore()
+        updateFloatingSubmitState()
     }
 
     func updateAIVoiceChatAvailability(_ enabled: Bool) {
@@ -653,6 +666,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             refreshToolsPresentation()
         }
         updateToolbarAIVoiceChat()
+        updateFloatingSubmitState()
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
@@ -1210,6 +1224,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         textChangeSubject.send(text)
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()
+        updateFloatingSubmitState()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -1231,6 +1246,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
+        updateFloatingSubmitState()
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
@@ -1245,6 +1261,25 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestAIChat()
+    }
+}
+
+extension UnifiedToggleInputCoordinator {
+
+    func submitCurrentInputFromFloatingSubmit() {
+        let state = makeFloatingSubmitState()
+        guard state.canSubmit else {
+            if state.hasInvalidAttachment {
+                syncAttachmentValidationErrorForCurrentMode()
+            }
+            return
+        }
+
+        if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            viewController.handler.submitAIChatAttachmentOnlyPrompt()
+        } else {
+            viewController.handler.submitText(currentText)
+        }
     }
 }
 
@@ -1347,6 +1382,20 @@ private extension UnifiedToggleInputCoordinator {
     func clearAttachmentValidationErrorIfPossible() {
         guard viewController.currentAttachments.contains(where: \.isInvalid) == false else { return }
         viewController.clearAttachmentValidationError()
+    }
+
+    func makeFloatingSubmitState() -> UnifiedToggleInputFloatingSubmitState {
+        let isAIChatMode = inputMode == .aiChat
+        let attachments = viewController.currentAttachments
+        return UnifiedToggleInputFloatingSubmitState(
+            hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            hasValidAttachment: isAIChatMode && attachments.contains { !$0.isInvalid },
+            hasInvalidAttachment: isAIChatMode && attachments.contains(where: \.isInvalid)
+        )
+    }
+
+    func updateFloatingSubmitState() {
+        floatingSubmitStateSubject.send(makeFloatingSubmitState())
     }
 
     // MARK: Session State

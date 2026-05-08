@@ -434,20 +434,19 @@ class ContentBlockerRulesUserScriptsTests: XCTestCase {
         }
     }
 
-    // MARK: - Test 13: Content blocking disabled (DEFERRED)
-
-    @MainActor
-    func testWhenContentBlockingFeatureIsDisabledThenTrackersAreReportedButNotBlocked() async throws {
-        throw XCTSkip(
-            """
-            DEFERRED: C-S-S stops observing resources entirely when \
-            blockingEnabled == false (remote-config kill-switch), while the \
-            old pipeline continued observing and classifying trackers as \
-            non-blocked. Restoring this behavior requires a C-S-S change, \
-            not a native fix. This is distinct from per-site protections-off \
-            (userUnprotectedDomains), which is already tested above.
-            """)
-    }
+    // The old `ContentBlockerRulesUserScript` had a `testWhenContentBlockingFeature`
+    // `IsDisabledThenTrackersAreReportedButNotBlocked` test asserting that when the
+    // `contentBlocking` privacy-config feature was disabled (remote-config kill-switch),
+    // the JS observer kept emitting tracker events with `isBlocked == false`. That
+    // behaviour was internally inconsistent: WKContentRuleLists were still installed
+    // and *did* block the network requests at the WebKit layer, while the JS observer
+    // independently reported them as not blocked (see the pre-migration test's own
+    // "do not check the requests" comment). The C-S-S `tracker-protection` feature
+    // intentionally returns early when `blockingEnabled` is false (no observation, no
+    // reporting), which is the consistent contract: kill-switch means kill-switch.
+    // Per-site `userUnprotectedDomains` and `contentBlockingExceptions` continue to
+    // emit `state == .allowed(reason: .protectionDisabled)` events and are covered by
+    // tests 11 and 12 above.
 }
 
 #endif

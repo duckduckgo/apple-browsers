@@ -344,6 +344,44 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
     }
 
+    func testWhenModelChangeMakesMetadataOnlyInvalidFileValidThenAttachmentIsPromoted() throws {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "unsupported-file-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "unsupported-file-model", supportsImageUpload: true, supportedFileTypes: []),
+            makeModel(id: "text-model", supportsImageUpload: true, supportedFileTypes: ["text/plain"])
+        ]
+        let fileData = Data("hello".utf8)
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("attachment-\(UUID().uuidString).txt")
+        try fileData.write(to: fileURL)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        let validationMessage = UserText.aiChatAttachmentUnsupportedFileType
+        sut.viewController.addAttachment(.invalidFile(
+            UnifiedToggleInputInvalidFileAttachment(
+                fileName: "a.txt",
+                mimeType: "text/plain",
+                fileSizeBytes: fileData.count,
+                validationMessage: validationMessage,
+                sourceURL: fileURL
+            )
+        ))
+        sut.viewController.showAttachmentValidationError(validationMessage)
+
+        sut.updateSelectedModel("text-model")
+
+        waitUntil("metadata-only invalid file is promoted") {
+            sut.viewController.currentAttachments.first?.fileAttachment != nil
+        }
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertFalse(sut.viewController.currentAttachments.first?.isInvalid ?? true)
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.txt")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.data, fileData)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
     func testWhenFloatingSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -594,6 +632,27 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1)
+    }
+
+    private func waitUntil(_ description: String, timeout: TimeInterval = 2, condition: @escaping () -> Bool) {
+        if condition() {
+            return
+        }
+
+        let expectation = expectation(description: description)
+
+        func poll() {
+            if condition() {
+                expectation.fulfill()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    poll()
+                }
+            }
+        }
+
+        poll()
+        wait(for: [expectation], timeout: timeout)
     }
 }
 

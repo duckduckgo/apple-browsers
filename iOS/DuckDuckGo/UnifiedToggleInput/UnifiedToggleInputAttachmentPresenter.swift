@@ -39,8 +39,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
 
-    nonisolated static func recoverFileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
-        fileAttachment(from: metadata)
+    nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
+        fileAttachment(from: metadata, id: id)
     }
 
     func makeAttachmentMenu(
@@ -159,7 +159,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
         return FileMetadata(fileName: url.lastPathComponent, mimeType: mimeType, fileSizeBytes: nil, url: url)
     }
 
-    nonisolated static func fileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
+    nonisolated static func fileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         let hasScopedAccess = metadata.url.startAccessingSecurityScopedResource()
         defer {
             if hasScopedAccess {
@@ -172,6 +172,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let pdfInspection = Self.inspectPDF(data: data, mimeType: metadata.mimeType)
 
             return AIChatFileAttachment(
+                id: id,
                 data: data,
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,

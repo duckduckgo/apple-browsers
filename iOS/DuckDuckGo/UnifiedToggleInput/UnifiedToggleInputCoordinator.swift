@@ -155,6 +155,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var isInputVisibleForKeyboard: Bool = true
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
+    private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -353,6 +354,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
+        cancelInvalidAttachmentRecoveryTasks()
         viewController.removeAllAttachments()
         for attachment in state.attachments {
             viewController.addAttachment(attachment)
@@ -1109,6 +1111,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func removeAttachment(id: UUID) {
+        invalidAttachmentRecoveryTasks[id]?.cancel()
+        invalidAttachmentRecoveryTasks[id] = nil
         viewController.removeAttachment(id: id)
         persistDraftToStore()
         syncAttachmentValidationErrorForCurrentMode()
@@ -1121,6 +1125,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             updateAttachButtonPresentation()
             return
         }
+        cancelInvalidAttachmentRecoveryTasks()
         viewController.removeAllAttachments()
         viewController.clearAttachmentValidationError()
         persistDraftToStore()
@@ -1335,47 +1340,96 @@ private extension UnifiedToggleInputCoordinator {
 
         for attachment in viewController.currentAttachments {
             guard case .invalidFile(let invalidAttachment) = attachment else { continue }
-
-            if let metadataValidationMessage = attachmentPolicy.fileMetadataValidationMessage(
-                mimeType: invalidAttachment.mimeType,
-                fileSizeBytes: invalidAttachment.fileSizeBytes > 0 ? invalidAttachment.fileSizeBytes : nil
-            ) {
-                guard metadataValidationMessage != invalidAttachment.validationMessage else { continue }
-                viewController.replaceAttachment(
-                    id: attachment.id,
-                    with: invalidFileAttachment(from: invalidAttachment, validationMessage: metadataValidationMessage)
-                )
-                didChange = true
-                continue
-            }
-
-            guard let fileAttachment = recoverableFileAttachment(for: invalidAttachment) else {
-                let validationMessage = UserText.aiChatAttachmentFileUnreadable
-                guard validationMessage != invalidAttachment.validationMessage else { continue }
-                viewController.replaceAttachment(
-                    id: attachment.id,
-                    with: invalidFileAttachment(from: invalidAttachment, validationMessage: validationMessage)
-                )
-                didChange = true
-                continue
-            }
-
-            if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
-                guard validationMessage != invalidAttachment.validationMessage else { continue }
-                viewController.replaceAttachment(
-                    id: attachment.id,
-                    with: invalidFileAttachment(from: invalidAttachment, validationMessage: validationMessage)
-                )
-            } else {
-                viewController.replaceAttachment(id: attachment.id, with: .file(fileAttachment))
-            }
-            didChange = true
+            didChange = revalidateInvalidAttachment(invalidAttachment) || didChange
         }
 
         guard didChange else { return }
+        finishAttachmentRevalidation()
+    }
+
+    @discardableResult
+    func revalidateInvalidAttachment(_ attachment: UnifiedToggleInputInvalidFileAttachment) -> Bool {
+        if let validationMessage = metadataValidationMessage(for: attachment) {
+            invalidAttachmentRecoveryTasks[attachment.id]?.cancel()
+            invalidAttachmentRecoveryTasks[attachment.id] = nil
+            return replaceInvalidAttachment(attachment, validationMessage: validationMessage)
+        }
+
+        if let fileAttachment = attachment.recoverableFileAttachment {
+            return applyRecoveredFileAttachment(fileAttachment, for: attachment)
+        }
+
+        guard attachment.sourceURL != nil else {
+            return replaceInvalidAttachment(attachment, validationMessage: UserText.aiChatAttachmentFileUnreadable)
+        }
+
+        recoverInvalidAttachmentFromSourceURL(attachment)
+        return false
+    }
+
+    func recoverInvalidAttachmentFromSourceURL(_ attachment: UnifiedToggleInputInvalidFileAttachment) {
+        guard invalidAttachmentRecoveryTasks[attachment.id] == nil,
+              let metadata = fileMetadata(for: attachment) else { return }
+
+        let attachmentID = attachment.id
+        invalidAttachmentRecoveryTasks[attachmentID] = Task { [weak self] in
+            let fileAttachment = await Task.detached(priority: .userInitiated) {
+                UnifiedToggleInputAttachmentPresenter.recoverFileAttachment(from: metadata, id: attachmentID)
+            }.value
+            guard !Task.isCancelled else { return }
+            await self?.completeInvalidAttachmentRecovery(id: attachmentID, fileAttachment: fileAttachment)
+        }
+    }
+
+    func completeInvalidAttachmentRecovery(id: UUID, fileAttachment: AIChatFileAttachment?) {
+        invalidAttachmentRecoveryTasks[id] = nil
+        guard let attachment = viewController.currentAttachments.first(where: { $0.id == id }),
+              case .invalidFile(let invalidAttachment) = attachment else { return }
+
+        let didChange: Bool
+        if let validationMessage = metadataValidationMessage(for: invalidAttachment) {
+            didChange = replaceInvalidAttachment(invalidAttachment, validationMessage: validationMessage)
+        } else if let fileAttachment {
+            didChange = applyRecoveredFileAttachment(fileAttachment, for: invalidAttachment)
+        } else {
+            didChange = replaceInvalidAttachment(invalidAttachment, validationMessage: UserText.aiChatAttachmentFileUnreadable)
+        }
+
+        guard didChange else { return }
+        finishAttachmentRevalidation()
+    }
+
+    @discardableResult
+    func applyRecoveredFileAttachment(
+        _ fileAttachment: AIChatFileAttachment,
+        for attachment: UnifiedToggleInputInvalidFileAttachment
+    ) -> Bool {
+        if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
+            return replaceInvalidAttachment(attachment, validationMessage: validationMessage)
+        }
+
+        viewController.replaceAttachment(id: attachment.id, with: .file(fileAttachment))
+        return true
+    }
+
+    @discardableResult
+    func replaceInvalidAttachment(
+        _ attachment: UnifiedToggleInputInvalidFileAttachment,
+        validationMessage: String
+    ) -> Bool {
+        guard validationMessage != attachment.validationMessage else { return false }
+        viewController.replaceAttachment(
+            id: attachment.id,
+            with: invalidFileAttachment(from: attachment, validationMessage: validationMessage)
+        )
+        return true
+    }
+
+    func finishAttachmentRevalidation() {
         persistDraftToStore()
         updateAttachButtonPresentation()
         updateFloatingSubmitState()
+        syncAttachmentValidationErrorForCurrentMode()
     }
 
     func invalidFileAttachment(
@@ -1395,19 +1449,26 @@ private extension UnifiedToggleInputCoordinator {
         )
     }
 
-    func recoverableFileAttachment(for attachment: UnifiedToggleInputInvalidFileAttachment) -> AIChatFileAttachment? {
-        if let fileAttachment = attachment.recoverableFileAttachment {
-            return fileAttachment
-        }
+    func metadataValidationMessage(for attachment: UnifiedToggleInputInvalidFileAttachment) -> String? {
+        attachmentPolicy.fileMetadataValidationMessage(
+            mimeType: attachment.mimeType,
+            fileSizeBytes: attachment.fileSizeBytes > 0 ? attachment.fileSizeBytes : nil
+        )
+    }
 
+    func fileMetadata(for attachment: UnifiedToggleInputInvalidFileAttachment) -> UnifiedToggleInputAttachmentPresenter.FileMetadata? {
         guard let sourceURL = attachment.sourceURL else { return nil }
-        let metadata = UnifiedToggleInputAttachmentPresenter.FileMetadata(
+        return UnifiedToggleInputAttachmentPresenter.FileMetadata(
             fileName: attachment.fileName,
             mimeType: attachment.mimeType,
             fileSizeBytes: attachment.fileSizeBytes > 0 ? attachment.fileSizeBytes : nil,
             url: sourceURL
         )
-        return UnifiedToggleInputAttachmentPresenter.recoverFileAttachment(from: metadata)
+    }
+
+    func cancelInvalidAttachmentRecoveryTasks() {
+        invalidAttachmentRecoveryTasks.values.forEach { $0.cancel() }
+        invalidAttachmentRecoveryTasks.removeAll()
     }
 
     func removeUnsupportedAttachmentsForSelectedModel() {
@@ -1416,6 +1477,8 @@ private extension UnifiedToggleInputCoordinator {
             attachmentPolicy.isAttachmentSupported(attachment) == false
         }
         unsupportedAttachments.forEach { attachment in
+            invalidAttachmentRecoveryTasks[attachment.id]?.cancel()
+            invalidAttachmentRecoveryTasks[attachment.id] = nil
             viewController.removeAttachment(id: attachment.id)
         }
         revalidateInvalidAttachmentsForSelectedModel()

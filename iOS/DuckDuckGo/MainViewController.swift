@@ -5647,6 +5647,14 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
     }
 }
 
+// MARK: - OmniBarFocuser
+
+extension MainViewController: OmniBarFocuser {
+    func beginSearch() {
+        omniBar.beginEditing(animated: true)
+    }
+}
+
 // MARK: - AIChatViewControllerManagerDelegate
 extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {

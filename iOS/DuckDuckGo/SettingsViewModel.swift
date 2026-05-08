@@ -391,8 +391,8 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var afterInactivityFooterText: String {
-        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .always {
-            return UserText.settingsAfterInactivityFooterAlways
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .none {
+            return UserText.settingsAfterInactivityFooterNone
         }
         return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
     }

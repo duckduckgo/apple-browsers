@@ -34,7 +34,7 @@ enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
 }
 
 enum AfterInactivityIdleInterval: Int, CaseIterable, CustomStringConvertible {
-    case always = 0
+    case none = 0
     case oneMinute = 60
     case fiveMinutes = 300
     case tenMinutes = 600
@@ -48,7 +48,7 @@ enum AfterInactivityIdleInterval: Int, CaseIterable, CustomStringConvertible {
 
     var description: String {
         switch self {
-        case .always: return UserText.settingsAfterInactivityIdleIntervalAlways
+        case .none: return UserText.settingsAfterInactivityIdleIntervalNone
         case .oneMinute: return UserText.settingsAfterInactivityIdleIntervalMinuteSingular
         case .fiveMinutes: return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, 5)
         case .tenMinutes: return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, 10)

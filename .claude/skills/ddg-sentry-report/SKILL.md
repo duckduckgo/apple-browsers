@@ -34,7 +34,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 |---|---|---|
 | Project | `iOS` or `macOS` | Maps to Sentry project slug `apple-ios` / `apple-macos`. A single version ships under multiple release strings (main app + extensions) — see [constants](references/constants.md). |
 | Asana parent task URL (optional) | `https://app.asana.com/1/137249556945/task/1214175611004136` | Extract the task GID from the URL path — this is the **parent** task. The summary report is created as a **new subtask** under it (never written to the parent itself). Subtask name: `Sentry summary - <platform> <version> - <YYYY-MM-DD>`. **If omitted**, auto-resolve via 1.2 below. |
-| Version (optional) | `1.186.0`, `1.186.*`, or `1.186` (macOS) / `7.216.x` (iOS) | Pass-through: an exact version (`1.186.0`) goes to `app_version:1.186.0`; a series (`1.186` or `1.186.*`) becomes the wildcard `app_version:1.186.*`. Always use the wildcard form when the user supplies a series. **If omitted**, the version is auto-resolved from Asana via the `release-type` parameter (1.3 below). The auto-resolved value is always exact (e.g. `7.218.0`). |
+| Version (optional) | `1.186.0`, `1.186.*`, or `1.186` (macOS) / `7.216.x` (iOS) | Pass-through: an exact version (`1.186.0`) goes to `app_version:1.186.0`; a series (`1.186` or `1.186.*`) becomes the wildcard `app_version:1.186.*`. Always use the wildcard form when the user supplies a series. **If omitted**, the version is auto-resolved from Asana via the `release-type` parameter (1.3 below). The auto-resolved value is collapsed to a major.minor wildcard (e.g. `7.218.0` → `7.218.*`) so the report covers all patch releases in the series. |
 | Release-type (optional) | `public` or `internal` | **Only consulted when `version` is omitted.** Selects which Asana project to look up the version in. See 1.3 below. **If both `version` and `release-type` are omitted**, stop and ask the user — do NOT pick a default. |
 | Time range (optional) | `24h`, `72h`, `7d`, `14d` | Sentry-style relative time. **Default when omitted:** `72h` on Monday (covers Friday–Sunday), `24h` otherwise. Determine via `date +%u` (Bash; `1`=Monday … `7`=Sunday). The resolved value is appended to step-3 `list_issues` queries as `lastSeen:-<range>` and substituted into the rewritten query URLs as `&statsPeriod=<range>`. **Does NOT apply** to step 2's crash-free check (a global "is there any data" query — adding a time filter would cause false crash-free readings for versions whose only events fall outside the window). |
 
@@ -118,11 +118,11 @@ Otherwise branch on `release-type`:
 
 In both branches: **stop and ask the user** if zero matching tasks survive the filter. Do NOT silently fall back to a different platform, a different release-type, or a manually-chosen version. Surface the resolved task (name + permalink + `created_at`) to the user in your first text update.
 
-The auto-resolved version is always **exact** — feed it to step 2 as `<version>` and to step 3 as `app_version:<version>` (no `*`). If the user wants a series-wide query (`app_version:1.186.*`), they must supply the version explicitly.
+**Collapse the auto-resolved version to its major.minor components** (e.g. `7.218.0` → `7.218`) and feed that series form to the rest of the workflow. Step 2 calls `find_releases(query="7.218")`; step 3 uses `app_version:7.218.*`. The auto-resolve branch never produces a single-patch query. If a user needs a single-patch view (`app_version:1.186.0`), they must supply that exact version explicitly.
 
 ## Step 2: Resolve releases + version filter (with crash-free short-circuit)
 
-Call `find_releases(query="<version>")` (e.g. `1.186`) to enumerate all release strings matching the series — needed for `firstRelease:` in step 3. Keep **all** of them (main app + extensions; do not filter down to a single prefix). For event matching, build the `app_version` filter directly from the user input: a series like `1.186` becomes `app_version:1.186.*`, an exact version like `1.186.0` stays `app_version:1.186.0`.
+Call `find_releases(query="<version>")` (e.g. `1.186`) to enumerate all release strings matching the series — needed for `firstRelease:` in step 3. Keep **all** of them (main app + extensions; do not filter down to a single prefix). For event matching, build the `app_version` filter from `<version>`: a series like `1.186` becomes `app_version:1.186.*`, an exact version like `1.186.0` stays `app_version:1.186.0`. Auto-resolved versions arrive here already collapsed to major.minor by 1.3, so they take the wildcard branch.
 
 **Match the user-supplied version literally.** Never substitute a different version. If you suspect a typo, ask the user; do not silently retarget.
 
@@ -301,6 +301,7 @@ Top-bite rows. See [`references/common-mistakes-extended.md`](references/common-
 | Forgetting the time-range filter on step-3 queries | Both `list_issues` calls in step 3 must include `lastSeen:-<TIME_RANGE>`. Without it, the queries return all-time data and the report becomes a mixed history dump. |
 | Applying the time-range filter to the step-2 crash-free check | The crash-free short-circuit is a global "is there any data ever" question. Adding `lastSeen:` causes false crash-free readings when a version has events outside the window. |
 | Hard-coding `&statsPeriod=7d` in URLs | Use the resolved `<TIME_RANGE>` value in step-7 query URLs so the linked Sentry view matches what the report analyzed. Single-issue URLs stay unfiltered. |
+| Querying an auto-resolved version as exact (`app_version:1.186.0` instead of `app_version:1.186.*`) | When `version` is omitted and the value comes from auto-resolve in 1.3, collapse it to major.minor before building the filter. Patch releases (`1.186.1`, `1.186.2`, …) ship without a separate Asana task, so a single-patch query under-reports the series. User-supplied exact versions stay exact. |
 
 ### Tracking-task lookup + dedupe
 

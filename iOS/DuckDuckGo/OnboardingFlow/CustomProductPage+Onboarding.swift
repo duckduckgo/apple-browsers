@@ -23,28 +23,30 @@ import Onboarding
 /// Extends `AppStoreCustomProductPageEvaluator` to provide onboarding flow evaluation.
 extension AppStoreCustomProductPageEvaluator: OnboardingFlowEvaluating {
 
-    /// Evaluates a URL and returns the corresponding onboarding flow type.
+    /// Evaluates a URL and returns the corresponding onboarding flow and source.
     ///
-    /// If the URL represents a recognised Custom Product Page, returns the tailored onboarding flow for that page. Otherwise, returns the .`default` onboarding flow.
+    /// If the URL represents a recognised Custom Product Page, returns the tailored onboarding flow and source for that page.
+    /// Otherwise, returns the `.default` onboarding flow and source.
     /// - Parameter url: The URL to evaluate (typically from app launch via CPP deep link)
-    /// - Returns: The onboarding flow type (`.default` or tailored variant like `.duckAI`)
-    func evaluateOnboardingFlow(from url: URL?) -> OnboardingFlowType {
+    /// - Returns: A tuple containing `OnboardingFlowType` and `OnboardingSource`
+    func evaluateOnboardingFlow(from url: URL?) -> (flow: OnboardingFlowType, source: OnboardingSource) {
         Logger.onboarding.debug("Evaluating onboarding flow for url: \(url?.absoluteString ?? "nil")")
 
         guard let url else {
             Logger.onboarding.debug("No URL Provided. Default to standard onboarding.")
-            return .default
+            return (.default, .default)
         }
 
         guard let cpp = evaluateCustomProductPage(from: url) else {
             Logger.onboarding.debug("Unsupported Custom Product Page URL. Default to standard onboarding")
-            return .default
+            return (.default, .default)
         }
 
         let onboardingType = OnboardingFlowType(cpp)
+        let onboardingSource = OnboardingSource(cpp)
         Logger.onboarding.debug("Evaluated tailored onboarding type: \(onboardingType.rawValue, privacy: .public)")
 
-        return onboardingType
+        return (onboardingType, onboardingSource)
     }
 
 }
@@ -57,6 +59,17 @@ private extension OnboardingFlowType {
         switch value {
         case .duckAI:
             self = .duckAI
+        }
+    }
+
+}
+
+private extension OnboardingSource {
+
+    init(_ value: AppStoreCustomProductPage) {
+        switch value {
+        case .duckAI:
+            self = .duckAICPP
         }
     }
 

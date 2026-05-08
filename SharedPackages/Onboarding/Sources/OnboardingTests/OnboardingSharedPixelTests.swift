@@ -155,7 +155,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenInstallTypeIsProvidedThenItParameterIsIncluded() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(installType: .newInstall, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installTypeProvider: { .newInstall }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
@@ -165,12 +165,27 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenInstallTypeIsNotProvidedThenItParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(installType: nil, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installTypeProvider: { nil }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertNil(event.additionalParameters?["it"])
+    }
+
+    func testWhenInstallTypeProviderResultChangesThenSubsequentFiresUseUpdatedItParameter() throws {
+        let pixelFiring = PixelKitMock()
+        var isReinstall = false
+        let pixelHandler = makeHandler(installTypeProvider: { isReinstall ? .reinstall : .newInstall }, pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.welcome(.shown))
+        let first = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(first.additionalParameters?["it"], "new")
+
+        isReinstall = true
+        pixelHandler.fire(.welcome(.shown))
+        let second = try XCTUnwrap(pixelFiring.actualFireCalls.last)
+        XCTAssertEqual(second.additionalParameters?["it"], "reinstall")
     }
 
     func testWhenDaysSinceInstallIsInRangeThenDParameterIsIncluded() throws {
@@ -235,12 +250,12 @@ private extension OnboardingSharedPixelHandling {
 
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
-                     installType: OnboardingSharedPixelHandler.InstallType? = nil,
+                     installTypeProvider: @escaping () -> OnboardingSharedPixelHandler.InstallType? = { nil },
                      installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {
         OnboardingSharedPixelHandler(platform: platform,
-                                     installType: installType,
+                                     installTypeProvider: installTypeProvider,
                                      installDateProvider: installDateProvider,
                                      currentDateProvider: currentDateProvider,
                                      pixelFiring: pixelFiring)

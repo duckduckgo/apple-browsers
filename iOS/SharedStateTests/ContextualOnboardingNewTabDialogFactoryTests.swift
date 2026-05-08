@@ -176,6 +176,22 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
             // THEN
             XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
             XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, event)
+            XCTAssertTrue(self.pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+            XCTAssertEqual(self.pixelReporterMock.capturedSharedOnboardingScreenImpression, Self.expectedSharedScreenImpression(forLegacyPixel: event))
+        }
+    }
+
+    static func expectedSharedScreenImpression(forLegacyPixel event: Pixel.Event) -> OnboardingSharedPixelEvent {
+        switch event {
+        case .onboardingContextualTrySearchUnique:
+            return .search(.shown)
+        case .onboardingContextualTryVisitSiteUnique:
+            return .visitSite(.shown)
+        case .daxDialogsEndOfJourneyNewTabUnique:
+            return .end(.shown)
+        default:
+            XCTFail("Update expectedSharedScreenImpression mapping for \(event)")
+            return .search(.shown)
         }
     }
 
@@ -184,6 +200,8 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
         let expectation = self.expectation(description: #function)
         XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
 
         // WHEN
         let view = factory.createDaxDialog(for: spec, onCompletion: { _ in }, onManualDismiss: { })

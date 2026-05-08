@@ -434,19 +434,16 @@ class ContentBlockerRulesUserScriptsTests: XCTestCase {
         }
     }
 
-    // The old `ContentBlockerRulesUserScript` had a `testWhenContentBlockingFeature`
-    // `IsDisabledThenTrackersAreReportedButNotBlocked` test asserting that when the
-    // `contentBlocking` privacy-config feature was disabled (remote-config kill-switch),
-    // the JS observer kept emitting tracker events with `isBlocked == false`. That
-    // behaviour was internally inconsistent: WKContentRuleLists were still installed
-    // and *did* block the network requests at the WebKit layer, while the JS observer
-    // independently reported them as not blocked (see the pre-migration test's own
-    // "do not check the requests" comment). The C-S-S `tracker-protection` feature
-    // intentionally returns early when `blockingEnabled` is false (no observation, no
-    // reporting), which is the consistent contract: kill-switch means kill-switch.
-    // Per-site `userUnprotectedDomains` and `contentBlockingExceptions` continue to
-    // emit `state == .allowed(reason: .protectionDisabled)` events and are covered by
-    // tests 11 and 12 above.
+    // The legacy `testWhenContentBlockingFeatureIsDisabledThenTrackersAreReportedButNotBlocked`
+    // test is intentionally not migrated. `contentBlocking.state = disabled` is an emergency
+    // remote-config kill-switch, not a code path users encounter in the wild. C-S-S 14.5.0
+    // (`tracker-protection.js`) returns early from `init()` when that flag is unset and
+    // suppresses observation, so the dashboard goes empty under the kill-switch — a
+    // regression vs the legacy `ContentBlockerRulesUserScript` behavior, but a low-impact
+    // one because in any scenario where we'd flip the kill-switch the team is already in
+    // incident-response mode. The dashboard-visible cases users actually hit
+    // (`userUnprotectedDomains`, `tempUnprotectedDomains`, `contentBlocking.exceptions`,
+    // `trackerAllowlist`) are exercised by tests 4, 5, 8, 9, 11, and 12 above.
 }
 
 #endif

@@ -18,11 +18,9 @@
 
 import Foundation
 
-/// Resolves a TZID parameter value (e.g. `America/New_York` or `Eastern Standard Time`) to a
-/// Foundation `TimeZone`. IANA names are tried first via `TimeZone(identifier:)`; unrecognised
-/// names fall back to the bundled CLDR Windows-to-IANA mapping. Anything still unrecognised
-/// throws `ICSParser.Error.unrecognizedTimeZone`, since wrong-time events are worse than no
-/// event for our import-only flow.
+/// Resolves a TZID to a `TimeZone`. IANA names go through `TimeZone(identifier:)`;
+/// Windows-style names fall back to the bundled CLDR mapping. Unrecognised TZIDs throw
+/// rather than guess, since wrong-time events are worse than no event.
 enum TimeZoneResolver {
 
     static func resolve(tzid: String) throws -> TimeZone {

@@ -18,11 +18,8 @@
 
 import Foundation
 
-/// Walks the lines inside a single VEVENT block and assembles an `ICSEvent`. Each line is of
-/// the form `KEY[;PARAMS]:VALUE`; this parser recognises the VEVENT subset documented in the
-/// package README.
-///
-/// RRULE support, TZID resolution, and DURATION fallback land in subsequent commits.
+/// Walks the lines inside a single VEVENT block (`KEY[;PARAMS]:VALUE` per line) and assembles
+/// an `ICSEvent`. The recognised VEVENT subset is documented in the package README.
 enum PropertyParser {
 
     static func parseEvent(from lines: [String]) throws -> ICSEvent {
@@ -94,8 +91,7 @@ enum PropertyParser {
         )
     }
 
-    /// RFC 5545 §3.6.1 fallback hierarchy: prefer DTEND if present, otherwise DTSTART + DURATION,
-    /// otherwise a sensible default (1h for timed events, end-of-day for all-day events).
+    /// RFC 5545 §3.6.1 fallback: DTEND, then DTSTART + DURATION, then a default duration.
     private static func resolveEndDate(
         start: Date,
         endDate: Date?,

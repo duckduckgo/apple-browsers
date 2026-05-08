@@ -29,22 +29,22 @@ enum VEventExtractor {
 
         var blocks: [[String]] = []
         var inBlock = false
-        var current: [String] = []
+        var currentBlock: [String] = []
         for line in lines {
             if line == "BEGIN:VEVENT" {
                 inBlock = true
-                current = []
+                currentBlock = []
                 continue
             }
             if line == "END:VEVENT" {
                 if inBlock {
-                    blocks.append(current)
+                    blocks.append(currentBlock)
                 }
                 inBlock = false
                 continue
             }
             if inBlock {
-                current.append(line)
+                currentBlock.append(line)
             }
         }
 

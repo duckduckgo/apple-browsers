@@ -18,15 +18,9 @@
 
 import Foundation
 
-/// Parses .ics (iCalendar) file content into one or more `ICSEvent` values ready to hand to
-/// EventKit.
+/// Parses .ics (iCalendar) file content into one or more `ICSEvent` values.
 ///
-/// Supports a deliberately narrow subset of RFC 5545: VEVENT properties (SUMMARY, DESCRIPTION,
-/// LOCATION, URL, UID, DTSTART, DTEND, DURATION), IANA TZIDs plus the CLDR Windows-to-IANA
-/// mapping for Outlook-style identifiers, and the common subset of RRULE.
-///
-/// The integration decides what to do when the returned array contains more than one event
-/// (typical kickoff decision: show a toast and fall back to QuickLook preview).
+/// Scope and out-of-scope items are documented in the package README.
 public enum ICSParser {
 
     public enum Error: Swift.Error, Equatable {
@@ -54,15 +48,8 @@ public enum ICSParser {
 
     /// Parses the given .ics file content from a string. Convenience for tests.
     public static func parse(string raw: String) throws -> [ICSEvent] {
-        // Strip a leading UTF-8 BOM (U+FEFF). Windows-generated .ics exports often include
-        // one, and `String(data:encoding:.utf8)` preserves it as the first character, which
-        // would defeat the literal "BEGIN:VCALENDAR" comparison in `VEventExtractor`.
-        let stripped: String
-        if raw.first == "\u{FEFF}" {
-            stripped = String(raw.dropFirst())
-        } else {
-            stripped = raw
-        }
+        // Windows .ics exports often include a UTF-8 BOM that survives UTF-8 decoding.
+        let stripped = raw.first == "\u{FEFF}" ? String(raw.dropFirst()) : raw
         let lines = LineUnfolder.unfold(stripped)
         let blocks = try VEventExtractor.extract(from: lines)
         return try blocks.map { try PropertyParser.parseEvent(from: $0) }

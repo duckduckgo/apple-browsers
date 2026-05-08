@@ -47,13 +47,11 @@ enum DurationParser {
             throw ICSParser.Error.malformedDuration(raw: raw)
         }
 
-        // Week form: digits followed by exactly "W".
         if input.last == "W" {
             let weeks = try integer(from: input.dropLast(), raw: raw)
             return sign * Double(weeks) * 7 * 86_400
         }
 
-        // Day-time form. Optional days, optional T-prefixed time component.
         var days = 0
         var hours = 0
         var minutes = 0
@@ -79,28 +77,24 @@ enum DurationParser {
             days = try integer(from: datePart.dropLast(), raw: raw)
         }
 
-        var current = ""
+        var digits = ""
         for character in timePart {
             if character.isNumber {
-                current.append(character)
-            } else {
-                guard !current.isEmpty, let value = Int(current) else {
-                    throw ICSParser.Error.malformedDuration(raw: raw)
-                }
-                current = ""
-                switch character {
-                case "H":
-                    hours = value
-                case "M":
-                    minutes = value
-                case "S":
-                    seconds = value
-                default:
-                    throw ICSParser.Error.malformedDuration(raw: raw)
-                }
+                digits.append(character)
+                continue
+            }
+            guard !digits.isEmpty, let unitValue = Int(digits) else {
+                throw ICSParser.Error.malformedDuration(raw: raw)
+            }
+            digits = ""
+            switch character {
+            case "H": hours = unitValue
+            case "M": minutes = unitValue
+            case "S": seconds = unitValue
+            default: throw ICSParser.Error.malformedDuration(raw: raw)
             }
         }
-        if !current.isEmpty {
+        if !digits.isEmpty {
             throw ICSParser.Error.malformedDuration(raw: raw)
         }
 

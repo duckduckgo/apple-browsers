@@ -19,15 +19,11 @@
 import EventKit
 import Foundation
 
-/// Parses an RRULE value into an `EKRecurrenceRule`. Recognises the common subset specified
-/// in the package README: FREQ, INTERVAL, COUNT, UNTIL, BYDAY (with optional weeknumber prefix
-/// like `1MO` / `-1FR`), BYMONTHDAY, BYMONTH. Exotic parts (BYSETPOS, BYWEEKNO, etc.) are
-/// silently ignored; the editor's Repeat picker would render them as "Custom" anyway.
+/// Parses an RRULE into an `EKRecurrenceRule`. Recognises the common subset documented in the
+/// package README. Unsupported parts (BYSETPOS, BYWEEKNO, etc.) are silently ignored.
 ///
-/// Performs a parse-time COUNT → UNTIL conversion in the simple cases where the math is
-/// unambiguous (no BY-rules, or a single BYDAY/BYMONTHDAY/BYMONTH). The conversion makes
-/// `EKEventEditViewController` display the actual end date instead of "Never" when the
-/// editor renders a COUNT-bounded recurrence.
+/// COUNT is converted to UNTIL when the math is unambiguous (no BY-rules, or a single
+/// BYDAY/BYMONTHDAY/BYMONTH). Otherwise the rule keeps `EKRecurrenceEnd(occurrenceCount:)`.
 enum RecurrenceRuleParser {
 
     static func parse(_ value: String, startDate: Date) throws -> EKRecurrenceRule {
@@ -43,29 +39,29 @@ enum RecurrenceRuleParser {
             let pieces = part.split(separator: "=", maxSplits: 1)
             guard pieces.count == 2 else { continue }
             let key = String(pieces[0]).uppercased()
-            let raw = String(pieces[1])
+            let rawValue = String(pieces[1])
 
             switch key {
             case "FREQ":
-                freq = try parseFrequency(raw, original: value)
+                freq = try parseFrequency(rawValue, original: value)
             case "INTERVAL":
-                guard let parsed = Int(raw), parsed >= 1 else {
+                guard let intervalValue = Int(rawValue), intervalValue >= 1 else {
                     throw ICSParser.Error.malformedRecurrenceRule(raw: value)
                 }
-                interval = parsed
+                interval = intervalValue
             case "COUNT":
-                guard let parsed = Int(raw), parsed >= 1 else {
+                guard let countValue = Int(rawValue), countValue >= 1 else {
                     throw ICSParser.Error.malformedRecurrenceRule(raw: value)
                 }
-                count = parsed
+                count = countValue
             case "UNTIL":
-                until = parseUntil(raw)
+                until = parseUntil(rawValue)
             case "BYDAY":
-                byDay = raw.split(separator: ",").compactMap { parseByDay(String($0)) }
+                byDay = rawValue.split(separator: ",").compactMap { parseByDay(String($0)) }
             case "BYMONTHDAY":
-                byMonthDay = raw.split(separator: ",").compactMap { Int($0) }
+                byMonthDay = rawValue.split(separator: ",").compactMap { Int($0) }
             case "BYMONTH":
-                byMonth = raw.split(separator: ",").compactMap { Int($0) }
+                byMonth = rawValue.split(separator: ",").compactMap { Int($0) }
             default:
                 break
             }
@@ -141,8 +137,8 @@ enum RecurrenceRuleParser {
         return EKRecurrenceDayOfWeek(weekday, weekNumber: weekNumber)
     }
 
-    /// Parses an UNTIL value. Per RFC 5545 §3.3.10 the value is always UTC for time-anchored
-    /// DTSTARTs. We accept the date-only form too because some producers emit it.
+    /// Per RFC 5545 §3.3.10, UNTIL is UTC for time-anchored DTSTARTs. Date-only form accepted
+    /// because some producers emit it.
     private static func parseUntil(_ raw: String) -> Date? {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -186,9 +182,7 @@ enum RecurrenceRuleParser {
         return EKRecurrenceEnd(occurrenceCount: count)
     }
 
-    /// Computes the date of the Nth occurrence for simple cases. Returns nil when the math
-    /// would be wrong (multi-BYDAY weekly, multi-BYMONTHDAY, multi-BYMONTH); the caller falls
-    /// back to setting COUNT directly so EventKit drives the recurrence honestly.
+    /// Returns the date of the Nth occurrence, or nil when BY-rules make the simple math wrong.
     private static func countToUntil(
         count: Int,
         startDate: Date,

@@ -19,11 +19,7 @@
 import EventKit
 import Foundation
 
-/// A calendar event parsed from the first VEVENT block of an .ics (iCalendar) file.
-///
-/// Fields map directly to `EKEvent` properties for handoff to `EKEventEditViewController`.
-/// `startDate` and `endDate` are guaranteed non-nil; the parser applies the RFC 5545 fallback
-/// hierarchy (DTEND, otherwise DTSTART + DURATION, otherwise a default duration) before returning.
+/// A calendar event parsed from a VEVENT block. Fields mirror `EKEvent` for direct handoff.
 public struct ICSEvent {
     public let title: String?
     public let startDate: Date

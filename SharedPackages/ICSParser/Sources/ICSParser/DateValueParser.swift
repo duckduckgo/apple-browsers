@@ -59,13 +59,9 @@ enum DateValueParser {
     }
 
     private static func resolveTimeZone(value: String, paramPart: String, isDateOnly: Bool) throws -> TimeZone {
-        // Date-only values carry no wall-clock time. Anchor in UTC so parsing is
-        // deterministic across devices; EventKit handles the all-day display in the user's
-        // local timezone regardless of the underlying instant.
-        if isDateOnly {
-            return TimeZone(identifier: "UTC") ?? .current
-        }
-        if value.hasSuffix("Z") {
+        // Anchor date-only values in UTC for deterministic parsing across devices. EventKit
+        // displays them as all-day in the user's local timezone regardless.
+        if isDateOnly || value.hasSuffix("Z") {
             return TimeZone(identifier: "UTC") ?? .current
         }
         if let tzid = TimeZoneResolver.extractTZID(from: paramPart) {

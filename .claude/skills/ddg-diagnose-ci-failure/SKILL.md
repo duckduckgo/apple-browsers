@@ -1,15 +1,75 @@
 ---
 name: ddg-diagnose-ci-failure
-description: Use when the user shares a GitHub Actions URL (github.com/*/actions/runs/*), asks "why did CI fail", reports a flaky CI test, or pastes a link to a failed PR check. Even a bare URL with no other text triggers this skill.
+description: Use when the user wants to diagnose a CI failure. Triggers on a GitHub Actions run URL (github.com/*/actions/runs/*), a PR URL or bare PR number, an Apple CI Failing Tests Asana task URL, a failed PR check link, or asks like "why did CI fail" / "diagnose CI failure", with or without an argument.
 ---
 
 # Diagnose CI Failure
 
 Investigate a GitHub Actions workflow failure, classify it, trace test failures back to the local code, and propose a fix.
 
-## Output Guidelines
+## Inputs
 
-Lead with the diagnosis: what failed, why, what to do. Don't echo metadata the user already gave you (URL, owner, repo, run ID). Scale depth to complexity - a missing translation or lint violation needs 2-3 sentences and a fix; a flaky test needs the deeper analysis below.
+The skill resolves any of the following to a single GitHub Actions run to investigate. The repo is always `duckduckgo/apple-browsers`. Resolve the input first, then start at Step 1 with the resulting `run_id`.
+
+### Actions run URL
+
+Example: `https://github.com/duckduckgo/apple-browsers/actions/runs/25519433222` (optionally with `/job/<id>` or `/attempts/N`).
+
+Extract `run_id` (and `job_id` if present). Use directly.
+
+### PR URL
+
+Example: `https://github.com/duckduckgo/apple-browsers/pull/4752`.
+
+Extract the PR number, then resolve as below.
+
+### Bare PR number
+
+Example: `4752` or `#4752`.
+
+```bash
+gh pr checks <pr_number> --repo duckduckgo/apple-browsers --json name,state,link,workflow
+```
+
+Pick the most recent failed check's run URL. If multiple checks failed, prefer the broadest test workflow (`iOS - PR Checks`, `macOS - PR Checks`, `DBP - PR Checks`) over lint-only or build-only ones.
+
+### Apple CI Failing Tests Asana task URL
+
+Example: `https://app.asana.com/1/137249556945/project/1205237866452338/task/<gid>`.
+
+Extract the trailing numeric task GID. Fetch the task via the Asana MCP `asana_get_task` tool (pass the GID as `task_id`); the failing test's class and method are typically in the title (`<TestClass>.<testMethod>` or similar). Find the most recent failure:
+
+```bash
+gh run list --repo duckduckgo/apple-browsers --branch=main --status=failure --limit=20 --json databaseId,workflowName,createdAt
+```
+
+For each candidate run download the JUnit XML artifact (`*-unittests.xml`) and grep for a `<failure>` node matching the test name; use the latest matching run.
+
+**Lethal-trifecta note:** querying Asana via MCP locks WebFetch and most other MCP tools for the rest of the session. Confirm with the user before proceeding if they may want unrelated MCPs available later.
+
+### No argument
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+If the branch is `main`, take the most recent failed run:
+
+```bash
+gh run list --repo duckduckgo/apple-browsers --branch=main --status=failure --limit=1 --json databaseId
+```
+
+Otherwise, find the open PR for the current branch:
+
+```bash
+gh pr list --repo duckduckgo/apple-browsers --head <branch> --state open --limit 1 --json number
+```
+
+Then resolve as a PR number. If the branch has no open PR, say so and ask.
+
+### When resolution fails
+
+If resolution turns up nothing (PR has no failed checks, branch has no PR, Asana task title doesn't name a test), say so and stop - don't guess.
 
 ## Prerequisites
 
@@ -17,7 +77,7 @@ Requires `gh` authenticated. If `gh auth status` fails, ask the user to run `gh 
 
 ## Step 1: Fetch Run Data
 
-Extract `owner`, `repo`, `run_id` (and optional `job_id`) from the URL. Then gather data in two passes.
+Once the input is resolved to a `run_id` (see Inputs above; carry `job_id` through if the original URL had one), gather data in two passes.
 
 ### 1a: Structured overview
 
@@ -33,15 +93,15 @@ Identify which jobs failed, the branch/trigger event, and the workflow name (you
 gh run view {run_id} --log-failed 2>&1 | tail -n 1000
 ```
 
-CI logs are organized as `{job-name}\t{step-name}\t{line}`. Errors almost always cluster at the end - 1000 lines is usually enough; bump to 3000 if the failure context is cut off. If a `job_id` was in the URL, focus there.
+CI logs are organized as `{job-name}\t{step-name}\t{line}`. Errors almost always cluster at the end - 1000 lines is usually enough; bump to 3000 if the failure context is cut off. If `tail` surfaces a test-name inventory rather than failure markers (common when the log is large), grep the persisted log for `failed|FAIL|XCTAssert|<failure|error:` to jump straight to the actual failure context. If a `job_id` was in the URL, focus there.
 
-### 1c: Artifacts (optional, for test failures)
+### 1c: Artifacts (primary source for test failures)
 
-JUnit XML artifacts are uploaded for most test runs (e.g. `unittests.xml`, `package-tests.xml`, `dbp-ios-unittests.xml`). List and download:
+For any non-zero JUnit failure count, the XML is the authoritative source: precise failure counts, exact messages, and (when retries are configured) repeated `<testcase>` entries that disambiguate deterministic vs flaky failures (see Step 3d). Most test runs upload one (e.g. `unittests.xml`, `package-tests.xml`, `dbp-ios-unittests.xml`). List and download:
 
 ```bash
-gh api repos/{owner}/{repo}/actions/runs/{run_id}/artifacts --jq '.artifacts[].name'
-gh run download {run_id} -n {artifact-name} -D /tmp/ci-artifacts/
+gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/artifacts --jq '.artifacts[].name'
+gh run download {run_id} --repo duckduckgo/apple-browsers -n {artifact-name} -D /tmp/ci-artifacts/
 ```
 
 ## Step 2: Classify the Failure
@@ -89,6 +149,20 @@ git blame -L {failing_line_start},{failing_line_end} {test_file_path}
 
 If the test or its production target changed in the last few commits, that's almost certainly the regression source.
 
+**Merge-order regression (PR passed its own CI but fails on main):**
+
+When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks under `iOS/SharedTestUtils/`, `macOS/SharedTestUtils/`, etc.) between this PR's last green run and main HEAD:
+
+```bash
+# Find this PR's last green run, capture the SHA
+gh run list --branch=<pr_branch> --status=success --limit=1 --json headSha,createdAt
+
+# What landed in main between that SHA and HEAD?
+git log --oneline <last_green_sha>..HEAD -- <suspected_shared_paths>
+```
+
+A diff in a helper or mock used by the failing test is a strong signal: the PR's CI passed in isolation, but a parallel-merged PR shifted the contract underneath it. The failing test is then often a real test-side mismatch, not a production bug.
+
 **Workflow history (flaky / environmental failures):**
 
 When local git shows no relevant changes, or the failure looks intermittent:
@@ -120,17 +194,21 @@ Likely flaky if any apply:
 | Failure message shows a race - off-by-one counts, nil optionals, "expected X but got Y" | Classic concurrent-access symptom |
 | Workflow history (Step 3c) shows the same test passing then failing without code changes | Environmental, not logic |
 
+**Inverse signal - deterministic, not flaky:** if the JUnit XML shows the same test name in N consecutive `<failure>` entries where N matches the workflow's `-retry-tests-on-failure` count, the test failed on every retry. By definition that's deterministic - skip the flaky framing and treat it as a real regression.
+
 If none apply and the failure looks deterministic, say so - not every CI failure is flaky.
 
 ### 3e: Consult the Apple CI Failing Tests project (only if needed)
 
 Use this step only when 3a-3d haven't produced a clear diagnosis, or when you specifically want longer-term failure history for the test (months of pattern, prior investigations, owner). For an obvious failure (timing-dependent test that just changed in 3c, or a clear assertion regression), skip this step.
 
-The team tracks known-flaky and known-broken tests in the [Apple CI Failing Tests project](https://app.asana.com/1/137249556945/project/1205237866452338):
+The team tracks known-flaky and known-broken tests in the [Apple CI Failing Tests project](https://app.asana.com/1/137249556945/project/1205237866452338). Use the Asana MCP `asana_search_tasks` tool with these parameters:
 
-```
-asana_search_tasks(workspace="137249556945", projects.any="1205237866452338", text="<test method or class name>")
-```
+- `workspace`: `137249556945`
+- `projects.any`: `1205237866452338`
+- `text`: the test method or class name
+
+Outcomes:
 
 - **Open task exists**: known issue with prior root-cause notes - reference it in your diagnosis instead of restarting the investigation.
 - **Completed task exists**: previously closed but failing again - flag as a regression of a supposed fix.
@@ -148,21 +226,20 @@ Cross-check your root cause against evidence. A confident-but-wrong diagnosis wa
 
 If evidence is thin, say so explicitly.
 
-## Step 5: Present Diagnosis
+## Step 5: Present Diagnosis (Wait Before Proposing a Fix)
+
+Lead with the diagnosis: what failed, why, what to do. Don't echo metadata the user already gave you (URL, owner, repo, run ID). Scale depth to complexity - a missing translation or lint violation needs 2-3 sentences and a fix; a flaky test needs the deeper analysis below.
 
 State:
-1. **What the test does** - one sentence
-2. **What failed** - the specific assertion or expectation
-3. **Why** - root cause mechanism (timing, shared state, environment, genuine bug)
+
+1. **What the test does** - one sentence.
+2. **What failed** - the specific assertion or expectation.
+3. **Why** - root cause mechanism (timing, shared state, environment, genuine bug).
 4. **Test or production?** - prefer attributing to the test unless evidence clearly points to a production bug. Flaky tests are almost always a test-level problem.
 
 Then ask: *"Would you like me to propose a fix?"*
 
-**Wait for the user to respond.** Do not proceed to Step 6 until they confirm.
-
-## Step 6: Propose a Fix
-
-When the user approves:
+**Wait for the user to respond.** Do not propose a fix until they confirm. When the user approves:
 
 - **Prefer fixing the test** unless the failure reveals a real production bug.
 - **Explain why** each change addresses the root cause, not just what it does.

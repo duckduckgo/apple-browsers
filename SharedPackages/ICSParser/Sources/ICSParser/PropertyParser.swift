@@ -112,7 +112,8 @@ enum PropertyParser {
         if isAllDay {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
-            return calendar.date(bySettingHour: 23, minute: 59, second: 59, of: start) ?? start
+            // RFC 5545 §3.6.1: an all-day event's end is exclusive (next day at 00:00).
+            return calendar.date(byAdding: .day, value: 1, to: start) ?? start
         }
         return start.addingTimeInterval(3_600)
     }

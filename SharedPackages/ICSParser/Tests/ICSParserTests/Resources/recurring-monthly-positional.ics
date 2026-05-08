@@ -6,9 +6,9 @@ UID:recurring-monthly-001@duckduckgo.com
 DTSTAMP:20260501T120000Z
 DTSTART:20260601T160000Z
 DTEND:20260601T170000Z
-SUMMARY:First Monday of Every Month
-DESCRIPTION:Monthly on the first Monday. Tests positional BYDAY (1MO).
+SUMMARY:First Monday of Every Month (12 occurrences)
+DESCRIPTION:Monthly on the first Monday for 12 occurrences. Tests positional BYDAY (1MO).
 LOCATION:Conference Room
-RRULE:FREQ=MONTHLY;BYDAY=1MO
+RRULE:FREQ=MONTHLY;BYDAY=1MO;COUNT=12
 END:VEVENT
 END:VCALENDAR

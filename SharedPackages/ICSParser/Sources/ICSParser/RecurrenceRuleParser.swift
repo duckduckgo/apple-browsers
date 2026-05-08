@@ -132,8 +132,11 @@ enum RecurrenceRuleParser {
         if prefix.isEmpty {
             return EKRecurrenceDayOfWeek(weekday)
         }
-        guard let weekNumber = Int(prefix), weekNumber != 0 else {
-            return EKRecurrenceDayOfWeek(weekday)
+        // RFC 5545 §3.3.10: the BYDAY positional integer is in [-53, 53] excluding 0.
+        guard let weekNumber = Int(prefix),
+              weekNumber != 0,
+              (-53...53).contains(weekNumber) else {
+            return nil
         }
         return EKRecurrenceDayOfWeek(weekday, weekNumber: weekNumber)
     }

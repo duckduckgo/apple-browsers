@@ -39,7 +39,7 @@ enum DateValueParser {
         let upperParam = paramPart.uppercased()
         let isDateOnly = upperParam.contains("VALUE=DATE") || (value.count == 8 && !value.contains("T"))
 
-        let timeZone = try resolveTimeZone(value: value, paramPart: paramPart)
+        let timeZone = try resolveTimeZone(value: value, paramPart: paramPart, isDateOnly: isDateOnly)
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -58,7 +58,13 @@ enum DateValueParser {
         throw ICSParser.Error.malformedDate(field: field, raw: value)
     }
 
-    private static func resolveTimeZone(value: String, paramPart: String) throws -> TimeZone {
+    private static func resolveTimeZone(value: String, paramPart: String, isDateOnly: Bool) throws -> TimeZone {
+        // Date-only values carry no wall-clock time. Anchor in UTC so parsing is
+        // deterministic across devices; EventKit handles the all-day display in the user's
+        // local timezone regardless of the underlying instant.
+        if isDateOnly {
+            return TimeZone(identifier: "UTC") ?? .current
+        }
         if value.hasSuffix("Z") {
             return TimeZone(identifier: "UTC") ?? .current
         }

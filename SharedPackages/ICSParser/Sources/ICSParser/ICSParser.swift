@@ -54,7 +54,16 @@ public enum ICSParser {
 
     /// Parses the given .ics file content from a string. Convenience for tests.
     public static func parse(string raw: String) throws -> [ICSEvent] {
-        let lines = LineUnfolder.unfold(raw)
+        // Strip a leading UTF-8 BOM (U+FEFF). Windows-generated .ics exports often include
+        // one, and `String(data:encoding:.utf8)` preserves it as the first character, which
+        // would defeat the literal "BEGIN:VCALENDAR" comparison in `VEventExtractor`.
+        let stripped: String
+        if raw.first == "\u{FEFF}" {
+            stripped = String(raw.dropFirst())
+        } else {
+            stripped = raw
+        }
+        let lines = LineUnfolder.unfold(stripped)
         let blocks = try VEventExtractor.extract(from: lines)
         return try blocks.map { try PropertyParser.parseEvent(from: $0) }
     }

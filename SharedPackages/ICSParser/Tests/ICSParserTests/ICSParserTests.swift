@@ -46,6 +46,9 @@ struct ICSParserTests {
         let event = events[0]
         #expect(event.title == "All Day Event")
         #expect(event.isAllDay == true)
+        #expect(event.startDate == iso("2026-06-15T00:00:00Z"))
+        // RFC 5545: end of an all-day event is exclusive, expressed as the next day at midnight.
+        #expect(event.endDate == iso("2026-06-16T00:00:00Z"))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -182,10 +185,20 @@ struct ICSParserTests {
         let events = try ICSParser.parse(data: fixture("recurring-yearly"))
         try #require(events.count == 1)
         let event = events[0]
+        #expect(event.isAllDay == true)
+        #expect(event.startDate == iso("2026-12-25T00:00:00Z"))
         let rule = try #require(event.recurrenceRule)
         #expect(rule.frequency == .yearly)
         #expect(rule.monthsOfTheYear == [12])
         #expect(rule.daysOfTheMonth == [25])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Strips a leading UTF-8 BOM before parsing", .timeLimit(.minutes(1)))
+    func stripsLeadingBOM() throws {
+        let events = try ICSParser.parse(data: fixture("bom-prefixed"))
+        try #require(events.count == 1)
+        #expect(events[0].title == "BOM-Prefixed File")
     }
 
     // MARK: - Error paths

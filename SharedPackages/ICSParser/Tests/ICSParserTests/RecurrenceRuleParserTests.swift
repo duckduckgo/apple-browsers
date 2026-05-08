@@ -89,7 +89,7 @@ struct RecurrenceRuleParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Throws malformedRecurrenceRule when FREQ is missing", .timeLimit(.minutes(1)))
     func throwsWithoutFrequency() {
-        #expect(throws: ICSParser.Error.self) {
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: "INTERVAL=1")) {
             try RecurrenceRuleParser.parse("INTERVAL=1", startDate: utcDate("2026-06-01T00:00:00Z"))
         }
     }
@@ -97,9 +97,23 @@ struct RecurrenceRuleParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Throws malformedRecurrenceRule for unknown FREQ", .timeLimit(.minutes(1)))
     func throwsForUnknownFrequency() {
-        #expect(throws: ICSParser.Error.self) {
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: "FREQ=HOURLY")) {
             try RecurrenceRuleParser.parse("FREQ=HOURLY", startDate: utcDate("2026-06-01T00:00:00Z"))
         }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Drops BYDAY tokens with invalid week numbers (0 or out of range)", .timeLimit(.minutes(1)))
+    func dropsByDayTokensWithInvalidWeekNumbers() throws {
+        // 0MO and 99MO are invalid; MO is valid. Only the valid token should survive.
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;BYDAY=0MO,99MO,MO",
+            startDate: utcDate("2026-06-01T00:00:00Z")
+        )
+        let days = rule.daysOfTheWeek ?? []
+        try #require(days.count == 1)
+        #expect(days[0].dayOfTheWeek == .monday)
+        #expect(days[0].weekNumber == 0) // EKRecurrenceDayOfWeek without weekNumber reports 0
     }
 
     @available(iOS 16, macOS 13, *)

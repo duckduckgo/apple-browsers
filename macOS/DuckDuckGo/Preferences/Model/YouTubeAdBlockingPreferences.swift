@@ -112,6 +112,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     @MainActor
     func openLearnMoreURL() {
+        // TODO: replace with final YouTube Ad Blocking help page URL.
         guard let url = URL(string: "https://duckduckgo.com") else { return }
         Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }

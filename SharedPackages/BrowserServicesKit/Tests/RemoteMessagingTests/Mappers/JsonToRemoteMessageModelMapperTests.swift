@@ -664,8 +664,6 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(resultItem.descriptionText, "Translated Description 1")
     }
 
-}
-
     // MARK: - DisplayConditions Mapping Tests
 
     func testWhenMessageHasDisplayConditionsWithTriggerThenItIsMappedCorrectly() {

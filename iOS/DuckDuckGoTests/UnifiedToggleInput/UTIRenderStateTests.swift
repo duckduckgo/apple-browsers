@@ -242,4 +242,14 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)
     }
+
+    func test_omnibarHost_aiTabExpanded_aiChat_disablingToggleAfterShow_keepsToolbar() {
+        // Live disable path — coordinator must compute showsToolbar=true here so the live update
+        // doesn't strip the AI toolbar (the view's local rule alone can't see isAITabState).
+        sut.showExpanded(inputMode: .aiChat)
+        sut.updateToggleEnabled(false)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
 }

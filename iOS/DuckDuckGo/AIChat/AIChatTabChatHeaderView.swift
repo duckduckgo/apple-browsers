@@ -52,6 +52,7 @@ final class AIChatTabChatHeaderView: UIView {
     private var isSubscriptionActive: Bool = false
     private var isVoiceModeActive: Bool = false
     private var isNavigationVisible: Bool = false
+    private var isNavigationPairVisible: Bool = false
 
     private lazy var backButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.arrowLeft,
@@ -83,14 +84,14 @@ final class AIChatTabChatHeaderView: UIView {
 
     private lazy var chatListButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.chats,
-        accessibilityLabel: "Recent chats",
+        accessibilityLabel: UserText.aiChatHeaderRecentChatsAccessibilityLabel,
         action: #selector(chatListTapped),
         includeChrome: false
     )
 
     private lazy var newChatButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.compose,
-        accessibilityLabel: "New chat",
+        accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel,
         action: #selector(newChatTapped),
         includeChrome: false
     )
@@ -258,23 +259,34 @@ final class AIChatTabChatHeaderView: UIView {
 
     func configure(isSubscriptionActive: Bool) {
         self.isSubscriptionActive = isSubscriptionActive
-        titleContainer.isHidden = isSubscriptionActive
-        titleLabel.isHidden = !isSubscriptionActive
+        updateTitleVisibility()
     }
 
     func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
         let showsNavPair = canGoBack && canGoForward
         let showsStandaloneBack = canGoBack && !canGoForward
         let showsStandaloneForward = canGoForward && !canGoBack
-        let anyNavVisible = canGoBack || canGoForward
-        isNavigationVisible = anyNavVisible
+        isNavigationVisible = canGoBack || canGoForward
+        isNavigationPairVisible = showsNavPair
 
         backPill.isHidden = !showsStandaloneBack
         forwardPill.isHidden = !showsStandaloneForward
         navPairPill.isHidden = !showsNavPair
         updateLeftChatControlsVisibility()
-        // Hide free/paid title when both arrows occupy the left pill — the row gets crowded.
-        titleContainer.isHidden = showsNavPair
+        updateTitleVisibility()
+    }
+
+    /// Both back+forward arrows in the left pill crowd the row, so the title is dropped in that
+    /// state regardless of plan. Otherwise `isSubscriptionActive` picks between the free upgrade
+    /// plate (`titleContainer`) and the paid `Duck.ai` nav-style label.
+    private func updateTitleVisibility() {
+        if isNavigationPairVisible {
+            titleContainer.isHidden = true
+            titleLabel.isHidden = true
+        } else {
+            titleContainer.isHidden = isSubscriptionActive
+            titleLabel.isHidden = !isSubscriptionActive
+        }
     }
 
     /// Hides the chats / new-chat pill in voice mode (back/forward stay so the user can exit).
@@ -555,11 +567,11 @@ private final class HighlightableContainerView: UIControl {
     }
 }
 
-/// Cancels its host UIControl's tracking the moment the touch leaves the control's visible
-/// bounds. UIControl's default tracking tolerates ~70pt of slack — fine for an isolated
-/// button, but inside our shared glass pill it lets the originally-tapped icon fire when the
-/// finger is released over a sibling icon. The flags below keep the recognizer purely
-/// observational so the control's own taps, long-press and menus still flow normally.
+/// Cancels the host UIControl's touch follow-through the moment the touch leaves the visible
+/// bounds. UIControl tolerates ~70pt of slack by default — fine for an isolated button, but
+/// inside our shared glass pill it lets the originally-tapped icon fire when the finger is
+/// released over a sibling icon. The flags below keep the recognizer purely observational so
+/// the control's own taps, long-press, and menus still flow normally.
 private final class StrictBoundsTouchObserver: UIGestureRecognizer {
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)

@@ -115,7 +115,7 @@ private extension MainViewController {
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
     }
 
-    /// Captures a snapshot of `contentContainer` and pins a clipping wrapper to track
+    /// Captures a snapshot of `contentContainer` and pins a clipping wrapper to follow
     /// `contentContainer`'s frame for the duration of an AI-tab expand animation. Returns the
     /// wrapper so the caller can schedule its removal once the animation has settled. `nil` if
     /// the snapshot can't be taken (no AI tab, or the snapshot view fails).

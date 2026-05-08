@@ -324,6 +324,7 @@ final class UnifiedToggleInputView: UIView {
     private lazy var aiTabCollapsedVoiceButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice)
         button.isHidden = true
+        button.accessibilityLabel = UserText.actionDuckAIVoice
         button.addTarget(self, action: #selector(voiceTapped), for: .touchUpInside)
         return button
     }()
@@ -495,12 +496,12 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
-    func updateToggleEnabled(_ enabled: Bool) {
+    func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
-            applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: enabled && toggleView.selectedMode == .aiChat), animated: false)
+            applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
         }
     }
 

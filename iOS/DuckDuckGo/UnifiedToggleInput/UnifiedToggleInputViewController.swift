@@ -281,9 +281,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
-    func updateToggleEnabled(_ enabled: Bool) {
+    func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         handler.isToggleEnabled = enabled
-        inputBarView.updateToggleEnabled(enabled)
+        inputBarView.updateToggleEnabled(enabled, showsToolbar: showsToolbar)
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {

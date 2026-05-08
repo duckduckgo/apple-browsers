@@ -624,7 +624,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateToggleEnabled(_ enabled: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
-        viewController.updateToggleEnabled(enabled)
+        // Pass `showsToolbar` derived from the coordinator's render-state rule rather than
+        // letting the view re-derive it locally — the view doesn't know `isAITabState`, and
+        // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
+        // on a Duck.ai tab when the user disables the toggle.
+        viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
         if !enabled, isOmnibarSession {
             inputMode = .search
             viewController.apply(computeRenderState().viewConfig, animated: false)

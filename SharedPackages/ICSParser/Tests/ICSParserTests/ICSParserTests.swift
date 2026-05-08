@@ -135,6 +135,59 @@ struct ICSParserTests {
         #expect(event.endDate.timeIntervalSince(event.startDate) == 3_600)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses weekly RRULE with COUNT and BYDAY (with COUNT→UNTIL conversion)", .timeLimit(.minutes(1)))
+    func parsesWeeklyRecurrenceWithCountConversion() throws {
+        let events = try ICSParser.parse(data: fixture("recurring-weekly"))
+        try #require(events.count == 1)
+        let event = events[0]
+        let rule = try #require(event.recurrenceRule)
+        #expect(rule.frequency == .weekly)
+        #expect(rule.interval == 1)
+        // Jun 1 is a Monday; 4 weekly Mondays => last on Jun 22.
+        #expect(rule.recurrenceEnd?.endDate == iso("2026-06-22T23:59:59Z"))
+        let days = rule.daysOfTheWeek ?? []
+        try #require(days.count == 1)
+        #expect(days[0].dayOfTheWeek == .monday)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses daily RRULE with explicit UNTIL", .timeLimit(.minutes(1)))
+    func parsesDailyRecurrenceWithUntil() throws {
+        let events = try ICSParser.parse(data: fixture("recurring-daily-until"))
+        try #require(events.count == 1)
+        let event = events[0]
+        let rule = try #require(event.recurrenceRule)
+        #expect(rule.frequency == .daily)
+        #expect(rule.recurrenceEnd?.endDate == iso("2026-06-30T23:59:59Z"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses monthly RRULE with positional BYDAY (first Monday)", .timeLimit(.minutes(1)))
+    func parsesMonthlyPositionalRecurrence() throws {
+        let events = try ICSParser.parse(data: fixture("recurring-monthly-positional"))
+        try #require(events.count == 1)
+        let event = events[0]
+        let rule = try #require(event.recurrenceRule)
+        #expect(rule.frequency == .monthly)
+        let days = rule.daysOfTheWeek ?? []
+        try #require(days.count == 1)
+        #expect(days[0].dayOfTheWeek == .monday)
+        #expect(days[0].weekNumber == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses yearly RRULE with BYMONTH and BYMONTHDAY", .timeLimit(.minutes(1)))
+    func parsesYearlyRecurrence() throws {
+        let events = try ICSParser.parse(data: fixture("recurring-yearly"))
+        try #require(events.count == 1)
+        let event = events[0]
+        let rule = try #require(event.recurrenceRule)
+        #expect(rule.frequency == .yearly)
+        #expect(rule.monthsOfTheYear == [12])
+        #expect(rule.daysOfTheMonth == [25])
+    }
+
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {

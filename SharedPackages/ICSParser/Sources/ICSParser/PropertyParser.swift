@@ -30,6 +30,7 @@ enum PropertyParser {
         var startDate: Date?
         var endDate: Date?
         var durationRaw: String?
+        var rRuleRaw: String?
         var isAllDay = false
         var location: String?
         var notes: String?
@@ -61,6 +62,8 @@ enum PropertyParser {
                 endDate = parsed.date
             case "DURATION":
                 durationRaw = value
+            case "RRULE":
+                rRuleRaw = value
             default:
                 break
             }
@@ -75,6 +78,9 @@ enum PropertyParser {
             durationRaw: durationRaw,
             isAllDay: isAllDay
         )
+        let recurrenceRule = try rRuleRaw.map {
+            try RecurrenceRuleParser.parse($0, startDate: resolvedStart)
+        }
 
         return ICSEvent(
             title: title,
@@ -84,7 +90,7 @@ enum PropertyParser {
             location: location,
             notes: notes,
             url: url,
-            recurrenceRule: nil
+            recurrenceRule: recurrenceRule
         )
     }
 

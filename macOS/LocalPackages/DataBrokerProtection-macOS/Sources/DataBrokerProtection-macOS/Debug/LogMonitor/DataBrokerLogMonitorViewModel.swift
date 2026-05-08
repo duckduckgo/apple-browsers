@@ -28,7 +28,15 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     @Published var filteredLogs: [LogEntry] = []
     @Published var isMonitoring: Bool = false
     @Published var filterSettings = LogFilterSettings() {
-        didSet { applyFiltersToExistingLogs() }
+        didSet {
+            if oldValue.subsystemPresets != filterSettings.subsystemPresets
+                || oldValue.shouldUseCustomSubsystem != filterSettings.shouldUseCustomSubsystem
+                || oldValue.customSubsystem != filterSettings.customSubsystem {
+                allLogs.removeAll()
+                logService.resetPosition()
+            }
+            applyFiltersToExistingLogs()
+        }
     }
     @Published var retentionLimitText: String = "2000"
     @Published var errorMessage: String?
@@ -130,7 +138,10 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
             guard let self = self else { return }
             while !Task.isCancelled && isMonitoring {
                 do {
-                    let newLogs = try await logService.fetchRecentLogs(since: logService.currentPosition)
+                    let newLogs = try await logService.fetchRecentLogs(
+                        matching: filterSettings.subsystemPredicate,
+                        since: logService.currentPosition
+                    )
 
                     if !newLogs.isEmpty {
                         allLogs.append(contentsOf: newLogs)

@@ -114,6 +114,21 @@ struct LogFilterSettings {
         return subsystemMatch && categoryMatch && levelMatch && searchMatch
     }
 
+    var subsystemPredicate: NSPredicate {
+        let processClause = NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo")
+        if shouldUseCustomSubsystem {
+            guard !customSubsystem.isEmpty else { return NSPredicate(value: false) }
+            let subsystemClause = NSPredicate(format: "subsystem CONTAINS[cd] %@", customSubsystem)
+            return NSCompoundPredicate(andPredicateWithSubpredicates: [processClause, subsystemClause])
+        }
+        if subsystemPresets.isEmpty || subsystemPresets.count == SubsystemPreset.allCases.count {
+            return processClause
+        }
+        let names = subsystemPresets.map(\.rawValue)
+        let subsystemClause = NSPredicate(format: "subsystem IN %@", names)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [processClause, subsystemClause])
+    }
+
     var hasActiveFilters: Bool {
         let subsystemActive: Bool
         if shouldUseCustomSubsystem {

@@ -30,7 +30,7 @@ public class DataBrokerLogMonitorService {
         return lastLogPosition
     }
 
-    func fetchRecentLogs(since lastPosition: OSLogPosition? = nil) async throws -> [LogEntry] {
+    func fetchRecentLogs(matching predicate: NSPredicate, since lastPosition: OSLogPosition? = nil) async throws -> [LogEntry] {
         let store = try OSLogStore.local()
 
         let position: OSLogPosition
@@ -41,7 +41,6 @@ public class DataBrokerLogMonitorService {
             position = store.position(date: startDate)
         }
 
-        let predicate = NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo")
         let entries = try store.getEntries(at: position, matching: predicate)
         let logEntries = entries.compactMap { entry in
             LogEntry(from: entry)

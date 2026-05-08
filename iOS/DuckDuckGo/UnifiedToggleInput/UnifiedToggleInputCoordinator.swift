@@ -640,8 +640,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         if didModeChange {
             syncAttachmentValidationErrorForCurrentMode()
+            recordUserChoiceToStore()
         }
-        recordUserChoiceToStore()
         updateFloatingSubmitState()
     }
 

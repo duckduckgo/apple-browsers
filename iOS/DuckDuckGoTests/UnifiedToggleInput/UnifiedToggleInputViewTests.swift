@@ -62,6 +62,30 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(scrollView.contentOffset.x, expectedOffset, accuracy: 1)
     }
 
+    func test_attachmentStripDoesNotAutoScrollWhenUserHasScrolledAwayFromTrailingEdge() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        sut.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: 160,
+            height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight
+        )
+
+        (0..<6).forEach { index in
+            sut.addAttachment(makeInvalidFileAttachment(fileName: "attachment-\(index)-long-name.pdf"))
+        }
+        flushMainQueue()
+        sut.layoutIfNeeded()
+        let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        XCTAssertGreaterThan(scrollView.contentSize.width - scrollView.bounds.width, 0)
+
+        scrollView.setContentOffset(.zero, animated: false)
+        sut.addAttachment(makeInvalidFileAttachment(fileName: "attachment-new-long-name.pdf"))
+        flushMainQueue()
+
+        XCTAssertEqual(scrollView.contentOffset.x, 0, accuracy: 1)
+    }
+
     @MainActor
     func test_documentPickerFailureIncludesFallbackMetadataForInvalidChip() async {
         let sut = UnifiedToggleInputAttachmentPresenter()

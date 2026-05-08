@@ -62,6 +62,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
+        let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
         attachments.append(attachment)
         let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
         thumbnail.onRemove = { [weak self] id in
@@ -69,7 +70,9 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         }
         stackView.addArrangedSubview(thumbnail)
         onAttachmentsChanged?()
-        scheduleScrollToTrailingEdge()
+        if shouldAutoScroll {
+            scheduleScrollToTrailingEdge()
+        }
     }
 
     func removeAttachment(id: UUID) {
@@ -119,6 +122,12 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         layoutIfNeeded()
         let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
         scrollView.setContentOffset(CGPoint(x: maximumOffset, y: 0), animated: false)
+    }
+
+    private func shouldAutoScrollAfterAddingAttachment() -> Bool {
+        guard !scrollView.isTracking, !scrollView.isDragging, !scrollView.isDecelerating else { return false }
+        let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
+        return maximumOffset == 0 || scrollView.contentOffset.x >= maximumOffset - 1
     }
 
     private func scheduleScrollToTrailingEdge() {

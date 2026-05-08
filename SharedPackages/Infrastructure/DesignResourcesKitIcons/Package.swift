@@ -36,6 +36,9 @@ let package = Package(
             name: "DesignResourcesKitIcons",
             resources: [
                 .process("DesignSystemImages.xcassets")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 

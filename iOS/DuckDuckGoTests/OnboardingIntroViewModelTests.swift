@@ -115,7 +115,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(result, .landing)
     }
 
-    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() {
+    func testWhenRestoreActionProvided_PerformRestoreInvokesAction_AndDefersContextualDaxDialogsDismissal() {
         // GIVEN
         let restorePromptHandlerMock = MockRestorePromptHandler()
         let sut = makeSUT(
@@ -130,7 +130,38 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(restorePromptHandlerMock.didCallRestoreSyncAccount)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenRestoreActionProvided_AndOnboardingCompletes_ThenDisablesContextualDaxDialogs() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(
+            currentOnboardingStep: .searchExperienceSelection,
+            restorePromptHandler: restorePromptHandlerMock
+        )
+        sut.restoreSyncAccountAction()
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
         XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenOnboardingCompletes_AndRestoreActionNotInvoked_ThenDoesNotDisableContextualDaxDialogs() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
     }
 
     func testWhenReturningUserAndRestorePromptEligibilityIsTrueThenShowsRestorePrompt() {

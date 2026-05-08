@@ -96,8 +96,6 @@ let package = Package(
                 "Navigation"
             ],
             resources: [
-                .process("ContentBlocking/UserScripts/contentblockerrules.js"),
-                .process("ContentBlocking/UserScripts/surrogates.js"),
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
                 .copy("../../PrivacyInfo.xcprivacy")
             ],
@@ -800,8 +798,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
-                "BrowserServicesKitTestsUtils",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                "BrowserServicesKitTestsUtils",
             ]
         ),
         .testTarget(

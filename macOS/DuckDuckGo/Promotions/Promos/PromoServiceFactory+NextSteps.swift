@@ -21,15 +21,11 @@ import Foundation
 extension PromoServiceFactory {
 
     /// Next Steps promo (nextStepsList and nextSteps widgets). Delegate is set when NTP is built.
-    static let nextSteps = Promo(
+    static let nextSteps = ExternalPromo(
         id: "next-steps-cards",
-        triggers: [], // External promo (Next Steps cards) so no internal triggers
         initiated: .app,
         promoType: PromoType(.nextSteps),
         context: .newTabPage,
-        coexistingPromoIDs: [], // Coexistence between external promos is handled externally
-        respectsGlobalCooldown: false,
-        setsGlobalCooldown: true,
         delegate: nil
     )
 }

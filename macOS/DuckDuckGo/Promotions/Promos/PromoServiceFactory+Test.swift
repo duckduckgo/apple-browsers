@@ -26,10 +26,10 @@ extension PromoServiceFactory {
     static var testPromos: [Promo] = {
         guard includeTestPromos else { return [] }
 
-        var testPromoA = Promo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
-        var testPromoB = Promo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
-        var testPromoC = Promo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
-        var testPromoD = Promo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
+        var testPromoA = InternalPromo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
+        var testPromoB = InternalPromo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
+        var testPromoC = InternalPromo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
+        var testPromoD = InternalPromo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
 
         testPromoA.delegate = TestPromoDelegate(for: testPromoA)
         testPromoB.delegate = TestPromoDelegate(for: testPromoB)
@@ -42,7 +42,7 @@ extension PromoServiceFactory {
 
 /// Test promo delegate that shows an NSAlert with metadata, history, and result buttons.
 /// Used to exercise promo persistence across app restarts.
-final class TestPromoDelegate: PromoDelegate {
+final class TestPromoDelegate: InternalPromoDelegate {
     private let promo: Promo
     private var alert: NSAlert?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(true)

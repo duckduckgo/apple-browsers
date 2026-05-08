@@ -225,8 +225,17 @@ final class AIChatTabChatHeaderView: UIView {
         return label
     }()
 
+    private lazy var freePlanRow: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [freePlanLabel, freeChevronView])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = Constants.chevronSpacing
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     private lazy var freeTitleStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [freePlanLabel, upgradeLabel])
+        let stack = UIStackView(arrangedSubviews: [freePlanRow, upgradeLabel])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 0
@@ -342,7 +351,6 @@ final class AIChatTabChatHeaderView: UIView {
         }
 
         titleContainer.addSubview(freeTitleStack)
-        titleContainer.addSubview(freeChevronView)
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
@@ -425,8 +433,6 @@ final class AIChatTabChatHeaderView: UIView {
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
 
-            freeChevronView.leadingAnchor.constraint(equalTo: freePlanLabel.trailingAnchor, constant: Constants.chevronSpacing),
-            freeChevronView.centerYAnchor.constraint(equalTo: freePlanLabel.centerYAnchor),
             freeChevronView.widthAnchor.constraint(equalToConstant: Constants.chevronSize),
             freeChevronView.heightAnchor.constraint(equalToConstant: Constants.chevronSize),
 

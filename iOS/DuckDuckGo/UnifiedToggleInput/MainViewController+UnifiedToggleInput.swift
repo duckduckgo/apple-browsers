@@ -109,13 +109,12 @@ extension MainViewController {
     }
 
     /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
+    /// Safe to call with the feature flag off — `isCurrentTabUsingUnifiedInputAIChrome` is
+    /// already flag-gated, so the else branch reduces to the legacy width/minimal-chrome rule.
     func reconcileToolbarVisibilityForCurrentTab() {
-        guard unifiedToggleInputFeature.isAvailable else { return }
-
         if isCurrentTabUsingUnifiedInputAIChrome {
             viewCoordinator.toolbar.isHidden = true
         } else {
-            // Don't re-show on a non-AI tab that's intentionally in minimal chrome.
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
         }
     }

@@ -22,9 +22,9 @@ import PixelKit
 
 public protocol OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent,
-              source: OnboardingSourcePixelParameter?,
-              flow: OnboardingFlowTypePixelParameter?,
-              variant: OnboardingVariantPixelParameter?)
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?,
+              variant: OnboardingPixelParameter.Variant?)
 }
 
 public extension OnboardingSharedPixelHandling {
@@ -37,28 +37,30 @@ public extension OnboardingSharedPixelHandling {
     #endif
 
     func fire(_ event: OnboardingSharedPixelEvent,
-              source: OnboardingSourcePixelParameter?,
-              flow: OnboardingFlowTypePixelParameter?) {
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?) {
         fire(event, source: source, flow: flow, variant: nil)
     }
 }
 
-/// Pixel parameter for the entry point into the onboarding flow.
-public enum OnboardingSourcePixelParameter: String {
-    case `default` = "default"
-    case duckAICustomProductPage = "duckai_cpp"
-}
+public enum OnboardingPixelParameter {
+    /// Pixel parameter for the entry point into the onboarding flow.
+    public enum Source: String {
+        case `default` = "default"
+        case duckAICustomProductPage = "duckai_cpp"
+    }
 
-/// Pixel parameter for the type of onboarding flow the user started.
-public enum OnboardingFlowTypePixelParameter: String {
-    case `default` = "default"
-    case duckAI = "duckai"
-}
+    /// Pixel parameter for the type of onboarding flow the user started.
+    public enum Flow: String {
+        case `default` = "default"
+        case duckAI = "duckai"
+    }
 
-/// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
-public enum OnboardingVariantPixelParameter: String {
-    case duckAISearch = "search_plus_duckai-search"
-    case duckAIChat = "search_plus_duckai-chat"
+    /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
+    public enum Variant: String {
+        case duckAISearch = "search_plus_duckai-search"
+        case duckAIChat = "search_plus_duckai-chat"
+    }
 }
 
 final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
@@ -127,9 +129,9 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public func fire(_ event: OnboardingSharedPixelEvent,
-                     source: OnboardingSourcePixelParameter?,
-                     flow: OnboardingFlowTypePixelParameter?,
-                     variant: OnboardingVariantPixelParameter?) {
+                     source: OnboardingPixelParameter.Source?,
+                     flow: OnboardingPixelParameter.Flow?,
+                     variant: OnboardingPixelParameter.Variant?) {
         var additionalParameters = installParameters
         if let source {
             additionalParameters[ParameterKeys.source] = source.rawValue

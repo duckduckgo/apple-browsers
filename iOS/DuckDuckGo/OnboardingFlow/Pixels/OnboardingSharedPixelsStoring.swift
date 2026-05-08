@@ -28,7 +28,7 @@ enum OnboardingSharedPixelsStorageKeys: String, StorageKeyDescribing {
 }
 
 struct OnboardingSharedPixelsKeys: StoringKeys {
-    let onboardingSource = StorageKey<OnboardingSourcePixelParameter>(OnboardingSharedPixelsStorageKeys.onboardingSource)
-    let onboardingFlow = StorageKey<OnboardingFlowTypePixelParameter>(OnboardingSharedPixelsStorageKeys.onboardingFlow)
-    let onboardingVariant = StorageKey<OnboardingVariantPixelParameter>(OnboardingSharedPixelsStorageKeys.onboardingVariant)
+    let onboardingSource = StorageKey<OnboardingPixelParameter.Source>(OnboardingSharedPixelsStorageKeys.onboardingSource)
+    let onboardingFlow = StorageKey<OnboardingPixelParameter.Flow>(OnboardingSharedPixelsStorageKeys.onboardingFlow)
+    let onboardingVariant = StorageKey<OnboardingPixelParameter.Variant>(OnboardingSharedPixelsStorageKeys.onboardingVariant)
 }

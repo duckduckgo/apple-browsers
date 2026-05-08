@@ -265,6 +265,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.cancelSetDefaultBrowserAction()
 
         // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
         XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 5))))
     }
 
@@ -429,6 +430,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.cancelSetDefaultBrowserAction()
 
         // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
         XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 2, totalSteps: 2))))
     }
 
@@ -635,6 +637,19 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureResumeOnboardingCTAAction)
+    }
+
+    func testWhenStartOnboardingActionResumingFalseIsCalledThenPixelReporterMeasureStartOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
     }
 
     // MARK: - Copy

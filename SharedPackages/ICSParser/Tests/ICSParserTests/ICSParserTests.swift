@@ -188,6 +188,40 @@ struct ICSParserTests {
         #expect(rule.daysOfTheMonth == [25])
     }
 
+    // MARK: - Error paths
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws noVEvent for VCALENDAR with no VEVENT components", .timeLimit(.minutes(1)))
+    func throwsForCalendarWithNoEvent() {
+        #expect(throws: ICSParser.Error.noVEvent) {
+            try ICSParser.parse(data: fixture("no-vevent"))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws missingRequiredField when DTSTART is absent", .timeLimit(.minutes(1)))
+    func throwsForMissingDTSTART() {
+        #expect(throws: ICSParser.Error.missingRequiredField(field: "DTSTART")) {
+            try ICSParser.parse(data: fixture("missing-dtstart"))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedDate when DTSTART can't be parsed", .timeLimit(.minutes(1)))
+    func throwsForMalformedDTSTART() {
+        #expect(throws: ICSParser.Error.malformedDate(field: "DTSTART", raw: "not-a-real-date")) {
+            try ICSParser.parse(data: fixture("malformed-date"))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedDuration when DURATION can't be parsed", .timeLimit(.minutes(1)))
+    func throwsForMalformedDURATION() {
+        #expect(throws: ICSParser.Error.malformedDuration(raw: "nonsense")) {
+            try ICSParser.parse(data: fixture("malformed-duration"))
+        }
+    }
+
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {

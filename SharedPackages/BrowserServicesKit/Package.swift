@@ -799,6 +799,7 @@ let package = Package(
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                "BrowserServicesKitTestsUtils",
             ]
         ),
         .testTarget(

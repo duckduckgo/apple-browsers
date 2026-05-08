@@ -1,6 +1,6 @@
 ---
 name: ddg-diagnose-ci-failure
-description: Use when the user wants to diagnose a CI failure. Triggers on a GitHub Actions run URL (github.com/*/actions/runs/*), a PR URL or bare PR number, an Apple CI Failing Tests Asana task URL, a failed PR check link, or asks like "why did CI fail" / "diagnose CI failure", with or without an argument.
+description: Invoke ONLY when the user explicitly runs /ddg-diagnose-ci-failure or names this skill by name (e.g. "use ddg-diagnose-ci-failure on PR 4780"). Do NOT auto-invoke from symptom/intent matching - the skill may query the Apple CI Failing Tests Asana project (Step 3e), which locks other MCPs for the rest of the session under the lethal-trifecta policy, so it must be user-initiated. If the user asks about CI failures, GitHub Actions runs, or flaky tests without naming this skill, answer directly instead. Accepts one optional argument: a GitHub Actions run URL, a PR URL or bare PR number, or an Apple CI Failing Tests Asana task URL - or no argument to use the current branch's open PR.
 ---
 
 # Diagnose CI Failure

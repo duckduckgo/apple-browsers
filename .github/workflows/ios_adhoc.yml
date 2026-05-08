@@ -255,7 +255,6 @@ jobs:
           aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
             --acl public-read --content-type "text/html; charset=utf-8"
 
-          echo "manifest-url=${MANIFEST_URL}" >> $GITHUB_OUTPUT
           echo "install-url=${install_url}" >> $GITHUB_OUTPUT
 
       - name: Report success
@@ -266,7 +265,6 @@ jobs:
           DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
           INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
-          MANIFEST_URL: ${{ steps.generate-ota.outputs.manifest-url }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |

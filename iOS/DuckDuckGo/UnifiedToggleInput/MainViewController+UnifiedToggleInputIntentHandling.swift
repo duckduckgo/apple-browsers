@@ -139,8 +139,9 @@ private extension MainViewController {
 
         snapshot.translatesAutoresizingMaskIntoConstraints = false
         wrapper.addSubview(snapshot)
-        parent.addSubview(wrapper)
-        parent.bringSubviewToFront(wrapper)
+        // Sit just above `target` — masks the WKWebView's model-layer snap, but stays below the
+        // AI-tab header so the pill drop shadows that bleed into the content area aren't clipped.
+        parent.insertSubview(wrapper, aboveSubview: target)
 
         NSLayoutConstraint.activate([
             wrapper.topAnchor.constraint(equalTo: target.topAnchor),

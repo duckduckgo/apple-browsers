@@ -349,7 +349,7 @@ final class UnifiedToggleInputView: UIView {
     init(handler: UnifiedToggleInputHandler, isToggleEnabled: Bool = true) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
-        self.textEntryView = SwitchBarTextEntryView(handler: handler)
+        self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         setupUI()
         setupSubscriptions()
@@ -481,11 +481,12 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
-        guard layout != currentLayout else { return }
-        currentLayout = layout
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        textEntryView.voiceButtonAppearance = expanded ? .microphone : .aiVoicePlain
+        guard layout != currentLayout else { return }
+        currentLayout = layout
 
         let showsToggle = layout.showsToggle
         let showToolbar = layout.showsToolbar
@@ -891,7 +892,7 @@ private extension UnifiedToggleInputView {
             self?.handler.stopGeneratingButtonTapped()
         }
         toolsToolbar.onVoiceTapped = { [weak self] in
-            self?.handler.microphoneButtonTapped()
+            self?.handler.aiVoiceChatButtonTapped()
         }
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }

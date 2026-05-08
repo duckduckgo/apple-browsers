@@ -1505,6 +1505,8 @@
 		37F19A6528E1B3FB00740DC6 /* PreferencesDuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6428E1B3FB00740DC6 /* PreferencesDuckPlayerView.swift */; };
 		37F19A6728E1B43200740DC6 /* DuckPlayerPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6628E1B43200740DC6 /* DuckPlayerPreferences.swift */; };
 		37F19A6A28E2F2D000740DC6 /* DuckPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6928E2F2D000740DC6 /* DuckPlayer.swift */; };
+		37F1C19A2FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1C1992FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift */; };
+		37F1C19B2FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1C1992FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift */; };
 		37F8ABD32CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */; };
 		37F8ABD42CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */; };
 		37F9AEB12D131705007FD19B /* NewTabPageLinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F9AEB02D1316FE007FD19B /* NewTabPageLinkOpener.swift */; };
@@ -5235,6 +5237,7 @@
 		37F19A6428E1B3FB00740DC6 /* PreferencesDuckPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesDuckPlayerView.swift; sourceTree = "<group>"; };
 		37F19A6628E1B43200740DC6 /* DuckPlayerPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerPreferences.swift; sourceTree = "<group>"; };
 		37F19A6928E2F2D000740DC6 /* DuckPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayer.swift; sourceTree = "<group>"; };
+		37F1C1992FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerProtectionMemoryGuardrailTests.swift; sourceTree = "<group>"; };
 		37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagOverridesMenu.swift; sourceTree = "<group>"; };
 		37F9AEB02D1316FE007FD19B /* NewTabPageLinkOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLinkOpener.swift; sourceTree = "<group>"; };
 		37FC2A172CF903060048E226 /* MockPrivacyStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPrivacyStats.swift; sourceTree = "<group>"; };
@@ -12848,6 +12851,7 @@
 				B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */,
 				B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */,
 				B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */,
+				37F1C1992FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift */,
 				EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */,
 			);
 			path = AppHealth;
@@ -16114,6 +16118,7 @@
 				CC442CB02F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */,
 				5681ED472BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */,
 				CC34456F2E674E7700019518 /* UserScriptErrorTests.swift in Sources */,
+				37F1C19B2FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift in Sources */,
 				1E8995E02DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */,
 				4BE344EF2B23786F003FC223 /* UnifiedFeedbackFormViewModelTests.swift in Sources */,
 				9F97B3202DE8311000653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift in Sources */,
@@ -18568,6 +18573,7 @@
 				AA652CCE25DD9071009059CC /* BookmarkListTests.swift in Sources */,
 				859E7D6D274548F2009C2B69 /* BookmarksExporterTests.swift in Sources */,
 				3745DE082D536EF900024FC8 /* HistoryGroupingProviderTests.swift in Sources */,
+				37F1C19A2FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift in Sources */,
 				BB153C572F3A11DF004D9F5E /* MemoryReportingBucketsTests.swift in Sources */,
 				BB153C582F3A11DF004D9F5E /* MemoryUsageIntervalPixelTests.swift in Sources */,
 				EE76B5962E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */,

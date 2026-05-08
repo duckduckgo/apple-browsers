@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Teraz nie";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkcie AI sú súkromné a voliteľné.\nMôžeš vykonať zmeny v Nastaveniach > Funkcie AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chceš mať jednoduchý prístup k súkromnému AI chatu v adresnom riadku?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Vyhľadávanie & Duck.ai";
 

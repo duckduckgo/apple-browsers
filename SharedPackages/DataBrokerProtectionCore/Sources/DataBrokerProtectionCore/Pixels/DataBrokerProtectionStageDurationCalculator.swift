@@ -33,6 +33,7 @@ public enum Stage: String {
     case emailConfirm = "email-confirm"
     case emailConfirmHalted = "email-confirm-halted"
     case emailConfirmDecoupled = "email-confirm-decoupled"
+    case emailGetData = "email-get-data"
     case validate
     case other
     case fillForm = "fill-form"
@@ -57,6 +58,7 @@ public protocol StageDurationCalculator {
     func fireOptOutFillForm()
     func fireOptOutEmailReceive()
     func fireOptOutEmailConfirm()
+    func fireOptOutEmailGetData()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int, error: Error)
@@ -217,6 +219,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutEmailConfirm() {
         let duration = durationSinceLastStage()
         handler.fire(.optOutEmailConfirm(dataBroker: dataBrokerURL,
+                                         attemptId: attemptId,
+                                         duration: duration,
+                                         dataBrokerVersion: dataBrokerVersion,
+                                         tries: tries,
+                                         parent: parentURL ?? "",
+                                         actionId: actionID ?? ""))
+    }
+
+    func fireOptOutEmailGetData() {
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
+        handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,

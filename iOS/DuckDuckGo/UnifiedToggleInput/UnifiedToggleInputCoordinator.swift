@@ -271,6 +271,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
+        subscribeToAIVoiceChatTap()
         subscribeToAttachmentUsageChanges()
         viewController.isToolsButtonHidden = true
 
@@ -435,6 +436,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .aiTab(.expanded)
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
+        viewController.handler.resetInteractionState()
 
         let renderState = computeRenderState()
 
@@ -493,6 +495,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
+        viewController.handler.resetInteractionState()
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -503,9 +506,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         fetchModels()
 
+        let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
+            shouldSelectAllText = true
+        } else {
+            shouldSelectAllText = false
         }
 
         let expandedHeight = editingHeight()
@@ -522,8 +529,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if textState == .prefilledSelected {
-                viewController.selectAllText()
+            if shouldSelectAllText {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, case .omnibar(.active) = displayState else { return }
+                    viewController.selectAllText()
+                }
             }
         }
     }
@@ -1401,7 +1411,24 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToVoiceSearchTap() {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
-                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                guard let self else { return }
+                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
+                    && viewController.inputMode == .aiChat
+                    && !viewController.isInputExpanded
+                if isCollapsedAIVoiceChatButton {
+                    delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                } else {
+                    guard viewController.handler.isVoiceSearchEnabled else { return }
+                    delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToAIVoiceChatTap() {
+        viewController.handler.aiVoiceChatButtonTappedPublisher
+            .sink { [weak self] in
+                self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
     }

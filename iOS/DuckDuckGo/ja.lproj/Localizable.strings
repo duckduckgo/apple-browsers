@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "後で";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "AI機能はプライバシーに配慮されており、利用は任意です。\n設定＞AI機能から変更できます。";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "アドレスバーからプライベートなAIチャットに簡単にアクセスしたいですか？";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "検索とDuck.ai";
 

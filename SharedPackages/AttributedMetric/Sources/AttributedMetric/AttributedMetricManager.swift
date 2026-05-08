@@ -67,7 +67,8 @@ public protocol AttributedMetricReturningUserProviding {
 }
 
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
-public final class AttributedMetricManager {
+/// Mutable state needs to be accessed through `workQueue` in order for Sendable conformance to be accurate.
+public final class AttributedMetricManager: @unchecked Sendable {
 
     struct Constants {
         static let monthTimeInterval: TimeInterval = Double(Constants.daysInAMonth) * .day
@@ -528,73 +529,94 @@ public final class AttributedMetricManager {
 
         Task {
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
-            if isFreeTrial  {
-                dataStorage.subscriptionFreeTrialFired = true
-            } else {
-                dataStorage.subscriptionMonth1Fired = true
+            workQueue.async { [self] in
+                processSubscriptionDay(isFreeTrial: isFreeTrial)
             }
-
-            let month = isFreeTrial ? 0 : 1
-            guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
-                Logger.attributedMetric.error("Failed to bucket month value")
-                return
-            }
-            pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                installDate: originOrInstall.installDate,
-                                                                month: bucket.value,
-                                                                bucketVersion: bucket.version),
-                           frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
         }
     }
 
+    private func processSubscriptionDay(isFreeTrial: Bool) {
+        if isFreeTrial {
+            dataStorage.subscriptionFreeTrialFired = true
+        } else {
+            dataStorage.subscriptionMonth1Fired = true
+        }
+
+        let month = isFreeTrial ? 0 : 1
+        guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
+            Logger.attributedMetric.error("Failed to bucket month value")
+            return
+        }
+        pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                            installDate: originOrInstall.installDate,
+                                                            month: bucket.value,
+                                                            bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false,
+                       doNotEnforcePrefix: true)
+    }
+
     func processSubscriptionCheck() {
+        guard let subscriptionDate = dataStorage.subscriptionDate,
+              subscriptionStateProvider.isActive
+        else {
+            Logger.attributedMetric.log("Not subscribed or subscription date is missing")
+            return
+        }
+
+        let now = dateProvider.now()
+        let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
+        let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
+
         Task {
-            guard let subscriptionDate = dataStorage.subscriptionDate,
-                  subscriptionStateProvider.isActive
-             else {
-                Logger.attributedMetric.log("Not subscribed or subscription date is missing")
-                return
-            }
-
-            let now = dateProvider.now()
-            let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
-            let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
-            let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
-            let activeFromMoreThan1Month = monthsActive > 1.0
+            workQueue.async { [self] in
+                processSubscriptionCheck(subscriptionDate: subscriptionDate,
+                                         now: now,
+                                         freeTrialPixelSent: freeTrialPixelSent,
+                                         firstMonthPixelSent: firstMonthPixelSent,
+                                         isFreeTrial: isFreeTrial)
+            }
+        }
+    }
 
-            if freeTrialPixelSent && !isFreeTrial {
-                // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
-                do {
-                    let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
-                    pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                        installDate: originOrInstall.installDate,
-                                                                        month: bucket.value,
-                                                                        bucketVersion: bucket.version),
-                                   frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   doNotEnforcePrefix: true)
-                    dataStorage.subscriptionMonth1Fired = true
-                } catch {
-                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
-                }
-            } else if firstMonthPixelSent && activeFromMoreThan1Month {
-                // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
-                do {
-                    let subscriptionMonth = Int(monthsActive.rounded(.up))
-                    let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
-                    pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                        installDate: originOrInstall.installDate,
-                                                                        month: bucket.value,
-                                                                        bucketVersion: bucket.version),
-                                   frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   doNotEnforcePrefix: true)
-                } catch {
-                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
-                }
+    private func processSubscriptionCheck(subscriptionDate: Date,
+                                          now: Date,
+                                          freeTrialPixelSent: Bool,
+                                          firstMonthPixelSent: Bool,
+                                          isFreeTrial: Bool) {
+        let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
+        let activeFromMoreThan1Month = monthsActive > 1.0
+
+        if freeTrialPixelSent && !isFreeTrial {
+            // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
+            do {
+                let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false,
+                               doNotEnforcePrefix: true)
+                dataStorage.subscriptionMonth1Fired = true
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
+            }
+        } else if firstMonthPixelSent && activeFromMoreThan1Month {
+            // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
+            do {
+                let subscriptionMonth = Int(monthsActive.rounded(.up))
+                let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false,
+                               doNotEnforcePrefix: true)
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
             }
         }
     }

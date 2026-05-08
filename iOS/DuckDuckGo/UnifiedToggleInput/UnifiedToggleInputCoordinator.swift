@@ -90,6 +90,11 @@ enum UTIAnimationStyle {
 }
 
 extension UnifiedToggleInputIntent {
+    enum AnimationConstants {
+        /// In-place pose morph on Duck.ai (collapsed ↔ expanded card).
+        static let aiTabPoseMorphDuration: TimeInterval = 0.35
+    }
+
     /// Animation style derived from the intent's transition. The (from, to) pair is the only
     /// signal needed — adding new transitions means adding new cases in the matrix below, not
     /// scattering `if/else` across handlers.
@@ -112,8 +117,9 @@ extension UnifiedToggleInputIntent {
         switch (from, to) {
         case (.aiTab(.expanded), .aiTab(.collapsed)),
              (.aiTab(.collapsed), .aiTab(.expanded)):
-            // In-place pose morph on Duck.ai — animate the card shrinking / growing.
-            return .animated(duration: 0.35, options: .curveEaseInOut, layoutTarget: layoutTarget)
+            return .animated(duration: AnimationConstants.aiTabPoseMorphDuration,
+                             options: .curveEaseInOut,
+                             layoutTarget: layoutTarget)
         default:
             // Fresh entry into a state from a different layout (tab swipe, app launch,
             // omnibar dismiss, hide). The outer constraint changes shouldn't be animated;

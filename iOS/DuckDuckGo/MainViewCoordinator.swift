@@ -228,6 +228,11 @@ class MainViewCoordinator {
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
+        if addressBarPosition == .top {
+            setNavBarContainerBottomToToolbar()
+            setAddressBarBottomActive(false)
+            setAddressBarTopActive(true)
+        }
         constraints.navigationBarContainerHeight.constant = expandedHeight
         superview.layoutIfNeeded()
     }

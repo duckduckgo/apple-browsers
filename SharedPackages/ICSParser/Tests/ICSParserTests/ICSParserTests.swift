@@ -104,6 +104,37 @@ struct ICSParserTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Derives endDate from DURATION when DTEND is missing", .timeLimit(.minutes(1)))
+    func usesDurationWhenDTEndIsMissing() throws {
+        let events = try ICSParser.parse(data: fixture("duration-timed"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.startDate == iso("2026-06-01T14:00:00Z"))
+        // DTSTART + PT1H30M
+        #expect(event.endDate == iso("2026-06-01T15:30:00Z"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Derives endDate from DURATION for all-day Outlook-style events", .timeLimit(.minutes(1)))
+    func usesDurationForAllDayEvents() throws {
+        let events = try ICSParser.parse(data: fixture("duration-allday"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.isAllDay == true)
+        // DTSTART = 2026-06-15 (date-only), DURATION = P1D => +86400 seconds.
+        #expect(event.endDate.timeIntervalSince(event.startDate) == 86_400)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Defaults to a 1-hour event when DTEND and DURATION are both missing", .timeLimit(.minutes(1)))
+    func defaultsToOneHourWhenDurationMissing() throws {
+        let events = try ICSParser.parse(data: fixture("duration-missing"))
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.endDate.timeIntervalSince(event.startDate) == 3_600)
+    }
+
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {

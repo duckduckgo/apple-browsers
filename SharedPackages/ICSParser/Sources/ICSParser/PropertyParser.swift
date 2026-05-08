@@ -29,6 +29,7 @@ enum PropertyParser {
         var title: String?
         var startDate: Date?
         var endDate: Date?
+        var durationRaw: String?
         var isAllDay = false
         var location: String?
         var notes: String?
@@ -58,6 +59,8 @@ enum PropertyParser {
             case "DTEND":
                 let parsed = try DateValueParser.parse(value: value, paramPart: keyPart, field: "DTEND")
                 endDate = parsed.date
+            case "DURATION":
+                durationRaw = value
             default:
                 break
             }
@@ -66,7 +69,12 @@ enum PropertyParser {
         guard let resolvedStart = startDate else {
             throw ICSParser.Error.missingRequiredField(field: "DTSTART")
         }
-        let resolvedEnd = endDate ?? defaultEndDate(for: resolvedStart, isAllDay: isAllDay)
+        let resolvedEnd = try resolveEndDate(
+            start: resolvedStart,
+            endDate: endDate,
+            durationRaw: durationRaw,
+            isAllDay: isAllDay
+        )
 
         return ICSEvent(
             title: title,
@@ -80,12 +88,26 @@ enum PropertyParser {
         )
     }
 
-    private static func defaultEndDate(for start: Date, isAllDay: Bool) -> Date {
+    /// RFC 5545 §3.6.1 fallback hierarchy: prefer DTEND if present, otherwise DTSTART + DURATION,
+    /// otherwise a sensible default (1h for timed events, end-of-day for all-day events).
+    private static func resolveEndDate(
+        start: Date,
+        endDate: Date?,
+        durationRaw: String?,
+        isAllDay: Bool
+    ) throws -> Date {
+        if let endDate {
+            return endDate
+        }
+        if let durationRaw {
+            let interval = try DurationParser.parse(durationRaw)
+            return start.addingTimeInterval(interval)
+        }
         if isAllDay {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
             return calendar.date(bySettingHour: 23, minute: 59, second: 59, of: start) ?? start
         }
-        return start.addingTimeInterval(3600)
+        return start.addingTimeInterval(3_600)
     }
 }

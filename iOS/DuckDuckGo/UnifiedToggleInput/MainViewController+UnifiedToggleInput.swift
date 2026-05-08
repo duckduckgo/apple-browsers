@@ -97,39 +97,25 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// Voice-mode chrome reduction is currently **dormant**.
-    ///
-    /// The chrome-hide plumbing (`setVoiceModeActive` on the header, `setAITabBottomChromeHidden`
-    /// on the coordinator, the reconcile call from refresh paths) is intentionally kept in place
-    /// for future use, but the activation signal returns `false` so the chrome stays standard.
-    ///
-    /// We had a working URL + `voiceSessionStarted/Ended` notification combo wired up, but the
-    /// duck.ai web FE has two open issues that make it unreliable end-to-end: it `replaceState`s
-    /// the `?mode=voice` query mid-session, and `voiceSessionEnded` is dispatched
-    /// inconsistently. Re-enable once those are fixed by switching this back to a real signal.
+    /// Dormant — duck.ai web FE `replaceState`s `?mode=voice` mid-session and dispatches
+    /// `voiceSessionEnded` inconsistently. Re-enable with a real signal once those are fixed.
     var isCurrentTabUsingVoiceMode: Bool { false }
 
-    /// Reduces the AI-tab chrome (left pill + bottom UTI bar) when the user is in voice mode.
-    /// Idempotent; call from every refresh. Dormant for now (see `isCurrentTabUsingVoiceMode`).
+    /// Hides the AI-tab chrome during voice mode. Idempotent; dormant (see `isCurrentTabUsingVoiceMode`).
     func reconcileVoiceModeChromeForCurrentTab() {
         let active = isCurrentTabUsingVoiceMode
         aiChatTabChatHeaderView?.setVoiceModeActive(active)
         viewCoordinator.setAITabBottomChromeHidden(active)
     }
 
-    /// Derives the toolbar's hidden state from `currentTab?.isAITab`. Idempotent — call from any
-    /// path that flips the current tab.
+    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
     func reconcileToolbarVisibilityForCurrentTab() {
-        // The reconciler exists to keep the toolbar hidden on AI tabs (and re-show it on the way
-        // out). Both legs are unified-toggle-input concerns, so when the feature is off we have
-        // nothing to reconcile and shouldn't fight other subsystems for the toolbar.
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         if isCurrentTabUsingUnifiedInputAIChrome {
             viewCoordinator.toolbar.isHidden = true
         } else {
-            // Respect minimal chrome (URL bar pinned, toolbar collapsed) — re-showing the toolbar
-            // here would flash it back on a non-AI tab that's intentionally in minimal chrome.
+            // Don't re-show on a non-AI tab that's intentionally in minimal chrome.
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
         }
     }

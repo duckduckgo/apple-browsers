@@ -99,13 +99,8 @@ private extension MainViewController {
     }
 
     func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
-        // The `.aiTab(.collapsed) → .aiTab(.expanded)` transition shrinks `contentContainer`
-        // (its bottom is anchored to the input bar's top, which moves up as the input grows).
-        // `WKWebView` lays out its rendered content using the model layer's bounds, so the
-        // chat snaps to its smaller size in one frame while the outer layer's bounds animate
-        // — visible as a gray strip between the rendered chat (white) and the navbar (panel
-        // gray). Mask the snap by overlaying a snapshot of the chat at its old visual state
-        // and clipping the snapshot from the bottom in lockstep with `contentContainer`.
+        // WKWebView snaps to the new size in one frame while the outer layer animates; mask the
+        // gap with a snapshot of the chat at its old visual state.
         let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
         animationStyle.perform({ [self] in
             applyAITabExpandedPose()
@@ -115,15 +110,10 @@ private extension MainViewController {
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
     }
 
-    /// Captures a snapshot of `contentContainer` and pins a clipping wrapper to follow
-    /// `contentContainer`'s frame for the duration of an AI-tab expand animation. Returns the
-    /// wrapper so the caller can schedule its removal once the animation has settled. `nil` if
-    /// the snapshot can't be taken (no AI tab, or the snapshot view fails).
+    /// Captures a snapshot of `contentContainer` at its current (pre-expand) size and pins a
+    /// clipping wrapper that follows the container's frame. Caller removes the wrapper on
+    /// animation completion.
     private func installContentContainerSnapshotMaskForAITabExpandIfNeeded() -> UIView? {
-        // `coordinator.displayState` is flipped to `.aiTab(.expanded)` synchronously *before*
-        // the intent fires, so we don't gate on `!isAITabExpanded` — the `contentContainer`'s
-        // frame is still its old (collapsed-pose) size at this point because the layout pass
-        // hasn't run yet, which is exactly what we want to capture.
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.isAITabState,
               let target = viewCoordinator.contentContainer,

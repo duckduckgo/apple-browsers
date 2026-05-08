@@ -261,17 +261,10 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            // Universal centerY — `textView` height grows with content via
-            // `updateTextViewHeight`, so when the textView is empty the placeholder visually
-            // sits where typed text will appear (single-line tall textView ⇒ centerY ≈ top).
-            // For the AI-tab collapsed pill (taller fixed-height container) this also keeps
-            // the placeholder optically centred in the pill rather than riding too high.
             placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
-            // Trail to the buttons' leading edge (not the textView's) so a visible stop /
-            // search-go-to / voice button truncates the placeholder rather than overlapping it.
-            // When `.noButtons`, the buttonsView has zero intrinsic width so this collapses back
-            // to the original "near the trailing edge" position.
+            // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
+            // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)

@@ -864,7 +864,6 @@ final class AddressBarButtonsViewController: NSViewController {
         let isNewTab = [.newtab].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
-        let isLocalUrl = url?.isLocalURL ?? false
 
         // Privacy entry point button
         let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
@@ -881,7 +880,6 @@ final class AddressBarButtonsViewController: NSViewController {
         && isHypertextUrl
         && !tabViewModel.isShowingErrorPage
         && !hasPendingBarInput
-        && !isLocalUrl
         && !isAIChatPanelActive
 
         /// The `imageButton.image != nil` check is the gate that keeps the left icon out of `.editing(.text)` and

@@ -191,6 +191,73 @@ jobs:
           aws s3 cp $IPA_LOCAL_PATH $ipa_s3_path --acl public-read
           echo "ipa-s3-path=${ipa_s3_path}" >> $GITHUB_OUTPUT
 
+      - name: Generate and upload OTA install manifest and page
+        id: generate-ota
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          BUILD_TYPE: ${{ github.event.inputs.build-type }}
+          IPA_URL: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
+          IPA_S3_PATH: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
+        run: |
+          set -euo pipefail
+
+          # Bundle ID and display title per build type. These must match the
+          # IPA's actual bundle ID exactly or iOS will fail OTA install with a
+          # generic "Unable to install" error.
+          case "${BUILD_TYPE}" in
+            Alpha)
+              export BUNDLE_ID="com.duckduckgo.mobile.ios.alpha"
+              export TITLE="DuckDuckGo Alpha"
+              ;;
+            Release)
+              export BUNDLE_ID="com.duckduckgo.mobile.ios"
+              export TITLE="DuckDuckGo"
+              ;;
+            Experimental)
+              export BUNDLE_ID="com.duckduckgo.mobile.ios.experimental"
+              export TITLE="DuckDuckGo Experimental"
+              ;;
+            *)
+              echo "Unknown build type: ${BUILD_TYPE}" >&2
+              exit 1
+              ;;
+          esac
+
+          export BUILD_TYPE
+          export IPA_URL
+          export BUNDLE_VERSION="${app_version}"
+          export BUILD_NUMBER="${build_number}"
+          export COMMIT_SHORT_SHA="$(git rev-parse --short HEAD)"
+          export BUILD_TIMESTAMP="$(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          # Place manifest + install page in the same <sha>/ directory as the
+          # IPA, named after the IPA's output_name so re-runs on the same SHA
+          # with different suffixes don't overwrite each other.
+          ipa_dir_url="${IPA_URL%/*}"
+          ipa_dir_s3="${IPA_S3_PATH%/*}"
+          manifest_filename="${output_name}.manifest.plist"
+          install_filename="${output_name}.install.html"
+
+          export MANIFEST_URL="${ipa_dir_url}/${manifest_filename}"
+          install_url="${ipa_dir_url}/${install_filename}"
+
+          # URL-encode the manifest URL for embedding in the itms-services link.
+          export MANIFEST_URL_ENCODED="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${MANIFEST_URL}")"
+
+          template_dir="${{ github.workspace }}/.github/templates"
+          python3 "${template_dir}/render.py" "${template_dir}/ios_adhoc_manifest.plist" "${manifest_filename}"
+          python3 "${template_dir}/render.py" "${template_dir}/ios_adhoc_install.html"   "${install_filename}"
+
+          aws s3 cp "${manifest_filename}" "${ipa_dir_s3}/${manifest_filename}" \
+            --acl public-read --content-type "application/x-plist"
+          aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
+            --acl public-read --content-type "text/html; charset=utf-8"
+
+          echo "manifest-url=${MANIFEST_URL}" >> $GITHUB_OUTPUT
+          echo "install-url=${install_url}" >> $GITHUB_OUTPUT
+
       - name: Report success
         env:
           ASANA_TASK_URL: ${{ github.event.inputs.asana-task-url }}
@@ -198,16 +265,19 @@ jobs:
           IPA_S3_PATH: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
           DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
+          INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
+          MANIFEST_URL: ${{ steps.generate-ota.outputs.manifest-url }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
           echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
 
           if [[ -n "$ASANA_TASK_URL" ]]; then
             bundle exec fastlane run asana_add_comment \
               task_url:"$ASANA_TASK_URL" \
-              comment:"New build is available at ${IPA_URL}."
+              comment:"New build is available. Install on iPhone (open in Safari): ${INSTALL_URL} — IPA: ${IPA_URL}"
           fi

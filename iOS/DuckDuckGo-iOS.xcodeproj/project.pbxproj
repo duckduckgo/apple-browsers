@@ -723,7 +723,6 @@
 		850250B520D80419002199C7 /* AtbAndVariantCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850250B420D80419002199C7 /* AtbAndVariantCleanupTests.swift */; };
 		850259682EC353EC004607A9 /* MobileCustomizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850259672EC353E7004607A9 /* MobileCustomizationTests.swift */; };
 		850365F323DE087800D0F787 /* UIImageViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850365F223DE087800D0F787 /* UIImageViewExtension.swift */; };
-		85047B8A1F69692C002A95D8 /* contentblocker.js in Resources */ = {isa = PBXBuildFile; fileRef = 85047B891F69692C002A95D8 /* contentblocker.js */; };
 		85047C772A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85047C762A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift */; };
 		8504E9EA2D8883BA00FF1352 /* TabSwitcherBarsStateHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504E9E92D8883AE00FF1352 /* TabSwitcherBarsStateHandlerTests.swift */; };
 		850559C923C61B5D0055C0D5 /* login-form-detection.js in Resources */ = {isa = PBXBuildFile; fileRef = 850559C823C61B5D0055C0D5 /* login-form-detection.js */; };
@@ -3229,7 +3228,6 @@
 		850250B420D80419002199C7 /* AtbAndVariantCleanupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtbAndVariantCleanupTests.swift; sourceTree = "<group>"; };
 		850259672EC353E7004607A9 /* MobileCustomizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCustomizationTests.swift; sourceTree = "<group>"; };
 		850365F223DE087800D0F787 /* UIImageViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImageViewExtension.swift; sourceTree = "<group>"; };
-		85047B891F69692C002A95D8 /* contentblocker.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = contentblocker.js; sourceTree = "<group>"; };
 		85047C762A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncSettingsViewController+SyncDelegate.swift"; sourceTree = "<group>"; };
 		8504E9E92D8883AE00FF1352 /* TabSwitcherBarsStateHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherBarsStateHandlerTests.swift; sourceTree = "<group>"; };
 		850559C823C61B5D0055C0D5 /* login-form-detection.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "login-form-detection.js"; sourceTree = "<group>"; };
@@ -7026,7 +7024,6 @@
 			isa = PBXGroup;
 			children = (
 				8595BF491FE847EB00F692EC /* ios-js-support */,
-				85047B891F69692C002A95D8 /* contentblocker.js */,
 				850559C823C61B5D0055C0D5 /* login-form-detection.js */,
 			);
 			name = contentblocking;
@@ -11953,7 +11950,6 @@
 				83E2D2B3253CC16B005605F5 /* httpsMobileV2FalsePositives.json in Resources */,
 				4B60AC97252EC07B00E8D219 /* fullscreenvideo.js in Resources */,
 				83E2D2B2253CC16B005605F5 /* httpsMobileV2Bloom.bin in Resources */,
-				85047B8A1F69692C002A95D8 /* contentblocker.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,19 +7,29 @@ description: Invoke ONLY when the user explicitly runs /ddg-diagnose-ci-failure 
 
 Investigate a GitHub Actions workflow failure, classify it, trace test failures back to the local code, and propose a fix.
 
+## Prerequisites
+
+This skill requires the GitHub CLI (`gh`) to be installed and authenticated. Before doing anything else, run:
+
+```bash
+command -v gh >/dev/null && gh auth status
+```
+
+If `gh` is not installed, stop and tell the user to install it (`brew install gh` on macOS) - do not attempt to substitute `curl` against the GitHub API. If `gh` is installed but not authenticated, stop and tell the user to run `gh auth login`. Either way, bail out before resolving inputs.
+
 ## Inputs
 
-The skill resolves any of the following to a single GitHub Actions run to investigate. The repo is always `duckduckgo/apple-browsers`. Resolve the input first, then start at Step 1 with the resulting `run_id` and any optional `job_id` or `attempt_number`.
+The skill resolves any of the following to a single GitHub Actions run to investigate. `gh` autodetects the repo from the current working directory's git remote, so you don't need to pass `--repo` unless the user supplies a URL pointing at a different repo - in which case extract `<owner>/<repo>` from the URL and pass it explicitly with `--repo <owner>/<repo>`. Resolve the input first, then start at Step 1 with the resulting `run_id` and any optional `job_id` or `attempt_number`.
 
 ### Actions run URL
 
-Example: `https://github.com/duckduckgo/apple-browsers/actions/runs/25519433222` (optionally with `/job/<id>` or `/attempts/N`).
+Example: `https://github.com/<owner>/<repo>/actions/runs/25519433222` (optionally with `/job/<id>` or `/attempts/N`).
 
 Extract `run_id`, `job_id` if present, and `attempt_number` if the URL includes `/attempts/N`. Use directly. Do not discard the attempt number: all later `gh run view` commands for this run must include `--attempt {attempt_number}` so logs and status match the supplied attempt instead of defaulting to the latest attempt.
 
 ### PR URL
 
-Example: `https://github.com/duckduckgo/apple-browsers/pull/4752`.
+Example: `https://github.com/<owner>/<repo>/pull/4752`.
 
 Extract the PR number, then resolve as below.
 
@@ -28,19 +38,19 @@ Extract the PR number, then resolve as below.
 Example: `4752` or `#4752`.
 
 ```bash
-gh pr checks <pr_number> --repo duckduckgo/apple-browsers --json name,state,link,workflow
+gh pr checks <pr_number> --json name,state,link,workflow
 ```
 
-Pick the most recent failed check's run URL. If multiple checks failed, prefer the broadest test workflow (`iOS - PR Checks`, `macOS - PR Checks`, `DBP - PR Checks`) over lint-only or build-only ones.
+Pick the most recent failed check's run URL. If multiple checks failed, prefer the broadest test workflow over lint-only or build-only ones (in the apple-browsers monorepo that's `iOS - PR Checks`, `macOS - PR Checks`, `DBP - PR Checks`).
 
 ### Apple CI Failing Tests Asana task URL
 
-Example: `https://app.asana.com/1/137249556945/project/1205237866452338/task/<gid>`.
+DDG-monorepo specific. Example: `https://app.asana.com/1/137249556945/project/1205237866452338/task/<gid>`.
 
 Extract the trailing numeric task GID. Fetch the task via the Asana MCP `asana_get_task` tool (pass the GID as `task_id`); the failing test's class and method are typically in the title (`<TestClass>.<testMethod>` or similar). Find the most recent failure:
 
 ```bash
-gh run list --repo duckduckgo/apple-browsers --branch=main --status=failure --limit=20 --json databaseId,workflowName,createdAt
+gh run list --branch=main --status=failure --limit=20 --json databaseId,workflowName,createdAt
 ```
 
 For each candidate run download the JUnit XML artifact (`*-unittests.xml`) and grep for a `<failure>` node matching the test name; use the latest matching run.
@@ -53,16 +63,16 @@ For each candidate run download the JUnit XML artifact (`*-unittests.xml`) and g
 git rev-parse --abbrev-ref HEAD
 ```
 
-If the branch is `main`, take the most recent failed run:
+If the branch is the repo's default branch, take the most recent failed run:
 
 ```bash
-gh run list --repo duckduckgo/apple-browsers --branch=main --status=failure --limit=1 --json databaseId
+gh run list --branch=<default_branch> --status=failure --limit=1 --json databaseId
 ```
 
 Otherwise, find the open PR for the current branch:
 
 ```bash
-gh pr list --repo duckduckgo/apple-browsers --head <branch> --state open --limit 1 --json number
+gh pr list --head <branch> --state open --limit 1 --json number
 ```
 
 Then resolve as a PR number. If the branch has no open PR, say so and ask.
@@ -70,10 +80,6 @@ Then resolve as a PR number. If the branch has no open PR, say so and ask.
 ### When resolution fails
 
 If resolution turns up nothing (PR has no failed checks, branch has no PR, Asana task title doesn't name a test), say so and stop - don't guess.
-
-## Prerequisites
-
-Requires `gh` authenticated. If `gh auth status` fails, ask the user to run `gh auth login`.
 
 ## Step 1: Fetch Run Data
 
@@ -106,17 +112,23 @@ For any non-zero JUnit failure count, the XML is the authoritative source: preci
 
 Use the REST API directly (`gh api`) rather than `gh run download` so the flow is stable across gh CLI versions and works correctly for non-latest attempts.
 
+First, resolve the repo from the current working directory (or use the `<owner>/<repo>` extracted from the input URL):
+
+```bash
+repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+```
+
 List artifacts:
 
 ```bash
-gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/artifacts \
+gh api "repos/$repo/actions/runs/{run_id}/artifacts" \
   --jq '.artifacts[] | {id, name, created_at}'
 ```
 
 If `attempt_number` was supplied, the same name may appear once per attempt (re-runs add new artifacts to the same run rather than replacing them). Fetch the attempt's time window and pick the artifact whose `created_at` falls within it:
 
 ```bash
-gh api repos/duckduckgo/apple-browsers/actions/runs/{run_id}/attempts/{attempt_number} \
+gh api "repos/$repo/actions/runs/{run_id}/attempts/{attempt_number}" \
   --jq '{run_started_at, updated_at}'
 ```
 
@@ -124,7 +136,7 @@ Download by artifact ID - this disambiguates duplicate names and avoids relying 
 
 ```bash
 mkdir -p /tmp/ci-artifacts/{name}
-gh api repos/duckduckgo/apple-browsers/actions/artifacts/{artifact_id}/zip > /tmp/artifact.zip
+gh api "repos/$repo/actions/artifacts/{artifact_id}/zip" > /tmp/artifact.zip
 unzip -o /tmp/artifact.zip -d /tmp/ci-artifacts/{name}/
 ```
 
@@ -151,7 +163,7 @@ For each failure, capture: test class, method, failure message, and duration (un
 
 ### 3b: Map to local files
 
-Test directories use `*Tests` and `*UITests` suffixes under `iOS/`, `macOS/`, and `SharedPackages/*/Tests/`. Search:
+Test files conventionally use `*Tests` and `*UITests` suffixes. In the apple-browsers monorepo they live under `iOS/`, `macOS/`, and `SharedPackages/*/Tests/`; in other repos, grep from the repo root or whichever subtree is appropriate.
 
 ```bash
 grep -rn --include='*.swift' "func {testMethodName}" iOS/ macOS/ SharedPackages/
@@ -173,9 +185,9 @@ git blame -L {failing_line_start},{failing_line_end} {test_file_path}
 
 If the test or its production target changed in the last few commits, that's almost certainly the regression source.
 
-**Merge-order regression (PR passed its own CI but fails on main):**
+**Merge-order regression (PR passed its own CI but fails on the default branch):**
 
-When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks under `iOS/SharedTestUtils/`, `macOS/SharedTestUtils/`, etc.) between this PR's last green run and main HEAD:
+When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks - in the apple-browsers monorepo these live under `iOS/SharedTestUtils/`, `macOS/SharedTestUtils/`, etc.) between this PR's last green run and the default branch's HEAD:
 
 ```bash
 # Find this PR's last green run for the failed workflow, capture the SHA
@@ -192,11 +204,11 @@ Use the workflow name identified in Step 1. A diff in a helper or mock used by t
 When local git shows no relevant changes, or the failure looks intermittent:
 
 ```bash
-# Last green runs of the same workflow on main
-gh run list --workflow="{workflow_name}" --branch=main --status=success --limit=5 --json headSha,createdAt,displayTitle
+# Last green runs of the same workflow on the default branch
+gh run list --workflow="{workflow_name}" --branch=<default_branch> --status=success --limit=5 --json headSha,createdAt,displayTitle
 
 # Recent runs to see the fail/pass pattern
-gh run list --workflow="{workflow_name}" --branch=main --limit=20 --json conclusion,headSha,createdAt
+gh run list --workflow="{workflow_name}" --branch=<default_branch> --limit=20 --json conclusion,headSha,createdAt
 
 # Runs on this PR branch - did the test fail across all pushes (deterministic) or only some (flaky)?
 gh run list --branch={pr_branch} --workflow="{workflow_name}" --limit=10
@@ -211,7 +223,7 @@ Likely flaky if any apply:
 | Signal | Why |
 |--------|-----|
 | Timing-dependent (`waitForExpectations`, `XCTWaiter`, `sleep`, `Task.sleep`, timeouts) | CI runners are slower/less predictable than dev machines |
-| Test passed on retry (`-retry-tests-on-failure` is used in `dbp_pr_checks.yml`, `macos_pr_checks.yml`, `macos_sync_end_to_end.yml`) | By definition, intermittent = flaky |
+| Test passed on retry (e.g. `-retry-tests-on-failure` configured in the workflow - in the apple-browsers monorepo this includes `dbp_pr_checks.yml`, `macos_pr_checks.yml`, `macos_sync_end_to_end.yml`) | By definition, intermittent = flaky |
 | Only fails on one matrix variant (Sandbox vs Non-Sandbox, sim version, etc.) | Environmental dependency |
 | Shared mutable state - singletons, globals, class-level properties | Order/parallelism changes outcome |
 | Real network/filesystem/UserDefaults access without isolation | External state varies |

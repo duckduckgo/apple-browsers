@@ -1123,6 +1123,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_dbp_freemium_settings_entry_point_clicked": {
+        "description": "Fires when the user taps the freemium Personal Information Removal entry point CTA in Settings.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_dbp_notification_opened_first_scan_complete": {
         "description": "Fires when the user opens the initial scan completion notification.",
         "owners": ["quanganhdo"],

@@ -294,7 +294,7 @@ extension MainViewController {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
-            if hasEntitlement {
+            if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp)
                 }, deepLinkTarget: .dbp)
@@ -439,6 +439,8 @@ extension MainViewController {
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
@@ -473,6 +475,7 @@ extension MainViewController {
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                                                  freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
@@ -542,6 +545,8 @@ extension MainViewController {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,

@@ -21,11 +21,12 @@ import Foundation
 /// Evaluates which onboarding flow to present based on the app's launch context.
 public protocol OnboardingFlowEvaluating {
 
-    /// Evaluates and returns the appropriate onboarding flow type based on the provided URL.
+    /// Evaluates and returns the appropriate onboarding flow type and source based on the provided URL.
     ///
     /// - Parameter url: The deep link URL from app launch, or `nil` for normal app icon launches.
     ///                  Expected format: `<scheme>://<identifier>` (e.g., `ddgCPP://duck-ai`)
     ///
-    /// - Returns: The determined `OnboardingFlowType`. Defaults to `.default` if URL is `nil`, unrecognised or has an invalid format.
-    func evaluateOnboardingFlow(from url: URL?) -> OnboardingFlowType
+    /// - Returns: A tuple with the determined `OnboardingFlowType` and `OnboardingSource`.
+    ///            The `flow` and `source` default to `.default` when URL is `nil`, unrecognised, or invalid.
+    func evaluateOnboardingFlow(from url: URL?) -> (flow: OnboardingFlowType, source: OnboardingSource)
 }

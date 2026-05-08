@@ -318,6 +318,48 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .clearOnly)
     }
 
+    func test_setAIVoiceChatEnabled_aiChatModeWithEmptyText_keepsInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_setAIVoiceChatEnabled_collapsedAIChatWithVoiceSearchDisabled_showsVoiceButton() {
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_setAIVoiceChatEnabled_expandedAIChatWithVoiceSearchDisabled_hidesVoiceButton() {
+        sut.isAIVoiceChatEnabled = true
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_setAIVoiceChatEnabled_aiChatModeWithText_keepsClearButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.updateCurrentText("hello")
+
+        XCTAssertEqual(sut.buttonState, .clearOnly)
+    }
+
+    func test_hidesVoiceButton_aiChatModeWithAIVoiceChatEnabled_hidesInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.hidesVoiceButton = true
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
     // MARK: - microphoneButtonTapped
 
     func test_microphoneButtonTapped_firesPublisher() {
@@ -327,6 +369,16 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         sut.microphoneButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_aiVoiceChatButtonTapped_firesPublisher() {
+        let expectation = expectation(description: "aiVoiceChatButtonTappedPublisher fires")
+        sut.aiVoiceChatButtonTappedPublisher
+            .sink { expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.aiVoiceChatButtonTapped()
         waitForExpectations(timeout: 1)
     }
 

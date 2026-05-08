@@ -201,7 +201,9 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate,
+                                                            freemiumPIRDebugSettings: self.dependencies.freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: self.dependencies.freemiumDBPUserStateManager)
                 }
             }) : nil,
             webExtensionsDebugScreen,

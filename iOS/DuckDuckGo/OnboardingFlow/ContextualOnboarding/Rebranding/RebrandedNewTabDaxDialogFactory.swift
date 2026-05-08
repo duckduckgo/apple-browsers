@@ -66,7 +66,10 @@ private extension RebrandedNewTabDaxDialogFactory {
     func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSearchSuggestionsViewModel(
             suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
-            delegate: delegate
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.onboardingPixelReporter.measureTrySearchDialogSuggestedSearchTapped()
+            }
         )
 
         let manualDismissAction = { [weak self] in
@@ -81,6 +84,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.search(.shown))
         }
     }
 
@@ -89,7 +93,12 @@ private extension RebrandedNewTabDaxDialogFactory {
 extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
+        let onDismiss = { [weak self] in
+            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            onDismiss()
+        }
+
+        return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(
@@ -118,7 +127,10 @@ private extension RebrandedNewTabDaxDialogFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-            delegate: delegate
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.onboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
+            }
         )
 
         let manualDismissAction = { [weak self] in
@@ -133,6 +145,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -177,6 +190,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
     
@@ -219,6 +233,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 proceedText: proceedButtonText,
                 dismissText: dismissText,
                 proceedAction: { [weak self] in
+                    self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
                     NotificationCenter.default.post(
@@ -228,7 +243,9 @@ private extension RebrandedNewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
-                dismissAction: {
+                dismissAction: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 },
                 onManualDismiss: { [weak self] in
@@ -241,6 +258,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .applyNewTabOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
+            self?.onboardingPixelReporter.measureSubscriptionPromoDialogShown()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true
         }
     }

@@ -182,12 +182,18 @@ final class OnboardingIntroViewModel: ObservableObject {
     func startOnboardingAction(isResumingOnboarding: Bool = false) {
         if isResumingOnboarding {
             pixelReporter.measureResumeOnboardingCTAAction()
+        } else {
+            pixelReporter.measureStartOnboardingCTAAction()
         }
         makeNextViewState()
     }
 
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
+    }
+
+    func skipOnboardingPresented() {
+        pixelReporter.measureSkipOnboardingScreenImpression()
     }
 
     func confirmSkipOnboardingAction() {
@@ -206,6 +212,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func cancelSetDefaultBrowserAction() {
+        pixelReporter.measureSetDefaultBrowserSkipped()
         makeNextViewState()
     }
 
@@ -224,17 +231,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func appIconPickerContinueAction() {
-        if appIconProvider() != .defaultAppIcon {
-            pixelReporter.measureChooseCustomAppIconColor()
-        }
-
+        pixelReporter.measureChooseAppIconColor(appIconProvider())
         makeNextViewState()
     }
 
     func selectAddressBarPositionAction() {
-        if addressBarPositionProvider() == .bottom {
-            pixelReporter.measureChooseBottomAddressBarPosition()
-        }
+        pixelReporter.measureChooseAddressBarPosition(addressBarPositionProvider())
         makeNextViewState()
     }
 

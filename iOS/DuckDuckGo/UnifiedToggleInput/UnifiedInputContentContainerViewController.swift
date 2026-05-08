@@ -240,15 +240,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateEscapeHatchTopInset()
     }
 
-    /// Bottom-bar Duck.ai unconditionally applies the +44pt clearance because the suggestions table starts at content y=0,
-    /// so cells need (x) dismiss-button clearance regardless of whether the hatch is present (without it, the first cell
-    /// slides under the floating dismiss button when the user is typing). Top-bar mirrors the Search-side tray's pull-up
-    /// rule, gating the negative offset on hatch presence.
+    /// Duck.ai suggestions tray uses the same escape-hatch-driven inset as the Search-side tray:
+    /// 0 when there's no hatch, +44pt to clear the hatch card in bottom-bar, -10pt pull-up in top-bar.
     private var duckAITopInset: CGFloat {
-        if isUsingTopBarPosition {
-            return escapeHatchModel != nil ? Metrics.escapeHatchTopBarTrayPullUp : 0
-        }
-        return Metrics.escapeHatchBaseTopInset
+        Self.computeSuggestionTrayEscapeHatchInset(
+            hasEscapeHatch: escapeHatchModel != nil,
+            isBottomBar: !isUsingTopBarPosition
+        )
     }
 
     /// Updates both surfaces' top insets so the (x) dismiss button doesn't overlap their content in bottom-bar mode.
@@ -263,10 +261,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool,
                                                       isBottomBar: Bool) -> CGFloat {
-        // Tray: bottom bar needs space for dismiss button; top bar gets a small pull-up.
-        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchBaseTopInset : 0
-        let trayTopBarPullUp: CGFloat = hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
-        return suggestionInsetBase + trayTopBarPullUp
+        // Top-bar tightening when the hatch is present; both surfaces handle their own
+        // breathing room around the hatch card internally, so no bottom-bar inset is needed.
+        return hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
     }
 
     func setText(_ text: String) {
@@ -685,7 +682,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
-        static let escapeHatchBaseTopInset: CGFloat = 44
         static let escapeHatchLogoOffset: CGFloat = 120
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10

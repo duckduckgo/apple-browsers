@@ -21,6 +21,7 @@ import AVKit
 import BrowserServicesKit
 import Core
 import Onboarding
+import Persistence
 import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
@@ -57,6 +58,7 @@ final class OnboardingManager {
     private let variantManager: VariantManager
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
+    private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
 
     private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
@@ -90,7 +92,8 @@ final class OnboardingManager {
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
-        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
@@ -98,8 +101,8 @@ final class OnboardingManager {
         self.isIphone = isIphone
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
+        self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
     }
-
 }
 
 // MARK: - New User Debugging
@@ -151,7 +154,7 @@ extension OnboardingManager: OnboardingAddToDockVisibilityManager {
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {
         onboardingSteps.contains(.addToDockPromo)
     }
-    
+
 }
 
 // MARK: - Onboarding Manager + Onboarding Flows
@@ -174,16 +177,20 @@ extension OnboardingManager: OnboardingFlowManaging {
             return
         }
 
-        let flowType = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
-        Logger.onboarding.debug("Configured onboarding flow: \(flowType.rawValue, privacy: .public)")
+        let evaluatedOnboarding = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
+        Logger.onboarding.debug("Configured onboarding flow: \(evaluatedOnboarding.flow.rawValue, privacy: .public)")
 
-        switch flowType {
+        let resolvedFlow: OnboardingFlowType
+        switch evaluatedOnboarding.flow {
         case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
             Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
-            tutorialSettings.onboardingFlowType = .default
+            resolvedFlow = .default
         default:
-            tutorialSettings.onboardingFlowType = flowType
+            resolvedFlow = evaluatedOnboarding.flow
         }
+
+        tutorialSettings.onboardingFlowType = resolvedFlow
+        persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)
     }
 
 }
@@ -191,6 +198,13 @@ extension OnboardingManager: OnboardingFlowManaging {
 // MARK: - Private
 
 private extension OnboardingManager {
+
+    /// Persist the flow and source for onboarding pixels based on the evaluated context.
+    /// This must be called before onboarding is presented.
+    func persistOnboardingPixelContext(flow: OnboardingFlowType, source: OnboardingSource) {
+        sharedPixelsStorage.onboardingFlow = OnboardingPixelParameter.Flow(flow)
+        sharedPixelsStorage.onboardingSource = OnboardingPixelParameter.Source(source)
+    }
 
     func stepsForCurrentFlow() -> [OnboardingIntroStep] {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
@@ -207,4 +221,29 @@ private extension OnboardingManager {
         isIphone ? iPhoneFlow : iPadFlow
     }
 
+}
+
+private extension OnboardingPixelParameter.Source {
+
+    init(_ source: OnboardingSource) {
+        switch source {
+        case .default:
+            self = .default
+        case .duckAICPP:
+            self = .duckAICustomProductPage
+        }
+    }
+
+}
+
+private extension OnboardingPixelParameter.Flow {
+
+    init(_ flow: OnboardingFlowType) {
+        switch flow {
+        case .default:
+            self = .default
+        case .duckAI:
+            self = .duckAI
+        }
+    }
 }

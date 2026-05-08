@@ -44,6 +44,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         segueToFeedbackCallCount = 0
         segueToSyncSettingsCallCount = 0
         segueToSettingsAppearanceCallCount = 0
+        segueToPIRCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -146,6 +147,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             XCTAssertEqual(segueToAIChatSettingsCallCount, count)
             XCTAssertEqual(segueToFeedbackCallCount, count)
             XCTAssertEqual(segueToSettingsAppearanceCallCount, count)
+            XCTAssertEqual(segueToPIRCallCount, count)
         }
 
         // Start state
@@ -163,6 +165,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         DefaultMessageNavigator(delegate: self).navigateTo(.appearance, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsAppearanceCallCount, 1)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.personalInformationRemoval, presentationStyle: .dismissModalsAndPresentFromRoot)
+        XCTAssertEqual(segueToPIRCallCount, 1)
 
         // End state
         assertSegueCount(1)

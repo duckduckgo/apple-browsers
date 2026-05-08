@@ -330,5 +330,46 @@
         "key": "dur",
         "type": "string",
         "description": "Duration in seconds (as a floating-point string)"
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "onboardingSource": {
+        "key": "source",
+        "type": "string",
+        "description": "User's entry point into the onboarding flow",
+        "enum": ["default", "duckai_cpp"]
+    },
+    "onboardingFlow": {
+        "key": "flow",
+        "type": "string",
+        "description": "Version of the onboarding flow the user entered",
+        "enum": ["default", "duckai"]
+    },
+    "onboardingFlowVariant": {
+        "key": "variant",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
     }
 }

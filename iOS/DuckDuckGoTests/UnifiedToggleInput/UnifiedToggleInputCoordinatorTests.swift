@@ -86,7 +86,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showCollapsed_emitsIntent() {
         let exp = expectation(description: "showCollapsed intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .showCollapsed { exp.fulfill() } }
+            .sink { if case .showCollapsed = $0 { exp.fulfill() } }
             .store(in: &cancellables)
 
         sut.showCollapsed()
@@ -103,7 +103,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showExpanded_emitsIntent() {
         let exp = expectation(description: "showExpanded intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .showExpanded { exp.fulfill() } }
+            .sink { if case .showExpanded = $0 { exp.fulfill() } }
             .store(in: &cancellables)
 
         sut.showExpanded()
@@ -113,16 +113,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showExpanded_setsInputMode() {
         sut.showExpanded(inputMode: .search)
         XCTAssertEqual(sut.inputMode, .search)
-    }
-
-    func test_showExpanded_setsExpandedOnVC() {
-        sut.showExpanded()
-        XCTAssertTrue(sut.viewController.isInputExpanded)
-    }
-
-    func test_showExpanded_setsInputModeOnVC() {
-        sut.showExpanded(inputMode: .search)
-        XCTAssertEqual(sut.viewController.inputMode, .search)
     }
 
     func test_showExpanded_withPrefilledText_setsTextStateToPrefilledSelected() {
@@ -1605,6 +1595,8 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode
     }
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

@@ -237,16 +237,14 @@ extension HomePage.Models {
         }
 
         var firstRunFeatures: [FeatureType] {
-            var features = availableFeatures.filter { $0 != .duckplayer }
-            features.insert(.duckplayer, at: 0)
-            return features
+            availableFeatures
         }
 
         private var availableFeatures: [FeatureType] {
             if dockCustomizer.supportsAddingToDock {
-                return [.duckplayer, .youtubeAdBlocking, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+                return [.youtubeAdBlocking, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
             } else {
-                return [.duckplayer, .youtubeAdBlocking, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
+                return [.youtubeAdBlocking, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
             }
         }
 

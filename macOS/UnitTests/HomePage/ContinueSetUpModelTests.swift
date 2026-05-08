@@ -44,7 +44,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     var cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler!
     private var nonAppStoreFeatureTypes: [HomePage.Models.FeatureType] {
-        [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+        [.emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
     }
 
     @MainActor override func setUp() {
@@ -130,7 +130,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
     @MainActor func testWhenInitializedForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
         homePageContinueSetUpModelPersisting.isFirstSession = true
-        var expectedMatrix = [[HomePage.Models.FeatureType.duckplayer, .emailProtection]]
+        var expectedMatrix = [[HomePage.Models.FeatureType.emailProtection, .defaultBrowser]]
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -223,74 +223,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
     }
 
-    @MainActor func testWhenUserHasDuckPlayerEnabledAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerDisabledAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerOnAlwaysAskAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerOnAlwaysAskAndOverlayButtonIsPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
-    }
-
     @MainActor func testThatWhenAllFeatureInactiveThenVisibleMatrixIsEmpty() {
         capturingDefaultBrowserProvider.isDefault = true
         emailStorage.isEmailProtectionEnabled = true
@@ -338,9 +270,6 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         vm.removeItem(for: .importBookmarksAndPasswords)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.importBookmarksAndPasswords))
-
-        vm.removeItem(for: .duckplayer)
-        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.duckplayer))
 
         vm.removeItem(for: .emailProtection)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.emailProtection))
@@ -443,12 +372,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(vm.visibleFeaturesMatrix.flatMap { $0 }.count, numberOfFeatures - 1)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDuckPlayerThenItHandlesCardAction() {
-        vm.performAction(for: .duckplayer)
-
-        XCTAssertEqual(cardActionsHandler.cardActionsPerformed, [.duckplayer])
-    }
-
     @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItHandlesCardAction() {
         vm.performAction(for: .emailProtection)
 
@@ -473,12 +396,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.removeItem(for: .dock)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .addAppToDockMac)
-    }
-
-    @MainActor func testWhenDismissingDuckplayerCardThenItFiresPixel() {
-        vm.removeItem(for: .duckplayer)
-
-        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .duckplayer)
     }
 
     @MainActor func testWhenDismissingEmailProtectionCardThenItFiresPixel() {
@@ -527,50 +444,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.shouldShowAllFeatures = true
 
         XCTAssertTrue(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
-    }
-
-    // MARK: - YouTube Ad Blocking ↔ Duck Player mutual exclusion
-
-    @MainActor func testWhenYTAdBlockingEligibleThenDuckPlayerCardIsHidden() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
-
-        vm.shouldShowAllFeatures = true
-
-        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
-        XCTAssertTrue(visibleFeatures.contains(.youtubeAdBlocking))
-        XCTAssertFalse(visibleFeatures.contains(.duckplayer))
-    }
-
-    @MainActor func testWhenYTAdBlockingNotEligibleThenDuckPlayerCardIsVisible() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: false, isEnabledByUser: true)
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
-
-        vm.shouldShowAllFeatures = true
-
-        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
-        XCTAssertFalse(visibleFeatures.contains(.youtubeAdBlocking))
-        XCTAssertTrue(visibleFeatures.contains(.duckplayer))
-    }
-
-    @MainActor func testWhenYTAdBlockingDismissedThenDuckPlayerCardBecomesVisible() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
-
-        vm.shouldShowAllFeatures = true
-        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.duckplayer))
-
-        vm.removeItem(for: .youtubeAdBlocking)
-
-        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
-        XCTAssertFalse(visibleFeatures.contains(.youtubeAdBlocking))
-        XCTAssertTrue(visibleFeatures.contains(.duckplayer))
     }
 
     // MARK: - YouTube Ad Blocking action handling & dismissal

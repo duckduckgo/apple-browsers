@@ -97,7 +97,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// Cards sorted in default order, for standard ordering.
     private let defaultStandardCards: [NewTabPageDataModel.CardID] = [
-        .duckplayer,
         .youtubeAdBlocking,
         .emailProtection,
         .defaultApp,
@@ -117,7 +116,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         LeveledCard(cardID: .emailProtection, level: .level1),
         LeveledCard(cardID: .defaultApp, level: .level2),
         LeveledCard(cardID: .addAppToDockMac, level: .level2),
-        LeveledCard(cardID: .duckplayer, level: .level2),
         LeveledCard(cardID: .youtubeAdBlocking, level: .level2),
         LeveledCard(cardID: .bringStuff, level: .level2),
         LeveledCard(cardID: .subscription, level: .level2)
@@ -322,10 +320,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .addAppToDockMac:
             return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
-            // `.youtubeAdBlocking` takes precedence — hide Duck Player when YT ad-blocking is eligible.
-            return duckPlayerPreferences.duckPlayerModeBool == nil
-                && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
-                && !adBlockingAvailability.isEnabled
+            // Duck Player Next Steps card is deprecated and replaced by `.youtubeAdBlocking`.
+            // Returning false also protects users with a stale `.duckplayer` entry in their persisted
+            // advanced-ordering list (`persistor.orderedCardIDs`) from a prior app version.
+            return false
         case .emailProtection:
             return !emailManager.isSignedIn
         case .subscription:

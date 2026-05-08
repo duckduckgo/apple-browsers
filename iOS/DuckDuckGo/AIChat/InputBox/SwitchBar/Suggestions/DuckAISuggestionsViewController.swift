@@ -60,6 +60,10 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let recentChatsHeaderBottomPadding: CGFloat = 24
     }
 
+    /// Suppresses the "Recent Chats" section header per the unified-input redesign.
+    /// Flip to `true` to restore the header; rendering logic below is preserved.
+    private static let areSectionHeadersEnabled = false
+
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
 
     private let chatViewModel: AIChatSuggestionsViewModel
@@ -414,11 +418,13 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard Self.areSectionHeadersEnabled else { return 0 }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return 0 }
         return Constants.recentChatsHeaderHeight
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard Self.areSectionHeadersEnabled else { return nil }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return nil }
         return makeRecentChatsHeaderView()
     }

@@ -256,9 +256,7 @@ extension RemoteMessagingStore {
                    let firstShown = remoteMessageManagedObject.firstShownDate,
                    let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day,
                    daysSinceFirstShown >= dismissAfterDays {
-                    remoteMessageManagedObject.status = NSNumber(value: RemoteMessageStatus.dismissed.rawValue)
-                    self.invalidateRemoteMessagingConfigs(in: context)
-                    try? context.save()
+                    self.dismissExpiredMessage(withID: id)
                     continue
                 }
 
@@ -460,6 +458,14 @@ extension RemoteMessagingStore {
                 remoteMessageManagedObject.id = remoteMessage.id
                 remoteMessageManagedObject.shown = false
             }
+        }
+    }
+
+    private func dismissExpiredMessage(withID id: String) {
+        context.performAndWait {
+            updateRemoteMessage(withID: id, toStatus: .dismissed, in: context)
+            invalidateRemoteMessagingConfigs(in: context)
+            try? context.save()
         }
     }
 

@@ -47,7 +47,8 @@ struct HomePageConfigurationTests {
         #expect(storeMock.capturedSurfaces == .newTabPage)
     }
 
-    @Test("When refreshed with openedAfterIdle true, trigger is afterIdle")
+    @available(iOS 16, *)
+    @Test("When refreshed with openedAfterIdle true, trigger is afterIdle", .timeLimit(.minutes(1)))
     func refreshWithOpenedAfterIdlePassesAfterIdleTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
@@ -61,7 +62,8 @@ struct HomePageConfigurationTests {
         #expect(storeMock.capturedTrigger == .afterIdle)
     }
 
-    @Test("When refreshed with openedAfterIdle false, trigger is nil")
+    @available(iOS 16, *)
+    @Test("When refreshed with openedAfterIdle false, trigger is nil", .timeLimit(.minutes(1)))
     func refreshWithOpenedAfterIdleFalsePassesNilTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
@@ -75,7 +77,8 @@ struct HomePageConfigurationTests {
         #expect(storeMock.capturedTrigger == nil)
     }
 
-    @Test("When refreshed without parameter, trigger is nil (backward compat)")
+    @available(iOS 16, *)
+    @Test("When refreshed without parameter, trigger is nil (backward compat)", .timeLimit(.minutes(1)))
     func refreshWithoutParameterPassesNilTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()

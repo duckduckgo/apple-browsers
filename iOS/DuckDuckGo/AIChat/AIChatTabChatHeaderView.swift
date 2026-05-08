@@ -49,9 +49,24 @@ final class AIChatTabChatHeaderView: UIView {
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
-    private var isSubscriptionActive: Bool = false
-    private var isVoiceModeActive: Bool = false
-    private var isNavigationVisible: Bool = false
+    private struct ViewState: Equatable {
+        var isSubscriptionActive: Bool = false
+        var isVoiceModeActive: Bool = false
+        var canGoBack: Bool = false
+        var canGoForward: Bool = false
+
+        var showsNavPair: Bool { canGoBack && canGoForward }
+        var showsStandaloneBack: Bool { canGoBack && !canGoForward }
+        var showsStandaloneForward: Bool { canGoForward && !canGoBack }
+        var isNavigationVisible: Bool { canGoBack || canGoForward }
+    }
+
+    private var state = ViewState() {
+        didSet {
+            guard state != oldValue else { return }
+            applyState()
+        }
+    }
 
     private lazy var backButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.arrowLeft,
@@ -267,37 +282,32 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     func configure(isSubscriptionActive: Bool) {
-        self.isSubscriptionActive = isSubscriptionActive
-        titleContainer.isHidden = isSubscriptionActive
-        titleLabel.isHidden = !isSubscriptionActive
+        state.isSubscriptionActive = isSubscriptionActive
     }
 
     func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
-        let showsNavPair = canGoBack && canGoForward
-        let showsStandaloneBack = canGoBack && !canGoForward
-        let showsStandaloneForward = canGoForward && !canGoBack
-        isNavigationVisible = canGoBack || canGoForward
-
-        backPill.isHidden = !showsStandaloneBack
-        forwardPill.isHidden = !showsStandaloneForward
-        navPairPill.isHidden = !showsNavPair
-        updateLeftChatControlsVisibility()
-        // Both arrows in the left pill crowd the row — drop the title slot. Hiding the wrapper
-        // hides both children regardless of the active subscription state.
-        titleHolder.isHidden = showsNavPair
+        var newState = state
+        newState.canGoBack = canGoBack
+        newState.canGoForward = canGoForward
+        state = newState
     }
 
     /// Hides the chats / new-chat pill in voice mode (back/forward stay so the user can exit).
     func setVoiceModeActive(_ active: Bool) {
-        guard isVoiceModeActive != active else { return }
-        isVoiceModeActive = active
-        updateLeftChatControlsVisibility()
+        state.isVoiceModeActive = active
     }
 
-    private func updateLeftChatControlsVisibility() {
-        leftPairPill.isHidden = isVoiceModeActive
-        // Compose / new-chat is suppressed when nav arrows are visible — the row gets cluttered.
-        newChatButton.isHidden = isNavigationVisible
+    private func applyState() {
+        titleContainer.isHidden = state.isSubscriptionActive
+        titleLabel.isHidden = !state.isSubscriptionActive
+        // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
+        titleHolder.isHidden = state.showsNavPair
+        backPill.isHidden = !state.showsStandaloneBack
+        forwardPill.isHidden = !state.showsStandaloneForward
+        navPairPill.isHidden = !state.showsNavPair
+        leftPairPill.isHidden = state.isVoiceModeActive
+        // Compose suppressed when nav arrows are visible — the row gets cluttered.
+        newChatButton.isHidden = state.isNavigationVisible
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -324,9 +334,6 @@ final class AIChatTabChatHeaderView: UIView {
         pillContentSuperview(for: forwardPill).addSubview(forwardButton)
         pillContentSuperview(for: navPairPill).addSubview(navPairStack)
         pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
-        backPill.isHidden = true
-        forwardPill.isHidden = true
-        navPairPill.isHidden = true
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
@@ -436,7 +443,7 @@ final class AIChatTabChatHeaderView: UIView {
             }
         ]
 
-        configure(isSubscriptionActive: false)
+        applyState()
         updateButtonShadows()
     }
 
@@ -552,7 +559,7 @@ final class AIChatTabChatHeaderView: UIView {
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
     @objc private func upgradeTapped() {
-        if !isSubscriptionActive {
+        if !state.isSubscriptionActive {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
         }
     }

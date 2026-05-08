@@ -31,7 +31,6 @@ import UIKit
 
 private let aiTabToolbarLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AITabToolbar")
 private var toolbarIsHiddenObservationKey: UInt8 = 0
-private var aiChatVoiceSessionActiveKey: UInt8 = 0
 
 extension MainViewController {
 
@@ -103,63 +102,42 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// On AI tab, true when either the URL is a `?mode=voice` URL OR the page has dispatched
-    /// `voiceSessionStarted`. Both signals are needed: URL covers connection-failure cases the
-    /// notification misses; the session flag covers `replaceState` URL-cleanup mid-session.
-    var isCurrentTabUsingVoiceMode: Bool {
-        guard let currentTab, currentTab.isAITab else { return false }
-        return tabIsAtVoiceModeURL(currentTab) || aiChatVoiceSessionActive
-    }
-
-    private var aiChatVoiceSessionActive: Bool {
-        get { (objc_getAssociatedObject(self, &aiChatVoiceSessionActiveKey) as? Bool) ?? false }
-        set { objc_setAssociatedObject(self, &aiChatVoiceSessionActiveKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-    }
+    /// Voice-mode chrome reduction is currently **dormant**.
+    ///
+    /// The chrome-hide plumbing (`setVoiceModeActive` on the header, `setAITabBottomChromeHidden`
+    /// on the coordinator, the reconcile call from refresh paths) is intentionally kept in place
+    /// for future use, but the activation signal returns `false` so the chrome stays standard.
+    ///
+    /// We had a working URL + `voiceSessionStarted/Ended` notification combo wired up, but the
+    /// duck.ai web FE has two open issues that make it unreliable end-to-end: it `replaceState`s
+    /// the `?mode=voice` query mid-session, and `voiceSessionEnded` is dispatched
+    /// inconsistently. Re-enable once those are fixed by switching this back to a real signal.
+    var isCurrentTabUsingVoiceMode: Bool { false }
 
     /// Reduces the AI-tab chrome (left pill + bottom UTI bar) when the user is in voice mode.
-    /// Idempotent; call from every refresh.
+    /// Idempotent; call from every refresh. Dormant for now (see `isCurrentTabUsingVoiceMode`).
     func reconcileVoiceModeChromeForCurrentTab() {
         let active = isCurrentTabUsingVoiceMode
         aiChatTabChatHeaderView?.setVoiceModeActive(active)
         viewCoordinator.setAITabBottomChromeHidden(active)
     }
 
-    /// Reads `webView.url` first — it updates synchronously when WK commits, while `tab.url`
-    /// lags ~100ms (the `asyncAfter` in `TabViewController`'s URL KVO).
-    private func tabIsAtVoiceModeURL(_ tab: TabViewController) -> Bool {
-        let url = tab.webView.url ?? tab.url ?? tab.tabModel.link?.url
-        return url?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
-    }
-
-    /// Single source of truth for the bottom toolbar's hidden state in AI-tab/non-AI-tab
-    /// transitions. The hidden state is **derived** from `currentTab?.isAITab` (gated by the
-    /// unified-toggle-input feature flag), never imperatively passed by the caller — the
-    /// previous API took a `Bool` and that asymmetry (one path setting `true`, a sibling path
-    /// forgetting to set `false`) is what produced the "stuck without toolbar after the
-    /// idle-return escape hatch" class of bug.
-    ///
-    /// Call this from any code path that:
-    ///   - Changes the active tab (tab swap, swipe, tab switcher).
-    ///   - Lands the user on a non-AI surface from an AI surface, or vice versa
-    ///     (NTP attach, omnibar dismiss completion, idle-return routing).
-    ///   - Changes size class / orientation that may have hidden the toolbar for other
-    ///     reasons (`applyLargeWidth`/`applySmallWidth`).
-    ///
-    /// The setter is idempotent so over-calling is free; under-calling is what creates these
-    /// bugs. If a new path can flip `currentTab` and the toolbar isn't reconciling, **add a
-    /// call here** rather than re-introducing an imperative `setToolbarHidden(_ bool: Bool)`
-    /// — that surface is what we're deliberately removing.
-    ///
-    /// Direct mutations of `viewCoordinator.toolbar.isHidden` outside of unrelated subsystems
-    /// (minimal chrome, blank snapshot, tab-switcher multi-select) are tripwired by
-    /// `installAITabToolbarObserverIfNeeded` — they will surface as `BUG: toolbar.isHidden
-    /// became false on AI tab` in the logs.
+    /// Derives the toolbar's hidden state from `currentTab?.isAITab`. Idempotent — call from any
+    /// path that flips the current tab. Direct mutations of `toolbar.isHidden` on AI tabs are
+    /// tripwired by `installAITabToolbarObserverIfNeeded`.
     func reconcileToolbarVisibilityForCurrentTab() {
+        // The reconciler exists to keep the toolbar hidden on AI tabs (and re-show it on the way
+        // out). Both legs are unified-toggle-input concerns, so when the feature is off we have
+        // nothing to reconcile and shouldn't fight other subsystems for the toolbar.
+        guard unifiedToggleInputFeature.isAvailable else { return }
+
         installAITabToolbarObserverIfNeeded()
         if isCurrentTabUsingUnifiedInputAIChrome {
             viewCoordinator.toolbar.isHidden = true
         } else {
-            viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth
+            // Respect minimal chrome (URL bar pinned, toolbar collapsed) — re-showing the toolbar
+            // here would flash it back on a non-AI tab that's intentionally in minimal chrome.
+            viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
         }
     }
 
@@ -387,23 +365,6 @@ private extension MainViewController {
                 if self.currentTab?.isAITab == true {
                     self.refreshAIChatTabChatHeaderSubscriptionState()
                 }
-            }
-            .store(in: &unifiedToggleInputCancellables)
-
-        // Tandem with URL detection: the page `replaceState`s `?mode=voice` mid-session.
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.aiChatVoiceSessionActive = true
-                self?.reconcileVoiceModeChromeForCurrentTab()
-            }
-            .store(in: &unifiedToggleInputCancellables)
-
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.aiChatVoiceSessionActive = false
-                self?.reconcileVoiceModeChromeForCurrentTab()
             }
             .store(in: &unifiedToggleInputCancellables)
     }

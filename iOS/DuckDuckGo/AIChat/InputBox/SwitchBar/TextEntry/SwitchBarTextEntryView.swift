@@ -178,6 +178,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
+        placeholderLabel.lineBreakMode = .byTruncatingTail
 
         setupButtonsView()
 
@@ -267,7 +268,11 @@ class SwitchBarTextEntryView: UIView {
             // the placeholder optically centred in the pill rather than riding too high.
             placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
-            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
+            // Trail to the buttons' leading edge (not the textView's) so a visible stop /
+            // search-go-to / voice button truncates the placeholder rather than overlapping it.
+            // When `.noButtons`, the buttonsView has zero intrinsic width so this collapses back
+            // to the original "near the trailing edge" position.
+            placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])

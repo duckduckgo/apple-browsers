@@ -2360,7 +2360,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private var isInMinimalChromeLayout: Bool = false
+    private(set) var isInMinimalChromeLayout: Bool = false
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout

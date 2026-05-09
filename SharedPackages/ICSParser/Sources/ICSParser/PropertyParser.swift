@@ -34,7 +34,7 @@ enum PropertyParser {
         var url: URL?
 
         for line in lines {
-            guard let colonIndex = line.firstIndex(of: ":") else { continue }
+            guard let colonIndex = unquotedColonIndex(in: line) else { continue }
             let keyPart = String(line[..<colonIndex])
             let value = String(line[line.index(after: colonIndex)...])
             let key = keyPart.split(separator: ";").first.map { String($0).uppercased() } ?? keyPart.uppercased()
@@ -89,6 +89,23 @@ enum PropertyParser {
             url: url,
             recurrenceRule: recurrenceRule
         )
+    }
+
+    /// Per RFC 5545 §3.2, parameter values may be DQUOTE-wrapped to contain `:`, `;`, or `,`.
+    /// The first colon outside any quoted region separates the parameter section from the value.
+    private static func unquotedColonIndex(in line: String) -> String.Index? {
+        var inQuotes = false
+        for index in line.indices {
+            switch line[index] {
+            case "\"":
+                inQuotes.toggle()
+            case ":" where !inQuotes:
+                return index
+            default:
+                break
+            }
+        }
+        return nil
     }
 
     /// RFC 5545 §3.6.1 fallback: DTEND, then DTSTART + DURATION, then a default duration.

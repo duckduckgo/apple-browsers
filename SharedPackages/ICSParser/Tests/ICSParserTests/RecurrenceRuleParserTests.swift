@@ -128,6 +128,32 @@ struct RecurrenceRuleParserTests {
         #expect(rule.daysOfTheMonth == [25])
     }
 
+    /// RFC 5545 §3.3.10 forbids both COUNT and UNTIL in the same RRULE. Real-world files
+    /// occasionally include both; we honour UNTIL and ignore COUNT to give a deterministic end.
+    @available(iOS 16, macOS 13, *)
+    @Test("UNTIL takes precedence over COUNT when both are present", .timeLimit(.minutes(1)))
+    func untilWinsOverCountWhenBothPresent() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=DAILY;COUNT=10;UNTIL=20260131T235959Z",
+            startDate: utcDate("2026-01-01T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.endDate == utcDate("2026-01-31T23:59:59Z"))
+        #expect(rule.recurrenceEnd?.occurrenceCount == 0)
+    }
+
+    /// RFC 5545 §3.3.10 restricts BYMONTHDAY to ±1..31. We pass values through to EventKit
+    /// rather than validating; this test pins the lenient behaviour so a future tightening
+    /// is an explicit decision.
+    @available(iOS 16, macOS 13, *)
+    @Test("Passes BYMONTHDAY values through to EventKit without bounds-checking", .timeLimit(.minutes(1)))
+    func leavesBYMONTHDAYBoundsCheckingToEventKit() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;BYMONTHDAY=32",
+            startDate: utcDate("2026-01-01T00:00:00Z")
+        )
+        #expect(rule.daysOfTheMonth == [32])
+    }
+
     // MARK: - Helpers
 
     private func utcDate(_ string: String) -> Date {

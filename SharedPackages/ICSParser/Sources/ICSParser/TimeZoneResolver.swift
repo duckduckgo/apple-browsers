@@ -41,7 +41,12 @@ enum TimeZoneResolver {
         for component in paramPart.split(separator: ";") {
             let pieces = component.split(separator: "=", maxSplits: 1)
             if pieces.count == 2 && pieces[0].uppercased() == "TZID" {
-                return String(pieces[1])
+                var raw = String(pieces[1])
+                // RFC 5545 §3.2: parameter values may be DQUOTE-wrapped. Strip outer quotes.
+                if raw.count >= 2, raw.hasPrefix("\""), raw.hasSuffix("\"") {
+                    raw = String(raw.dropFirst().dropLast())
+                }
+                return raw
             }
         }
         return nil

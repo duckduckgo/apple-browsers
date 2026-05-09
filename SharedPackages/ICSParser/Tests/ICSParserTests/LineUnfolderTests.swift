@@ -70,4 +70,24 @@ struct LineUnfolderTests {
         let result = LineUnfolder.unfold(input)
         #expect(result == ["BEGIN:VCALENDAR", "", "END:VCALENDAR"])
     }
+
+    /// RFC 5545 §3.1: unfolding runs before escape decoding. An escaped backslash split
+    /// across a fold should still decode to a single backslash, not get mangled.
+    @available(iOS 16, macOS 13, *)
+    @Test("Unfolds before escape decoding so an escape sequence spanning a fold is preserved", .timeLimit(.minutes(1)))
+    func unfoldsBeforeEscapeDecoding() throws {
+        let input = "SUMMARY:foo \\\n \\n bar"
+        let unfolded = LineUnfolder.unfold(input)
+        try #require(unfolded == ["SUMMARY:foo \\\\n bar"])
+        let value = unfolded[0].split(separator: ":", maxSplits: 1).map(String.init)[1]
+        #expect(TextUnescaper.unescape(value) == "foo \\n bar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Tolerates mixed CRLF and LF terminators in the same input", .timeLimit(.minutes(1)))
+    func tolerantOfMixedLineEndings() {
+        let input = "BEGIN:VCALENDAR\r\nVERSION:2.0\nBEGIN:VEVENT\r\nEND:VEVENT\nEND:VCALENDAR"
+        let result = LineUnfolder.unfold(input)
+        #expect(result == ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "END:VEVENT", "END:VCALENDAR"])
+    }
 }

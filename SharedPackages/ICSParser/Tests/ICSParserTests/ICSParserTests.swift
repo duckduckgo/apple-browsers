@@ -235,6 +235,49 @@ struct ICSParserTests {
         }
     }
 
+    /// RFC 5545 §3.3.5 requires HHMMSS for the time portion. A 4-digit HHMM form must not
+    /// be silently accepted as 14:30:00 — that would corrupt event times.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedDate when DTSTART omits the seconds component", .timeLimit(.minutes(1)))
+    func throwsForDateMissingSeconds() {
+        #expect(throws: ICSParser.Error.malformedDate(field: "DTSTART", raw: "20260615T1430")) {
+            try ICSParser.parse(data: fixture("malformed-truncated-time"))
+        }
+    }
+
+    /// 2026 is not a leap year. DateFormatter (non-lenient) rejects Feb 29 instead of rolling
+    /// over to Mar 1. This test pins that behaviour so a future formatter change can't silently
+    /// shift events by a day.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedDate for Feb 29 in a non-leap year", .timeLimit(.minutes(1)))
+    func throwsForFeb29InNonLeapYear() {
+        #expect(throws: ICSParser.Error.malformedDate(field: "DTSTART", raw: "20260229T120000Z")) {
+            try ICSParser.parse(data: fixture("malformed-leap-day"))
+        }
+    }
+
+    /// RFC 5545 §3.2 lets parameter values be DQUOTE-wrapped to contain `:`. The parser must
+    /// not split the line at the colon inside the quoted TZID; it should extract the literal
+    /// TZID and surface unrecognizedTimeZone since the value is not resolvable.
+    @available(iOS 16, macOS 13, *)
+    @Test("Handles quoted TZID values containing a colon without splitting at the wrong colon", .timeLimit(.minutes(1)))
+    func handlesQuotedTZIDWithColon() {
+        #expect(throws: ICSParser.Error.unrecognizedTimeZone(tzid: "GMT+02:00 (Athens)")) {
+            try ICSParser.parse(data: fixture("timezone-quoted-with-colon"))
+        }
+    }
+
+    /// Current behaviour: a single malformed VEVENT aborts the entire parse. Pinned here so
+    /// any future move toward tolerant parsing (return valid events, surface failures) is an
+    /// explicit decision rather than an accidental change.
+    @available(iOS 16, macOS 13, *)
+    @Test("Aborts the whole parse if any VEVENT in the file is malformed", .timeLimit(.minutes(1)))
+    func abortsOnMalformedEventInMultiVEventFile() {
+        #expect(throws: ICSParser.Error.malformedDate(field: "DTSTART", raw: "not-a-real-date")) {
+            try ICSParser.parse(data: fixture("multi-vevent-with-malformed"))
+        }
+    }
+
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {

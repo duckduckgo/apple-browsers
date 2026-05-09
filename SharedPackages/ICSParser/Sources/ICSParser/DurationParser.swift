@@ -29,54 +29,67 @@ import Foundation
 enum DurationParser {
 
     static func parse(_ raw: String) throws -> TimeInterval {
+        let (sign, body) = stripSignAndPrefix(raw)
+        guard !body.isEmpty else {
+            throw ICSParser.Error.malformedDuration(raw: raw)
+        }
+
+        if body.last == "W" {
+            let weeks = try integer(from: body.dropLast(), raw: raw)
+            return sign * Double(weeks) * 7 * 86_400
+        }
+
+        let (datePart, timePart) = try splitDateAndTime(body, raw: raw)
+        let days = try parseDays(datePart, raw: raw)
+        let (hours, minutes, seconds) = try parseTimePart(timePart, raw: raw)
+
+        let total = Double(days) * 86_400
+            + Double(hours) * 3_600
+            + Double(minutes) * 60
+            + Double(seconds)
+        return sign * total
+    }
+
+    private static func stripSignAndPrefix(_ raw: String) -> (Double, Substring) {
         var sign: Double = 1
         var input = Substring(raw.trimmingCharacters(in: .whitespaces))
-
         if input.first == "+" {
             input = input.dropFirst()
         } else if input.first == "-" {
             sign = -1
             input = input.dropFirst()
         }
+        if input.first == "P" {
+            input = input.dropFirst()
+        } else {
+            return (sign, "")
+        }
+        return (sign, input)
+    }
 
-        guard input.first == "P" else {
+    private static func splitDateAndTime(_ body: Substring, raw: String) throws -> (Substring, Substring) {
+        guard let tIndex = body.firstIndex(of: "T") else {
+            return (body, "")
+        }
+        let timePart = body[body.index(after: tIndex)...]
+        if timePart.isEmpty {
             throw ICSParser.Error.malformedDuration(raw: raw)
         }
-        input = input.dropFirst()
-        guard !input.isEmpty else {
+        return (body[..<tIndex], timePart)
+    }
+
+    private static func parseDays(_ datePart: Substring, raw: String) throws -> Int {
+        guard !datePart.isEmpty else { return 0 }
+        guard datePart.last == "D" else {
             throw ICSParser.Error.malformedDuration(raw: raw)
         }
+        return try integer(from: datePart.dropLast(), raw: raw)
+    }
 
-        if input.last == "W" {
-            let weeks = try integer(from: input.dropLast(), raw: raw)
-            return sign * Double(weeks) * 7 * 86_400
-        }
-
-        var days = 0
+    private static func parseTimePart(_ timePart: Substring, raw: String) throws -> (Int, Int, Int) {
         var hours = 0
         var minutes = 0
         var seconds = 0
-
-        var datePart: Substring
-        var timePart: Substring
-        if let tIndex = input.firstIndex(of: "T") {
-            datePart = input[..<tIndex]
-            timePart = input[input.index(after: tIndex)...]
-            if timePart.isEmpty {
-                throw ICSParser.Error.malformedDuration(raw: raw)
-            }
-        } else {
-            datePart = input
-            timePart = ""
-        }
-
-        if !datePart.isEmpty {
-            guard datePart.last == "D" else {
-                throw ICSParser.Error.malformedDuration(raw: raw)
-            }
-            days = try integer(from: datePart.dropLast(), raw: raw)
-        }
-
         var digits = ""
         for character in timePart {
             if character.isNumber {
@@ -97,12 +110,7 @@ enum DurationParser {
         if !digits.isEmpty {
             throw ICSParser.Error.malformedDuration(raw: raw)
         }
-
-        let total = Double(days) * 86_400
-            + Double(hours) * 3_600
-            + Double(minutes) * 60
-            + Double(seconds)
-        return sign * total
+        return (hours, minutes, seconds)
     }
 
     private static func integer(from substring: Substring, raw: String) throws -> Int {

@@ -64,6 +64,7 @@ public final class SyncCreditCardsAdapter {
     public func setUpProviderIfNeeded(
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
+        keyValueStore: ThrowingKeyValueStoring,
         metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
         privacyConfigurationManager: PrivacyConfigurationManaging
     ) {
@@ -75,6 +76,7 @@ public final class SyncCreditCardsAdapter {
             let provider = try CreditCardsProvider(
                 secureVaultFactory: secureVaultFactory,
                 secureVaultErrorReporter: secureVaultErrorReporter,
+                keyValueStore: keyValueStore,
                 metadataStore: metadataStore,
                 metricsEvents: metricsEventsHandler,
                 syncDidUpdateData: { [weak self] in

@@ -315,6 +315,7 @@ extension SecureVaultModels.SyncableCreditCard {
             creditCard?.cardholderName = cardholderName
             if let cardNumber, let cardNumberData = cardNumber.data(using: .utf8) {
                 creditCard?.cardNumberData = cardNumberData
+                creditCard?.cardSuffix = Self.cardSuffix(from: cardNumber)
             }
             creditCard?.cardSecurityCode = cardSecurityCode
             creditCard?.expirationMonth = expirationMonthInt
@@ -342,5 +343,10 @@ extension SecureVaultModels.SyncableCreditCard {
             return (nil, nil)
         }
         return (monthInt, yearInt)
+    }
+
+    static func cardSuffix(from cardNumber: String) -> String {
+        let trimmedCardNumber = cardNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(trimmedCardNumber.suffix(4))
     }
 }

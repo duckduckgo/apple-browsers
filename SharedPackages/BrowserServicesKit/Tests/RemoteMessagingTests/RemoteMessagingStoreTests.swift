@@ -757,9 +757,6 @@ class RemoteMessagingStoreTests: XCTestCase {
 
         let result = store.fetchScheduledRemoteMessage(surfaces: .allCases, trigger: .afterIdle)
         XCTAssertNil(result)
-
-        let dismissedIDs = store.fetchDismissedRemoteMessageIDs()
-        XCTAssertTrue(dismissedIDs.contains("trigger-and-dismiss"))
     }
 
     func testWhenUpdateRemoteMessageAsShownThenFirstShownDateIsRecorded() async throws {

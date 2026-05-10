@@ -126,6 +126,7 @@ final class PacketTunnelMessageHandlerTests: XCTestCase {
     private var tunnelState: MockTunnelStateProvider!
     private var tunnelLifecycle: MockTunnelLifecycleManager!
     private var snoozeManager: MockSnoozeManager!
+    private var leakCheckController: MockLeakCheckController!
     private var handler: PacketTunnelMessageHandler!
 
     override func setUp() {
@@ -149,6 +150,7 @@ final class PacketTunnelMessageHandlerTests: XCTestCase {
         tunnelState = MockTunnelStateProvider()
         tunnelLifecycle = MockTunnelLifecycleManager()
         snoozeManager = MockSnoozeManager()
+        leakCheckController = MockLeakCheckController()
 
         handler = PacketTunnelMessageHandler(
             keyStore: keyStore,
@@ -162,12 +164,14 @@ final class PacketTunnelMessageHandlerTests: XCTestCase {
             debugEvents: debugEvents,
             tunnelState: tunnelState,
             tunnelLifecycle: tunnelLifecycle,
-            snoozeManager: snoozeManager
+            snoozeManager: snoozeManager,
+            leakCheckController: leakCheckController
         )
     }
 
     override func tearDown() {
         handler = nil
+        leakCheckController = nil
         snoozeManager = nil
         tunnelLifecycle = nil
         tunnelState = nil

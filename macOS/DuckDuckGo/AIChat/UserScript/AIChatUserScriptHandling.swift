@@ -33,7 +33,7 @@ protocol AIChatMetricReportingHandling {
 }
 
 // swiftlint:disable inclusive_language
-protocol AIChatUserScriptHandling {
+protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -57,6 +57,9 @@ protocol AIChatUserScriptHandling {
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
+
+    var isFireWindowProvider: (() -> Bool)? { get set }
+
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
@@ -77,6 +80,13 @@ protocol AIChatUserScriptHandling {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    /// Voice-session lifecycle messages from Duck.ai. Native rebroadcasts them as
+    /// `aiChatVoiceSessionStarted` / `aiChatVoiceSessionEnded` notifications carrying the
+    /// source `WKWebView` as `object`, so observers (`VoiceSessionTracker`) can map back
+    /// to the owning `Tab` and decide whether to focus it instead of opening a new one.
+    @MainActor func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -107,6 +117,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let featureFlagger: FeatureFlagger
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
+
+    var isFireWindowProvider: (() -> Bool)?
 
     init(
         storage: AIChatPreferencesStorage,
@@ -152,7 +164,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let isFireWindow = await isFireWindowMessage(message)
+        let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
@@ -614,6 +626,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    // MARK: - Voice Session
+
+    @MainActor
+    func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
     private func makeSyncHandler() -> AIChatSyncHandler? {
         guard let sync = syncServiceProvider() else {
             return nil
@@ -623,15 +649,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
-    }
-
-    @MainActor
-    private func isFireWindowMessage(_ message: UserScriptMessage) -> Bool {
-        guard let windowController = message.messageWebView?.window?.windowController as? MainWindowController else {
-            return false
-        }
-
-        return windowController.mainViewController.isBurner
     }
 
     @MainActor

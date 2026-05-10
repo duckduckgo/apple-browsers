@@ -19,8 +19,8 @@
 import AppKitExtensions
 import XCTest
 
-/// UI Tests for the new permission authorization view and permission center (behind the newPermissionView feature flag).
-/// These tests verify the SwiftUI-based permission UI that replaces the legacy storyboard-based permission UI.
+/// UI Tests for the permission authorization view and permission center.
+/// These tests verify the SwiftUI-based permission UI.
 /// Note: Restricted to macOS 26+ due to differences in system permission dialogs across macOS versions.
 class NewPermissionViewTests: UITestCase {
 
@@ -52,8 +52,8 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        // Now set up and launch the app with the newPermissionView feature flag enabled
-        app = XCUIApplication.setUp(featureFlags: ["newPermissionView": true])
+        // Now set up and launch the app
+        app = XCUIApplication.setUp()
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -733,13 +733,12 @@ final class NewPermissionViewPopupTests: UITestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
-        // Enable newPermissionView AND popup blocking features with reduced timeout
+        // Enable popup blocking feature with reduced timeout
         app = XCUIApplication.setUp(
             environment: [
                 "POPUP_TIMEOUT_OVERRIDE": String(PopupTimeout.testingThreshold)
             ],
             featureFlags: [
-                "newPermissionView": true,
                 "popupBlocking": true,
             ]
         )

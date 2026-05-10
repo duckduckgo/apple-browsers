@@ -58,14 +58,16 @@ extension MainViewController {
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         } else {
             OnboardingIntroViewController.legacy(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         }
         controller.delegate = self
@@ -292,7 +294,7 @@ extension MainViewController {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
-            if hasEntitlement {
+            if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp)
                 }, deepLinkTarget: .dbp)
@@ -386,6 +388,27 @@ extension MainViewController {
         }
     }
 
+    func presentDataImportSummary(_ summary: DataImportSummary,
+                                  importScreen: DataImportViewModel.ImportScreen = .passwords) {
+        let presenter = topMostPresentedViewController(startingFrom: self)
+
+        guard !(presenter is DataImportSummaryViewController) else {
+            Logger.autofill.debug("Data import summary already presented")
+            return
+        }
+
+        let summaryViewController = DataImportSummaryViewController(summary: summary,
+                                                                    importScreen: importScreen,
+                                                                    syncService: syncService) { [weak self] source in
+            guard let self else { return }
+            dismissPresentedDataImportSummaryIfNeeded {
+                self.segueToSettingsSync(with: source)
+            }
+        } onCompletion: { }
+
+        presenter.present(summaryViewController, animated: true)
+    }
+
     func segueToFeedback() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
@@ -416,6 +439,8 @@ extension MainViewController {
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
@@ -450,6 +475,7 @@ extension MainViewController {
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                                                  freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
@@ -519,6 +545,8 @@ extension MainViewController {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
@@ -543,7 +571,25 @@ extension MainViewController {
             ViewHighlighter.hideAll()
         }
     }
-    
+
+    private func dismissPresentedDataImportSummaryIfNeeded(completion: @escaping () -> Void) {
+        let topMostViewController = topMostPresentedViewController(startingFrom: self)
+        guard topMostViewController is DataImportSummaryViewController else {
+            completion()
+            return
+        }
+
+        topMostViewController.dismiss(animated: true, completion: completion)
+    }
+
+    private func topMostPresentedViewController(startingFrom rootViewController: UIViewController) -> UIViewController {
+        var currentViewController = rootViewController
+        while let presentedViewController = currentViewController.presentedViewController {
+            currentViewController = presentedViewController
+        }
+        return currentViewController
+    }
+
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear

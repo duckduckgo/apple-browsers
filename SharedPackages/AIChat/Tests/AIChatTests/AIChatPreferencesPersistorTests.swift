@@ -132,6 +132,40 @@ final class AIChatPreferencesPersistorTests: XCTestCase {
         XCTAssertEqual(secondPersistor.selectedReasoningEffort, "medium")
     }
 
+    // MARK: - Selected Reasoning Mode
+
+    func testWhenNoReasoningModeSelected_ThenSelectedReasoningModeIsNil() {
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsSet_ThenItCanBeReadBack() {
+        persistor.selectedReasoningMode = .extendedReasoning
+
+        XCTAssertEqual(persistor.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func testWhenReasoningModeIsCleared_ThenItReturnsNil() {
+        persistor.selectedReasoningMode = .reasoning
+
+        persistor.selectedReasoningMode = nil
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        persistor.selectedReasoningMode = .fast
+
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        XCTAssertEqual(secondPersistor.selectedReasoningMode, .fast)
+    }
+
+    func testWhenPersistedReasoningModeRawValueIsUnknown_ThenSelectedReasoningModeIsNil() {
+        userDefaults.set("unsupported", forKey: "aichat.omnibar.selected-reasoning-mode")
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
     // MARK: - selectedModelIdPublisher
 
     func testSelectedModelIdPublisher_emitsOnEveryDistinctWrite() {

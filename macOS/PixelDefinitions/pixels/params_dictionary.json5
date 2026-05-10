@@ -241,6 +241,8 @@
             "click",
             "expectation",
             "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",
@@ -288,6 +290,17 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
     },
     "onboardingEventType": {
         "key": "e",

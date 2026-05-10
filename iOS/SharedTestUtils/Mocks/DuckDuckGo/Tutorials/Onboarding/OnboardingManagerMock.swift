@@ -19,10 +19,22 @@
 
 import Foundation
 import Core
+import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingStepsProvider {
+final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingAddToDockVisibilityManager, OnboardingFlowManaging {
+
     private(set) var didCallSettingsURLPath = false
+    private(set) var didCallConfigureOnboardingFlow = false
+    private(set) var capturedURL: URL?
+    private(set) var didCallEvaluateOnboardingFlow = false
 
     var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+
+    var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
+
+    func configureOnboardingFlow(from url: URL?) {
+        didCallConfigureOnboardingFlow = true
+        capturedURL = url
+    }
 }

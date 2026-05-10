@@ -181,7 +181,7 @@ class TabSwitcherViewController: UIViewController {
     private var fireTabsTipTask: Task<Void, Never>?
     var fireModePromotionsCoordinator: FireModePromotionCoordinating?
     var shouldForceShowFireTabsTip = false
-    private var fireModeCapability: FireModeCapable {
+    var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
 
@@ -433,6 +433,9 @@ class TabSwitcherViewController: UIViewController {
         pagingScrollView.delegate = self
         pagingScrollView.translatesAutoresizingMaskIntoConstraints = false
         pagingScrollView.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 17.0, *) {
+            pagingScrollView.allowsKeyboardScrolling = false
+        }
 
         normalPageContainer = UIView()
         normalPageContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -526,7 +529,7 @@ class TabSwitcherViewController: UIViewController {
         }
 
         barsHandler.onNewFireTabTapped = { [weak self] in
-            self?.addNewFireTab()
+            self?.addNewFireTab(source: .tabSwitcherLongPress)
         }
 
         barsHandler.onNewNormalTabTapped = { [weak self] in
@@ -690,7 +693,7 @@ class TabSwitcherViewController: UIViewController {
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
-    func addNewFireTab() {
+    func addNewFireTab(source: FireModeSwitchSource) {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
@@ -698,7 +701,7 @@ class TabSwitcherViewController: UIViewController {
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
         ])
         dismissIfPossible(forceDismissOnEmpty: true)
-        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self)
+        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
     }
 
     func addNewNormalTab() {

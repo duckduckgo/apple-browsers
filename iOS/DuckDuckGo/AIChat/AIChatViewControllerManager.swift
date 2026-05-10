@@ -66,6 +66,7 @@ final class AIChatViewControllerManager {
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let statisticsLoader: StatisticsLoader
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Initialization
 
@@ -80,7 +81,8 @@ final class AIChatViewControllerManager {
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
-         statisticsLoader: StatisticsLoader = .shared) {
+         statisticsLoader: StatisticsLoader = .shared,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -94,6 +96,7 @@ final class AIChatViewControllerManager {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.statisticsLoader = statisticsLoader
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
 
     // MARK: - Public Methods
@@ -119,8 +122,13 @@ final class AIChatViewControllerManager {
                     autoSend: Bool = false,
                     flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
+                    modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
+                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     on viewController: UIViewController) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -141,10 +149,15 @@ final class AIChatViewControllerManager {
                                autoSend: Bool = false,
                                flowType: AIChatOnboardingFlowType = .default,
                                tools: [AIChatRAGTool]? = nil,
+                               modelId: String? = nil,
+                               reasoningEffort: AIChatReasoningEffort? = nil,
+                               images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                               files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
     }
@@ -175,6 +188,10 @@ final class AIChatViewControllerManager {
                       autoSend: Bool = false,
                       flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
+                      modelId: String? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
+                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
@@ -206,6 +223,10 @@ final class AIChatViewControllerManager {
                     autoSend: autoSend,
                     flowType: flowType,
                     tools: tools,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort,
+                    images: images,
+                    files: files,
                     presentationMode: presentationMode,
                     containerView: containerView,
                     viewController: viewController,
@@ -220,6 +241,10 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 presentationMode: presentationMode,
                 containerView: containerView,
                 viewController: viewController,
@@ -236,6 +261,10 @@ final class AIChatViewControllerManager {
                               autoSend: Bool,
                               flowType: AIChatOnboardingFlowType = .default,
                               tools: [AIChatRAGTool]?,
+                              modelId: String?,
+                              reasoningEffort: AIChatReasoningEffort?,
+                              images: [AIChatNativePrompt.NativePromptImage]?,
+                              files: [AIChatNativePrompt.NativePromptFile]?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
@@ -250,6 +279,10 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 on: viewController,
                 voiceMode: voiceMode
             )
@@ -261,6 +294,10 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 in: containerView,
                 parentViewController: viewController,
                 completion: completion
@@ -278,6 +315,10 @@ final class AIChatViewControllerManager {
                                        autoSend: Bool,
                                        flowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
+                                       modelId: String?,
+                                       reasoningEffort: AIChatReasoningEffort?,
+                                       images: [AIChatNativePrompt.NativePromptImage]?,
+                                       files: [AIChatNativePrompt.NativePromptFile]?,
                                        on viewController: UIViewController,
                                        voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
@@ -288,6 +329,10 @@ final class AIChatViewControllerManager {
             autoSend: autoSend,
             flowType: flowType,
             tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files,
             voiceMode: voiceMode
         )
         let roundedPageSheet = RoundedPageSheetContainerViewController(
@@ -308,6 +353,10 @@ final class AIChatViewControllerManager {
                                         autoSend: Bool,
                                         flowType: AIChatOnboardingFlowType = .default,
                                         tools: [AIChatRAGTool]?,
+                                        modelId: String?,
+                                        reasoningEffort: AIChatReasoningEffort?,
+                                        images: [AIChatNativePrompt.NativePromptImage]?,
+                                        files: [AIChatNativePrompt.NativePromptFile]?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
                                         completion: (() -> Void)? = nil) {
@@ -318,7 +367,11 @@ final class AIChatViewControllerManager {
             payload: payload,
             autoSend: autoSend,
             flowType: flowType,
-            tools: tools
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files
         )
 
         parentViewController.addChild(aiChatViewController)
@@ -409,6 +462,10 @@ final class AIChatViewControllerManager {
                                          autoSend: Bool,
                                          flowType: AIChatOnboardingFlowType = .default,
                                          tools: [AIChatRAGTool]?,
+                                         modelId: String?,
+                                         reasoningEffort: AIChatReasoningEffort?,
+                                         images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                                         files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                          voiceMode: Bool = false) {
         if voiceMode {
             aiChatViewController.loadVoiceMode()
@@ -420,7 +477,18 @@ final class AIChatViewControllerManager {
                 query,
                 autoSend: autoSend,
                 flowType: flowType,
-                tools: tools
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort
+            )
+            storePromptWithAttachmentsIfNeeded(
+                query,
+                autoSend: autoSend,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files
             )
         }
 
@@ -451,6 +519,31 @@ final class AIChatViewControllerManager {
     }
 }
 
+private extension AIChatViewControllerManager {
+
+    func storePromptWithAttachmentsIfNeeded(_ query: String,
+                                            autoSend: Bool,
+                                            tools: [AIChatRAGTool]?,
+                                            modelId: String?,
+                                            reasoningEffort: AIChatReasoningEffort?,
+                                            images: [AIChatNativePrompt.NativePromptImage]?,
+                                            files: [AIChatNativePrompt.NativePromptFile]?) {
+        guard images?.isEmpty == false || files?.isEmpty == false else { return }
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let prompt = AIChatNativePrompt.queryPrompt(
+            query,
+            autoSubmit: autoSend,
+            toolChoice: tools?.map(\.rawValue),
+            images: images,
+            files: files,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
+        )
+        AIChatPromptHandler.shared.setData(prompt)
+    }
+}
+
 // MARK: - UserContentControllerDelegate
 
 extension AIChatViewControllerManager: UserContentControllerDelegate {
@@ -466,6 +559,11 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
         aiChatUserScript = userScripts.aiChatUserScript
         aiChatUserScript?.setFireModeProvider(isFireModeProvider)
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireModeProvider?() == true,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView

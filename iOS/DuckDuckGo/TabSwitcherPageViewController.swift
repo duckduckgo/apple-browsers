@@ -113,6 +113,9 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.clipsToBounds = true
         collectionView.isMultipleTouchEnabled = true
+        if #available(iOS 17.0, *) {
+            collectionView.allowsKeyboardScrolling = false
+        }
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.dragDelegate = self

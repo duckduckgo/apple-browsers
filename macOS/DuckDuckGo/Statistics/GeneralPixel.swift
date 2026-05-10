@@ -32,6 +32,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case crashReportingFailedToReadContents
+    case crashReportSent
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -591,8 +592,6 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
-    case attributionXattrCanary(variantMatch: String, originMatch: String)
-
     // Website Autoplay
     case autoplaySettingAllowAll
     case autoplaySettingBlockAudio
@@ -621,6 +620,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
+
+        case .crashReportSent:
+            return "m_mac_crash-report_sent"
 
         case .compileRulesWait(onboardingShown: let onboardingShown, waitTime: let waitTime, result: let result):
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
@@ -1357,8 +1359,6 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
-        case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
-
             // Website Autoplay
         case .autoplaySettingAllowAll:
             return "m_mac_autoplay_setting_allow-all"
@@ -1535,9 +1535,6 @@ enum GeneralPixel: PixelKitEvent {
             params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
-        case .attributionXattrCanary(let variantMatch, let originMatch):
-            return ["variant_match": variantMatch, "origin_match": originMatch]
-
         default: return nil
         }
     }
@@ -1549,6 +1546,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
                 .crashReportingFailedToReadContents,
+                .crashReportSent,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,
@@ -1933,8 +1931,7 @@ enum GeneralPixel: PixelKitEvent {
                 .siteNotWorkingShown,
                 .siteNotWorkingWebsiteIsBroken,
                 .usageSegments,
-                .userScriptLoadJSFailed,
-                .attributionXattrCanary:
+                .userScriptLoadJSFailed:
             return [.pixelSource]
         case .settingsAddToDockShowMeHowClicked:
             return nil

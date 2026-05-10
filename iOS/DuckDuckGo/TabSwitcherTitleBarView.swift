@@ -65,6 +65,7 @@ final class TabSwitcherTitleBarView: UIView {
     }()
 
     private weak var currentCenterView: UIView?
+    private var managedButtonConstraints: [UIView: [NSLayoutConstraint]] = [:]
 
     private var leadingStackCenterY: NSLayoutConstraint!
     private var trailingStackCenterY: NSLayoutConstraint!
@@ -119,13 +120,46 @@ final class TabSwitcherTitleBarView: UIView {
     }
 
     func setLeadingButtons(_ buttons: [UIView]) {
+        removeButtonConstraints(from: leadingButtonsStack)
         leadingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach { leadingButtonsStack.addArrangedSubview($0) }
+        buttons.forEach {
+            applyButtonConstraints(to: $0)
+            leadingButtonsStack.addArrangedSubview($0)
+        }
     }
 
     func setTrailingButtons(_ buttons: [UIView]) {
+        removeButtonConstraints(from: trailingButtonsStack)
         trailingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach { trailingButtonsStack.addArrangedSubview($0) }
+        buttons.forEach {
+            applyButtonConstraints(to: $0)
+            trailingButtonsStack.addArrangedSubview($0)
+        }
+    }
+
+    private func applyButtonConstraints(to view: UIView) {
+        guard managedButtonConstraints[view] == nil else { return }
+        // Only icon buttons should be forced to a square 44×44.
+        guard isIconButton(view) else { return }
+        let constraints = [
+            view.widthAnchor.constraint(equalToConstant: Metrics.buttonSize),
+            view.widthAnchor.constraint(equalTo: view.heightAnchor),
+        ]
+        NSLayoutConstraint.activate(constraints)
+        managedButtonConstraints[view] = constraints
+    }
+
+    private func isIconButton(_ view: UIView) -> Bool {
+        guard let button = view as? BrowserChromeButton else { return true }
+        return button.hasImage && !button.hasTitle
+    }
+
+    private func removeButtonConstraints(from stack: UIStackView) {
+        for view in stack.arrangedSubviews {
+            if let constraints = managedButtonConstraints.removeValue(forKey: view) {
+                NSLayoutConstraint.deactivate(constraints)
+            }
+        }
     }
 
     func updateForAddressBarPosition(isBottom: Bool) {

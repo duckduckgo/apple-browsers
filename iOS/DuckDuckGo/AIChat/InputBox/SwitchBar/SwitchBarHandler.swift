@@ -32,6 +32,13 @@ public enum TextEntryMode: String, CaseIterable {
     case aiChat
 }
 
+extension TextEntryMode {
+    /// Returns the mode the omnibar should actually display, falling back to `.search` when the AI search-input feature is unavailable.
+    func displayed(isAIChatSearchInputEnabled: Bool) -> TextEntryMode {
+        isAIChatSearchInputEnabled ? self : .search
+    }
+}
+
 // MARK: - SwitchBarHandling Protocol
 protocol SwitchBarHandling: AnyObject {
 

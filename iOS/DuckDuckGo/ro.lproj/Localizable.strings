@@ -208,10 +208,72 @@
 "ai-features.settings.title" = "Caracteristici AI";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Alege o fotografie";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fă o fotografie";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Poți atașa doar %d fișiere per conversație.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Nu putem citi fișierele atașate deoarece cel puțin unul dintre ele este criptat.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Fișierele atașate depășesc limita totală de %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Fișierul acesta este prea mare. Dimensiunea maximă a fișierului este de %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Unul dintre fișierele atașate are mai multe pagini decât acceptăm. Încarcă fișiere cu %d pagini sau mai puține.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Nu putem citi unul dintre fișierele pe care le-ai atașat. Verifică dacă nu este deteriorat și încearcă din nou.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Poți atașa doar %d imagini per conversație.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Poți atașa doar %d imagini odată.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Atașează fișierul";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Atașează o fotografie";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Acel mesaj este prea lung pentru a fi trimis cu atașări.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Atașările nu sunt disponibile temporar. Încearcă din nou mai târziu.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Acest tip de fișier nu este acceptat.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Acest tip de fișier nu este acceptat, atașează un %1$@ sau un %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Acest tip de fișier nu este acceptat, atașează un %@.";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Pentru sarcini analitice";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Raționament extins";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Răspunde rapid";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Rapid";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Pentru sarcini complexe";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Raționament";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizează răspunsurile";
@@ -1257,6 +1319,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importă marcaje în DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Deschide Chrome, apoi mergi la Manager de parole și urmează pașii de mai jos:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Setări** > **Exportă date**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Apasă pe **Continuă**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Selectează **DuckDuckGo** ca destinație";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importă din Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Ai finalizat exportul?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Trebuie să accesezi aplicația Passwords (Parole), apoi să urmezi pașii pentru a importa.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Apasă **···** > **Exportă datele într-o altă aplicație**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Atinge **Selectează toate** > **Continuă**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Selectează **DuckDuckGo** ca destinație";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importă din Passwords (Parole)";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Mai întâi, exportă parolele și marcajele din Safari, apoi revino aici pentru a încărca fișierul.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exportă din Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importă din Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Încarcă fișierul exportat...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Nu s-au găsit date acceptate în fișierul zip. Consultă instrucțiunile de export Safari și încearcă din nou.";
 
@@ -1266,6 +1373,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Fișierul %@ nu a putut fi citit. Este posibil să existe o problemă cu datele din fișier.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Am înțeles";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Fișierul %@ nu a putut fi citit. Încearcă să încarci un alt fișier sau aplică o altă metodă de import.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Fișierul poate fi deteriorat";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Nu s-au găsit date acceptate în fișierul zip. Consultă instrucțiunile de export și încearcă din nou.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nu s-au găsit date";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Fișierul selectat nu este compatibil. Selectează un alt fișier și încearcă din nou.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Fișier neacceptat";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1274,6 +1402,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Adu în DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Selectează **Export**, iar pe ecranul următor selectează **Marcaje** și **Salvează în descărcări**.";
@@ -1285,7 +1416,7 @@
 "data.import.passwords.instructions.chrome.step1" = "În Chrome, mergi la **Manager de parole Google** și apoi la **Setări**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Selectează **Exportă parolele**, apoi **Salvează în fișiere** și salvează fișierul într-un folder pe care să-l poți ține minte.";
+"data.import.passwords.instructions.chrome.step2" = "Selectează **Exportă date**, apoi **···**, apoi **Descarcă în CSV** și salvează fișierul într-un folder pe care îl ții minte.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Cum să exporți parolele";
@@ -1313,6 +1444,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importă parolele în DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Deschide Setări pentru export";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Nu uita să apeși pe „Exportă în fișiere”";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplicația Passwords (Parole)";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importă din";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sincronizează din";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo pe un alt dispozitiv";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Semne de carte";
@@ -1349,6 +1504,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Parole";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Dorești să preiei și marcajele din Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Continuați";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Nu acum";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Dorești să preiei și parolele?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Ultima lună";
@@ -2181,7 +2348,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Depanează site-uri";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Filele Fire sunt izolate de alte date din browser, iar datele lor sunt șterse când le închizi pe toate. Au aceeași protecție împotriva urmăririi ca și alte file.";
+"fire.mode.empty.state.description" = "Filele Fire sunt izolate de alte date din browser. Datele acestora sunt arse când le închizi pe toate. Acestea îți oferă aceeași protecție împotriva urmăririi ca și alte file.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nouă filă Fire";
@@ -2193,7 +2360,7 @@
 "fire.mode.menu.promotion.badge" = "Nouă";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Răsfoiește fără a salva istoricul local sau conectează-te la site-uri cu un cont diferit.";
+"fire.mode.ntp.promotion.description" = "Nou! Răsfoiește fără a salva istoricul local sau conectează-te la site-uri cu un cont diferit.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Nu acum";
@@ -2203,6 +2370,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Încearcă filele Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Încearcă filele Fire pentru a naviga fără a salva istoricul local.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nou: file Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Filă Fire";
@@ -2328,6 +2501,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Caută sau introdu adresa";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nouă filă Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Filă nouă";
@@ -2715,6 +2891,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Nu acum";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funcțiile IA sunt private și opționale.\nPoți face modificări în Setări > Funcții IA.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Vrei acces rapid la chat privat cu inteligență artificială în bara de adrese?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Caută pe Duck.ai";
@@ -4177,7 +4359,7 @@
 "sync.delete.all.confirm.action" = "Șterge datele serverului";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Toate dispozitivele vor fi deconectate, iar datele tale sincronizate vor fi șterse de pe server.";
+"sync.delete.all.confirm.message" = "Copia de rezervă va fi ștearsă de pe server. Toate dispozitivele vor fi deconectate de la sincronizare, dar nimic nu va fi șters de pe niciun dispozitiv.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Ștergi datele serverului?";
@@ -4244,6 +4426,30 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Elimini dispozitivul?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Cod copiat";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Dispozitivul a fost sincronizat!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup activat";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Codul de recuperare a fost copiat";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nu s-a putut activa Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Oprește";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Marcajele și parolele de pe acest dispozitiv nu vor fi afectate.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Oprești Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Elimină";

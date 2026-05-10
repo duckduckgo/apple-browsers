@@ -31,6 +31,7 @@ public struct AIChatModel {
     public let shortName: String
     public let provider: ModelProvider
     public let supportsImageUpload: Bool
+    public let supportedFileTypes: [String]
     /// Image formats supported by this model (e.g. ["png", "webp"]). Empty when image upload is not supported.
     public let supportedImageFormats: [String]
     /// Tools supported by this model for prompt-time augmentation.
@@ -39,8 +40,8 @@ public struct AIChatModel {
     public let entityHasAccess: Bool
     /// The access tiers this model belongs to (e.g. ["free", "plus", "pro", "internal"]).
     public let accessTier: [String]
-    /// Supported reasoning effort levels (e.g. ["none", "low", "medium"]). Empty when reasoning is not supported.
-    public let supportedReasoningEffort: [String]
+    /// Supported reasoning effort levels. Empty when reasoning is not supported.
+    public let supportedReasoningEffort: [AIChatReasoningEffort]
 
     public enum ModelProvider {
         case openAI
@@ -51,23 +52,29 @@ public struct AIChatModel {
         case unknown
     }
 
+    public var supportsFileUpload: Bool {
+        !supportedFileTypes.isEmpty
+    }
+
     public init(
         id: String,
         name: String,
         shortName: String? = nil,
         provider: ModelProvider,
         supportsImageUpload: Bool,
+        supportedFileTypes: [String] = [],
         supportedImageFormats: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
         accessTier: [String] = [],
-        supportedReasoningEffort: [String] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
     ) {
         self.id = id
         self.name = name
         self.shortName = shortName ?? name
         self.provider = provider
         self.supportsImageUpload = supportsImageUpload
+        self.supportedFileTypes = supportedFileTypes
         self.supportedImageFormats = supportedImageFormats
         self.supportedTools = supportedTools
         self.entityHasAccess = entityHasAccess

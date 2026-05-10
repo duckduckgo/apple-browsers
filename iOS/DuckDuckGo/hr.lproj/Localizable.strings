@@ -208,10 +208,72 @@
 "ai-features.settings.title" = "AI značajke";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Odaberi fotografiju";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Snimi fotografiju";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Možeš priložiti samo %d datoteke/a po razgovoru.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Ne možemo pročitati priložene datoteke jer je barem jedna od njih šifrirana.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Priložene datoteke prelaze ukupno ograničenje veličine od %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Ova je datoteka prevelika. Maksimalna veličina datoteke je %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Jedna od priloženih datoteka ima više stranica nego što podržavamo. Prenesite datoteke s najviše %d stranica.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Ne možemo pročitati jednu od priloženih datoteka. Provjeri je li datoteka oštećena i pokušaj ponovno.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Možeš priložiti samo %d slike/a po razgovoru.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Možeš priložiti samo %d slike/a odjednom.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Priloži datoteku";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Priloži fotografiju";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Ta je poruka predugačka za slanje s prilozima.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Prilozi su privremeno nedostupni. Pokušaj ponovno nešto kasnije.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Ova vrsta datoteke nije podržana.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Ova vrsta datoteke nije podržana; priloži %1$@ ili %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Ova vrsta datoteke nije podržana, priloži %@.";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Za analitičke zadatke";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Prošireno rasuđivanje";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Brzi odgovori";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Brzo";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Za složene zadatke";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Rasuđivanje";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odgovore";
@@ -1257,6 +1319,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Uvezi knjižne oznake u DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Otvori Chrome, zatim idi na Upravitelj lozinki i slijedi korake u nastavku:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Postavke** > **Izvoz podataka**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Pritisni **Nastavi**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Odaberi **DuckDuckGo** kao odredište";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Uvezeno iz Chromea";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Je li izvoz završen?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Trebaš otići u aplikaciju Passwords, a zatim slijediti korake za uvoz.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Dodirni **···** > **Izvoz podataka u drugu aplikaciju**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Dodirni **Odaberi sve** > **Nastavi**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Odaberi **DuckDuckGo** kao odredište";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Uvoz iz Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Prvo izvezi svoje lozinke i oznake iz Safarija, a zatim se vrati ovdje da preneseš datoteku.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Izvoz iz Safarija";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Uvoz iz Safarija";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Prenesi izvezenu datoteku...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "U zip datoteci nisu pronađeni podržani podaci. Pregledaj upute za izvoz Safarija i pokušaj ponovno.";
 
@@ -1266,6 +1373,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Nije moguće pročitati %@ datoteku. Možda postoji problem s podacima u datoteci.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Shvatio/la sam";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Nije moguće pročitati %@ datoteku. Pokušaj prenijeti drugu datoteku ili isprobaj drugu metodu uvoza.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Datoteka je možda oštećena";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "U zip datoteci nisu pronađeni podržani podaci. Pregledaj upute za izvoz i pokušaj ponovno.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nisu pronađeni podaci";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Odabrana datoteka nije podržana. Odaberi drugu datoteku i pokušaj ponovno.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepodržana datoteka";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1274,6 +1402,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Prenesi na DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Odaberi **Izvoz**, a na sljedećem zaslonu odaberi **Knjižne oznake** i **Spremi u Preuzimanja**.";
@@ -1285,7 +1416,7 @@
 "data.import.passwords.instructions.chrome.step1" = "U Chromeu, idi na **Google Password Manager**, a zatim na **Postavke**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Odaberi **Izvoz lozinki**, zatim **Spremi u datoteke** i spremi datoteku u mapu koju možeš zapamtiti.";
+"data.import.passwords.instructions.chrome.step2" = "Odaberi **Izvoz podataka**, zatim **···** i potom **Preuzmi u CSV** i spremi datoteku u mapu koje se možeš sjetiti.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kako izvesti lozinke";
@@ -1313,6 +1444,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Uvezi lozinke u DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Otvori postavke za izvoz";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Ne zaboravi pritisnuti\n \"Izvoz u datoteke\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikacija Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safarija";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Uvezi iz";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sinkroniziraj iz";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGoa na drugom uređaju";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Knjižne oznake";
@@ -1349,6 +1504,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Lozinke";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Želiš li prenijeti i svoje knjižne oznake iz Safarija?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Nastavi";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ne sada";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Želiš li ponijeti i svoje lozinke?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Prošli mjesec";
@@ -2181,7 +2348,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Rješavanje problema s web-stranicama";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Kartice Fire izolirane su od ostalih podataka preglednika, a njihovi se podaci brišu kada ih sve zatvoriš. Imaju istu zaštitu od praćenja kao i ostale kartice.";
+"fire.mode.empty.state.description" = "Kartice Fire izolirane su od ostalih podataka preglednika. Njihovi se podaci brišu kada ih sve zatvoriš. Daju ti istu zaštitu od praćenja kao i ostale kartice.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nova Fire kartica";
@@ -2193,7 +2360,7 @@
 "fire.mode.menu.promotion.badge" = "Novo";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Pregledavaj bez spremanja lokalne povijesti ili se prijavi na web-mjesta drugim računom.";
+"fire.mode.ntp.promotion.description" = "Novo! Pregledavaj bez spremanja lokalne povijesti ili se prijavi na web-mjesta drugim računom.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Ne sada";
@@ -2203,6 +2370,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Isprobaj Fire kartice";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Isprobaj kartice Fire za pregledavanje bez spremanja lokalne povijesti.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Novo: kartice Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire kartica";
@@ -2328,6 +2501,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Pretraži ili unesi adresu";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nova Fire kartica";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nova kartica";
@@ -2715,6 +2891,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne sada";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Značajke umjetne inteligencije privatne su i neobavezne.\nIzmjene možeš napraviti u izborniku Postavke > AI značajke.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Želiš li jednostavan pristup privatnom AI čavrljanju u adresnoj traci?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Pretraživanje i Duck.ai";
@@ -4177,7 +4359,7 @@
 "sync.delete.all.confirm.action" = "Brisanje podataka poslužitelja";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Svi uređaji bit će isključeni i tvoji sinkronizirani podaci bit će izbrisani s poslužitelja.";
+"sync.delete.all.confirm.message" = "Tvoja sigurnosna kopija bit će izbrisana s poslužitelja. Svi uređaji bit će isključeni iz sinkronizacije, ali ništa se neće izbrisati s bilo kojeg uređaja.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Izbrisati podatke poslužitelja?";
@@ -4244,6 +4426,30 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Želiš li ukloniti uređaj?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kôd je kopiran";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Uređaj je uspješno sinkroniziran!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup je uključen";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Šifra za oporavak je kopirana";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nije moguće uključiti opciju Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Isključi";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tvoje oznake i lozinke na ovom uređaju neće biti promijenjene.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Isključiti Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Ukloni";

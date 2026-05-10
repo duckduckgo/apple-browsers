@@ -39,9 +39,9 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
         do {
-            let remoteModels = try await modelsService.fetchModels()
+            let response = try await modelsService.fetchModels()
             let userTier = await resolveUserTier()
-            let models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+            let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             let hasActiveSubscription = userTier != .free
 
             let sections = AIChatModelSectionBuilder.buildSections(
@@ -61,7 +61,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                             shortName: model.shortName,
                             isEnabled: model.entityHasAccess,
                             supportsImageUpload: model.supportsImageUpload,
-                            supportedTools: model.supportedTools.map(\.rawValue)
+                            supportedTools: model.supportedTools.map(\.rawValue),
+                            supportedReasoningEffort: model.supportedReasoningEffort.map(\.rawValue)
                         )
                     }
                 )

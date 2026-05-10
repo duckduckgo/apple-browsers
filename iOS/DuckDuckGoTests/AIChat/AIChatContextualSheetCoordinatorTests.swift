@@ -33,11 +33,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var triggerContextCollectionCallCount = 0
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
+        var clearAttachedContextCallCount = 0
         var resubscribeCallCount = 0
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
             contextSubject.eraseToAnyPublisher()
+        }
+
+        func sendContext(_ context: AIChatPageContext?) {
+            contextSubject.send(context)
         }
 
         func triggerContextCollection() -> Bool {
@@ -53,12 +58,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func resubscribe() {
             resubscribeCallCount += 1
         }
+
+        func clearAttachedContext() {
+            clearAttachedContextCallCount += 1
+            contextSubject.send(nil)
+        }
     }
 
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {
         var didRequestToLoadURLs: [URL] = []
         var didRequestExpandURLs: [URL] = []
-        var didRequestExpandShouldToggleSidebar: [Bool] = []
         var openSettingsCallCount = 0
         var openSyncSettingsCallCount = 0
 
@@ -66,9 +75,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             didRequestToLoadURLs.append(url)
         }
 
-        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
             didRequestExpandURLs.append(url)
-            didRequestExpandShouldToggleSidebar.append(shouldToggleSidebar)
         }
 
         func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -117,6 +125,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
+    private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -128,6 +137,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -135,7 +145,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
-            pageContextHandler: mockPageContextHandler
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: PassthroughSubject<URL?, Never>().eraseToAnyPublisher()
+            )
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
@@ -152,6 +166,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
+        originatingTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -262,7 +277,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL, shouldToggleSidebar: false)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
         XCTAssertEqual(mockDelegate.didRequestExpandURLs, [expandURL])
@@ -276,7 +291,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL, shouldToggleSidebar: false)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
         XCTAssertNotNil(sut.sheetViewController)
@@ -313,6 +328,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.notifyPageChanged()
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testRemoveChipRequestClearsAttachedContextFromHandler() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext())
+
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+        XCTAssertEqual(mockPageContextHandler.clearAttachedContextCallCount, 1)
     }
 
     // MARK: - Session Timer Tests
@@ -454,6 +481,47 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
+    // MARK: - originatingURLPublisher Tests
+
+    @MainActor
+    func test_originatingURLPublisher_emitsTabURL() throws {
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        originatingTabURLSubject.send(URL(string: "https://example.com")!)
+
+        XCTAssertEqual(received.last??.absoluteString, "https://example.com")
+    }
+
+    @MainActor
+    func test_originatingURLPublisher_emitsNilOnClear() throws {
+        let url = URL(string: "https://example.com")!
+        originatingTabURLSubject.send(url)
+
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        originatingTabURLSubject.send(nil)
+
+        XCTAssertEqual(received, [url, nil])
+    }
+
     // MARK: - Helpers
+
+    private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
+        let contextData = AIChatPageContextData(
+            title: title,
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
 
 }

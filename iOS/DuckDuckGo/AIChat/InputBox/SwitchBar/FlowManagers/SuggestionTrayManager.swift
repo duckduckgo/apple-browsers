@@ -76,6 +76,8 @@ final class SuggestionTrayManager: NSObject {
     }
 
     var shouldDisplayFavoritesOverlay: Bool {
+        // Fire tabs render a dedicated empty state (managed by DaxLogoManager), so favorites must not sit behind it.
+        guard !switchBarHandler.isFireTab else { return false }
         let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
         let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 

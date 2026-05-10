@@ -142,6 +142,23 @@
             "dbpActionId"
         ]
     },
+    "m_ios_dbp_optout_stage_email-get-data": {
+        "description": "Fired at the email get-data stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
+        ]
+    },
     "m_ios_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
@@ -1028,7 +1045,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1048,7 +1065,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1104,6 +1121,13 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_dbp_freemium_settings_entry_point_clicked": {
+        "description": "Fires when the user taps the freemium Personal Information Removal entry point CTA in Settings.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_dbp_notification_opened_first_scan_complete": {

@@ -100,6 +100,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
+    /// Returns the page context currently attached to the chat session, queried at submit time
+    /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
+    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
+    var attachedPageContextProvider: (() -> AIChatPageContextData?)?
+
+    /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
+    /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
+    var onPromptSubmitted: (() -> Void)?
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -249,13 +257,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     private func subscribeToInputBoxEvents() {
         inputBoxCancellables.removeAll()
 
-        inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: { [weak self] prompt in
-                let modelId = self?.inputBoxHandler?.persistedModelId
-                self?.submitPrompt(prompt, modelId: modelId)
-            })
-            .store(in: &inputBoxCancellables)
-
         inputBoxHandler?.didPressNewChatButton
             .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
             .store(in: &inputBoxCancellables)
@@ -281,24 +282,28 @@ final class AIChatUserScript: NSObject, Subfeature {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext, reasoningEffort: reasoningEffort)
         push(.submitPrompt(promptPayload))
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
-        submitPrompt(prompt, images: images, modelId: modelId, tools: nil)
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?) {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
             toolChoice: tools?.map(\.rawValue),
             images: images,
-            modelId: modelId
+            files: files,
+            modelId: modelId,
+            pageContext: attachedPageContextProvider?(),
+            reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
+        onPromptSubmitted?()
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.

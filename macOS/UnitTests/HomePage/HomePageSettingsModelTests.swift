@@ -62,6 +62,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         )
     }
 
+    @MainActor
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
         appearancePreferences = nil

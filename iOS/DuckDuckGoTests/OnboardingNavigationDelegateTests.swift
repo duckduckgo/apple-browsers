@@ -24,10 +24,12 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
-import Configuration
+import DataBrokerProtection_iOS
+@testable import Configuration
 import Combine
 import SubscriptionTestingUtilities
 import Common
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core
 
@@ -51,6 +53,13 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             faviconStoring: MockFaviconStore(),
             tld: TLD()
         )
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: try MockKeyValueFileStore())
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingNavigationDelegateTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -60,7 +69,18 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage()
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
+            duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockConfigurationURLProvider(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            winBackOfferService: .mocked,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: MockFeatureFlagger(),
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
         let tabsModel = TabsModel(desktop: true)

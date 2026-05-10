@@ -119,12 +119,13 @@ protocol TabDelegate: AnyObject {
     func closeFindInPage(tab: TabViewController)
 
     func tabContentProcessDidTerminate(tab: TabViewController)
+
+    /// User activated an in-page link in this tab.
+    func tabDidEngageWithPage(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
-
-    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController)
 
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 

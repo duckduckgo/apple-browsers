@@ -11,6 +11,66 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
+            },
+            {
+                "key": "isReinstall",
+                "description": "Randomized subscription data reporting parameter: whether the user is a reinstall",
+                "type": "boolean"
+            },
+            {
+                "key": "fireButtonUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has used the fire button frequently",
+                "type": "boolean"
+            },
+            {
+                "key": "syncUsed",
+                "description": "Randomized subscription data reporting parameter: whether sync is in use",
+                "type": "boolean"
+            },
+            {
+                "key": "fireproofingUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has fireproofed any domains",
+                "type": "boolean"
+            },
+            {
+                "key": "appOnboardingCompleted",
+                "description": "Randomized subscription data reporting parameter: whether the user has completed onboarding",
+                "type": "boolean"
+            },
+            {
+                "key": "emailEnabled",
+                "description": "Randomized subscription data reporting parameter: whether Email Protection is enabled",
+                "type": "boolean"
+            },
+            {
+                "key": "widgetAdded",
+                "description": "Randomized subscription data reporting parameter: whether the user has added a widget",
+                "type": "boolean"
+            },
+            {
+                "key": "frequentUser",
+                "description": "Randomized subscription data reporting parameter: whether the user is considered frequent based on recent session activity",
+                "type": "boolean"
+            },
+            {
+                "key": "longTermUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has had the app installed for a long time",
+                "type": "boolean"
+            },
+            {
+                "key": "autofillUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has used autofill",
+                "type": "boolean"
+            },
+            {
+                "key": "validOpenTabsCount",
+                "description": "Randomized subscription data reporting parameter: whether the user has a valid number of open tabs",
+                "type": "boolean"
+            },
+            {
+                "key": "searchUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has performed a search recently",
+                "type": "boolean"
             }
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
@@ -26,6 +86,66 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
+            },
+            {
+                "key": "isReinstall",
+                "description": "Randomized subscription data reporting parameter: whether the user is a reinstall",
+                "type": "boolean"
+            },
+            {
+                "key": "fireButtonUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has used the fire button frequently",
+                "type": "boolean"
+            },
+            {
+                "key": "syncUsed",
+                "description": "Randomized subscription data reporting parameter: whether sync is in use",
+                "type": "boolean"
+            },
+            {
+                "key": "fireproofingUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has fireproofed any domains",
+                "type": "boolean"
+            },
+            {
+                "key": "appOnboardingCompleted",
+                "description": "Randomized subscription data reporting parameter: whether the user has completed onboarding",
+                "type": "boolean"
+            },
+            {
+                "key": "emailEnabled",
+                "description": "Randomized subscription data reporting parameter: whether Email Protection is enabled",
+                "type": "boolean"
+            },
+            {
+                "key": "widgetAdded",
+                "description": "Randomized subscription data reporting parameter: whether the user has added a widget",
+                "type": "boolean"
+            },
+            {
+                "key": "frequentUser",
+                "description": "Randomized subscription data reporting parameter: whether the user is considered frequent based on recent session activity",
+                "type": "boolean"
+            },
+            {
+                "key": "longTermUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has had the app installed for a long time",
+                "type": "boolean"
+            },
+            {
+                "key": "autofillUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has used autofill",
+                "type": "boolean"
+            },
+            {
+                "key": "validOpenTabsCount",
+                "description": "Randomized subscription data reporting parameter: whether the user has a valid number of open tabs",
+                "type": "boolean"
+            },
+            {
+                "key": "searchUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has performed a search recently",
+                "type": "boolean"
             }
         ]
     },

@@ -25,6 +25,12 @@ import Core
 
 class SwitchBarTextEntryView: UIView {
 
+    enum VoiceButtonAppearance {
+        case automatic
+        case microphone
+        case aiVoicePlain
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -43,9 +49,18 @@ class SwitchBarTextEntryView: UIView {
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6
+
+        // Matches UnifiedToggleInputView.Constants.animationDuration so icons ride the focus animation.
+        static let buttonStateAnimationDuration: TimeInterval = 0.25
     }
 
     private let handler: SwitchBarHandling
+    var voiceButtonAppearance: VoiceButtonAppearance {
+        didSet {
+            guard voiceButtonAppearance != oldValue else { return }
+            updateButtonState()
+        }
+    }
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -103,6 +118,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     var isExpandable: Bool = false {
         didSet {
@@ -131,8 +147,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling, voiceButtonAppearance: VoiceButtonAppearance = .automatic) {
         self.handler = handler
+        self.voiceButtonAppearance = voiceButtonAppearance
         super.init(frame: .zero)
 
         setupView()
@@ -145,16 +162,13 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        if handler.isFireTab {
-            overrideUserInterfaceStyle = .dark
-        }
-        
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
+
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = handler.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
@@ -165,7 +179,7 @@ class SwitchBarTextEntryView: UIView {
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
-        placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        placeholderLabel.textColor = defaultPlaceholderColor
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
@@ -230,6 +244,10 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }
+
+        buttonsView.onAIChatShortcutTapped = { [weak self] in
+            self?.onAIChatShortcutTapped?()
+        }
     }
 
     private func updateButtonsPadding() {
@@ -292,8 +310,8 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = .default
+            textView.returnKeyType = .go
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -310,16 +328,31 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
-        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        updateVoiceButtonStyle()
 
         if newButtonState != currentButtonState {
-            // UIStackView animates `isHidden` changes that land inside an animation block;
-            // lay out `self` so `buttonsView`'s frame settles here, not on a later pass.
-            UIView.performWithoutAnimation {
-                currentButtonState = newButtonState
-                adjustTextViewContentInset()
-                layoutIfNeeded()
+            // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
+            UIView.transition(with: buttonsView,
+                              duration: Constants.buttonStateAnimationDuration,
+                              options: .transitionCrossDissolve) {
+                UIView.performWithoutAnimation {
+                    self.currentButtonState = newButtonState
+                    self.adjustTextViewContentInset()
+                    self.layoutIfNeeded()
+                }
             }
+        }
+    }
+
+    private func updateVoiceButtonStyle() {
+        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        switch voiceButtonAppearance {
+        case .automatic:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
+        case .microphone:
+            buttonsView.voiceButtonStyle = .microphone
+        case .aiVoicePlain:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
         }
     }
 
@@ -452,6 +485,17 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        textView.tintColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
+    }
+
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
@@ -528,8 +572,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
+            textView.returnKeyType = currentMode == .aiChat ? .go : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -547,6 +591,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }
@@ -557,6 +605,74 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(text)
+    }
+
+    /// Reflects the current transform; reset the shift to zero before reading the natural x.
+    var placeholderWindowX: CGFloat? {
+        guard placeholderLabel.window != nil else { return nil }
+        return placeholderLabel.convert(CGPoint.zero, to: nil).x
+    }
+
+    /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+
+    // Two transient overlays composite directly over the parent background (the original label is
+    // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which
+    // would otherwise composite darker than either color alone.
+    func animatePlaceholderColorTransition(from: UIColor, to color: UIColor, duration: TimeInterval) {
+        let bounds = placeholderLabel.bounds
+        guard bounds.width > 0, bounds.height > 0, !(placeholderLabel.text ?? "").isEmpty else {
+            placeholderLabel.textColor = color
+            return
+        }
+        guard !from.isEqual(color) else {
+            placeholderLabel.textColor = color
+            return
+        }
+
+        placeholderLabel.textColor = .clear
+        let sourceOverlay = makePlaceholderColorOverlay(color: from, frame: bounds, alpha: 1)
+        let targetOverlay = makePlaceholderColorOverlay(color: color, frame: bounds, alpha: 0)
+        placeholderLabel.addSubview(sourceOverlay)
+        placeholderLabel.addSubview(targetOverlay)
+
+        UIView.animate(withDuration: duration, delay: 0, options: .curveEaseOut, animations: {
+            sourceOverlay.alpha = 0
+            targetOverlay.alpha = 1
+        }, completion: { [weak self] _ in
+            self?.placeholderLabel.textColor = color
+            sourceOverlay.removeFromSuperview()
+            targetOverlay.removeFromSuperview()
+        })
+    }
+
+    private func makePlaceholderColorOverlay(color: UIColor, frame: CGRect, alpha: CGFloat) -> UILabel {
+        let overlay = UILabel()
+        overlay.text = placeholderLabel.text
+        overlay.font = placeholderLabel.font
+        overlay.textColor = color
+        overlay.textAlignment = placeholderLabel.textAlignment
+        overlay.adjustsFontForContentSizeCategory = placeholderLabel.adjustsFontForContentSizeCategory
+        overlay.frame = frame
+        overlay.isUserInteractionEnabled = false
+        overlay.alpha = alpha
+        return overlay
+    }
+
+    func setTextHorizontalShift(_ shift: CGFloat) {
+        let transform = shift == 0 ? .identity : CGAffineTransform(translationX: shift, y: 0)
+        textView.transform = transform
+        placeholderLabel.transform = transform
+    }
+
+    @discardableResult
+    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+        setTextHorizontalShift(0)
+        guard placeholderLabel.window != nil else { return 0 }
+        let currentX = placeholderLabel.convert(CGPoint.zero, to: nil).x
+        let shift = windowX - currentX
+        setTextHorizontalShift(shift)
+        return shift
     }
 
     private func disableAutoCorrectionAndSpellChecking() {
@@ -603,9 +719,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat && handler.isToggleEnabled {
-                return true
-            }
             fireKeyboardGoPressedPixel()
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

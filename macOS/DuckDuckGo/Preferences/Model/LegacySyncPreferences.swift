@@ -276,6 +276,12 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         }
     }
 
+    private func updateSingleDeviceSyncPromoVisibility() {
+        let isFlagEnabled = featureFlagger.isFeatureOn(.allowSingleDeviceOnConnectScreen)
+        let isSyncInactive = syncService.account == nil
+        managementDialogModel.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen = isFlagEnabled && isSyncInactive
+    }
+
     private func setUpObservables() {
         syncService.featureFlagsPublisher
             .dropFirst()
@@ -292,6 +298,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
                 let isEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
                 self.isAIChatSyncEnabled = isEnabled
                 self.managementDialogModel.isAIChatSyncEnabled = isEnabled
+                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
 
@@ -300,7 +307,9 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             .asVoid()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.refreshDevices()
+                guard let self else { return }
+                self.refreshDevices()
+                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
 

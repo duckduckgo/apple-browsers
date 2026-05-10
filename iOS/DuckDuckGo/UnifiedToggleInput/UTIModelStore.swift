@@ -26,6 +26,7 @@ final class UTIModelStore {
 
     var models: [AIChatModel] = []
     var subscriptionState: SubscriptionState = .free
+    var attachmentLimits: AIChatAttachmentTierLimits?
 
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
@@ -59,9 +60,25 @@ final class UTIModelStore {
         preferences.selectedModelId
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        preferences.selectedReasoningMode
+    }
+
+    var selectedModel: AIChatModel? {
+        guard let persistedModelId else { return nil }
+        return models.first(where: { $0.id == persistedModelId })
+    }
+
     var selectedModelSupportsImageUpload: Bool {
-        guard !models.isEmpty else { return false }
-        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+        selectedModel?.supportsImageUpload ?? false
+    }
+
+    var selectedModelSupportsFileUpload: Bool {
+        selectedModel?.supportsFileUpload ?? false
+    }
+
+    var selectedModelSupportedFileTypes: [String] {
+        selectedModel?.supportedFileTypes ?? []
     }
 
     func selectedModelSupports(tool: AIChatRAGTool) -> Bool {
@@ -81,12 +98,17 @@ final class UTIModelStore {
             guard !Task.isCancelled else { return }
             self.subscriptionState = state
             do {
-                let remoteModels = try await modelsService.fetchModels()
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
-                self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                self.models = Self.resolveModels(from: response.models, userTier: state.userTier)
+                self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
             } catch {
+                guard !Task.isCancelled else { return }
+                self.attachmentLimits = nil
+                self.onModelsUpdated?()
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
         }
@@ -95,6 +117,26 @@ final class UTIModelStore {
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        clearStaleReasoningModeIfNeeded()
+    }
+
+    func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
+        guard selectedModel?.availableReasoningModes.contains(mode) == true else { return }
+        preferences.selectedReasoningMode = mode
+    }
+
+    /// Used by per-tab restoration to mirror a tab's stored selection into preferences,
+    /// including nil values. Bypasses the validity checks of `updateSelectedModel`/
+    /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.
+    func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
+        preferences.selectedModelId = modelID
+        // Always assign — including nil when the model isn't (yet) in `models` —
+        // otherwise the previous tab's cached short name lingers in preferences
+        // until handleModelsUpdated() corrects it.
+        preferences.selectedModelShortName = modelID.flatMap { id in
+            models.first(where: { $0.id == id })?.shortName
+        }
+        preferences.selectedReasoningMode = reasoningMode
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
@@ -106,10 +148,12 @@ final class UTIModelStore {
                     shortName: remote.modelShortName,
                     provider: .from(id: remote.id, providerString: remote.provider),
                     supportsImageUpload: remote.supportsImageUpload,
+                    supportedFileTypes: remote.supportedFileTypes ?? [],
                     supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
-                    accessTier: remote.accessTier
+                    accessTier: remote.accessTier,
+                    supportedReasoningEffort: remote.supportedReasoningEffort
                 )
             }
             return AIChatModel(remoteModel: remote, userTier: userTier)
@@ -146,6 +190,19 @@ final class UTIModelStore {
         if isStale {
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
+        }
+    }
+
+    func clearStaleReasoningModeIfNeeded() {
+        guard let selectedReasoningMode = preferences.selectedReasoningMode else { return }
+
+        guard let selectedModel else {
+            preferences.selectedReasoningMode = nil
+            return
+        }
+
+        if !selectedModel.availableReasoningModes.contains(selectedReasoningMode) {
+            preferences.selectedReasoningMode = nil
         }
     }
 }

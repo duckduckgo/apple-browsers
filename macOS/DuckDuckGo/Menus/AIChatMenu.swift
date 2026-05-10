@@ -62,14 +62,23 @@ final class AIChatMenu: NSMenu {
     }()
 
     private lazy var newVoiceChatItem: NSMenuItem = {
-        let item = NSMenuItem(title: UserText.aiChatMenuNewVoiceChat, action: #selector(newVoiceChatTapped), keyEquivalent: "")
+        // Shortcut on the main menu only — More Options popups don't bind global keys.
+        // ⌥⌘V groups with Open Duck.ai's ⌥⌘N under the same modifier family.
+        let item = NSMenuItem(title: UserText.aiChatMenuNewVoiceChat, action: #selector(newVoiceChatTapped), keyEquivalent: origin == .mainMenu ? "v" : "")
+        if origin == .mainMenu {
+            item.keyEquivalentModifierMask = [.option, .command]
+        }
         item.target = self
         item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size12.voice
         return item
     }()
 
     private lazy var newImageChatItem: NSMenuItem = {
-        let item = NSMenuItem(title: UserText.aiChatMenuNewImageChat, action: #selector(newImageChatTapped), keyEquivalent: "")
+        // ⌥⌘G — G for "Generate" image; ⌥⌘I and ⌥⌘C are taken by Web Inspector / JS Console.
+        let item = NSMenuItem(title: UserText.aiChatMenuNewImageChat, action: #selector(newImageChatTapped), keyEquivalent: origin == .mainMenu ? "g" : "")
+        if origin == .mainMenu {
+            item.keyEquivalentModifierMask = [.option, .command]
+        }
         item.target = self
         item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.images : DesignSystemImages.Glyphs.Size12.images
         return item
@@ -258,8 +267,9 @@ extension AIChatMenu.Actions {
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
-                let url = AIChatURLParameters.voiceModeURL(from: remoteSettings.aiChatURL)
-                tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+                let sourceCollection = windowControllersManager.lastKeyMainWindowController?
+                    .mainViewController.tabCollectionViewModel
+                tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)

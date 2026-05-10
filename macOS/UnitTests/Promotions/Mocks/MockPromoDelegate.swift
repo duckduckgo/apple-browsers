@@ -20,7 +20,7 @@ import Combine
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockPromoDelegate: PromoDelegate {
+final class MockPromoDelegate: InternalPromoDelegate {
 
     let isEligibleSubject: CurrentValueSubject<Bool, Never>
     var isEligible: Bool {

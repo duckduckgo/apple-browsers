@@ -389,6 +389,7 @@ public extension DesignSystemImages {
             public static var bookmarksList: DesignSystemImage { .init(resource: .bookmarksList24) }
             public static var bookmarksOpen: DesignSystemImage { .init(resource: .bookmarksOpen24) }
             public static var calendar: DesignSystemImage { .init(resource: .calendar24) }
+            public static var camera: DesignSystemImage { .init(resource: .camera24) }
             public static var card: DesignSystemImage { .init(resource: .card24) }
             public static var check: DesignSystemImage { .init(resource: .check24) }
             public static var checkAccent: DesignSystemImage { .init(resource: .checkAccent24) }
@@ -463,10 +464,12 @@ public extension DesignSystemImages {
             public static var home: DesignSystemImage { .init(resource: .home24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration24) }
             public static var image: DesignSystemImage { .init(resource: .image24) }
+            public static var images: DesignSystemImage { .init(resource: .images24) }
             public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
+            public static var lightning: DesignSystemImage { .init(resource: .lightning24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }
             public static var list: DesignSystemImage { .init(resource: .list24) }
             public static var location: DesignSystemImage { .init(resource: .location24) }
@@ -508,6 +511,7 @@ public extension DesignSystemImages {
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var searchFindGoTo: DesignSystemImage { .init(resource: .searchFindGoTo24) }
@@ -522,8 +526,11 @@ public extension DesignSystemImages {
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
+            public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
+            public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
+            public static var uploadFile: DesignSystemImage { .init(resource: .uploadFile24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }

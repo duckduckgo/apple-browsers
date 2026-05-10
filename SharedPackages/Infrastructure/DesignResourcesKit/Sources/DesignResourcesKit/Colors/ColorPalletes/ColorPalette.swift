@@ -16,11 +16,30 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public struct DesignSystemPalette {
     /// The current color palette set globally.
     ///
     /// Used as a default parameter value when creating colors via public color extensions.
-    public static var current: ColorPalette = .default
+    public static var current: ColorPalette {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _current
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _current = newValue
+        }
+    }
+
+    // `current` is a globally mutable & nonisolated variable, which isn't allowed in Swift 6.
+    // To get around this, the public `current` getter is protected by a lock, and `nonisolated(unsafe)` is applied to
+    // promise the Swift compiler that this value is threadsafe.
+    nonisolated(unsafe) private static var _current: ColorPalette = .default
+    private static let lock = NSLock()
 }
 
 public enum ColorPalette {

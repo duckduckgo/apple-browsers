@@ -57,6 +57,13 @@ public struct SimplifiedScanOrShowCodeView: View {
                     .foregroundColor(.white)
             }
         }
+        .modifier {
+            if #available(iOS 16.0, *) {
+                $0.toolbarBackground(.hidden, for: .navigationBar)
+            } else {
+                $0
+            }
+        }
         .navigationBarBackButtonHidden(true)
     }
 

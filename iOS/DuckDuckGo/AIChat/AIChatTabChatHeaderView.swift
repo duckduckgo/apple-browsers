@@ -131,7 +131,6 @@ final class AIChatTabChatHeaderView: UIView {
             font: .daxHeadline(),
             color: UIColor(designSystemColor: .textPrimary)
         )
-        label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
         return label
     }()
@@ -209,9 +208,10 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
 
             paidTitleStack.topAnchor.constraint(equalTo: titleContainer.topAnchor),
-            paidTitleStack.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
-            paidTitleStack.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
             paidTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
+            paidTitleStack.centerXAnchor.constraint(equalTo: titleContainer.centerXAnchor),
+            paidTitleStack.leadingAnchor.constraint(greaterThanOrEqualTo: titleContainer.leadingAnchor),
+            paidTitleStack.trailingAnchor.constraint(lessThanOrEqualTo: titleContainer.trailingAnchor),
 
             upgradeArrow.widthAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
             upgradeArrow.heightAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),

@@ -21,6 +21,7 @@ import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import History
+import Lottie
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
@@ -197,7 +198,8 @@ struct FireDialogView: ModalView {
 
     private var headerView: some View {
         VStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Color.Size72.fire)
+            FirePictogramAnimation()
+                .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
             Text(viewModel.mode.dialogTitle)
@@ -701,6 +703,40 @@ private struct RowWithPressEffect<Content: View>: View {
             Rectangle()
                 .fill(background)
         }
+    }
+}
+
+// MARK: - Fire Pictogram Lottie
+
+/// Loads the fire pictogram Lottie animation.
+private struct FirePictogramAnimation: NSViewRepresentable {
+
+    private static let assetName = "fire-pictogram"
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.masksToBounds = true
+        attachAnimation(to: container)
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func attachAnimation(to container: NSView) {
+        guard let animation = LottieAnimation.asset(Self.assetName, bundle: .main) else {
+            return
+        }
+        let view = LottieAnimationView(animation: animation)
+        view.contentMode = .scaleAspectFit
+        view.loopMode = .playOnce
+        view.animationSpeed = 1.0
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        view.autoresizingMask = [.width, .height]
+        view.frame = container.bounds
+        container.addSubview(view)
+        view.play()
     }
 }
 

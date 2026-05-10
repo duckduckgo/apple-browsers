@@ -76,7 +76,8 @@ extension OnboardingIntroViewController where Content == OnboardingView {
         onboardingPixelReporter: OnboardingPixelReporting,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: ContextualDaxDialogDisabling,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        onboardingManager: OnboardingManaging
     ) -> OnboardingIntroViewController {
         let viewModel = OnboardingIntroViewModel(
             pixelReporter: onboardingPixelReporter,
@@ -85,7 +86,8 @@ extension OnboardingIntroViewController where Content == OnboardingView {
             restorePromptHandler: OnboardingRestorePromptHandler(
                 configuration: .enabled,
                 syncAutoRestoreHandler: syncAutoRestoreHandler
-            )
+            ),
+            onboardingManager: onboardingManager
         )
         let rootView = OnboardingView(model: viewModel)
         return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
@@ -99,7 +101,8 @@ extension OnboardingIntroViewController where Content == RebrandedOnboardingView
         onboardingPixelReporter: OnboardingPixelReporting,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: ContextualDaxDialogDisabling,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        onboardingManager: OnboardingManaging
     ) -> OnboardingIntroViewController {
         let viewModel = OnboardingIntroViewModel(
             pixelReporter: onboardingPixelReporter,
@@ -108,7 +111,8 @@ extension OnboardingIntroViewController where Content == RebrandedOnboardingView
             restorePromptHandler: OnboardingRestorePromptHandler(
                 configuration: .enabled,
                 syncAutoRestoreHandler: syncAutoRestoreHandler
-            )
+            ),
+            onboardingManager: onboardingManager
         )
         let rootView = RebrandedOnboardingView(model: viewModel)
         return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)

@@ -87,11 +87,7 @@ struct Foreground: ForegroundHandling {
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
-        let idleReturnEvaluator = IdleReturnEvaluator(
-            featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
-        )
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
@@ -104,7 +100,8 @@ struct Foreground: ForegroundHandling {
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
-            launchActionHandler: launchActionHandler
+            launchActionHandler: launchActionHandler,
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 
@@ -130,7 +127,9 @@ struct Foreground: ForegroundHandling {
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
             /// This is called when the **app is ready to handle web navigations** after all browser data has been cleared.
             onWebViewReadyForInteractions: {
-                /* ... */
+                if #available(iOS 18.4, *) {
+                    appDependencies.mainCoordinator.loadWebExtensionsIfPending()
+                }
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.

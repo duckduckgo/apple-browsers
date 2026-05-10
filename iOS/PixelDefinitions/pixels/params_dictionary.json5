@@ -39,6 +39,12 @@
         "type": "integer",
         "enum": [0, 1]
     },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "0 when the consent heuristic feature is disabled, 1 when it is enabled",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "isInternalUser": {
         "key": "is_internal_user",
         "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",
@@ -230,6 +236,8 @@
             "click",
             "expectation",
             "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",
@@ -306,6 +314,12 @@
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
     },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
     "browsingMode": {
         "key": "browsing_mode",
         "type": "string",
@@ -316,5 +330,46 @@
         "key": "dur",
         "type": "string",
         "description": "Duration in seconds (as a floating-point string)"
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "onboardingSource": {
+        "key": "source",
+        "type": "string",
+        "description": "User's entry point into the onboarding flow",
+        "enum": ["default", "duckai_cpp"]
+    },
+    "onboardingFlow": {
+        "key": "flow",
+        "type": "string",
+        "description": "Version of the onboarding flow the user entered",
+        "enum": ["default", "duckai"]
+    },
+    "onboardingFlowVariant": {
+        "key": "variant",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
     }
 }

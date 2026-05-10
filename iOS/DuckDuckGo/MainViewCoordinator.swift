@@ -229,8 +229,8 @@ class MainViewCoordinator {
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
         if addressBarPosition == .top {
-            setNavBarContainerBottomToToolbar()
             setAddressBarBottomActive(false)
+            setNavBarContainerBottomToToolbar(active: false)
             setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = expandedHeight
@@ -492,14 +492,14 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
     }
 
-    private func setNavBarContainerBottomToToolbar() {
+    private func setNavBarContainerBottomToToolbar(active: Bool = true) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor = nil
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0
-        constraints.navigationBarContainerBottom.isActive = true
+        constraints.navigationBarContainerBottom.isActive = active
         isNavBarContainerBottomKeyboardBased = false
     }
 

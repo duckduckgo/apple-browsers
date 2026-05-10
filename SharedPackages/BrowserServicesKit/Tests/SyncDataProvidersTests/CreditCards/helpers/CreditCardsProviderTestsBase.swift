@@ -22,6 +22,7 @@ import DDGSync
 import Foundation
 import GRDB
 import Persistence
+import PersistenceTestingUtils
 import SecureStorage
 import SecureStorageTestsUtils
 @testable import BrowserServicesKit
@@ -38,6 +39,7 @@ internal class CreditCardsProviderTestsBase: XCTestCase {
 
     var crypter = CryptingMock()
     var provider: CreditCardsProvider!
+    var keyValueStore: MockKeyValueFileStore!
 
     var secureVaultFactory: AutofillVaultFactory!
     var secureVault: (any AutofillSecureVault)!
@@ -79,10 +81,12 @@ internal class CreditCardsProviderTestsBase: XCTestCase {
         try makeSecureVault()
 
         setUpSyncMetadataDatabase()
+        keyValueStore = MockKeyValueFileStore()
 
         provider = try CreditCardsProvider(
             secureVaultFactory: secureVaultFactory,
             secureVaultErrorReporter: MockSecureVaultErrorReporter(),
+            keyValueStore: keyValueStore,
             metadataStore: LocalSyncMetadataStore(database: metadataDatabase),
             syncDidUpdateData: {},
             syncDidFinish: { _ in }
@@ -95,6 +99,7 @@ internal class CreditCardsProviderTestsBase: XCTestCase {
         try? metadataDatabase.tearDown(deleteStores: true)
         metadataDatabase = nil
         try? FileManager.default.removeItem(at: metadataDatabaseLocation)
+        keyValueStore = nil
 
         try super.tearDownWithError()
     }
@@ -147,6 +152,7 @@ internal class CreditCardsProviderTestsBase: XCTestCase {
         provider = try CreditCardsProvider(
             secureVaultFactory: secureVaultFactory,
             secureVaultErrorReporter: MockSecureVaultErrorReporter(),
+            keyValueStore: keyValueStore,
             metadataStore: LocalSyncMetadataStore(database: metadataDatabase),
             syncDidUpdateData: {},
             syncDidFinish: { _ in }

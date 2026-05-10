@@ -120,4 +120,72 @@ final class CreditCardsRegularSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertTrue(syncableCreditCards.map(\.metadata.lastModified).allSatisfy { $0 == nil })
         crypter.throwsException(exceptionString: nil)
     }
+
+    func testWhenCardSuffixIsStaleThenSyncRefreshesItOnlyOnce() async throws {
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", in: database)
+        }
+        try setStaleStoredCardSuffix("0000", forUUID: "1")
+
+        try await handleSyncResponse(received: [])
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "1111")
+
+        try setStaleStoredCardSuffix("2222", forUUID: "1")
+        try await handleSyncResponse(received: [])
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "2222")
+    }
+
+    func testWhenRefreshGateWriteFailsThenSyncSucceedsAndRefreshIsRetried() async throws {
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", in: database)
+        }
+        try setStaleStoredCardSuffix("0000", forUUID: "1")
+        keyValueStore.shouldThrowOnSet = true
+
+        try await handleSyncResponse(received: [])
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "1111")
+        XCTAssertTrue(keyValueStore.underlyingDict.isEmpty)
+
+        keyValueStore.shouldThrowOnSet = false
+        try await handleSyncResponse(received: [])
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "1111")
+        XCTAssertEqual(keyValueStore.underlyingDict.count, 1)
+    }
+
+    func testWhenIncomingSyncUpdatesCardNumberThenSuffixUpdatesWithoutBackfill() async throws {
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", in: database)
+        }
+
+        // Complete the one-time refresh upfront so this assertion validates the forward update path.
+        try await handleSyncResponse(received: [])
+
+        let received: [Syncable] = [
+            .creditCard(uuid: "1", cardNumber: "5555555555554444")
+        ]
+        try await handleSyncResponse(received: received)
+
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "4444")
+    }
+
+    private func storedCardSuffix(forUUID uuid: String) throws -> String? {
+        try fetchAllSyncableCreditCards()
+            .first(where: { $0.metadata.uuid == uuid })?
+            .creditCard?.cardSuffix
+    }
+
+    private func setStaleStoredCardSuffix(_ suffix: String, forUUID uuid: String) throws {
+        try secureVault.inDatabaseTransaction { database in
+            guard let syncableCreditCard = try SecureVaultModels.SyncableCreditCard.query
+                .filter(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid == uuid)
+                .fetchOne(database),
+                var creditCard = syncableCreditCard.creditCard else {
+                XCTFail("Expected syncable credit card to exist for uuid \(uuid)")
+                return
+            }
+
+            creditCard.cardSuffix = suffix
+            try creditCard.update(database)
+        }
+    }
 }

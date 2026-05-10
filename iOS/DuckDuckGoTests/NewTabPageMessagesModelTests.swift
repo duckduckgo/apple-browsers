@@ -293,7 +293,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     // MARK: - openedAfterIdle
 
     func testWhenOpenedAfterIdleIsTrueThenRefreshPassesOpenedAfterIdleTrue() {
-        let sut = createSUT(isOpenedAfterIdle: { true })
+        let sut = createSUT(isOpenedAfterIdle: true)
 
         sut.load()
 
@@ -302,7 +302,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     func testWhenOpenedAfterIdleIsFalseThenRefreshPassesOpenedAfterIdleFalse() {
-        let sut = createSUT(isOpenedAfterIdle: { false })
+        let sut = createSUT(isOpenedAfterIdle: false)
 
         sut.load()
 
@@ -321,7 +321,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func createSUT(isOpenedAfterIdle: @escaping () -> Bool = { false }) -> NewTabPageMessagesModel {
+    private func createSUT(isOpenedAfterIdle: Bool = false) -> NewTabPageMessagesModel {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 

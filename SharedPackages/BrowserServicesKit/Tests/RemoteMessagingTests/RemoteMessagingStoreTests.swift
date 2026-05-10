@@ -630,7 +630,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertNotNil(result)
     }
 
-    func testWhenMessageExceedsDismissThresholdThenStatusIsSetToDismissed() async throws {
+    func testWhenMessageExceedsDismissThresholdThenItIsNotReturned() async throws {
         let context = store.context
         try context.performAndWait {
             let message = RemoteMessageManagedObject(context: context)
@@ -645,10 +645,8 @@ class RemoteMessagingStoreTests: XCTestCase {
             try context.save()
         }
 
-        _ = store.fetchScheduledRemoteMessage(surfaces: .allCases)
-
-        let dismissedIDs = store.fetchDismissedRemoteMessageIDs()
-        XCTAssertTrue(dismissedIDs.contains("auto-dismiss-status"))
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNil(result)
     }
 
     func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {

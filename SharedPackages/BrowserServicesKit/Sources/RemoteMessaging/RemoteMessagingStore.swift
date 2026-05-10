@@ -462,10 +462,8 @@ extension RemoteMessagingStore {
     }
 
     private func dismissExpiredMessage(withID id: String) {
-        context.performAndWait {
-            updateRemoteMessage(withID: id, toStatus: .dismissed, in: context)
-            invalidateRemoteMessagingConfigs(in: context)
-            try? context.save()
+        Task {
+            await dismissRemoteMessage(withID: id)
         }
     }
 

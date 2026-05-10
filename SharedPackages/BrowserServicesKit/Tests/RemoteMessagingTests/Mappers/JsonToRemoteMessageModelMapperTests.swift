@@ -740,6 +740,36 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertNil(result.first?.displayConditions)
     }
 
+    func testWhenDismissAfterDaysShownIsZeroThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-clamp",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: 0)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenDismissAfterDaysShownIsNegativeThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-negative",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: -5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
     func testWhenMultipleMessagesAndOneHasUnknownTriggerThenOnlyThatOneIsDiscarded() {
         let validMessage = makeJsonMessage(
             id: "msg-valid",

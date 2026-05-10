@@ -121,18 +121,11 @@ struct JsonToRemoteMessageModelMapper {
             }
 
             let displayConditions: DisplayConditions?
-            if let jsonConditions = message.displayConditions {
-                if let triggerString = jsonConditions.trigger {
-                    guard let trigger = MessageTrigger(rawValue: triggerString) else {
-                        Logger.remoteMessaging.debug("Unknown trigger '\(triggerString, privacy: .public)' for message \(message.id, privacy: .public), discarding")
-                        return
-                    }
-                    displayConditions = DisplayConditions(trigger: trigger, dismissAfterDaysShown: jsonConditions.dismissAfterDaysShown)
-                } else {
-                    displayConditions = DisplayConditions(trigger: nil, dismissAfterDaysShown: jsonConditions.dismissAfterDaysShown)
-                }
-            } else {
-                displayConditions = nil
+            do {
+                displayConditions = try mapToDisplayConditions(message: message)
+            } catch {
+                Logger.remoteMessaging.debug("Invalid display conditions for message \(message.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return
             }
 
             var remoteMessage = RemoteMessageModel(
@@ -152,6 +145,15 @@ struct JsonToRemoteMessageModelMapper {
             remoteMessages.append(remoteMessage)
         }
         return remoteMessages
+    }
+
+    static func mapToDisplayConditions(message: RemoteMessageResponse.JsonRemoteMessage) throws -> DisplayConditions? {
+        try message.displayConditions.flatMap { conditions in
+            let validator = MappingValidator(root: conditions)
+            let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
+            let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+        }
     }
 
     static func mapToSurfaces(jsonSurfaces: [String]?, supportedSurfacesForMessage: RemoteMessageSurfaceType, messageId: String) -> RemoteMessageSurfaceType? {

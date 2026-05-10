@@ -97,7 +97,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: { hasEscapeHatch })
+                                                isOpenedAfterIdle: hasEscapeHatch)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,

@@ -1306,7 +1306,6 @@ extension Tab: UserContentControllerDelegate {
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView

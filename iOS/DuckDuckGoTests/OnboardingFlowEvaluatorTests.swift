@@ -27,7 +27,7 @@ struct OnboardingFlowEvaluatorTests {
 
     // MARK: - Default Scheme Tests
 
-    @Test("Returns default flow when URL is nil")
+    @Test("Returns default flow and default source when URL is nil")
     func nilURLReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator()
@@ -36,10 +36,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: nil)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow for valid CPP URL with default identifier")
+    @Test("Returns default flow and default source for valid CPP URL with default identifier")
     func validCPPURLWithDefaultIdentifierReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -49,10 +50,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns duckAI flow for valid CPP URL with duckAI identifier")
+    @Test("Returns duckAI flow and duckAICPP source for valid CPP URL with duckAI identifier")
     func validCPPURLWithDuckAIIdentifierReturnsDuckAIFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -62,12 +64,13 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .duckAI)
+        #expect(result.flow == .duckAI)
+        #expect(result.source == .duckAICPP)
     }
 
     // MARK: - Invalid URL Tests
 
-    @Test("Returns default flow when URL scheme does not match CPP scheme")
+    @Test("Returns default flow and default source when URL scheme does not match CPP scheme")
     func wrongSchemeReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -77,10 +80,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL has no host")
+    @Test("Returns default flow and default source when URL has no host")
     func missingHostReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -90,10 +94,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL host is not a valid flow type")
+    @Test("Returns default flow and default source when URL host is not a valid flow type")
     func invalidFlowTypeIdentifierReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -103,10 +108,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL has invalid format")
+    @Test("Returns default flow and default source when URL has invalid format")
     func malformedURLReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -116,10 +122,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL has query parameters but invalid host")
+    @Test("Returns default flow and default source when URL has query parameters but invalid host")
     func queryParametersWithInvalidHostReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -129,10 +136,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL has path components instead of host")
+    @Test("Returns default flow and default source when URL has path components instead of host")
     func pathComponentsInsteadOfHostReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -142,12 +150,13 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
     // MARK: - Custom Scheme Tests
 
-    @Test("Returns duckAI flow when using custom scheme with duckAI identifier")
+    @Test("Returns duckAI flow and duckAICPP source when using custom scheme with duckAI identifier")
     func customSchemeWithDuckAIIdentifierReturnsDuckAIFlow() {
         // GIVEN
         let customScheme = "customScheme"
@@ -158,10 +167,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .duckAI)
+        #expect(result.flow == .duckAI)
+        #expect(result.source == .duckAICPP)
     }
 
-    @Test("Returns default flow when using custom scheme with default identifier")
+    @Test("Returns default flow and default source when using custom scheme with default identifier")
     func customSchemeWithDefaultIdentifierReturnsDefaultFlow() {
         // GIVEN
         let customScheme = "customScheme"
@@ -172,10 +182,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when custom scheme does not match URL scheme")
+    @Test("Returns default flow and default source when custom scheme does not match URL scheme")
     func customSchemeMismatchReturnsDefaultFlow() {
         // GIVEN
         let customScheme = "customScheme"
@@ -186,12 +197,13 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
     // MARK: - Case Sensitivity Tests
 
-    @Test("Returns DuckAI flow when scheme has uppercase letters")
+    @Test("Returns DuckAI flow and duckAICPP source when scheme has uppercase letters")
     func uppercaseSchemeReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator()
@@ -201,12 +213,13 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .duckAI)
+        #expect(result.flow == .duckAI)
+        #expect(result.source == .duckAICPP)
     }
 
     // MARK: - Edge Cases
 
-    @Test("Returns duckAI flow when URL has query parameters")
+    @Test("Returns duckAI flow and duckAICPP source when URL has query parameters")
     func validURLWithQueryParametersReturnsDuckAIFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -216,10 +229,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .duckAI)
+        #expect(result.flow == .duckAI)
+        #expect(result.source == .duckAICPP)
     }
 
-    @Test("Returns duckAI flow when URL has fragment")
+    @Test("Returns duckAI flow and duckAICPP source when URL has fragment")
     func validURLWithFragmentReturnsDuckAIFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -229,10 +243,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .duckAI)
+        #expect(result.flow == .duckAI)
+        #expect(result.source == .duckAICPP)
     }
 
-    @Test("Returns default flow when identifier contains only whitespace")
+    @Test("Returns default flow and default source when identifier contains only whitespace")
     func whitespaceIdentifierReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -242,10 +257,11 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
-    @Test("Returns default flow when URL is empty string")
+    @Test("Returns default flow and default source when URL is empty string")
     func emptyStringURLReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
@@ -255,7 +271,8 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result.flow == .default)
+        #expect(result.source == .default)
     }
 
 }

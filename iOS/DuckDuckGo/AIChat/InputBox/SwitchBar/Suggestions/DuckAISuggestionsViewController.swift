@@ -49,8 +49,6 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
-        /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
-        static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 72
         static let escapeHatchTopPadding: CGFloat = 16
         /// 24pt gap below the hatch — matches Search-side breathing room around section title.
@@ -59,6 +57,10 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
         static let recentChatsHeaderBottomPadding: CGFloat = 24
     }
+
+    /// Suppresses the "Recent Chats" section header per the unified-input redesign.
+    /// Flip to `true` to restore the header; rendering logic below is preserved.
+    private static let areSectionHeadersEnabled = false
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
 
@@ -85,7 +87,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         // Without this, iPad readable-width pulls cells narrower than the UTI input above.
         tableView.cellLayoutMarginsFollowReadableWidth = false
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        // Pin section / cell horizontal insets to 16pt so they line up with the unified input
+        // bar's `cardHorizontalMargin` and the escape-hatch card hosted in the table header.
+        tableView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         return tableView
     }()
 
@@ -220,7 +224,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func updateContentInset() {
         guard isViewLoaded else { return }
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset + additionalTopInset, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: additionalTopInset, left: 0, bottom: 0, right: 0)
     }
 
     private func updateTableHeader() {
@@ -414,11 +418,13 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard Self.areSectionHeadersEnabled else { return 0 }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return 0 }
         return Constants.recentChatsHeaderHeight
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard Self.areSectionHeadersEnabled else { return nil }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return nil }
         return makeRecentChatsHeaderView()
     }

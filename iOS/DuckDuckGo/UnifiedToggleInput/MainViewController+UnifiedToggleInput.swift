@@ -648,11 +648,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
-        if mode == .aiChat && voiceShortcutFeature.isAvailable {
-            onDuckAIVoiceModeRequested()
-        } else {
-            handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
-        }
+        handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+    }
+
+    func unifiedToggleInputDidRequestAIVoiceChat() {
+        onDuckAIVoiceModeRequested()
     }
 
     func unifiedToggleInputDidRequestAIChat() {

@@ -775,7 +775,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 throw StartError.connectionStatusInvalid
             }
 
-            await clearInternalManager()
+            clearInternalManager()
             resetControllerStartWideEventMeasurement()
             try await start(isFirstAttempt: false)
         case .connected:

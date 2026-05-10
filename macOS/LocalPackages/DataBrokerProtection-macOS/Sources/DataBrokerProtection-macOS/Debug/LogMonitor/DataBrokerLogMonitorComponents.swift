@@ -27,10 +27,10 @@ struct LogMonitorToolbarView: View {
 
     let onStartStop: () -> Void
     let onClear: () -> Void
+    let onExport: () -> Void
 
     @Binding var retentionLimit: String
-    @Binding var shouldUseCustomSubsystem: Bool
-    @Binding var customSubsystem: String
+    @Binding var searchText: String
 
     var body: some View {
         HStack(spacing: 12) {
@@ -64,23 +64,14 @@ struct LogMonitorToolbarView: View {
 
             Divider()
 
-            // Subsystem selection
             HStack(spacing: 4) {
-                Toggle("Custom Subsystem", isOn: $shouldUseCustomSubsystem)
+                Text("Active:")
                     .font(.caption)
-                    .disabled(isMonitoring)
-
-                if shouldUseCustomSubsystem {
-                    TextField("Enter subsystem (e.g. \"PixelKit\" for pixels", text: $customSubsystem)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(width: 120)
-                        .disabled(isMonitoring)
-                } else {
-                    Text(subsystemDisplayName)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(width: 120, alignment: .leading)
-                }
+                Text(subsystemDisplayName)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
 
             Divider()
@@ -101,6 +92,21 @@ struct LogMonitorToolbarView: View {
             }
 
             Spacer()
+
+            TextField("Search logs...", text: $searchText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(width: 200)
+
+            Divider()
+
+            Button {
+                onExport()
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+            }
+            .buttonStyle(.borderless)
+            .help("Export currently visible logs to Desktop")
+            .disabled(logCount == 0)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -110,21 +116,51 @@ struct LogMonitorToolbarView: View {
 
 struct LogFilterControlsView: View {
     @Binding var filterSettings: LogFilterSettings
-    @Binding var shouldUseCustomCategory: Bool
-    @Binding var customCategory: String
 
     var body: some View {
         VStack(spacing: 8) {
+            HStack {
+                Text("Subsystem:")
+                    .font(.caption)
+                    .fontWeight(.medium)
+
+                Toggle("Custom Subsystem", isOn: $filterSettings.shouldUseCustomSubsystem)
+                    .font(.caption)
+
+                if filterSettings.shouldUseCustomSubsystem {
+                    TextField("Enter subsystem (e.g. \"Pixel\" for pixels)", text: $filterSettings.customSubsystem)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 200)
+                } else {
+                    ForEach(SubsystemPreset.allCases) { preset in
+                        Toggle(preset.rawValue, isOn: Binding(
+                            get: { filterSettings.subsystemPresets.contains(preset) },
+                            set: { isOn in
+                                if isOn {
+                                    filterSettings.subsystemPresets.insert(preset)
+                                } else {
+                                    filterSettings.subsystemPresets.remove(preset)
+                                }
+                            }
+                        ))
+                        .toggleStyle(CheckboxToggleStyle())
+                        .font(.caption)
+                    }
+                }
+
+                Spacer()
+            }
+
             HStack {
                 Text("Categories:")
                     .font(.caption)
                     .fontWeight(.medium)
 
-                Toggle("Custom Category", isOn: $shouldUseCustomCategory)
+                Toggle("Custom Category", isOn: $filterSettings.shouldUseCustomCategory)
                     .font(.caption)
 
-                if shouldUseCustomCategory {
-                    TextField("Enter category (e.g. \"PixelKit\" for pixels)", text: $customCategory)
+                if filterSettings.shouldUseCustomCategory {
+                    TextField("Enter category (e.g. \"PixelKit\" for pixels)", text: $filterSettings.customCategory)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 200)
                 } else {
@@ -145,10 +181,6 @@ struct LogFilterControlsView: View {
                 }
 
                 Spacer()
-
-                TextField("Search logs...", text: $filterSettings.searchText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 200)
             }
 
             HStack {
@@ -247,11 +279,11 @@ struct LogListView: View {
     }
 }
 
-private var timeFormatter: DateFormatter {
+private let timeFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "HH:mm:ss.SSS"
     return formatter
-}
+}()
 
 struct LogEntryRowView: View {
     let log: LogEntry
@@ -298,8 +330,6 @@ struct LogEntryRowView: View {
 }
 
 struct LogEmptyStateView: View {
-    let isMonitoring: Bool
-
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "eye")

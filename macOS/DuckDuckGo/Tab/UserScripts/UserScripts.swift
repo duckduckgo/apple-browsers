@@ -37,7 +37,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
@@ -286,7 +285,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

@@ -1,0 +1,53 @@
+# Common mistakes — extended
+
+Overflow rows from `SKILL.md` → `Common mistakes`. Load when a workflow step fails in a way the inline table doesn't cover.
+
+## Sentry queries
+
+| Mistake | Fix |
+|---|---|
+| Filtering events by `release:DuckDuckGo@...` (single prefix) | Silently drops extension crashes (e.g. `com.duckduckgo.macos.vpn.network-extension@...`). Use `app_version:` for the event-matching query; use the full multi-prefix release list only for `firstRelease:`. |
+| Confusing `app_version:` vs `firstRelease:` | `app_version:` = events whose version tag matches (cross-target). `firstRelease:` = issue's *first-ever* event was in one of these release strings (true regressions) — needs explicit release strings, so include all targets. |
+| Forgetting `&project=<filter>` in errors.duckduckgo.com query URLs | The project filter is required for listing pages to render correctly; optional but recommended for single-issue URLs. |
+| Linking Sentry short-IDs without the `APPLE-IOS-` / `APPLE-MACOS-` platform prefix in the URL path | The full short-ID is `APPLE-IOS-DF5F` or `APPLE-MACOS-BE7`, not `DF5F` / `BE7` alone. Use `https://errors.duckduckgo.com/organizations/ddg/issues/APPLE-IOS-DF5F` — the link **text** can shorten to the trailing portion (`DF5F`) for readability, but the URL path must carry the full prefixed short-ID or it may not resolve. Inconsistency within one report (some links prefixed, some not) is a tell that the model dropped the prefix mid-list. |
+| Trusting the "culprit" field for blame when generic | Symbols like `value`, `NSBundle.module`, `__pthread_kill`, `objc_release`, `main` are not attributable. Skip them. |
+
+## Tracking-task lookup + dedupe
+
+| Mistake | Fix |
+|---|---|
+| Forgetting `completed` and `tags.name` in the step 5 search `opt_fields` | Without these, you can't tell whether an existing task is open vs. closed, or read the fix-version tag. Always include `opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name,completed"`. |
+| Misreading the fix-version tag (e.g. ignoring older tags when newer ones exist) | Multiple `<platform>-app-release-X.Y.Z` tags can accumulate over time. The **highest** version is the most recent claimed fix; that's the one to compare against the analysed version. |
+| Forgetting to set `custom_fields` on the new tracking task | Without `{"1214294661819893": "<SHORT_ID>[,<SHORT_ID>...]"}`, future runs of this skill will create duplicates because the dedupe lookup will miss. |
+| Searching across the whole `Sentry Crash Reports` project instead of the platform section | Always scope the primary search to the platform section (`sections.any=<PLATFORM_SECTION>`). Only fall back to the `Untitled section` (`1214294661819891`) when the platform-section search misses — that's where pre-split tasks still live. |
+| Creating a new tracking task in the `Untitled section` (the fallback) | The fallback is read-only for *new* tasks. New tasks always go in the platform section (`section_id=1214291024165659` for macOS, `1214290879396596` for iOS). |
+| Investigating culprits for a `[Duplicate]` tracking task without checking the parent task's tags | When a tracking task is marked `[Duplicate]`, look up the parent task it points to and use that task's fix-version tags for the skip/reopen/investigate gating decision. |
+
+## Auto-resolve
+
+| Mistake | Fix |
+|---|---|
+| Filing the auto-resolved report under the Weekly Release DRI task itself instead of under today's `<Weekday> status` subtask | The DRI task is the *container* — the daily status subtasks are the actual write targets. Resolve the DRI task first, then descend into the `<Weekday> status` subtask via `asana_get_task(opt_fields="subtasks,subtasks.name,...")`. Use that subtask's GID as `<PARENT_GID>`. |
+| Treating the "🧰 Create a new release DRI task" entries as DRI matches | They're scaffolding tasks that share the project, not the actual DRI rotation task. Filter `asana_search_tasks` results to an **exact** name match (`name == "<platform> App Weekly Release DRI"`) before disambiguation. |
+| Silently falling back when auto-discovery fails (e.g. no `<Weekday> status` subtask for today, or no exact DRI match) | Stop and ask the user. Never write the report under the DRI task itself, under a previous day's status subtask, or under an inferred-but-unverified candidate. |
+| Picking the newest `is now public` task without applying the 12-hour gate | Order matters: filter out tasks <12h old first, then take the newest from the remainder. Picking the newest before the gate yields the just-rolled-out release that has no Sentry data yet — the exact case the gate exists to prevent. If every candidate is <12h old, stop and ask the user. |
+| Picking an older task when auto-resolving a `public` version (after the gate) | Once the <12h tasks are filtered out, take the **newest** of what remains. Older surviving tasks correspond to earlier releases that were superseded; we want the most recent release that has had time to accumulate events. |
+| Picking the oldest task when auto-resolving an `internal` version | `internal` uses **newest** `created_at` with no time gate. Internal release tasks accumulate over time and aren't closed on review; we always want the most recent in-flight release. |
+| Forgetting `is_subtask=false` on the `internal` release search | The `<platform> App Release <version>` parent task contains many rollout-step subtasks (`Run "Tag Release and Update Asana" GHA Job`, `Start Phased rollout`, `Announce the release manually`, etc.) that match the `App Release` text filter. Without `is_subtask=false` they clutter the result and the newest-by-`created_at` pick lands on a subtask, not the release. |
+| Treating cross-platform tasks as matches when auto-resolving the version | Asana's `text` filter is fuzzy. Always post-filter the result list with an exact regex against the platform — `^iOS <version> is now public$` for `public`, `^iOS App Release \d+\.\d+\.\d+$` for `internal` (and similarly for macOS). A `macOS …` task showing up in an iOS run must be discarded, not used. |
+| Auto-resolving a version when the user supplied one | The `release-type` parameter is **only consulted when `version` is omitted**. If the user passed `version=1.186` and also `release-type=public`, ignore `release-type` and use the literal version — same authoritative-version rule that already applies to crash-free short-circuits. |
+| Picking a default release-type when neither version nor release-type is supplied | Stop and ask the user. Picking `public` or `internal` silently means filing a Sentry report against a release the user didn't intend to triage. |
+| Adding the DRI as a follower of per-issue tracking tasks created in step 9 | Step 11 only follows the main report subtask. Tracking tasks in `Sentry Crash Reports` have their own follower model managed by the team; do not auto-add the DRI to them. |
+| Requesting only `assignee.name` (not `assignee`) in the step 1 DRI search opt_fields | You'll get the assignee's display name but no GID, and step 11 needs the GID to call `asana_add_task_followers`. Always include both `assignee` and `assignee.name`. |
+
+## Severity / classification
+
+| Mistake | Fix |
+|---|---|
+| Treating every iOS SIGKILL as a bug | Most SIGKILL+`main` crashes on iOS are Jetsam memory kills, not app bugs. LOW severity unless volume spikes or culprit is specific app code. |
+| Skipping the step-8 subagent because the crash leaf is in libobjc / UIKit / Swift runtime | Look at the *full* trace, not just the leaf. If the trace has ≥3 first-party (DuckDuckGo) frames before reaching the OS leaf, dispatch the subagent — the root cause can absolutely be in app code (renamed `@IBAction`, over-released object, retain-cycle break, allocation pressure from a specific path) even when the fault surfaces inside `__sel_registerName`, `objc_msgSend`, `bmalloc`, or `WKWebView` internals. The "OS-frames-only" skip applies only when there are *no* first-party frames at all. |
+| Creating a tracking task with no Root Cause Analysis section | If a subagent ran for the issue, its output must populate the tracking-task body. If you decide to skip the subagent under one of the legitimate skip rules in step 8, that's fine — but never create a tracking task with just a Sentry link and nothing else when a subagent should have run. A "concluded not actionable, here's why" RCA is a valid result; an empty body is not. |
+| Attributing blame on pre-existing crashes (full names, initials, or assignee mentions) | Step 4 says pre-existing entries list by user count and do **not** attribute blame at all. No "assigned to Kieran", no "(KS)", no "owned by frontend team". Pre-existing issues already have owners on their own tracking tasks; the daily summary records volume only. The blame columns (initials + PR links) apply to HIGH/MEDIUM new-in-version issues only. |
+| Inventing skip rationales in the "Recommended next step" section | The Recommended-next-step block summarises *what was found and what to do about it*. It is not a place to retroactively justify omissions ("none warrant immediate tracking tasks given the 1-user threshold"). If you skipped a tracking task, it must be for one of the four reasons in step 8 — and that reason belongs in the per-issue line, not as a release-wide policy. If you find yourself writing a sentence that explains away why MEDIUMs were dropped, stop: the MEDIUMs almost certainly need tracking tasks, and the step-8 skip rules are narrower than user-count. |
+| Substituting a different version when the requested one returns no events | The user-supplied version is authoritative — match it literally. If `find_releases` returns no releases AND `list_issues` returns zero issues, take the step 2 short-circuit: write the "Crash-free release" report and stop. Do NOT silently retarget to a previously-shipped version. Pre-release runs exist specifically to verify that internal-testing builds have no new crashes; substituting a different version files redundant tracking tasks against the wrong Asana task and defeats the check. If a version looks like a typo, ask the user. |
+| Running root-cause subagents serially | Dispatch them in parallel (single message, multiple Agent tool calls) — they're independent and waiting serially is wasteful. Skip subagents entirely when the culprit is generic or OS-only — there's nothing to analyze. Also skip when step 5 routed the issue to the "fix already shipped" bucket. |

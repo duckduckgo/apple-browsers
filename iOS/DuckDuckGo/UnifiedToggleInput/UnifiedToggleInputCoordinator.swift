@@ -271,6 +271,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
+        subscribeToAIVoiceChatTap()
         subscribeToAttachmentUsageChanges()
         viewController.isToolsButtonHidden = true
 
@@ -404,7 +405,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cleared.text = ""
         cleared.attachments = []
         cleared.selectedTool = nil
-        stateStore.update(cleared, for: uid)
+        stateStore.recordUserChoice(cleared, for: uid)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
 
@@ -505,9 +506,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         fetchModels()
 
+        let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
+            shouldSelectAllText = true
+        } else {
+            shouldSelectAllText = false
         }
 
         let expandedHeight = editingHeight()
@@ -524,8 +529,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if textState == .prefilledSelected {
-                viewController.selectAllText()
+            if shouldSelectAllText {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, case .omnibar(.active) = displayState else { return }
+                    viewController.selectAllText()
+                }
             }
         }
     }
@@ -1012,6 +1020,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func updateReasoningPicker() {
+        if toolsController.selectedTool == .imageGeneration {
+            // Reasoning effort doesn't apply to image generation; hide the picker without touching the persisted
+            // mode so the previous selection returns when the user deselects the image-gen tool.
+            viewController.isReasoningButtonHidden = true
+            viewController.reasoningPickerMenu = nil
+            return
+        }
         let selectedMode = resolvedSelectedReasoningMode
         let shouldHide = !(selectedModel?.supportsReasoningPicker ?? false)
         viewController.selectedReasoningMode = selectedMode
@@ -1082,14 +1097,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 // MARK: - Tools Menu Selection
 
 extension UnifiedToggleInputCoordinator {
-
+    
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         switch identifier {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
-            refreshToolsPresentation()
-            recordUserChoiceToStore()
+        case .imageGeneration:
+            toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
         }
+        refreshToolsPresentation()
+        recordUserChoiceToStore()
     }
 }
 
@@ -1285,7 +1302,9 @@ private extension UnifiedToggleInputCoordinator {
 
     func updateModelChipVisibility() {
         // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
-        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt
+        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
+        let isImageGenActive = toolsController.selectedTool == .imageGeneration
+        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt || isImageGenActive
         updateReasoningPicker()
     }
 
@@ -1341,6 +1360,9 @@ private extension UnifiedToggleInputCoordinator {
             selectedTool: presentation.selectedTool,
             toolsMenu: toolsMenu
         )
+        // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
+        // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
+        updateModelChipVisibility()
     }
 
     func resetToolsSelection() {
@@ -1403,7 +1425,24 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToVoiceSearchTap() {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
-                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                guard let self else { return }
+                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
+                    && viewController.inputMode == .aiChat
+                    && !viewController.isInputExpanded
+                if isCollapsedAIVoiceChatButton {
+                    delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                } else {
+                    guard viewController.handler.isVoiceSearchEnabled else { return }
+                    delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToAIVoiceChatTap() {
+        viewController.handler.aiVoiceChatButtonTappedPublisher
+            .sink { [weak self] in
+                self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
     }

@@ -317,7 +317,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await updateTunnelConfiguration(
                 updateMethod: .selectServer(currentServerSelectionMethod),
                 reassert: false,
-                regenerateKey: true)
+                regenerateKey: true,
+                isConnectionAttempt: true)
             providerEvents.fire(.rekeyAttempt(.success))
         } catch {
             providerEvents.fire(.rekeyAttempt(.failure(error)))
@@ -995,12 +996,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod,
                                    reassert: Bool,
-                                   regenerateKey: Bool = false) async throws {
+                                   regenerateKey: Bool = false,
+                                   isConnectionAttempt: Bool) async throws {
 
         providerEvents.fire(.tunnelUpdateAttempt(.begin))
 
-        if reassert {
+        if isConnectionAttempt {
             providerEvents.fire(.reportConnectionAttempt(attempt: .connecting))
+        }
+
+        if reassert {
             await stopMonitors()
         }
 
@@ -1025,12 +1030,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             providerEvents.fire(.tunnelUpdateAttempt(.success))
-            if reassert {
+            if isConnectionAttempt {
                 providerEvents.fire(.reportConnectionAttempt(attempt: .success))
             }
         } catch {
             providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
-            if reassert {
+            if isConnectionAttempt {
                 providerEvents.fire(.reportConnectionAttempt(attempt: .failure))
             }
 
@@ -1132,7 +1137,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if case .connected = connectionStatus {
                 try? await updateTunnelConfiguration(
                     updateMethod: .selectServer(serverSelectionMethod),
-                    reassert: true)
+                    reassert: true,
+                    isConnectionAttempt: true)
             }
         case .setSelectedLocation(let selectedLocation):
             let serverSelectionMethod: NetworkProtectionServerSelectionMethod
@@ -1147,7 +1153,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if case .connected = connectionStatus {
                 try? await updateTunnelConfiguration(
                     updateMethod: .selectServer(serverSelectionMethod),
-                    reassert: true)
+                    reassert: true,
+                    isConnectionAttempt: true)
             }
         case .setConnectOnLogin,
                 .setDNSSettings,
@@ -1178,7 +1185,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration),
                                             reassert: false,
-                                            regenerateKey: false)
+                                            regenerateKey: false,
+                                            isConnectionAttempt: true)
     }
 
     /// Disables on-demand if the OS supports it.
@@ -1324,7 +1332,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private func handleFailureRecoveryConfigUpdate(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws {
         self.lastSelectedServer = result.server
-        try await updateTunnelConfiguration(updateMethod: .useConfiguration(result.tunnelConfiguration), reassert: true)
+        try await updateTunnelConfiguration(updateMethod: .useConfiguration(result.tunnelConfiguration), reassert: true, isConnectionAttempt: true)
     }
 
     @MainActor
@@ -1397,7 +1405,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                         try await self.updateTunnelConfiguration(
                             updateMethod: .selectServer(currentServerSelectionMethod),
                             reassert: true,
-                            regenerateKey: true)
+                            regenerateKey: true,
+                            isConnectionAttempt: true)
                         providerEvents.fire(.serverMigrationAttempt(.success))
                     } catch {
                         providerEvents.fire(.serverMigrationAttempt(.failure(error)))
@@ -1779,8 +1788,8 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
     // resetRegistrationKey() — already internal @MainActor
     // handleAccessRevoked(dueTo:) — already internal @MainActor
 
-    func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod, reassert: Bool) async throws {
-        try await updateTunnelConfiguration(updateMethod: updateMethod, reassert: reassert, regenerateKey: false)
+    func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod, reassert: Bool, isConnectionAttempt: Bool) async throws {
+        try await updateTunnelConfiguration(updateMethod: updateMethod, reassert: reassert, regenerateKey: false, isConnectionAttempt: isConnectionAttempt)
     }
 
     func restartAdapter() async throws {

@@ -881,6 +881,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
     }
 
+    public func hasScanHistoryEvents() throws -> Bool {
+        scanJobData.contains { !$0.historyEvents.isEmpty }
+    }
+
     public func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
         return [HistoryEvent]()
     }

@@ -656,12 +656,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
-        if !enabled, isOmnibarSession {
-            inputMode = .search
-            viewController.apply(computeRenderState().viewConfig, animated: false)
-            refreshToolsPresentation()
-            modeChangeSubject.send(.search)
-        }
+        let effective = effectiveInputMode(for: inputMode)
+        guard effective != inputMode else { return }
+        inputMode = effective
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        refreshToolsPresentation()
+        modeChangeSubject.send(effective)
+    }
+
+    /// Resolves the mode the coordinator should actually be in given a requested mode.
+    /// When the toggle UI is unavailable the user has no way to flip mode themselves, so
+    /// the omnibar host collapses to search and Duck.ai tabs lock to aiChat. Otherwise the
+    /// requested mode passes through unchanged.
+    private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
+        guard !isToggleEnabled else { return requestedMode }
+        if isOmnibarSession { return .search }
+        if isAITabState { return .aiChat }
+        return requestedMode
     }
 
     func editingHeight() -> CGFloat {
@@ -686,7 +697,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Input Management
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
@@ -726,7 +737,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }

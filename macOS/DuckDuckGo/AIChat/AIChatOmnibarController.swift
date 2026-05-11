@@ -869,14 +869,22 @@ final class AIChatOmnibarController {
                 PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
 
-            // Snapshot attached tabs from the active tab's shared state. Only the IDs flow into
-            // the prompt — the duck.ai web app calls back via `getAIChatTabContent` per id to
-            // fetch each tab's page content, mirroring the sidebar tab picker's flow.
+            // Snapshot attached tabs from the active tab's shared state, then extract each tab's
+            // current `AIChatPageContextData` in parallel — same per-tab extractor the sidebar's
+            // JS-bridge (`getAIChatTabContent`) uses, so the page-content + favicon enrichment is
+            // byte-identical across both flows. Each entry carries `tabId` so the duck.ai web app
+            // sees the discriminator (presence = tab-picker context), except for the entry whose
+            // tab UUID matches the active tab: that one becomes the no-`tabId` form, i.e. "the
+            // page you're chatting about", per the tech design.
             let tabAttachments = self.activeTabAttachments
-            let attachedTabIds: [String]? = tabAttachments.isEmpty ? nil : tabAttachments.map(\.id)
-            if let attachedTabIds, !attachedTabIds.isEmpty {
+            let activeTabUUID = self.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+            let pageContextPayload: AIChatPageContextPayload? = await self.extractPageContextsForOmnibarSubmit(
+                tabAttachments: tabAttachments,
+                activeTabUUID: activeTabUUID
+            )
+            if !tabAttachments.isEmpty {
                 PixelKit.fire(
-                    AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: attachedTabIds.count),
+                    AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: tabAttachments.count),
                     frequency: .dailyAndCount,
                     includeAppVersionParameter: true
                 )
@@ -914,9 +922,9 @@ final class AIChatOmnibarController {
                 images: images,
                 files: files,
                 modelId: modelId,
+                pageContext: pageContextPayload,
                 mode: mode,
-                reasoningEffort: reasoningEffort,
-                attachedTabIds: attachedTabIds
+                reasoningEffort: reasoningEffort
             )
             promptHandler.setData(prompt)
 
@@ -932,6 +940,65 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
+    }
+
+    /// Eagerly extracts the page context for each omnibar-attached tab, returning a
+    /// `AIChatPageContextPayload?` ready to attach to the prompt's top-level `pageContext`
+    /// field. Empty list → `nil` (the field is omitted on the wire). Otherwise a
+    /// `.multiple([...])` array preserving the carousel's insertion order, where each entry
+    /// has `tabId` stamped EXCEPT the one whose tab matches the active tab (that one is
+    /// stripped to the no-`tabId` form, marking it as "the page you're chatting about" per
+    /// the tech design discriminator).
+    ///
+    /// Per-tab extraction runs in parallel (`withTaskGroup`) with the same 5s timeout the
+    /// sidebar's JS-bridge uses. Suspended / unreachable tabs return `nil` from the shared
+    /// extractor and are dropped silently from the payload — same behavior the JS-bridge has.
+    @MainActor
+    private func extractPageContextsForOmnibarSubmit(
+        tabAttachments: [AIChatTabAttachment],
+        activeTabUUID: String?
+    ) async -> AIChatPageContextPayload? {
+        guard !tabAttachments.isEmpty else { return nil }
+
+        // Look up the actual `Tab` objects from this controller's tabCollectionViewModel,
+        // matching the JS-bridge's `getAIChatTabContent` lookup (which only considers loaded
+        // tabs). Unloaded tabs have no `PageContextUserScript` to invoke, so they'd return
+        // `nil` from the extractor anyway — restricting to `loadedTabs` makes that explicit.
+        let pinned: [Tab] = tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
+        let regular: [Tab] = tabCollectionViewModel.tabCollection.loadedTabs
+        let allTabs: [Tab] = pinned + regular
+        var tabsByUUID: [String: Tab] = [:]
+        for tab in allTabs {
+            tabsByUUID[tab.uuid] = tab
+        }
+
+        let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
+            for attachment in tabAttachments {
+                let tabId: String = attachment.id
+                let tab: Tab? = tabsByUUID[tabId]
+                group.addTask { @MainActor in
+                    guard let tab else { return (tabId, nil) }
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(from: tab)
+                    return (tabId, ctx)
+                }
+            }
+            var results: [(String, AIChatPageContextData?)] = []
+            for await pair in group {
+                results.append(pair)
+            }
+            return results
+        }
+
+        // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
+        // active tab), then re-order to match the carousel's insertion order.
+        var byId: [String: AIChatPageContextData] = [:]
+        for (tabId, maybeContext) in extracted {
+            guard let ctx = maybeContext else { continue }
+            let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
+            byId[tabId] = ctx.withTabId(stampedTabId)
+        }
+        let ordered: [AIChatPageContextData] = tabAttachments.compactMap { byId[$0.id] }
+        return ordered.isEmpty ? nil : .multiple(ordered)
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.

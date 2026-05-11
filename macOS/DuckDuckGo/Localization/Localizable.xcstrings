@@ -2830,13 +2830,13 @@
       }
     },
     "aichat.file-attachment.accessibility-format" : {
-      "comment" : "Accessibility label for an attached file in the AI chat omnibar carousel — %@ is replaced with the filename",
+      "comment" : "Accessibility label for a file added to the AI chat omnibar — %@ is replaced with the filename",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "File attachment %@"
+            "value" : "Added file %@"
           }
         }
       }
@@ -4114,120 +4114,120 @@
       }
     },
     "aichat.remove-attachment-button.accessibility" : {
-      "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
+      "comment" : "Accessibility label for the remove button on added items (images, files, tabs) in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anhang entfernen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Remove attachment"
+            "value" : "Remove"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Eliminar archivo adjunto"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Supprimer la pièce jointe"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rimuovi allegato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bijlage verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usuń załącznik"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Remover anexo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Удалить вложение"
           }
         }
       }
     },
     "aichat.remove-attachment-button.tooltip" : {
-      "comment" : "Tooltip for the remove attachment button on image thumbnails in AI chat",
+      "comment" : "Tooltip for the remove button on added items (images, files, tabs) in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anhang entfernen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Remove attachment"
+            "value" : "Remove"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Eliminar archivo adjunto"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Supprimer la pièce jointe"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rimuovi allegato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bijlage verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usuń załącznik"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Remover anexo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Удалить вложение"
           }
         }

@@ -21,7 +21,7 @@ import PixelKit
 
 /// Tracks address-bar UI responsiveness for the cross-platform UI responsiveness SLO.
 /// Each interaction emits a single pixel carrying two 9-band basis-points histograms — one for
-/// char-render latency, one for suggest-settle latency — plus a `stages` enum naming which
+/// char-render latency, one for suggest-render latency — plus a `stages` enum naming which
 /// halves carry real data. An interaction that produced no samples for a given stage sends that
 /// stage as nine zeros; the `stages` parameter lets the backend filter halves explicitly without
 /// having to inspect the histogram sums.
@@ -44,7 +44,7 @@ struct AddressBarPerfPixel: PixelKitEvent {
     /// when no char samples were captured.
     let charBasisPoints: [Int]
 
-    /// 9-band basis-points histogram of suggest-settle latencies for the interaction, or nine zeros
+    /// 9-band basis-points histogram of suggest-render latencies for the interaction, or nine zeros
     /// when no suggest samples were captured.
     let suggestBasisPoints: [Int]
 

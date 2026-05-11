@@ -105,8 +105,7 @@ struct SettingsYouTubeAdBlockingView: View {
         }
     }
 
-    // TODO: replace with final YouTube Ad Blocking help page URL.
-    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com")
+    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
 
     private var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)

@@ -1210,7 +1210,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
-            onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring() as any KeyedStoring<OnboardingStoringKeys>
+            onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
     }
 }

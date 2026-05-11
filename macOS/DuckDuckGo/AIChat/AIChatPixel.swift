@@ -358,6 +358,12 @@ enum AIChatPixel: PixelKitEvent {
     /// (set to `.allow`) because it was previously `.deny` or `.ask`.
     case aiChatVoiceChatPermissionAutoGranted(from: AIChatVoiceChatPermissionAutoGrantedSource)
 
+    /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
+    /// to start a voice chat. `reason` distinguishes the case we acted on (`mic_os_denied`)
+    /// from anything else (`other`) — useful for measuring how often the FE hook fires for
+    /// unrelated WebKit failures and for sizing the OS-deny remediation funnel.
+    case aiChatVoiceChatStartFailed(reason: AIChatVoiceChatStartFailedReason)
+
     // MARK: -
 
     var name: String {
@@ -567,6 +573,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_is_enabled"
         case .aiChatVoiceChatPermissionAutoGranted:
             return "aichat_voice_chat_permission_auto_granted"
+        case .aiChatVoiceChatStartFailed:
+            return "aichat_voice_chat_start_failed"
         }
     }
 
@@ -689,6 +697,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["reason": reason]
         case .aiChatVoiceChatPermissionAutoGranted(let from):
             return ["from": from.rawValue]
+        case .aiChatVoiceChatStartFailed(let reason):
+            return ["reason": reason.rawValue]
         }
     }
 
@@ -793,7 +803,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled,
-                .aiChatVoiceChatPermissionAutoGranted:
+                .aiChatVoiceChatPermissionAutoGranted,
+                .aiChatVoiceChatStartFailed:
             return [.pixelSource]
         }
     }
@@ -829,4 +840,13 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
 enum AIChatVoiceChatPermissionAutoGrantedSource: String, CaseIterable {
     case deny
     case ask
+}
+
+/// Reason associated with a Duck.ai voice-chat start failure reported by the FE
+enum AIChatVoiceChatStartFailedReason: String, CaseIterable {
+    /// FE reported `NotAllowedError` and the OS has denied microphone access to the app —
+    /// the remediation surface was shown.
+    case micOsDenied = "mic_os_denied"
+    /// Any other reason (transient WebKit error, hardware unavailable, etc.) — no action taken.
+    case other
 }

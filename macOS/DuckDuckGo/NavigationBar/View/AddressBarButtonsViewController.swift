@@ -31,6 +31,7 @@ import UIComponents
 import DesignResourcesKitIcons
 import SwiftUI
 import WebExtensions
+import WebKit
 
 // MARK: - Toggle Interaction Tracking
 
@@ -353,6 +354,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToChromeSidebarFeatureFlag()
         subscribeToThemeChanges()
         subscribeToTabRemovals()
+        subscribeToAIChatVoiceChatPermissionRequests()
 
         applyThemeStyle()
 
@@ -598,6 +600,31 @@ final class AddressBarButtonsViewController: NSViewController {
                 }
                 .store(in: &tabRemovalCancellables)
         }
+    }
+
+    /// Observes `aiChatVoiceChatPermissionCenterRequested` and opens the Permission Center
+    /// popover when the request originated from this window's selected tab. The notification
+    /// is broadcast app-wide; the comparison against `selectedTabViewModel?.tab.webView`
+    /// scopes it to the right window and skips background tabs.
+    private func subscribeToAIChatVoiceChatPermissionRequests() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAIChatVoiceChatPermissionRequested(_:)),
+            name: .aiChatVoiceChatPermissionCenterRequested,
+            object: nil
+        )
+    }
+
+    @objc private func handleAIChatVoiceChatPermissionRequested(_ notification: Notification) {
+        guard let sourceWebView = notification.object as? WKWebView,
+              tabCollectionViewModel.selectedTabViewModel?.tab.webView === sourceWebView else {
+            return
+        }
+        // Dedupe: ignore repeated requests while the popover is already on screen.
+        if let existing = permissionCenterPopover, existing.isShown {
+            return
+        }
+        permissionCenterButtonAction(self)
     }
 
     private func subscribeToUrl() {

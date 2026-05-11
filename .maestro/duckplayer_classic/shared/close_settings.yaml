@@ -1,10 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 ---
 # Close Settings - need to go back twice on iPad
-# Duck Player is now nested under YouTube Ad Blocking — step back one level first.
-- tapOn:
-    text: "YouTube Ad Blocking"
-- tapOn:
+- tapOn: 
     text: "Settings"
-- tapOn:
+- tapOn: 
     text: "Done"

@@ -184,7 +184,7 @@ extension OnboardingRebranding {
         /// Motion. When set, the rebranded onboarding skips entrance/exit transitions, fades,
         /// and bubble-resize choreography, jumping straight to final state. Text typing is
         /// already gated inside `TypingText` / `AnimatableTypingText`. Lottie playback is *not*
-        /// gated here — those assets are swapped/frozen at the design layer.
+        /// gated here , those assets are swapped/frozen at the design layer.
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         /// Drives Dax-animation sizing for the intro dialog so accessibility text sizes don't
         /// cause the inflated bubble to overlap Dax's head.
@@ -193,7 +193,7 @@ extension OnboardingRebranding {
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
         /// Measured height of the *intro* dialog bubble. Drives Dax's adaptive sizing so that as
-        /// the bubble grows (longer copy, larger Dynamic Type) Dax shrinks 1:1 — and disappears
+        /// the bubble grows (longer copy, larger Dynamic Type) Dax shrinks 1:1 , and disappears
         /// entirely once it would fall below `IntroDialogContent.daxAnimation`'s minimum.
         @State private var introBubbleHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
@@ -247,7 +247,7 @@ extension OnboardingRebranding {
                     // at step transitions (see `animateContentTransition`); when the user changes
                     // the system text size while backgrounded the `.onChange(of: dynamicTypeSize)`
                     // below resyncs it, but reading the environment directly here makes the
-                    // accessibility-size suppression authoritative on the render itself — even
+                    // accessibility-size suppression authoritative on the render itself , even
                     // if the closure runs after this body re-evaluates.
                     if let dax = currentDaxAnimation, !dynamicTypeSize.isAccessibilitySize {
                         DaxAnimationOverlay(animation: dax, playForward: daxPlayForward, isExiting: daxExiting)
@@ -287,7 +287,7 @@ extension OnboardingRebranding {
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
             // When the user changes the system text size (Settings → Accessibility → Display &
             // Text Size → Larger Text) while the app is backgrounded, returning to the app only
-            // re-evaluates the body — but `currentDaxAnimation` is `@State` and stays whatever
+            // re-evaluates the body , but `currentDaxAnimation` is `@State` and stays whatever
             // value was captured at the last step transition. Without this, switching to/from an
             // accessibility size won't add/remove Dax (or update its scale at xxLarge/xxxLarge).
             // Recompute against the new environment and bump the overlay ID so the Lottie view
@@ -303,16 +303,23 @@ extension OnboardingRebranding {
             }
             .onPreferenceChange(IntroBubbleHeightPreferenceKey.self) { introBubbleHeight = $0 }
             .onChange(of: introBubbleHeight) { _ in
-                // Bubble height drives the intro Dax sizing — refresh `currentDaxAnimation`
+                // Bubble height drives the intro Dax sizing , refresh `currentDaxAnimation`
                 // when it changes so Dax shrinks/grows/disappears in step with the bubble.
                 // Gate to the intro step: when the user advances past intro, the bubble
-                // unmounts and the preference value drops to 0; without this guard that
-                // change would bump `daxAnimationID` for the *next* step's overlay and
-                // restart its animation from frame 0 (causing it to play twice).
+                // unmounts and the preference value drops to 0; without this guard the
+                // resize would target the *next* step's overlay.
+                //
+                // Intentionally do NOT bump `daxAnimationID` here: the intro Dax must
+                // stay alive across the internal swap between the two intro bubble
+                // configurations ("Let's get started" / "I've been here before" ↔
+                // "Start browsing" / "Show tutorial"). The swap shifts the bubble's
+                // measured height, which fires this preference change , recreating the
+                // overlay at that point makes Dax visibly disappear and reappear.
+                // Updating only the animation lets `DaxAnimationOverlay`'s `.frame(...)`
+                // resize in place while Lottie keeps playing.
                 guard case let .onboarding(viewState) = model.state,
                       case .startOnboardingDialog = viewState.type else { return }
                 currentDaxAnimation = activeDaxAnimation
-                daxAnimationID += 1
                 daxExiting = false
             }
         }
@@ -636,7 +643,7 @@ extension OnboardingRebranding {
         }
 
         /// Variant that accepts an explicit `DynamicTypeSize`. Used by the dynamic-type-change
-        /// handler, which must not rely on `self.dynamicTypeSize` — when SwiftUI invokes the
+        /// handler, which must not rely on `self.dynamicTypeSize` , when SwiftUI invokes the
         /// `.onChange(of: dynamicTypeSize)` closure, the captured `self` can still hold the
         /// previous environment value, which produces a wrong `daxAnimation(for:)` answer.
         private func activeDaxAnimation(for dynamicTypeSize: DynamicTypeSize) -> DaxAnimation? {
@@ -646,7 +653,7 @@ extension OnboardingRebranding {
 
         /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured,
         /// the device screen is smaller than the reference size (iPhone 16), or the user has
-        /// chosen an accessibility text size — at those text sizes the inflated dialog bubble
+        /// chosen an accessibility text size , at those text sizes the inflated dialog bubble
         /// would otherwise overlap the animation.
         ///
         /// `dynamicTypeSize` defaults to the view's current environment value but can be
@@ -698,7 +705,7 @@ extension OnboardingRebranding {
             skipTypingAnimation = false
 
             // Dax exit only applies during step transitions (action != nil).
-            // On initial appearance (action == nil) the overlay is just being created — no exit needed.
+            // On initial appearance (action == nil) the overlay is just being created , no exit needed.
             // Use `currentDaxAnimation` (what's actually displayed) instead of deriving from the model state,
             // so transitions where the overlay was already cleared (e.g. promo→tutorial within add-to-dock)
             // don't trigger an unnecessary daxExitDuration delay.
@@ -711,14 +718,14 @@ extension OnboardingRebranding {
             )
 
             if action == nil {
-                // Initial appearance — pin the overlay to the current step and reset Dax.
+                // Initial appearance , pin the overlay to the current step and reset Dax.
                 currentDaxAnimation = activeDaxAnimation
                 daxPlayForward = true
                 daxAnimationID += 1
             }
 
             // All exit animations (slide, fade, or both) start simultaneously with the page
-            // transition — no pre-transition delay is added. Reduced motion collapses every
+            // transition , no pre-transition delay is added. Reduced motion collapses every
             // delay to zero so the new step appears immediately.
             let actionDelay: TimeInterval = (action != nil && !reduceMotion) ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0
 
@@ -726,20 +733,20 @@ extension OnboardingRebranding {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
                     if hasAnyDaxExit {
                         // Trigger exit animations in sync with the page transition.
-                        // currentDaxAnimation is intentionally NOT updated here — keeping it
+                        // currentDaxAnimation is intentionally NOT updated here , keeping it
                         // pinned to the old step's animation keeps the overlay alive so it can
                         // finish its exit even after model.state has moved to the next step.
                         daxExiting = true
                         action()
                         DispatchQueue.main.asyncAfter(deadline: .now() + daxExitDuration) {
-                            // Exit complete — advance the overlay to the new step.
+                            // Exit complete , advance the overlay to the new step.
                             daxExiting = false
                             currentDaxAnimation = activeDaxAnimation
                             daxPlayForward = true
                             daxAnimationID += 1
                         }
                     } else {
-                        // No exit animation — advance the overlay atomically with the state change.
+                        // No exit animation , advance the overlay atomically with the state change.
                         action()
                         currentDaxAnimation = activeDaxAnimation
                         daxPlayForward = true
@@ -848,7 +855,7 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
 }
 
 /// Carries the rendered height of the *intro* bubble up to `OnboardingView` so it can size Dax
-/// inversely to the bubble (the bigger the bubble, the smaller Dax — until Dax hides).
+/// inversely to the bubble (the bigger the bubble, the smaller Dax , until Dax hides).
 private struct IntroBubbleHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 

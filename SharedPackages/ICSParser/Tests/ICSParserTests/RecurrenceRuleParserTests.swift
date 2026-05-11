@@ -166,6 +166,68 @@ struct RecurrenceRuleParserTests {
         }
     }
 
+    /// Silently dropping a bad BYMONTHDAY token would change the recurrence (e.g. `15,abc,31`
+    /// would behave as `15,31`). Must surface the error.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for non-integer BYMONTHDAY token", .timeLimit(.minutes(1)))
+    func throwsForMalformedByMonthDay() {
+        let raw = "FREQ=MONTHLY;BYMONTHDAY=15,abc,31"
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: raw)) {
+            try RecurrenceRuleParser.parse(raw, startDate: utcDate("2026-01-15T09:00:00Z"))
+        }
+    }
+
+    /// Same shape as the BYMONTHDAY case: a non-integer token must throw, not be dropped.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for non-integer BYMONTH token", .timeLimit(.minutes(1)))
+    func throwsForMalformedByMonth() {
+        let raw = "FREQ=YEARLY;BYMONTH=12,xyz"
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: raw)) {
+            try RecurrenceRuleParser.parse(raw, startDate: utcDate("2026-12-25T09:00:00Z"))
+        }
+    }
+
+    /// Monthly + single BYMONTHDAY: +N months keeps DTSTART's day. When BYMONTHDAY differs,
+    /// our shortcut lands on the wrong day; keep COUNT semantics.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT when monthly BYMONTHDAY does not match DTSTART day", .timeLimit(.minutes(1)))
+    func keepsCountWhenMonthlyByMonthDayMisaligned() throws {
+        // DTSTART on day 10; BYMONTHDAY=15 picks a different day each month.
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;COUNT=12;BYMONTHDAY=15",
+            startDate: utcDate("2026-06-10T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 12)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
+    /// Yearly + single BYMONTH: +N years keeps DTSTART's month. Misaligned BYMONTH shifts the
+    /// effective month each cycle; defer to occurrence count.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT when yearly BYMONTH does not match DTSTART month", .timeLimit(.minutes(1)))
+    func keepsCountWhenYearlyByMonthMisaligned() throws {
+        // DTSTART in March; BYMONTH=6 picks June each year.
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=YEARLY;COUNT=5;BYMONTH=6",
+            startDate: utcDate("2026-03-15T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 5)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
+    /// Yearly + single BYMONTHDAY similarly needs DTSTART's day to match.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT when yearly BYMONTHDAY does not match DTSTART day", .timeLimit(.minutes(1)))
+    func keepsCountWhenYearlyByMonthDayMisaligned() throws {
+        // DTSTART on day 10; BYMONTHDAY=20 shifts the day of the month each year.
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=YEARLY;COUNT=5;BYMONTHDAY=20",
+            startDate: utcDate("2026-06-10T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 5)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Drops BYDAY tokens with invalid week numbers (0 or out of range)", .timeLimit(.minutes(1)))
     func dropsByDayTokensWithInvalidWeekNumbers() throws {

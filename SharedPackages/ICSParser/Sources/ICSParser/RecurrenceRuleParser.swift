@@ -59,9 +59,9 @@ enum RecurrenceRuleParser {
             case "BYDAY":
                 byDay = rawValue.split(separator: ",").compactMap { parseByDay(String($0)) }
             case "BYMONTHDAY":
-                byMonthDay = rawValue.split(separator: ",").compactMap { Int($0) }
+                byMonthDay = try integerList(rawValue, original: value)
             case "BYMONTH":
-                byMonth = rawValue.split(separator: ",").compactMap { Int($0) }
+                byMonth = try integerList(rawValue, original: value)
             default:
                 break
             }
@@ -135,6 +135,17 @@ enum RecurrenceRuleParser {
             return nil
         }
         return EKRecurrenceDayOfWeek(weekday, weekNumber: weekNumber)
+    }
+
+    /// Throws on any non-integer token so a malformed BYMONTH/BYMONTHDAY value doesn't silently
+    /// drop entries and produce a different recurrence than the file specified.
+    private static func integerList(_ raw: String, original: String) throws -> [Int] {
+        try raw.split(separator: ",").map { token in
+            guard let value = Int(token) else {
+                throw ICSParser.Error.malformedRecurrenceRule(raw: original)
+            }
+            return value
+        }
     }
 
     /// Per RFC 5545 §3.3.10, UNTIL is UTC for time-anchored DTSTARTs. Date-only form accepted
@@ -235,6 +246,26 @@ enum RecurrenceRuleParser {
         byMonth: [Int],
         calendar: Calendar
     ) -> Bool {
+        if byRuleStructureUnsafe(frequency: frequency, byDay: byDay, byMonthDay: byMonthDay, byMonth: byMonth) {
+            return true
+        }
+        return dtstartMisalignsBYRules(
+            frequency: frequency,
+            startDate: startDate,
+            byDay: byDay,
+            byMonthDay: byMonthDay,
+            byMonth: byMonth,
+            calendar: calendar
+        )
+    }
+
+    /// BY-rule shapes where component arithmetic is unsafe regardless of DTSTART alignment.
+    private static func byRuleStructureUnsafe(
+        frequency: EKRecurrenceFrequency,
+        byDay: [EKRecurrenceDayOfWeek],
+        byMonthDay: [Int],
+        byMonth: [Int]
+    ) -> Bool {
         // Daily + BYDAY filters which weekdays count, so +N days overshoots by skipped days.
         if frequency == .daily, !byDay.isEmpty { return true }
         if frequency == .weekly, byDay.count > 1 { return true }
@@ -242,15 +273,40 @@ enum RecurrenceRuleParser {
         if frequency == .monthly || frequency == .yearly, !byDay.isEmpty { return true }
         if byMonthDay.count > 1 { return true }
         if byMonth.count > 1 { return true }
-        // Weekly + single BYDAY only lands on the right weekday when DTSTART already matches.
-        if frequency == .weekly, let onlyDay = byDay.first {
-            let startWeekday = calendar.component(.weekday, from: startDate)
-            if startWeekday != onlyDay.dayOfTheWeek.rawValue { return true }
+        return false
+    }
+
+    /// BY-rule shapes where component arithmetic only works when DTSTART already matches the
+    /// single-value BY-rule, plus the day-clamping cases for monthly/yearly arithmetic.
+    private static func dtstartMisalignsBYRules(
+        frequency: EKRecurrenceFrequency,
+        startDate: Date,
+        byDay: [EKRecurrenceDayOfWeek],
+        byMonthDay: [Int],
+        byMonth: [Int],
+        calendar: Calendar
+    ) -> Bool {
+        let startWeekday = calendar.component(.weekday, from: startDate)
+        let startDay = calendar.component(.day, from: startDate)
+        let startMonth = calendar.component(.month, from: startDate)
+
+        if frequency == .weekly, let only = byDay.first, startWeekday != only.dayOfTheWeek.rawValue {
+            return true
+        }
+        // Monthly + single BYMONTHDAY: +N months keeps DTSTART's day, not the BYMONTHDAY day.
+        if frequency == .monthly, let only = byMonthDay.first, startDay != only {
+            return true
+        }
+        // Yearly + single BYMONTH/BYMONTHDAY: +N years keeps DTSTART's month and day; both
+        // must already match the BY-rule values to land on the right occurrence.
+        if frequency == .yearly, let only = byMonth.first, startMonth != only {
+            return true
+        }
+        if frequency == .yearly, let only = byMonthDay.first, startDay != only {
+            return true
         }
         // Calendar clamps day-of-month, so DTSTART on day 29/30/31 + N months can undershoot.
-        let startDay = calendar.component(.day, from: startDate)
         if frequency == .monthly, startDay > 28 { return true }
-        let startMonth = calendar.component(.month, from: startDate)
         if frequency == .yearly, startMonth == 2, startDay == 29 { return true }
         return false
     }

@@ -47,6 +47,8 @@ enum PropertyParser {
             case "LOCATION":
                 location = TextUnescaper.unescape(value)
             case "URL":
+                // Malformed URLs are dropped silently rather than failing the event: producers
+                // sometimes emit unencoded values, and the URL field is optional metadata.
                 url = URL(string: value)
             case "DTSTART":
                 let parsed = try DateValueParser.parse(value: value, paramPart: keyPart, field: "DTSTART")
@@ -128,6 +130,9 @@ enum PropertyParser {
             // RFC 5545 §3.6.1: an all-day event's end is exclusive (next day at 00:00).
             return calendar.date(byAdding: .day, value: 1, to: start) ?? start
         }
+        // RFC 5545 §3.6.1 specifies a 0-second duration when DTEND and DURATION are both absent
+        // for timed events. We diverge to a 1-hour fallback to match Apple Calendar's behaviour
+        // and avoid a UX where the event "starts and ends at the same instant".
         return start.addingTimeInterval(3_600)
     }
 }

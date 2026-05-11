@@ -585,8 +585,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .onboardingDuckAIQueryExperiment:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
                    cohortType: DuckAIQueryExperimentCohort.self)
+            // Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
+            //        cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
             Config(source: .disabled, supportsLocalOverriding: true)
         case .storeSerpSettings:

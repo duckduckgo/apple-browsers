@@ -268,6 +268,7 @@ class TabSwitcherViewController: UIViewController {
 
     func showFireTabsTipIfNeeded() {
         guard #available(iOS 17.0, *) else { return }
+        guard !LaunchOptionsHandler().isAutomationSession else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
         guard selectedBrowsingMode != .fire else { return }
         guard let sourceView = segmentedPickerHostingController?.view else { return }

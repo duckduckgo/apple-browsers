@@ -386,7 +386,7 @@
             }
         ]
     },
-    "m_web_extension_adblocking_detected_ad_blocker": {
+    "m_web_extension_adblocking_detected_ad_blocker_daily": {
         "description": "Fires once daily when content-scope-scripts detects an ad blocker challenge while playing a YouTube video.",
         "owners": ["miasma13"],
         "triggers": ["other"],
@@ -401,7 +401,7 @@
             }
         ]
     },
-    "m_web_extension_adblocking_detected_playability_error": {
+    "m_web_extension_adblocking_detected_playability_error_daily": {
         "description": "Fires once daily when content-scope-scripts detects a YouTube playability error.",
         "owners": ["miasma13"],
         "triggers": ["other"],
@@ -416,7 +416,7 @@
             }
         ]
     },
-    "m_web_extension_adblocking_detected_video_ad": {
+    "m_web_extension_adblocking_detected_video_ad_daily": {
         "description": "Fires once daily when content-scope-scripts detects a YouTube video ad.",
         "owners": ["miasma13"],
         "triggers": ["other"],
@@ -431,7 +431,7 @@
             }
         ]
     },
-    "m_web_extension_adblocking_detected_static_ad": {
+    "m_web_extension_adblocking_detected_static_ad_daily": {
         "description": "Fires once daily when content-scope-scripts detects a YouTube static (non-video) ad.",
         "owners": ["miasma13"],
         "triggers": ["other"],
@@ -446,7 +446,7 @@
             }
         ]
     },
-    "m_web_extension_adblocking_detected_buffering": {
+    "m_web_extension_adblocking_detected_buffering_daily": {
         "description": "Fires once daily when content-scope-scripts detects YouTube playback buffering.",
         "owners": ["miasma13"],
         "triggers": ["other"],

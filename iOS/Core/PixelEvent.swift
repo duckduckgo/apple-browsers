@@ -1831,11 +1831,11 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlocker
-        case webExtensionAdBlockingDetectedPlayabilityError
-        case webExtensionAdBlockingDetectedVideoAd
-        case webExtensionAdBlockingDetectedStaticAd
-        case webExtensionAdBlockingDetectedBuffering
+        case webExtensionAdBlockingDetectedAdBlockerDaily
+        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
+        case webExtensionAdBlockingDetectedVideoAdDaily
+        case webExtensionAdBlockingDetectedStaticAdDaily
+        case webExtensionAdBlockingDetectedBufferingDaily
 
         // MARK: - Fire Mode
         case fireModeNTPPromotionShown
@@ -1866,11 +1866,11 @@ extension Pixel.Event {
     /// Returns `nil` for unknown types so the caller can no-op.
     public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
         switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlocker
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityError
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAd
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAd
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBuffering
+        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
+        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
+        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
+        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
+        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
         default: return nil
         }
     }
@@ -3611,11 +3611,11 @@ extension Pixel.Event {
         case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
         case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
 
-        case .webExtensionAdBlockingDetectedAdBlocker: return "m_web_extension_adblocking_detected_ad_blocker"
-        case .webExtensionAdBlockingDetectedPlayabilityError: return "m_web_extension_adblocking_detected_playability_error"
-        case .webExtensionAdBlockingDetectedVideoAd: return "m_web_extension_adblocking_detected_video_ad"
-        case .webExtensionAdBlockingDetectedStaticAd: return "m_web_extension_adblocking_detected_static_ad"
-        case .webExtensionAdBlockingDetectedBuffering: return "m_web_extension_adblocking_detected_buffering"
+        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
+        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
+        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
+        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
+        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"

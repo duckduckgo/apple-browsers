@@ -32,7 +32,7 @@ protocol TabObserver: AnyObject {
     
 }
 
-public class Tab: NSObject, NSCoding {
+public class Tab: NSObject, NSCoding, NSCopying {
 
     struct WeaklyHeldTabObserver {
         weak var observer: TabObserver?
@@ -234,6 +234,19 @@ public class Tab: NSObject, NSCoding {
         coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
+    }
+
+    public func copy(with zone: NSZone? = nil) -> Any {
+        Tab(uid: uid,
+            link: link?.copy() as? Link,
+            viewed: viewed,
+            desktop: isDesktop,
+            lastViewedDate: lastViewedDate,
+            daxEasterEggLogoURL: daxEasterEggLogoURL,
+            contextualChatURL: contextualChatURL,
+            supportsTabHistory: supportsTabHistory,
+            fireTab: fireTab,
+            unifiedInputState: unifiedInputState)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

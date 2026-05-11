@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Combine
 
-public class TabsModel: NSObject, NSCoding, TabsModelManaging {
+public class TabsModel: NSObject, NSCoding, NSCopying, TabsModelManaging {
 
     private struct NSCodingKeys {
         static let legacyIndex = "currentIndex"
@@ -115,6 +115,11 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         coder.encode(tabs, forKey: NSCodingKeys.tabs)
         coder.encode(_currentIndex, forKey: NSCodingKeys.currentIndex)
         coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
+    }
+
+    public func copy(with zone: NSZone? = nil) -> Any {
+        let tabsCopy = tabs.compactMap { $0.copy() as? Tab }
+        return TabsModel(tabs: tabsCopy, currentIndex: _currentIndex, desktop: false, mode: mode)
     }
 
     var currentTab: Tab? {

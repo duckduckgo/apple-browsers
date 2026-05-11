@@ -21,15 +21,24 @@ import PixelKit
 
 /// Tracks address-bar UI responsiveness for the cross-platform UI responsiveness SLO.
 /// Each interaction emits a single pixel carrying two 9-band basis-points histograms — one for
-/// char-render latency, one for suggest-settle latency. An interaction that produced no samples
-/// for a given stage sends that stage as nine zeros; the backend filters per stage by checking
-/// whether the half's basis points sum to non-zero (a populated half sums to 9992–10000).
+/// char-render latency, one for suggest-settle latency — plus a `stages` enum naming which
+/// halves carry real data. An interaction that produced no samples for a given stage sends that
+/// stage as nine zeros; the `stages` parameter lets the backend filter halves explicitly without
+/// having to inspect the histogram sums.
 ///
 /// The Windows counterpart ships two separate pixels with the same per-stage schemas. The
 /// macOS divergence is intentional — both stages share trigger, snapshot, and deferred dispatch,
 /// so a single pixel halves the network traffic in the case where both stages have data.
 /// Backend aggregation accommodates the divergence via a macOS-specific Prefect case.
 struct AddressBarPerfPixel: PixelKitEvent {
+
+    /// Names which halves of the pixel carry real data. A pixel is only emitted when at least one
+    /// stage has samples, so a "neither" case is never sent.
+    enum Stages: String {
+        case charOnly = "char_only"
+        case suggestOnly = "suggest_only"
+        case both
+    }
 
     /// 9-band basis-points histogram of char-render latencies for the interaction, or nine zeros
     /// when no char samples were captured.
@@ -39,6 +48,9 @@ struct AddressBarPerfPixel: PixelKitEvent {
     /// when no suggest samples were captured.
     let suggestBasisPoints: [Int]
 
+    /// Names which halves of this pixel carry real data.
+    let stages: Stages
+
     var name: String { "m_mac_address-bar_render-perf" }
 
     var parameters: [String: String]? {
@@ -46,6 +58,7 @@ struct AddressBarPerfPixel: PixelKitEvent {
         for (key, value) in Self.histogramParameters(prefix: "suggest_", basisPoints: suggestBasisPoints) {
             result[key] = value
         }
+        result["stages"] = stages.rawValue
         return result
     }
 

@@ -101,6 +101,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         XCTAssertEqual(pixel.charBasisPoints[1], 10_000)
         XCTAssertEqual(pixel.charBasisPoints.reduce(0, +), 10_000)
         XCTAssertEqual(pixel.suggestBasisPoints.reduce(0, +), 0, "Suggest half must be empty (all zeros)")
+        XCTAssertEqual(pixel.stages, .charOnly)
     }
 
     func test_terminateWithNoMeasurements_doesNotFirePixel() {
@@ -135,6 +136,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         let pixel = pixels[0]
         XCTAssertGreaterThan(pixel.charBasisPoints.reduce(0, +), 0, "Char half must be populated")
         XCTAssertGreaterThan(pixel.suggestBasisPoints.reduce(0, +), 0, "Suggest half must be populated")
+        XCTAssertEqual(pixel.stages, .both)
     }
 
     func test_suggestionsUpdateWithoutKeystroke_recordsNothing() {
@@ -166,6 +168,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         // 80ms latency — band 2 (50..100).
         XCTAssertEqual(pixel.suggestBasisPoints[2], 10_000)
         XCTAssertEqual(pixel.charBasisPoints.reduce(0, +), 0, "Char half must be empty (no commit fired)")
+        XCTAssertEqual(pixel.stages, .suggestOnly)
     }
 
     // MARK: - Commit-gating

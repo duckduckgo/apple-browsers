@@ -1,13 +1,19 @@
 // See https://app.asana.com/0/0/1213998825835555/f
 {
     "m_mac_address-bar_render-perf": {
-        "description": "Fires at the end of an address-bar interaction (focus loss, navigation, AI-mode toggle, tab switch, window or app deactivate) when at least one render measurement was captured. Carries two 9-band basis-points histograms — one for char-render latencies, one for suggest-settle latencies. A stage with no samples is sent as nine zeros; the backend filters per stage by checking whether the half's basis points sum to non-zero.",
+        "description": "Fires at the end of an address-bar interaction (focus loss, navigation, AI-mode toggle, tab switch, window or app deactivate) when at least one render measurement was captured. Carries two 9-band basis-points histograms — one for char-render latencies, one for suggest-settle latencies — plus a `stages` field naming which halves carry real data. A stage with no samples is sent as nine zeros and identified by the `stages` value.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
             "appVersion",
             "pixelSource",
+            {
+                "key": "stages",
+                "type": "string",
+                "description": "Names which halves of the pixel carry real data: `char_only` when only char-render samples were captured, `suggest_only` when only suggest-settle samples were captured, `both` when both stages have samples.",
+                "pattern": "^(char_only|suggest_only|both)$"
+            },
             {
                 "key": "char_bp_0_16",
                 "type": "string",

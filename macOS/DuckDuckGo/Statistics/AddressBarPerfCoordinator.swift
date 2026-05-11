@@ -144,7 +144,19 @@ final class AddressBarPerfCoordinator {
 
         let charBP = AddressBarPerfBucketing.basisPoints(for: snapshot.char)
         let suggestBP = AddressBarPerfBucketing.basisPoints(for: snapshot.suggest)
-        let pixel = AddressBarPerfPixel(charBasisPoints: charBP, suggestBasisPoints: suggestBP)
+        let stages: AddressBarPerfPixel.Stages
+        if !snapshot.char.isEmpty && !snapshot.suggest.isEmpty {
+            stages = .both
+        } else if !snapshot.char.isEmpty {
+            stages = .charOnly
+        } else {
+            stages = .suggestOnly
+        }
+        let pixel = AddressBarPerfPixel(
+            charBasisPoints: charBP,
+            suggestBasisPoints: suggestBP,
+            stages: stages
+        )
 
         let firer = pixelFirer
         let work = DispatchWorkItem {

@@ -103,6 +103,8 @@ struct BrokerProfileScanSubJob {
                                 stageCalculator: stageCalculator,
                                 database: dependencies.database)
 
+            dependencies.pixelHandler.fire(.firstScan(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+
             let runner = makeScanRunner(brokerProfileQueryData: brokerProfileQueryData,
                                         stageCalculator: stageCalculator,
                                         shouldRunNextStep: shouldRunNextStep,

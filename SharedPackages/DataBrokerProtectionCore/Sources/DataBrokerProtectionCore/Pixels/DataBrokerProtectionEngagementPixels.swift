@@ -113,45 +113,69 @@ public final class DataBrokerProtectionEngagementPixels {
             return
         }
 
+        let mostRecentScan = mostRecentSuccessfulScanDate()
         let isFreeScan = !isAuthenticated
 
-        if shouldWeFireDailyPixel(date: currentDate) {
+        if shouldWeFireDailyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
             handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh, isFreeScan: isFreeScan))
             repository.markDailyPixelSent()
         }
 
-        if shouldWeFireWeeklyPixel(date: currentDate) {
+        if shouldWeFireWeeklyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
             handler.fire(.weeklyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markWeeklyPixelSent()
         }
 
-        if shouldWeFireMonthlyPixel(date: currentDate) {
+        if shouldWeFireMonthlyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
             handler.fire(.monthlyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markMonthlyPixelSent()
         }
     }
 
-    private func shouldWeFireDailyPixel(date: Date) -> Bool {
-        guard let latestPixelFire = repository.getLatestDailyPixel() else {
-            return true
+    private func shouldWeFireDailyPixel(date: Date, mostRecentScan: Date?) -> Bool {
+        if let latestPixelFire = repository.getLatestDailyPixel(),
+           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily) {
+            return false
         }
-
-        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily)
+        return isWithin(.daily, of: date, scan: mostRecentScan)
     }
 
-    private func shouldWeFireWeeklyPixel(date: Date) -> Bool {
-        guard let latestPixelFire = repository.getLatestWeeklyPixel() else {
-            return true
+    private func shouldWeFireWeeklyPixel(date: Date, mostRecentScan: Date?) -> Bool {
+        if let latestPixelFire = repository.getLatestWeeklyPixel(),
+           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly) {
+            return false
         }
-
-        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly)
+        return isWithin(.weekly, of: date, scan: mostRecentScan)
     }
 
-    private func shouldWeFireMonthlyPixel(date: Date) -> Bool {
-        guard let latestPixelFire = repository.getLatestMonthlyPixel() else {
-            return true
+    private func shouldWeFireMonthlyPixel(date: Date, mostRecentScan: Date?) -> Bool {
+        if let latestPixelFire = repository.getLatestMonthlyPixel(),
+           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly) {
+            return false
         }
+        return isWithin(.monthly, of: date, scan: mostRecentScan)
+    }
 
-        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly)
+    private func isWithin(_ frequency: Frequency, of date: Date, scan: Date?) -> Bool {
+        guard let scan,
+              let diff = DataBrokerProtectionSharedPixelsUtilities.numberOfDaysFrom(startDate: scan, endDate: date) else {
+            return false
+        }
+        return diff < frequency.rawValue
+    }
+
+    private func mostRecentSuccessfulScanDate() -> Date? {
+        guard let allData = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false) else {
+            return nil
+        }
+        var latest: Date?
+        for queryData in allData {
+            for event in queryData.scanJobData.historyEvents where event.isScanSuccessEvent() {
+                if latest == nil || event.date > latest! {
+                    latest = event.date
+                }
+            }
+        }
+        return latest
     }
 }

@@ -35,6 +35,15 @@ final class DBPHomeViewController: NSViewController {
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
     private let vpnBypassService: VPNBypassFeatureProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler? = PixelKit.shared.map {
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS)
+    }
+    private lazy var interactionPixels: DataBrokerProtectionInteractionPixels? = sharedPixelsHandler.map {
+        DataBrokerProtectionInteractionPixels(
+            handler: $0,
+            repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+        )
+    }
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
@@ -155,6 +164,12 @@ final class DBPHomeViewController: NSViewController {
         case .valid:
             displayDBPUI()
             pixelHandler.fire(.homeViewShowWebUI)
+            Task { [weak self] in
+                guard let self else { return }
+                let isAuthenticated = await self.dataBrokerProtectionManager.isUserAuthenticated()
+                self.interactionPixels?.fireInteractionPixel(isAuthenticated: isAuthenticated)
+                self.sharedPixelsHandler?.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+            }
         }
     }
 

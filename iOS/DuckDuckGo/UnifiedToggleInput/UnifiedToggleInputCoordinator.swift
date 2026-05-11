@@ -1002,7 +1002,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
-            inputMode: inputMode
+            inputMode: inputMode,
+            isAITab: isAITabState
         )
     }
 

@@ -31,6 +31,9 @@ struct UTIRenderState: Equatable {
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    /// True when the UTI is hosted by a Duck.ai tab. Used downstream to suppress the inline
+    /// dismiss (back chevron) — the tab's nav header already provides a back arrow.
+    var isAITab: Bool
 
     var isExpanded: Bool { cardLayout.isExpanded }
 
@@ -42,7 +45,8 @@ struct UTIRenderState: Equatable {
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isAITab: isAITab
         )
     }
 

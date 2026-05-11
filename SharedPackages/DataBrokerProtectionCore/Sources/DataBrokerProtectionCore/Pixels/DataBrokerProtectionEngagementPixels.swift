@@ -113,7 +113,7 @@ public final class DataBrokerProtectionEngagementPixels {
             return
         }
 
-        let mostRecentScan = mostRecentSuccessfulScanDate()
+        let mostRecentScan = (try? database.fetchMostRecentFinishedScanEventDate()) ?? nil
         let isFreeScan = !isAuthenticated
 
         if shouldWeFireDailyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
@@ -162,20 +162,5 @@ public final class DataBrokerProtectionEngagementPixels {
             return false
         }
         return diff < frequency.rawValue
-    }
-
-    private func mostRecentSuccessfulScanDate() -> Date? {
-        guard let allData = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false) else {
-            return nil
-        }
-        var latest: Date?
-        for queryData in allData {
-            for event in queryData.scanJobData.historyEvents where event.isScanSuccessEvent() {
-                if latest == nil || event.date > latest! {
-                    latest = event.date
-                }
-            }
-        }
-        return latest
     }
 }

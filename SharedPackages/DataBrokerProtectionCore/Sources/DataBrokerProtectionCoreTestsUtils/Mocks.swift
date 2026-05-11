@@ -908,6 +908,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         false
     }
 
+    public func fetchMostRecentFinishedScanEventDate() throws -> Date? {
+        nil
+    }
+
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         return [DataBroker]()
     }
@@ -1341,6 +1345,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         false
     }
 
+    public var mostRecentFinishedScanEventDateToReturn: Date?
+
+    public func fetchMostRecentFinishedScanEventDate() throws -> Date? {
+        mostRecentFinishedScanEventDateToReturn
+    }
+
     public func matchRemovedByUser(_ matchID: Int64) throws {
 
     }
@@ -1420,6 +1430,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutEvents.removeAll()
         backgroundTaskEventsToReturn.removeAll()
         addHistoryEventError = nil
+        mostRecentFinishedScanEventDateToReturn = nil
     }
 
     public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []

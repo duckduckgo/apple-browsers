@@ -114,6 +114,8 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
 
     func hasMatches() throws -> Bool
 
+    func fetchMostRecentFinishedScanEventDate() throws -> Date?
+
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
@@ -504,6 +506,10 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
 
     public func hasMatches() throws -> Bool {
         try self.providers.database.hasMatches()
+    }
+
+    public func fetchMostRecentFinishedScanEventDate() throws -> Date? {
+        try self.providers.database.fetchMostRecentFinishedScanEventDate()
     }
 
     public func fetchAllAttempts() throws -> [AttemptInformation] {

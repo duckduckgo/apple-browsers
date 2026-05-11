@@ -97,11 +97,15 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// Dormant — duck.ai web FE `replaceState`s `?mode=voice` mid-session and dispatches
-    /// `voiceSessionEnded` inconsistently. Re-enable with a real signal once those are fixed.
-    var isCurrentTabUsingVoiceMode: Bool { false }
+    /// Driven by FE `hideChatInput` / `showChatInput` user-script messages, persisted per tab
+    /// in `TabInputState`. Only AI tabs participate in the chrome reduction.
+    var isCurrentTabUsingVoiceMode: Bool {
+        guard currentTab?.isAITab == true else { return false }
+        return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
+    }
 
-    /// Hides the AI-tab chrome during voice mode. Idempotent; dormant (see `isCurrentTabUsingVoiceMode`).
+    /// Hides the AI-tab chrome (left pill + bottom UTI bar) when FE asks to hide the chat input.
+    /// Idempotent; call from every refresh.
     func reconcileVoiceModeChromeForCurrentTab() {
         let active = isCurrentTabUsingVoiceMode
         aiChatTabChatHeaderView?.setVoiceModeActive(active)

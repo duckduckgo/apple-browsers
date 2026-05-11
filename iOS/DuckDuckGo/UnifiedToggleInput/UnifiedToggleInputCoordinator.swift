@@ -198,7 +198,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
-    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+        didSet {
+            // Persist FE-driven visibility changes so they survive tab switches; guarded by
+            // `isApplyingState` inside `persistDraftToStore` so the tab-switch round-trip
+            // doesn't loop back into the store.
+            guard oldValue != aiChatInputBoxVisibility else { return }
+            persistDraftToStore()
+        }
+    }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
     // MARK: - Properties

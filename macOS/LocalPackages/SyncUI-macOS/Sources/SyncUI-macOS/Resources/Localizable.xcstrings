@@ -5646,55 +5646,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Geräte werden getrennt und deine synchronisierten Daten werden vom Server gelöscht."
+            "value" : "Dein Backup wird vom Server gelöscht. Alle Geräte werden von der Synchronisierung getrennt, es werden jedoch keine Daten von den Geräten gelöscht."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "These devices will be disconnected and your synced data will be deleted from the server."
+            "value" : "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos dispositivos se desdesconectarán y tus datos sincronizados se eliminarán del servidor."
+            "value" : "Tu copia de seguridad se eliminará del servidor. Todos los dispositivos se desconectarán de la sincronización, pero no se eliminará nada de ningún dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ces appareils seront déconnectés et vos données synchronisées seront supprimées du serveur."
+            "value" : "Votre sauvegarde sera supprimée du serveur. Tous les appareils seront déconnectés de la synchronisation, mais rien ne sera supprimé sur aucun appareil."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questi dispositivi saranno disconnessi e i dati sincronizzati saranno eliminati dal server."
+            "value" : "Il tuo backup verrà eliminato dal server. Tutti i dispositivi verranno disconnessi dalla sincronizzazione, ma nessun dato verrà eliminato da alcun dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De verbinding met deze apparaten wordt verbroken en je gesynchroniseerde gegevens worden van de server verwijderd."
+            "value" : "Je back-up wordt verwijderd van de server. Alle apparaten worden losgekoppeld van de synchronisatie, maar er wordt niets van de apparaten verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Te urządzenia zostaną odłączone, a zsynchronizowane dane usunięte z serwera."
+            "value" : "Twoja kopia zapasowa zostanie usunięta z serwera. Wszystkie urządzenia zostaną odłączone od synchronizacji, ale nic nie zostanie usunięte z żadnego urządzenia."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estes dispositivos serão desconectados e os dados sincronizados serão eliminados do servidor."
+            "value" : "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Привязка устройств будет отключена, а синхронизированные данные — удалены с сервера."
+            "value" : "Ваша резервная копия будет удалена с сервера. Все устройства будут отключены от синхронизации, но никакие данные с устройств удалены не будут."
           }
         }
       }

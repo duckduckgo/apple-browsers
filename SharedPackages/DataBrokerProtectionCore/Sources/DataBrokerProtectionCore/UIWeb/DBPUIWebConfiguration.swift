@@ -65,7 +65,7 @@ public final class DBPUIUserScript: UserScriptsProvider {
         self.webUISettings = webUISettings
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig,
                                                                     properties: prefs,
-                                                                    scriptContext: .contentScope,
+                                                                    scriptContext: .contentScope(),
                                                                     allowedNonisolatedFeatures: ["dbpuiCommunication"],
                                                                     privacyConfigurationJSONGenerator: nil)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]

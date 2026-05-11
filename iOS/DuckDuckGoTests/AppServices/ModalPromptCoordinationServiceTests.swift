@@ -334,6 +334,7 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var isTopBarPosition: Bool = true
     var isToggleEnabled: Bool = false
     var isFireTab: Bool = false
+    var hidesVoiceButton: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool = false
     var shouldDisableAutocorrectOnEmpty: Bool = false

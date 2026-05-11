@@ -179,6 +179,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                    self.syncSetupExperimentPixels.fireSignupDirect()
+                    self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
@@ -200,6 +202,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                self.syncSetupExperimentPixels.fireSignupDirect()
+                self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
@@ -660,6 +664,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: pixelSource])
+                self.syncSetupExperimentPixels.fireBarcodeScreenShown()
             }
         }
     }
@@ -692,6 +697,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
+                        self.syncSetupExperimentPixels.fireSyncDisabled()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.viewModel.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
@@ -727,6 +733,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
+                        self.syncSetupExperimentPixels.fireSyncDisabled()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
@@ -756,6 +763,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
+                        self?.syncSetupExperimentPixels.fireSyncDisabledAndDeleted()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
@@ -801,9 +809,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeEntryScreenShown() {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireManualCodeEntryScreenShown()
     }
 
-    func codeCopied() {
+    func codeCopied(_ code: String) {
+        fireBarcodeCodeCopiedPixel(for: code)
         ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 

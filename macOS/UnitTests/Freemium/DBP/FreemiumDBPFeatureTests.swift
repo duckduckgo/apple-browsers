@@ -117,6 +117,45 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testWhenOnlyPurchaseCapabilityIsUnavailable_thenFreemiumDBPIsAvailableIgnoringPurchaseCapability() throws {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.resultTokenContainer = nil
+        mockSubscriptionManager.currentStorefrontRegion = .usa
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // Then
+        XCTAssertFalse(sut.isAvailable)
+        XCTAssertTrue(sut.isAvailableIgnoringPurchaseCapability)
+    }
+
+    func testWhenUserAlreadySubscribed_thenFreemiumDBPIsNotAvailableIgnoringPurchaseCapability() throws {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.currentStorefrontRegion = .usa
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // Then
+        XCTAssertFalse(sut.isAvailableIgnoringPurchaseCapability)
+    }
+
     func testWhenUserDidNotActivate_thenOffboardingIsNotExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = false

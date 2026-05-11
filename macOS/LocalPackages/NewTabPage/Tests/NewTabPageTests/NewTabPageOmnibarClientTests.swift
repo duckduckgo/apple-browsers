@@ -71,7 +71,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
@@ -80,7 +80,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testWhenSetConfigWithSelectedModelIdThenModelIdIsPersisted() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
     }
@@ -93,7 +93,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                 NewTabPageDataModel.AIModelItem(id: "maverick", name: "Maverick", shortName: "Maverick", isEnabled: true, supportsImageUpload: false, supportedTools: [])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "maverick", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "maverick", aiModelSections: nil, selectedReasoningEffort: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -109,7 +109,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                 NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isEnabled: true, supportsImageUpload: false, supportedTools: [])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "brand-new-model", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "brand-new-model", aiModelSections: nil, selectedReasoningEffort: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -125,7 +125,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = nil
 
         // When — web echoes back the same id (typical on launch)
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
         // Then — cached short name is preserved (not wiped by a failed lookup)
@@ -207,7 +207,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["none", "low", "medium"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -226,7 +226,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["low"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -244,7 +244,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["low"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableVoiceChatAccess: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -399,6 +399,37 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(response, expectedChats)
     }
 
+    func testGetAiChatsRoundTripsModelField() async throws {
+        let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
+            NewTabPageDataModel.AiChat(chatId: "v", title: "Voice", model: AIChatNativePrompt.voiceMode),
+            NewTabPageDataModel.AiChat(chatId: "i", title: "Image", model: AIChatNativePrompt.imageGenerationMode),
+            NewTabPageDataModel.AiChat(chatId: "t", title: "Text", model: nil)
+        ])
+        aiChatsProvider.aiChatsHandler = { _ in expectedChats }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: nil)
+        let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
+
+        XCTAssertEqual(response, expectedChats)
+        XCTAssertEqual(response.chats[0].model, "voice-mode")
+        XCTAssertEqual(response.chats[1].model, "image-generation")
+        XCTAssertNil(response.chats[2].model)
+    }
+
+    func testGetAiChatsOmitsModelKeyWhenNil() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1")
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertFalse(json.keys.contains("model"), "Expected `model` key to be absent when nil; got: \(json.keys.sorted())")
+    }
+
+    func testGetAiChatsEncodesModelKeyWhenPresent() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1", model: AIChatNativePrompt.voiceMode)
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(json["model"] as? String, "voice-mode")
+    }
+
     func testGetAiChatsPassesQueryToProvider() async throws {
         var receivedQuery: String?
         aiChatsProvider.aiChatsHandler = { query in
@@ -473,6 +504,26 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image], mode: AIChatNativePrompt.imageGenerationMode, toolChoice: ["WebSearch"], reasoningEffort: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - voice chat access
+
+    @MainActor
+    func testWhenVoiceChatAccessEnabledThenGetConfigIncludesEnableVoiceChatAccessTrue() async throws {
+        configProvider.isVoiceChatAccessEnabled = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableVoiceChatAccess, true)
+    }
+
+    @MainActor
+    func testWhenVoiceChatAccessDisabledThenGetConfigIncludesEnableVoiceChatAccessFalse() async throws {
+        configProvider.isVoiceChatAccessEnabled = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableVoiceChatAccess, false)
     }
 
 }

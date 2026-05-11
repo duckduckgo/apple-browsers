@@ -24,35 +24,75 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingEndOfJourneyDialog: View {
-        let title = UserText.ContextualOnboarding.onboardingFinalScreenTitle
-        let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenMessage)
-        let cta = UserText.ContextualOnboarding.onboardingFinalScreenButton
+        /// Layout values unique to the highFive dialog. Shared metrics live on
+        /// `OnboardingRebranding.Layout`.
+        private enum Layout {
+            /// Bubble tail anchor — pushed further down the leading edge so the tip lands
+            /// next to Dax's mouth area rather than near the top of the bubble.
+            static let tailOffset: CGFloat = 0.85
+            /// Locally smaller tail than the shared `OnboardingRebranding.Layout.bubbleArrow*`
+            /// metrics so the high-five bubble's arrow doesn't dominate the tighter layout.
+            static let arrowLength: CGFloat = 18
+            static let arrowWidth: CGFloat = 28
+        }
 
         let highFiveAction: () -> Void
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
-                OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                OnboardingBubbleView(
+                    tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
+                    arrowLength: Layout.arrowLength,
+                    arrowWidth: Layout.arrowWidth,
+                    content: {
+                        OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+                    }
+                )
+                .onboardingDismissable(onManualDismiss)
+                .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
+                .overlay(
+                    DaxWavingAnimation()
+                        .frame(
+                            width: OnboardingRebranding.Layout.DaxWaving.width,
+                            height: OnboardingRebranding.Layout.DaxWaving.height
+                        )
+                        .clipped()
+                        .offset(
+                            x: OnboardingRebranding.Layout.DaxWaving.offsetX,
+                            y: OnboardingRebranding.Layout.DaxWaving.offsetY
+                        )
+                        .allowsHitTesting(false),
+                    alignment: .topLeading
+                )
+                Spacer(minLength: 0)
             }
+            .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+            .padding(.bottom, OnboardingRebranding.Layout.panelBottomPadding)
+            .frame(maxWidth: .infinity)
         }
     }
 
     struct OnboardingEndOfJourneyDialogContent: View {
-        let title = UserText.ContextualOnboarding.onboardingFinalScreenTitle
+        @Environment(\.onboardingTheme) private var theme
+
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenMessage)
         let cta = UserText.ContextualOnboarding.onboardingFinalScreenButton
         let highFiveAction: () -> Void
 
         var body: some View {
-            Onboarding.ContextualDaxDialogContent(
+            OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: .horizontalStack(alignment: .center),
                 title: title,
-                titleFont: OnboardingDialogsContants.titleFont,
-                message: message,
-                messageFont: OnboardingDialogsContants.messageFont,
-                customActionView: AnyView(OnboardingPrimaryCTAButton(title: cta, action: highFiveAction))
-            )
+                message: message
+            ) {
+                Button(cta) {
+                    highFiveAction()
+                }
+                .buttonStyle(theme.primaryButtonStyle.style)
+            }
         }
     }
 

@@ -39,12 +39,11 @@ struct UnifiedToggleInputModelMenu: Equatable {
     static func build(
         models: [AIChatModel],
         selectedId: String?,
-        isBottomAnchored: Bool,
         hasActiveSubscription: Bool,
         advancedSectionTitle: String,
         basicSectionTitle: String
     ) -> UnifiedToggleInputModelMenu {
-        var sections: [Section]
+        let sections: [Section]
 
         if hasActiveSubscription {
             sections = buildSubscribedSections(
@@ -59,10 +58,6 @@ struct UnifiedToggleInputModelMenu: Equatable {
                 selectedId: selectedId,
                 advancedSectionTitle: advancedSectionTitle
             )
-        }
-
-        if isBottomAnchored {
-            sections.reverse()
         }
 
         return UnifiedToggleInputModelMenu(sections: sections)

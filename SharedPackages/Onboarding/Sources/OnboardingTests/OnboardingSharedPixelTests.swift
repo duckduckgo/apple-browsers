@@ -43,14 +43,34 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.namePrefix, "m_mac_")
     }
 
-    func testWhenFiringPixelEventThenUsesExpectedName() throws {
+    func testWhenFiringPixelEventWithNilParametersThenUsesExpectedNameAndStandardParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
-        pixelHandler.fire(.welcome(.shown))
+        pixelHandler.fire(.welcome(.shown), source: nil, flow: nil, variant: nil)
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
+        XCTAssertEqual(event.pixel.parameters?["e"], "shown")
+        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+        XCTAssertNil(event.additionalParameters?["source"])
+        XCTAssertNil(event.additionalParameters?["flow"])
+        XCTAssertNil(event.additionalParameters?["variant"])
+    }
+
+    func testWhenFiringPixelEventWithAdditionalParametersThenUsesProvidedParameters() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.searchResults(.shown),
+                          source: .duckAICustomProductPage,
+                          flow: .duckAI,
+                          variant: .duckAISearch)
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.additionalParameters?["source"], "duckai_cpp")
+        XCTAssertEqual(event.additionalParameters?["flow"], "duckai")
+        XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {
@@ -103,6 +123,16 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["value"], "suggested")
     }
 
+    func testWhenSuggestedOrCustomToggleEventClickedThenUsesSuggestedOrCustomValue() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.searchChatToggle(.clicked(.suggestedChat)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "suggested_chat")
+    }
+
     func testWhenCustomizeEventClickedWithValuesThenUsesValues() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
@@ -125,7 +155,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenInstallTypeIsProvidedThenItParameterIsIncluded() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(installType: .newInstall, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installTypeProvider: { .newInstall }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
@@ -135,12 +165,27 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenInstallTypeIsNotProvidedThenItParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(installType: nil, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installTypeProvider: { nil }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertNil(event.additionalParameters?["it"])
+    }
+
+    func testWhenInstallTypeProviderResultChangesThenSubsequentFiresUseUpdatedItParameter() throws {
+        let pixelFiring = PixelKitMock()
+        var isReinstall = false
+        let pixelHandler = makeHandler(installTypeProvider: { isReinstall ? .reinstall : .newInstall }, pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.welcome(.shown))
+        let first = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(first.additionalParameters?["it"], "new")
+
+        isReinstall = true
+        pixelHandler.fire(.welcome(.shown))
+        let second = try XCTUnwrap(pixelFiring.actualFireCalls.last)
+        XCTAssertEqual(second.additionalParameters?["it"], "reinstall")
     }
 
     func testWhenDaysSinceInstallIsInRangeThenDParameterIsIncluded() throws {
@@ -176,25 +221,41 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertNil(event.additionalParameters?["d"])
     }
 
-    func testAddToDockEventIncludesPixelSourceParameter() throws {
+    func testWhenAppIconColorClickedThenUsesColorValue() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
-        pixelHandler.fire(.addToDock(.clicked(.engage)))
+        pixelHandler.fire(.appIconColor(.clicked(.purple)))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+        XCTAssertEqual(event.pixel.parameters?["value"], "purple")
+    }
+
+    func testWhenAddressBarPositionClickedThenUsesPositionValue() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.addressBarPosition(.clicked(.bottom)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "bottom")
+    }
+}
+
+private extension OnboardingSharedPixelHandling {
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        fire(event, source: nil, flow: nil, variant: nil)
     }
 }
 
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
-                     installType: OnboardingSharedPixelHandler.InstallType? = nil,
+                     installTypeProvider: @escaping () -> OnboardingSharedPixelHandler.InstallType? = { nil },
                      installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {
         OnboardingSharedPixelHandler(platform: platform,
-                                     installType: installType,
+                                     installTypeProvider: installTypeProvider,
                                      installDateProvider: installDateProvider,
                                      currentDateProvider: currentDateProvider,
                                      pixelFiring: pixelFiring)

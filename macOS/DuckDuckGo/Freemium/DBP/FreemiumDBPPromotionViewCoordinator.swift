@@ -59,6 +59,11 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         freemiumDBPFeature.isFeatureFlagEnabled
     }
 
+    /// Whether the feature is available ignoring purchase capability. Used by the fast path while product availability settles.
+    var isFeatureAvailableIgnoringPurchaseCapability: Bool {
+        freemiumDBPFeature.isAvailableIgnoringPurchaseCapability
+    }
+
     /// The user state manager, which tracks the user's activation status and scan results.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 

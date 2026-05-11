@@ -37,8 +37,8 @@ import enum UserScript.UserScriptError
 final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeView> {
     private var viewModel: RunDBPDebugModeViewModel
     
-    init() {
-        let viewModel = RunDBPDebugModeViewModel()
+    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+        let viewModel = RunDBPDebugModeViewModel(freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let contentView = RunDBPDebugModeView(viewModel: viewModel)
         self.viewModel = viewModel
         super.init(rootView: contentView)
@@ -398,7 +398,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
     
-    init() {
+    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         let features = ContentScopeFeatureToggles(
             emailProtection: false,
             emailProtectionIncontextSignup: false,
@@ -434,7 +434,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
 
         let appDependencies = AppDependencyProvider.shared
-        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
+        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: appDependencies.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings
@@ -910,6 +911,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireOptOutSubmit() {}
     func fireOptOutEmailReceive() {}
     func fireOptOutEmailConfirm() {}
+    func fireOptOutEmailGetData() {}
     func fireOptOutFillForm() {}
     func fireOptOutValidate() {}
     func fireOptOutSubmitSuccess(tries: Int) {}

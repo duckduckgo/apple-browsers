@@ -49,11 +49,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
+    private var isBorderSuppressedForChromeLayout = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+    private let tutorialSettings: TutorialSettings
 
     var onViewDidAppear: (() -> Void)?
 
@@ -75,7 +77,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
-         appWidthObserver: AppWidthObserver = .shared) {
+         appWidthObserver: AppWidthObserver = .shared,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -83,6 +86,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
+        self.tutorialSettings = tutorialSettings
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
@@ -121,6 +125,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil
         }
+        updateBorderView()
+    }
+
+    func setChromeLayoutContext(isBorderSuppressed: Bool) {
+        isBorderSuppressedForChromeLayout = isBorderSuppressed
         updateBorderView()
     }
 
@@ -172,9 +181,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
+        if !favoritesModel.isEmpty, isViewLoaded {
+            borderView.insertSelf(into: view)
+        }
+
+        let shouldShowBorder = !favoritesModel.isEmpty && !isBorderSuppressedForChromeLayout
         let hasEscapeHatch = newTabPageViewModel.escapeHatch != nil
-        borderView.isTopVisible = !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
-        borderView.isBottomVisible = !appWidthObserver.isLargeWidth
+        borderView.isTopVisible = shouldShowBorder && !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
+        borderView.isBottomVisible = shouldShowBorder && !appWidthObserver.isLargeWidth
     }
 
     func registerForNotifications() {
@@ -273,6 +287,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
+        // If linear onboarding is not completed do not attempt to present any Dax dialog.
+        guard tutorialSettings.hasSeenOnboarding else { return }
+        // Present Dax dialog if needed.
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 

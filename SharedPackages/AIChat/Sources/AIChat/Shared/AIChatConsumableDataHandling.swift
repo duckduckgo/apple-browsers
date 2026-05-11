@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 /// A protocol that defines a standard interface for handling consumable data.
 /// Types conforming to this protocol can set, consume, and reset data of a specified type.
 public protocol AIChatConsumableDataHandling {
@@ -188,6 +190,18 @@ public struct AIChatTabMetadata: Codable {
         self.url = url
         self.favicon = favicon
         self.isCurrentTab = isCurrentTab
+    }
+
+    /// Returns `true` if a tab with this URL should be hidden from any tab picker that lists
+    /// open tabs as Duck.ai chat attachments (sidebar today, omnibar in the future). Excludes
+    /// URLs that carry no useful page context for an AI chat:
+    /// - The DDG homepage (SERP URLs with a `q=` parameter remain attachable).
+    /// - `about:blank` (transient state, no content).
+    /// - Duck.ai itself (avoids meta-attaching one chat to another).
+    public static func shouldExcludeFromTabPicker(_ url: URL) -> Bool {
+        return url.isDuckDuckGoHomepage
+            || url.absoluteString == "about:blank"
+            || url.isDuckAIURL
     }
 }
 

@@ -101,7 +101,7 @@ Otherwise branch on `release-type`:
     limit=20)
   ```
   Filter the returned list to **exact name pattern match** for the platform: `^<platform> <version> is now public$` (e.g. `iOS 7.218.0 is now public`). Cross-platform names must be discarded — the `text` filter is fuzzy. Then drop any task whose `created_at` is within the last 12 hours (compare against `date -u +%Y-%m-%dT%H:%M:%SZ` minus 12 hours via Bash). From the remaining tasks, take the **first** (newest `created_at`). The 12-hour gate handles the case where a brand-new release task has just been created but Sentry has no events for that version yet — without it, we'd target the just-rolled-out release and the report would be near-empty. Order matters: filter by 12h, *then* take newest. If every candidate is <12h old, stop and ask the user.
-- **`release-type=internal`** — find the newest open `<platform> App Release <version>` task in the Apple Releases project's `<platform>` section:
+- **`release-type=internal`** — find the open `<platform> App Release <version>` task in the Apple Releases project's `<platform>` section that's currently pending publishing:
   ```
   asana_search_tasks(workspace="137249556945",
     projects.any="1209802997613369",
@@ -114,7 +114,9 @@ Otherwise branch on `release-type`:
     opt_fields="name,gid,created_at,permalink_url",
     limit=10)
   ```
-  where `<PLATFORM_RELEASE_SECTION>` is `1209802997613372` for iOS or `1209802997613373` for macOS. Also filter the returned list to exact name pattern `^<platform> App Release \d+\.\d+\.\d+$` so cross-platform tasks and unrelated rollout subtasks are dropped. `is_subtask=false` is required — without it the rollout-step subtasks (`Run "Tag Release and Update Asana" GHA Job`, `Start Phased rollout`, etc.) clutter the result. Take the **first** remaining (newest `created_at`).
+  where `<PLATFORM_RELEASE_SECTION>` is `1209802997613372` for iOS or `1209802997613373` for macOS. Also filter the returned list to exact name pattern `^<platform> App Release \d+\.\d+\.\d+$` so cross-platform tasks and unrelated rollout subtasks are dropped. `is_subtask=false` is required — without it the rollout-step subtasks (`Run "Tag Release and Update Asana" GHA Job`, `Start Phased rollout`, etc.) clutter the result.
+
+  **Pick by weekday (UTC).** Check `date -u +%u` via Bash. On Tuesday–Sunday (`2`–`7`), take the **first** remaining (newest `created_at`). On Monday UTC (`1`), drop the newest match and take the **second** (next-newest `created_at`): internal code freeze runs at 01:00 UTC every Monday and creates a fresh `<platform> App Release` task whose version has been out for only a few hours and won't have meaningful Sentry events yet — the task one position older is the internal release currently pending publishing, which is the one we want to triage. If only one task survives the filter on a Monday, stop and ask the user — do NOT fall back to the newest.
 
 In both branches: **stop and ask the user** if zero matching tasks survive the filter. Do NOT silently fall back to a different platform, a different release-type, or a manually-chosen version. Surface the resolved task (name + permalink + `created_at`) to the user in your first text update.
 

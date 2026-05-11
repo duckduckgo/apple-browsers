@@ -76,6 +76,7 @@ class SuggestionTrayViewController: UIViewController {
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
+    private var pendingOpenTabCount: Int = 0
     private var pendingSuggestionsSectionTitle: String?
     private var pendingFavoritesSectionTitle: String?
     private let bookmarksDatabase: CoreDataDatabase
@@ -345,6 +346,11 @@ class SuggestionTrayViewController: UIViewController {
         newTabPage?.setEscapeHatch(model)
     }
 
+    func setOpenTabCount(_ count: Int) {
+        pendingOpenTabCount = count
+        newTabPage?.setOpenTabCount(count)
+    }
+
     func setSuggestionsSectionTitle(_ title: String?) {
         pendingSuggestionsSectionTitle = title
         autocompleteController?.setSectionTitle(title)
@@ -390,6 +396,7 @@ class SuggestionTrayViewController: UIViewController {
             controller.hideBorderView()
         }
         controller.setEscapeHatch(pendingEscapeHatchModel)
+        controller.setOpenTabCount(pendingOpenTabCount)
         if let pendingFavoritesSectionTitle {
             controller.setSectionTitle(pendingFavoritesSectionTitle)
         }

@@ -49,7 +49,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
-        static let escapeHatchCardHeight: CGFloat = 72
+        /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
+        static let topContentInset: CGFloat = 12
+        static let escapeHatchCardHeight: CGFloat = 56
         static let escapeHatchTopPadding: CGFloat = 16
         /// 24pt gap below the hatch — matches Search-side breathing room around section title.
         static let escapeHatchBottomPadding: CGFloat = 24
@@ -99,11 +101,15 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private struct EscapeHatch: Equatable {
         let model: EscapeHatchModel
+        let openTabCount: Int
         let onTapped: () -> Void
-        static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool { lhs.model == rhs.model }
+        let onTabSwitcherTapped: () -> Void
+        static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool {
+            lhs.model == rhs.model && lhs.openTabCount == rhs.openTabCount
+        }
     }
 
-    private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
     private var currentEscapeHatch: EscapeHatch?
     private var additionalTopInset: CGFloat = 0
     /// Hatch is hidden while typing — mirrors Search-side, where the autocomplete view covers the NTP+hatch.
@@ -183,8 +189,21 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Escape hatch
 
     /// No-op on identical model — called repeatedly from container layout/refresh paths.
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        let next: EscapeHatch? = (model.flatMap { m in onTapped.map { EscapeHatch(model: m, onTapped: $0) } })
+    func setEscapeHatch(_ model: EscapeHatchModel?,
+                        openTabCount: Int,
+                        onTapped: (() -> Void)?,
+                        onTabSwitcherTapped: (() -> Void)?) {
+        let next: EscapeHatch?
+        if let model, let onTapped, let onTabSwitcherTapped {
+            next = EscapeHatch(
+                model: model,
+                openTabCount: openTabCount,
+                onTapped: onTapped,
+                onTabSwitcherTapped: onTabSwitcherTapped
+            )
+        } else {
+            next = nil
+        }
         guard next != currentEscapeHatch else { return }
         currentEscapeHatch = next
         rebuildHatch()
@@ -212,7 +231,13 @@ final class DuckAISuggestionsViewController: UIViewController {
             escapeHatchHostingController = nil
         }
         if let hatch = currentEscapeHatch, !isQueryActive {
-            let hosting = UIHostingController(rootView: ReturnToTabCard(model: hatch.model, onTap: hatch.onTapped))
+            let view = EscapeHatchView(
+                model: hatch.model,
+                openTabCount: hatch.openTabCount,
+                onCardTap: hatch.onTapped,
+                onTabSwitcherTap: hatch.onTabSwitcherTapped
+            )
+            let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             addChild(hosting)
             escapeHatchHostingController = hosting
@@ -224,7 +249,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func updateContentInset() {
         guard isViewLoaded else { return }
-        tableView.contentInset = UIEdgeInsets(top: additionalTopInset, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset + additionalTopInset, left: 0, bottom: 0, right: 0)
     }
 
     private func updateTableHeader() {

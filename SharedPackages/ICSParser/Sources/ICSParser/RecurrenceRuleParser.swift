@@ -57,7 +57,7 @@ enum RecurrenceRuleParser {
             case "UNTIL":
                 until = try parseUntil(rawValue, original: value)
             case "BYDAY":
-                byDay = rawValue.split(separator: ",").compactMap { parseByDay(String($0)) }
+                byDay = try rawValue.split(separator: ",").compactMap { try parseByDay(String($0), original: value) }
             case "BYMONTHDAY":
                 byMonthDay = try integerList(rawValue, original: value)
             case "BYMONTH":
@@ -106,10 +106,14 @@ enum RecurrenceRuleParser {
     }
 
     /// Parses a single BYDAY token: bare weekday code (`MO`) or weekday with positional prefix
-    /// (`1MO` for the first Monday, `-1FR` for the last Friday).
-    private static func parseByDay(_ token: String) -> EKRecurrenceDayOfWeek? {
+    /// (`1MO` for the first Monday, `-1FR` for the last Friday). Throws on syntactic garbage
+    /// (no letters, unknown day code); returns nil for out-of-range positions (RFC says these
+    /// are validated at expansion time, so we drop them rather than fail the whole rule).
+    private static func parseByDay(_ token: String, original: String) throws -> EKRecurrenceDayOfWeek? {
         let trimmed = token.trimmingCharacters(in: .whitespaces).uppercased()
-        guard let firstLetterIndex = trimmed.firstIndex(where: { $0.isLetter }) else { return nil }
+        guard let firstLetterIndex = trimmed.firstIndex(where: { $0.isLetter }) else {
+            throw ICSParser.Error.malformedRecurrenceRule(raw: original)
+        }
         let prefix = String(trimmed[..<firstLetterIndex])
         let dayCode = String(trimmed[firstLetterIndex...])
 
@@ -122,7 +126,7 @@ enum RecurrenceRuleParser {
         case "TH": weekday = .thursday
         case "FR": weekday = .friday
         case "SA": weekday = .saturday
-        default: return nil
+        default: throw ICSParser.Error.malformedRecurrenceRule(raw: original)
         }
 
         if prefix.isEmpty {

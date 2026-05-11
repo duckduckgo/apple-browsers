@@ -243,6 +243,17 @@ struct RecurrenceRuleParserTests {
         }
     }
 
+    /// Unknown day codes are syntactic errors and must throw, matching how BYMONTHDAY/BYMONTH
+    /// treat non-integer tokens. Out-of-range positional prefixes are a separate, lenient case.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for unknown BYDAY day code", .timeLimit(.minutes(1)))
+    func throwsForUnknownByDayCode() {
+        let raw = "FREQ=WEEKLY;BYDAY=MO,XX,FR"
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: raw)) {
+            try RecurrenceRuleParser.parse(raw, startDate: utcDate("2026-06-01T00:00:00Z"))
+        }
+    }
+
     /// Same shape as the BYMONTHDAY case: a non-integer token must throw, not be dropped.
     @available(iOS 16, macOS 13, *)
     @Test("Throws malformedRecurrenceRule for non-integer BYMONTH token", .timeLimit(.minutes(1)))

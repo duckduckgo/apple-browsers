@@ -56,11 +56,16 @@ final class AIChatTabChatHeaderView: UIView {
         var isChatInputHidden: Bool = false
         var canGoBack: Bool = false
         var canGoForward: Bool = false
+        /// Forces the back arrow visible regardless of `canGoBack` so the user has an exit path
+        /// (e.g. when the AI Chat toggle is OFF in settings). Tap routing is decided by the
+        /// delegate based on actual `canGoBack`.
+        var forceBackButtonVisible: Bool = false
 
-        var showsNavPair: Bool { canGoBack && canGoForward }
-        var showsStandaloneBack: Bool { canGoBack && !canGoForward }
-        var showsStandaloneForward: Bool { canGoForward && !canGoBack }
-        var isNavigationVisible: Bool { canGoBack || canGoForward }
+        var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }
+        var showsNavPair: Bool { effectiveCanGoBack && canGoForward }
+        var showsStandaloneBack: Bool { effectiveCanGoBack && !canGoForward }
+        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack }
+        var isNavigationVisible: Bool { effectiveCanGoBack || canGoForward }
     }
 
     private var state = ViewState() {
@@ -301,6 +306,10 @@ final class AIChatTabChatHeaderView: UIView {
         newState.canGoBack = canGoBack
         newState.canGoForward = canGoForward
         state = newState
+    }
+
+    func setForceBackButtonVisible(_ visible: Bool) {
+        state.forceBackButtonVisible = visible
     }
 
     /// Hides the chats / new-chat pill while FE has hidden the native chat input (voice mode,

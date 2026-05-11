@@ -2092,6 +2092,7 @@ class MainViewController: UIViewController {
         refreshMiddleButton()
         aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
                                                   canGoForward: currentTab?.canGoForward ?? false)
+        aiChatTabChatHeaderView?.setForceBackButtonVisible(!aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
         // Belt-and-braces reconciliation. Most explicit transitions also call this directly
         // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
         // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
@@ -2867,7 +2868,9 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshOmniBar()
+                guard let self else { return }
+                self.refreshOmniBar()
+                self.aiChatTabChatHeaderView?.setForceBackButtonVisible(!self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
                 WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)

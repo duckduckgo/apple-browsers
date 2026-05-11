@@ -873,7 +873,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapBack() {
-        onBackPressed()
+        if currentTab?.canGoBack == true {
+            onBackPressed()
+        } else {
+            showTabSwitcher()
+        }
     }
 
     func aiChatTabChatHeaderDidTapForward() {

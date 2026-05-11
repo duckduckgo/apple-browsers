@@ -33,6 +33,32 @@ enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     }
 }
 
+enum AfterInactivityIdleInterval: Int, CaseIterable, CustomStringConvertible {
+    case always = 0
+    case oneMinute = 60
+    case fiveMinutes = 300
+    case tenMinutes = 600
+    case thirtyMinutes = 1800
+    case oneHour = 3600
+    case twelveHours = 43200
+
+    static let `default`: AfterInactivityIdleInterval = .thirtyMinutes
+
+    var seconds: Int { rawValue }
+
+    var description: String {
+        switch self {
+        case .always: return UserText.settingsAfterInactivityIdleIntervalAlways
+        case .oneMinute: return UserText.settingsAfterInactivityIdleIntervalMinuteSingular
+        case .fiveMinutes: return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, 5)
+        case .tenMinutes: return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, 10)
+        case .thirtyMinutes: return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, 30)
+        case .oneHour: return UserText.settingsAfterInactivityIdleIntervalHourSingular
+        case .twelveHours: return String(format: UserText.settingsAfterInactivityIdleIntervalHoursFormat, 12)
+        }
+    }
+}
+
 struct SettingsGeneralView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -48,11 +74,16 @@ struct SettingsGeneralView: View {
             }
             // NTP after idle time
             if viewModel.shouldShowNTPAfterIdleSetting {
-                Section(footer: Text(String(format: UserText.settingsAfterInactivityFooterFormat, viewModel.idleTimeInterval))) {
-                    // Text Size
+                Section(footer: Text(viewModel.afterInactivityFooterText)) {
                     SettingsPickerCellView(label: UserText.settingsAfterInactivityLabel,
                                            options: AfterInactivityOption.allCases,
                                            selectedOption: viewModel.afterInactivityOptionBinding)
+
+                    if viewModel.afterInactivityOption == .newTab {
+                        SettingsPickerCellView(label: UserText.settingsAfterInactivityIntervalLabel,
+                                               options: AfterInactivityIdleInterval.allCases,
+                                               selectedOption: viewModel.afterInactivityIdleIntervalBinding)
+                    }
                 }
             }
 

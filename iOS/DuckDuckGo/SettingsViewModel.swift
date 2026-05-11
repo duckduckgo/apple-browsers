@@ -247,6 +247,9 @@ final class SettingsViewModel: ObservableObject {
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
+    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
+
     // MARK: Bindings
 
     var selectedToolbarButton: Binding<MobileCustomization.Button> {
@@ -387,19 +390,33 @@ final class SettingsViewModel: ObservableObject {
         formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
     }
 
+    var afterInactivityFooterText: String {
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .always {
+            return UserText.settingsAfterInactivityFooterAlways
+        }
+        return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
+    }
+
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
         Binding<AfterInactivityOption>(
-            get: {
-                self.idleReturnEligibilityManager.effectiveAfterInactivityOption()
-            },
-            set: {
-                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
-                self.objectWillChange.send()
-
-                let pixel: Pixel.Event = $0 == .newTab
+            get: { self.afterInactivityOption },
+            set: { newValue in
+                self.afterInactivityOption = newValue
+                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
                 DailyPixel.fireDailyAndCount(pixel: pixel)
+            }
+        )
+    }
+
+    var afterInactivityIdleIntervalBinding: Binding<AfterInactivityIdleInterval> {
+        Binding<AfterInactivityIdleInterval>(
+            get: { self.afterInactivityIdleInterval },
+            set: { newValue in
+                self.afterInactivityIdleInterval = newValue
+                try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
             }
         )
     }
@@ -937,6 +954,8 @@ final class SettingsViewModel: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider

@@ -69,11 +69,20 @@ struct SettingsYouTubeAdBlockingView: View {
                     .padding(.vertical, 8)
                 }
 
-                Section(footer: Text(footerAttributedString)) {
-                    SettingsCellView(
-                        label: UserText.youTubeAdBlockingToggle,
-                        accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                    )
+                if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                    Section {
+                        SettingsCellView(
+                            label: UserText.youTubeAdBlockingToggle,
+                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+                        )
+                    }
+                } else {
+                    Section(footer: Text(footerAttributedString)) {
+                        SettingsCellView(
+                            label: UserText.youTubeAdBlockingToggle,
+                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+                        )
+                    }
                 }
             }
 
@@ -92,6 +101,7 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
+            viewModel.markYouTubeAdBlockingDisclosureHiddenIfExistingUser()
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }

@@ -40,6 +40,7 @@ import WebExtensions
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
     case youTubeAnalyticsEnabled = "com_duckduckgo_ios_youTubeAnalyticsEnabled"
+    case shouldHideYouTubeAdBlockingDisclosure = "com_duckduckgo_ios_shouldHideYouTubeAdBlockingDisclosure"
 
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
 }
@@ -47,6 +48,7 @@ enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
 struct YouTubeAdBlockingKeys: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
     let youTubeAnalyticsEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabled)
+    let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.shouldHideYouTubeAdBlockingDisclosure)
 }
 
 final class SettingsViewModel: ObservableObject {
@@ -671,10 +673,13 @@ final class SettingsViewModel: ObservableObject {
             get: { self.state.youTubeAdBlockingEnabled },
             set: {
                 guard $0 != self.state.youTubeAdBlockingEnabled else { return }
+                let disclosureVisibleAtToggle = !self.state.youTubeAdBlockingDisclosureHidden
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
                 self.state.youTubeAdBlockingEnabled = $0
                 if !$0 {
                     self.setYouTubeAnalyticsEnabled(false)
+                } else if disclosureVisibleAtToggle {
+                    self.setYouTubeAnalyticsEnabled(true)
                 }
                 DailyPixel.fireDailyAndCount(
                     pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
@@ -687,6 +692,25 @@ final class SettingsViewModel: ObservableObject {
 
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+    }
+
+    var isYouTubeAdBlockingDisclosureHidden: Bool {
+        state.youTubeAdBlockingDisclosureHidden
+    }
+
+    /// Settings-pane open hook. If the disclosure preference has never been
+    /// written, pin it to the current YouTube Ad Blocking state — existing
+    /// users (toggle already on) get the disclosure hidden, new users (toggle
+    /// off) keep the disclosure until they explicitly opt in. Always refreshes
+    /// `state.youTubeAdBlockingDisclosureHidden` so external writes (e.g. debug
+    /// menu) are picked up.
+    func markYouTubeAdBlockingDisclosureHiddenIfExistingUser() {
+        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+            try? youTubeAdBlockingStorage.set(state.youTubeAdBlockingEnabled,
+                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        }
+        state.youTubeAdBlockingDisclosureHidden =
+            (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
     }
 
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
@@ -1022,7 +1046,8 @@ extension SettingsViewModel {
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
             youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
-            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
+            youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )
 
         // Subscribe to DuckPlayerSettings updates

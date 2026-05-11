@@ -274,6 +274,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -296,6 +297,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -592,6 +594,7 @@ jobs:
           -configuration "Release" \
           -skipPackagePluginValidation -skipMacroValidation \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee release-xcodebuild.log \
           | xcbeautify
 

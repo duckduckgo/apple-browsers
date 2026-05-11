@@ -131,14 +131,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_tier-options_success": {
         "description": "Fired when subscription tier options are successfully retrieved (direct distribution)",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_tier-options_failure": {
         "description": "Fired when subscription tier options fail to be retrieved (direct distribution)",
@@ -275,6 +275,67 @@
         "triggers": ["user_submitted"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on App Store distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos",
+                    "funnel_applaunch_macos_winback",
+                    "funnel_appmenu_macos_winback",
+                    "funnel_appsettings_macos_winback",
+                    "funnel_newtab_macos_winback",
+                    "funnel_onboarding_macOS__nextstepscard",
+                    "funnel_purchaseoffer_macos",
+                    "funnel_prepurchasecheck_macos"
+                ]
+            },
+            "locale",
+            "freeTrial"
+        ]
+    },
+    "m_mac_direct_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos",
+                    "funnel_applaunch_macos_winback",
+                    "funnel_appmenu_macos_winback",
+                    "funnel_appsettings_macos_winback",
+                    "funnel_newtab_macos_winback",
+                    "funnel_onboarding_macOS__nextstepscard",
+                    "funnel_purchaseoffer_macos",
+                    "funnel_prepurchasecheck_macos"
+                ]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
@@ -463,7 +524,8 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
-            }
+            },
+            "channel"
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true

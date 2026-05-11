@@ -175,6 +175,9 @@ struct OnboardingView: View {
                 skipAction: {
                     model.restorePromptSkipAction()
                     model.skipOnboardingAction()
+                },
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
                 }
             )
             .onboardingDaxDialogStyle()
@@ -189,7 +192,10 @@ struct OnboardingView: View {
                 continueAction: {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
-                skipAction: model.skipOnboardingAction
+                skipAction: model.skipOnboardingAction,
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
+                }
             )
             .onboardingDaxDialogStyle()
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
@@ -407,6 +413,14 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
+    class MockOnboardingManager: OnboardingManaging {
+        let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
+
+        let userHasSeenAddToDockPromoDuringOnboarding: Bool = false
+
+        func configureOnboardingFlow(from url: URL?) {}
+    }
+
     final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
         func isEligibleForRestorePrompt() -> Bool {
             false
@@ -426,7 +440,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
                     daxDialogsManager: MockDaxDialogDisabling(),
-                    restorePromptHandler: MockRestorePromptHandler()
+                    restorePromptHandler: MockRestorePromptHandler(),
+                    onboardingManager: MockOnboardingManager()
                 )
             )
             .preferredColorScheme($0)

@@ -53,16 +53,22 @@ public enum Classifier {
     /// This struct describes the policy to be used when classifying the input.
     public struct Policy: Codable, Sendable {
         /// Treat any host-like strings as URLs (e.g. `package.json`) without consulting Public Suffix List.
-        public var allowIntranetMultiLabel: Bool
+        public let allowIntranetMultiLabel: Bool
 
         /// Whether to allow single-label domains (e.g. `test` or `dev`).
-        public var allowIntranetSingleLabel: Bool
+        public let allowIntranetSingleLabel: Bool
 
         /// When checking Public Suffix List, whether to consult private suffixes (e.g. `appspot.com` or `github.io`).
-        public var allowPrivateSuffix: Bool
+        public let allowPrivateSuffix: Bool
 
         /// Defines schemes recognized by the app/
-        public var allowedSchemes: Set<String>
+        public let allowedSchemes: Set<String>
+
+        /// JSON sent to the Rust classifier, computed once.
+        ///
+        /// `classify` runs per-keystroke in the address bar and re-encoding here
+        /// may pressure the heap enough to trip malloc on memory-tight machines.
+        fileprivate let encodedJSON: String
 
         public init(
             allowIntranetMultiLabel: Bool,
@@ -74,6 +80,43 @@ public enum Classifier {
             self.allowIntranetSingleLabel = allowIntranetSingleLabel
             self.allowPrivateSuffix = allowPrivateSuffix
             self.allowedSchemes = allowedSchemes
+
+            let encoder = JSONEncoder()
+            encoder.keyEncodingStrategy = .convertToSnakeCase
+            let shape = EncodableShape(
+                allowIntranetMultiLabel: allowIntranetMultiLabel,
+                allowIntranetSingleLabel: allowIntranetSingleLabel,
+                allowPrivateSuffix: allowPrivateSuffix,
+                allowedSchemes: allowedSchemes
+            )
+            // Encoding a struct of Bool/String/Set<String> with snake_case keys cannot fail at runtime.
+            // swiftlint:disable:next force_try
+            self.encodedJSON = String(data: try! encoder.encode(shape), encoding: .utf8)!
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.init(
+                allowIntranetMultiLabel: try container.decode(Bool.self, forKey: .allowIntranetMultiLabel),
+                allowIntranetSingleLabel: try container.decode(Bool.self, forKey: .allowIntranetSingleLabel),
+                allowPrivateSuffix: try container.decode(Bool.self, forKey: .allowPrivateSuffix),
+                allowedSchemes: try container.decode(Set<String>.self, forKey: .allowedSchemes)
+            )
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case allowIntranetMultiLabel
+            case allowIntranetSingleLabel
+            case allowPrivateSuffix
+            case allowedSchemes
+        }
+
+        /// Reflects the encodable Policy struct, to use with `encodedJSON` and `classify` calls.
+        private struct EncodableShape: Encodable {
+            let allowIntranetMultiLabel: Bool
+            let allowIntranetSingleLabel: Bool
+            let allowPrivateSuffix: Bool
+            let allowedSchemes: Set<String>
         }
 
 #if os(macOS)
@@ -156,14 +199,7 @@ public enum Classifier {
     // MARK: - Internal
 
     static func classifyRawJSON(input: String, policy: Policy?) throws -> String {
-        // Encode policy with snake_case to match Rust field names.
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        guard let policyData = try? encoder.encode(policy),
-              let policyJSON = String(data: policyData, encoding: .utf8)
-        else {
-            throw Error.policyEncodingFailed
-        }
+        let policyJSON = policy?.encodedJSON ?? "null"
 
         let jsonString: String = try input.withCString { inputPtr in
             try policyJSON.withCString { policyPtr in

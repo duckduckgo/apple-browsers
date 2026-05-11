@@ -37,6 +37,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
         sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage
@@ -85,7 +86,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showCollapsed_emitsIntent() {
         let exp = expectation(description: "showCollapsed intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .showCollapsed { exp.fulfill() } }
+            .sink { if case .showCollapsed = $0 { exp.fulfill() } }
             .store(in: &cancellables)
 
         sut.showCollapsed()
@@ -102,7 +103,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showExpanded_emitsIntent() {
         let exp = expectation(description: "showExpanded intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .showExpanded { exp.fulfill() } }
+            .sink { if case .showExpanded = $0 { exp.fulfill() } }
             .store(in: &cancellables)
 
         sut.showExpanded()
@@ -112,16 +113,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_showExpanded_setsInputMode() {
         sut.showExpanded(inputMode: .search)
         XCTAssertEqual(sut.inputMode, .search)
-    }
-
-    func test_showExpanded_setsExpandedOnVC() {
-        sut.showExpanded()
-        XCTAssertTrue(sut.viewController.isInputExpanded)
-    }
-
-    func test_showExpanded_setsInputModeOnVC() {
-        sut.showExpanded(inputMode: .search)
-        XCTAssertEqual(sut.viewController.inputMode, .search)
     }
 
     func test_showExpanded_withPrefilledText_setsTextStateToPrefilledSelected() {
@@ -191,10 +182,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.aiChatStatus, .unknown)
     }
 
-    func test_unbind_resetsAIChatInputBoxVisibility() {
-        sut.aiChatInputBoxVisibility = .visible
+    func test_unbind_preservesAIChatInputBoxVisibility() {
+        // Visibility is owned per-tab by `TabInputState`; resetting on unbind would clobber the
+        // value that `applyState` just restored for the incoming tab.
+        sut.aiChatInputBoxVisibility = .hidden
         sut.unbind()
-        XCTAssertEqual(sut.aiChatInputBoxVisibility, .unknown)
+        XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
     }
 
     // MARK: - VC Delegate: Collapsed Tap
@@ -352,9 +345,65 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
     }
 
+    func test_activateFromSearchTopPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
+    }
+
+    func test_activateFromSearchBottomPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
+    }
+
+    func test_activateFromSearchTopPosition_withVoiceSearchEnabled_showsInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .voiceOnly)
+    }
+
+    func test_activateFromSearchBottomPosition_withVoiceSearchEnabled_showsInlineVoiceButton() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        XCTAssertEqual(sut.viewController.handler.buttonState, .voiceOnly)
+    }
+
     func test_activateFromOmnibar_setsExpandedTrue() {
         sut.activateFromOmnibar()
         XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        // Bottom pre-stages to collapsed; the show animation expands it.
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
+    func test_activateFromOmnibar_emitsIntentWithBothHeights() {
+        let exp = expectation(description: "showOmnibarEditing emitted with pending height")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showOmnibarEditing(let height, let pending) = intent {
+                    XCTAssertGreaterThan(height, 0)
+                    XCTAssertNotNil(pending)
+                    exp.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        waitForExpectations(timeout: 1)
     }
 
     func test_deactivateToOmnibar_resetsVCProperties() {
@@ -554,7 +603,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .omnibar(.active))
         XCTAssertEqual(sut.viewController.inputMode, .aiChat)
-        XCTAssertTrue(sut.viewController.isInputExpanded)
+        // Bottom bar sits in show-animation start pose here; expansion runs in the intent handler.
 
         let renderState = sut.computeRenderState()
         XCTAssertEqual(renderState.cardPosition, .bottom)
@@ -690,6 +739,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
+    func test_handleExternalPromptSubmission_fromAITab_clearsPendingAttachments() {
+        sut.showExpanded()
+        sut.viewController.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "test.png")))
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
     func test_handleExternalPromptSubmission_noOpWhenHidden() {
         sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .hidden)
@@ -819,12 +877,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    func test_toolsMenu_containsCustomizeResponsesAction_onAITab() {
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_onAITab() {
         sut.showExpanded()
 
         let actionTitles = toolsMenuActions().map(\.title)
 
-        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
     func test_toolsMenu_doesNotContainCustomizeResponsesAction_inOmnibar() {
@@ -961,6 +1019,171 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertNil(sut.selectedTool)
         XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    // MARK: - Image Generation Tool
+
+    func test_toolsMenu_containsImageGenerationAction() {
+        sut.showExpanded()
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
+    }
+
+    func test_toolsMenu_disablesImageGenerationActionWhenModelDoesNotSupportIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+
+        sut.showExpanded()
+
+        let imageGenAction = toolsMenuActions().first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }
+
+        XCTAssertEqual(imageGenAction?.attributes, .disabled)
+    }
+
+    func test_toolsMenu_enablesImageGenerationActionWhenModelSupportsIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+
+        sut.showExpanded()
+
+        let imageGenAction = toolsMenuActions().first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }
+
+        XCTAssertEqual(imageGenAction?.attributes, [])
+    }
+
+    func test_selectTool_imageGeneration_setsSelectedTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
+    }
+
+    func test_selectTool_imageGeneration_isIgnoredWhenModelDoesNotSupportIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertNil(sut.selectedTool)
+    }
+
+    func test_toolsController_toggleSelection_togglesOffSelectedImageGenerationTool() {
+        let toolsController = UTIToolsController()
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        toolsController.select(.imageGeneration, for: sut.modelStore)
+
+        toolsController.toggleSelection(for: .imageGeneration, modelStore: sut.modelStore)
+
+        XCTAssertNil(toolsController.selectedTool)
+    }
+
+    func test_toolsController_selectingImageGeneration_replacesPreviousWebSearchSelection() {
+        let toolsController = UTIToolsController()
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch, .imageGeneration])]
+        toolsController.select(.webSearch, for: sut.modelStore)
+        XCTAssertEqual(toolsController.selectedTool, .webSearch)
+
+        toolsController.select(.imageGeneration, for: sut.modelStore)
+
+        XCTAssertEqual(toolsController.selectedTool, .imageGeneration)
+    }
+
+    func test_updateSelectedModel_clearsImageGenerationSelectionWhenNewModelDoesNotSupportIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "claude", access: true, supportedTools: [])
+        ]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+
+        sut.updateSelectedModel("claude")
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_submitAIChat_imageGenerationSelected_forwardsToolChoice() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "draw a cat", mode: .aiChat)
+
+        XCTAssertEqual(mockDelegate.submittedTools, [.imageGeneration])
+    }
+
+    // MARK: - Image Generation: Model & Reasoning Visibility
+
+    func test_selectImageGeneration_hidesModelChip() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_selectImageGeneration_hidesReasoningButton() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(
+            id: "gpt-5", access: true, supportedTools: [.imageGeneration],
+            supportedReasoningEffort: [.low, .medium, .high]
+        )]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+    }
+
+    func test_clearImageGeneration_restoresModelChip() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.clearSelectedTool()
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_clearImageGeneration_restoresReasoningButton() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(
+            id: "gpt-5", access: true, supportedTools: [.imageGeneration],
+            supportedReasoningEffort: [.low, .medium, .high]
+        )]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+
+        sut.clearSelectedTool()
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+    }
+
+    func test_selectWebSearch_doesNotHideModelChip() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.webSearch)
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
     }
 
     // MARK: - Model Selection: persistedModelId
@@ -1108,6 +1331,37 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isModelChipHidden)
     }
 
+    func test_modelChip_hiddenWhileImageGenerationSelected_andRestoredAfterDeselect_inNewChat() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.selectTool(.imageGeneration)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.clearSelectedTool()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_remainsHiddenAfterDeselectingImageGeneration_inExistingChat() {
+        // Regression: deselecting the image-gen tool used to clobber the chip's hidden state to false,
+        // making the chip reappear inside an existing chat (where `hasSubmittedPrompt` should keep it hidden).
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.selectTool(.imageGeneration)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.clearSelectedTool()
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
     // MARK: - Stale Model Selection
 
     func test_persistedModelId_clearedWhenModelRemoved() {
@@ -1188,7 +1442,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_chipLabel_shownFromCacheBeforeFetch() {
         mockPreferences.selectedModelShortName = "Cached Model"
-        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        let coordinator = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences)
 
         XCTAssertEqual(coordinator.viewController.modelName, "Cached Model")
         XCTAssertNil(coordinator.viewController.modelPickerMenu)
@@ -1229,6 +1483,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Attachments Change Publisher
 
     func test_addImageAttachment_publishesAttachmentsChange() {
+        configureImageAttachments()
         let exp = expectation(description: "attachmentsChange fires")
         sut.attachmentsChangePublisher
             .sink { exp.fulfill() }
@@ -1243,6 +1498,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_clearAttachments_publishesAttachmentsChange() {
+        configureImageAttachments()
         let image = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { ctx in
             UIColor.red.setFill()
             ctx.fill(CGRect(origin: .zero, size: CGSize(width: 10, height: 10)))
@@ -1360,14 +1616,146 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
+    func test_inlineVoiceSearchTap_requestsVoiceSearch() {
+        sut.updateVoiceSearchAvailability(true)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_collapsedAIVoiceChatButtonTap_requestsAIVoiceChat() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+    }
+
+    func test_initialCollapsedAIVoiceChatButton_usesPlainWaveformStyle() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+
+        let voiceButton = findButton(accessibilityIdentifier: "Browser.OmniBar.Button.VoiceSearch", in: sut.viewController.view)
+
+        XCTAssertEqual(voiceButton?.backgroundColor, .clear)
+        XCTAssertEqual(voiceButton?.layer.cornerRadius, 0)
+    }
+
+    func test_expandedAIChatInlineVoiceSearchTap_requestsVoiceSearch() {
+        sut.updateVoiceSearchAvailability(true)
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_expandedAIChatInlineVoiceSearchTap_whenVoiceSearchDisabled_ignoresStaleTap() {
+        sut.updateVoiceSearchAvailability(false)
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.viewController.handler.microphoneButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+    }
+
+    func test_aiVoiceChatTap_requestsAIVoiceChat() {
+        sut.viewController.handler.aiVoiceChatButtonTapped()
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestVoiceSearchCount, 0)
+    }
+
+    // MARK: - Toolbar Voice Chat State Sync
+
+    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .search)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.deactivateToOmnibar()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    // MARK: - AI Chat Shortcut
+
+    func test_updateAIChatShortcutAvailability_propagatesToHandler() {
+        sut.updateAIChatShortcutAvailability(true)
+        XCTAssertTrue(sut.viewController.handler.isAIChatShortcutAvailable)
+
+        sut.updateAIChatShortcutAvailability(false)
+        XCTAssertFalse(sut.viewController.handler.isAIChatShortcutAvailable)
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_invokesDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAIChatCount, 0)
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatCount, 1)
+    }
+
     // MARK: - Helpers
 
-    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
-        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedTools: supportedTools, entityHasAccess: access)
+    private func configureImageAttachments() {
+        mockPreferences.selectedModelId = "image-model"
+        sut.modelStore.models = [makeModel(id: "image-model", access: true, supportsImageUpload: true)]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
+    private func makeModel(id: String,
+                           access: Bool,
+                           supportsImageUpload: Bool = false,
+                           supportedTools: [AIChatRAGTool] = [],
+                           supportedReasoningEffort: [AIChatReasoningEffort] = []) -> AIChatModel {
+        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload,
+                    supportedTools: supportedTools, entityHasAccess: access,
+                    supportedReasoningEffort: supportedReasoningEffort)
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
     }
 
     private func toolsMenuActions() -> [UIAction] {
         (sut.viewController.toolsMenu?.children ?? []).compactMap { $0 as? UIAction }
+    }
+
+    private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityIdentifier == accessibilityIdentifier {
+                return button
+            }
+            if let button = findButton(accessibilityIdentifier: accessibilityIdentifier, in: subview) {
+                return button
+            }
+        }
+        return nil
     }
 }
 
@@ -1402,6 +1790,42 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
     }
 
+    func test_stopGeneratingButtonMatchesSubmitLayoutAndUsesMinimumHitTarget() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 280, height: 56))
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        container.layoutIfNeeded()
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+
+        let submitFrame = submitButton.convert(submitButton.bounds, to: sut)
+        sut.isGenerating = true
+        container.layoutIfNeeded()
+
+        guard let stopButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.StopGenerating", in: sut) else {
+            XCTFail("Expected to find stop generating button")
+            return
+        }
+
+        let stopFrame = stopButton.convert(stopButton.bounds, to: sut)
+        XCTAssertEqual(stopFrame.width, submitFrame.width, accuracy: 0.5)
+        XCTAssertEqual(stopFrame.height, submitFrame.height, accuracy: 0.5)
+        XCTAssertEqual(stopButton.image(for: .normal)?.size, CGSize(width: 24, height: 24))
+        XCTAssertTrue(stopButton.hitTest(CGPoint(x: -1, y: stopButton.bounds.midY), with: nil) === stopButton)
+    }
+
     func test_reasoningButton_hasAccessibilityIdentifier() {
         let sut = UnifiedToggleInputToolbarView()
 
@@ -1410,6 +1834,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(reasoningButton?.accessibilityLabel, UserText.aiChatToolbarReasoningButtonAccessibilityLabel)
         if #available(iOS 16.0, *) {
             XCTAssertEqual(reasoningButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
+    func test_modelChipButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        XCTAssertNotNil(modelChipButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(modelChipButton?.preferredMenuElementOrder, .fixed)
         }
     }
 
@@ -1447,22 +1882,31 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
+    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
+    var didRequestVoiceSearchCount = 0
+    var didRequestAIVoiceChatCount = 0
+    var didRequestAIChatCount = 0
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
         submittedReasoningEffort = reasoningEffort
         submittedImages = images
+        submittedFiles = files
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
-    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
+    func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
+    func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode
     }
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
@@ -1470,11 +1914,589 @@ private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class MockToggleModeStorage: ToggleModeStoring {
+    private var storedMode: TextEntryMode?
+    func save(_ mode: TextEntryMode) { storedMode = mode }
+    func restore() -> TextEntryMode? { storedMode }
+}
+
+@MainActor
+private final class FakeInputStateStore: UnifiedInputStateStoring {
+    var states: [TabUID: TabInputState] = [:]
+    var lastUsedDefaults = LastUsedInputDefaults(
+        toggleMode: .search,
+        selectedModelID: nil,
+        selectedReasoningMode: nil,
+        selectedTool: nil
+    )
+
+    var lastUsed: LastUsedInputDefaults { lastUsedDefaults }
+
+    func state(for uid: TabUID) -> TabInputState {
+        states[uid] ?? TabInputState(toggleMode: lastUsedDefaults.toggleMode)
+    }
+
+    func update(_ state: TabInputState, for uid: TabUID) {
+        states[uid] = state
+    }
+
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+        states[uid] = state
+        lastUsedDefaults = LastUsedInputDefaults(
+            toggleMode: state.toggleMode,
+            selectedModelID: state.selectedModelID,
+            selectedReasoningMode: state.selectedReasoningMode,
+            selectedTool: state.selectedTool
+        )
+    }
+
+    func remove(for uid: TabUID) {
+        states.removeValue(forKey: uid)
+    }
+}
+
+// MARK: - Per-tab state regression tests
+
+@MainActor
+final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
+
+    private func makeSUT(stateStore: UnifiedInputStateStoring) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: MockAIChatPreferencesForPerTab(),
+            toggleModeStorage: MockToggleModeStorageForPerTab(),
+            stateStore: stateStore
+        )
+    }
+
+    func test_activateForTab_appliesStoredText() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(text: "remembered")
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "remembered")
+    }
+
+    func test_activateForTab_flushesPreviousTab() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("typed")
+        sut.activateForTab("tab-B")
+        XCTAssertEqual(store.states["tab-A"]?.text, "typed")
+    }
+
+    func test_endToEnd_twoTabSwitches_preserveIndependentState() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.setText("from A")
+        sut.updateInputMode(.aiChat, animated: false)
+
+        sut.activateForTab("tab-B")
+        sut.setText("from B")
+        sut.updateInputMode(.search, animated: false)
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "from A")
+        XCTAssertEqual(sut.inputMode, .aiChat)
+
+        sut.activateForTab("tab-B")
+        XCTAssertEqual(sut.currentText, "from B")
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_textChange_propagatesToStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("typing")
+        XCTAssertEqual(store.states["tab-A"]?.text, "typing")
+    }
+
+    // Regression: clearText is a dismiss-time visible-input cleanup. With per-tab
+    // persistence it must NOT wipe the stored draft — the user may re-activate the
+    // same tab and expect their typed text back. Without this guard, tapping outside
+    // the omnibar (or opening a new tab) eventually fires the deferred clearText and
+    // overwrites the per-tab entry with empty text.
+    func test_clearText_doesNotWipeStoreEntry() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "draft to keep")
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep")
+
+        sut.clearText()
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep",
+                       "Dismiss-time clearText must preserve the per-tab stored draft.")
+    }
+
+    // Regression: applyState must always sync the live model store from per-tab
+    // state, even when state values are nil. Otherwise the previous tab's reasoning
+    // mode (or model id) leaks through preferences, and the next snapshot writes
+    // that leaked value into the current tab's stored state — corrupting it.
+    func test_applyState_clearsLiveReasoningWhenStateHasNoReasoning() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedReasoningMode: .reasoning)
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedReasoningMode: nil)
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.snapshotCurrentState().selectedReasoningMode, .reasoning)
+
+        sut.activateForTab("tab-B")
+        XCTAssertNil(sut.snapshotCurrentState().selectedReasoningMode,
+                     "Live reasoning must clear to match tab-B's nil state, otherwise it leaks into tab-B's snapshot.")
+    }
+
+    func test_applyState_clearsLiveModelIDWhenStateHasNoModel() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: nil)
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.activateForTab("tab-B")
+        // The live preferences must reflect tab-B's nil model id, not tab-A's.
+        XCTAssertNil(sut.modelStore.currentModelId,
+                     "Live preferences.selectedModelId must clear when state has nil model id.")
+    }
+
+    // Regression: clearText only clears the visible input; the coordinator's tracked
+    // draft (currentText) must remain so the very next activateForTab flush captures
+    // the user's text, not the cleared visible state.
+    func test_clearText_thenActivateAnotherTab_flushesPreviousTabDraft() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "tab A draft")
+        sut.clearText()
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertEqual(store.states["tab-A"]?.text, "tab A draft",
+                       "Flushing the outgoing tab after a dismiss-clear must store the user's draft, not the cleared live state.")
+    }
+
+    // Regression: a brand-new tab must not inherit another tab's attachments. The
+    // previous tab's attachments are still in the live view at the moment of
+    // activateForTab; applyState must clear them before any user can see them.
+    func test_activateForTab_newTabDoesNotInheritPreviousTabAttachments() {
+        let store = FakeInputStateStore()
+        let attachment = AIChatImageAttachment(image: UIImage(), fileName: "x.jpg")
+        store.states["tab-1"] = TabInputState(attachments: [attachment])
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-1")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        // tab-2 has no entry in the store — it should get a fresh empty seed.
+        sut.activateForTab("tab-2")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0,
+                       "tab-2 must start with no attachments; the previous tab's strip contents must be cleared.")
+    }
+
+    // Regression: submitting a search/prompt empties the live input. The store entry
+    // for the active tab must reflect that emptiness eagerly — the visible clear may
+    // be deferred to a dismiss animation, but the store entry shouldn't hold the
+    // submitted text in the meantime, since a tab switch during the animation would
+    // miss the deferred clear.
+    func test_submitSearch_clearsStoreEntryEagerly() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("hello")
+        XCTAssertEqual(store.states["tab-A"]?.text, "hello")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search)
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+    }
+
+    func test_submitPrompt_clearsStoreTextAndAttachmentsEagerly() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.activateForTab("tab-A")
+        sut.setText("ask claude something")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        XCTAssertEqual(store.states["tab-A"]?.text, "ask claude something")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat)
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
+    // Regression: user keystrokes flow through unifiedToggleInputVC(_:didChangeText:),
+    // not setText(_:), so the persistence must be wired on the delegate callback too.
+    func test_didChangeText_propagatesToStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "user-typed")
+        XCTAssertEqual(store.states["tab-A"]?.text, "user-typed")
+    }
+
+    // Regression: tab switch must NOT mutate lastUsed. New tabs should keep inheriting
+    // the most recent deliberate choice, not the active tab's mirror.
+    func test_activateForTab_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.updateInputMode(.aiChat, animated: false)
+        let lastUsedAfterChoice = store.lastUsed
+
+        sut.activateForTab("tab-B")
+        sut.activateForTab("tab-A")
+
+        XCTAssertEqual(store.lastUsed, lastUsedAfterChoice)
+    }
+
+    // MARK: - Persistence split: drafts vs user-deliberate choices
+
+    func test_setText_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.setText("just typing")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_didChangeText_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "keystrokes")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_addImageAttachment_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_clearAttachments_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        let baseline = store.lastUsed
+
+        sut.clearAttachments()
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_updateInputMode_mutatesLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(store.lastUsed.toggleMode, .aiChat)
+    }
+
+    func test_selectTool_mutatesLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+
+        sut.selectTool(.webSearch)
+
+        XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
+    }
+
+    // MARK: - External submission clears the store (P1)
+
+    func test_handleExternalSubmission_query_clearsStoreText() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("submitted via suggestion")
+        XCTAssertEqual(store.states["tab-A"]?.text, "submitted via suggestion")
+
+        sut.handleExternalSubmission(.query)
+
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+    }
+
+    func test_handleExternalSubmission_prompt_clearsStoreTextAndAttachments() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("voice prompt body")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
+    func test_handleExternalSubmission_resetsCoordinatorCurrentText() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("about to submit")
+
+        sut.handleExternalSubmission(.query)
+
+        XCTAssertEqual(sut.currentText, "")
+    }
+
+    // MARK: - Tool menu selection persists (P2)
+
+    func test_handleToolsMenuSelection_webSearch_persistsSelection() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
+        XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
+    }
+
+    // MARK: - Tool selection cleared on submit (P1)
+
+    func test_submitAIChat_withSelectedTool_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.webSearch)
+        XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool,
+                     "After AI submit the store must not retain the selected tool — otherwise reactivation restores it.")
+    }
+
+    func test_submitAIChat_withSelectedToolAndAttachments_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportsImageUpload: true)]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        sut.selectTool(.webSearch)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool)
+    }
+
+    func test_handleExternalSubmission_prompt_withSelectedTool_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.webSearch)
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool)
+    }
+
+    func test_handleExternalSubmission_prompt_clearsLastUsedSelectedTool() {
+        // Regression: the lastUsed snapshot was not cleared on submission, so a fresh tab seeded
+        // its state from `trackedLastUsed.selectedTool` and inherited the just-consumed tool
+        // selection — surfacing as a sticky chip on the newly-opened chat tab.
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportedTools: [.imageGeneration])]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+        XCTAssertEqual(store.lastUsed.selectedTool, .imageGeneration)
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertNil(store.lastUsed.selectedTool)
+    }
+
+    // MARK: - Reasoning button visibility on tab switch
+
+    func test_activateForTab_reasoningModel_showsReasoningButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+
+        sut.activateForTab("tab-A")
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden,
+                       "Reasoning-capable model must show the picker after tab activation.")
+    }
+
+    func test_activateForTab_nonReasoningModel_hidesReasoningButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "Non-reasoning model must hide the picker after tab activation.")
+    }
+
+    func test_activateForTab_switchingFromReasoningToNonReasoning_hidesButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "Switching to a non-reasoning model must re-evaluate visibility and hide the picker.")
+    }
+
+    func test_activateForTab_switchingFromNonReasoningToReasoning_showsButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+
+        sut.activateForTab("tab-A")
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+    }
+
+    func test_showCollapsed_afterTabSwitch_refreshesReasoningButtonVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+        sut.showCollapsed()
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "showCollapsed must refresh reasoning visibility from the live model.")
+    }
+
+    func test_activateFromOmnibar_refreshesReasoningButtonVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "activateFromOmnibar must reflect the current tab's model reasoning capability.")
+    }
+
+    // MARK: - Helpers
+
+    private func makeModelWithTools(
+        id: String,
+        supportsImageUpload: Bool = false,
+        supportedTools: [AIChatRAGTool] = [.webSearch]
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            provider: .unknown,
+            supportsImageUpload: supportsImageUpload,
+            supportedTools: supportedTools,
+            entityHasAccess: true
+        )
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
+
+    private func makeReasoningModel(id: String, supportedReasoningEffort: [AIChatReasoningEffort]) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: id,
+            provider: .openAI,
+            supportsImageUpload: false,
+            entityHasAccess: true,
+            supportedReasoningEffort: supportedReasoningEffort
+        )
+    }
+
+}
+
+private final class MockAIChatPreferencesForPerTab: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class MockToggleModeStorageForPerTab: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }

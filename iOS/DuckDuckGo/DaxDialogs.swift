@@ -26,6 +26,7 @@ import PrivacyDashboard
 import Combine
 import AIChat
 import os.log
+import Onboarding
 
 protocol EntityProviding {
     

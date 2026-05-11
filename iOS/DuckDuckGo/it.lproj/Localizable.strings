@@ -208,10 +208,54 @@
 "ai-features.settings.title" = "Funzionalità IA";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Scegli foto";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Scatta una foto";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Puoi allegare solo %d file per conversazione.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Non possiamo leggere i file allegati perché almeno uno di essi è crittografato.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "I file allegati superano il limite totale di dimensione di %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Questo file è troppo grande. La dimensione massima del file è %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Uno dei file allegati ha più pagine di quante ne supportiamo. Carica file con %d pagine o meno.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Non riusciamo a leggere uno dei file allegati. Verifica che non sia danneggiato e riprova.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Puoi allegare solo %d immagini per conversazione.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Puoi allegare solo %d immagini alla volta.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Allega file";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Allega una foto";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Il messaggio è troppo lungo per essere inviato con allegati.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Gli allegati non sono al momento disponibili. Riprova in seguito.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Questo tipo di file non è supportato.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Questo tipo di file non è supportato, allega un %1$@ o %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Questo tipo di file non è supportato, allega un %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Per attività analitiche";
@@ -1275,6 +1319,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importa segnalibri su DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Apri Chrome, quindi vai su Gestione password e attieniti ai passaggi seguenti:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Impostazioni** > **Esporta dati**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Premi **Continua**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Seleziona **DuckDuckGo** come destinazione";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importa da Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Esportazione completata?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Devi andare all'app Passwords, quindi seguire i passaggi per importare.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Tocca **···** > **Esporta dati in un'altra app**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Tocca **Seleziona tutto** > **Continua**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Seleziona **DuckDuckGo** come destinazione";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importa da Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Innanzitutto, esporta le password e i segnalibri da Safari, poi torna qui per caricare il file.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Esporta da Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importa da Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Carica file esportato...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Nessun dato supportato trovato nel file zip. Controlla le istruzioni per l'esportazione da Safari e riprova.";
 
@@ -1284,6 +1373,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Impossibile leggere il file %@. Potrebbe essersi verificato un problema con i dati nel file.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Fatto";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Impossibile leggere il file %@. Prova a caricare un altro file o prova un altro metodo di importazione.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Il file potrebbe essere danneggiato";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Nessun dato supportato trovato nel file zip. Controlla le istruzioni per l'esportazione e riprova.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nessun dato trovato";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Il file selezionato non è supportato. Seleziona un file diverso e riprova.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "File non supportato";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1402,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Trasferisci su DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Seleziona **Esporta** e nella schermata successiva seleziona **Segnalibri** e **Salva nei download**.";
@@ -1303,7 +1416,7 @@
 "data.import.passwords.instructions.chrome.step1" = "In Chrome, vai a **Gestione della password di Google**, quindi a **Impostazioni**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Seleziona **Esportazione delle password**, quindi **Salva come** e salva il file in una cartella che ricordi.";
+"data.import.passwords.instructions.chrome.step2" = "Seleziona **Esporta dati**, poi **···** e quindi **Scarica in CSV** e salva il file in una cartella che ricordi.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Come esportare le password";
@@ -1331,6 +1444,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importa le tue password in DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Apri le impostazioni per esportare";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Ricorda di toccare\n\"Esporta su file\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "App Password";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importa da";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sincronizza da";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo su un altro dispositivo";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Segnalibri";
@@ -1367,6 +1504,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Password";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Vuoi importare anche i segnalibri da Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Continua";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Non adesso";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Vuoi portare anche le tue password?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Ultimo mese";
@@ -2742,6 +2891,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Non adesso";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Le funzionalità AI sono private e opzionali.\nPuoi effettuare modifiche in Impostazioni > Funzionalità AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Vuoi un accesso facile alla chat AI privata nella barra degli indirizzi?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Ricerca e Duck.ai";
@@ -4271,6 +4426,30 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Rimuovere il dispositivo?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Codice copiato";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Dispositivo sincronizzato correttamente!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup abilitati";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Codice di ripristino copiato";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Impossibile abilitare Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Disattiva";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "I preferiti e le password salvati su questo dispositivo non verranno modificati.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Disattivare Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Rimuovi";

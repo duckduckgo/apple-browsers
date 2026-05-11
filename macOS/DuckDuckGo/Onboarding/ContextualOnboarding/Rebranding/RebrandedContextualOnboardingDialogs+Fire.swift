@@ -25,22 +25,50 @@ extension OnboardingRebranding {
 
     struct OnboardingFireDialog: View {
         let viewModel: OnboardingFireButtonDialogViewModel
-        @State private var showNextScreen: Bool = false
         let onManualDismiss: () -> Void
+        /// Fires when the bubble transitions in-place to the highFive content,
+        /// so the host can swap the background illustration to match.
+        let onContentTransition: (() -> Void)?
+
+        @State private var showNextScreen: Bool = false
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
-                if showNextScreen {
-                    OnboardingEndOfJourneyDialogContent(highFiveAction: viewModel.highFive)
-                } else {
-                    OnboardingFireDialogContent(viewModel: viewModel)
+            if showNextScreen {
+                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                    highFiveAction: viewModel.highFive,
+                    onManualDismiss: onManualDismiss
+                )
+                .transition(.opacity)
+            } else {
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: nil,
+                    onDismiss: onManualDismiss
+                ) {
+                    OnboardingFireDialogContent(viewModel: viewModel) {
+                        onContentTransition?()
+                        withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
+                            showNextScreen = true
+                        }
+                    }
                 }
+                .contextualOnboardingPanelLayout()
+                .transition(.opacity)
             }
-            .padding()
         }
     }
 
     struct OnboardingFireDialogContent: View {
+        /// Layout values unique to the fire dialog content.
+        fileprivate enum Layout {
+            /// Vertical spacing between the primary "Try it" button and the skip button.
+            static let buttonStackSpacing: CGFloat = 8
+            /// Background opacity for the skip button in its normal/pressed states.
+            static let skipButtonBackgroundOpacity: Double = 0.12
+            static let skipButtonPressedBackgroundOpacity: Double = 0.2
+        }
+
+        @Environment(\.onboardingTheme) private var theme
+
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
         private let attributedMessage = NSMutableAttributedString.attributedString(
             from: Self.firstString,
@@ -51,25 +79,39 @@ extension OnboardingRebranding {
         )
 
         let viewModel: OnboardingFireButtonDialogViewModel
-        @State private var showNextScreen: Bool = false
+        let onSkip: () -> Void
 
         var body: some View {
-            if showNextScreen {
-                OnboardingEndOfJourneyDialogContent(highFiveAction: viewModel.highFive)
-            } else {
-                Onboarding.ContextualDaxDialogContent(
-                    orientation: .horizontalStack(alignment: .center),
-                    message: attributedMessage,
-                    messageFont: OnboardingDialogsContants.titleFontNotBold,
-                    customActionView: AnyView(actionView))
+            OnboardingRebranding.ContextualDaxDialogContent(
+                orientation: .horizontalStack(alignment: .center),
+                message: attributedMessage
+            ) {
+                VStack(spacing: Layout.buttonStackSpacing) {
+                    Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
+                        viewModel.tryFireButton()
+                    }
+                    .buttonStyle(theme.primaryButtonStyle.style)
+
+                    Button(UserText.ContextualOnboarding.onboardingTryFireButtonSkip) {
+                        viewModel.skipFireButton()
+                        onSkip()
+                    }
+                    .buttonStyle(OnboardingFireDialogSkipButtonStyle())
+                }
             }
         }
+    }
 
-        @ViewBuilder
-        private var actionView: some View {
-            VStack {
-                OnboardingPrimaryCTAButton(title: UserText.ContextualOnboarding.onboardingTryFireButtonButton, action: viewModel.tryFireButton)
-            }
+    private struct OnboardingFireDialogSkipButtonStyle: ButtonStyle {
+        @Environment(\.onboardingTheme) private var theme
+
+        func makeBody(configuration: Configuration) -> some View {
+            OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
+                backgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonBackgroundOpacity),
+                pressedBackgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonPressedBackgroundOpacity),
+                foregroundColor: theme.colorPalette.textPrimary,
+                font: theme.typography.contextual.body
+            ).makeBody(configuration: configuration)
         }
     }
 

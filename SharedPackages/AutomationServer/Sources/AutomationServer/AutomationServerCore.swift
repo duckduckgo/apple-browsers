@@ -474,7 +474,6 @@ public final class AutomationServerCore {
                 return .failure(.jsonEncodingFailed)
             }
             do {
-                let jsonDecoder = JSONDecoder()
                 if let decodedArgs = try JSONSerialization.jsonObject(with: argsData, options: []) as? [String: Any] {
                     args = decodedArgs
                 } else {

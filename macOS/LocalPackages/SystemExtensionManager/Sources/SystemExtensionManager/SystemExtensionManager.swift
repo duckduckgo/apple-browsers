@@ -27,6 +27,27 @@ public enum SystemExtensionRequestError: Error {
     case willActivateAfterReboot
 }
 
+public enum SystemExtensionActivationState: Equatable {
+    case enabled
+    case awaitingUserApproval
+    case disabled
+    case uninstalling
+    case notInstalled
+    case unknown
+}
+
+public struct SystemExtensionPropertiesSnapshot: Equatable {
+    let isEnabled: Bool
+    let isAwaitingUserApproval: Bool
+    let isUninstalling: Bool
+
+    public init(isEnabled: Bool, isAwaitingUserApproval: Bool, isUninstalling: Bool) {
+        self.isEnabled = isEnabled
+        self.isAwaitingUserApproval = isAwaitingUserApproval
+        self.isUninstalling = isUninstalling
+    }
+}
+
 public struct SystemExtensionManager {
 
     private static var systemSettingsSecurityURL: String {
@@ -104,6 +125,63 @@ public struct SystemExtensionManager {
         .submit()
     }
 
+    public func openSystemExtensionSettings() {
+        openSystemSettingsSecurity()
+    }
+
+    public func activationState() async -> SystemExtensionActivationState {
+        guard #available(macOS 12.0, *) else {
+            return .unknown
+        }
+
+        do {
+            let properties = try await SystemExtensionPropertiesRequest.properties(
+                forExtensionWithIdentifier: extensionBundleID,
+                manager: manager
+            )
+            let snapshots = properties.map {
+                SystemExtensionPropertiesSnapshot(
+                    isEnabled: $0.isEnabled,
+                    isAwaitingUserApproval: $0.isAwaitingUserApproval,
+                    isUninstalling: $0.isUninstalling
+                )
+            }
+            return Self.activationState(from: snapshots)
+        } catch {
+            Logger.systemExtensionManager.error("""
+            Failed to query system extension state
+              bundleID:    \(extensionBundleID, privacy: .public)
+              description: \(error.localizedDescription, privacy: .public)
+            """)
+            return .unknown
+        }
+    }
+
+    static func activationState(from properties: [SystemExtensionPropertiesSnapshot]) -> SystemExtensionActivationState {
+        guard !properties.isEmpty else {
+            return .notInstalled
+        }
+
+        if properties.contains(where: \.isEnabled) {
+            return .enabled
+        }
+
+        if properties.contains(where: \.isUninstalling) {
+            return .uninstalling
+        }
+
+        if properties.contains(where: \.isAwaitingUserApproval) {
+            return .awaitingUserApproval
+        }
+
+        return .disabled
+    }
+
+    @available(macOS 15.1, *)
+    public func makeActivationStateObserver(onStateChange: @escaping () -> Void) -> SystemExtensionActivationStateObserver {
+        SystemExtensionActivationStateObserver(extensionBundleID: extensionBundleID, onStateChange: onStateChange)
+    }
+
     // MARK: - Activation: Checking if there are pending requests
 
     /// Checks if there are pending activation requests for the system extension.
@@ -133,6 +211,145 @@ public struct SystemExtensionManager {
     private func openSystemSettingsSecurity() {
         let url = URL(string: Self.systemSettingsSecurityURL)!
         workspace.open(url)
+    }
+}
+
+@available(macOS 12.0, *)
+private final class SystemExtensionPropertiesRequest: NSObject {
+
+    private let request: OSSystemExtensionRequest
+    private let manager: OSSystemExtensionManager
+    private var continuation: CheckedContinuation<[OSSystemExtensionProperties], Error>?
+
+    private init(request: OSSystemExtensionRequest, manager: OSSystemExtensionManager) {
+        self.request = request
+        self.manager = manager
+        super.init()
+    }
+
+    static func properties(forExtensionWithIdentifier bundleId: String, manager: OSSystemExtensionManager) async throws -> [OSSystemExtensionProperties] {
+        let query = SystemExtensionPropertiesRequest(
+            request: .propertiesRequest(forExtensionWithIdentifier: bundleId, queue: .global()),
+            manager: manager
+        )
+        // OSSystemExtensionRequest.delegate is weak. Without an explicit lifetime extension,
+        // the compiler may release `query` during the await, niling the delegate before the
+        // callback fires and leaving the continuation suspended forever.
+        let result = try await query.submit()
+        return withExtendedLifetime(query) { result }
+    }
+
+    private func submit() async throws -> [OSSystemExtensionProperties] {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            request.delegate = self
+            manager.submitRequest(request)
+        }
+    }
+
+    private func complete(with result: Result<[OSSystemExtensionProperties], Error>) {
+        guard let continuation else {
+            return
+        }
+
+        self.continuation = nil
+
+        switch result {
+        case .success(let properties):
+            continuation.resume(returning: properties)
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        }
+    }
+}
+
+@available(macOS 12.0, *)
+extension SystemExtensionPropertiesRequest: OSSystemExtensionRequestDelegate {
+    func request(_ request: OSSystemExtensionRequest,
+                 actionForReplacingExtension existing: OSSystemExtensionProperties,
+                 withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction {
+        .replace
+    }
+
+    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
+        // Properties requests do not need user approval.
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
+        complete(with: .success([]))
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
+        complete(with: .failure(error))
+    }
+
+    func request(_ request: OSSystemExtensionRequest, foundProperties properties: [OSSystemExtensionProperties]) {
+        complete(with: .success(properties))
+    }
+}
+
+@available(macOS 15.1, *)
+public final class SystemExtensionActivationStateObserver: NSObject {
+
+    private let extensionBundleID: String
+    private let workspace: OSSystemExtensionsWorkspace
+    private let onStateChange: () -> Void
+    private var isObserving = false
+
+    init(extensionBundleID: String,
+         workspace: OSSystemExtensionsWorkspace = .shared,
+         onStateChange: @escaping () -> Void) {
+
+        self.extensionBundleID = extensionBundleID
+        self.workspace = workspace
+        self.onStateChange = onStateChange
+
+        super.init()
+    }
+
+    deinit {
+        stop()
+    }
+
+    public func start() throws {
+        guard !isObserving else {
+            return
+        }
+
+        try workspace.addObserver(self)
+        isObserving = true
+    }
+
+    public func stop() {
+        guard isObserving else {
+            return
+        }
+
+        workspace.removeObserver(self)
+        isObserving = false
+    }
+
+    private func handleStateChange(for systemExtensionInfo: OSSystemExtensionInfo) {
+        guard systemExtensionInfo.bundleIdentifier == extensionBundleID else {
+            return
+        }
+
+        onStateChange()
+    }
+}
+
+@available(macOS 15.1, *)
+extension SystemExtensionActivationStateObserver: OSSystemExtensionsWorkspaceObserver {
+    public func systemExtensionWillBecomeEnabled(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
+    }
+
+    public func systemExtensionWillBecomeDisabled(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
+    }
+
+    public func systemExtensionWillBecomeInactive(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
     }
 }
 

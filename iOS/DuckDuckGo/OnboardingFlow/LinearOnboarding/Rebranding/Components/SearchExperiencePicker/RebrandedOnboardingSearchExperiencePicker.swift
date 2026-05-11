@@ -23,34 +23,38 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct OnboardingSearchExperiencePicker: View {
-        @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
+        @Binding var isDuckAISelected: Bool
         @Environment(\.onboardingTheme) private var onboardingTheme
         // Keep both option titles at the same measured height so indicators align
         // whether one title wraps or both remain on a single line.
         @State private var maxOptionTitleHeight: CGFloat = 0
 
+        init(isDuckAISelected: Binding<Bool>) {
+            self._isDuckAISelected = isDuckAISelected
+        }
+
         var body: some View {
             HStack(alignment: .top, spacing: PickerMetrics.optionsSpacing) {
                 PickerOption(
-                    isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
+                    isSelected: !isDuckAISelected,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
                     title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor,
                     titleMinHeight: maxOptionTitleHeight
                 ) {
-                    viewModel.isSearchAndAIChatEnabled.wrappedValue = false
+                    isDuckAISelected = false
                 }
 
                 PickerOption(
-                    isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
+                    isSelected: isDuckAISelected,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
                     title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor,
                     titleMinHeight: maxOptionTitleHeight
                 ) {
-                    viewModel.isSearchAndAIChatEnabled.wrappedValue = true
+                    isDuckAISelected = true
                 }
             }
             // Collect per-option measured title heights and apply the maximum to both.

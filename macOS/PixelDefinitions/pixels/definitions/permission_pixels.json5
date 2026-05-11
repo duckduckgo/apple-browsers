@@ -55,7 +55,7 @@
                 "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme", "autoplay_policy"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_permission_system_preferences": {
         "description": "Fired when user clicks the link to open System Preferences/Settings for a permission",

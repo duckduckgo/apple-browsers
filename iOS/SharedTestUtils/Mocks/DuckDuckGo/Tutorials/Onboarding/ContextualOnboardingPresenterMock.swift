@@ -193,6 +193,8 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func setChatPathVisitSiteSeen() {}
 
+    func setAsChatFirstPath() {}
+
     var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
     var isAIChatEnabled: Bool { true }
 

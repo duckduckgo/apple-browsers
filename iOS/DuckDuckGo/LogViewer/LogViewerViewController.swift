@@ -156,7 +156,7 @@ final class LogViewerViewController: UIViewController {
             popover.barButtonItem = exportButton
         }
 
-        activityViewController.completionWithItemsHandler = { [weak self] _, _, _, _ in
+        activityViewController.completionWithItemsHandler = { _, _, _, _ in
             DispatchQueue.global(qos: .utility).async {
                 try? FileManager.default.removeItem(at: logFileURL)
             }

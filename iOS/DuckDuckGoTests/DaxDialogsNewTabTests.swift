@@ -126,6 +126,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     func testWhenFireShownAndNoBrowsingAndChatPathVisitSiteNotSeen_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
         // GIVEN – chat path: fire was seen before visiting any site
+        settings.isChatFirstPath = true
         settings.fireMessageExperimentShown = true
         settings.chatPathVisitSiteSeen = false
         // nonDDGBrowsingMessageSeen = false by default
@@ -139,6 +140,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     func testWhenFireShownAndChatPathVisitSiteSeen_AndNoBrowsing_OnNextHomeScreenMessageNew_ReturnsNil() {
         // GIVEN – chat path: visit-site dialog was shown; waiting for user to browse
+        settings.isChatFirstPath = true
         settings.fireMessageExperimentShown = true
         settings.chatPathVisitSiteSeen = true
         // nonDDGBrowsingMessageSeen = false by default
@@ -159,6 +161,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
     }
 
     func testWhenFireShownAndVisitSiteNotSeen_ChatPathPhase_IsVisitSite() {
+        settings.isChatFirstPath = true
         settings.fireMessageExperimentShown = true
         settings.chatPathVisitSiteSeen = false
 
@@ -166,16 +169,23 @@ final class DaxDialogsNewTabTests: XCTestCase {
     }
 
     func testWhenFireAndVisitSiteSeenAndFinalNotShown_ChatPathPhase_IsTrackerToEOJ() {
+        settings.isChatFirstPath = true
         settings.fireMessageExperimentShown = true
         settings.chatPathVisitSiteSeen = true
+        // The seenBrowsingDialog guard requires that the user actually saw a browsing tracker
+        // dialog before advancing to .trackerToEOJ; without one of these flags the phase stays
+        // at .visitSite to prevent the EOJ from triggering before any site visit.
+        settings.browsingWithTrackersShown = true
         settings.browsingFinalDialogShown = false
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .trackerToEOJ)
     }
 
     func testWhenFireAndVisitSiteSeenAndFinalShown_ChatPathPhase_IsNone() {
+        settings.isChatFirstPath = true
         settings.fireMessageExperimentShown = true
         settings.chatPathVisitSiteSeen = true
+        settings.browsingWithTrackersShown = true
         settings.browsingFinalDialogShown = true
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .none)

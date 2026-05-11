@@ -88,10 +88,13 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check intro message is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check intro message is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.Onboarding.Rebranding.Intro.message, UserText.Onboarding.DuckAICPP.Intro.message]
+            )
         )
-        func checkIntroMessage(flow: OnboardingFlowType) {
+        func checkIntroMessage(flow: OnboardingFlowType, expectedMessage: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -99,7 +102,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.introStepContent
 
             // THEN
-            #expect(result.message == UserText.Onboarding.Rebranding.Intro.message)
+            #expect(result.message == expectedMessage)
         }
 
         @Test(
@@ -216,10 +219,13 @@ struct OnboardingIntroContentProviderTests {
             }
 
             @Test(
-                "Check skip flow message is correct",
-                arguments: [.default, .duckAI] as [OnboardingFlowType]
+                "Check skip flow message is correct per flow",
+                arguments: zip(
+                    [OnboardingFlowType.default, .duckAI],
+                    [UserText.Onboarding.Skip.message, UserText.Onboarding.DuckAICPP.Skip.message]
+                )
             )
-            func checkSkipFlowMessage(flow: OnboardingFlowType) {
+            func checkSkipFlowMessage(flow: OnboardingFlowType, expectedMessage: String) {
                 // GIVEN
                 let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -227,14 +233,17 @@ struct OnboardingIntroContentProviderTests {
                 let result = sut.introStepContent.skipFlowStepContent
 
                 // THEN
-                #expect(result.message == UserText.Onboarding.Skip.message)
+                #expect(result.message == expectedMessage)
             }
 
             @Test(
-                "Check skip flow primary CTA is start browsing",
-                arguments: [.default, .duckAI] as [OnboardingFlowType]
+                "Check skip flow primary CTA is correct per flow",
+                arguments: zip(
+                    [OnboardingFlowType.default, .duckAI],
+                    [UserText.Onboarding.Skip.confirmSkipOnboardingCTA, UserText.Onboarding.DuckAICPP.Skip.confirmSkipOnboardingCTA]
+                )
             )
-            func checkSkipFlowPrimaryCTA(flow: OnboardingFlowType) {
+            func checkSkipFlowPrimaryCTA(flow: OnboardingFlowType, expectedPrimaryCTA: String) {
                 // GIVEN
                 let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -242,7 +251,31 @@ struct OnboardingIntroContentProviderTests {
                 let result = sut.introStepContent.skipFlowStepContent
 
                 // THEN
-                #expect(result.primaryCTA == UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
+                #expect(result.primaryCTA == expectedPrimaryCTA)
+            }
+
+            @Test("Check Duck.ai skip flow message contains the chat icon token")
+            func duckAISkipFlowMessageContainsChatIconToken() {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: .duckAI, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.introStepContent.skipFlowStepContent
+
+                // THEN
+                #expect(result.message.contains(UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken))
+            }
+
+            @Test("Check default skip flow message does not contain the chat icon token")
+            func defaultSkipFlowMessageDoesNotContainChatIconToken() {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.introStepContent.skipFlowStepContent
+
+                // THEN
+                #expect(!result.message.contains(UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken))
             }
 
             @Test(

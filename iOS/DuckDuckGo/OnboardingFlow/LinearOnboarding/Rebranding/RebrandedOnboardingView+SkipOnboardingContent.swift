@@ -60,7 +60,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    styledMessage()
+                    Text(attributedStringWithAttachments: OnboardingRichTextMessageRenderer.render(content.message))
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
@@ -93,15 +93,6 @@ extension OnboardingRebranding.OnboardingView {
                 }
             )
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
-        }
-
-        /// Composes the skip message with bold "Fire Button". Uses `Text` concatenation so the
-        /// bold weight inherits from the outer `.font(...)`.
-        private func styledMessage() -> Text {
-            let highlight = Self.fireButtonCopy
-            let parts = content.message.components(separatedBy: highlight)
-            guard parts.count == 2 else { return Text(content.message) }
-            return Text(parts[0]) + Text(highlight).bold() + Text(parts[1])
         }
     }
 }

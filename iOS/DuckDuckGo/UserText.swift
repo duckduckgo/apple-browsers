@@ -2451,6 +2451,18 @@ public struct UserText {
             )
         }
 
+        enum DuckAICPP {
+            public enum Intro {
+                public static let message = NotLocalizedString("onboarding.duckai.intro.message", value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?", comment: "The message of the onboarding intro dialog popup")
+            }
+
+            public enum Skip {
+                public static let message = NotLocalizedString("onboarding.duckai.skip.message", value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]", comment: "The message of the onboarding skip dialog popup")
+
+                public static let confirmSkipOnboardingCTA = NotLocalizedString("onboarding.duckai.skip.cta.confirm", value: "Start AI Chat", comment: "The title of the button to skip the onboarding and start browsing.")
+            }
+        }
+
         enum ContextualOnboarding {
 
             enum Rebranding {

@@ -1372,6 +1372,7 @@
 		9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */; };
 		9F104B942F4EA27200FD6139 /* RebrandedScrollableOnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F104B932F4EA26600FD6139 /* RebrandedScrollableOnboardingBackground.swift */; };
 		9F12A0BD2FB1677D00F80554 /* RebrandedOnboardingView+AIComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F12A0BC2FB1676F00F80554 /* RebrandedOnboardingView+AIComparisonContent.swift */; };
+		9F12A0C12FB187FD00F80554 /* OnboardingRichTextMessageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F12A0C02FB187F400F80554 /* OnboardingRichTextMessageRenderer.swift */; };
 		9F16230B2CA0F0190093C4FC /* DebouncerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */; };
 		9F1798572CD2443F0073018B /* AddToDockPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */; };
 		9F219FE92F74DFA700006156 /* OnboardingDuckAISuggestionsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F219FE82F74DFA700006156 /* OnboardingDuckAISuggestionsProvider.swift */; };
@@ -4055,6 +4056,7 @@
 		9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManager.swift; sourceTree = "<group>"; };
 		9F104B932F4EA26600FD6139 /* RebrandedScrollableOnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedScrollableOnboardingBackground.swift; sourceTree = "<group>"; };
 		9F12A0BC2FB1676F00F80554 /* RebrandedOnboardingView+AIComparisonContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+AIComparisonContent.swift"; sourceTree = "<group>"; };
+		9F12A0C02FB187F400F80554 /* OnboardingRichTextMessageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRichTextMessageRenderer.swift; sourceTree = "<group>"; };
 		9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebouncerTests.swift; sourceTree = "<group>"; };
 		9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModelTests.swift; sourceTree = "<group>"; };
 		9F219FE82F74DFA700006156 /* OnboardingDuckAISuggestionsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDuckAISuggestionsProvider.swift; sourceTree = "<group>"; };
@@ -8773,6 +8775,7 @@
 		9FF7E9802C22A19800902BE5 /* OnboardingFlow */ = {
 			isa = PBXGroup;
 			children = (
+				9F12A0C02FB187F400F80554 /* OnboardingRichTextMessageRenderer.swift */,
 				9FD8A2F12F99B982005772BC /* CustomProductPage+Onboarding.swift */,
 				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
 				9F96F73D2C914C3D009E45D5 /* Background */,
@@ -12414,6 +12417,7 @@
 				85F996CE2E54ADC0006B4641 /* OpenAIChatFromAddressBarHandling.swift in Sources */,
 				1E8AD1C727BE9B2900ABA377 /* DownloadsListDataSource.swift in Sources */,
 				85B7CD8D2DCA3308000C7B7B /* MessageNavigator.swift in Sources */,
+				9F12A0C12FB187FD00F80554 /* OnboardingRichTextMessageRenderer.swift in Sources */,
 				97D99E622F741FE900EE34E7 /* AIVoiceChatIntent.swift in Sources */,
 				9FF362DA2F3DC6A200824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift in Sources */,
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,

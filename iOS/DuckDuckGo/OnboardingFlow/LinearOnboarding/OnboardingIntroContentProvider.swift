@@ -91,10 +91,20 @@ struct OnboardingIntroStepContent: Equatable {
 extension OnboardingIntroContentProvider {
 
     var introStepContent: OnboardingIntroStepContent {
+        let introMessage = switch flowType {
+        case .default: UserText.Onboarding.Rebranding.Intro.message
+        case .duckAI: UserText.Onboarding.DuckAICPP.Intro.message
+        }
+
+        let (skipMessage, skipPrimaryCTA) = switch flowType {
+        case .default: (UserText.Onboarding.Skip.message, UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
+        case .duckAI: (UserText.Onboarding.DuckAICPP.Skip.message, UserText.Onboarding.DuckAICPP.Skip.confirmSkipOnboardingCTA)
+        }
+
         let skipOnboardingContent = OnboardingIntroStepContent.SkipFlowStepContent(
             title: UserText.Onboarding.Skip.title,
-            message: UserText.Onboarding.Skip.message,
-            primaryCTA: UserText.Onboarding.Skip.confirmSkipOnboardingCTA,
+            message: skipMessage,
+            primaryCTA: skipPrimaryCTA,
             secondaryCTA: UserText.Onboarding.Skip.resumeOnboardingCTA
         )
 
@@ -107,7 +117,7 @@ extension OnboardingIntroContentProvider {
 
         return OnboardingIntroStepContent(
             title: UserText.Onboarding.Rebranding.Intro.title,
-            message: UserText.Onboarding.Rebranding.Intro.message,
+            message: introMessage,
             primaryCTA: UserText.Onboarding.Intro.continueCTA,
             secondaryCTA: UserText.Onboarding.Intro.skipCTA,
             restorePromptStepContent: restoreOnboardingContent,

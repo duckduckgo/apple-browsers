@@ -267,9 +267,12 @@ private extension OnboardingRebranding {
         //   forwards completion.
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
-            AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
-                revealStaticMessageAndFinish()
-            })
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { revealStaticMessageAndFinish() }
+            )
             .font(theme.typography.contextual.title)
             .multilineTextAlignment(alignment)
             .frame(maxWidth: .infinity, alignment: Alignment(alignment))
@@ -306,9 +309,12 @@ private extension OnboardingRebranding {
         #else
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
-            AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
-                startTypingMessage = true
-            })
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { startTypingMessage = true }
+            )
             .font(theme.typography.contextual.title)
             .multilineTextAlignment(alignment)
             .frame(maxWidth: .infinity, alignment: Alignment(alignment))
@@ -316,10 +322,15 @@ private extension OnboardingRebranding {
 
         @ViewBuilder
         private func messageTypingView(alignment: TextAlignment) -> some View {
-            AnimatableTypingText(message, startAnimating: $startTypingMessage, onTypingFinished: onTypingFinished)
-                .font(theme.typography.contextual.body)
-                .multilineTextAlignment(alignment)
-                .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+            AnimatableTypingText(
+                message,
+                startAnimating: $startTypingMessage,
+                alignment: Alignment(alignment),
+                onTypingFinished: onTypingFinished
+            )
+            .font(theme.typography.contextual.body)
+            .multilineTextAlignment(alignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(alignment))
         }
         #endif
     }

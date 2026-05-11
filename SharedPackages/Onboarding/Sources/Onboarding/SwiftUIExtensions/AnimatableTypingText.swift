@@ -32,6 +32,11 @@ public struct AnimatableTypingText: View {
     private var startAnimating: Binding<Bool>
     private var skipAnimation: Binding<Bool>
     private var onTypingFinished: (() -> Void)?
+    /// Horizontal alignment of the typed text within its own infinite-width frame. Defaults to
+    /// `.leading` to preserve the original behavior; callers that center the surrounding layout
+    /// (e.g. the contextual SubscriptionPromo dialog title) should pass `.center` so the inner
+    /// `Text` doesn't anchor to the leading edge regardless of the parent's `.multilineTextAlignment`.
+    private let alignment: Alignment
 
     @StateObject private var model: AnimatableTypingTextModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -40,12 +45,14 @@ public struct AnimatableTypingText: View {
         _ text: NSAttributedString,
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
+        alignment: Alignment = .leading,
         onTypingFinished: (() -> Void)? = nil
     ) {
         self.text = text
         _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: text, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
+        self.alignment = alignment
         self.onTypingFinished = onTypingFinished
     }
 
@@ -53,6 +60,7 @@ public struct AnimatableTypingText: View {
         _ text: String,
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
+        alignment: Alignment = .leading,
         onTypingFinished: (() -> Void)? = nil
     ) {
         let attributesText = NSAttributedString(string: text)
@@ -60,12 +68,13 @@ public struct AnimatableTypingText: View {
         _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: attributesText, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
+        self.alignment = alignment
         self.onTypingFinished = onTypingFinished
     }
 
     public var body: some View {
         Text(attributedStringWithAttachments: model.typedAttributedText)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: alignment)
         .onChange(of: startAnimating.wrappedValue, perform: { shouldAnimate in
             if skipAnimation.wrappedValue || reduceMotion {
                 model.skip()

@@ -55,7 +55,7 @@ enum RecurrenceRuleParser {
                 }
                 count = countValue
             case "UNTIL":
-                until = parseUntil(rawValue)
+                until = try parseUntil(rawValue, original: value)
             case "BYDAY":
                 byDay = rawValue.split(separator: ",").compactMap { parseByDay(String($0)) }
             case "BYMONTHDAY":
@@ -138,8 +138,9 @@ enum RecurrenceRuleParser {
     }
 
     /// Per RFC 5545 §3.3.10, UNTIL is UTC for time-anchored DTSTARTs. Date-only form accepted
-    /// because some producers emit it.
-    private static func parseUntil(_ raw: String) -> Date? {
+    /// because some producers emit it. Throws on unparseable input so a malformed UNTIL does
+    /// not silently degrade a finite recurrence to an infinite one.
+    private static func parseUntil(_ raw: String, original: String) throws -> Date {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "UTC")
@@ -149,7 +150,7 @@ enum RecurrenceRuleParser {
                 return parsed
             }
         }
-        return nil
+        throw ICSParser.Error.malformedRecurrenceRule(raw: original)
     }
 
     private static func recurrenceEnd(

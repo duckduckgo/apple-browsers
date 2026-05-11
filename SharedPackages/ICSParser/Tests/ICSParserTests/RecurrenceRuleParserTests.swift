@@ -142,6 +142,17 @@ struct RecurrenceRuleParserTests {
         }
     }
 
+    /// A malformed UNTIL must not be silently dropped: that would turn a finite recurrence
+    /// into an infinite one. The parser must surface the error like other RRULE field errors.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for unparseable UNTIL", .timeLimit(.minutes(1)))
+    func throwsForMalformedUntil() {
+        let raw = "FREQ=DAILY;UNTIL=2026-06-30"
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: raw)) {
+            try RecurrenceRuleParser.parse(raw, startDate: utcDate("2026-06-01T09:00:00Z"))
+        }
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Drops BYDAY tokens with invalid week numbers (0 or out of range)", .timeLimit(.minutes(1)))
     func dropsByDayTokensWithInvalidWeekNumbers() throws {

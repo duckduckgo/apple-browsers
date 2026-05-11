@@ -110,6 +110,24 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
+    /// Regression guard for the duplicate-terminator path. Cmd-Tab fires window-deactivate and
+    /// app-deactivate back to back: the first terminator snapshots a non-empty buffer and
+    /// schedules emission, the second sees an empty recorder. The empty-snapshot guard must
+    /// run before cancellation so the second terminator can't drop the first one's pixel.
+    func test_duplicateTerminator_doesNotCancelFirstPixel() {
+        clock.now = 0
+        coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().count, 1)
+    }
+
     func test_paintWithoutKeystroke_recordsNothing() {
         clock.now = 0.030
         coordinator.handlePaint(at: 0.030)

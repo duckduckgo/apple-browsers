@@ -86,6 +86,19 @@ struct RecurrenceRuleParserTests {
         #expect(rule.recurrenceEnd?.endDate == nil)
     }
 
+    /// Daily + BYDAY filters expansion to specific weekdays (e.g. `FREQ=DAILY;BYDAY=MO` ≡
+    /// "Mondays"). Simple +N days arithmetic would skip the gaps and undershoot. Keep COUNT.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT for daily RRULE with BYDAY filter", .timeLimit(.minutes(1)))
+    func keepsCountForDailyWithByDay() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=DAILY;COUNT=4;BYDAY=MO",
+            startDate: utcDate("2026-06-01T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 4)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
     /// When DTSTART's weekday differs from the single BYDAY, +N weeks arithmetic lands on the
     /// wrong weekday, so EventKit would expand too few occurrences. Must fall back to COUNT.
     @available(iOS 16, macOS 13, *)

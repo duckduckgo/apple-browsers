@@ -194,31 +194,20 @@ enum RecurrenceRuleParser {
         byMonth: [Int]
     ) -> Date? {
         guard count >= 1, interval >= 1 else { return nil }
-        if frequency == .weekly, byDay.count > 1 { return nil }
-        // Monthly/yearly BYDAY positions (e.g. "1MO") shift the day-of-month each cycle, so
-        // simple component arithmetic on DTSTART would land on the wrong date.
-        if frequency == .monthly || frequency == .yearly, !byDay.isEmpty { return nil }
-        if byMonthDay.count > 1 { return nil }
-        if byMonth.count > 1 { return nil }
 
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
 
-        // For weekly + single BYDAY, simple +N weeks arithmetic only lands on the right weekday
-        // when DTSTART's weekday already matches. Otherwise the computed UNTIL falls short and
-        // EventKit expands fewer occurrences than COUNT.
-        if frequency == .weekly, let onlyDay = byDay.first {
-            let startWeekday = calendar.component(.weekday, from: startDate)
-            if startWeekday != onlyDay.dayOfTheWeek.rawValue { return nil }
+        if shouldDeferToOccurrenceCount(
+            frequency: frequency,
+            startDate: startDate,
+            byDay: byDay,
+            byMonthDay: byMonthDay,
+            byMonth: byMonth,
+            calendar: calendar
+        ) {
+            return nil
         }
-
-        // Calendar.date(byAdding:) clamps day-of-month, so DTSTART on day 29/30/31 + N months
-        // lands too early when an interim month has fewer days. RFC 5545 expansion skips those
-        // months instead, so leave COUNT semantics to EventKit.
-        let startDay = calendar.component(.day, from: startDate)
-        if frequency == .monthly, startDay > 28 { return nil }
-        let startMonth = calendar.component(.month, from: startDate)
-        if frequency == .yearly, startMonth == 2, startDay == 29 { return nil }
 
         let component: Calendar.Component
         switch frequency {
@@ -234,5 +223,35 @@ enum RecurrenceRuleParser {
             return nil
         }
         return calendar.date(bySettingHour: 23, minute: 59, second: 59, of: lastOccurrence) ?? lastOccurrence
+    }
+
+    /// True when +N component arithmetic on DTSTART would not match the RFC expansion, so the
+    /// rule should retain `EKRecurrenceEnd(occurrenceCount:)` and let EventKit do the work.
+    private static func shouldDeferToOccurrenceCount(
+        frequency: EKRecurrenceFrequency,
+        startDate: Date,
+        byDay: [EKRecurrenceDayOfWeek],
+        byMonthDay: [Int],
+        byMonth: [Int],
+        calendar: Calendar
+    ) -> Bool {
+        // Daily + BYDAY filters which weekdays count, so +N days overshoots by skipped days.
+        if frequency == .daily, !byDay.isEmpty { return true }
+        if frequency == .weekly, byDay.count > 1 { return true }
+        // Monthly/yearly BYDAY positions (e.g. "1MO") shift the day-of-month each cycle.
+        if frequency == .monthly || frequency == .yearly, !byDay.isEmpty { return true }
+        if byMonthDay.count > 1 { return true }
+        if byMonth.count > 1 { return true }
+        // Weekly + single BYDAY only lands on the right weekday when DTSTART already matches.
+        if frequency == .weekly, let onlyDay = byDay.first {
+            let startWeekday = calendar.component(.weekday, from: startDate)
+            if startWeekday != onlyDay.dayOfTheWeek.rawValue { return true }
+        }
+        // Calendar clamps day-of-month, so DTSTART on day 29/30/31 + N months can undershoot.
+        let startDay = calendar.component(.day, from: startDate)
+        if frequency == .monthly, startDay > 28 { return true }
+        let startMonth = calendar.component(.month, from: startDate)
+        if frequency == .yearly, startMonth == 2, startDay == 29 { return true }
+        return false
     }
 }

@@ -377,6 +377,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return tabControllerCache.first { $0.tabModel === tab }
     }
 
+    func controller(forWebView webView: WKWebView) -> TabViewController? {
+        return tabControllerCache.first { $0.webView === webView }
+    }
+
     @MainActor
     func viewModel(for tab: Tab) -> TabViewModel {
         if let controller = controller(for: tab) {

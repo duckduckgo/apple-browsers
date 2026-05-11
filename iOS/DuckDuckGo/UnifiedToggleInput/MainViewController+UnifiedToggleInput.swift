@@ -371,29 +371,20 @@ private extension MainViewController {
     }
 
     private func handleVoiceSessionEnded(for webView: WKWebView) {
-        guard let controller = tabControllerForWebView(webView) else { return }
-        let uid = controller.tabModel.uid
+        guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab,
            let coordinator = unifiedToggleInputCoordinator,
            coordinator.aiChatInputBoxVisibility == .hidden {
+            // Coordinator setter persists via `didSet`, and the publisher subscription
+            // reconciles the chrome — no manual reconcile needed.
             coordinator.aiChatInputBoxVisibility = .visible
-            reconcileAIChatInputChromeForCurrentTab()
-        } else if let stateStore = unifiedInputStateStore {
-            var state = stateStore.state(for: uid)
-            guard state.aiChatInputBoxVisibility == .hidden else { return }
-            state.aiChatInputBoxVisibility = .visible
-            stateStore.update(state, for: uid)
+            return
         }
-    }
-
-    private func tabControllerForWebView(_ webView: WKWebView) -> TabViewController? {
-        for tab in tabManager.allTabsModel.tabs {
-            if let controller = tabManager.controller(for: tab),
-               controller.webView === webView {
-                return controller
-            }
-        }
-        return nil
+        guard let stateStore = unifiedInputStateStore else { return }
+        var state = stateStore.state(for: controller.tabModel.uid)
+        guard state.aiChatInputBoxVisibility == .hidden else { return }
+        state.aiChatInputBoxVisibility = .visible
+        stateStore.update(state, for: controller.tabModel.uid)
     }
 
     func subscribeToToggleSettings() {

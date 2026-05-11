@@ -317,8 +317,6 @@ final class AIChatTabChatHeaderView: UIView {
         backPill.isHidden = !state.showsStandaloneBack
         forwardPill.isHidden = !state.showsStandaloneForward
         navPairPill.isHidden = !state.showsNavPair
-        // FE hides the chat input (voice mode, sidebar open) → drop the chats/new-chat pill;
-        // back/forward stay so the user can exit.
         leftPairPill.isHidden = state.isChatInputHidden
         // Compose suppressed when nav arrows are visible — the row gets cluttered.
         newChatButton.isHidden = state.isNavigationVisible

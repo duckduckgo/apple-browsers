@@ -32,7 +32,6 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
-    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
@@ -1175,14 +1174,6 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
-            }
-            .store(in: &cancellables)
-
-        handler.searchGoToButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                delegate?.unifiedToggleInputViewDidTapSearchGoTo(self)
             }
             .store(in: &cancellables)
 

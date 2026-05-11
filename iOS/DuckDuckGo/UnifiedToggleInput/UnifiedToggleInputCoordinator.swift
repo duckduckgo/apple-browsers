@@ -1286,10 +1286,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateInputMode(mode, animated: true)
     }
 
-    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
-        showExpanded(inputMode: .search)
-    }
-
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
         clearSelectedTool()
     }

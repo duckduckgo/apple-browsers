@@ -771,16 +771,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .aiChat)
     }
 
-    // MARK: - VC Delegate: SearchGoTo
-
-    func test_searchGoToTap_expandsInSearchMode() {
-        sut.showCollapsed()
-        sut.unifiedToggleInputVCDidTapSearchGoTo(sut.viewController)
-
-        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
-        XCTAssertEqual(sut.inputMode, .search)
-    }
-
     // MARK: - AI Tab Search Inactive State
 
     func test_updateOmnibarInputVisibility_aiTabSearch_becomesInactiveOnHide() {

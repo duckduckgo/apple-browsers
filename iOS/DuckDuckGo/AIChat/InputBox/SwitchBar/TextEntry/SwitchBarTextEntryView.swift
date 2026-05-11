@@ -248,10 +248,6 @@ class SwitchBarTextEntryView: UIView {
             self?.handler.microphoneButtonTapped()
         }
 
-        buttonsView.onSearchGoToTapped = { [weak self] in
-            self?.handler.searchGoToButtonTapped()
-        }
-
         buttonsView.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }

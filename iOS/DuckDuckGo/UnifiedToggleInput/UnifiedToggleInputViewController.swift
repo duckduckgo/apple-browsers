@@ -29,7 +29,6 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
-    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
@@ -356,10 +355,6 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode) {
         delegate?.unifiedToggleInputVC(self, didChangeMode: mode)
-    }
-
-    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
     }
 
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {

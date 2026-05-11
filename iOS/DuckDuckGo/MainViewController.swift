@@ -797,19 +797,25 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
-                                                    omnibarDependencies: omnibarDependencies) { [weak self] in
+                                                    omnibarDependencies: omnibarDependencies) { [weak self] tab in
 
-            guard $0 !== self?.tabManager.currentTabsModel.currentTab else { return }
+            Logger.swipeTabs.debug("MainViewController.selectTab callback: targetTab uid=\(tab.uid) isAITab=\(tab.isAITab) hasLink=\(tab.link != nil) currentTab.uid=\(self?.tabManager.currentTabsModel.currentTab?.uid ?? "nil")")
+            guard tab !== self?.tabManager.currentTabsModel.currentTab else {
+                Logger.swipeTabs.debug("MainViewController.selectTab callback: same tab — bailing")
+                return
+            }
 
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.selectTab($0)
+            self?.selectTab(tab)
 
         } newTab: { [weak self] in
+            Logger.swipeTabs.debug("MainViewController.newTab callback (from swipe past last tab)")
             Pixel.fire(pixel: .swipeToOpenNewTab)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
+            Logger.swipeTabs.debug("MainViewController.onSwipeStarted callback")
             self?.performCancel()
             self?.hideKeyboard()
             self?.updatePreviewForCurrentTab()
@@ -5129,8 +5135,7 @@ extension MainViewController: UIGestureRecognizerDelegate {
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        if let pan = gestureRecognizer as? UIPanGestureRecognizer,
-           pan.view === viewCoordinator.unifiedToggleInputContainer || pan.view === aiChatTabChatHeaderView {
+        if let pan = gestureRecognizer as? UnifiedInputSwipeTabsPanGestureRecognizer {
             return shouldBeginUnifiedInputSwipeTabsPan(pan)
         }
         return true

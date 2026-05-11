@@ -19,6 +19,7 @@
 
 import DesignResourcesKit
 import UIKit
+import os.log
 
 class MainViewCoordinator {
 
@@ -197,6 +198,7 @@ class MainViewCoordinator {
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
+        Logger.swipeTabs.debug("MainViewCoordinator.showUnifiedToggleInput: → bottom-pinned, height=\(self.standardNavigationBarContainerHeight)")
         setAddressBarTopActive(false)
         setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
@@ -263,6 +265,7 @@ class MainViewCoordinator {
 
 
     func hideUnifiedToggleInput() {
+        Logger.swipeTabs.debug("MainViewCoordinator.hideUnifiedToggleInput: → isHidden=true addressBarPosition=\(String(describing: self.addressBarPosition))")
         unifiedToggleInputContainer.isHidden = true
         setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
@@ -356,6 +359,7 @@ class MainViewCoordinator {
     // MARK: - AI Tab Chrome
 
     func showAITabChrome() {
+        Logger.swipeTabs.debug("MainViewCoordinator.showAITabChrome: → showing AI header + hiding nav chrome")
         cancelInFlightLayoutAnimations()
         showAIChatTabChatHeader()
         setNavigationChromeHidden(true)
@@ -369,6 +373,7 @@ class MainViewCoordinator {
     }
 
     func hideAITabChrome() {
+        Logger.swipeTabs.debug("MainViewCoordinator.hideAITabChrome: → hiding AI header + showing nav chrome")
         hideAIChatTabChatHeader()
         setNavigationChromeHidden(false)
     }

@@ -1,0 +1,121 @@
+// See https://app.asana.com/0/0/1213998825835555/f
+{
+    "m_mac_address-bar_render-perf": {
+        "description": "Fires at the end of an address-bar interaction (focus loss, navigation, AI-mode toggle, tab switch, window or app deactivate) when at least one render measurement was captured. Carries two 9-band basis-points histograms — one for char-render latencies, one for suggest-settle latencies. A stage with no samples is sent as nine zeros; the backend filters per stage by checking whether the half's basis points sum to non-zero.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "char_bp_0_16",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 0..16 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_16_50",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 16..50 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_50_100",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 50..100 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_100_150",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 100..150 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_150_200",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 150..200 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_200_300",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 200..300 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_300_500",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 300..500 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_500_1000",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 500..1000 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "char_bp_1000_plus",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of char-render samples in the 1000+ ms band (capped at 5 s by the sample filter).",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_0_16",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 0..16 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_16_50",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 16..50 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_50_100",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 50..100 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_100_150",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 100..150 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_150_200",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 150..200 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_200_300",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 200..300 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_300_500",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 300..500 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_500_1000",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 500..1000 ms band.",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            },
+            {
+                "key": "suggest_bp_1000_plus",
+                "type": "string",
+                "description": "Basis-points share (0..10000) of suggest-settle samples in the 1000+ ms band (capped at 5 s by the sample filter).",
+                "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
+            }
+        ]
+    }
+}

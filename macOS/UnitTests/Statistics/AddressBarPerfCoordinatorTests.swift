@@ -83,16 +83,9 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
     }
 
-    private func basisPoints(_ pixel: AddressBarPerfPixel) -> [Int] {
-        switch pixel {
-        case .charRender(let bp), .suggestSettle(let bp):
-            return bp
-        }
-    }
-
     // MARK: - Char path
 
-    func test_keystrokeAndPaintAndTerminate_firesCharPixelWithCorrectBucket() {
+    func test_keystrokeAndPaintAndTerminate_firesPixelWithCharHalfPopulated() {
         clock.now = 0
         coordinator.markKeystroke()
         coordinator.armCharRenderIfPending()
@@ -104,12 +97,10 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
         let pixels = capture.snapshot()
         XCTAssertEqual(pixels.count, 1)
-        guard let first = pixels.first, case .charRender = first else {
-            return XCTFail("Expected a charRender pixel")
-        }
-        let bp = basisPoints(first)
-        XCTAssertEqual(bp[1], 10_000)
-        XCTAssertEqual(bp.reduce(0, +), 10_000)
+        let pixel = pixels[0]
+        XCTAssertEqual(pixel.charBasisPoints[1], 10_000)
+        XCTAssertEqual(pixel.charBasisPoints.reduce(0, +), 10_000)
+        XCTAssertEqual(pixel.suggestBasisPoints.reduce(0, +), 0, "Suggest half must be empty (all zeros)")
     }
 
     func test_terminateWithNoMeasurements_doesNotFirePixel() {
@@ -128,7 +119,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
     // MARK: - Suggest path
 
-    func test_keystrokeAndSuggestionsUpdateAndPaint_firesSuggestPixel() {
+    func test_keystrokeAndSuggestionsUpdateAndPaint_firesPixelWithBothHalvesPopulated() {
         clock.now = 0
         coordinator.markKeystroke()
         coordinator.armCharRenderIfPending()
@@ -140,9 +131,10 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         waitForPixelEmission()
 
         let pixels = capture.snapshot()
-        // Order is implementation-defined (char fires first, then suggest); we only require both.
-        XCTAssertTrue(pixels.contains { if case .suggestSettle = $0 { return true } else { return false } },
-                      "Expected a suggestSettle pixel")
+        XCTAssertEqual(pixels.count, 1)
+        let pixel = pixels[0]
+        XCTAssertGreaterThan(pixel.charBasisPoints.reduce(0, +), 0, "Char half must be populated")
+        XCTAssertGreaterThan(pixel.suggestBasisPoints.reduce(0, +), 0, "Suggest half must be populated")
     }
 
     func test_suggestionsUpdateWithoutKeystroke_recordsNothing() {
@@ -170,12 +162,10 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
         let pixels = capture.snapshot()
         XCTAssertEqual(pixels.count, 1)
-        guard let only = pixels.first, case .suggestSettle = only else {
-            return XCTFail("Expected exactly one suggestSettle pixel and no charRender pixel")
-        }
-        let bp = basisPoints(only)
+        let pixel = pixels[0]
         // 80ms latency — band 2 (50..100).
-        XCTAssertEqual(bp[2], 10_000)
+        XCTAssertEqual(pixel.suggestBasisPoints[2], 10_000)
+        XCTAssertEqual(pixel.charBasisPoints.reduce(0, +), 0, "Char half must be empty (no commit fired)")
     }
 
     // MARK: - Commit-gating
@@ -216,12 +206,8 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
         let pixels = capture.snapshot()
         XCTAssertEqual(pixels.count, 1)
-        guard let first = pixels.first, case .charRender = first else {
-            return XCTFail("Expected a charRender pixel")
-        }
-        let bp = basisPoints(first)
         // Single sample at 10ms — band 0 (0..16). All weight on band 0, nothing elsewhere.
-        XCTAssertEqual(bp[0], 10_000)
+        XCTAssertEqual(pixels[0].charBasisPoints[0], 10_000)
     }
 
     // MARK: - Reset and cancellation
@@ -302,11 +288,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
         let pixels = capture.snapshot()
         XCTAssertEqual(pixels.count, 1)
-        guard let first = pixels.first, case .charRender = first else {
-            return XCTFail("Expected a charRender pixel")
-        }
-        let bp = basisPoints(first)
         // Three measurements: 16 → band 0, 11 → band 0, 6 → band 0. All in band 0.
-        XCTAssertEqual(bp[0], 10_000)
+        XCTAssertEqual(pixels[0].charBasisPoints[0], 10_000)
     }
 }

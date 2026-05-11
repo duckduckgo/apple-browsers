@@ -142,16 +142,13 @@ final class AddressBarPerfCoordinator {
         guard !snapshot.char.isEmpty || !snapshot.suggest.isEmpty else { return }
         cancelPendingEmit()
 
+        let charBP = AddressBarPerfBucketing.basisPoints(for: snapshot.char)
+        let suggestBP = AddressBarPerfBucketing.basisPoints(for: snapshot.suggest)
+        let pixel = AddressBarPerfPixel(charBasisPoints: charBP, suggestBasisPoints: suggestBP)
+
         let firer = pixelFirer
         let work = DispatchWorkItem {
-            if !snapshot.char.isEmpty {
-                let bp = AddressBarPerfBucketing.basisPoints(for: snapshot.char)
-                firer(.charRender(basisPoints: bp))
-            }
-            if !snapshot.suggest.isEmpty {
-                let bp = AddressBarPerfBucketing.basisPoints(for: snapshot.suggest)
-                firer(.suggestSettle(basisPoints: bp))
-            }
+            firer(pixel)
         }
         pendingEmit = work
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + deferredEmitDelay, execute: work)

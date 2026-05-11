@@ -20,61 +20,52 @@ import Foundation
 import PixelKit
 
 /// Tracks address-bar UI responsiveness for the cross-platform UI responsiveness SLO.
-/// Each interaction emits up to two pixels — one per stage — carrying a 9-band basis-points
-/// histogram of latency measurements. Schemas are identical to the Windows counterparts so
-/// the dashboard can run the same query logic per platform.
-enum AddressBarPerfPixel: PixelKitEvent {
+/// Each interaction emits a single pixel carrying two 9-band basis-points histograms — one for
+/// char-render latency, one for suggest-settle latency. An interaction that produced no samples
+/// for a given stage sends that stage as nine zeros; the backend filters per stage by checking
+/// whether the half's basis points sum to non-zero (a populated half sums to 9992–10000).
+///
+/// The Windows counterpart ships two separate pixels with the same per-stage schemas. The
+/// macOS divergence is intentional — both stages share trigger, snapshot, and deferred dispatch,
+/// so a single pixel halves the network traffic in the case where both stages have data.
+/// Backend aggregation accommodates the divergence via a macOS-specific Prefect case.
+struct AddressBarPerfPixel: PixelKitEvent {
 
-    private enum ParameterNames {
-        static let bp_0_16     = "bp_0_16"
-        static let bp_16_50    = "bp_16_50"
-        static let bp_50_100   = "bp_50_100"
-        static let bp_100_150  = "bp_100_150"
-        static let bp_150_200  = "bp_150_200"
-        static let bp_200_300  = "bp_200_300"
-        static let bp_300_500  = "bp_300_500"
-        static let bp_500_1000 = "bp_500_1000"
-        static let bp_1000_plus = "bp_1000_plus"
-    }
+    /// 9-band basis-points histogram of char-render latencies for the interaction, or nine zeros
+    /// when no char samples were captured.
+    let charBasisPoints: [Int]
 
-    /// Char-render histogram for one address-bar interaction (one band-share per parameter).
-    case charRender(basisPoints: [Int])
-    /// Suggest-settle histogram for one address-bar interaction (one band-share per parameter).
-    case suggestSettle(basisPoints: [Int])
+    /// 9-band basis-points histogram of suggest-settle latencies for the interaction, or nine zeros
+    /// when no suggest samples were captured.
+    let suggestBasisPoints: [Int]
 
-    var name: String {
-        switch self {
-        case .charRender:
-            return "m_mac_address-bar_char-render-perf"
-        case .suggestSettle:
-            return "m_mac_address-bar_suggest-settle-perf"
-        }
-    }
+    var name: String { "m_mac_address-bar_render-perf" }
 
     var parameters: [String: String]? {
-        switch self {
-        case .charRender(let basisPoints), .suggestSettle(let basisPoints):
-            return Self.histogramParameters(basisPoints)
+        var result = Self.histogramParameters(prefix: "char_", basisPoints: charBasisPoints)
+        for (key, value) in Self.histogramParameters(prefix: "suggest_", basisPoints: suggestBasisPoints) {
+            result[key] = value
         }
+        return result
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
         [.pixelSource]
     }
 
-    private static func histogramParameters(_ basisPoints: [Int]) -> [String: String] {
+    private static func histogramParameters(prefix: String, basisPoints: [Int]) -> [String: String] {
         precondition(basisPoints.count == AddressBarPerfBucketing.bandCount,
                      "Histogram must have exactly \(AddressBarPerfBucketing.bandCount) bands")
         return [
-            ParameterNames.bp_0_16:      String(basisPoints[0]),
-            ParameterNames.bp_16_50:     String(basisPoints[1]),
-            ParameterNames.bp_50_100:    String(basisPoints[2]),
-            ParameterNames.bp_100_150:   String(basisPoints[3]),
-            ParameterNames.bp_150_200:   String(basisPoints[4]),
-            ParameterNames.bp_200_300:   String(basisPoints[5]),
-            ParameterNames.bp_300_500:   String(basisPoints[6]),
-            ParameterNames.bp_500_1000:  String(basisPoints[7]),
-            ParameterNames.bp_1000_plus: String(basisPoints[8])
+            "\(prefix)bp_0_16":      String(basisPoints[0]),
+            "\(prefix)bp_16_50":     String(basisPoints[1]),
+            "\(prefix)bp_50_100":    String(basisPoints[2]),
+            "\(prefix)bp_100_150":   String(basisPoints[3]),
+            "\(prefix)bp_150_200":   String(basisPoints[4]),
+            "\(prefix)bp_200_300":   String(basisPoints[5]),
+            "\(prefix)bp_300_500":   String(basisPoints[6]),
+            "\(prefix)bp_500_1000":  String(basisPoints[7]),
+            "\(prefix)bp_1000_plus": String(basisPoints[8])
         ]
     }
 }

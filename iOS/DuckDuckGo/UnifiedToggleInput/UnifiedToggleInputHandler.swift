@@ -18,6 +18,7 @@
 //
 
 import Combine
+import Core
 import Foundation
 
 /// Bridges `UnifiedToggleInput` state to `SwitchBarHandling` so `SwitchBarTextEntryView`
@@ -31,7 +32,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
-    let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
     var isFireTab: Bool
 
@@ -41,6 +41,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
@@ -111,7 +112,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> {
-        Just(false).eraseToAnyPublisher()
+        $isCurrentTextValidURL.eraseToAnyPublisher()
     }
 
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
@@ -126,6 +127,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> {
         microphoneButtonTappedSubject.eraseToAnyPublisher()
+    }
+
+    private let aiVoiceChatButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var aiVoiceChatButtonTappedPublisher: AnyPublisher<Void, Never> {
+        aiVoiceChatButtonTappedSubject.eraseToAnyPublisher()
     }
 
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
@@ -166,6 +172,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     func updateCurrentText(_ text: String) {
         guard currentText != text else { return }
         currentText = text
+        isCurrentTextValidURL = URL.isValidAddressBarURLInput(text)
         updateButtonState()
     }
 
@@ -189,9 +196,18 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.send()
     }
 
+    func aiVoiceChatButtonTapped() {
+        aiVoiceChatButtonTappedSubject.send()
+    }
+
     func markUserInteraction() {
         guard !hasUserInteractedWithText else { return }
         hasUserInteractedWithText = true
+    }
+
+    func resetInteractionState() {
+        guard hasUserInteractedWithText else { return }
+        hasUserInteractedWithText = false
     }
 
     func clearButtonTapped() {
@@ -215,7 +231,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
@@ -226,7 +243,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            // Search-go-to is the only escape hatch back to search when the toggle is off.
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly

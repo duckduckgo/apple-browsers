@@ -1,8 +1,8 @@
 //
-//  Logger+Onboarding.swift
+//  OmniBarFocuser.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,8 +18,18 @@
 //
 
 import Foundation
-@_documentation(visibility: internal) @_exported import os.log
 
-extension Logger {
-    static var onboarding = { Logger(subsystem: "Onboarding", category: "") }()
+@MainActor
+protocol OmniBarFocuser: AnyObject {
+    func beginSearch()
+}
+
+@MainActor
+final class OmniBarFocuserProvider {
+
+    weak var focuser: (any OmniBarFocuser)?
+
+    func focusOmniBar() {
+        focuser?.beginSearch()
+    }
 }

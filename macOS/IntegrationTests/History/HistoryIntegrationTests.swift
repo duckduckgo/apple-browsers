@@ -294,7 +294,7 @@ class HistoryIntegrationTests: XCTestCase {
 
         let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
-        XCTAssertEqual(first?.numberOfTrackersBlocked, 3)
+        XCTAssertEqual(first?.numberOfTrackersBlocked, 2)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])
         XCTAssertEqual(first?.numberOfVisits, 1)
     }

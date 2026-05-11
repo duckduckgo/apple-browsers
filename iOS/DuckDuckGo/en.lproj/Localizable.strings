@@ -2734,6 +2734,12 @@ https://duckduckgo.com/mac";
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Not Now";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "AI features are private and optional.\nYou can make changes in Settings > AI Features.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Want easy access to private\nAI chat in the address bar?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Search & Duck.ai";
 

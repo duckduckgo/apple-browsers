@@ -26,7 +26,7 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
         featureName: "vpn-ip-leak-check",
         mobileMetaType: "ios-vpn-ip-leak-check",
         desktopMetaType: "macos-vpn-ip-leak-check",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     public var globalData: WideEventGlobalData

@@ -179,9 +179,9 @@ private struct SuggestionView: View {
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
                                    title: phrase,
                                    query: query,
-                                   indicator: tapAheadImage) {
-                    autocompleteModel.onTapAhead(model)
-                }.accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
+                                   indicator: tapAheadImage,
+                                   onTapIndicator: { autocompleteModel.onTapAhead(model) })
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
 
             case .website(let url):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),

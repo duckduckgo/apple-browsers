@@ -21,6 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import os.log
 import Foundation
+import PrivacyConfig
 import HistoryView
 import Persistence
 import PixelKit
@@ -36,13 +37,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -58,6 +56,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
@@ -73,8 +72,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -139,8 +136,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -217,6 +216,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
@@ -284,9 +285,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

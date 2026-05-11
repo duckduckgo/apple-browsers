@@ -55,6 +55,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+    private let tutorialSettings: TutorialSettings
 
     var onViewDidAppear: (() -> Void)?
 
@@ -76,7 +77,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
-         appWidthObserver: AppWidthObserver = .shared) {
+         appWidthObserver: AppWidthObserver = .shared,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -84,6 +86,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
+        self.tutorialSettings = tutorialSettings
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
@@ -284,6 +287,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
+        // If linear onboarding is not completed do not attempt to present any Dax dialog.
+        guard tutorialSettings.hasSeenOnboarding else { return }
+        // Present Dax dialog if needed.
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 

@@ -38,7 +38,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)

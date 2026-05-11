@@ -398,6 +398,7 @@ public extension DesignSystemImages {
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
             public static var checkSmall: DesignSystemImage { .init(resource: .checkSmall24) }
             public static var chat: DesignSystemImage { .init(resource: .chat24) }
+            public static var chats: DesignSystemImage { .init(resource: .chats24) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
             public static var chevronDownSmall: DesignSystemImage { .init(resource: .chevronDown24Small) }
@@ -464,6 +465,7 @@ public extension DesignSystemImages {
             public static var home: DesignSystemImage { .init(resource: .home24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration24) }
             public static var image: DesignSystemImage { .init(resource: .image24) }
+            public static var images: DesignSystemImage { .init(resource: .images24) }
             public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
@@ -510,6 +512,7 @@ public extension DesignSystemImages {
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var searchFindGoTo: DesignSystemImage { .init(resource: .searchFindGoTo24) }

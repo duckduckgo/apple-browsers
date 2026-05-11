@@ -375,9 +375,12 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {}
     func unifiedToggleInputDidRequestAIChat() {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {

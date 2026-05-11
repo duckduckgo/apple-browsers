@@ -28,7 +28,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let verticalPadding: CGFloat = 8
+        static let verticalPadding: CGFloat = 6
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
@@ -220,7 +220,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }()
 
     private lazy var selectedToolIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.globe)
+        let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.tintColor = UIColor(designSystemColor: .textPrimary)
         imageView.contentMode = .scaleAspectFit
@@ -286,13 +286,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
-    private lazy var stopButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-        button.layer.cornerRadius = 14
-        button.clipsToBounds = true
+    private lazy var stopButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.stopSquare, for: .normal)
+        button.setColors(
+            foreground: UIColor(designSystemColor: .textPrimary),
+            background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+        )
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
         button.setContentHuggingPriority(.required, for: .horizontal)
@@ -300,6 +301,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
         button.isHidden = true
+
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -403,7 +405,8 @@ private extension UnifiedToggleInputToolbarView {
     private func updateChipVisibility() {
         modelChipButton.isHidden = modelChipExplicitlyHidden
         selectedToolChipView.isHidden = (selectedTool == nil)
-        selectedToolChipView.accessibilityLabel = selectedTool == .webSearch ? UserText.aiChatToolbarWebSearchToolTitle : nil
+        selectedToolIconView.image = selectedTool?.toolbarChipIcon
+        selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }
 
     func updateSubmitButtonState() {
@@ -416,7 +419,11 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
-        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        if showVoice {
+            submitButton.applyAIVoiceChatStyle()
+        } else {
+            submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        }
     }
 
     func updateGeneratingVisibility() {
@@ -438,4 +445,31 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+private extension AIChatRAGTool {
+
+    var toolbarChipIcon: DesignSystemImage? {
+        switch self {
+        case .webSearch:
+            return DesignSystemImages.Glyphs.Size24.globe
+        case .imageGeneration:
+            return DesignSystemImages.Glyphs.Size24.images
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
+
+    var toolbarChipAccessibilityLabel: String? {
+        switch self {
+        case .webSearch:
+            return UserText.aiChatToolbarWebSearchToolTitle
+        case .imageGeneration:
+            return UserText.aiChatToolbarImageGenerationToolTitle
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
 }

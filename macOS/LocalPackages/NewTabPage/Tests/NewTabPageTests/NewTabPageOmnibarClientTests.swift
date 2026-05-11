@@ -399,6 +399,37 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(response, expectedChats)
     }
 
+    func testGetAiChatsRoundTripsModelField() async throws {
+        let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
+            NewTabPageDataModel.AiChat(chatId: "v", title: "Voice", model: AIChatNativePrompt.voiceMode),
+            NewTabPageDataModel.AiChat(chatId: "i", title: "Image", model: AIChatNativePrompt.imageGenerationMode),
+            NewTabPageDataModel.AiChat(chatId: "t", title: "Text", model: nil)
+        ])
+        aiChatsProvider.aiChatsHandler = { _ in expectedChats }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: nil)
+        let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
+
+        XCTAssertEqual(response, expectedChats)
+        XCTAssertEqual(response.chats[0].model, "voice-mode")
+        XCTAssertEqual(response.chats[1].model, "image-generation")
+        XCTAssertNil(response.chats[2].model)
+    }
+
+    func testGetAiChatsOmitsModelKeyWhenNil() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1")
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertFalse(json.keys.contains("model"), "Expected `model` key to be absent when nil; got: \(json.keys.sorted())")
+    }
+
+    func testGetAiChatsEncodesModelKeyWhenPresent() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1", model: AIChatNativePrompt.voiceMode)
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(json["model"] as? String, "voice-mode")
+    }
+
     func testGetAiChatsPassesQueryToProvider() async throws {
         var receivedQuery: String?
         aiChatsProvider.aiChatsHandler = { query in

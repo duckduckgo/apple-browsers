@@ -1,8 +1,26 @@
 /* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
 "2pp-PM-6rW.title" = "Klavye";
 
+/* Class = "UILabel"; text = "Clear Tabs Only"; ObjectID = "3WZ-Fi-HIH"; */
+"3WZ-Fi-HIH.text" = "Yalnızca Sekmeleri Temizle";
+
+/* Class = "UILabel"; text = "App Exit, Inactive for 30 Minutes"; ObjectID = "5Yd-7i-bey"; */
+"5Yd-7i-bey.text" = "Uygulamadan Çık, 30 Dakika Boyunca İnaktif";
+
+/* Class = "UILabel"; text = "Automatically Clear Data"; ObjectID = "5YD-Od-uDU"; */
+"5YD-Od-uDU.text" = "Verileri Otomatik Olarak Temizle";
+
+/* Class = "UILabel"; text = "App Exit, Inactive for 1 Hour"; ObjectID = "9EC-lx-77p"; */
+"9EC-lx-77p.text" = "1 Saat Boyunca Hareket Yoksa Uygulamadan Çık";
+
+/* Class = "UILabel"; text = "Clear Tabs and Data"; ObjectID = "9fc-9r-4aA"; */
+"9fc-9r-4aA.text" = "Sekmeleri ve Verileri Temizle";
+
 /* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
 "13n-KI-KLq.text" = "Uygulamayı Başlatma";
+
+/* Class = "UITableViewSection"; footerTitle = "Data and/or tabs will be cleared upon restart of the app."; ObjectID = "BGs-JL-4ib"; */
+"BGs-JL-4ib.footerTitle" = "Uygulama yeniden başlatıldığında veriler ve/veya sekmeler temizlenecektir.";
 
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Oturum açıldığında sitelerin Korumalı hâle getirilip getirilmeyeceğini sor";
@@ -16,14 +34,26 @@
 /* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
 "CxT-QK-iVn.title" = "Ekle";
 
+/* Class = "UILabel"; text = "App Exit, Inactive for 15 Minutes"; ObjectID = "D0R-jp-UY8"; */
+"D0R-jp-UY8.text" = "Uygulamadan Çık, 15 Dakika Boyunca İnaktif";
+
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Label";
 
 /* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
 "EIq-Ev-nfj.text" = "Label";
 
+/* Class = "UILabel"; text = "App Exit, Inactive for 5 Minutes"; ObjectID = "ElX-yE-4PX"; */
+"ElX-yE-4PX.text" = "Uygulamadan Çık, 5 Dakika Boyunca İnaktif";
+
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "Uygulama Simgesi";
+
+/* Class = "UILabel"; text = "App Exit Only"; ObjectID = "Fal-1Y-o2S"; */
+"Fal-1Y-o2S.text" = "Yalnızca Uygulamadan Çıkma";
+
+/* Class = "UITableViewController"; title = "Automatically Clear Data"; ObjectID = "fdJ-b1-Des"; */
+"fdJ-b1-Des.title" = "Verileri Otomatik Olarak Temizle";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Küresel Gizlilik Kontrolü (GPC)";
@@ -49,8 +79,17 @@
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Küresel Gizlilik Kontrolü (GPC)";
 
+/* Class = "UITableViewSection"; headerTitle = "Action"; ObjectID = "U2M-6p-6nl"; */
+"U2M-6p-6nl.headerTitle" = "İşlem";
+
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Tüm Korumalı Web Sitelerini Kaldır";
+
+/* Class = "UITableViewSection"; footerTitle = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background."; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
+"vSJ-YJ-bBs.footerTitle" = "Uygulama çıkışı, uygulama arka plandayken uzun süre etkin olmaması durumunda uygulamayı kapatmak için ekranı kaydırmak şeklinde tanımlanır.";
+
+/* Class = "UITableViewSection"; headerTitle = "Desired timing"; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
+"vSJ-YJ-bBs.headerTitle" = "İstenen zamanlama";
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Korumalı Siteler";

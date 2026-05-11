@@ -1,8 +1,26 @@
 /* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
 "2pp-PM-6rW.title" = "Klávesnica";
 
+/* Class = "UILabel"; text = "Clear Tabs Only"; ObjectID = "3WZ-Fi-HIH"; */
+"3WZ-Fi-HIH.text" = "Vymazať iba karty";
+
+/* Class = "UILabel"; text = "App Exit, Inactive for 30 Minutes"; ObjectID = "5Yd-7i-bey"; */
+"5Yd-7i-bey.text" = "Ukončiť 30 minút neaktívnu aplikáciu";
+
+/* Class = "UILabel"; text = "Automatically Clear Data"; ObjectID = "5YD-Od-uDU"; */
+"5YD-Od-uDU.text" = "Automaticky vymazať údaje";
+
+/* Class = "UILabel"; text = "App Exit, Inactive for 1 Hour"; ObjectID = "9EC-lx-77p"; */
+"9EC-lx-77p.text" = "Aplikácia bola zatvorená po 1 hodine neaktívnosti";
+
+/* Class = "UILabel"; text = "Clear Tabs and Data"; ObjectID = "9fc-9r-4aA"; */
+"9fc-9r-4aA.text" = "Vymazať karty a údaje";
+
 /* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
 "13n-KI-KLq.text" = "Spustenie aplikácie";
+
+/* Class = "UITableViewSection"; footerTitle = "Data and/or tabs will be cleared upon restart of the app."; ObjectID = "BGs-JL-4ib"; */
+"BGs-JL-4ib.footerTitle" = "Údaje a/alebo karty sa vymažú po reštartovaní aplikácie.";
 
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Požadovať zakázanie cookie pre stránky pri prihlásení";
@@ -16,14 +34,26 @@
 /* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
 "CxT-QK-iVn.title" = "Pridať";
 
+/* Class = "UILabel"; text = "App Exit, Inactive for 15 Minutes"; ObjectID = "D0R-jp-UY8"; */
+"D0R-jp-UY8.text" = "Ukončiť 15 minút neaktívnu aplikáciu";
+
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Označenie";
 
 /* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
 "EIq-Ev-nfj.text" = "Označenie";
 
+/* Class = "UILabel"; text = "App Exit, Inactive for 5 Minutes"; ObjectID = "ElX-yE-4PX"; */
+"ElX-yE-4PX.text" = "Ukončiť 5 minút neaktívnu aplikáciu";
+
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "Ikona aplikácie";
+
+/* Class = "UILabel"; text = "App Exit Only"; ObjectID = "Fal-1Y-o2S"; */
+"Fal-1Y-o2S.text" = "Iba ukončiť aplikáciu";
+
+/* Class = "UITableViewController"; title = "Automatically Clear Data"; ObjectID = "fdJ-b1-Des"; */
+"fdJ-b1-Des.title" = "Automaticky vymazať údaje";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Globálna kontrola súkromia (GPC)";
@@ -49,8 +79,17 @@
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Globálna kontrola súkromia (GPC)";
 
+/* Class = "UITableViewSection"; headerTitle = "Action"; ObjectID = "U2M-6p-6nl"; */
+"U2M-6p-6nl.headerTitle" = "Aktivita";
+
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Odstrániť všetky zabezpečené stránky";
+
+/* Class = "UITableViewSection"; footerTitle = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background."; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
+"vSJ-YJ-bBs.footerTitle" = "Uzatvorenie aplikácie je rozpoznané potiahnutím aplikácie na jej uzatvorenie, zatiaľ čo nečinnosť nastane, keď je aplikácia na pozadí.";
+
+/* Class = "UITableViewSection"; headerTitle = "Desired timing"; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
+"vSJ-YJ-bBs.headerTitle" = "Požadované načasovanie";
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Zabezpečené stránky";

@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore - Description */
 "auto.restore.description" = "Gjenopprett dataene dine automatisk på denne enheten hvis du installerer appen på nytt.";
 

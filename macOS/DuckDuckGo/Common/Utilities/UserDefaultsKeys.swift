@@ -90,6 +90,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case youTubeAdBlockingEnabled = "preferences_youtube-ad-blocking_enabled"
     case youTubeAnalyticsEnabled = "preferences_youtube-analytics_enabled"
+    case shouldHideYouTubeAdBlockingDisclosure = "preferences_youtube-ad-blocking_should-hide-disclosure"
 
     // MARK: - Quick Feedback Tip
 

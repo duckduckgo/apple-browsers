@@ -832,7 +832,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = NSMenu()
         let title = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: title, action: #selector(toggleBookmarksPanelPinning(_:)), keyEquivalent: "")
-            .withImage(.bookmarks12)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
 
         bookmarkListButton.menu = menu
@@ -1948,24 +1948,24 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
-            .withImage(.shareApple12)
+            .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImage(.downloads12)
+            .withImage(DesignSystemImages.Glyphs.Size12.downloads)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
-            .withImage(.keyLogin12)
+            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
-            .withImage(.bookmarks12)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
-                .withImage(.vpnUnlock12)
+                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {

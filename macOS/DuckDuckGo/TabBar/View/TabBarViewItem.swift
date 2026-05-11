@@ -1444,7 +1444,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
-        pinMenuItem.image = .pin12
+        pinMenuItem.image = DesignSystemImages.Glyphs.Size12.pin
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
@@ -1454,7 +1454,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addBookmarkMenuItem(to menu: NSMenu) {
         let bookmarkMenuItem = NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(bookmarkThisPageAction(_:)), keyEquivalent: "")
-        bookmarkMenuItem.image = .bookmarkAdd12
+        bookmarkMenuItem.image = DesignSystemImages.Glyphs.Size12.bookmarkAdd
         bookmarkMenuItem.target = self
         bookmarkMenuItem.isEnabled = delegate?.tabBarViewItemCanBeBookmarked(self) ?? false
         menu.addItem(bookmarkMenuItem)
@@ -1487,7 +1487,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
             menuItem.isEnabled = true
         }
-        menuItem.image = .fireproof12
+        menuItem.image = DesignSystemImages.Glyphs.Size12.fireproof
         menuItem.target = self
         menu.addItem(menuItem)
     }
@@ -1497,7 +1497,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
-        muteUnmuteMenuItem.image = audioState.isMuted ? .audio12 : .audioMute12
+        muteUnmuteMenuItem.image = audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
     }
@@ -1539,7 +1539,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
-        closeMenuItem.image = .close12
+        closeMenuItem.image = DesignSystemImages.Glyphs.Size12.close
         closeMenuItem.target = self
         menu.addItem(closeMenuItem)
     }

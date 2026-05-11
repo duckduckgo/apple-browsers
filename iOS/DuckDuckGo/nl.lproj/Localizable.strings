@@ -208,10 +208,54 @@
 "ai-features.settings.title" = "AI-functies";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Foto kiezen";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Maak een foto";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Je kunt per gesprek maximaal %d bestanden bijvoegen.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "We kunnen de bijgevoegde bestanden niet lezen omdat minstens één ervan versleuteld is.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "De bijgevoegde bestanden overschrijden de totale groottelimiet van %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Dit bestand is te groot. De maximale bestandsgrootte is %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Een van de bijgevoegde bestanden bevat meer pagina's dan we ondersteunen. Upload bestanden met %d pagina's of minder.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "We kunnen een van de bijgevoegde bestanden niet lezen. Controleer of het bestand niet beschadigd is en probeer het opnieuw.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Je kunt slechts %d afbeeldingen per gesprek bijvoegen.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Je kunt slechts %d afbeeldingen tegelijk bijvoegen.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Bestand bijvoegen";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Foto bijvoegen";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Dat bericht is te lang om met bijlagen te versturen.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Bijlagen zijn tijdelijk niet beschikbaar. Probeer het later opnieuw.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Dit bestandstype wordt niet ondersteund.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Dit bestandstype wordt niet ondersteund, voeg een %1$@ of %2$@ bij.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Dit bestandstype wordt niet ondersteund. Voeg een %@ toe.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Voor analytische taken";
@@ -1275,6 +1319,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Bladwijzers importeren in DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Open Chrome, ga daarna naar Wachtwoordbeheer en volg de onderstaande stappen:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Instellingen** > **Exporteren**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Klik **Doorgaan**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Selecteer **DuckDuckGo** als bestemming.";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importeren vanuit Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Exporteren voltooid?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Ga naar de wachtwoorden-app en volg de stappen om te importeren.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Tik op **···** > **Gegevens exporteren naar een andere app**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Tik op **Alles selecteren** > **Doorgaan**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Selecteer **DuckDuckGo** als bestemming.";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importeren van wachtwoorden";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Exporteer eerst je wachtwoorden en bladwijzers uit Safari, en kom dan terug om het bestand te uploaden.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exporteren vanuit Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importeren vanuit Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Geëxporteerd bestand uploaden...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Geen ondersteunde gegevens gevonden in het zipbestand. Controleer de exporteerinstructies van Safari en probeer het opnieuw.";
 
@@ -1284,6 +1373,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Het %@-bestand kon niet worden gelezen. Mogelijk is er een probleem met de gegevens in het bestand.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Ik snap het";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Het %@-bestand kon niet worden gelezen. Probeer een ander bestand te uploaden of een andere importmethode.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Het bestand is mogelijk beschadigd.";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Geen ondersteunde gegevens gevonden in het zipbestand. Lees de exportinstructies nog eens door en probeer het opnieuw.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Geen gegevens gevonden";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Het geselecteerde bestand wordt niet ondersteund. Selecteer een ander bestand en probeer het opnieuw.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Niet-ondersteund bestand";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1402,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Naar DuckDuckGo brengen";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Selecteer **Exporteren** en kies in het volgende scherm **Bladwijzers** en **Opslaan naar Downloads**.";
@@ -1303,7 +1416,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Ga in Chrome naar **Google wachtwoordbeheer** en dan naar **Instellingen**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Selecteer **Wachtwoorden exporteren**, vervolgens **Opslaan naar bestanden** en sla het bestand op in een map die je kunt onthouden.";
+"data.import.passwords.instructions.chrome.step2" = "Selecteer **Gegevens exporteren**, vervolgens **···** en dan **Downloaden naar CSV** en sla het bestand op in een map die je kunt onthouden.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Wachtwoorden exporteren";
@@ -1331,6 +1444,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Wachtwoorden importeren naar DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Open Instellingen om te exporteren";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Vergeet niet te tikken op \"Exporteren naar bestanden\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Wachtwoorden-app";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importeren vanuit";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchroniseren van";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo op een ander apparaat";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Bladwijzers";
@@ -1367,6 +1504,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Wachtwoorden";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Wil je ook je bladwijzers van Safari meenemen?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Doorgaan";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Niet nu";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Wil je je wachtwoorden ook meenemen?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Afgelopen maand";
@@ -2742,6 +2891,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Niet nu";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "AI-functies zijn privé en optioneel.\nJe kunt wijzigingen aanbrengen in Instellingen > AI-functies.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Wil je eenvoudig toegang tot privé AI-chat in de adresbalk?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Zoeken en Duck.ai";
@@ -4274,6 +4429,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Code gekopieerd";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Apparaat is gesynchroniseerd!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Synchronisatie en back-up ingeschakeld";

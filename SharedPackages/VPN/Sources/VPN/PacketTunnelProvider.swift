@@ -276,9 +276,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private var lastSelectedServer: NetworkProtectionServer? {
         didSet {
+            if lastSelectedServer != oldValue {
+                bumpTunnelPathGeneration()
+            }
             lastSelectedServerInfoPublisher.send(lastSelectedServer?.serverInfo)
         }
     }
+
+    @MainActor
+    private var tunnelPathGeneration: UInt64 = 0
 
     @MainActor
     public var lastSelectedServerInfo: NetworkProtectionServerInfo? {
@@ -313,11 +319,21 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         providerEvents.fire(.rekeyAttempt(.begin))
 
+        let preRekeyEgress = await currentEgressInfo()
+
         do {
             try await updateTunnelConfiguration(
                 updateMethod: .selectServer(currentServerSelectionMethod),
                 reassert: false,
                 regenerateKey: true)
+            // A rekey that landed back on the same server can't have changed the egress path, so
+            // skip the leak check and let the periodic timer handle the routine validation. We
+            // only force an immediate check when the server (or its IP) actually changed.
+            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
+            // service would skip the check anyway, so don't bother scheduling.
+            if let postRekeyEgress = await currentEgressInfo(), preRekeyEgress != postRekeyEgress {
+                await leakCheckService?.scheduleCheck(trigger: .rekey)
+            }
             providerEvents.fire(.rekeyAttempt(.success))
         } catch {
             providerEvents.fire(.rekeyAttempt(.failure(error)))
@@ -794,6 +810,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
+            await subscriptionAccessErrorHandler(error)
+
             if startupOptions.startupMethod == .automaticOnDemand {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
@@ -1004,6 +1022,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                                    regenerateKey: Bool = false) async throws {
 
         providerEvents.fire(.tunnelUpdateAttempt(.begin))
+        bumpTunnelPathGeneration()
 
         if reassert {
             await stopMonitors()
@@ -1240,12 +1259,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     private func scheduleLeakCheck(for startReason: AdapterStartReason) async {
-        guard let egressIP = lastSelectedServerInfo?.ipv4?.debugDescription,
-              let egressServerName = lastSelectedServerInfo?.name else {
-            return
-        }
-        let egressInfo = LeakCheckEgressInfo(ipAddress: egressIP, name: egressServerName)
-
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
@@ -1254,9 +1267,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 let fallbackInterfaceName = adapter.interfaceName
                 let service = VPNLeakCheckService(
                     configuration: .default,
-                    egressInfo: egressInfo,
+                    egressInfo: { [weak self] in
+                        await self?.currentEgressInfo()
+                    },
                     tunnelInterface: { [weak self] in
                         await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                    },
+                    tunnelPathGeneration: { [weak self] in
+                        guard let self else { return 0 }
+                        return await self.tunnelPathGeneration
                     },
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
@@ -1264,16 +1283,32 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 )
                 leakCheckService = service
                 await service.start()
-            } else {
-                await leakCheckService?.updateEgressInfo(egressInfo)
             }
             await leakCheckService?.scheduleCheck(trigger: .tunnelStart)
         case .reconnected:
-            await leakCheckService?.updateEgressInfo(egressInfo)
             await leakCheckService?.scheduleCheck(trigger: .reassert)
         case .wake:
             break
         }
+    }
+
+    /// Resolves the current egress info from `lastSelectedServerInfo` on the main actor. The leak
+    /// check service calls this at the start of every check so the reference IP stays in sync with
+    /// whichever server WireGuard is currently connected to — including changes made by `rekey()`,
+    /// `handleRestartAdapter()`, or any future code path that mutates `lastSelectedServer` without
+    /// going through `handleAdapterStarted`.
+    @MainActor
+    private func currentEgressInfo() -> LeakCheckEgressInfo? {
+        guard let info = lastSelectedServerInfo,
+              let ip = info.ipv4?.debugDescription else {
+            return nil
+        }
+        return LeakCheckEgressInfo(ipAddress: ip, name: info.name)
+    }
+
+    @MainActor
+    private func bumpTunnelPathGeneration() {
+        tunnelPathGeneration &+= 1
     }
 
     // MARK: - Monitors

@@ -232,6 +232,21 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }
 
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
+    /// Re-emits the current `isVoiceChatAccessEnabled` value whenever the feature-flagger reports
+    /// any change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP swaps in
+    /// or out of voice-chat mode without a reload.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isVoiceChatAccessEnabled }
+            .prepend(isVoiceChatAccessEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

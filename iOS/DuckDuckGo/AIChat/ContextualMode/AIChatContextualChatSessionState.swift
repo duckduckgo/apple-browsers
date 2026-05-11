@@ -159,6 +159,13 @@ final class AIChatContextualChatSessionState {
         latestContext != nil
     }
 
+    /// User-attached context (nil if opted out / never attached). Unlike `latestContext`,
+    /// this respects X-tap downgrades — `latestContext` keeps the last collected payload regardless.
+    var intendedAttachedContext: AIChatPageContext? {
+        if case .attached(let context) = chipState { return context }
+        return nil
+    }
+
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled

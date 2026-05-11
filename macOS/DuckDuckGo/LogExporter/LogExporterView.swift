@@ -25,6 +25,7 @@ struct LogExporterConfiguration {
     let includeNetworkProtection: Bool
     let includePersonalInformationRemoval: Bool
     let includeSparkle: Bool
+    let includePixels: Bool
 }
 
 struct LogExporterView: View {
@@ -35,6 +36,7 @@ struct LogExporterView: View {
     @State private var includeNetworkProtection = true
     @State private var includePersonalInformationRemoval = true
     @State private var includeSparkle = true
+    @State private var includePixels = false
 
     let onComplete: (_ result: LogExporterConfiguration) -> Void
 
@@ -57,6 +59,9 @@ struct LogExporterView: View {
                 Toggle(UserText.networkProtection, isOn: $includeNetworkProtection)
                 Toggle(UserText.personalInformationRemoval, isOn: $includePersonalInformationRemoval)
                 Toggle(UserText.update, isOn: $includeSparkle)
+                Toggle(isOn: $includePixels) {
+                    Text(verbatim: "Pixels")
+                }
             }
 
             Spacer()
@@ -70,7 +75,8 @@ struct LogExporterView: View {
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
                         includePersonalInformationRemoval: includePersonalInformationRemoval,
-                        includeSparkle: includeSparkle
+                        includeSparkle: includeSparkle,
+                        includePixels: includePixels
                     ))
                 }
                 Button(UserText.ok) {
@@ -80,10 +86,11 @@ struct LogExporterView: View {
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
                         includePersonalInformationRemoval: includePersonalInformationRemoval,
-                        includeSparkle: includeSparkle
+                        includeSparkle: includeSparkle,
+                        includePixels: includePixels
                     ))
                 }
-                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includePersonalInformationRemoval || includeSparkle) == false)
+                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includePersonalInformationRemoval || includeSparkle || includePixels) == false)
                 .keyboardShortcut(.defaultAction)
 
             }

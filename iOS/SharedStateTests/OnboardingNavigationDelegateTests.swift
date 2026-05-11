@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import DataBrokerProtection_iOS
 import RemoteMessagingTestsUtils
 @testable import Configuration
 import Combine
@@ -58,6 +59,13 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             faviconStoring: MockFaviconStore(),
             tld: TLD()
         )
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingNavigationDelegateTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -67,8 +75,18 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
             duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockConfigurationURLProvider()
+            configurationURLProvider: MockConfigurationURLProvider(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            winBackOfferService: .mocked,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: MockFeatureFlagger(),
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)

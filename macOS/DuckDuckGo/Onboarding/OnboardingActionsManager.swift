@@ -119,7 +119,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = "v3"
+        let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
         if applicationBuildType.isAppStoreBuild {
             let rows = [
@@ -191,7 +191,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
-                installType: reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall,
+                installTypeProvider: {
+                    reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall
+                },
                 installDateProvider: installDateProvider
              )
         )

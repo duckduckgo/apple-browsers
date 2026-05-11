@@ -532,7 +532,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             .sink { [weak self] _ in
                 guard let self else { return }
                 Task {
-                    await self.presentDialog(for: .nowSyncing)
+                    self.presentDialog(for: .nowSyncing)
                 }
             }.store(in: &cancellables)
     }
@@ -843,7 +843,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         }
         Task {
             await switchAccounts(recoveryKey: recoveryKey)
-            await managementDialogModel.endFlow()
+            managementDialogModel.endFlow()
         }
     }
 
@@ -857,7 +857,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         do {
             let device = Self.deviceInfo()
             let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
-            await mapDevices(registeredDevices)
+            mapDevices(registeredDevices)
         } catch {
             PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError, doNotEnforcePrefix: true)
         }

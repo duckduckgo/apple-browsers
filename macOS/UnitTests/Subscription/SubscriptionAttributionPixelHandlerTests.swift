@@ -56,7 +56,7 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams.event?.name, expectedPixelName)
@@ -69,7 +69,7 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.locale], "hu-HU")
@@ -84,7 +84,7 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         sut.origin = origin
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.origin], origin)
@@ -100,7 +100,7 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         sut.origin = origin
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertNil(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.origin])
@@ -113,10 +113,34 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams.includeAppVersion, true)
         XCTAssertEqual(capturedParams.frequency, .standard)
+    }
+
+    func testWhenFreeTrialTrueThenFreeTrialParameterIsTrue() {
+        // GIVEN
+        let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+
+        // WHEN
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: true)
+
+        // THEN
+        XCTAssertEqual(capturedParams?.parameters?["free_trial"], "true")
+    }
+
+    func testWhenFreeTrialFalseThenFreeTrialParameterIsFalse() {
+        // GIVEN
+        let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+
+        // WHEN
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
+
+        // THEN
+        XCTAssertEqual(capturedParams?.parameters?["free_trial"], "false")
     }
 }

@@ -610,6 +610,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
 
+        // Skip animation when off-window to prevent spring from capturing unsettled bounds.
+        guard view.window != nil else {
+            UIView.performWithoutAnimation { animation() }
+            completion?(.end)
+            return
+        }
+
         if contentAnimator?.state == .stopped {
             contentAnimator = nil
         }

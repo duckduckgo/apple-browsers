@@ -1034,10 +1034,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
-        guard let controller = hostViewController as? TabViewController else {
-            return
-        }
-        duckPlayer.setHostViewController(controller)
+        duckPlayer.setHostViewController(hostViewController)
 
         // Ensure the tab is not muted
         if let webview = hostViewController.webView {

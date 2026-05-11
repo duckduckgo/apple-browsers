@@ -256,7 +256,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && featureFlagger.isFeatureOn(.unifiedToggleInput)
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
         let fireMode = isFireModeProvider?() ?? false
 
@@ -426,14 +426,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
-        NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: nil)
+        // `object` carries the source webView so listeners can route per-tab (matches macOS).
+        NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
         Pixel.fire(pixel: .voiceSessionStarted)
         return nil
     }
 
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
-        NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: nil)
+        NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
         return nil
     }
 

@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sünkrooni teise seadmega";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Mitte praegu";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Kas sünkroonida oma andmed teise seadmega?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Laadib ikoonid veebisaitidelt, mille oled järjehoidjatesse lisanud. Ikoonide allalaadimine toimub sinu võrgus.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Järjehoidjad";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Kasuta samu lemmikuid järjehoidjaid nii mobiilis kui ka lauaarvutis.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Ühendamine...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Salvesta oma järjehoidjad ja automaatse täitmise andmed ning sünkrooni need oma seadmete vahel otspunktkrüpteerimise abil.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Loe edasi](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo rakendus";

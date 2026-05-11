@@ -45,7 +45,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var hvc: NewTabPageViewController!
 
     override func setUpWithError() throws {
-        let db = CoreDataDatabase.bookmarksMock
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
         specProvider = MockNewTabDialogSpecProvider()
@@ -65,7 +64,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
-            internalUserCommands: MockURLBasedDebugCommands()
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true),
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)

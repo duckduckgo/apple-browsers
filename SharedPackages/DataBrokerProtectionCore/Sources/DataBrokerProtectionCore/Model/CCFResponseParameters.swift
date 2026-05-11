@@ -121,6 +121,10 @@ struct CCFSuccessResponse: Decodable {
             self.response = .expectation
         case .emailConfirmation:
             self.response = nil // Email confirmation is done on the native side. We shouldn't have a response here
+        case .generateEmail:
+            self.response = nil // Email generation is done on the native side. We shouldn't have a response here
+        case .getEmailData:
+            self.response = nil // Polling the email-data endpoint is done on the native side. No C-S-S response.
         case .getCaptchaInfo:
             self.response = .getCaptchaInfo(try container.decode(GetCaptchaInfoResponse.self, forKey: .response))
         case .solveCaptcha:

@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Синхронизиране с друго устройство";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Не сега";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Синхронизиране на данните с друго устройство?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Зарежда икони от уебсайтове, които сте добавили в отметките. Изтеглянето на икони се разкрива във Вашата мрежа.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Отметки";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Използвайте едни и същи любими отметки на мобилни устройства и на компютър.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Свързване...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Запазете отметките и данните за автоматично попълване и ги синхронизирайте между устройствата с криптиране от край до край.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Използвайте този код, за да възстановите данните си, ако загубите достъп до това устройство. Данните в Sync & Backup не могат да бъдат възстановени след 18 месеца неактивност. [Научете повече](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Приложение DuckDuckGo";

@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sinkroniziraj drugi uređaj";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ne sada";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Sinkronizirati vaše podatke s drugim uređajem?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Učitava ikone s web-mjesta koja ste označili. Preuzimanja ikona izložena su tvojoj mreži.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Knjižne oznake";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Koristi iste omiljene oznake na mobilnim uređajima i računalima.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Povezivanje u tijeku...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Spremi svoje knjižne oznake i podatke za automatsko popunjavanje te ih sinkroniziraj između uređaja pomoću end-to-end enkripcije.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup ovom uređaju. Podaci sinkronizacije i sigurnosne kopije (Sync & Backup) ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti. [Saznaj više](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";

@@ -45,6 +45,9 @@ public protocol AIChatSettingsProvider {
     /// The user settings state for the AI Chat Search Input
     var isAIChatSearchInputUserSettingsEnabled: Bool { get }
 
+    /// Indicates if AI Chat Search Input was explicitly disabled by the user
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool { get }
+
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
 

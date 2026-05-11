@@ -146,6 +146,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         context.isInspectable = isInspectable
+        context.hasAccessToPrivateData = true
         return context
     }
 }

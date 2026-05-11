@@ -208,10 +208,54 @@
 "ai-features.settings.title" = "AI funktsioonid";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vali foto";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tee foto";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Saad vestluse kohta lisada ainult %d faili.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Me ei saa lisatud faile lugeda, sest vähemalt üks neist on krüptitud.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Lisatud failid ületavad %d MB suuruse kogumahu piirangut.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "See fail on liiga suur. Maksimaalne faili suurus on %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Ühel lisatud failidest on rohkem lehekülgi, kui me toetame. Palun laadi üles failid, millel on %d lehekülge või vähem.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Me ei saa ühte lisatud failidest lugeda. Palun kontrolli, et see poleks rikutud, ja proovi uuesti.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Saad vestlusele lisada ainult %d pilti.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Saad korraga lisada ainult %d pilti.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Lisa fail";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Lisa foto";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "See sõnum on manustega saatmiseks liiga pikk.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Manused pole ajutiselt saadaval. Proovi hiljem uuesti.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Seda failitüüpi ei toetata.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Seda failitüüpi ei toetata, palun lisa %1$@ või %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Seda failitüüpi ei toetata, palun lisa %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
@@ -1275,6 +1319,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Järjehoidjate importimine DuckDuckGo'sse";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Ava Chrome, seejärel mine paroolihaldurisse ja järgi alltoodud samme.";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Seaded** > **Andmete eksport**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Vajuta **Jätka**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Impordi Chrome'ist";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Kas eksportimine on lõpetatud?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Sa pead minema Paroolirakendusse ja seejärel järgima importimiseks vajalikke samme.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Puuduta valikuid **···** > **Ekspordi andmed teise rakendusse**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Puuduta **Vali kõik** > **Jätka**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import paroolidest";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Esmalt ekspordi oma paroolid ja järjehoidjad Safarist ning seejärel tule siia tagasi faili üleslaadimiseks.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksport Safarist";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Impordi Safarist";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Laadi eksporditud fail üles…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip-failist ei leitud toetatud andmeid. Vaadake Safari ekspordijuhiseid ja proovige uuesti.";
 
@@ -1284,6 +1373,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Faili %@ lugemine ebaõnnestus. Failis olevate andmetega võib esineda probleeme.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Sain aru";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Faili %@ lugemine ebaõnnestus. Proovi üles laadida mõni teine fail või proovi mõnda muud importimismeetodit.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Fail võib olla vigane";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip-failist ei leitud toetatud andmeid. Vaadake ekspordijuhiseid ja proovige uuesti.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Andmeid ei leitud";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Valitud faili ei toetata. Valige muu fail ja proovige uuesti.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Toetamata fail";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1402,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Too DuckDuckGo-sse";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Valige **Eksport** ning järgmisel ekraanil valige **Järjehoidjad** ja **Salvesta allalaadimiskausta**.";
@@ -1303,7 +1416,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Avage Chrome'is **Google Password Manager** ja seejärel **Seaded**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valige **Ekspordi paroolid**, seejärel **Salvesta failidesse** ja salvestage fail kausta, mida mäletate.";
+"data.import.passwords.instructions.chrome.step2" = "Vali **Ekspordi andmed**, seejärel **···** ja seejärel **Laadi CSV-failina alla** ning salvesta fail kausta, mida mäletad.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kuidas eksportida paroole";
@@ -1331,6 +1444,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Impordi paroolid DuckDuckGosse";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Ava seaded eksportimiseks";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Pea meeles puudutada valikut\n„Ekspordi failidesse“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Paroolid Rakendus";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Impordi alates";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sünkrooni alates";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo teisel seadmel";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Järjehoidjad";
@@ -1367,6 +1504,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Paroolid";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Kas soovid oma järjehoidjad ka Safarist üle tuua?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Jätka";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Mitte praegu";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Kas tahad ka oma paroolid kaasa võtta?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viimane kuu";
@@ -2742,6 +2891,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Mitte praegu";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Tehisintellekti funktsioonid on privaatsed ja valikulised.\nSaad muudatusi teha suvandis Seaded > Tehisintellekti funktsioonid.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Kas soovid aadressiribal hõlpsat juurdepääsu privaatsele tehisintellekti vestlusele?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Otsi ja Duck.ai";
@@ -4274,6 +4429,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kood kopeeritud";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Seade sünkrooniti edukalt!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup lubatud";

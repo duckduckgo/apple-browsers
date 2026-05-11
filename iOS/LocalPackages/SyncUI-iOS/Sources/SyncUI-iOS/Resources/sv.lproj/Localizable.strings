@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Synkronisera en annan enhet";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Inte nu";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Synkronisera dina data med en annan enhet?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Läser in ikoner från webbplatser som du har bokmärkt. Ikonnedladdningar exponeras för ditt nätverk.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Bokmärken";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Använd samma favoritbokmärken på mobilen och datorn.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Ansluter …";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Spara dina bokmärken och data för automatisk ifyllning och synkronisera dem mellan dina enheter med end-to-end-kryptering.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Använd den här koden för att återställa dina data om du förlorar åtkomst till den här enheten. Sync & Backup-data kan inte återställas efter 18 månaders inaktivitet. [Läs mer](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-app";

@@ -71956,6 +71956,18 @@
         }
       }
     },
+    "permission.system.microphone.disabled" : {
+      "comment" : "Text shown when system microphone access was previously denied. Followed by a link to System Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System microphone disabled. Turn it on in "
+          }
+        }
+      }
+    },
     "permission.system.notification.enable" : {
       "comment" : "Button to enable system notifications",
       "extractionState" : "extracted_with_value",
@@ -72192,6 +72204,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки системы → Конфиденциальность"
+          }
+        }
+      }
+    },
+    "permission.system.settings.microphone" : {
+      "comment" : "Link text to open System Settings Privacy section for microphone",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Settings → Privacy"
           }
         }
       }

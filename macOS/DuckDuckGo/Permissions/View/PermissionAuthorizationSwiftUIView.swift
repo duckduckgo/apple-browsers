@@ -674,7 +674,9 @@ extension PermissionType {
             return UserText.permissionSystemLocationDisabled
         case .notification:
             return UserText.permissionCenterSystemNotificationDisabled
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .microphone:
+            return UserText.permissionSystemMicrophoneDisabled
+        case .camera, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }
@@ -686,7 +688,9 @@ extension PermissionType {
             return UserText.permissionSystemSettingsLocation
         case .notification:
             return UserText.permissionCenterSystemSettingsNotifications
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .microphone:
+            return UserText.permissionSystemSettingsMicrophone
+        case .camera, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }
@@ -698,7 +702,9 @@ extension PermissionType {
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
         case .notification:
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .microphone:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+        case .camera, .popups, .externalScheme, .autoplayPolicy:
             return nil
         }
     }

@@ -83,6 +83,14 @@ struct PermissionCenterItem: Identifiable {
         state == .active
     }
 
+    /// Whether the user is prevented from editing this row. Duck.ai's microphone
+    /// permission is auto-granted at launch by `DuckAiVoiceChatPermissionMigration`,
+    /// so exposing the dropdown / remove button would let the user make a change
+    /// that gets reverted on next launch.
+    var isLocked: Bool {
+        permissionType == .microphone && domain == URL.duckAi.host
+    }
+
     /// Whether the permission is allowed (granted or user selected "Always Allow")
     var isAllowed: Bool {
         // Check persisted decision first
@@ -534,8 +542,8 @@ final class PermissionCenterViewModel: ObservableObject {
             externalSchemes: []
         )
 
-        // Async check for permissions that require system permission
-        if permissionType.requiresSystemPermission {
+        // Async check for permissions whose OS-level state may surface a system-disabled warning
+        if permissionType.surfacesSystemDisabledWarning {
             checkSystemDisabledAsync(for: item)
         }
 
@@ -579,10 +587,11 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
-    /// Asynchronously checks system authorization state for permissions that require it
-    /// Uses weak self to handle case where popover is dismissed before check completes
+    /// Asynchronously checks system authorization state for permissions that surface
+    /// a system-disabled warning. Uses weak self to handle case where popover is
+    /// dismissed before check completes.
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
-        guard item.permissionType.requiresSystemPermission else { return }
+        guard item.permissionType.surfacesSystemDisabledWarning else { return }
 
         Task { @MainActor [weak self] in
             guard let self else { return }

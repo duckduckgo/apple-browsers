@@ -1423,7 +1423,6 @@ private extension UnifiedToggleInputCoordinator {
     func resetSessionState() {
         isNewChatPending = false
         aiChatStatus = .unknown
-        aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
         updateModelChipVisibility()

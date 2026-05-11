@@ -182,10 +182,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.aiChatStatus, .unknown)
     }
 
-    func test_unbind_resetsAIChatInputBoxVisibility() {
-        sut.aiChatInputBoxVisibility = .visible
+    func test_unbind_preservesAIChatInputBoxVisibility() {
+        // Visibility is owned per-tab by `TabInputState`; resetting on unbind would clobber the
+        // value that `applyState` just restored for the incoming tab.
+        sut.aiChatInputBoxVisibility = .hidden
         sut.unbind()
-        XCTAssertEqual(sut.aiChatInputBoxVisibility, .unknown)
+        XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
     }
 
     // MARK: - VC Delegate: Collapsed Tap

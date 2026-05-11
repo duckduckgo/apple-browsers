@@ -53,7 +53,7 @@ final class AIChatTabChatHeaderView: UIView {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
-        var isVoiceModeActive: Bool = false
+        var isChatInputHidden: Bool = false
         var canGoBack: Bool = false
         var canGoForward: Bool = false
 
@@ -303,9 +303,10 @@ final class AIChatTabChatHeaderView: UIView {
         state = newState
     }
 
-    /// Hides the chats / new-chat pill in voice mode (back/forward stay so the user can exit).
-    func setVoiceModeActive(_ active: Bool) {
-        state.isVoiceModeActive = active
+    /// Hides the chats / new-chat pill while FE has hidden the native chat input (voice mode,
+    /// sidebar open, etc.). Back/forward arrows remain so the user can exit.
+    func setAIChatInputHidden(_ hidden: Bool) {
+        state.isChatInputHidden = hidden
     }
 
     private func applyState() {
@@ -316,7 +317,9 @@ final class AIChatTabChatHeaderView: UIView {
         backPill.isHidden = !state.showsStandaloneBack
         forwardPill.isHidden = !state.showsStandaloneForward
         navPairPill.isHidden = !state.showsNavPair
-        leftPairPill.isHidden = state.isVoiceModeActive
+        // FE hides the chat input (voice mode, sidebar open) → drop the chats/new-chat pill;
+        // back/forward stay so the user can exit.
+        leftPairPill.isHidden = state.isChatInputHidden
         // Compose suppressed when nav arrows are visible — the row gets cluttered.
         newChatButton.isHidden = state.isNavigationVisible
     }

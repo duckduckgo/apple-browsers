@@ -707,6 +707,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onSwitchToTab(tab)
     }
 
+    func unifiedInputEditingStateDidRequestTabSwitcher() {
+        requestTabSwitcher()
+    }
+
     func unifiedInputEditingStateDidRequestTryFireMode() {
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
         showTabSwitcher(forceFireTabsTip: true)

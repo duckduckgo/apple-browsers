@@ -25,36 +25,32 @@ import DesignResourcesKitIcons
 struct ReturnToTabCard: View {
     let model: EscapeHatchModel
     let onTap: () -> Void
+    @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
         Button(action: onTap) {
-            HStack(alignment: .center) {
+            HStack(spacing: Metrics.innerSpacing) {
                 iconView
-                VStack(alignment: .leading, spacing: Metrics.labelToContentSpacing) {
-                    returnToLabel
-                    VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
-                        Text(model.title)
-                            .daxHeadline()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                        if !model.subtitle.isEmpty {
-                            Text(model.subtitle)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                                .lineLimit(1)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
+                    Text(UserText.escapeHatchReturnToLabel)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                        .frame(height: Metrics.textRowHeight, alignment: .center)
+                    Text(model.title)
+                        .daxSubheadSemibold()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                        .frame(height: Metrics.textRowHeight, alignment: .center)
                 }
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.undo)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(Metrics.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Metrics.horizontalPadding)
+            .frame(maxWidth: .infinity)
+            .frame(height: Metrics.height)
             .background(
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .fill(Color(designSystemColor: .surface))
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: Metrics.shadowRadius1, x: 0, y: Metrics.shadowOffset1)
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: Metrics.shadowRadius2, x: 0, y: Metrics.shadowOffset2)
+                Capsule()
+                    .fill(Color(designSystemColor: .controlsFillSecondary))
             )
         }
         .buttonStyle(.plain)
@@ -70,39 +66,55 @@ struct ReturnToTabCard: View {
         return String(format: UserText.escapeHatchReturnToWithSubtitleAccessibilityLabelFormat, model.title, model.subtitle)
     }
 
-    private var returnToLabel: some View {
-        Text(returnToLabelText)
-            .daxFootnoteRegular()
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-    }
-
     /// Favicon from .tabs cache, fire tab icon, Duck.ai logo, or placeholder depending on tab type.
+    /// Decorated with a small back-arrow overlay to signal "return to" affordance.
     private var iconView: some View {
-        Group {
-            switch model.tabType {
-            case .fire:
-                Image(uiImage: DesignSystemImages.Color.Size96.fireTab)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            case .aiChat:
-                Image(uiImage: UIImage(resource: .duckAIDefault))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            case .regular:
-                if let domain = model.domain {
-                    DomainFaviconView(domain: domain)
-                } else {
-                    RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
-                        .fill(Color(designSystemColor: .controlsFillSecondary))
-                }
-            }
+        ZStack(alignment: .bottomTrailing) {
+            faviconBaseView
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                .clipShape(RoundedRectangle(cornerRadius: Metrics.iconCornerRadius))
+
+            backArrowOverlay
+                // Flip x for RTL so the badge stays at the bottom-trailing visual corner
+                // (which is bottom-left in RTL) and protrudes outward rather than inward.
+                .offset(x: layoutDirection == .rightToLeft ? -Metrics.overlayOffset : Metrics.overlayOffset,
+                        y: Metrics.overlayOffset)
         }
         .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-        .clipShape(RoundedRectangle(cornerRadius: Metrics.iconCornerRadius))
     }
 
-    private var returnToLabelText: String {
-        UserText.escapeHatchReturnToLabel
+    @ViewBuilder
+    private var faviconBaseView: some View {
+        switch model.tabType {
+        case .fire:
+            Image(uiImage: DesignSystemImages.Color.Size96.fireTab)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        case .aiChat:
+            Image(uiImage: UIImage(resource: .duckAIDefault))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        case .regular:
+            if let domain = model.domain {
+                DomainFaviconView(domain: domain)
+            } else {
+                RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
+            }
+        }
+    }
+
+    /// Uses rebranded `decorationPrimary` (9% vs default 30% opacity); will become global default after rebrand rollout.
+    private var backArrowOverlay: some View {
+        Image(uiImage: DesignSystemImages.Glyphs.Size12.goBackCircleRecolorable)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: Metrics.overlayContainerSize, height: Metrics.overlayContainerSize)
+            .overlay(
+                Circle()
+                    .strokeBorder(Color(singleUseColor: .rebranding(.decorationPrimary)),
+                                  lineWidth: Metrics.overlayStrokeWidth)
+            )
     }
 }
 
@@ -123,16 +135,16 @@ private struct DomainFaviconView: View {
 }
 
 private enum Metrics {
-    static let cornerRadius: CGFloat = 16
-    static let shadowRadius1: CGFloat = 12
-    static let shadowRadius2: CGFloat = 48
-    static let shadowOffset1: CGFloat = 4
-    static let shadowOffset2: CGFloat = 16
-    static let cardPadding: CGFloat = 16
-    static let labelToContentSpacing: CGFloat = 0
-    static let titleToSubtitleSpacing: CGFloat = 2
+    static let height: CGFloat = 56
+    static let horizontalPadding: CGFloat = 16
+    static let innerSpacing: CGFloat = 8
+    static let titleToSubtitleSpacing: CGFloat = 0
+    static let textRowHeight: CGFloat = 20
     static let iconSize: CGFloat = 24
-    static let iconCornerRadius: CGFloat = 4
+    static let iconCornerRadius: CGFloat = 6
+    static let overlayContainerSize: CGFloat = 12
+    static let overlayStrokeWidth: CGFloat = 1
+    static let overlayOffset: CGFloat = 3
 }
 
 // MARK: - Previews

@@ -572,11 +572,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
-        let effectiveInputMode = isToggleEnabled ? inputMode : .search
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
-        setInitialInputMode(effectiveInputMode)
+        // `effectiveInputMode` reads `isOmnibarSession`, so the displayState assignment above must precede it.
+        setInitialInputMode(effectiveInputMode(for: inputMode))
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
@@ -664,10 +664,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modeChangeSubject.send(effective)
     }
 
-    /// Resolves the mode the coordinator should actually be in given a requested mode.
-    /// When the toggle UI is unavailable the user has no way to flip mode themselves, so
-    /// the omnibar host collapses to search and Duck.ai tabs lock to aiChat. Otherwise the
-    /// requested mode passes through unchanged.
+    /// Without a toggle UI the user can't switch mode, so omnibar locks to `.search` and
+    /// AI tabs to `.aiChat`.
     private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
         guard !isToggleEnabled else { return requestedMode }
         if isOmnibarSession { return .search }

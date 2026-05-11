@@ -976,9 +976,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
             let isSearchOnAITab = isAITabState && inputMode == .search
-            // Toggling to search on a chat tab without text is a *mode switch*; keep the chat
-            // web view visible. Suggestions take over once the user starts typing.
-            let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
+            // Toggling to Search on a chat tab without visible text is a mode switch — keep the
+            // chat web view; `textState` (not `currentText`) excludes preserved drafts from
+            // dismiss-cleanup.
+            let isSearchOnAITabWithoutText = isSearchOnAITab && textState == .empty
             isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
             inactiveAppearance = isSearchKeyboardHidden

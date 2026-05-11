@@ -104,7 +104,7 @@ private extension MainViewController {
         let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
         animationStyle.perform({ [self] in
             applyAITabExpandedPose()
-        }, completion: { [weak snapshotMask] _ in
+        }, completion: { _ in
             snapshotMask?.removeFromSuperview()
         })
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)

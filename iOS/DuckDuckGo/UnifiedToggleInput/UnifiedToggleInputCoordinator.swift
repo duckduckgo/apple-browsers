@@ -1053,6 +1053,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearAttachments()
         setText("")
         attachmentUsage = nil
+        aiChatInputBoxVisibility = .visible
     }
 
     func updateSelectedModel(_ modelId: String) {

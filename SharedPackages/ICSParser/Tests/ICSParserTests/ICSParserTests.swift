@@ -177,6 +177,10 @@ struct ICSParserTests {
         try #require(days.count == 1)
         #expect(days[0].dayOfTheWeek == .monday)
         #expect(days[0].weekNumber == 1)
+        // COUNT-to-UNTIL conversion is unsafe for monthly BYDAY because the day-of-month
+        // shifts each cycle. The rule must keep COUNT semantics so EventKit expands correctly.
+        #expect(rule.recurrenceEnd?.occurrenceCount == 12)
+        #expect(rule.recurrenceEnd?.endDate == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -276,6 +280,31 @@ struct ICSParserTests {
         #expect(throws: ICSParser.Error.malformedDate(field: "DTSTART", raw: "not-a-real-date")) {
             try ICSParser.parse(data: fixture("multi-vevent-with-malformed"))
         }
+    }
+
+    /// `VALUE=DATE` and `VALUE=DATE-TIME` are distinct RFC 5545 §3.2.20 token values. A naive
+    /// substring check on the parameter would mis-classify `VALUE=DATE-TIME` as date-only.
+    @available(iOS 16, macOS 13, *)
+    @Test("Treats VALUE=DATE-TIME as a timed value, not date-only", .timeLimit(.minutes(1)))
+    func valueDateTimeIsNotDateOnly() throws {
+        let raw = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//Test//EN
+        BEGIN:VEVENT
+        UID:dt@example.com
+        DTSTART;VALUE=DATE-TIME:20260601T140000Z
+        DTEND;VALUE=DATE-TIME:20260601T150000Z
+        SUMMARY:Explicit DATE-TIME value type
+        END:VEVENT
+        END:VCALENDAR
+        """
+        let events = try ICSParser.parse(string: raw)
+        try #require(events.count == 1)
+        let event = events[0]
+        #expect(event.isAllDay == false)
+        #expect(event.startDate == iso("2026-06-01T14:00:00Z"))
+        #expect(event.endDate == iso("2026-06-01T15:00:00Z"))
     }
 
     // MARK: - Helpers

@@ -194,6 +194,9 @@ enum RecurrenceRuleParser {
     ) -> Date? {
         guard count >= 1, interval >= 1 else { return nil }
         if frequency == .weekly, byDay.count > 1 { return nil }
+        // Monthly/yearly BYDAY positions (e.g. "1MO") shift the day-of-month each cycle, so
+        // simple component arithmetic on DTSTART would land on the wrong date.
+        if frequency == .monthly || frequency == .yearly, !byDay.isEmpty { return nil }
         if byMonthDay.count > 1 { return nil }
         if byMonth.count > 1 { return nil }
 

@@ -154,6 +154,31 @@ struct RecurrenceRuleParserTests {
         #expect(rule.daysOfTheMonth == [32])
     }
 
+    /// Positional BYDAY rules like `1MO` shift the actual day-of-month each cycle, so
+    /// component arithmetic from DTSTART can't compute the Nth occurrence reliably. The rule
+    /// must fall back to occurrenceCount semantics for monthly/yearly + BYDAY.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT semantics for monthly RRULE with positional BYDAY", .timeLimit(.minutes(1)))
+    func keepsCountForMonthlyPositionalByDay() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;BYDAY=1MO;COUNT=12",
+            startDate: utcDate("2026-06-01T16:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 12)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT semantics for yearly RRULE with positional BYDAY", .timeLimit(.minutes(1)))
+    func keepsCountForYearlyPositionalByDay() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=YEARLY;BYDAY=-1FR;COUNT=5",
+            startDate: utcDate("2026-12-25T00:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 5)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
     // MARK: - Helpers
 
     private func utcDate(_ string: String) -> Date {

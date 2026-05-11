@@ -36,8 +36,9 @@ enum DateValueParser {
     }
 
     static func parse(value: String, paramPart: String, field: String) throws -> Parsed {
-        let upperParam = paramPart.uppercased()
-        let isDateOnly = upperParam.contains("VALUE=DATE") || (value.count == 8 && !value.contains("T"))
+        let params = paramPart.split(separator: ";").map { $0.uppercased() }
+        // Token-equal compare so VALUE=DATE-TIME is not misclassified as date-only.
+        let isDateOnly = params.contains("VALUE=DATE") || (value.count == 8 && !value.contains("T"))
 
         let timeZone = try resolveTimeZone(value: value, paramPart: paramPart, isDateOnly: isDateOnly)
 

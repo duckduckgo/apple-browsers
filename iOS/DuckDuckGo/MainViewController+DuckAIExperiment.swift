@@ -48,6 +48,9 @@ struct ExperimentDuckAIFireOnboardingFlowContext {
     var controlsLocked = false
     /// Pending retry or failsafe trigger used when the dialog cannot be shown immediately.
     var triggerWorkItem: DispatchWorkItem?
+    /// Completion copy captured before the final dialog can safely be presented.
+    var pendingCompletionDialogMessage: String?
+
     /// True while the flow is in progress and owns the current UI state.
     var isRunning: Bool {
         switch state {

@@ -304,12 +304,18 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
                 continue
             }
 
-            let decryptedCardNumberData = try secureVault.decrypt(creditCard.cardNumberData, using: encryptionKey)
-            guard let decryptedCardNumber = String(data: decryptedCardNumberData, encoding: .utf8) else {
+            let refreshedCardSuffix: String
+            do {
+                let decryptedCardNumberData = try secureVault.decrypt(creditCard.cardNumberData, using: encryptionKey)
+                guard let decryptedCardNumber = String(data: decryptedCardNumberData, encoding: .utf8) else {
+                    continue
+                }
+
+                refreshedCardSuffix = SecureVaultModels.CreditCard.suffix(from: decryptedCardNumber)
+            } catch {
                 continue
             }
 
-            let refreshedCardSuffix = SecureVaultModels.SyncableCreditCard.cardSuffix(from: decryptedCardNumber)
             if refreshedCardSuffix == creditCard.cardSuffix {
                 continue
             }

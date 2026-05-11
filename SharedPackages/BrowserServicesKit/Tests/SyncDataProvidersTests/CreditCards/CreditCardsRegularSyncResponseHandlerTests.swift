@@ -152,6 +152,27 @@ final class CreditCardsRegularSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(keyValueStore.underlyingDict.count, 1)
     }
 
+    func testWhenOneCardDecryptFailsDuringStaleSuffixRefreshThenOtherCardsStillRefresh() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+        let decryptionFailureMarker = Data([0xAA, 0xBB, 0xCC, 0xDD])
+        TestBitFlipCryptoProvider.decryptionFailureMarker = decryptionFailureMarker
+        defer { TestBitFlipCryptoProvider.decryptionFailureMarker = nil }
+
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", in: database)
+            try self.secureVault.storeSyncableCreditCard("2", cardNumber: "5555555555554444", in: database)
+        }
+        try setStaleStoredCardSuffix("0000", forUUID: "1")
+        try setStaleStoredCardSuffix("0000", forUUID: "2")
+        try setStoredEncryptedCardNumberData(decryptionFailureMarker, forUUID: "1")
+
+        try await handleSyncResponse(received: [])
+
+        XCTAssertEqual(try storedCardSuffix(forUUID: "1"), "0000")
+        XCTAssertEqual(try storedCardSuffix(forUUID: "2"), "4444")
+        XCTAssertEqual(keyValueStore.underlyingDict.count, 1)
+    }
+
     func testWhenIncomingSyncUpdatesCardNumberThenSuffixUpdatesWithoutBackfill() async throws {
         try secureVault.inDatabaseTransaction { database in
             try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", in: database)
@@ -185,6 +206,21 @@ final class CreditCardsRegularSyncResponseHandlerTests: CreditCardsProviderTests
             }
 
             creditCard.cardSuffix = suffix
+            try creditCard.update(database)
+        }
+    }
+
+    private func setStoredEncryptedCardNumberData(_ cardNumberData: Data, forUUID uuid: String) throws {
+        try secureVault.inDatabaseTransaction { database in
+            guard let syncableCreditCard = try SecureVaultModels.SyncableCreditCard.query
+                .filter(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid == uuid)
+                .fetchOne(database),
+                var creditCard = syncableCreditCard.creditCard else {
+                XCTFail("Expected syncable credit card to exist for uuid \(uuid)")
+                return
+            }
+
+            creditCard.cardNumberData = cardNumberData
             try creditCard.update(database)
         }
     }

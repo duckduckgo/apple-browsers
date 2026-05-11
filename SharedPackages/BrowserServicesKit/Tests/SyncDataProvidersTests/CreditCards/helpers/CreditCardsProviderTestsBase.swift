@@ -215,6 +215,9 @@ extension AutofillSecureVault {
 // Implements an "encryption" that simply bit-flips every byte so encrypting twice is observable.
 final class TestBitFlipCryptoProvider: SecureStorageCryptoProvider {
 
+    /// Optional marker used by tests to simulate decrypt failures for selected ciphertext blobs.
+    static var decryptionFailureMarker: Data?
+
     var hashingSalt: Data?
 
     var passwordSalt: Data { Data() }
@@ -231,6 +234,10 @@ final class TestBitFlipCryptoProvider: SecureStorageCryptoProvider {
     }
 
     func decrypt(_ data: Data, withKey key: Data) throws -> Data {
+        if let decryptionFailureMarker = Self.decryptionFailureMarker,
+           data.starts(with: decryptionFailureMarker) {
+            throw SecureStorageError.invalidPassword
+        }
         Data(data.map { ~$0 })
     }
 

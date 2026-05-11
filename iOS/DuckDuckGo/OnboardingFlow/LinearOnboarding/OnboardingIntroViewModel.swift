@@ -110,7 +110,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let restorePromptHandler: OnboardingRestorePromptHandling
     private let tutorialSettings: TutorialSettings
-    private let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -119,7 +119,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
                      onboardingManager: OnboardingManaging,
-                     duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
+                     onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
@@ -137,7 +137,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             featureFlagger: AppDependencyProvider.shared.featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: DefaultTutorialSettings(),
-            duckAIOnboardingResumeStepStore: duckAIOnboardingResumeStepStore
+            onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
 
@@ -154,7 +154,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
+        onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -167,7 +167,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
-        self.duckAIOnboardingResumeStepStore = if let duckAIOnboardingResumeStepStore { duckAIOnboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
+        self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
         currentIntroStep = currentOnboardingStep
@@ -200,7 +200,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
         tutorialSettings.hasSkippedOnboarding = true
-        DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
     }
@@ -331,7 +331,7 @@ private extension OnboardingIntroViewModel {
             OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
-        case .duckAIQueryExperimentSelection:
+        case .duckAIQuerySelection:
             OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(defaultMode: duckAIQueryExperimentDefaultMode), step: stepInfo()))
         }
 
@@ -341,7 +341,7 @@ private extension OnboardingIntroViewModel {
     func makeNextViewState() {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else {
             assertionFailure("Onboarding Step index not found.")
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
             completeOnboardingIntro()
             return
         }
@@ -351,8 +351,8 @@ private extension OnboardingIntroViewModel {
 
         // If the flow does not have any step remaining dismiss it
         guard let nextIntroStep = introSteps[safe: nextStepIndex] else {
-            if currentIntroStep != .duckAIQueryExperimentSelection {
-                DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            if currentIntroStep != .duckAIQuerySelection {
+                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
             }
             completeOnboardingIntro()
             return
@@ -376,19 +376,19 @@ private extension OnboardingIntroViewModel {
     }
 
     func restorePendingOnboardingStepIfNeeded() {
-        guard let resumeStep = duckAIOnboardingResumeStepStore.resumeStep else { return }
+        guard let resumeStep = onboardingResumeStepStore.resumeStep else { return }
 
         switch resumeStep {
-        case .duckAIQueryExperimentSelection:
+        case .duckAIQuerySelection:
             guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-                DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
                 return
             }
-            if !introSteps.contains(.duckAIQueryExperimentSelection) {
+            if !introSteps.contains(.duckAIQuerySelection) {
                 let insertIndex = introSteps.firstIndex(of: .searchExperienceSelection).map { $0 + 1 } ?? introSteps.count
-                introSteps.insert(.duckAIQueryExperimentSelection, at: insertIndex)
+                introSteps.insert(.duckAIQuerySelection, at: insertIndex)
             }
-            currentIntroStep = .duckAIQueryExperimentSelection
+            currentIntroStep = .duckAIQuerySelection
 
         case .browserComparison where introSteps.contains(.browserComparison):
             currentIntroStep = .browserComparison
@@ -406,25 +406,25 @@ private extension OnboardingIntroViewModel {
 
         default:
             // Stored step is not available in the current flow — clear and start from the beginning.
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
         }
     }
 
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         switch step {
-        case .duckAIQueryExperimentSelection:
-            duckAIOnboardingResumeStepStore.resumeExperimentPrompt = nil
-            duckAIOnboardingResumeStepStore.resumeStep = .duckAIQueryExperimentSelection
+        case .duckAIQuerySelection:
+            onboardingResumeStepStore.resumeExperimentPrompt = nil
+            onboardingResumeStepStore.resumeStep = .duckAIQuerySelection
         case .browserComparison:
-            duckAIOnboardingResumeStepStore.resumeStep = .browserComparison
+            onboardingResumeStepStore.resumeStep = .browserComparison
         case .addToDockPromo:
-            duckAIOnboardingResumeStepStore.resumeStep = .addToDockPromo
+            onboardingResumeStepStore.resumeStep = .addToDockPromo
         case .appIconSelection:
-            duckAIOnboardingResumeStepStore.resumeStep = .appIconSelection
+            onboardingResumeStepStore.resumeStep = .appIconSelection
         case .addressBarPositionSelection:
-            duckAIOnboardingResumeStepStore.resumeStep = .addressBarPositionSelection
+            onboardingResumeStepStore.resumeStep = .addressBarPositionSelection
         case .searchExperienceSelection:
-            duckAIOnboardingResumeStepStore.resumeStep = .searchExperienceSelection
+            onboardingResumeStepStore.resumeStep = .searchExperienceSelection
         case .introDialog:
             break
         }
@@ -454,10 +454,10 @@ private extension OnboardingIntroViewModel {
     func insertExperimentStepIfNeeded() {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
               let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
-              !introSteps.contains(.duckAIQueryExperimentSelection) else {
+              !introSteps.contains(.duckAIQuerySelection) else {
             return
         }
-        introSteps.insert(.duckAIQueryExperimentSelection, at: currentStepIndex + 1)
+        introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
     }
 
     var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {

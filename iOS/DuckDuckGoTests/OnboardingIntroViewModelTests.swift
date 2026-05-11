@@ -1022,8 +1022,8 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectDuckAIQueryExperimentChooseDuckAIThenCorrectPixelFires() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.duckAIQueryExperimentSelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+        onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
 
         // WHEN
@@ -1036,8 +1036,8 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectDuckAIQueryExperimentChooseSearchThenCorrectPixelFires() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.duckAIQueryExperimentSelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+        onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
 
         // WHEN
@@ -1077,11 +1077,11 @@ extension OnboardingIntroViewModelTests {
     // Helpers to read/write the resume step directly on the raw store,
     // avoiding parameterised-existential type inference issues on iOS 15 targets.
     private func resumeStepRawValue(in store: MockKeyValueStore) -> String? {
-        store.object(forKey: DuckAIOnboardingStorageKeys.resumeStep.rawValue) as? String
+        store.object(forKey: OnboardingStorageKeys.resumeStep.rawValue) as? String
     }
 
     private func setResumeStep(_ step: OnboardingResumeStep, in store: MockKeyValueStore) {
-        store.set(step.rawValue, forKey: DuckAIOnboardingStorageKeys.resumeStep.rawValue)
+        store.set(step.rawValue, forKey: OnboardingStorageKeys.resumeStep.rawValue)
     }
 
     // MARK: Persist
@@ -1123,7 +1123,7 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenAdvancingToSearchExperienceSelectionThenResumeStepIsPersisted() {
         let store = MockKeyValueStore()
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection, resumeStepStore: store)
         sut.onAppear()
         sut.selectAddressBarPositionAction()
@@ -1171,17 +1171,17 @@ extension OnboardingIntroViewModelTests {
     func testWhenResumeStepIsSearchExperienceSelectionThenOnAppearShowsSearchExperience() {
         let store = MockKeyValueStore()
         setResumeStep(.searchExperienceSelection, in: store)
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog)
     }
 
     func testWhenResumeStepIsNotInCurrentFlowThenStoreIsClearedAndOnboardingStartsFromBeginning() {
-        // searchExperienceSelection is not in the iPhone flow without search experience
+        // addToDockPromo is not in the iPad flow
         let store = MockKeyValueStore()
-        setResumeStep(.searchExperienceSelection, in: store)
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        setResumeStep(.addToDockPromo, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
         _ = makeSUT(resumeStepStore: store)
         XCTAssertNil(resumeStepRawValue(in: store))
     }
@@ -1210,7 +1210,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
-            duckAIOnboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
+            onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring() as any KeyedStoring<OnboardingStoringKeys>
         )
     }
 }

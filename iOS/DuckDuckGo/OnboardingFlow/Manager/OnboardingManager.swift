@@ -132,7 +132,20 @@ enum OnboardingIntroStep: Equatable {
     case addToDockPromo
     case addressBarPositionSelection
     case searchExperienceSelection
-    case duckAIQueryExperimentSelection
+    case duckAIQuerySelection
+}
+
+/// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
+enum OnboardingResumeStep: String {
+    case browserComparison
+    case addToDockPromo
+    case appIconSelection
+    case addressBarPositionSelection
+    case searchExperienceSelection
+    /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
+    case duckAIQuerySelection
+    /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
+    case duckAIAnswerStep
 }
 
 protocol OnboardingStepsProvider: AnyObject {

@@ -561,9 +561,6 @@ class MainViewController: UIViewController {
     /// `SwipeTabsCoordinator` at swipe start.
     private var tabSwipeOverlayView: TabSwipeOverlayView?
 
-    /// Cache of `MainViewController.view` snapshots keyed by tab UID. Captured by
-    /// `captureCurrentTabScreenSnapshotIfPossible` after the chrome settles for a tab.
-    let tabScreenSnapshotStore = TabScreenSnapshotStore()
     private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
@@ -835,8 +832,8 @@ class MainViewController: UIViewController {
     }
 
     /// Mounts the swipe overlay as the topmost subview of `MainViewController.view` and hands
-    /// it (plus the snapshot store) to the coordinator. The overlay is alpha=0 by default
-    /// and isUserInteractionEnabled=false — touches pass through to the underlying chrome's
+    /// it to the coordinator. The overlay is alpha=0 by default and
+    /// isUserInteractionEnabled=false — touches pass through to the underlying chrome's
     /// gesture recognizers when it's hidden, and it can be raised by setting alpha=1.
     private func installTabSwipeOverlay() {
         let overlay = TabSwipeOverlayView(frame: view.bounds)
@@ -845,7 +842,6 @@ class MainViewController: UIViewController {
         view.addSubview(overlay)
         tabSwipeOverlayView = overlay
         swipeTabsCoordinator?.swipeOverlayView = overlay
-        swipeTabsCoordinator?.snapshotStore = tabScreenSnapshotStore
     }
 
     /// Best-effort capture for tabs the user reaches via tap (not swipe). Defers with a small
@@ -864,11 +860,19 @@ class MainViewController: UIViewController {
                 return
             }
             // Guard against tab having changed since scheduling.
-            guard self.tabManager.currentTabsModel.currentTab?.uid == tabUID else {
+            guard let currentTab = self.tabManager.currentTabsModel.currentTab,
+                  currentTab.uid == tabUID else {
                 Logger.swipeTabs.debug("captureCurrentTabScreenSnapshotIfPossible: tab \(tabUID) is no longer current, skipping")
                 return
             }
-            self.tabScreenSnapshotStore.capture(view: self.view, tabUID: tabUID)
+            guard self.view.window != nil,
+                  self.view.bounds.width > 0,
+                  self.view.bounds.height > 0 else { return }
+            let renderer = UIGraphicsImageRenderer(size: self.view.bounds.size)
+            let image = renderer.image { _ in
+                self.view.drawHierarchy(in: self.view.bounds, afterScreenUpdates: false)
+            }
+            self.previewsSource.updateFullScreenSnapshot(image, forTab: currentTab)
             Logger.swipeTabs.debug("captureCurrentTabScreenSnapshotIfPossible: captured snapshot for tab \(tabUID)")
         }
     }

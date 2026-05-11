@@ -150,10 +150,6 @@ class SwipeTabsCoordinator: NSObject {
     /// facade, contentContainer preview) are bypassed.
     weak var swipeOverlayView: TabSwipeOverlayView?
 
-    /// Per-tab full-screen snapshot cache. Set by the host. Read by the coordinator when
-    /// populating the overlay at swipe start.
-    weak var snapshotStore: TabScreenSnapshotStore?
-
     /// Lookup of tab UIDs in the same order as `tabsModel.tabs` — used to build the overlay's
     /// page array. Refreshed at swipe start.
     private var overlayActive = false
@@ -281,8 +277,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// occlude what's underneath. Touching the live views' alpha while a refresh is firing
     /// during the swipe was the cause of the "stacked screens" / "offset chrome" artifacts.
     private func activateSwipeOverlay() -> Bool {
-        guard let overlay = swipeOverlayView, let store = snapshotStore else {
-            Logger.swipeTabs.debug("activateSwipeOverlay: skipped — overlay or store missing")
+        guard let overlay = swipeOverlayView else {
+            Logger.swipeTabs.debug("activateSwipeOverlay: skipped — overlay missing")
             return false
         }
 
@@ -291,11 +287,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         // Capture the source page right now from the live view — pixel-perfect, no cache
         // reliance. The overlay is currently alpha=0 (about to be raised), so it won't
-        // appear in its own snapshot. We also stash this image into the store under the
-        // current tab's UID so the next swipe BACK to this tab has fresh chrome.
+        // appear in its own snapshot. We also stash this image into the previews source
+        // under the current tab's UID so the next swipe BACK to this tab has fresh chrome.
         let sourceImage: UIImage? = makeFullScreenSnapshot()
         if let sourceImage, currentIndex < tabs.count {
-            store.set(image: sourceImage, for: tabs[currentIndex].uid)
+            tabPreviewsSource.updateFullScreenSnapshot(sourceImage, forTab: tabs[currentIndex])
         }
 
         // Include the trailing "new tab" cell so swiping past the last tab works.
@@ -306,9 +302,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 return sourceImage  // always fresh
             }
             guard idx < tabs.count else { return nil }
-            // Cache preferred (full-screen, chrome included). Fall back to the legacy webview-
-            // only preview if we haven't captured this tab's screen yet — better than blank.
-            if let cached = store.snapshot(for: tabs[idx].uid) {
+            // Full-screen snapshot preferred (chrome included). Fall back to the legacy
+            // webview-only preview if we haven't captured this tab's screen yet — better than
+            // blank.
+            if let cached = tabPreviewsSource.fullScreenSnapshot(for: tabs[idx]) {
                 return cached
             }
             return tabPreviewsSource.preview(for: tabs[idx])

@@ -138,7 +138,10 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController)
 
-        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
+                                    contentBlocking: contentBlockingService.common,
+                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
@@ -159,6 +162,12 @@ struct Launching: LaunchingHandling {
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
                                                                   daxDialogs: daxDialogs)
+        let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
+            featureFlagger: featureFlagger,
+            runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
+            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings
+        )
 
         let remoteMessagingImageLoader = RemoteMessagingImageLoader(
             dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
@@ -173,6 +182,8 @@ struct Launching: LaunchingHandling {
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
+                                                            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                            freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
@@ -210,6 +221,7 @@ struct Launching: LaunchingHandling {
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
         // Initialise modal prompts coordination
+        let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -229,7 +241,8 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
-                userScriptsDependencies: contentBlockingService.userScriptsDependencies
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies,
+                omniBarFocuser: omniBarFocuser
             )
         )
 
@@ -263,6 +276,9 @@ struct Launching: LaunchingHandling {
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
+                                              freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                              freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                              freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
@@ -279,6 +295,7 @@ struct Launching: LaunchingHandling {
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
+        omniBarFocuser.focuser = mainCoordinator.controller
 
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
 

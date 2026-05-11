@@ -212,6 +212,51 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Uzņemt fotoattēlu";
 
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Tu vari katrai sarunai pievienot tikai %d failus.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Mēs nevaram nolasīt pievienotos failus, jo vismaz viens no tiem ir šifrēts.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Pievienoto failu kopējais lieluma ierobežojums pārsniedz %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Šis fails ir pārāk liels. Maksimālais faila lielums ir %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Vienam no pievienotajiem failiem ir vairāk lappušu, nekā mēs atbalstām. Lūdzu, augšupielādē failus ar %d lapām vai mazāk.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Mēs nevaram nolasīt vienu no pievienotajiem failiem. Lūdzu, pārbaudi, vai tas nav bojāts, un mēģini vēlreiz.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Tu vari katrā sarunā pievienot tikai %d attēlus.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Tu vari vienlaikus pievienot tikai %d attēlus.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Pievienot failu";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Pievienot fotoattēlu";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Šis ziņojums ir pārāk garš, lai to nosūtītu ar pielikumiem.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Pielikumi īslaicīgi nav pieejami. Lūdzu, vēlāk mēģini vēlreiz.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Šis faila tips netiek atbalstīts.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %1$@ vai %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %@.";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analītiskiem uzdevumiem";
 

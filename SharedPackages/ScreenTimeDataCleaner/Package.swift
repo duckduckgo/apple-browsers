@@ -22,6 +22,9 @@ let package = Package(
         .target(
             name: "ScreenTimeDataCleaner",
             dependencies: [
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
     ]

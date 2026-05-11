@@ -220,7 +220,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }()
 
     private lazy var selectedToolIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.globe)
+        let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.tintColor = UIColor(designSystemColor: .textPrimary)
         imageView.contentMode = .scaleAspectFit
@@ -405,7 +405,8 @@ private extension UnifiedToggleInputToolbarView {
     private func updateChipVisibility() {
         modelChipButton.isHidden = modelChipExplicitlyHidden
         selectedToolChipView.isHidden = (selectedTool == nil)
-        selectedToolChipView.accessibilityLabel = selectedTool == .webSearch ? UserText.aiChatToolbarWebSearchToolTitle : nil
+        selectedToolIconView.image = selectedTool?.toolbarChipIcon
+        selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }
 
     func updateSubmitButtonState() {
@@ -418,7 +419,11 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
-        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        if showVoice {
+            submitButton.applyAIVoiceChatStyle()
+        } else {
+            submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        }
     }
 
     func updateGeneratingVisibility() {
@@ -440,4 +445,31 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+private extension AIChatRAGTool {
+
+    var toolbarChipIcon: DesignSystemImage? {
+        switch self {
+        case .webSearch:
+            return DesignSystemImages.Glyphs.Size24.globe
+        case .imageGeneration:
+            return DesignSystemImages.Glyphs.Size24.images
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
+
+    var toolbarChipAccessibilityLabel: String? {
+        switch self {
+        case .webSearch:
+            return UserText.aiChatToolbarWebSearchToolTitle
+        case .imageGeneration:
+            return UserText.aiChatToolbarImageGenerationToolTitle
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
 }

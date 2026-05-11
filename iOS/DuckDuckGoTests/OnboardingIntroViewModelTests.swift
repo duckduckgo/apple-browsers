@@ -115,7 +115,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(result, .landing)
     }
 
-    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() {
+    func testWhenRestoreActionProvided_PerformRestoreInvokesAction_AndDefersContextualDaxDialogsDismissal() {
         // GIVEN
         let restorePromptHandlerMock = MockRestorePromptHandler()
         let sut = makeSUT(
@@ -130,7 +130,38 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(restorePromptHandlerMock.didCallRestoreSyncAccount)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenRestoreActionProvided_AndOnboardingCompletes_ThenDisablesContextualDaxDialogs() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(
+            currentOnboardingStep: .searchExperienceSelection,
+            restorePromptHandler: restorePromptHandlerMock
+        )
+        sut.restoreSyncAccountAction()
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
         XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenOnboardingCompletes_AndRestoreActionNotInvoked_ThenDoesNotDisableContextualDaxDialogs() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
     }
 
     func testWhenReturningUserAndRestorePromptEligibilityIsTrueThenShowsRestorePrompt() {
@@ -265,6 +296,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.cancelSetDefaultBrowserAction()
 
         // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
         XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 5))))
     }
 
@@ -429,6 +461,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.cancelSetDefaultBrowserAction()
 
         // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
         XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 2, totalSteps: 2))))
     }
 
@@ -500,30 +533,32 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconImpression)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterMeasureCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterMeasureAppIconColor() {
         // GIVEN
         appIconProvider = { .purple }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconColor)
+        XCTAssertEqual(pixelReporterMock.didCaptureAppIconColorSelection, .purple)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterDoNotMeasureCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterMeasureAppIconColor() {
         // GIVEN
         appIconProvider = { .defaultAppIcon }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconColor)
+        XCTAssertEqual(pixelReporterMock.didCaptureAppIconColorSelection, .red)
     }
 
     func testWhenStateChangesToChooseAddressBarPositionThenPixelReporterMeasureAddressBarSelectionImpression() {
@@ -539,30 +574,32 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddressBarPositionSelectionImpression)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterMeasureChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterMeasureChooseAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .bottom }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
+        XCTAssertEqual(pixelReporterMock.didCaptureAddressBarPositionSelection, .bottom)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterDoNotMeasureChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterMeasureChooseAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .top }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
+        XCTAssertEqual(pixelReporterMock.didCaptureAddressBarPositionSelection, .top)
     }
 
     // MARK: - Pixels Skip Onboarding
@@ -631,6 +668,19 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureResumeOnboardingCTAAction)
+    }
+
+    func testWhenStartOnboardingActionResumingFalseIsCalledThenPixelReporterMeasureStartOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
     }
 
     // MARK: - Copy
@@ -972,8 +1022,8 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectDuckAIQueryExperimentChooseDuckAIThenCorrectPixelFires() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.duckAIQueryExperimentSelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+        onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
 
         // WHEN
@@ -986,8 +1036,8 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectDuckAIQueryExperimentChooseSearchThenCorrectPixelFires() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.duckAIQueryExperimentSelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+        onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
 
         // WHEN
@@ -1020,13 +1070,132 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
 }
 
+// MARK: - Onboarding resume step persistence and restoration
+
+extension OnboardingIntroViewModelTests {
+
+    // Helpers to read/write the resume step directly on the raw store,
+    // avoiding parameterised-existential type inference issues on iOS 15 targets.
+    private func resumeStepRawValue(in store: MockKeyValueStore) -> String? {
+        store.object(forKey: OnboardingStorageKeys.resumeStep.rawValue) as? String
+    }
+
+    private func setResumeStep(_ step: OnboardingResumeStep, in store: MockKeyValueStore) {
+        store.set(step.rawValue, forKey: OnboardingStorageKeys.resumeStep.rawValue)
+    }
+
+    // MARK: Persist
+
+    func testWhenAdvancingToBrowserComparisonThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        sut.startOnboardingAction()
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.browserComparison.rawValue)
+    }
+
+    func testWhenAdvancingToAddToDockPromoThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison, resumeStepStore: store)
+        sut.onAppear()
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.addToDockPromo.rawValue)
+    }
+
+    func testWhenAdvancingToAppIconSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addToDockPromo, resumeStepStore: store)
+        sut.onAppear()
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.appIconSelection.rawValue)
+    }
+
+    func testWhenAdvancingToAddressBarPositionSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .appIconSelection, resumeStepStore: store)
+        sut.onAppear()
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.addressBarPositionSelection.rawValue)
+    }
+
+    func testWhenAdvancingToSearchExperienceSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection, resumeStepStore: store)
+        sut.onAppear()
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.searchExperienceSelection.rawValue)
+    }
+
+    // MARK: Restore
+
+    func testWhenResumeStepIsBrowserComparisonThenOnAppearShowsBrowserComparison() {
+        let store = MockKeyValueStore()
+        setResumeStep(.browserComparison, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog)
+    }
+
+    func testWhenResumeStepIsAddToDockPromoThenOnAppearShowsAddToDock() {
+        let store = MockKeyValueStore()
+        setResumeStep(.addToDockPromo, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog)
+    }
+
+    func testWhenResumeStepIsAppIconSelectionThenOnAppearShowsAppIconPicker() {
+        let store = MockKeyValueStore()
+        setResumeStep(.appIconSelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog)
+    }
+
+    func testWhenResumeStepIsAddressBarPositionSelectionThenOnAppearShowsAddressBarPicker() {
+        let store = MockKeyValueStore()
+        setResumeStep(.addressBarPositionSelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog)
+    }
+
+    func testWhenResumeStepIsSearchExperienceSelectionThenOnAppearShowsSearchExperience() {
+        let store = MockKeyValueStore()
+        setResumeStep(.searchExperienceSelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog)
+    }
+
+    func testWhenResumeStepIsNotInCurrentFlowThenStoreIsClearedAndOnboardingStartsFromBeginning() {
+        // addToDockPromo is not in the iPad flow
+        let store = MockKeyValueStore()
+        setResumeStep(.addToDockPromo, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
+        _ = makeSUT(resumeStepStore: store)
+        XCTAssertNil(resumeStepRawValue(in: store))
+    }
+
+}
+
 extension OnboardingIntroViewModelTests {
 
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
         restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler(),
-        featureFlagger: FeatureFlagger = MockFeatureFlagger()
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        resumeStepStore: MockKeyValueStore? = nil
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             defaultBrowserManager: defaultBrowserManagerMock,
@@ -1041,7 +1210,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
-            duckAIOnboardingResumeStepStore: MockKeyValueStore().keyedStoring()
+            onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
     }
 }

@@ -1,5 +1,5 @@
 //
-//  DuckAIOnboardingResumeStepStore.swift
+//  OnboardingResumeStepStore.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,18 +20,18 @@
 import Foundation
 import Persistence
 
-enum DuckAIOnboardingStorageKeys: String, StorageKeyDescribing {
+enum OnboardingStorageKeys: String, StorageKeyDescribing {
     case resumeStep = "com-duckduckgo-tutorials-onboardingResumeStep"
     case resumeExperimentPrompt = "com-duckduckgo-tutorials-onboardingResumeExperimentPrompt"
 }
 
-struct DuckAIOnboardingStoringKeys: StoringKeys {
-    let resumeStep = StorageKey<OnboardingResumeStep>(DuckAIOnboardingStorageKeys.resumeStep)
-    let resumeExperimentPrompt = StorageKey<String>(DuckAIOnboardingStorageKeys.resumeExperimentPrompt)
+struct OnboardingStoringKeys: StoringKeys {
+    let resumeStep = StorageKey<OnboardingResumeStep>(OnboardingStorageKeys.resumeStep)
+    let resumeExperimentPrompt = StorageKey<String>(OnboardingStorageKeys.resumeExperimentPrompt)
 }
 
-enum DuckAIOnboardingResumeCheckpointStore {
-    static func clearAll(in store: any KeyedStoring<DuckAIOnboardingStoringKeys>) {
+enum OnboardingResumeCheckpointStore {
+    static func clearAll(in store: any KeyedStoring<OnboardingStoringKeys>) {
         store.resumeStep = nil
         store.resumeExperimentPrompt = nil
     }

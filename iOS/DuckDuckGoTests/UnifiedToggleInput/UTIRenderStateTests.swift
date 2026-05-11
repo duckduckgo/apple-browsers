@@ -69,11 +69,19 @@ final class UTIRenderStateTests: XCTestCase {
 
     }
 
-    func test_aiTabExpanded_search_showsContent() {
+    func test_aiTabExpanded_search_emptyText_hidesContent() {
+        // Toggling to search on a chat tab without typing keeps the chat web view visible —
+        // suggestions only take over once there's text to suggest against.
         sut.showExpanded(inputMode: .search)
         let state = sut.computeRenderState()
-        XCTAssertTrue(state.isContentVisible)
+        XCTAssertFalse(state.isContentVisible)
+    }
 
+    func test_aiTabExpanded_search_withText_showsContent() {
+        sut.showExpanded(inputMode: .search)
+        sut.setText("hello")
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isContentVisible)
     }
 
     func test_aiTabExpanded_search_keyboardHidden_showsInactive() {
@@ -220,6 +228,26 @@ final class UTIRenderStateTests: XCTestCase {
     func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
         sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
         sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
+
+    func test_omnibarHost_aiTabExpanded_aiChat_toggleDisabled_stillShowsToolbar() {
+        // Toggle-off on a Duck.ai tab must keep the AI-chat toolbar so the user retains
+        // the model selector / attachments / send affordances.
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
+        sut.showExpanded(inputMode: .aiChat)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
+
+    func test_omnibarHost_aiTabExpanded_aiChat_disablingToggleAfterShow_keepsToolbar() {
+        // Live disable path — coordinator must compute showsToolbar=true here so the live update
+        // doesn't strip the AI toolbar (the view's local rule alone can't see isAITabState).
+        sut.showExpanded(inputMode: .aiChat)
+        sut.updateToggleEnabled(false)
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)

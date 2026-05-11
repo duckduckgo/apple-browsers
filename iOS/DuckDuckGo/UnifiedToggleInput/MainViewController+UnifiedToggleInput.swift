@@ -83,6 +83,7 @@ extension MainViewController {
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
         installFloatingSubmitViewController()
+        installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)

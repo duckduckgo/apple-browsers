@@ -2406,6 +2406,7 @@
 		F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */; };
 		F2B8A10236AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10536AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift */; };
 		F2B8A10336AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */; };
+		770F04AEA51E0EF84C52CD53 /* MainViewController+UnifiedToggleInputSwipeTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18A7DE942EC889067320A83 /* MainViewController+UnifiedToggleInputSwipeTabs.swift */; };
 		F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */; };
 		F2B8A10836AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10A36AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift */; };
 		F40F843728C939760081AE75 /* AutofillLoginListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */; };
@@ -5078,6 +5079,7 @@
 		F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentPresenter.swift; sourceTree = "<group>"; };
 		F2B8A10536AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputModelMenuFactory.swift; sourceTree = "<group>"; };
 		F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInputIntentHandling.swift"; sourceTree = "<group>"; };
+		D18A7DE942EC889067320A83 /* MainViewController+UnifiedToggleInputSwipeTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInputSwipeTabs.swift"; sourceTree = "<group>"; };
 		F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachment.swift; sourceTree = "<group>"; };
 		F2B8A10A36AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFileEncoder.swift; sourceTree = "<group>"; };
 		F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListViewModelTests.swift; sourceTree = "<group>"; };
@@ -9229,6 +9231,7 @@
 				C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */,
 				C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */,
 				F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */,
+				D18A7DE942EC889067320A83 /* MainViewController+UnifiedToggleInputSwipeTabs.swift */,
 				F2B8A10A36AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift */,
 				C18390D02F50A001001939B9 /* UnifiedToggleInputImageEncoder.swift */,
 				C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */,
@@ -12532,6 +12535,7 @@
 				9F5E5AAC2C3D0FCD00165F54 /* ContextualDaxDialogsFactory.swift in Sources */,
 				C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */,
 				F2B8A10336AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift in Sources */,
+				770F04AEA51E0EF84C52CD53 /* MainViewController+UnifiedToggleInputSwipeTabs.swift in Sources */,
 				C10CB5F32A1A5BDF0048E503 /* AutofillViews.swift in Sources */,
 				6FE127382C20492500EB5724 /* NewTabPage.swift in Sources */,
 				982E5630222C3D5B008D861B /* FeedbackPickerViewController.swift in Sources */,

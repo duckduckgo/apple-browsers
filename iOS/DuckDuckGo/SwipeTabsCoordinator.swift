@@ -106,7 +106,12 @@ class SwipeTabsCoordinator: NSObject {
     }
     
     var state: State = .idle
-    
+
+    /// Tracks the contentOffset when an external pan (driven by a gesture on a view that overlays
+    /// the collection view, e.g. the Unified Toggle Input bar) begins, so `.changed` translations
+    /// resolve to an absolute offset.
+    private var externalPanStartOffset: CGPoint = .zero
+
     weak var preview: UIView?
     weak var currentView: UIView?
 
@@ -332,7 +337,72 @@ extension SwipeTabsCoordinator {
             collectionView.hitTestInsets.bottom = -12
         }
     }
-    
+
+    /// Drives the swipe-tabs state machine from a pan gesture attached to a view that overlays
+    /// the navigation-bar collection view (e.g. the Unified Toggle Input bar or the AI tab
+    /// header), where touches don't reach the collection view's own pan recognizer. Scrubs
+    /// `contentOffset` so the existing `scrollViewDidScroll` path animates the preview and
+    /// current view; snaps to the closest page on release and routes through
+    /// `scrollViewDidEndDecelerating` to select the destination tab.
+    func handleExternalPan(_ gesture: UIPanGestureRecognizer) {
+        guard isEnabled, let panView = gesture.view else { return }
+
+        switch gesture.state {
+        case .began:
+            // A prior external pan's settling animation can still be in flight, or another
+            // attached recognizer (UTI bar / AI header) may have left non-idle state behind.
+            // Reset before starting so `scrollViewWillBeginDragging` (which only transitions
+            // from `.idle`) actually arms the state machine for this gesture.
+            collectionView.layer.removeAllAnimations()
+            cleanUpViews()
+            state = .idle
+            externalPanStartOffset = collectionView.contentOffset
+            scrollViewWillBeginDragging(collectionView)
+
+        case .changed:
+            let translation = gesture.translation(in: panView).x
+            let pageWidth = collectionView.frame.width
+            let proposedX = externalPanStartOffset.x - translation
+            let maxX = max(collectionView.contentSize.width - pageWidth, 0)
+            collectionView.contentOffset = CGPoint(x: max(0, min(proposedX, maxX)), y: 0)
+
+        case .ended, .cancelled, .failed:
+            let pageWidth = collectionView.frame.width
+            guard pageWidth > 0 else {
+                scrollViewDidEndDecelerating(collectionView)
+                return
+            }
+
+            let translation = gesture.translation(in: panView).x
+            let velocity = gesture.velocity(in: panView).x
+            let totalPages = collectionView.numberOfItems(inSection: 0)
+            let currentPage = Int((externalPanStartOffset.x / pageWidth).rounded())
+
+            // Velocity wins over distance: a flick past the threshold commits to next/prev even
+            // if the user barely moved. Otherwise fall back to a half-page distance rule, so a
+            // slow drag still snaps back unless it crossed the midpoint.
+            let velocityThreshold: CGFloat = 300
+            let distanceThreshold = pageWidth / 2
+            var targetPage = currentPage
+            if abs(velocity) > velocityThreshold {
+                targetPage += velocity < 0 ? 1 : -1
+            } else if abs(translation) > distanceThreshold {
+                targetPage += translation < 0 ? 1 : -1
+            }
+            targetPage = max(0, min(targetPage, max(totalPages - 1, 0)))
+
+            let targetOffset = CGPoint(x: CGFloat(targetPage) * pageWidth, y: 0)
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
+                self.collectionView.contentOffset = targetOffset
+            }, completion: { _ in
+                self.scrollViewDidEndDecelerating(self.collectionView)
+            })
+
+        default:
+            break
+        }
+    }
+
 }
 
 // MARK: UICollectionViewDataSource

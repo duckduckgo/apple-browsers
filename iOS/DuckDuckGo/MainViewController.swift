@@ -5127,6 +5127,14 @@ extension MainViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if let pan = gestureRecognizer as? UIPanGestureRecognizer,
+           pan.view === viewCoordinator.unifiedToggleInputContainer || pan.view === aiChatTabChatHeaderView {
+            return shouldBeginUnifiedInputSwipeTabsPan(pan)
+        }
+        return true
+    }
 }
 
 extension MainViewController: GestureToolbarButtonDelegate {

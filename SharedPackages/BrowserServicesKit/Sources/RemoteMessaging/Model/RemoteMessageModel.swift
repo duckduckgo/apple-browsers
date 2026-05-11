@@ -282,6 +282,7 @@ public extension RemoteMessageModelType.ListItem {
 public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
+    case settingsGeneral = "settings.general"
     case feedback
     case sync
     case importPasswords = "import.passwords"

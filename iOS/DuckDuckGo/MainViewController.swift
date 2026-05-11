@@ -5817,6 +5817,15 @@ extension MainViewController: MessageNavigationDelegate {
         }
     }
 
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToGeneralSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
     func segueToFeedback(presentationStyle: PresentationContext.Style) {
         switch presentationStyle {
         case .dismissModalsAndPresentFromRoot:

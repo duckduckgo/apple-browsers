@@ -312,6 +312,10 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
         segueToSettingsCallCount += 1
     }
 
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        segueToSettingsCallCount += 1
+    }
+
     func segueToFeedback(presentationStyle: PresentationContext.Style) {
         segueToFeedbackCallCount += 1
     }

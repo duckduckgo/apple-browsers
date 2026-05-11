@@ -1,5 +1,5 @@
 //
-//  DuckAIOnboardingResumeStepStore.swift
+//  OnboardingResumeStepStore.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.

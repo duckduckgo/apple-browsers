@@ -113,7 +113,14 @@ public final class DataBrokerProtectionEngagementPixels {
             return
         }
 
-        let mostRecentScan = (try? database.fetchMostRecentFinishedScanEventDate()) ?? nil
+        let mostRecentScan: Date?
+        do {
+            mostRecentScan = try database.fetchMostRecentFinishedScanEventDate()
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to fetch most recent finished scan event date for engagement pixels: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
         let isFreeScan = !isAuthenticated
 
         if shouldWeFireDailyPixel(date: currentDate, mostRecentScan: mostRecentScan) {

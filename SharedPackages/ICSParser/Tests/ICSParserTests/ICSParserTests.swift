@@ -310,7 +310,7 @@ struct ICSParserTests {
     // MARK: - Helpers
 
     private func fixture(_ name: String) -> Data {
-        let url = Bundle.module.url(forResource: name, withExtension: "ics", subdirectory: "Resources")!
+        let url = Bundle.module.url(forResource: name, withExtension: "ics", subdirectory: "Fixtures")!
         return (try? Data(contentsOf: url))!
     }
 

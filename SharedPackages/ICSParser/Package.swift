@@ -35,7 +35,7 @@ let package = Package(
             name: "ICSParserTests",
             dependencies: ["ICSParser"],
             resources: [
-                .copy("Resources")
+                .copy("Fixtures")
             ]
         ),
     ]

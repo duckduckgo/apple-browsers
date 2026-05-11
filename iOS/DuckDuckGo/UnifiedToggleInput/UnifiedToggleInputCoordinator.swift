@@ -423,6 +423,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         defer { isApplyingState = false }
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
+        aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -458,7 +459,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachments: currentImageAttachmentsForTabState,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
-            selectedTool: toolsController.selectedTool
+            selectedTool: toolsController.selectedTool,
+            aiChatInputBoxVisibility: aiChatInputBoxVisibility
         )
     }
 

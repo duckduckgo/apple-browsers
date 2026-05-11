@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 /// Single overlay used to render a tab-swipe transition. Hosts full-screen `UIImage`
 /// snapshots of each tab side-by-side in a horizontal scroll view; chrome and content move as
@@ -49,7 +50,13 @@ final class TabSwipeOverlayView: UIView {
         // Pass-through user interaction so the underlying gesture recognizers (UTI pan, legacy
         // collection view pan) still receive touches when the overlay is on top.
         isUserInteractionEnabled = false
-        backgroundColor = .clear
+        // Opaque background so areas not covered by a page imageView — e.g. when the external
+        // driver pans the contentOffset beyond contentSize at the trailing/leading edge —
+        // don't reveal the live `MainViewController.view` underneath. Matches the design-
+        // system panel tone used by the navigation bar / toolbar, which is what the legacy
+        // non-UTI swipe shows when the user pans past the last tab.
+        let chromeColor = UIColor(designSystemColor: .panel)
+        backgroundColor = chromeColor
 
         scrollView.isPagingEnabled = false       // native paging would fight our offset writes
         scrollView.isScrollEnabled = false       // we drive contentOffset from the gesture
@@ -59,6 +66,7 @@ final class TabSwipeOverlayView: UIView {
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.clipsToBounds = true
+        scrollView.backgroundColor = chromeColor
         addSubview(scrollView)
 
         NSLayoutConstraint.activate([
@@ -83,11 +91,15 @@ final class TabSwipeOverlayView: UIView {
         let width = bounds.width
         let height = bounds.height
 
+        let chromeColor = UIColor(designSystemColor: .panel)
         for (idx, snapshot) in snapshots.enumerated() {
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
-            imageView.backgroundColor = .systemBackground
+            // Pages without a snapshot (trailing "new tab" slot, uncached tabs) show the
+            // chrome tone so they blend with the surrounding backdrop rather than flashing a
+            // contrasting system colour.
+            imageView.backgroundColor = chromeColor
             imageView.image = snapshot
             imageView.frame = CGRect(x: CGFloat(idx) * width, y: 0, width: width, height: height)
             scrollView.addSubview(imageView)

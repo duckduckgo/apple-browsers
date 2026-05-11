@@ -188,6 +188,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var shouldFireSignupAbandonedOnSheetDismissal = false
     private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
@@ -344,7 +345,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case .setup(let entryPoint):
             switch entryPoint {
             case .backup:
-                isSyncWithSetUpSheetVisible = true
+                showSyncWithSetUpSheet()
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
@@ -373,7 +374,24 @@ public class SyncSettingsViewModel: ObservableObject {
         self.recoveryCode = recoveryCode
     }
 
+    public func showSyncWithSetUpSheet() {
+        shouldFireSignupAbandonedOnSheetDismissal = true
+        isSyncWithSetUpSheetVisible = true
+    }
+
+    public func dismissSyncWithSetUpSheet() {
+        isSyncWithSetUpSheetVisible = false
+    }
+
+    public func syncWithSetUpSheetDidDismiss() {
+        guard shouldFireSignupAbandonedOnSheetDismissal else { return }
+
+        shouldFireSignupAbandonedOnSheetDismissal = false
+        delegate?.fireSyncSetupPixel(event: .signupAbandoned)
+    }
+
     public func startSyncPressed() {
+        shouldFireSignupAbandonedOnSheetDismissal = false
         isBusy = true
         delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }

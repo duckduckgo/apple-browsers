@@ -82,12 +82,9 @@ extension SyncSettingsView {
                 Text(UserText.syncAndBackUpThisDeviceLink)
                     .foregroundColor(Color(designSystemColor: .accent))
             }
-            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, onDismiss: {
-                guard !model.isBusy else { return }
-                model.delegate?.fireSyncSetupPixel(event: .signupAbandoned)
-            }, content: {
+            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, onDismiss: model.syncWithSetUpSheetDidDismiss, content: {
                 SyncWithServerView(model: model, onCancel: {
-                    model.isSyncWithSetUpSheetVisible = false
+                    model.dismissSyncWithSetUpSheet()
                 })
             })
             .disabled(!model.isAccountCreationAvailable)

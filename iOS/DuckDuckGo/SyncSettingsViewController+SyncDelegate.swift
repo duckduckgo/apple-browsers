@@ -565,7 +565,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
         switch entryPoint {
         case .backup:
-            viewModel.isSyncWithSetUpSheetVisible = true
+            viewModel.showSyncWithSetUpSheet()
         case .pairing:
             showSyncWithAnotherDevice()
         case .simplifiedToggle:
@@ -646,7 +646,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
                 onPresentPixelInfo = nil
-                source = .exchange
+                source = showQRCode ? .exchange : .recovery
             } else {
                 do {
                     let pairingInfo = try await connectionController.startConnectMode()

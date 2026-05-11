@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-authv2-token-refresh" }, "version": { "const": "1.0.0" } }
+            "properties": { "type": { "const": "ios-authv2-token-refresh" }, "version": { "const": "1.1.0" } }
         },
         "app": {
             "type": "object",
@@ -88,26 +88,70 @@
                                     ]
                                 },
                                 "refresh_token_latency_ms_bucketed": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "description": "The latency value of the token refresh call.",
-                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                                 },
                                 "fetch_jwks_latency_ms_bucketed": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "description": "The latency value of the JWKS call.",
-                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "error_description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
                                 }
-                            }
-                        },
-                        "error": {
-                            "type": "object",
-                            "required": ["domain", "code"],
-                            "additionalProperties": false,
-                            "properties": {
-                                "domain": { "type": "string", "description": "The top level error domain" },
-                                "code": { "type": "string", "description": "The top level error code" },
-                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
-                                "underlying_code": { "type": "string", "description": "The underlying error code" }
                             }
                         }
                     }

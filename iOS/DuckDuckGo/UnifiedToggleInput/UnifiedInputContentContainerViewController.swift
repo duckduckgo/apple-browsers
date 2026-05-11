@@ -669,7 +669,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             hasFavorites: suggestionTrayManager?.hasFavorites ?? false,
             hasRemoteMessages: suggestionTrayManager?.hasRemoteMessages ?? false
         )
-        let isHomeDaxVisible = daxLogoManager.shouldShowHomeDax(homeDaxInputs)
+        let isSearchMode = switchBarHandler.currentToggleState == .search
+        let isHomeDaxVisible = isSearchMode && daxLogoManager.shouldShowHomeDax(homeDaxInputs)
         let isAIDaxVisible = !hasContent && !isShowingDuckAISuggestions && !isDuckAISuggestionsPending
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)

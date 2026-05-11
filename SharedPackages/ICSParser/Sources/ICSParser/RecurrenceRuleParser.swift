@@ -200,6 +200,25 @@ enum RecurrenceRuleParser {
         if byMonthDay.count > 1 { return nil }
         if byMonth.count > 1 { return nil }
 
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
+
+        // For weekly + single BYDAY, simple +N weeks arithmetic only lands on the right weekday
+        // when DTSTART's weekday already matches. Otherwise the computed UNTIL falls short and
+        // EventKit expands fewer occurrences than COUNT.
+        if frequency == .weekly, let onlyDay = byDay.first {
+            let startWeekday = calendar.component(.weekday, from: startDate)
+            if startWeekday != onlyDay.dayOfTheWeek.rawValue { return nil }
+        }
+
+        // Calendar.date(byAdding:) clamps day-of-month, so DTSTART on day 29/30/31 + N months
+        // lands too early when an interim month has fewer days. RFC 5545 expansion skips those
+        // months instead, so leave COUNT semantics to EventKit.
+        let startDay = calendar.component(.day, from: startDate)
+        if frequency == .monthly, startDay > 28 { return nil }
+        let startMonth = calendar.component(.month, from: startDate)
+        if frequency == .yearly, startMonth == 2, startDay == 29 { return nil }
+
         let component: Calendar.Component
         switch frequency {
         case .daily: component = .day
@@ -209,8 +228,6 @@ enum RecurrenceRuleParser {
         @unknown default: return nil
         }
 
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
         let stepsToLast = (count - 1) * interval
         guard let lastOccurrence = calendar.date(byAdding: component, value: stepsToLast, to: startDate) else {
             return nil

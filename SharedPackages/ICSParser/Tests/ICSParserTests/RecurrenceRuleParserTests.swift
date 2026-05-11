@@ -86,6 +86,46 @@ struct RecurrenceRuleParserTests {
         #expect(rule.recurrenceEnd?.endDate == nil)
     }
 
+    /// When DTSTART's weekday differs from the single BYDAY, +N weeks arithmetic lands on the
+    /// wrong weekday, so EventKit would expand too few occurrences. Must fall back to COUNT.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT when weekly BYDAY does not match DTSTART weekday", .timeLimit(.minutes(1)))
+    func keepsCountWhenWeeklyByDayMisalignedWithStart() throws {
+        // 2026-06-03 is a Wednesday; BYDAY=MO is a different weekday.
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=WEEKLY;COUNT=4;BYDAY=MO",
+            startDate: utcDate("2026-06-03T14:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 4)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
+    /// Calendar.date(byAdding: .month) clamps to the last valid day. DTSTART on Jan 31 + 1
+    /// month yields Feb 28, so +N months arithmetic understates the real Nth occurrence.
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT for monthly RRULE when DTSTART is on day 29/30/31", .timeLimit(.minutes(1)))
+    func keepsCountForMonthlyHighDayOfMonth() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;COUNT=12",
+            startDate: utcDate("2026-01-31T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 12)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
+    /// Yearly + DTSTART on Feb 29 clamps to Feb 28 in non-leap years, so +N years arithmetic
+    /// undershoots the Nth real occurrence (only leap years).
+    @available(iOS 16, macOS 13, *)
+    @Test("Keeps COUNT for yearly RRULE when DTSTART is on Feb 29", .timeLimit(.minutes(1)))
+    func keepsCountForYearlyLeapDayStart() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=YEARLY;COUNT=10",
+            startDate: utcDate("2024-02-29T12:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.occurrenceCount == 10)
+        #expect(rule.recurrenceEnd?.endDate == nil)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Throws malformedRecurrenceRule when FREQ is missing", .timeLimit(.minutes(1)))
     func throwsWithoutFrequency() {

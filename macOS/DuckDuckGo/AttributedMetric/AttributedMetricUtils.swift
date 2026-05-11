@@ -18,6 +18,7 @@
 
 import Foundation
 import AttributedMetric
+import BrowserServicesKit
 import PrivacyConfig
 import Subscription
 import AppKit
@@ -72,6 +73,19 @@ struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProvi
 
     var isReturningUser: Bool {
         reinstallUserDetection.isReinstallingUser
+    }
+}
+
+struct AttributedMetricATBInstallDateProvider: AttributedMetricInstallDateProviding {
+
+    private let statisticsStore: StatisticsStore
+
+    init(statisticsStore: StatisticsStore = LocalStatisticsStore()) {
+        self.statisticsStore = statisticsStore
+    }
+
+    var installDate: Date? {
+        statisticsStore.installDate
     }
 }
 

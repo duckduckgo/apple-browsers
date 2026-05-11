@@ -543,13 +543,13 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
     },
-    "m_ios_dbp_first_scan": {
+    "m_ios_dbp_first_scan_u": {
         "description": "Fired once when a user starts their first scan",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
     },
-    "m_ios_dbp_freemium_upsell": {
+    "m_ios_dbp_freemium_upsell_u": {
         "description": "Fired once when a freemium PIR user activates a paid subscription",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["other"],

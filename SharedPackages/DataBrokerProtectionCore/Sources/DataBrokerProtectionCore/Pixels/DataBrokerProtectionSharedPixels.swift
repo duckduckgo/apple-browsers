@@ -279,10 +279,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .dashboardOpen: return "dbp_dashboard_open"
 
             // KPIs - first scan
-        case .firstScan: return "dbp_first_scan"
+        case .firstScan: return "dbp_first_scan_u"
 
             // KPIs - freemium upsell
-        case .freemiumUpsell: return "dbp_freemium_upsell"
+        case .freemiumUpsell: return "dbp_freemium_upsell_u"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"

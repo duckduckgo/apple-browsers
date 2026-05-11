@@ -47,6 +47,7 @@ final class DBPHomeViewController: NSViewController {
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
+    private var lastStatus: DataBrokerPrerequisitesStatus?
 
     private let prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -154,6 +155,9 @@ final class DBPHomeViewController: NSViewController {
     }
 
     private func setupUIWithStatus(_ status: DataBrokerPrerequisitesStatus) {
+        let isTransitionToValid = status == .valid && lastStatus != .valid
+        lastStatus = status
+
         switch status {
         case .invalidDirectory:
             displayWrongDirectoryErrorUI()
@@ -163,6 +167,7 @@ final class DBPHomeViewController: NSViewController {
             pixelHandler.fire(.homeViewShowNoPermissionError)
         case .valid:
             displayDBPUI()
+            guard isTransitionToValid else { return }
             pixelHandler.fire(.homeViewShowWebUI)
             Task { [weak self] in
                 guard let self else { return }

@@ -71,6 +71,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
+    func hasScanHistoryEvents() throws -> Bool
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
@@ -388,6 +389,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             }
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.add historyEvent")
+            throw error
+        }
+    }
+
+    public func hasScanHistoryEvents() throws -> Bool {
+        do {
+            return try vault.hasScanHistoryEvents()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.hasScanHistoryEvents")
             throw error
         }
     }

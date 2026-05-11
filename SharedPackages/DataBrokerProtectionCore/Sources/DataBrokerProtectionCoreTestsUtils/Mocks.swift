@@ -1061,9 +1061,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var wasUpdateFortyTwoDaysConfirmationPixelFired = false
     public var wasUpdateRemoveDateCalled = false
     public var wasAddHistoryEventCalled = false
+    public var wasHasScanHistoryEventsCalled = false
     public var wasFetchLastHistoryEventCalled = false
 
     public var fetchAllBrokerProfileQueryDataError: Error?
+    public var hasScanHistoryEventsResult: Result<Bool, Error>?
     public var lastHistoryEventToReturn: HistoryEvent?
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
@@ -1121,6 +1123,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateLastRunDateForOptOutCalled,
         wasUpdateRemoveDateCalled,
         wasAddHistoryEventCalled,
+        wasHasScanHistoryEventsCalled,
         wasFetchLastHistoryEventCalled]
 
     public var wasDatabaseCalled: Bool {
@@ -1321,6 +1324,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
+    public func hasScanHistoryEvents() throws -> Bool {
+        wasHasScanHistoryEventsCalled = true
+
+        if let hasScanHistoryEventsResult {
+            switch hasScanHistoryEventsResult {
+            case .success(let hasScanHistoryEvents):
+                return hasScanHistoryEvents
+            case .failure(let error):
+                throw error
+            }
+        }
+
+        return !scanEvents.isEmpty
+    }
+
     public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent? {
         wasFetchLastHistoryEventCalled = true
         if let event = brokerProfileQueryDataToReturn.first?.events.last {
@@ -1411,8 +1429,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateLastRunDateForOptOutCalled = false
         wasUpdateRemoveDateCalled = false
         wasAddHistoryEventCalled = false
+        wasHasScanHistoryEventsCalled = false
         wasFetchLastHistoryEventCalled = false
         fetchAllBrokerProfileQueryDataError = nil
+        hasScanHistoryEventsResult = nil
         lastHistoryEventToReturn = nil
         lastShouldFilterRemovedBrokers = nil
         lastPreferredRunDateOnScan = nil

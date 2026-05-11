@@ -823,8 +823,9 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
         try db.read { db in
             let events = try ScanHistoryEventDB
                 .order(ScanHistoryEventDB.Columns.timestamp.desc)
-                .fetchAll(db)
-            for event in events {
+                .fetchCursor(db)
+
+            while let event = try events.next() {
                 let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
                 switch eventType {
                 case .matchesFound, .noMatchFound, .reAppearence, .error:

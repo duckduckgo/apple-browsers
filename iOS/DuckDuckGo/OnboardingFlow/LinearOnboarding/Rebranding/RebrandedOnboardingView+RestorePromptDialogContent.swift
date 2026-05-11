@@ -33,6 +33,7 @@ extension OnboardingRebranding.OnboardingView {
         private let skipOnboardingView: AnyView?
         private let restoreAction: () -> Void
         private let skipAction: () -> Void
+        private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
         @State private var shouldStartTyping = false
@@ -43,19 +44,28 @@ extension OnboardingRebranding.OnboardingView {
             skipOnboardingView: AnyView?,
             isVisible: Binding<Bool>,
             restoreAction: @escaping () -> Void,
-            skipAction: @escaping () -> Void
+            skipAction: @escaping () -> Void,
+            onSkipOnboardingPresented: @escaping () -> Void
         ) {
             self.skipOnboardingView = skipOnboardingView
             self._isVisible = isVisible
             self.restoreAction = restoreAction
             self.skipAction = skipAction
+            self.onSkipOnboardingPresented = onSkipOnboardingPresented
         }
 
         var body: some View {
-            if showSkipOnboarding {
-                skipOnboardingView
-            } else {
-                restorePromptContent
+            Group {
+                if showSkipOnboarding {
+                    skipOnboardingView
+                } else {
+                    restorePromptContent
+                }
+            }
+            .onChange(of: showSkipOnboarding) { newValue in
+                if newValue {
+                    onSkipOnboardingPresented()
+                }
             }
         }
 

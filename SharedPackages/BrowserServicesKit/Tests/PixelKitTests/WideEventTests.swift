@@ -424,9 +424,13 @@ final class WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.test_eligible"], "true")
 
         // Error parameters
-        XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
-        XCTAssertEqual(parameters["feature.data.error.code"], "12345")
-        XCTAssertEqual(parameters["feature.data.error.description"], "Test Error")
+        XCTAssertEqual(parameters["feature.data.ext.error.domain"], "TestErrorDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.code"], "12345")
+        XCTAssertEqual(parameters["feature.data.ext.error.error_description"], "Test Error")
+        XCTAssertNil(parameters["feature.data.ext.error.description"])
+        XCTAssertNil(parameters["feature.data.error.domain"])
+        XCTAssertNil(parameters["feature.data.error.code"])
+        XCTAssertNil(parameters["feature.data.ext.error_description"])
 
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")
@@ -465,12 +469,16 @@ final class WideEventTests: XCTestCase {
         XCTAssertEqual(errorData.underlyingErrors.last?.code, 3)
 
         let parameters = errorData.pixelParameters()
-        XCTAssertEqual(parameters[WideEventParameter.Feature.errorDomain], "RootDomain")
-        XCTAssertEqual(parameters[WideEventParameter.Feature.errorCode], "1")
-        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorDomain], "NestedDomain")
-        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorCode], "2")
-        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorDomain + "2"], "DeepDomain")
-        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorCode + "2"], "3")
+        XCTAssertEqual(parameters["feature.data.ext.error.domain"], "RootDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.code"], "1")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_domain"], "NestedDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_code"], "2")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_domain2"], "DeepDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_code2"], "3")
+        XCTAssertNil(parameters["feature.data.error.domain"])
+        XCTAssertNil(parameters["feature.data.error.code"])
+        XCTAssertNil(parameters["feature.data.error.underlying_domain"])
+        XCTAssertNil(parameters["feature.data.error.underlying_code"])
     }
 
     func testActiveFlowManagement() throws {

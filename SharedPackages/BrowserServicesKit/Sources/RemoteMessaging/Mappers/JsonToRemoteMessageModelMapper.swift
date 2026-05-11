@@ -54,6 +54,9 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case isFreemiumPIREligible
+    case freemiumPIRDidActivate
+    case freemiumPIRFirstScanResult
     case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
@@ -97,6 +100,9 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isFreemiumPIREligible: return FreemiumPIREligibleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRDidActivate: return FreemiumPIRDidActivateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRFirstScanResult: return FreemiumPIRFirstScanResultMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)

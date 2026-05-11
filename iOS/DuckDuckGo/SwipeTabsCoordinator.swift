@@ -339,14 +339,17 @@ extension SwipeTabsCoordinator {
 extension SwipeTabsCoordinator: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        guard isEnabled else { return 1 }
+        guard isEnabled, let tabsModel else { return 1 }
         let extras = tabsModel.tabs.last?.link != nil ? 1 : 0 // last tab is not a home page, so let's add one
         let count = tabsModel.count + extras
         return count
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled
+        // `tabsModel` is a weak IUO; an early layout pass during startup (or after a model
+        // teardown) can ask for cells before `refresh(tabsModel:)` has wired it up. Fall
+        // back to the current-omnibar cell rather than crashing.
+        let isCurrentTab = !isEnabled || tabsModel?.currentIndex == indexPath.row || tabsModel == nil
         let reuseIdentifier = isCurrentTab ? Constant.omniBarReuseIdentifier : Constant.templateReuseIdentifier
 
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {
@@ -357,7 +360,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let tab = tabsModel.get(tabAt: indexPath.row)
+            let tab = tabsModel?.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)

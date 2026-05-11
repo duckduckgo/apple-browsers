@@ -82,6 +82,7 @@ extension OnboardingRebranding.OnboardingView {
         private let skipOnboardingView: AnyView?
         private let continueAction: () -> Void
         private let skipAction: () -> Void
+        private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
         /// Controls when the TypingText animation begins (delayed until the bubble fade-in finishes).
@@ -97,7 +98,8 @@ extension OnboardingRebranding.OnboardingView {
             skipOnboardingView: AnyView?,
             isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void,
-            skipAction: @escaping () -> Void
+            skipAction: @escaping () -> Void,
+            onSkipOnboardingPresented: @escaping () -> Void
         ) {
             self.title = title
             self.message = message
@@ -105,13 +107,21 @@ extension OnboardingRebranding.OnboardingView {
             self._isVisible = isVisible
             self.continueAction = continueAction
             self.skipAction = skipAction
+            self.onSkipOnboardingPresented = onSkipOnboardingPresented
         }
 
         var body: some View {
-            if showSkipOnboarding {
-                skipOnboardingView
-            } else {
-                content
+            Group {
+                if showSkipOnboarding {
+                    skipOnboardingView
+                } else {
+                    content
+                }
+            }
+            .onChange(of: showSkipOnboarding) { newValue in
+                if newValue {
+                    onSkipOnboardingPresented()
+                }
             }
         }
 

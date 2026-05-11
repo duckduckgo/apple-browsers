@@ -587,15 +587,3 @@ class OnboardingManagerTests: XCTestCase {
     }
 
 }
-
-private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
-    var eventsReceived: [OnboardingSharedPixelEvent] = []
-
-    func fire(_ event: OnboardingSharedPixelEvent) {
-        eventsReceived.append(event)
-    }
-
-    func reset() {
-        eventsReceived = []
-    }
-}

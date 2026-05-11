@@ -103,20 +103,18 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
 
 private extension RebrandedContextualDaxDialogFactory {
 
-    func afterSearchDialog(shouldFollowUpToWebsiteSearch: Bool,
-                           delegate: ContextualOnboardingDelegate,
-                           afterSearchPixelEvent: Pixel.Event,
-                           onSizeUpdate: @escaping () -> Void) -> some View {
+    func afterSearchDialog(
+        shouldFollowUpToWebsiteSearch: Bool,
+        delegate: ContextualOnboardingDelegate,
+        afterSearchPixelEvent: Pixel.Event,
+        onSizeUpdate: @escaping () -> Void
+    ) -> some View {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
             delegate: delegate,
-            // Mirror the standalone `tryVisitingSiteDialog` behaviour: when the user taps a
-            // suggestion in the post-search "try a site" follow-up, dismiss the dialog right
-            // away rather than waiting for the destination page to finish loading. Uses the
-            // `didNavigateAway…` hook so onboarding state isn't reset and the next contextual
-            // spec can still surface once the page is ready.
-            onSuggestionPressed: { [weak delegate] in
+            onSuggestionPressed: { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
                 delegate?.didNavigateAwayFromContextualOnboardingDialog()
             }
         )
@@ -124,13 +122,16 @@ private extension RebrandedContextualDaxDialogFactory {
         // If should not show websites search after searching inform the delegate that the user dismissed the dialog, otherwise let the dialog handle it.
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
             { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
             }
         } else {
-            { [weak delegate] in
+            { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
                 delegate?.didTapDismissContextualOnboardingAction()
             }
         }
@@ -155,6 +156,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .applyAnimatedContextualOnboardingBackground(backgroundType: .tryASearchCompleted)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.searchResults(.shown))
         }
     }
 
@@ -169,12 +171,8 @@ private extension RebrandedContextualDaxDialogFactory {
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
             delegate: delegate,
-            // Collapse the visit-site dialog as soon as the user taps a suggestion. We use the
-            // `didNavigateAway…` hook (not `didTapDismissContextualOnboardingAction`) on
-            // purpose: it dismisses the bubble without calling `setDaxDialogDismiss()`, so the
-            // natural next contextual spec (`withTrackers` / `noTrackers` / etc.) still surfaces
-            // once the chosen page finishes loading.
-            onSuggestionPressed: { [weak delegate] in
+            onSuggestionPressed: { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
                 delegate?.didNavigateAwayFromContextualOnboardingDialog()
             }
         )
@@ -192,6 +190,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -227,13 +226,15 @@ private extension RebrandedContextualDaxDialogFactory {
             shouldFollowUp: shouldFollowUpToFireDialog,
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
-                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
+
                 if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                     delegate?.didTapDismissContextualOnboardingAction()
                 } else {
                     onSizeUpdate()
                     delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
                     self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
                 }
             },
             onManualDismiss: onManualDismiss
@@ -244,6 +245,7 @@ private extension RebrandedContextualDaxDialogFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.trackersBlocked(.shown))
         }
     }
 
@@ -275,6 +277,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
         }
     }
 
@@ -310,6 +313,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
 

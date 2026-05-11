@@ -443,7 +443,7 @@ final class AIChatOmnibarController {
         if efforts.contains(stored) { return stored }
         switch stored {
         case .medium where efforts.contains(.high): return .high
-        case .minimal where efforts.contains(.none): return .none
+        case .minimal where efforts.contains(AIChatReasoningEffort.none): return AIChatReasoningEffort.none
         default: return nil
         }
     }

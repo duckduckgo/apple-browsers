@@ -411,23 +411,10 @@ private extension OnboardingIntroViewModel {
     }
 
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
-        switch step {
-        case .duckAIQuerySelection:
+        if step == .duckAIQuerySelection {
             onboardingResumeStepStore.resumeExperimentPrompt = nil
-            onboardingResumeStepStore.resumeStep = .duckAIQuerySelection
-        case .browserComparison:
-            onboardingResumeStepStore.resumeStep = .browserComparison
-        case .addToDockPromo:
-            onboardingResumeStepStore.resumeStep = .addToDockPromo
-        case .appIconSelection:
-            onboardingResumeStepStore.resumeStep = .appIconSelection
-        case .addressBarPositionSelection:
-            onboardingResumeStepStore.resumeStep = .addressBarPositionSelection
-        case .searchExperienceSelection:
-            onboardingResumeStepStore.resumeStep = .searchExperienceSelection
-        case .introDialog:
-            break
         }
+        onboardingResumeStepStore.resumeStep = step.resumeStep
     }
 
     func measureScreenImpression() {

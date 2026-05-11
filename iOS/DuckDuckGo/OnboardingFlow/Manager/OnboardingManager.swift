@@ -135,6 +135,21 @@ enum OnboardingIntroStep: Equatable {
     case duckAIQuerySelection
 }
 
+extension OnboardingIntroStep {
+    /// The resume checkpoint that should be persisted when this step is reached, or `nil` if no checkpoint is needed.
+    var resumeStep: OnboardingResumeStep? {
+        switch self {
+        case .introDialog: return nil
+        case .browserComparison: return .browserComparison
+        case .addToDockPromo: return .addToDockPromo
+        case .appIconSelection: return .appIconSelection
+        case .addressBarPositionSelection: return .addressBarPositionSelection
+        case .searchExperienceSelection: return .searchExperienceSelection
+        case .duckAIQuerySelection: return .duckAIQuerySelection
+        }
+    }
+}
+
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
     case browserComparison

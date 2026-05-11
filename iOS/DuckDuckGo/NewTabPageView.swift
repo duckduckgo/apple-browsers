@@ -162,6 +162,7 @@ private extension NewTabPageView {
 
     private var shouldShowLogoInEmptyState: Bool {
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
+        if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true

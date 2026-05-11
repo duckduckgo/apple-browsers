@@ -201,6 +201,11 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
     public func stateFor(_ subfeature: any PrivacySubfeature,
                          versionProvider: AppVersionProvider,
                          randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
+        // Parent kill-switch: if the parent is disabled, the subfeature must be disabled too,
+        // even when the subfeature is absent from config (otherwise callers fall through to defaultValue).
+        let parentState = stateFor(featureKey: subfeature.parent, versionProvider: versionProvider)
+        guard case .enabled = parentState else { return parentState }
+
         guard let subfeatureData = subfeatures(for: subfeature.parent)[subfeature.rawValue] else {
             return .disabled(.featureMissing)
         }
@@ -347,6 +352,10 @@ extension AppPrivacyConfiguration {
     public func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider,
                          randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
         guard let parentFeature = PrivacyFeature(rawValue: parentFeatureID) else { return .disabled(.featureMissing) }
+        // Parent kill-switch: if the parent is disabled, the subfeature must be disabled too,
+        // even when the subfeature is absent from config (otherwise callers fall through to defaultValue).
+        let parentState = stateFor(featureKey: parentFeature, versionProvider: versionProvider)
+        guard case .enabled = parentState else { return parentState }
         guard let subfeatureData = subfeatures(for: parentFeature)[subfeatureID] else { return .disabled(.featureMissing) }
         return stateFor(subfeatureID: subfeatureID, subfeatureData: subfeatureData, parentFeature: parentFeature, versionProvider: versionProvider, randomizer: randomizer)
     }

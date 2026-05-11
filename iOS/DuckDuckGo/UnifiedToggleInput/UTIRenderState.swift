@@ -22,7 +22,7 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var isToolbarSubmitHidden: Bool
@@ -32,9 +32,11 @@ struct UTIRenderState: Equatable {
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
 
+    var isExpanded: Bool { cardLayout.isExpanded }
+
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
             isToolbarSubmitHidden: isToolbarSubmitHidden,
@@ -42,18 +44,6 @@ struct UTIRenderState: Equatable {
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins
         )
-    }
-
-    /// The inline dismiss (X inside the card's top row) takes over when the expanded card is
-    /// anchored at the top with the Search/Duck.ai toggle enabled. When the toggle setting is
-    /// disabled, the card has no top row to host the X, so the floating dismiss in the content
-    /// container is used instead.
-    var isInlineDismissActive: Bool {
-        cardPosition == .top && isExpanded && isToggleEnabled
-    }
-
-    var isFloatingDismissVisible: Bool {
-        isContentVisible && !isInlineDismissActive
     }
 
 }

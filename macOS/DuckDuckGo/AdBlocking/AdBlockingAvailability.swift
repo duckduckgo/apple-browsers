@@ -32,7 +32,11 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding {
         self.isEnabledByUserProvider = isEnabledByUserProvider
     }
 
-    var isFeatureAvailable: Bool { featureFlagger.isFeatureOn(.adBlockingExtension) }
+    var isFeatureAvailable: Bool {
+        guard #available(macOS 15.4, *) else { return false }
+        return featureFlagger.isFeatureOn(.webExtensions)
+            && featureFlagger.isFeatureOn(.adBlockingExtension)
+    }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
     func shouldShowAnimation(for url: URL) -> Bool {

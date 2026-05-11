@@ -61,12 +61,15 @@ public enum WideEventParameter {
     public enum Feature {
         public static let name = "feature.name"
         public static let status = "feature.status"
-        public static let statusReason = "feature.data.ext.status_reason"
 
-        public static let errorDomain = "feature.data.error.domain"
-        public static let errorCode = "feature.data.error.code"
-        public static let errorDescription = "feature.data.error.description"
-        public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
-        public static let underlyingErrorCode = "feature.data.error.underlying_code"
+        public static let errorDomain = "feature.data.ext.error.domain"
+        public static let errorCode = "feature.data.ext.error.code"
+        public static let underlyingErrorDomain = "feature.data.ext.error.underlying_domain"
+        public static let underlyingErrorCode = "feature.data.ext.error.underlying_code"
+
+        // Shared error fields live under `ext.error` so all optional wide-event error detail uses one namespace.
+        // Status reasons remain a feature-level extension field.
+        public static let errorDescription = "feature.data.ext.error.error_description"
+        public static let statusReason = "feature.data.ext.status_reason"
     }
 }

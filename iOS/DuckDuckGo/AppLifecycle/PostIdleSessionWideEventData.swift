@@ -32,7 +32,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         mobileMetaType: "ios-post-idle-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-post-idle-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     enum Surface: String, Codable, CaseIterable {

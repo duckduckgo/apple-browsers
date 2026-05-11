@@ -32,6 +32,13 @@ public enum TextEntryMode: String, CaseIterable {
     case aiChat
 }
 
+extension TextEntryMode {
+    /// Returns the mode the omnibar should actually display, falling back to `.search` when the AI search-input feature is unavailable.
+    func displayed(isAIChatSearchInputEnabled: Bool) -> TextEntryMode {
+        isAIChatSearchInputEnabled ? self : .search
+    }
+}
+
 // MARK: - SwitchBarHandling Protocol
 protocol SwitchBarHandling: AnyObject {
 
@@ -50,6 +57,9 @@ protocol SwitchBarHandling: AnyObject {
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
+
+    /// Suppresses the in-pill voice button — used when an external flank already provides one.
+    var hidesVoiceButton: Bool { get set }
 
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
@@ -141,6 +151,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     var isAIVoiceChatEnabled: Bool {
         voiceShortcutFeature.isAvailable
     }
+
+    var hidesVoiceButton: Bool = false
 
     var modeParameters: [String: String] {
         ["mode": currentToggleState.rawValue]

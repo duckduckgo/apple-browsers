@@ -207,8 +207,25 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v6
       with:
-        submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
+
+    - name: Initialize submodules with retry
+      run: |
+        max_attempts=3
+        retry_delay=15
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Submodule init attempt $attempt of $max_attempts"
+          if git submodule update --init --recursive; then
+            echo "Submodules initialized successfully"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All submodule init attempts failed"
+        exit 1
 
     - name: Install screenresolution
       if: matrix.os-version != '14'
@@ -353,6 +370,7 @@ jobs:
           -skipPackagePluginValidation \
           -skipMacroValidation \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           ${{ env.extra-xcargs }} \
         | tee xcodebuild.log \
         | xcbeautify

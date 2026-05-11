@@ -100,6 +100,9 @@ final class UnifiedToggleInputToggleView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        // Clip subviews to bounds so labels don't protrude past the pill while the height
+        // constraint animates 0→40 during the reveal animation.
+        clipsToBounds = true
         setupUI()
     }
 
@@ -174,6 +177,9 @@ final class UnifiedToggleInputToggleView: UIView {
         var config = UIButton.Configuration.plain()
         config.imagePadding = Constants.iconTextSpacing
         config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        // Without this, the segment label wraps onto a second line when the toggle is squeezed
+        // by the inline back button + the AI-tab bottom margins. Truncate instead of wrap.
+        config.titleLineBreakMode = .byTruncatingTail
 
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         config.attributedTitle = AttributedString(title, attributes: .init([
@@ -185,6 +191,7 @@ final class UnifiedToggleInputToggleView: UIView {
         let button = UIButton(configuration: config)
         button.tag = tag
         button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.titleLabel?.numberOfLines = 1
         button.addTarget(self, action: #selector(segmentTapped(_:)), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button

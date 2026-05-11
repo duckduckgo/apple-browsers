@@ -22,14 +22,11 @@ extension PromoServiceFactory {
 
     static func sessionRestore(coordinator: SessionRestorePromptCoordinating) -> Promo {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
-        return Promo(
+        return ExternalPromo(
             id: "session-restore",
-            triggers: [], // External promo; visibility driven by coordinator
             initiated: .app,
             promoType: PromoType(.semiModal),
             context: .global,
-            coexistingPromoIDs: [], // Coexistence between external promos is handled externally
-            respectsGlobalCooldown: false,
             setsGlobalCooldown: false,
             delegate: delegate
         )

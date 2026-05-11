@@ -274,7 +274,7 @@ public final class DataBrokerProtectionIOSManager {
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
          isWebViewInspectable: Bool = false,
          freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
-         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DisabledFreemiumDBPUserStateManager(),
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          continuedProcessingCoordinator: (any DBPContinuedProcessingCoordinating)? = nil,
          shouldRegisterBackgroundTaskHandler: Bool = true
     ) {

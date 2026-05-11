@@ -66,7 +66,8 @@ public final class LocalSuggestionsReader: SuggestionsReading {
                     isPinned: item.chat.pinned,
                     chatId: item.chat.chatId,
                     timestamp: AIChatSuggestion.parseISO8601Date(item.chat.lastEdit),
-                    firstUserMessageContent: item.firstUserMessageContent
+                    firstUserMessageContent: item.firstUserMessageContent,
+                    model: item.chat.model
                 )
             }
 

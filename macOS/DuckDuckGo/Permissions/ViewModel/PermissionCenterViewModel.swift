@@ -86,10 +86,9 @@ struct PermissionCenterItem: Identifiable {
     /// Whether the user is prevented from editing this row. Duck.ai's microphone
     /// permission is auto-granted at launch by `DuckAiVoiceChatPermissionMigration`,
     /// so exposing the dropdown / remove button would let the user make a change
-    /// that gets reverted on next launch.
-    var isLocked: Bool {
-        permissionType == .microphone && domain == URL.duckAi.host
-    }
+    /// that gets reverted on next launch. Populated at build time by
+    /// `PermissionCenterViewModel` based on the `aiChatNativeVoicePermissionFlow` flag.
+    var isLocked: Bool = false
 
     /// Whether the permission is allowed (granted or user selected "Always Allow")
     var isAllowed: Bool {
@@ -531,7 +530,7 @@ final class PermissionCenterViewModel: ObservableObject {
             ? popupQueries.map { BlockedPopup(url: $0.url, query: $0) }
             : []
 
-        let item = PermissionCenterItem(
+        var item = PermissionCenterItem(
             id: permissionType,
             permissionType: permissionType,
             domain: domain,
@@ -541,13 +540,31 @@ final class PermissionCenterViewModel: ObservableObject {
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
+        item.isLocked = isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType)
 
         // Async check for permissions whose OS-level state may surface a system-disabled warning
-        if permissionType.surfacesSystemDisabledWarning {
+        if shouldSurfaceSystemDisabledWarning(for: permissionType) {
             checkSystemDisabledAsync(for: item)
         }
 
         return item
+    }
+
+    /// Wraps `PermissionType.surfacesSystemDisabledWarning` to layer in the
+    /// `aiChatNativeVoicePermissionFlow`-gated `.microphone` case (warning is only surfaced
+    /// for mic when the flag is on).
+    private func shouldSurfaceSystemDisabledWarning(for permissionType: PermissionType) -> Bool {
+        if permissionType.surfacesSystemDisabledWarning { return true }
+        if permissionType == .microphone,
+           featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) {
+            return true
+        }
+        return false
+    }
+
+    private func isDuckAiVoiceMicrophoneRow(domain: String, permissionType: PermissionType) -> Bool {
+        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return false }
+        return permissionType == .microphone && domain == URL.duckAi.host
     }
 
     private func buildExternalSchemesItem(from externalSchemePermissions: [PermissionType]) -> PermissionCenterItem? {
@@ -591,7 +608,7 @@ final class PermissionCenterViewModel: ObservableObject {
     /// a system-disabled warning. Uses weak self to handle case where popover is
     /// dismissed before check completes.
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
-        guard item.permissionType.surfacesSystemDisabledWarning else { return }
+        guard shouldSurfaceSystemDisabledWarning(for: item.permissionType) else { return }
 
         Task { @MainActor [weak self] in
             guard let self else { return }

@@ -373,6 +373,118 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.showReloadBanner, "Reload banner should be shown after changing autoplay decision")
     }
+
+    // MARK: - aiChatNativeVoicePermissionFlow flag
+
+    func testWhenFlagOn_andMicrophoneOnDuckAi_thenItemIsLocked() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "duck.ai",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertEqual(micItem?.isLocked, true)
+    }
+
+    func testWhenFlagOff_andMicrophoneOnDuckAi_thenItemIsNotLocked() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "duck.ai",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertEqual(micItem?.isLocked, false)
+    }
+
+    func testWhenFlagOn_andMicrophoneOnOtherDomain_thenItemIsNotLocked() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertEqual(micItem?.isLocked, false)
+    }
+
+    /// When the flag is off, microphone items should never have their system authorization
+    /// state populated — the system-disabled warning UI is exclusive to the gated flow.
+    func testWhenFlagOff_thenMicrophoneSystemAuthorizationStateStaysNil() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
+        mockSystemPermissionManager.authorizationStateToReturn = .denied
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "duck.ai",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        // Let the async check (if any) run; with flag off it shouldn't be scheduled at all.
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertNil(micItem?.systemAuthorizationState)
+    }
+
+    /// When the flag is on, microphone items should pick up the OS state asynchronously.
+    func testWhenFlagOn_thenMicrophoneSystemAuthorizationStateUpdatesFromOS() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        mockSystemPermissionManager.authorizationStateToReturn = .denied
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "duck.ai",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertEqual(micItem?.systemAuthorizationState, .denied)
+    }
 }
 
 // MARK: - Mock System Permission Manager

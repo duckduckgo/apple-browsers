@@ -157,11 +157,14 @@ extension PermissionType {
     /// type and surface a "System X disabled" warning when the user has denied access at the
     /// system level. Decoupled from `requiresSystemPermission` (which gates the two-step
     /// authorization flow) so we can light up the warning UI without changing the prompt flow.
+    ///
+    /// `.microphone` is *not* included here — that surfacing is gated behind the
+    /// `aiChatNativeVoicePermissionFlow` flag and is added by `PermissionCenterViewModel`.
     var surfacesSystemDisabledWarning: Bool {
         switch self {
-        case .geolocation, .notification, .microphone:
+        case .geolocation, .notification:
             return true
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return false
         }
     }

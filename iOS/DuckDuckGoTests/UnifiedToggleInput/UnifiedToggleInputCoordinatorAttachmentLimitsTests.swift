@@ -345,25 +345,52 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
-    func testWhenModelChangeMakesInvalidFileValidThenAttachmentIsPromoted() {
+    func testWhenModelChangeMakesInvalidFileValidThenAttachmentIsPromoted() throws {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "unsupported-file-model"
         let sut = makeCoordinator(preferences: prefs)
         sut.modelStore.models = [
             makeModel(id: "unsupported-file-model", supportsImageUpload: true, supportedFileTypes: []),
-            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])
+            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["text/plain"])
         ]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        let fileData = Data("hello".utf8)
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("attachment-\(UUID().uuidString).txt")
+        try fileData.write(to: fileURL)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
         sut.updateInputMode(.aiChat, animated: false)
-        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.addFileAttachment(
+            AIChatFileAttachment(
+                data: fileData,
+                fileName: "a.txt",
+                mimeType: "text/plain",
+                fileSizeBytes: fileData.count
+            ),
+            sourceURL: fileURL
+        )
         XCTAssertTrue(sut.viewController.currentAttachments.first?.isInvalid ?? false)
         XCTAssertNotNil(sut.viewController.attachmentValidationMessage)
 
         sut.updateSelectedModel("file-model")
 
+        waitUntil("invalid file is promoted after source recovery") {
+            sut.viewController.currentAttachments.first?.fileAttachment != nil
+        }
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
         XCTAssertFalse(sut.viewController.currentAttachments.first?.isInvalid ?? true)
-        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.pdf")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.txt")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.data, fileData)
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "use the file", mode: .aiChat)
+
+        XCTAssertEqual(delegate.submittedPrompt, "use the file")
+        XCTAssertEqual(delegate.submittedFiles?.count, 1)
+        XCTAssertEqual(delegate.submittedFiles?.first?.fileName, "a.txt")
+        XCTAssertEqual(delegate.submittedFiles?.first?.mimeType, "text/plain")
     }
 
     func testWhenModelChangeMakesMetadataOnlyInvalidFileValidThenAttachmentIsPromoted() throws {

@@ -1096,8 +1096,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     mimeType: fileAttachment.mimeType,
                     fileSizeBytes: fileAttachment.fileSizeBytes,
                     validationMessage: validationMessage,
-                    sourceURL: sourceURL,
-                    recoverableFileAttachment: fileAttachment
+                    sourceURL: sourceURL
                 )
             ))
             presentAttachmentValidationError(validationMessage)
@@ -1360,10 +1359,6 @@ private extension UnifiedToggleInputCoordinator {
             return replaceInvalidAttachment(attachment, validationMessage: validationMessage)
         }
 
-        if let fileAttachment = attachment.recoverableFileAttachment {
-            return applyRecoveredFileAttachment(fileAttachment, for: attachment)
-        }
-
         guard attachment.sourceURL != nil else {
             return replaceInvalidAttachment(attachment, validationMessage: UserText.aiChatAttachmentFileUnreadable)
         }
@@ -1446,8 +1441,7 @@ private extension UnifiedToggleInputCoordinator {
                 mimeType: attachment.mimeType,
                 fileSizeBytes: attachment.fileSizeBytes,
                 validationMessage: validationMessage,
-                sourceURL: attachment.sourceURL,
-                recoverableFileAttachment: attachment.recoverableFileAttachment
+                sourceURL: attachment.sourceURL
             )
         )
     }

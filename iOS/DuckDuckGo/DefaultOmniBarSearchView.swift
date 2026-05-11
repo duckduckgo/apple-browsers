@@ -209,7 +209,10 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
 
         isModeToggleHidden = true
-        trailingItemsContainer.setCustomSpacing(8, after: separatorView)
+
+        if UnifiedToggleInputFeature().isAvailable {
+            separatorView.lineColor = UIColor(designSystemColor: .decorationPrimary)
+        }
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         DefaultOmniBarView.setUpCommonProperties(for: reloadButton)

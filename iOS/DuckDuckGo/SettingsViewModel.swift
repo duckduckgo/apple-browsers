@@ -74,6 +74,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -182,6 +183,11 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
+    var canShowFreemiumPIRSettingsEntryPoint: Bool {
+        freemiumPIREligibilityChecker.canShowEntryPoint()
+            && dataBrokerProtectionViewControllerProvider != nil
+    }
+
     var dbpMeetsProfileRunPrequisite: Bool {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
@@ -240,6 +246,9 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
+
+    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
 
     // MARK: Bindings
 
@@ -381,19 +390,33 @@ final class SettingsViewModel: ObservableObject {
         formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
     }
 
+    var afterInactivityFooterText: String {
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .always {
+            return UserText.settingsAfterInactivityFooterAlways
+        }
+        return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
+    }
+
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
         Binding<AfterInactivityOption>(
-            get: {
-                self.idleReturnEligibilityManager.effectiveAfterInactivityOption()
-            },
-            set: {
-                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
-                self.objectWillChange.send()
-
-                let pixel: Pixel.Event = $0 == .newTab
+            get: { self.afterInactivityOption },
+            set: { newValue in
+                self.afterInactivityOption = newValue
+                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
                 DailyPixel.fireDailyAndCount(pixel: pixel)
+            }
+        )
+    }
+
+    var afterInactivityIdleIntervalBinding: Binding<AfterInactivityIdleInterval> {
+        Binding<AfterInactivityIdleInterval>(
+            get: { self.afterInactivityIdleInterval },
+            set: { newValue in
+                self.afterInactivityIdleInterval = newValue
+                try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
             }
         )
     }
@@ -895,6 +918,7 @@ final class SettingsViewModel: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -930,14 +954,16 @@ final class SettingsViewModel: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
-            featureFlagger: AppDependencyProvider.shared.featureFlagger,
             onboardingProvider: OnboardingSearchExperience(),
             daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
         )
@@ -1367,7 +1393,13 @@ extension SettingsViewModel {
         case .autoconsent:
             pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
-            pushViewController(legacyViewProvider.importPasswords(delegate: self))
+            pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
+                                                                  delegate: self,
+                                                                  onFinished: { [weak self] in
+                                                                      Task { @MainActor [weak self] in
+                                                                          self?.handleDataImportCompletion()
+                                                                      }
+                                                                  }))
         }
     }
  
@@ -1379,6 +1411,18 @@ extension SettingsViewModel {
     @MainActor
     private func presentViewController(_ view: UIViewController, modal: Bool) {
         onRequestPresentLegacyView?(view, modal)
+    }
+
+    @MainActor
+    private func handleDataImportCompletion() {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        pushViewController(legacyViewProvider.loginSettings(delegate: self,
+                                                            selectedAccount: nil,
+                                                            selectedCard: nil,
+                                                            showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
+                                                            showSettingsScreen: nil,
+                                                            source: state.autofillSource))
     }
     
 }
@@ -1396,14 +1440,7 @@ extension SettingsViewModel: AutofillSettingsViewControllerDelegate {
 extension SettingsViewModel: DataImportViewControllerDelegate {
     @MainActor
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
-        AppDependencyProvider.shared.autofillLoginSession.startSession()
-        pushViewController(legacyViewProvider.loginSettings(delegate: self,
-                                                            selectedAccount: nil,
-                                                            selectedCard: nil,
-                                                            showPasswordManagement: true,
-                                                            showCreditCardManagement: false,
-                                                            showSettingsScreen: nil,
-                                                            source: state.autofillSource))
+        handleDataImportCompletion()
     }
 }
 
@@ -1498,7 +1535,7 @@ extension SettingsViewModel {
         updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionManager.getAccessToken() else {
+        guard (try? await subscriptionManager.getAccessToken()) != nil else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false

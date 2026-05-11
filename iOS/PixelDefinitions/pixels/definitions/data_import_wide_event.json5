@@ -17,10 +17,15 @@
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the data import flow ends in error.",
+                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -82,7 +87,7 @@
                 "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.description",
                 "type": "string",
                 "description": "Human-readable error description for each import type failures",
-                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
             },
             // Per-type underlying error domains
             {
@@ -104,9 +109,10 @@
                     "funnel_bookmarks_ios",
                     "funnel_passwords_ios",
                     "funnel_settings_ios",
+                    "funnel_complete_setup_ios",
                     "funnel_promo_ios",
                     "funnel_in_browser_promo_ios",
-                    "funnel_whatsNew_ios"
+                    "funnel_whats_new_ios"
                 ]
             }
         ]

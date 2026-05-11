@@ -95,7 +95,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var emptyView: UIView = {
         let emptyView = BookmarksEmptyView(importViaSafariButtonAction: { [weak self] in
             self?.segueToDataImport()
-            Pixel.fire(pixel: .bookmarksImportButtonTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .bookmarks) {
+                Pixel.fire(pixel: .bookmarksImportButtonTapped)
+            }
         }, importDocumentButtonAction: { [weak self] in
             self?.presentDocumentPicker()
         })
@@ -131,6 +133,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             refreshTableHeaderView()
         }
     }
+    private var hasFiredImportButtonShownPixel = false
 
     private lazy var searchBarBottomConstraint: NSLayoutConstraint = {
         searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
@@ -644,7 +647,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                         image: DesignSystemImages.Glyphs.Size16.import
         ) { [weak self] _ in
             self?.segueToDataImport()
-            Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .bookmarks) {
+                Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
+            }
         }
     }
 
@@ -667,20 +672,52 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         present(docPicker, animated: true)
     }
 
-    private func segueToDataImport() {
-        finishEditing()
-
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: appSettings.favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.bookmarks,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
+        return dataImportViewController
+    }
+
+    private func makeBookmarksSafariImportViewController() -> ImportSourceDetailViewController {
+        let fileUploadCoordinator = DataImportFileUploadCoordinator(
+            bookmarksDatabase: bookmarksDatabase,
+            favoritesDisplayMode: appSettings.favoritesDisplayMode,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            importScreen: .bookmarks
+        )
+
+        return ImportSourceDetailViewController(
+            source: .safari,
+            entryPoint: .bookmarks,
+            keyValueStore: keyValueStore,
+            fileUploadCoordinator: fileUploadCoordinator
+        ) { [weak self] in
+            self?.viewModel.reloadData()
+            self?.navigationController?.popViewController(animated: false)
+        }
+    }
+
+    private func segueToDataImport() {
+        finishEditing()
+
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: .bookmarks) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = makeBookmarksSafariImportViewController()
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters)
+        }
         navigationController?.setToolbarHidden(true, animated: true)
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     func importBookmarks(fromHtml html: String) {
@@ -863,6 +900,15 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private func showEmptyState() {
         emptyStateContainer.isHidden = false
         tableView.tableHeaderView = nil
+
+        if #available(iOS 18.2, *), !hasFiredImportButtonShownPixel {
+            hasFiredImportButtonShownPixel = true
+            if case .hub = DataImportEntryPointHandler().destination(for: .bookmarks) {
+                Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters)
+            } else {
+                Pixel.fire(pixel: .bookmarksImportButtonShown)
+            }
+        }
     }
 
     private func hideEmptyState() {

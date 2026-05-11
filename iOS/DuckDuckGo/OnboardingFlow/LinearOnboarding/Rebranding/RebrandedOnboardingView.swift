@@ -311,6 +311,9 @@ extension OnboardingRebranding {
                     skipAction: {
                         model.restorePromptSkipAction()
                         model.skipOnboardingAction()
+                    },
+                    onSkipOnboardingPresented: {
+                        model.skipOnboardingPresented()
                     }
                 )
             case .skipTutorial, .default:
@@ -324,7 +327,10 @@ extension OnboardingRebranding {
                             model.startOnboardingAction(isResumingOnboarding: false)
                         }
                     },
-                    skipAction: model.skipOnboardingAction
+                    skipAction: model.skipOnboardingAction,
+                    onSkipOnboardingPresented: {
+                        model.skipOnboardingPresented()
+                    }
                 )
             }
         }

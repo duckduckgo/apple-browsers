@@ -339,9 +339,13 @@ final class WideEventSenderTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
 
         let parameters = capturedPixels[0].parameters
-        XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
-        XCTAssertEqual(parameters["feature.data.error.code"], "42")
-        XCTAssertEqual(parameters["feature.data.error.description"], "Test error description")
+        XCTAssertEqual(parameters["feature.data.ext.error.domain"], "TestErrorDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.code"], "42")
+        XCTAssertEqual(parameters["feature.data.ext.error.error_description"], "Test error description")
+        XCTAssertNil(parameters["feature.data.ext.error.description"])
+        XCTAssertNil(parameters["feature.data.error.domain"])
+        XCTAssertNil(parameters["feature.data.error.code"])
+        XCTAssertNil(parameters["feature.data.ext.error_description"])
     }
 
     func testSendIncludesUnderlyingErrorsWhenPresent() {
@@ -359,10 +363,14 @@ final class WideEventSenderTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
 
         let parameters = capturedPixels[0].parameters
-        XCTAssertEqual(parameters["feature.data.error.domain"], "OuterDomain")
-        XCTAssertEqual(parameters["feature.data.error.code"], "200")
-        XCTAssertEqual(parameters["feature.data.error.underlying_domain"], "InnerDomain")
-        XCTAssertEqual(parameters["feature.data.error.underlying_code"], "100")
+        XCTAssertEqual(parameters["feature.data.ext.error.domain"], "OuterDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.code"], "200")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_domain"], "InnerDomain")
+        XCTAssertEqual(parameters["feature.data.ext.error.underlying_code"], "100")
+        XCTAssertNil(parameters["feature.data.error.domain"])
+        XCTAssertNil(parameters["feature.data.error.code"])
+        XCTAssertNil(parameters["feature.data.error.underlying_domain"])
+        XCTAssertNil(parameters["feature.data.error.underlying_code"])
     }
 
     // MARK: - Status Tests

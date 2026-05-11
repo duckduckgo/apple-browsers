@@ -394,7 +394,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     sendFreemiumSubscriptionPixelIfFreemiumActivated()
                     saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                     PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
-                    subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
+                    subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                     notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -634,7 +634,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             Logger.subscription.log("[TierChange] Stripe \(changeType, privacy: .public) completed successfully")
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
-            subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
+            subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()

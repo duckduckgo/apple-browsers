@@ -422,19 +422,6 @@ function handleNativeAppsDropdown() {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
-window.__ddgQuickFeedbackAutofill = function(data) {
-    quickMode = data.quickMode;
-    diagnosticsText = data.diagnostics || '';
-    screenshotBase64 = data.screenshotBase64 || '';
-    osVersion = data.osVersion || '';
-    appVersion = data.appVersion || '';
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(function() { handleNativeAppsDropdown(); })
-        .catch(function() { console.error('Internal Product Feedback Form is not loaded after 5s'); });
-};
-
-if (quickMode !== null) {
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(_ => handleNativeAppsDropdown())
-        .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));
-}
+waitForElement('h1', 'Internal Product Feedback Form')
+    .then(_ => handleNativeAppsDropdown())
+    .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));

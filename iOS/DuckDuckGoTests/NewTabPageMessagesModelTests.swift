@@ -293,7 +293,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.load()
 
         XCTAssertTrue(messagesConfiguration.didRefresh)
-        XCTAssertTrue(messagesConfiguration.lastRefreshOpenedAfterIdle)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, true)
     }
 
     func testWhenOpenedAfterIdleIsFalseThenRefreshPassesOpenedAfterIdleFalse() {
@@ -302,7 +302,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.load()
 
         XCTAssertTrue(messagesConfiguration.didRefresh)
-        XCTAssertFalse(messagesConfiguration.lastRefreshOpenedAfterIdle)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
     }
 
     func testWhenDefaultOpenedAfterIdleThenRefreshPassesFalse() {
@@ -311,7 +311,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.load()
 
         XCTAssertTrue(messagesConfiguration.didRefresh)
-        XCTAssertFalse(messagesConfiguration.lastRefreshOpenedAfterIdle)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
     }
 
     // MARK: - Helpers

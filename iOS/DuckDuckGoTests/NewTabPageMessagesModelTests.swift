@@ -31,6 +31,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
+    private var segueToSettingsGeneralCallCount = 0
     private var segueToFeedbackCallCount = 0
     private var segueToSyncSettingsCallCount = 0
     private var segueToSettingsAppearanceCallCount = 0
@@ -41,6 +42,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         notificationCenter = NotificationCenter()
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
+        segueToSettingsGeneralCallCount = 0
         segueToFeedbackCallCount = 0
         segueToSyncSettingsCallCount = 0
         segueToSettingsAppearanceCallCount = 0
@@ -144,6 +146,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         func assertSegueCount(_ count: Int) {
             XCTAssertEqual(segueToSettingsCallCount, count)
+            XCTAssertEqual(segueToSettingsGeneralCallCount, count)
             XCTAssertEqual(segueToAIChatSettingsCallCount, count)
             XCTAssertEqual(segueToFeedbackCallCount, count)
             XCTAssertEqual(segueToSettingsAppearanceCallCount, count)
@@ -156,6 +159,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         // Individual states
         DefaultMessageNavigator(delegate: self).navigateTo(.settings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsCallCount, 1)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.settingsGeneral, presentationStyle: .dismissModalsAndPresentFromRoot)
+        XCTAssertEqual(segueToSettingsGeneralCallCount, 1)
 
         DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToAIChatSettingsCallCount, 1)
@@ -313,7 +319,7 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
     }
 
     func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
-        segueToSettingsCallCount += 1
+        segueToSettingsGeneralCallCount += 1
     }
 
     func segueToFeedback(presentationStyle: PresentationContext.Style) {

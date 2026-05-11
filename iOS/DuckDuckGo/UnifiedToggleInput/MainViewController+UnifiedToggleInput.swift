@@ -131,6 +131,15 @@ extension MainViewController {
             return
         }
 
+        // Capture the current tab's screen snapshot regardless of which refresh branch we
+        // take — `.unbindInactiveNonAITab` early-returns without falling through, but we
+        // still want a fresh snapshot for the swipe overlay every time the tab becomes the
+        // active one. `captureCurrentTabScreenSnapshotIfPossible` defers to the next runloop
+        // so any layout changes the branches apply have settled by capture time.
+        defer {
+            captureCurrentTabScreenSnapshotIfPossible(tabUID: tab.tabModel.uid)
+        }
+
         coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
@@ -152,16 +161,6 @@ extension MainViewController {
 
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
         Logger.swipeTabs.debug("refreshUnifiedToggleInput[done]: aiChatHeaderHidden=\(self.viewCoordinator.aiChatTabChatHeaderContainer.isHidden) utiContainerHidden=\(self.viewCoordinator.unifiedToggleInputContainer.isHidden) navContainerHidden=\(self.viewCoordinator.navigationBarContainer.isHidden) displayState=\(String(describing: coordinator.displayState))")
-
-        // After the AI chrome is mounted, capture a pixel-perfect snapshot we can slide in for
-        // future regular→AI swipes. Defer to the next runloop so auto-layout has resolved
-        // (`drawHierarchy` snapshots the current pixels, so layout has to be settled). For
-        // non-AI tabs the capture is a no-op — the chrome views are hidden.
-        if tab.isAITab {
-            DispatchQueue.main.async { [weak self] in
-                self?.swipeTabsCoordinator?.captureAIChromeSnapshotsIfPossible()
-            }
-        }
     }
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {

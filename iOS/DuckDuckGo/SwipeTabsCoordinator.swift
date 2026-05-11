@@ -144,6 +144,21 @@ class SwipeTabsCoordinator: NSObject {
     weak var preview: UIView?
     weak var currentView: UIView?
 
+    /// The overlay that hosts per-tab full-screen snapshots during a swipe. Set by the host.
+    /// When present, all visual rendering of the swipe is delegated to the overlay and the
+    /// legacy mechanisms (cell-based omnibar slide, auxiliary view translation, chromePreview
+    /// facade, contentContainer preview) are bypassed.
+    weak var swipeOverlayView: TabSwipeOverlayView?
+
+    /// Per-tab full-screen snapshot cache. Set by the host. Read by the coordinator when
+    /// populating the overlay at swipe start.
+    weak var snapshotStore: TabScreenSnapshotStore?
+
+    /// Lookup of tab UIDs in the same order as `tabsModel.tabs` — used to build the overlay's
+    /// page array. Refreshed at swipe start.
+    private var overlayActive = false
+    private var overlayPageStartOffset: CGFloat = 0
+
     /// Off-screen snapshot of the destination tab's chrome (omnibar / AI header) that slides in
     /// from the lead edge alongside the webview preview. Built only when crossing the
     /// AI↔regular boundary, where the destination's chrome lives at a different position than
@@ -159,6 +174,14 @@ class SwipeTabsCoordinator: NSObject {
     /// `layer.render(in:)` ignores. Captured by the host when a Duck.ai tab refreshes.
     var cachedAIHeaderSnapshot: UIImage?
     var cachedAIUTIBarSnapshot: UIImage?
+
+    /// Pixel-perfect cached snapshot of the live legacy omnibar, captured via `drawHierarchy`
+    /// while the user is on a regular tab. Used as the regular-tab destination facade — when
+    /// the facade is removed at swipe-end, the real omnibar takes its place; matching the
+    /// rendering path (drawHierarchy → real bitmap with shadows + effects) means there's no
+    /// visible "snap" between facade and real. A `layer.render` facade would render the
+    /// omnibar flat, so removing it exposes the real omnibar's shadows as a single-frame flash.
+    var cachedLegacyOmnibarSnapshot: UIImage?
 
     private var omniBarHeight: CGFloat {
         DefaultOmniBarView.expectedHeight
@@ -216,15 +239,23 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
             Logger.swipeTabs.debug("scrollViewDidScroll[.starting]: startX=\(startPosition.x) currentX=\(scrollView.contentOffset.x) offset=\(offset)")
-            prepareCurrentView()
-            preparePreview(offset)
-            prepareAuxiliarySwipeSnapshots()
+            if !activateSwipeOverlay() {
+                // Fallback: legacy visual prep when the overlay isn't installed yet.
+                prepareCurrentView()
+                preparePreview(offset)
+                prepareAuxiliarySwipeSnapshots()
+            }
             state = .swiping(startPosition, offset.sign)
             onSwipeStarted()
 
         case .swiping(let startPosition, let sign):
             let offset = startPosition.x - scrollView.contentOffset.x
-            if offset.sign == sign {
+            if overlayActive, let overlay = swipeOverlayView {
+                // Overlay path — chrome and content move as one snapshot, so direction
+                // changes are handled natively by just mirroring contentOffset. No need to
+                // restart the state machine on sign flip.
+                overlay.setContentOffsetX(scrollView.contentOffset.x)
+            } else if offset.sign == sign {
                 let modifier = sign == .plus ? -1.0 : 1.0
                 swipePreviewProportionally(offset: offset, modifier: modifier)
                 swipeChromePreviewProportionally(offset: offset, modifier: modifier)
@@ -241,10 +272,93 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
     }
 
-    /// Snapshots each visible auxiliary chrome view into a flat image view, parks the snapshot
-    /// in the superview at the original's screen position, and hides the original (alpha=0)
-    /// so the snapshot is the only thing the user sees. This sidesteps the live-translation
-    /// issues with `UIVisualEffectView` glass + drop shadows + nested cardViews.
+    /// Sets up `swipeOverlayView` with per-tab snapshots and shows it on top of the live views.
+    /// Returns false when the overlay isn't installed — the caller falls back to the legacy
+    /// rendering path.
+    ///
+    /// Important: this method does **not** hide the live `MainViewController.view` children.
+    /// The overlay's pages are opaque (`UIImageView` with `systemBackground` backing), so they
+    /// occlude what's underneath. Touching the live views' alpha while a refresh is firing
+    /// during the swipe was the cause of the "stacked screens" / "offset chrome" artifacts.
+    private func activateSwipeOverlay() -> Bool {
+        guard let overlay = swipeOverlayView, let store = snapshotStore else {
+            Logger.swipeTabs.debug("activateSwipeOverlay: skipped — overlay or store missing")
+            return false
+        }
+
+        let tabs = tabsModel.tabs
+        let currentIndex = tabsModel.currentIndex ?? 0
+
+        // Capture the source page right now from the live view — pixel-perfect, no cache
+        // reliance. The overlay is currently alpha=0 (about to be raised), so it won't
+        // appear in its own snapshot. We also stash this image into the store under the
+        // current tab's UID so the next swipe BACK to this tab has fresh chrome.
+        let sourceImage: UIImage? = makeFullScreenSnapshot()
+        if let sourceImage, currentIndex < tabs.count {
+            store.set(image: sourceImage, for: tabs[currentIndex].uid)
+        }
+
+        // Include the trailing "new tab" cell so swiping past the last tab works.
+        let extras = tabs.last?.link != nil ? 1 : 0
+        let pageCount = tabs.count + extras
+        let snapshots: [UIImage?] = (0..<pageCount).map { idx in
+            if idx == currentIndex {
+                return sourceImage  // always fresh
+            }
+            guard idx < tabs.count else { return nil }
+            // Cache preferred (full-screen, chrome included). Fall back to the legacy webview-
+            // only preview if we haven't captured this tab's screen yet — better than blank.
+            if let cached = store.snapshot(for: tabs[idx].uid) {
+                return cached
+            }
+            return tabPreviewsSource.preview(for: tabs[idx])
+        }
+
+        overlay.frame = coordinator.superview.bounds
+        overlay.populate(snapshots: snapshots, currentIndex: currentIndex)
+        overlay.alpha = 1
+        overlayActive = true
+        overlayPageStartOffset = overlay.contentOffsetX
+
+        let cachedCount = snapshots.compactMap { $0 }.count
+        Logger.swipeTabs.debug("activateSwipeOverlay: shown — pages=\(pageCount) currentIndex=\(currentIndex) cached=\(cachedCount)/\(pageCount)")
+        return true
+    }
+
+    /// Hides the overlay. The live views were never hidden, so there's nothing to restore.
+    private func deactivateSwipeOverlay() {
+        guard overlayActive else { return }
+        overlayActive = false
+        swipeOverlayView?.alpha = 0
+        Logger.swipeTabs.debug("deactivateSwipeOverlay: hidden")
+    }
+
+    /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
+    /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
+    /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
+    /// only paints once — no visible flash.
+    private func makeFullScreenSnapshot() -> UIImage? {
+        let superview = coordinator.superview
+        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+
+        let priorAlpha = swipeOverlayView?.alpha ?? 0
+        swipeOverlayView?.alpha = 0
+        defer { swipeOverlayView?.alpha = priorAlpha }
+
+        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
+        return renderer.image { _ in
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
+        }
+    }
+
+    /// Snapshots each visible auxiliary chrome view into a flat `UIImageView`, parks it in the
+    /// superview at the original's screen position, and hides the original (alpha=0) so the
+    /// snapshot is the only thing the user sees. Uses the same `drawHierarchy` path as the
+    /// cached destination snapshot — it goes through UIKit's real rendering pipeline, so it
+    /// captures `UIVisualEffectView` glass, drop shadows, and nested cardView layout as a
+    /// single composited image. `snapshotView(afterScreenUpdates:)` was unreliable here:
+    /// it returns a *view* that may still expose internal layering during a transform,
+    /// producing the "stacked screens" effect.
     private func prepareAuxiliarySwipeSnapshots() {
         // Defensive: should already be empty (cleanUpViews resets), but if a prior swipe was
         // interrupted mid-flight, restore + clear before starting fresh.
@@ -255,10 +369,12 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 Logger.swipeTabs.debug("prepareAuxiliarySwipeSnapshots: skip \(type(of: view)) — hidden or zero-sized")
                 continue
             }
-            guard let snapshot = view.snapshotView(afterScreenUpdates: false) else {
-                Logger.swipeTabs.error("prepareAuxiliarySwipeSnapshots: snapshotView returned nil for \(type(of: view))")
-                continue
+
+            let renderer = UIGraphicsImageRenderer(size: view.bounds.size)
+            let image = renderer.image { _ in
+                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
             }
+            let snapshot = UIImageView(image: image)
 
             // Convert the original's frame into the superview's coordinate space — auxiliary
             // views live as descendants (e.g. unifiedToggleInputContainer is inside
@@ -443,46 +559,22 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
     }
 
-    /// Renders a configured template omnibar for the given tab into an image, returned as an
-    /// `UIImageView` sized to the omnibar. Mirrors the cell-template configuration in
-    /// `collectionView(_:cellForItemAt:)` so the facade visual matches the real omnibar that
-    /// will appear post-settle.
+    /// Returns the cached legacy omnibar snapshot — captured via `drawHierarchy` while the bar
+    /// was actually rendered to the window, so removing this facade at swipe-end reveals a
+    /// pixel-identical real omnibar (no shadow/effect "snap"). The cache reflects the omnibar
+    /// the user most recently saw on a regular tab; if they're swiping to a *different*
+    /// regular tab, the URL text in the snapshot is briefly off, but the styling and layout
+    /// match and the real omnibar takes over the moment the swipe settles.
+    ///
+    /// `_ tab` is unused for now — we don't have a way to render a fresh OmniBar through
+    /// `drawHierarchy` without putting it in the window (which causes a flash), so per-tab
+    /// configuration is a known limitation.
     private func makeRegularOmnibarSnapshot(for tab: Tab) -> UIView? {
-        let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
-        controller.showSeparator()
-        controller.adjust(for: appSettings.currentAddressBarPosition)
-        controller.configureForSwipeTemplate(
-            isExpandedPhone: coordinator.omniBar.isExpandedPhone,
-            tabCount: tabsModel.count
-        )
-
-        let url = tab.link?.url
-        if tab.isAITab {
-            controller.enterAIChatMode()
-        } else if let url {
-            controller.startBrowsing()
-            controller.resetPrivacyIcon(for: url)
-        } else {
-            controller.stopBrowsing()
+        guard let image = cachedLegacyOmnibarSnapshot else {
+            Logger.swipeTabs.debug("makeRegularOmnibarSnapshot: no cached snapshot (user hasn't been on a regular tab in this session)")
+            return nil
         }
-        controller.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-        controller.refreshFireMode(fireMode: tab.fireTab)
-
-        let barView = controller.barView
-        let width = coordinator.superview.bounds.width
-        let height = DefaultOmniBarView.expectedHeight
-
-        // Force the view through a layout pass at the target size — without this `layer.render`
-        // captures the view at its intrinsic / zero size.
-        barView.translatesAutoresizingMaskIntoConstraints = true
-        barView.frame = CGRect(x: 0, y: 0, width: width, height: height)
-        barView.setNeedsLayout()
-        barView.layoutIfNeeded()
-
-        let renderer = UIGraphicsImageRenderer(size: barView.bounds.size)
-        let image = renderer.image { context in
-            barView.layer.render(in: context.cgContext)
-        }
+        _ = tab
         return UIImageView(image: image)
     }
 
@@ -572,9 +664,19 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
+        // Defer cleanup to the next runloop tick. `selectTab` synchronously triggers the tab
+        // swap (adding the destination's webview / NTP to `contentContainer`), but the new
+        // view typically needs one runloop iteration to lay out and produce its first paint.
+        // If we tear down the swipe overlays in the same tick — `preview.removeFromSuperview`
+        // plus `currentView.transform = .identity` — UIKit ends up painting a frame where the
+        // outgoing currentView has snapped back to its on-screen position while the destination
+        // isn't yet rendered. That's the flash. Async-deferring `cleanUpViews` lets the
+        // destination settle before we lift the overlays.
         defer {
-            cleanUpViews()
-            state = .idle
+            DispatchQueue.main.async { [weak self] in
+                self?.cleanUpViews()
+                self?.state = .idle
+            }
         }
 
         let point = CGPoint(x: coordinator.navigationBarCollectionView.bounds.midX,
@@ -600,7 +702,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
 
     private func cleanUpViews() {
-        Logger.swipeTabs.debug("cleanUpViews: currentView=\(String(describing: self.currentView.map { type(of: $0) })) preview=\(self.preview != nil) chromePreview=\(self.chromePreview != nil) auxSnapshots=\(self.auxiliarySwipeViewSnapshots.count)")
+        Logger.swipeTabs.debug("cleanUpViews: currentView=\(String(describing: self.currentView.map { type(of: $0) })) preview=\(self.preview != nil) chromePreview=\(self.chromePreview != nil) auxSnapshots=\(self.auxiliarySwipeViewSnapshots.count) overlayActive=\(self.overlayActive)")
+        deactivateSwipeOverlay()
         currentView?.transform = .identity
         currentView = nil
         preview?.removeFromSuperview()
@@ -625,6 +728,28 @@ extension SwipeTabsCoordinator {
         }
     }
     
+    /// Captures the live legacy omnibar via `drawHierarchy` so it can be reused as the
+    /// regular-tab destination facade. Same idea as `captureAIChromeSnapshotsIfPossible` —
+    /// rendering goes through UIKit's real pipeline, picking up shadows and effects that
+    /// `layer.render` ignores. Called by the host whenever a non-AI tab refreshes.
+    func captureLegacyOmnibarSnapshotIfPossible() {
+        let barView = coordinator.omniBar.barView
+        guard barView.bounds.width > 0, barView.bounds.height > 0 else {
+            Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: skipped — zero-sized")
+            return
+        }
+        guard barView.window != nil else {
+            // `drawHierarchy` needs the view in a window for layer composition to be valid.
+            Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: skipped — not in window")
+            return
+        }
+        let renderer = UIGraphicsImageRenderer(size: barView.bounds.size)
+        cachedLegacyOmnibarSnapshot = renderer.image { _ in
+            barView.drawHierarchy(in: barView.bounds, afterScreenUpdates: false)
+        }
+        Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: captured size=\(String(describing: barView.bounds.size))")
+    }
+
     /// Captures pixel-perfect images of the AI chrome (header + UTI bar) using `drawHierarchy`
     /// while they're rendered to a window. Called by the host whenever the AI chrome refreshes
     /// so the cache stays current with subscription state, model, etc. Skips views that are

@@ -441,7 +441,7 @@ struct OnboardingStepsForConfiguredFlow {
             isIphone: true,
             tutorialSettings: tutorialSettings
         )
-        let expectedSteps: [OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: isReturningUser)
+        let expectedSteps: [OnboardingIntroStep] = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: isReturningUser)
 
         // WHEN
         let result = sut.onboardingSteps

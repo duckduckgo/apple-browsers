@@ -132,6 +132,7 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 enum OnboardingIntroStep: Equatable {
     case introDialog(isReturningUser: Bool)
     case browserComparison
+    case aiComparison
     case appIconSelection
     case addToDockPromo
     case addressBarPositionSelection
@@ -250,15 +251,18 @@ private extension OnboardingManager {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
         switch tutorialSettings.onboardingFlowType {
         case .none, .default:
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + defaultFlowSteps(isIphone: isIphone)
         case .duckAI:
-            // Temporarily return steps for default flow
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + duckAITailoredFlowSteps()
         }
     }
 
-    func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+    func defaultFlowSteps(isIphone: Bool) -> [OnboardingIntroStep] {
         isIphone ? iPhoneFlow : iPadFlow
+    }
+
+    func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
+        [.aiComparison, .duckAIQuerySelection, .addToDockPromo, .browserComparison, .addressBarPositionSelection]
     }
 
 }

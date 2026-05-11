@@ -27,6 +27,7 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var browserComparisonContent: OnboardingBrowserComparisonContent { get }
+    var aiComparisonContent: OnboardingAIComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
@@ -133,6 +134,28 @@ extension OnboardingIntroContentProvider {
             features: RebrandedBrowsersComparisonModel.defaultFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip
+        )
+    }
+
+}
+
+// MARK: - Content Provider + AI Comparison (AI Protections activated!)
+
+struct OnboardingAIComparisonContent: Equatable {
+    let title: String
+    let subHeader: String
+    let features: [RebrandedBrowsersComparisonModel.Feature]
+    let primaryCTA: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var aiComparisonContent: OnboardingAIComparisonContent {
+        OnboardingAIComparisonContent(
+            title: UserText.Onboarding.BrowsersComparison.title,
+            subHeader: "",
+            features: [],
+            primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
         )
     }
 

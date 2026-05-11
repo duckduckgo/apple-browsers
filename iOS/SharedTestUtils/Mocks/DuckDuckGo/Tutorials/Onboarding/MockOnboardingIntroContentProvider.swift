@@ -24,6 +24,7 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
     var browserComparisonContent: OnboardingBrowserComparisonContent = .mock
+    var aiComparisonContent: OnboardingAIComparisonContent = .mock
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
@@ -69,6 +70,15 @@ extension OnboardingBrowserComparisonContent {
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary"
+    )
+}
+
+extension OnboardingAIComparisonContent {
+    static let mock = OnboardingAIComparisonContent(
+        title: "AI Comparison Title",
+        subHeader: "AI Comparison SubHeader",
+        features: [],
+        primaryCTA: "AI Comparison Primary"
     )
 }
 

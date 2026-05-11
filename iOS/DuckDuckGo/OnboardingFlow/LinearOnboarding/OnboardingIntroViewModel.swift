@@ -224,6 +224,10 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    func aiComparisonAction() {
+        makeNextViewState()
+    }
+
     func addToDockContinueAction(isShowingAddToDockTutorial: Bool) {
         makeNextViewState()
 
@@ -331,6 +335,8 @@ private extension OnboardingIntroViewModel {
             OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)), step: .hidden))
         case .browserComparison:
             OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent), step: stepInfo()))
+        case .aiComparison:
+            OnboardingView.ViewState.onboarding(.init(type: .aiComparisonDialog(content: contentProvider.aiComparisonContent), step: stepInfo()))
         case .addToDockPromo:
             OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog(content: contentProvider.addToDockContent), step: stepInfo()))
         case .appIconSelection:
@@ -340,7 +346,7 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent), step: stepInfo()))
         case .duckAIQuerySelection:
-            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryExperimentContent, defaultMode: duckAIQueryExperimentDefaultMode), step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryExperimentContent, defaultMode: onboardingManager.currentOnboardingFlow == .duckAI ? .duckAI : duckAIQueryExperimentDefaultMode), step: stepInfo()))
         }
 
         state = viewState
@@ -433,6 +439,8 @@ private extension OnboardingIntroViewModel {
             measureAutoRestorePromptImpressionIfNeeded(dialogType: dialogType)
         case .browsersComparisonDialog:
             pixelReporter.measureBrowserComparisonImpression()
+        case .aiComparisonDialog:
+            break
         case .addToDockPromoDialog:
             pixelReporter.measureAddToDockPromoImpression()
         case .chooseAppIconDialog:
@@ -467,7 +475,8 @@ private extension OnboardingIntroViewModel {
     }
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
+        // Do not enroll users experiencing Duck.ai tailored flow in the experiment
+        guard onboardingManager.currentOnboardingFlow == .default && featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
         return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }
 

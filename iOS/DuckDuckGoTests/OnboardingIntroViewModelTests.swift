@@ -485,6 +485,122 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
     }
 
+    // MARK: Duck.ai Flow
+
+    func testWhenStartOnboardingActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToAIComparisonDialogAndProgressIs1Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT()
+        XCTAssertEqual(sut.state, .landing(.mock))
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 5))))
+    }
+
+    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToDuckAIQueryExperimentDialogAndProgressIs2Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .aiComparison)
+
+        // WHEN
+        sut.aiComparisonAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
+    }
+
+    func testWhenSelectDuckAIQueryExperimentActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToAddToDockPromoDialogAndProgressIs3Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+
+        // WHEN
+        sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog(content: .mock), step: .init(currentStep: 3, totalSteps: 5))))
+    }
+
+    func testWhenAddToDockContinueActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs4Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .addToDockPromo)
+
+        // WHEN
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 4, totalSteps: 5))))
+    }
+
+    func testWhenSetDefaultBrowserActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs5Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog(content: .mock), step: .init(currentStep: 5, totalSteps: 5))))
+    }
+
+    func testWhenCancelSetDefaultBrowserActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs5Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.cancelSetDefaultBrowserAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog(content: .mock), step: .init(currentStep: 5, totalSteps: 5))))
+    }
+
+    func testWhenSelectAddressBarPositionActionIsCalled_AndIsDuckAIFlow_ThenOnCompletingOnboardingIntroIsCalled() {
+        // GIVEN
+        var didCallOnCompletingOnboardingIntro = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        sut.onCompletingOnboardingIntro = {
+            didCallOnCompletingOnboardingIntro = true
+        }
+        XCTAssertFalse(didCallOnCompletingOnboardingIntro)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertTrue(didCallOnCompletingOnboardingIntro)
+    }
+
+    func testWhenIsDuckAIFlow_AndReachingDuckAIQueryExperimentDialog_ThenUserIsNotEnrolledInExperiment() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
+        let sut = makeSUT(currentOnboardingStep: .aiComparison, featureFlagger: featureFlagger)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+
+        // WHEN
+        sut.aiComparisonAction()
+
+        // THEN
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
     // MARK: - Pixels
 
     func testWhenOnAppearIsCalledThenPixelReporterMeasureOnboardingIntroImpression() {

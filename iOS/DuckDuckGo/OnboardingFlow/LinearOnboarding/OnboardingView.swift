@@ -89,6 +89,8 @@ struct OnboardingView: View {
                                 introView(dialogType: dialogType)
                             case .browsersComparisonDialog:
                                 browsersComparisonView
+                            case .aiComparisonDialog:
+                                browsersComparisonView
                             case .addToDockPromoDialog:
                                 addToDockPromoView
                             case .chooseAppIconDialog:
@@ -346,6 +348,7 @@ extension OnboardingView.ViewState.Intro {
     enum IntroType: Equatable {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
         case browsersComparisonDialog(content: OnboardingBrowserComparisonContent)
+        case aiComparisonDialog(content: OnboardingAIComparisonContent)
         case addToDockPromoDialog(content: OnboardingAddToDockContent)
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)

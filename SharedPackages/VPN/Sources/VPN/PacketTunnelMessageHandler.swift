@@ -30,7 +30,7 @@ protocol TunnelStateProviding: AnyObject {
 
 protocol TunnelLifecycleManaging: AnyObject {
     @MainActor func cancelTunnel(with error: Error) async
-    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, isConnectionAttempt: Bool) async throws
+    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, attemptSource: PacketTunnelProvider.ConnectionAttemptSource) async throws
     @MainActor func restartAdapter() async throws
     @MainActor func resetRegistrationKey()
     @MainActor func removeToken() async throws
@@ -255,7 +255,7 @@ final class PacketTunnelMessageHandler {
                         try? await tunnelLifecycle?.updateTunnelConfiguration(
                             updateMethod: .selectServer(currentMethod),
                             reassert: true,
-                            isConnectionAttempt: true)
+                            attemptSource: .serverChange)
                     }
                 }
                 completionHandler?(nil)
@@ -272,7 +272,7 @@ final class PacketTunnelMessageHandler {
                 try? await tunnelLifecycle?.updateTunnelConfiguration(
                     updateMethod: .selectServer(.preferredServer(serverName: serverName)),
                     reassert: true,
-                    isConnectionAttempt: true)
+                    attemptSource: .serverChange)
             }
             completionHandler?(nil)
         }

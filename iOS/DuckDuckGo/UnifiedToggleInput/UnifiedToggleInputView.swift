@@ -758,12 +758,11 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateSubmitButtonAvailability() {
-        let isAIChatMode = handler.currentToggleState == .aiChat
-        let hasSubmittableText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
-        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
-        let hasSubmittableAttachment = isAIChatMode && hasValidAttachment
-        toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasSubmittableText || hasSubmittableAttachment)
+        let state = UnifiedToggleInputFloatingSubmitState(
+            text: handler.currentText,
+            mode: handler.currentToggleState,
+            attachments: attachmentsStrip.attachments)
+        toolsToolbar.isSubmitEnabled = state.canSubmit
     }
 
     private func submitCurrentInput() {

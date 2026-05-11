@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 import UIKit
 import UniformTypeIdentifiers
@@ -35,6 +36,18 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertTrue(sut.isToolbarSubmitEnabled)
+    }
+
+    func test_searchModeAttachmentOnlySubmitStaysDisabledWhenDuckAIAttachmentIsHidden() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        sut.addAttachment(makeFileAttachment())
+        sut.setInputMode(.search, animated: false)
+        flushMainQueue()
+
+        XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
@@ -156,6 +169,18 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 mimeType: "application/pdf",
                 fileSizeBytes: 1_000,
                 validationMessage: validationMessage
+            )
+        )
+    }
+
+    private func makeFileAttachment(fileName: String = "valid.pdf") -> UnifiedToggleInputAttachment {
+        .file(
+            AIChatFileAttachment(
+                data: Data(repeating: 0, count: 1_000),
+                fileName: fileName,
+                mimeType: "application/pdf",
+                fileSizeBytes: 1_000,
+                pageCount: 1
             )
         )
     }

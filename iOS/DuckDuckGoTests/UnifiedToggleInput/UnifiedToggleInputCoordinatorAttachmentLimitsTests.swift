@@ -351,12 +351,12 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         let sut = makeCoordinator(preferences: prefs)
         sut.modelStore.models = [
             makeModel(id: "unsupported-file-model", supportsImageUpload: true, supportedFileTypes: []),
-            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["text/plain"])
+            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])
         ]
         let delegate = SpyUnifiedToggleInputDelegate()
         sut.delegate = delegate
-        let fileData = Data("hello".utf8)
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("attachment-\(UUID().uuidString).txt")
+        let fileData = makePDFData()
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("attachment-\(UUID().uuidString).pdf")
         try fileData.write(to: fileURL)
         addTeardownBlock {
             try? FileManager.default.removeItem(at: fileURL)
@@ -365,8 +365,8 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addFileAttachment(
             AIChatFileAttachment(
                 data: fileData,
-                fileName: "a.txt",
-                mimeType: "text/plain",
+                fileName: "a.pdf",
+                mimeType: "application/pdf",
                 fileSizeBytes: fileData.count
             ),
             sourceURL: fileURL
@@ -381,7 +381,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         }
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
         XCTAssertFalse(sut.viewController.currentAttachments.first?.isInvalid ?? true)
-        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.txt")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.pdf")
         XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.data, fileData)
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
 
@@ -389,46 +389,35 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         XCTAssertEqual(delegate.submittedPrompt, "use the file")
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
-        XCTAssertEqual(delegate.submittedFiles?.first?.fileName, "a.txt")
-        XCTAssertEqual(delegate.submittedFiles?.first?.mimeType, "text/plain")
+        XCTAssertEqual(delegate.submittedFiles?.first?.fileName, "a.pdf")
+        XCTAssertEqual(delegate.submittedFiles?.first?.mimeType, "application/pdf")
     }
 
-    func testWhenModelChangeMakesMetadataOnlyInvalidFileValidThenAttachmentIsPromoted() throws {
+    func testWhenModelChangeMakesInvalidFileValidButSourceIsMissingThenExistingErrorIsPreserved() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "unsupported-file-model"
         let sut = makeCoordinator(preferences: prefs)
         sut.modelStore.models = [
             makeModel(id: "unsupported-file-model", supportsImageUpload: true, supportedFileTypes: []),
-            makeModel(id: "text-model", supportsImageUpload: true, supportedFileTypes: ["text/plain"])
+            makeModel(id: "file-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])
         ]
-        let fileData = Data("hello".utf8)
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("attachment-\(UUID().uuidString).txt")
-        try fileData.write(to: fileURL)
-        addTeardownBlock {
-            try? FileManager.default.removeItem(at: fileURL)
-        }
         let validationMessage = UserText.aiChatAttachmentUnsupportedFileType
         sut.viewController.addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(
-                fileName: "a.txt",
-                mimeType: "text/plain",
-                fileSizeBytes: fileData.count,
+                fileName: "a.pdf",
+                mimeType: "application/pdf",
+                fileSizeBytes: 1_000,
                 validationMessage: validationMessage,
-                sourceURL: fileURL
+                sourceURL: nil
             )
         ))
         sut.viewController.showAttachmentValidationError(validationMessage)
 
-        sut.updateSelectedModel("text-model")
+        sut.updateSelectedModel("file-model")
 
-        waitUntil("metadata-only invalid file is promoted") {
-            sut.viewController.currentAttachments.first?.fileAttachment != nil
-        }
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
-        XCTAssertFalse(sut.viewController.currentAttachments.first?.isInvalid ?? true)
-        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.fileName, "a.txt")
-        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.data, fileData)
-        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+        XCTAssertTrue(sut.viewController.currentAttachments.first?.isInvalid ?? false)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, validationMessage)
     }
 
     func testWhenFloatingSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
@@ -661,6 +650,14 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
             fileSizeBytes: data.count,
             pageCount: pageCount
         )
+    }
+
+    private func makePDFData() -> Data {
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 100, height: 100))
+        return renderer.pdfData { context in
+            context.beginPage()
+            "test".draw(at: CGPoint(x: 20, y: 20), withAttributes: nil)
+        }
     }
 
     private func viewContainsLabelText(_ text: String, in view: UIView) -> Bool {

@@ -38,6 +38,19 @@ struct UnifiedToggleInputFloatingSubmitState: Equatable {
         hasInvalidAttachment: false
     )
 
+    init(hasText: Bool, hasValidAttachment: Bool, hasInvalidAttachment: Bool) {
+        self.hasText = hasText
+        self.hasValidAttachment = hasValidAttachment
+        self.hasInvalidAttachment = hasInvalidAttachment
+    }
+
+    init(text: String, mode: TextEntryMode, attachments: [UnifiedToggleInputAttachment]) {
+        let isAIChatMode = mode == .aiChat
+        hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        hasValidAttachment = isAIChatMode && attachments.contains { !$0.isInvalid }
+        hasInvalidAttachment = isAIChatMode && attachments.contains(where: \.isInvalid)
+    }
+
     var canSubmit: Bool {
         !hasInvalidAttachment && (hasText || hasValidAttachment)
     }

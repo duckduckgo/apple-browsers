@@ -1273,6 +1273,10 @@ extension UnifiedToggleInputCoordinator {
         submitCurrentInputFromCoordinator()
     }
 
+}
+
+private extension UnifiedToggleInputCoordinator {
+
     func submitCurrentInputFromCoordinator() {
         let state = makeFloatingSubmitState()
         guard state.canSubmit else {
@@ -1293,9 +1297,6 @@ extension UnifiedToggleInputCoordinator {
             viewController.handler.submitText(currentText)
         }
     }
-}
-
-private extension UnifiedToggleInputCoordinator {
 
     // MARK: Attachments
 
@@ -1360,7 +1361,7 @@ private extension UnifiedToggleInputCoordinator {
         }
 
         guard attachment.sourceURL != nil else {
-            return replaceInvalidAttachment(attachment, validationMessage: UserText.aiChatAttachmentFileUnreadable)
+            return false
         }
 
         recoverInvalidAttachmentFromSourceURL(attachment)
@@ -1542,13 +1543,10 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func makeFloatingSubmitState() -> UnifiedToggleInputFloatingSubmitState {
-        let isAIChatMode = inputMode == .aiChat
-        let attachments = viewController.currentAttachments
-        return UnifiedToggleInputFloatingSubmitState(
-            hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-            hasValidAttachment: isAIChatMode && attachments.contains { !$0.isInvalid },
-            hasInvalidAttachment: isAIChatMode && attachments.contains(where: \.isInvalid)
-        )
+        UnifiedToggleInputFloatingSubmitState(
+            text: currentText,
+            mode: inputMode,
+            attachments: viewController.currentAttachments)
     }
 
     func updateFloatingSubmitState() {

@@ -663,6 +663,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_updateToggleEnabled_false_clearsAttachmentErrorBannerWhenOmnibar() {
+        let validationMessage = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.viewController.addAttachment(.invalidFile(UnifiedToggleInputInvalidFileAttachment(
+            fileName: "too-many-pages.pdf",
+            mimeType: "application/pdf",
+            fileSizeBytes: 1_000,
+            validationMessage: validationMessage
+        )))
+        sut.viewController.showAttachmentValidationError(validationMessage)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, validationMessage)
+
+        sut.updateToggleEnabled(false)
+
+        XCTAssertEqual(sut.inputMode, .search)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
     func test_updateToggleEnabled_noChangeIsNoOp() {
         let exp = expectation(description: "no mode change emitted")
         exp.isInverted = true

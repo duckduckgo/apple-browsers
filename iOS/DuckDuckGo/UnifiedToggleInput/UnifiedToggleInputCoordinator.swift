@@ -588,6 +588,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(computeRenderState().viewConfig, animated: false)
             refreshToolsPresentation()
             modeChangeSubject.send(.search)
+            syncAttachmentValidationErrorForCurrentMode()
             updateFloatingSubmitState()
         }
     }

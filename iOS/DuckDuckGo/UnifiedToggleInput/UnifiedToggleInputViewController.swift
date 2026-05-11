@@ -211,9 +211,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         usesOmnibarMargins = config.usesOmnibarMargins
         isToolbarSubmitHidden = config.isToolbarSubmitHidden
         isTopBarPosition = config.isTopBarPosition
-        // Must be set before `applyCardLayout` so the layout's inline-dismiss visibility
-        // computation reads the up-to-date flag. AI tabs surface back navigation in the tab
-        // nav header, so the in-card chevron is suppressed.
+        // Set before `applyCardLayout` reads the flag.
         inputBarView.isInlineDismissHidden = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)

@@ -2868,9 +2868,7 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                self.refreshOmniBar()
-                self.aiChatTabChatHeaderView?.setForceBackButtonVisible(!self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+                self?.refreshOmniBar()
                 WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)

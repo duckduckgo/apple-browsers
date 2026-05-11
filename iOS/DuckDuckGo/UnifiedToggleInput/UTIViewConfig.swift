@@ -57,8 +57,6 @@ struct UTIViewConfig: Equatable {
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
     var isTopBarPosition: Bool
-    /// True when the UTI is hosted by a Duck.ai tab. The VC translates this into the view's
-    /// `isInlineDismissHidden` so the back-chevron is suppressed — the tab nav header already
-    /// provides a back arrow.
+    /// True when the UTI is hosted by a Duck.ai tab.
     var isAITab: Bool
 }

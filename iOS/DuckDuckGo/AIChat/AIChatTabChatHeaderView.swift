@@ -56,9 +56,7 @@ final class AIChatTabChatHeaderView: UIView {
         var isChatInputHidden: Bool = false
         var canGoBack: Bool = false
         var canGoForward: Bool = false
-        /// Forces the back arrow visible regardless of `canGoBack` so the user has an exit path
-        /// (e.g. when the AI Chat toggle is OFF in settings). Tap routing is decided by the
-        /// delegate based on actual `canGoBack`.
+        /// Renders the back arrow even when there's no web history, so the user always has an exit.
         var forceBackButtonVisible: Bool = false
 
         var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }

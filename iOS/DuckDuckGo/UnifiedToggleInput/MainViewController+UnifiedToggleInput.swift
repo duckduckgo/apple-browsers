@@ -391,8 +391,10 @@ private extension MainViewController {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                guard let self else { return }
                 let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+                self.aiChatTabChatHeaderView?.setForceBackButtonVisible(!enabled)
+                guard let coordinator = self.unifiedToggleInputCoordinator else { return }
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)

@@ -1509,6 +1509,13 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
+        // with the AI header shown and the standard toolbar hidden. Some attach paths
+        // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so
+        // without this the user lands on NTP with no visible bars.
+        viewCoordinator.hideAITabChrome()
+        reconcileToolbarVisibilityForCurrentTab()
+
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
@@ -2063,6 +2070,13 @@ class MainViewController: UIViewController {
         refreshBackForwardMenuItems()
         updateChromeForDuckPlayer()
         refreshMiddleButton()
+        aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
+                                                  canGoForward: currentTab?.canGoForward ?? false)
+        // Belt-and-braces reconciliation. Most explicit transitions also call this directly
+        // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
+        // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
+        // the caller having to remember.
+        reconcileToolbarVisibilityForCurrentTab()
     }
 
     private func refreshMiddleButton() {
@@ -2081,6 +2095,9 @@ class MainViewController: UIViewController {
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode
+        aiChatTabChatHeaderView?.tabSwitcherButton.tabCount = count
+        aiChatTabChatHeaderView?.tabSwitcherButton.hasUnread = hasUnread
+        aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
     private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
@@ -2305,7 +2322,8 @@ class MainViewController: UIViewController {
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
-               !self.isInMinimalChromeLayout {
+               !self.isInMinimalChromeLayout,
+               !self.isCurrentTabUsingUnifiedInputAIChrome {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -2344,7 +2362,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private var isInMinimalChromeLayout: Bool = false
+    private(set) var isInMinimalChromeLayout: Bool = false
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
@@ -2358,7 +2376,7 @@ class MainViewController: UIViewController {
     private func applyLargeWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = false
-        viewCoordinator.toolbar.isHidden = true
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.omniBar.enterPadState()
 
         swipeTabsCoordinator?.isEnabled = false
@@ -2367,7 +2385,7 @@ class MainViewController: UIViewController {
     private func applySmallWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = true
-        viewCoordinator.toolbar.isHidden = false
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.constraints.toolbarBottom.constant = 0
         viewCoordinator.omniBar.enterPhoneState()
 

@@ -1683,7 +1683,7 @@ extension BrowserTabViewController: TabDelegate {
     }
     func runPrintOperation(with request: PrintDialogRequest) -> ModalSheetCancellable? {
         guard let window = view.window,
-              let webView = tabViewModel?.tab.webView else { return nil }
+              tabViewModel?.tab.webView != nil else { return nil }
 
         let printOperation = request.parameters
         // prevent running already started operation (e.g. when the same pinned tab is open in 2 windows)

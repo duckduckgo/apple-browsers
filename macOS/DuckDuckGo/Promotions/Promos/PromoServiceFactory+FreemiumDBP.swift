@@ -21,13 +21,12 @@ import Foundation
 extension PromoServiceFactory {
 
     /// Freemium DBP banner promo. Delegate is set when NTP is built.
-    static let freemiumDBP = Promo(
+    static let freemiumDBP = InternalPromo(
         id: "freemium-dbp-ntp-banner",
         triggers: [.newTabPageAppeared],
         initiated: .app,
         promoType: PromoType(.remoteMessage, customTimeoutInterval: .days(7), customTimeoutResult: .ignored(cooldown: .days(28))),
         context: .newTabPage,
-        coexistingPromoIDs: [],
         delegate: nil
     )
 }

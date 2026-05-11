@@ -28,6 +28,9 @@ struct TabInputState: Equatable {
     var selectedModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
     var selectedTool: AIChatRAGTool?
+    /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
+    /// because FE does not re-emit when the user returns to a tab already in voice mode.
+    var aiChatInputBoxVisibility: AIChatInputBoxVisibility
 
     init(
         text: String = "",
@@ -35,7 +38,8 @@ struct TabInputState: Equatable {
         attachments: [AIChatImageAttachment] = [],
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
-        selectedTool: AIChatRAGTool? = nil
+        selectedTool: AIChatRAGTool? = nil,
+        aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
     ) {
         self.text = text
         self.toggleMode = toggleMode
@@ -43,6 +47,7 @@ struct TabInputState: Equatable {
         self.selectedModelID = selectedModelID
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
+        self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
     }
 
     // AIChatImageAttachment is Identifiable but not Equatable, so compare attachments by id.
@@ -53,6 +58,7 @@ struct TabInputState: Equatable {
             && lhs.selectedModelID == rhs.selectedModelID
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
+            && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and
@@ -65,6 +71,6 @@ struct TabInputState: Equatable {
         let model = selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
-        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool)"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue)"
     }
 }

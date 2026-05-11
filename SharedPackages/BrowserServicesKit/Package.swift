@@ -64,7 +64,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "14.5.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "14.7.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -96,8 +96,6 @@ let package = Package(
                 "Navigation"
             ],
             resources: [
-                .process("ContentBlocking/UserScripts/contentblockerrules.js"),
-                .process("ContentBlocking/UserScripts/surrogates.js"),
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
                 .copy("../../PrivacyInfo.xcprivacy")
             ],
@@ -800,8 +798,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
-                "BrowserServicesKitTestsUtils",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                "BrowserServicesKitTestsUtils",
             ]
         ),
         .testTarget(

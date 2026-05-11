@@ -58,6 +58,9 @@ protocol SwitchBarHandling: AnyObject {
     var isUsingFadeOutAnimation: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
 
+    /// Suppresses the in-pill voice button — used when an external flank already provides one.
+    var hidesVoiceButton: Bool { get set }
+
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -148,6 +151,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     var isAIVoiceChatEnabled: Bool {
         voiceShortcutFeature.isAvailable
     }
+
+    var hidesVoiceButton: Bool = false
 
     var modeParameters: [String: String] {
         ["mode": currentToggleState.rawValue]

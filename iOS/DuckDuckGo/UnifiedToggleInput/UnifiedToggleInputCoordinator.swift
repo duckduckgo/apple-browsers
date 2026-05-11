@@ -49,13 +49,84 @@ enum UnifiedToggleInputDisplayState: Equatable {
 }
 
 enum UnifiedToggleInputIntent: Equatable {
-    case showCollapsed
-    case showExpanded
+    case showCollapsed(from: UnifiedToggleInputDisplayState)
+    case showExpanded(from: UnifiedToggleInputDisplayState)
     case showOmnibarEditing(expandedHeight: CGFloat, pendingExpandedHeight: CGFloat? = nil)
     case showOmnibarInactive
     case showOmnibarActive
     case hideOmnibarEditing(animated: Bool)
     case hide
+}
+
+/// First-class wrapper around "should this UI mutation animate, or snap?" Both branches
+/// take a closure of work to run — the wrapper handles the animation-context plumbing
+/// (`UIView.animate` vs `UIView.performWithoutAnimation`) so call sites stay flat.
+enum UTIAnimationStyle {
+    case snap
+    case animated(duration: TimeInterval, options: UIView.AnimationOptions, layoutTarget: UIView)
+
+    func perform(_ body: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
+        switch self {
+        case .snap:
+            UIView.performWithoutAnimation(body)
+            completion?(true)
+        case let .animated(duration, options, layoutTarget):
+            UIView.animate(withDuration: duration, delay: 0, options: options, animations: {
+                body()
+                layoutTarget.layoutIfNeeded()
+            }, completion: completion)
+        }
+    }
+
+    /// Duration of this style — `0` for snap, the configured duration for animated. Useful
+    /// for matching parallel animations (e.g. `adjustUI(withKeyboardFrame:in:)`) to the same
+    /// timing.
+    var duration: TimeInterval {
+        switch self {
+        case .snap: return 0
+        case let .animated(duration, _, _): return duration
+        }
+    }
+}
+
+extension UnifiedToggleInputIntent {
+    enum AnimationConstants {
+        /// In-place pose morph on Duck.ai (collapsed ↔ expanded card).
+        static let aiTabPoseMorphDuration: TimeInterval = 0.35
+    }
+
+    /// Animation style derived from the intent's transition. The (from, to) pair is the only
+    /// signal needed — adding new transitions means adding new cases in the matrix below, not
+    /// scattering `if/else` across handlers.
+    func animationStyle(layoutTarget: UIView) -> UTIAnimationStyle {
+        switch self {
+        case let .showCollapsed(from):
+            return Self.transitionStyle(from: from, to: .aiTab(.collapsed), layoutTarget: layoutTarget)
+        case let .showExpanded(from):
+            return Self.transitionStyle(from: from, to: .aiTab(.expanded), layoutTarget: layoutTarget)
+        case .hide, .showOmnibarEditing, .showOmnibarInactive, .showOmnibarActive, .hideOmnibarEditing:
+            // `.hide` is always a snap (no animatable transition pair); the omnibar intents
+            // own bespoke animation flows and pick their own style.
+            return .snap
+        }
+    }
+
+    private static func transitionStyle(from: UnifiedToggleInputDisplayState,
+                                        to: UnifiedToggleInputDisplayState,
+                                        layoutTarget: UIView) -> UTIAnimationStyle {
+        switch (from, to) {
+        case (.aiTab(.expanded), .aiTab(.collapsed)),
+             (.aiTab(.collapsed), .aiTab(.expanded)):
+            return .animated(duration: AnimationConstants.aiTabPoseMorphDuration,
+                             options: .curveEaseInOut,
+                             layoutTarget: layoutTarget)
+        default:
+            // Fresh entry into a state from a different layout (tab swipe, app launch,
+            // omnibar dismiss, hide). The outer constraint changes shouldn't be animated;
+            // the destination should just BE there.
+            return .snap
+        }
+    }
 }
 
 enum ExternalSubmissionType {
@@ -127,7 +198,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
-    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+        didSet {
+            guard oldValue != aiChatInputBoxVisibility else { return }
+            persistDraftToStore()
+        }
+    }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
     // MARK: - Properties
@@ -173,6 +249,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var isAITabExpanded: Bool {
         displayState == .aiTab(.expanded)
+    }
+
+    /// True when the current display state corresponds to the expanded card layout.
+    /// Synchronous (driven by `displayState`) so it's safe to read before the deferred
+    /// `applyCardLayout` runs from the intent handler.
+    var isInputPaneExpanded: Bool {
+        switch displayState {
+        case .aiTab(.expanded), .omnibar(.active): return true
+        default: return false
+        }
     }
 
     var isInputEditing: Bool {
@@ -342,6 +428,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         defer { isApplyingState = false }
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
+        aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -377,7 +464,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachments: currentImageAttachmentsForTabState,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
-            selectedTool: toolsController.selectedTool
+            selectedTool: toolsController.selectedTool,
+            aiChatInputBoxVisibility: aiChatInputBoxVisibility
         )
     }
 
@@ -418,29 +506,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if host == .contextualChat { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
+        let previousDisplayState = displayState
         displayState = .aiTab(.collapsed)
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
 
-        let renderState = computeRenderState()
-
-        viewController.apply(renderState.viewConfig, animated: false)
+        // Pose deferred to the intent handler so the morph animates in sync with the keyboard.
         applyToolbarPresentation()
         viewController.deactivateInput()
-        intentSubject.send(.showCollapsed)
+        intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
+        let previousDisplayState = displayState
         displayState = .aiTab(.expanded)
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
         viewController.handler.resetInteractionState()
 
-        let renderState = computeRenderState()
-
-        viewController.apply(renderState.viewConfig, animated: false)
+        // Pose deferred to the intent handler so the morph animates in sync with the keyboard.
         applyToolbarPresentation()
         fetchModels()
 
@@ -449,7 +535,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             textState = .prefilledSelected
         }
 
-        intentSubject.send(.showExpanded)
+        intentSubject.send(.showExpanded(from: previousDisplayState))
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             self.viewController.activateInput()
@@ -565,7 +651,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateToggleEnabled(_ enabled: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
-        viewController.updateToggleEnabled(enabled)
+        // Pass `showsToolbar` derived from the coordinator's render-state rule rather than
+        // letting the view re-derive it locally — the view doesn't know `isAITabState`, and
+        // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
+        // on a Duck.ai tab when the user disables the toggle.
+        viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
         if !enabled, isOmnibarSession {
             inputMode = .search
             viewController.apply(computeRenderState().viewConfig, animated: false)
@@ -876,8 +966,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isExpanded = true
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
-            isContentVisible = !isAIChatOnAITab
             let isSearchOnAITab = isAITabState && inputMode == .search
+            // Toggling to search on a chat tab without text is a *mode switch*; keep the chat
+            // web view visible. Suggestions take over once the user starts typing.
+            let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
+            isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
             inactiveAppearance = isSearchKeyboardHidden
 
@@ -916,13 +1009,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Decides which card components are visible right now, based on host + display state +
     /// toggle setting + input mode. Centralised here so the view layer just renders.
     private func cardLayout(forIsExpanded isExpanded: Bool) -> UnifiedToggleInputCardLayout {
-        guard isExpanded else { return .collapsed }
+        guard isExpanded else {
+            return isAITabState ? .flanked : .collapsed
+        }
         switch host {
         case .contextualChat:
             return .expanded(showsToggle: false, showsToolbar: true)
         case .omnibar:
             let showsToggle = isToggleEnabled
-            let showsToolbar = isToggleEnabled && inputMode == .aiChat
+            // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is user-disabled,
+            // so the user retains the model selector / attachments / send affordances.
+            let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
             return .expanded(showsToggle: showsToggle, showsToolbar: showsToolbar)
         }
     }
@@ -956,6 +1053,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearAttachments()
         setText("")
         attachmentUsage = nil
+        aiChatInputBoxVisibility = .visible
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -1218,6 +1316,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestAIChat()
     }
+
+    func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestFire()
+    }
+
+    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestDuckAIVoiceMode()
+    }
 }
 
 private extension UnifiedToggleInputCoordinator {
@@ -1315,7 +1421,6 @@ private extension UnifiedToggleInputCoordinator {
     func resetSessionState() {
         isNewChatPending = false
         aiChatStatus = .unknown
-        aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
         updateModelChipVisibility()
@@ -1428,7 +1533,7 @@ private extension UnifiedToggleInputCoordinator {
                 guard let self else { return }
                 let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
                     && viewController.inputMode == .aiChat
-                    && !viewController.isInputExpanded
+                    && !isInputPaneExpanded
                 if isCollapsedAIVoiceChatButton {
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {

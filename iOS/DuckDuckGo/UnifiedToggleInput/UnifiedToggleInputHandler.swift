@@ -243,7 +243,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            // Search-go-to is the only escape hatch back to search when the toggle is off.
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly

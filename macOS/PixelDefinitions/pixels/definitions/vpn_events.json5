@@ -37,10 +37,28 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced.",
+                "examples": [
+                    "noAuthToken",
+                    "cancelled",
+                    "connectionStatusInvalid",
+                    "simulateControllerFailureError",
+                    "startTunnelFailure",
+                    "failedToFetchAuthToken",
+                    "notAuthorizedToEnableLoginItem",
+                    "enableLoginItemError",
+                    "ipcControlError",
+                    "VPN settings are missing or invalid",
+                    "VPN disconnected due to expired subscription",
+                    "Abnormal situation caused the token to be reset"
+                ]
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -153,7 +171,6 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",

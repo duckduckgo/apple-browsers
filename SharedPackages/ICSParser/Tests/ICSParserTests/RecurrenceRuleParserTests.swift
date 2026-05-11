@@ -147,6 +147,72 @@ struct RecurrenceRuleParserTests {
         }
     }
 
+    /// RFC 5545 §3.3.10: INTERVAL must be a positive integer. A `0` value would otherwise
+    /// silently fall through to the default `interval = 1`.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for non-positive INTERVAL", .timeLimit(.minutes(1)))
+    func throwsForZeroInterval() {
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: "FREQ=DAILY;INTERVAL=0")) {
+            try RecurrenceRuleParser.parse("FREQ=DAILY;INTERVAL=0", startDate: utcDate("2026-06-01T00:00:00Z"))
+        }
+    }
+
+    /// COUNT=0 would generate no occurrences; reject like other invalid RRULE values.
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws malformedRecurrenceRule for non-positive COUNT", .timeLimit(.minutes(1)))
+    func throwsForZeroCount() {
+        #expect(throws: ICSParser.Error.malformedRecurrenceRule(raw: "FREQ=DAILY;COUNT=0")) {
+            try RecurrenceRuleParser.parse("FREQ=DAILY;COUNT=0", startDate: utcDate("2026-06-01T00:00:00Z"))
+        }
+    }
+
+    /// `parseUntil` accepts the naive datetime form (no Z), used by floating-time RRULEs.
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses UNTIL in naive datetime form (no Z suffix)", .timeLimit(.minutes(1)))
+    func parsesUntilNaiveDateTimeForm() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=DAILY;UNTIL=20260630T235959",
+            startDate: utcDate("2026-06-01T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.endDate == utcDate("2026-06-30T23:59:59Z"))
+    }
+
+    /// `parseUntil` accepts the date-only form some producers emit despite the RFC asking for
+    /// a time-anchored value to match DTSTART's type.
+    @available(iOS 16, macOS 13, *)
+    @Test("Parses UNTIL in date-only form", .timeLimit(.minutes(1)))
+    func parsesUntilDateOnlyForm() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=DAILY;UNTIL=20260630",
+            startDate: utcDate("2026-06-01T09:00:00Z")
+        )
+        #expect(rule.recurrenceEnd?.endDate == utcDate("2026-06-30T00:00:00Z"))
+    }
+
+    /// Happy path for the daily COUNT-to-UNTIL shortcut: no BYDAY, DTSTART + (count-1) days.
+    @available(iOS 16, macOS 13, *)
+    @Test("Converts COUNT to UNTIL for plain daily rules", .timeLimit(.minutes(1)))
+    func convertsCountToUntilForPlainDaily() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=DAILY;COUNT=5",
+            startDate: utcDate("2026-06-01T09:00:00Z")
+        )
+        // 5 daily occurrences: Jun 1, 2, 3, 4, 5. Last at end-of-day Jun 5.
+        #expect(rule.recurrenceEnd?.endDate == utcDate("2026-06-05T23:59:59Z"))
+    }
+
+    /// Happy path for the monthly COUNT-to-UNTIL shortcut with DTSTART day ≤ 28.
+    @available(iOS 16, macOS 13, *)
+    @Test("Converts COUNT to UNTIL for plain monthly rules on a safe day-of-month", .timeLimit(.minutes(1)))
+    func convertsCountToUntilForPlainMonthly() throws {
+        let rule = try RecurrenceRuleParser.parse(
+            "FREQ=MONTHLY;COUNT=6",
+            startDate: utcDate("2026-01-15T09:00:00Z")
+        )
+        // 6 monthly occurrences from Jan 15: last is Jun 15.
+        #expect(rule.recurrenceEnd?.endDate == utcDate("2026-06-15T23:59:59Z"))
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Throws malformedRecurrenceRule for unknown FREQ", .timeLimit(.minutes(1)))
     func throwsForUnknownFrequency() {

@@ -282,6 +282,55 @@ struct ICSParserTests {
         }
     }
 
+    /// Unknown / X-prefixed properties are skipped silently rather than failing the event.
+    /// Pins the default branch of `PropertyParser`'s key switch.
+    @available(iOS 16, macOS 13, *)
+    @Test("Ignores unknown properties without failing the event", .timeLimit(.minutes(1)))
+    func ignoresUnknownProperties() throws {
+        let raw = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//Test//EN
+        BEGIN:VEVENT
+        UID:x@example.com
+        DTSTART:20260601T140000Z
+        DTEND:20260601T150000Z
+        SUMMARY:Has unknown props
+        X-APPLE-FOO:something
+        CATEGORIES:Work,Meeting
+        ATTENDEE;CN=Bob:mailto:bob@example.com
+        END:VEVENT
+        END:VCALENDAR
+        """
+        let events = try ICSParser.parse(string: raw)
+        try #require(events.count == 1)
+        #expect(events[0].title == "Has unknown props")
+    }
+
+    /// An empty URL value drops to nil instead of failing the event; pins the optional-metadata
+    /// behaviour. (`URL(string:)` is otherwise very lenient and accepts most strings.)
+    @available(iOS 16, macOS 13, *)
+    @Test("Drops an empty URL value to nil without failing the event", .timeLimit(.minutes(1)))
+    func dropsEmptyURLSilently() throws {
+        let raw = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//Test//EN
+        BEGIN:VEVENT
+        UID:badurl@example.com
+        DTSTART:20260601T140000Z
+        DTEND:20260601T150000Z
+        SUMMARY:Empty URL
+        URL:
+        END:VEVENT
+        END:VCALENDAR
+        """
+        let events = try ICSParser.parse(string: raw)
+        try #require(events.count == 1)
+        #expect(events[0].url == nil)
+        #expect(events[0].title == "Empty URL")
+    }
+
     /// `VALUE=DATE` and `VALUE=DATE-TIME` are distinct RFC 5545 §3.2.20 token values. A naive
     /// substring check on the parameter would mis-classify `VALUE=DATE-TIME` as date-only.
     @available(iOS 16, macOS 13, *)

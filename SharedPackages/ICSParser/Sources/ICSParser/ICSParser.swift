@@ -46,8 +46,8 @@ public enum ICSParser {
         return try parse(string: raw)
     }
 
-    /// Parses the given .ics file content from a string. Convenience for tests.
-    public static func parse(string raw: String) throws -> [ICSEvent] {
+    /// Parses the given .ics file content from a string. Internal entry point for tests.
+    static func parse(string raw: String) throws -> [ICSEvent] {
         // Windows .ics exports often include a UTF-8 BOM that survives UTF-8 decoding.
         let stripped = raw.first == "\u{FEFF}" ? String(raw.dropFirst()) : raw
         let lines = LineUnfolder.unfold(stripped)

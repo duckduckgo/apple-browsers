@@ -3269,7 +3269,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.address.trackers.animation" = "Show in Address Bar";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Choose what you see when you return after %@ of inactivity.";
+"settings.afterInactivity.footer.format" = "Choose what you see when you return to DuckDuckGo after %@ of inactivity.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hour";
@@ -3290,7 +3290,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.afterInactivity.idle.interval.seconds" = "%d seconds";
 
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "After Inactivity";
+"settings.afterInactivity.label" = "Opening Screen";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Last Used Tab";

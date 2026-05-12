@@ -439,11 +439,10 @@ final class PreferencesSidebarModel: ObservableObject {
                     // Token gone — treat as signed out
                     updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
                 } catch {
-                    Logger.general.error("Failed to refresh subscription state, using degraded state: \(error, privacy: .public)")
-                    updatedState = PreferencesSidebarSubscriptionState(
-                        hasSubscription: subscriptionManager.isSubscriptionPresent(),
-                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase
-                    )
+                    // Transient error (network failure, 500, etc.) — keep current state so feature
+                    // flags don't flip to false while the subscription is still valid in the cache.
+                    Logger.general.error("Failed to refresh subscription state, keeping current: \(error, privacy: .public)")
+                    return
                 }
             } else {
                 updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)

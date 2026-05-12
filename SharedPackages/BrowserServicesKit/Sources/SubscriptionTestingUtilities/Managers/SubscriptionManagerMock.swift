@@ -181,8 +181,12 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var resultFeatures: [SubscriptionEntitlement] = []
+    public var resultFeaturesError: Error?
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
-        resultFeatures
+        if let resultFeaturesError {
+            throw resultFeaturesError
+        }
+        return resultFeatures
     }
 
     public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {

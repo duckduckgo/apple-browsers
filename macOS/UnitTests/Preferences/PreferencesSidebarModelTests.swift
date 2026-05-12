@@ -403,6 +403,39 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isSidebarItemEnabled(for: .paidAIChat))
     }
 
+    func testCurrentSubscriptionStateIsUnchangedOnTransientFeaturesError() async throws {
+        // Regression test: a transient currentSubscriptionFeatures error must not flip feature
+        // flags to false. The sidebar would otherwise show "Subscription Settings visible,
+        // sub-items hidden" until the next successful refresh.
+
+        // Given — model starts with a fully-featured subscription state
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Capture the known-good state
+        let stateBeforeError = model.currentSubscriptionState
+        XCTAssertTrue(stateBeforeError.hasSubscription)
+        XCTAssertTrue(stateBeforeError.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isIdentityTheftRestorationAvailable)
+
+        // When — next refresh hits a transient 500
+        mockSubscriptionManager.resultFeaturesError = URLError(.badServerResponse)
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then — state must be unchanged
+        XCTAssertEqual(model.currentSubscriptionState, stateBeforeError,
+                       "Transient error must not overwrite subscription state")
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
+    }
+
     // MARK: Tests for subscribed refresh notification triggers
 
     func testModelReloadsSectionsWhenRefreshSectionsCalled() async throws {

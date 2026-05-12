@@ -840,7 +840,7 @@ class MainViewController: UIViewController {
     func captureCurrentTabScreenSnapshotIfPossible(tabUID: String) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self else { return }
-            guard self.tabSwipeOverlayView?.alpha == 0 else {
+            guard (self.tabSwipeOverlayView?.alpha ?? 0) == 0 else {
                 return
             }
             guard let currentTab = self.tabManager.currentTabsModel.currentTab,

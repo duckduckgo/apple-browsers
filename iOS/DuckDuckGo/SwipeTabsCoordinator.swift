@@ -296,7 +296,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         overlay.alpha = 1
         overlayActive = true
 
-        let cachedCount = snapshots.compactMap { $0 }.count
         return true
     }
 
@@ -410,8 +409,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         var height = targetSize.height
 
         let tab = tabsModel.get(tabAt: nextIndex)
-        let isAITab = tab?.isAITab == true
-        let hasLink = tab?.link != nil
 
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)

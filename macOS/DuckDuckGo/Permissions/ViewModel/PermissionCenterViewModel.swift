@@ -533,7 +533,7 @@ final class PermissionCenterViewModel: ObservableObject {
         // so we omit the row entirely.
         if isLocked {
             switch systemPermissionManager.cachedAuthorizationState(for: permissionType) {
-            case .authorized, .notDetermined:
+            case .authorized, .notDetermined, .systemDisabled:
                 return nil
             case .denied, .restricted:
                 break

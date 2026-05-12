@@ -584,8 +584,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
-        // `effectiveInputMode` reads `isOmnibarSession`, so the displayState assignment above must precede it.
-        setInitialInputMode(effectiveInputMode(for: inputMode))
+        // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
+        setInitialInputMode(isToggleEnabled ? inputMode : .search)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true

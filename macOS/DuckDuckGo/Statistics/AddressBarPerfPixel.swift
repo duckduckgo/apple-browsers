@@ -35,8 +35,8 @@ struct AddressBarPerfPixel: PixelKitEvent {
     /// Names which halves of the pixel carry real data. A pixel is only emitted when at least one
     /// stage has samples, so a "neither" case is never sent.
     enum Stages: String {
-        case charOnly = "char_only"
-        case suggestOnly = "suggest_only"
+        case character
+        case suggestion
         case both
     }
 

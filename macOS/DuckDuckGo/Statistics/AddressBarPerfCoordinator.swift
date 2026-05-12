@@ -148,9 +148,9 @@ final class AddressBarPerfCoordinator {
         if !snapshot.char.isEmpty && !snapshot.suggest.isEmpty {
             stages = .both
         } else if !snapshot.char.isEmpty {
-            stages = .charOnly
+            stages = .character
         } else {
-            stages = .suggestOnly
+            stages = .suggestion
         }
         let pixel = AddressBarPerfPixel(
             charBasisPoints: charBP,

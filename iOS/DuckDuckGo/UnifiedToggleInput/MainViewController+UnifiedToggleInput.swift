@@ -287,6 +287,16 @@ private extension MainViewController {
                 self.updateUnifiedInputContentVisibility(for: coordinator)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        // Refresh Dax overlay visibility while onboarding as omnibar text changes.
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                      !self.daxDialogsManager.hasSeenOnboarding,
+                      coordinator.isOmnibarSession else { return }
+                self.updateUnifiedInputContentVisibility(for: coordinator)
+            }
+            .store(in: &unifiedToggleInputCancellables)
     }
 
     func handleModeChange(_ mode: TextEntryMode) {

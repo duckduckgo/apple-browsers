@@ -1208,13 +1208,23 @@ class TabViewController: UIViewController {
 
     func dismissContextualDaxFireDialog() {
         guard contextualOnboardingLogic.isShowingFireDialog else { return }
-        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        dismissContextualOnboardingIfNeeded()
     }
 
     func presentExperimentContextualDaxFireDialog() {
         contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
         let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
-        contextualOnboardingPresenter.presentContextualOnboarding(for: fireSpec, in: self)
+        presentContextualOnboarding(for: fireSpec)
+    }
+
+    private func presentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec) {
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
+        contextualOnboardingPresenter.presentContextualOnboarding(for: spec, in: self)
+    }
+
+    private func dismissContextualOnboardingIfNeeded() {
+        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
     }
 
     private func shouldHandleUpdate(_ previousURL: URL?, _ newURL: URL?) -> Bool {
@@ -1447,7 +1457,7 @@ class TabViewController: UIViewController {
     private var didGoBackForward: Bool = false {
         didSet {
             if didGoBackForward {
-                contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+                dismissContextualOnboardingIfNeeded()
             }
         }
     }
@@ -2080,7 +2090,7 @@ extension TabViewController: WKNavigationDelegate {
         guard let spec = daxDialogsManager.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
 
             // Dismiss Contextual onboarding if there's no message to show.
-            contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+            dismissContextualOnboardingIfNeeded()
             // Dismiss privacy dashbooard pulse animation when no browsing dialog to show.
             delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: false)
 
@@ -2109,7 +2119,7 @@ extension TabViewController: WKNavigationDelegate {
             self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
             // Present the contextual onboarding
-            contextualOnboardingPresenter.presentContextualOnboarding(for: spec, in: self)
+            presentContextualOnboarding(for: spec)
 
             if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
                 self.woShownRecently = true
@@ -4186,7 +4196,7 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // Reset last visited onboarding site and last dax dialog shown.
         contextualOnboardingLogic.setDaxDialogDismiss()
 
-        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        dismissContextualOnboardingIfNeeded()
     }
 
 }

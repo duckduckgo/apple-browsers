@@ -54,8 +54,8 @@ struct AddressBarPerfPixel: PixelKitEvent {
     var name: String { "m_mac_address-bar_render-perf" }
 
     var parameters: [String: String]? {
-        var result = Self.histogramParameters(prefix: "char_", basisPoints: charBasisPoints)
-        for (key, value) in Self.histogramParameters(prefix: "suggest_", basisPoints: suggestBasisPoints) {
+        var result = Self.histogramParameters(prefix: "character_", basisPoints: charBasisPoints)
+        for (key, value) in Self.histogramParameters(prefix: "suggestion_", basisPoints: suggestBasisPoints) {
             result[key] = value
         }
         result["stages"] = stages.rawValue

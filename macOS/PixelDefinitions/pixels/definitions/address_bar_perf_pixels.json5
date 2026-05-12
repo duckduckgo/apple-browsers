@@ -15,109 +15,109 @@
                 "pattern": "^(character|suggestion|both)$"
             },
             {
-                "key": "char_bp_0_16",
+                "key": "character_bp_0_16",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 0..16 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_16_50",
+                "key": "character_bp_16_50",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 16..50 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_50_100",
+                "key": "character_bp_50_100",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 50..100 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_100_150",
+                "key": "character_bp_100_150",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 100..150 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_150_200",
+                "key": "character_bp_150_200",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 150..200 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_200_300",
+                "key": "character_bp_200_300",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 200..300 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_300_500",
+                "key": "character_bp_300_500",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 300..500 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_500_1000",
+                "key": "character_bp_500_1000",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 500..1000 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "char_bp_1000_plus",
+                "key": "character_bp_1000_plus",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of char-render samples in the 1000+ ms band (capped at 5 s by the sample filter).",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_0_16",
+                "key": "suggestion_bp_0_16",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 0..16 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_16_50",
+                "key": "suggestion_bp_16_50",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 16..50 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_50_100",
+                "key": "suggestion_bp_50_100",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 50..100 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_100_150",
+                "key": "suggestion_bp_100_150",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 100..150 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_150_200",
+                "key": "suggestion_bp_150_200",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 150..200 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_200_300",
+                "key": "suggestion_bp_200_300",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 200..300 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_300_500",
+                "key": "suggestion_bp_300_500",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 300..500 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_500_1000",
+                "key": "suggestion_bp_500_1000",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 500..1000 ms band.",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"
             },
             {
-                "key": "suggest_bp_1000_plus",
+                "key": "suggestion_bp_1000_plus",
                 "type": "string",
                 "description": "Basis-points share (0..10000) of suggest-render samples in the 1000+ ms band (capped at 5 s by the sample filter).",
                 "pattern": "^(0|[1-9][0-9]{0,3}|10000)$"

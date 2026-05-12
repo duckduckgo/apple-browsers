@@ -32,7 +32,7 @@ protocol TabObserver: AnyObject {
     
 }
 
-public class Tab: NSObject, NSCoding, NSCopying {
+public class Tab: NSObject, NSCoding {
 
     struct WeaklyHeldTabObserver {
         weak var observer: TabObserver?
@@ -236,7 +236,8 @@ public class Tab: NSObject, NSCoding, NSCopying {
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
 
-    public func copy(with zone: NSZone? = nil) -> Any {
+    /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
+    func archivalSnapshot() -> Tab {
         Tab(uid: uid,
             link: link?.copy() as? Link,
             viewed: viewed,

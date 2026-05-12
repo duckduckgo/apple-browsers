@@ -157,7 +157,6 @@ struct Terminating: TerminatingHandling {
             pixel = switch error {
             case .appSupportDirAccess: .tabsStoreSupportDirAccessError
             case .storeInit: .tabsStoreInitError
-            case .copying: .tabsStoreSaveError
             }
             mode = .immediately(debugMessage: "TabsModelPersistence init failed: \(error)")
         }

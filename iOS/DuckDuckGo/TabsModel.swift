@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Combine
 
-public class TabsModel: NSObject, NSCoding, NSCopying, TabsModelManaging {
+public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     private struct NSCodingKeys {
         static let legacyIndex = "currentIndex"
@@ -117,12 +117,10 @@ public class TabsModel: NSObject, NSCoding, NSCopying, TabsModelManaging {
         coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
     }
 
-    public func copy(with zone: NSZone? = nil) -> Any {
-        let tabsCopy = tabs.compactMap { $0.copy() as? Tab }
-        return TabsModel(tabs: tabsCopy,
-                         currentIndex: _currentIndex,
-                         desktop: UIDevice.current.userInterfaceIdiom == .pad,
-                         mode: mode)
+    /// Returns a frozen deep copy of the model suitable for archiving without concurrent-mutation risk.
+    func archivalSnapshot() -> TabsModel {
+        let tabsCopy = tabs.map { $0.archivalSnapshot() }
+        return TabsModel(tabs: tabsCopy, currentIndex: _currentIndex, desktop: false, mode: mode)
     }
 
     var currentTab: Tab? {

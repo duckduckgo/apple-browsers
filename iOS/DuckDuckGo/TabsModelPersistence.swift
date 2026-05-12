@@ -37,7 +37,6 @@ protocol TabsModelPersisting {
 enum TabsPersistenceError: Error {
     case appSupportDirAccess
     case storeInit
-    case copying
 }
 
 class TabsModelPersistence: TabsModelPersisting {
@@ -143,10 +142,7 @@ class TabsModelPersistence: TabsModelPersisting {
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         do {
             // Deep-copy to freeze mutable state before archiving
-            guard let snapshot = model.copy() as? TabsModel else {
-                assertionFailure("Copying TabsModel failed")
-                return .failure(TabsPersistenceError.copying)
-            }
+            let snapshot = model.archivalSnapshot()
             let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
             try store(for: key).set(data, forKey: Constants.storageKey)
             return .success(())

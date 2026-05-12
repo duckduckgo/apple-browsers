@@ -112,8 +112,8 @@ final class QuickFeedbackService: NSObject {
         // before document-start fires on the first navigation.
         let tab = Tab(
             content: .none,
-            burnerMode: .regular,
-            shouldLoadInBackground: false
+            shouldLoadInBackground: false,
+            burnerMode: .regular
         )
         tab.setDelegate(self)
         tab.webView.configuration.userContentController.addUserScript(
@@ -157,10 +157,10 @@ final class QuickFeedbackService: NSObject {
         if let existing = contentOverlayPopover {
             return existing
         }
-        guard let anchorView = windowController?.webViewContainer else {
+        guard let anchorView = windowController?.webViewContainer,
+              let appDelegate = Application.appDelegate else {
             return nil
         }
-        let appDelegate = Application.appDelegate
         let popover = ContentOverlayPopover(
             currentTabView: anchorView,
             privacyConfigurationManager: appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,

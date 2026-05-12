@@ -36,8 +36,6 @@ import PixelKit
 @MainActor
 public final class AddressBarPerformanceCoordinator {
 
-    typealias PixelFirer = (AddressBarPerformancePixel) -> Void
-
     /// Default delay between terminator and pixel emission. Avoids competing with the
     /// post-navigation CPU window we're trying to keep clean for the SLO measurement itself.
     static let defaultDeferredEmitDelay: TimeInterval = 1.0
@@ -54,7 +52,7 @@ public final class AddressBarPerformanceCoordinator {
     private let recorder: AddressBarPerformanceRecorder
     private let deferredEmitDelay: TimeInterval
     private let hookStopDelay: TimeInterval
-    private let pixelFirer: PixelFirer
+    private let pixelFiring: PixelFiring?
 
     private var paintHook: AddressBarPerformancePaintHook?
     private var pendingCharStartTime: TimeInterval?
@@ -63,14 +61,12 @@ public final class AddressBarPerformanceCoordinator {
     private var pendingEmit: DispatchWorkItem?
     var pendingHookStopTask: Task<Void, Never>?
 
-    public convenience init() {
+    public convenience init(pixelFiring: PixelFiring? = PixelKit.shared) {
         self.init(
             recorder: AddressBarPerformanceRecorder(),
             deferredEmitDelay: AddressBarPerformanceCoordinator.defaultDeferredEmitDelay,
             hookStopDelay: AddressBarPerformanceCoordinator.defaultHookStopDelay,
-            pixelFirer: { pixel in
-                PixelKit.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
-            }
+            pixelFiring: pixelFiring
         )
     }
 
@@ -78,12 +74,12 @@ public final class AddressBarPerformanceCoordinator {
         recorder: AddressBarPerformanceRecorder,
         deferredEmitDelay: TimeInterval,
         hookStopDelay: TimeInterval,
-        pixelFirer: @escaping PixelFirer
+        pixelFiring: PixelFiring?
     ) {
         self.recorder = recorder
         self.deferredEmitDelay = deferredEmitDelay
         self.hookStopDelay = hookStopDelay
-        self.pixelFirer = pixelFirer
+        self.pixelFiring = pixelFiring
     }
 
     deinit {
@@ -205,9 +201,9 @@ public final class AddressBarPerformanceCoordinator {
             stages: stages
         )
 
-        let firer = pixelFirer
+        let firing = pixelFiring
         let work = DispatchWorkItem {
-            firer(pixel)
+            firing?.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
         }
         pendingEmit = work
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + deferredEmitDelay, execute: work)

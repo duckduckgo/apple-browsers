@@ -25,7 +25,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AddressBarPerformanceTests",
-            dependencies: ["AddressBarPerformance"]
+            dependencies: [
+                "AddressBarPerformance",
+                .product(name: "PixelKit", package: "BrowserServicesKit")
+            ]
         )
     ]
 )

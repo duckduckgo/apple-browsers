@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelKit
 import XCTest
 @testable import AddressBarPerformance
 
@@ -28,16 +29,25 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     }
 
     /// Captures pixels fired by the coordinator. Thread-safe so background-dispatched emits can append.
-    private final class PixelCapture {
+    private final class PixelCapture: PixelFiring {
         private let lock = NSLock()
         private var pixels: [AddressBarPerformancePixel] = []
 
-        var firer: (AddressBarPerformancePixel) -> Void {
-            { [weak self] pixel in
-                self?.lock.lock()
-                self?.pixels.append(pixel)
-                self?.lock.unlock()
+        func fire(_ event: PixelKitEvent,
+                  frequency: PixelKit.Frequency,
+                  includeAppVersionParameter: Bool,
+                  withAdditionalParameters: [String: String]?,
+                  withNamePrefix: String?,
+                  onComplete: @escaping PixelKit.CompletionBlock) {
+            guard let pixel = event as? AddressBarPerformancePixel else {
+                XCTFail("Unexpected event type: \(type(of: event))")
+                onComplete(false, nil)
+                return
             }
+            lock.lock()
+            pixels.append(pixel)
+            lock.unlock()
+            onComplete(true, nil)
         }
 
         func snapshot() -> [AddressBarPerformancePixel] {
@@ -77,7 +87,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
             recorder: recorder,
             deferredEmitDelay: testDeferredEmitDelay,
             hookStopDelay: testHookStopDelay,
-            pixelFirer: capture.firer
+            pixelFiring: capture
         )
     }
 

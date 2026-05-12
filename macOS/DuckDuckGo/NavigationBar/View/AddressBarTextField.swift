@@ -136,8 +136,15 @@ final class AddressBarTextField: NSTextField {
         perfTerminatorCancellables.removeAll()
         if let window {
             performanceCoordinator?.attach(to: window)
-            NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: window)
-                .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
+            /// `object: nil` + filter inside the sink — passing `object: window` makes the subscription
+            /// strong-retain it, forming a cycle through `perfTerminatorCancellables` that keeps the
+            /// whole view tree alive (the window can't dealloc, so `viewDidMoveToWindow(nil)` never runs
+            /// to clear the cancellables).
+            NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
+                .sink { [weak self] notification in
+                    guard let self, (notification.object as? NSWindow) === self.window else { return }
+                    self.performanceCoordinator?.terminateInteraction()
+                }
                 .store(in: &perfTerminatorCancellables)
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
                 .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }

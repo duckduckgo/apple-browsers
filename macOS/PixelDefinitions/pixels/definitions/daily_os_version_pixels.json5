@@ -28,7 +28,8 @@
                 "pattern": "^([0-9]{1,2}|latest)$"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     }
 }

@@ -31,6 +31,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
+    private var segueToSettingsGeneralCallCount = 0
     private var segueToFeedbackCallCount = 0
     private var segueToSyncSettingsCallCount = 0
     private var segueToSettingsAppearanceCallCount = 0
@@ -41,9 +42,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         notificationCenter = NotificationCenter()
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
+        segueToSettingsGeneralCallCount = 0
         segueToFeedbackCallCount = 0
         segueToSyncSettingsCallCount = 0
         segueToSettingsAppearanceCallCount = 0
+        segueToPIRCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -143,9 +146,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         func assertSegueCount(_ count: Int) {
             XCTAssertEqual(segueToSettingsCallCount, count)
+            XCTAssertEqual(segueToSettingsGeneralCallCount, count)
             XCTAssertEqual(segueToAIChatSettingsCallCount, count)
             XCTAssertEqual(segueToFeedbackCallCount, count)
             XCTAssertEqual(segueToSettingsAppearanceCallCount, count)
+            XCTAssertEqual(segueToPIRCallCount, count)
         }
 
         // Start state
@@ -155,6 +160,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         DefaultMessageNavigator(delegate: self).navigateTo(.settings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsCallCount, 1)
 
+        DefaultMessageNavigator(delegate: self).navigateTo(.settingsGeneral, presentationStyle: .dismissModalsAndPresentFromRoot)
+        XCTAssertEqual(segueToSettingsGeneralCallCount, 1)
+
         DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToAIChatSettingsCallCount, 1)
         
@@ -163,6 +171,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         DefaultMessageNavigator(delegate: self).navigateTo(.appearance, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsAppearanceCallCount, 1)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.personalInformationRemoval, presentationStyle: .dismissModalsAndPresentFromRoot)
+        XCTAssertEqual(segueToPIRCallCount, 1)
 
         // End state
         assertSegueCount(1)
@@ -285,7 +296,38 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertNil(PixelFiringMock.lastParams)
     }
 
-    private func createSUT() -> NewTabPageMessagesModel {
+    // MARK: - openedAfterIdle
+
+    func testWhenOpenedAfterIdleIsTrueThenRefreshPassesOpenedAfterIdleTrue() {
+        let sut = createSUT(isOpenedAfterIdle: true)
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, true)
+    }
+
+    func testWhenOpenedAfterIdleIsFalseThenRefreshPassesOpenedAfterIdleFalse() {
+        let sut = createSUT(isOpenedAfterIdle: false)
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
+    }
+
+    func testWhenDefaultOpenedAfterIdleThenRefreshPassesFalse() {
+        let sut = createSUT()
+
+        sut.load()
+
+        XCTAssertTrue(messagesConfiguration.didRefresh)
+        XCTAssertEqual(messagesConfiguration.lastRefreshOpenedAfterIdle, false)
+    }
+
+    // MARK: - Helpers
+
+    private func createSUT(isOpenedAfterIdle: Bool = false) -> NewTabPageMessagesModel {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
@@ -293,7 +335,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
-                                imageLoader: MockRemoteMessagingImageLoader())
+                                imageLoader: MockRemoteMessagingImageLoader(),
+                                isOpenedAfterIdle: isOpenedAfterIdle)
     }
 }
 
@@ -305,6 +348,10 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
     
     func segueToSettings(presentationStyle: PresentationContext.Style) {
         segueToSettingsCallCount += 1
+    }
+
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        segueToSettingsGeneralCallCount += 1
     }
 
     func segueToFeedback(presentationStyle: PresentationContext.Style) {

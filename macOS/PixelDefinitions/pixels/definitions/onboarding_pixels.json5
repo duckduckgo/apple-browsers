@@ -5,176 +5,126 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_step-complete-get-started": {
         "description": "Fired when the user completes the Get Started step of the onboarding flow",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_step-complete-private-by-default": {
         "description": "Fired when the user completes the Private by Default (Make Default Browser) step of the onboarding flow",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_step-complete-cleaner-browsing": {
         "description": "Fired when the user completes the Cleaner Browsing (DuckPlayer) step of the onboarding flow",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_step-complete-system-settings": {
         "description": "Fired when the user completes the System Settings (Dock/Import) step of the onboarding flow",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_step-complete-customize": {
         "description": "Fired when the user completes the Customize step of the onboarding flow",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_onboarding_final-step-complete": {
         "description": "Fired when the user completes the entire onboarding flow and clicks Start Browsing or Go to Settings",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_welcome": {
-        "description": "Fired on the Welcome step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_search_custom_u": {
+        "description": "Fired when the user types into the address bar when the search suggestions dialog is shown during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_set-default": {
-        "description": "Fired on the Set Default Browser step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_visit_site_custom_u": {
+        "description": "Fired when the user types into the address bar when the site suggestions dialog  is shown during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_add-to-dock": {
-        "description": "Fired on the Add to Dock row of the System Settings step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_fire_button_try_it_pressed_u": {
+        "description": "Fired when the “skip” button is clicked on the Fire Button dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_import-data": {
-        "description": "Fired on the Import row of the System Settings step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_finished_u": {
+        "description": "Fired when the final onboarding dialog is displayed during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_duck-player": {
-        "description": "Fired on the Duck Player step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_fire_button_pressed_u": {
+        "description": "Fired when the Fire button is clicked from the Fire Button dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_customization": {
-        "description": "Fired on the Customization step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_privacy_dashboard_opened_u": {
+        "description": "Fired when the privacy dashboard is opened from the Trackers dialog during the contextual onboarding",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            {
-                "key": "value",
-                "type": "string",
-                "description": "Comma-separated list of enabled customizations (bookmarks_bar, restore_session, home_button) or dismiss if all customizations were skipped"
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_search-experience": {
-        "description": "Fired on the Search Experience step of the linear onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_second_site_visit_u": {
+        "description": "Fired on didFinishLoading on Tab only if it's not a search; the OnboardingPixelProvider sends it only the second time",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            {
-                "key": "value",
-                "type": "string",
-                "description": "Which search experience option the user selected",
-                "enum": ["search_only", "search_plus_duckai"]
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_search": {
-        "description": "Fired on the Search step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_try_search_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try search dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            {
-                "key": "value",
-                "type": "string",
-                "description": "Whether the user selected a suggested search, entered a custom search, or dismissed the step",
-                "enum": ["custom", "dismiss", "suggested"]
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_search-results": {
-        "description": "Fired on the Search Done step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_search-result-dialog_dismiss-button-tapped_u": {
+        "description": "Fired when the search result dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_visit-site": {
-        "description": "Fired on the Visit A Site step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_try_visit_site_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try visit site dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            {
-                "key": "value",
-                "type": "string",
-                "description": "Whether the user selected a suggested site, entered a custom site, or dismissed the step",
-                "enum": ["custom", "dismiss", "suggested"]
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_trackers-blocked": {
-        "description": "Fired on the Trackers Blocked step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_trackers_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the trackers blocked dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_fire-button": {
-        "description": "Fired on the Fire Button step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_fire_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the try fire button dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_onboarding_end": {
-        "description": "Fired on the final step of the contextual onboarding flow.",
-        "owners": ["rachelmcr"],
+    "m_mac_onboarding_end_dialog_dismiss_button_tapped_u": {
+        "description": "Fired when the final dialog in the contextual onboarding is dismissed",
+        "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

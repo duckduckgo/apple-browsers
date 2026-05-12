@@ -207,7 +207,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                                subcategory: selectedSubcategory)
             }
         case .contactSupportClick:
-            await openSupport()
+            openSupport()
         }
     }
 

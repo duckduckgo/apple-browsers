@@ -21,7 +21,7 @@ import Common
 public enum SubscriptionManagerError: DDGError {
     /// The app has no `TokenContainer`
     case noTokenAvailable
-    /// There was a failure wile retrieving, updating or creating the `TokenContainer`
+    /// There was a failure while retrieving, updating or creating the `TokenContainer`
     case errorRetrievingTokenContainer(error: Error?)
 
     case confirmationHasInvalidSubscription

@@ -20,19 +20,19 @@
         "description": "Fired when the update notification popover appears after an update is detected",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_update_notification_tapped": {
         "description": "Fired when user interacts with the update notification popover",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_update_duckduckgo_button_tapped": {
         "description": "Fired when user taps the \"Update DuckDuckGo\" button in the About preferences",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_metadata_fetch_failed": {
         "description": "Fired when the network request to fetch latest release information fails",
@@ -68,7 +68,7 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_wide_sparkle_update_cycle": {
         "description": "Wide pixel tracking the complete Sparkle update cycle from check to installation",
@@ -207,7 +207,8 @@
                 "type": "string",
                 "description": "Context name for the update flow",
                 "enum": ["sparkle_update"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_update_application_success": {
@@ -254,7 +255,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_application_failure": {
@@ -333,7 +335,8 @@
                 "enum": ["automatic", "manual"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_application_unexpected": {
@@ -358,7 +361,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     }
 }

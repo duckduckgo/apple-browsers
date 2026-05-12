@@ -218,13 +218,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(forceRefresh: false)
             async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: false,
                                                                                                  loadingIndicator: false)
-            let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
+            let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
             // Reload remote subscription and email state
             async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
             async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: true,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
-            let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
+            _ = await (reloadedEmail, reloadedSubscription)
         }
     }
 

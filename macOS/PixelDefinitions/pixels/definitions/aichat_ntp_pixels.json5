@@ -20,7 +20,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_ntp_reasoning_effort_selected": {
         "description": "Fired when user selects a reasoning effort from the New Tab Page omnibar picker",

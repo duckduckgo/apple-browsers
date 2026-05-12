@@ -64,6 +64,14 @@ struct SettingsSubscriptionView: View {
         )
     }
 
+    @ViewBuilder
+    private var dataBrokerProtectionDestination: some View {
+        if let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                .edgesIgnoringSafeArea(.bottom)
+        }
+    }
+
     var currentStorefrontRegion: SubscriptionRegion {
         return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
     }
@@ -152,6 +160,37 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: restoreView,
                            isActive: $isShowingRestoreFlow) {
                 SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var freemiumPIRSettingsEntryPointSection: some View {
+        if settingsViewModel.canShowFreemiumPIRSettingsEntryPoint {
+            Section(header: Text(UserText.settingsPProOtherProtectionsSection)) {
+                SettingsCellView(
+                    label: UserText.settingsPProDBPTitle,
+                    subtitle: UserText.settingsPProFreemiumDBPSubtitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR)
+                )
+                .disabled(true)
+
+                SettingsCustomCell(content: {
+                    Text(UserText.settingsPProFreemiumDBPFreeScanCTA)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+                        .padding(.leading, 32.0)
+                }, action: {
+                    Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
+                    isShowingDBP = true
+                }, isButton: true)
+                .background(
+                    NavigationLink(destination: LazyView(dataBrokerProtectionDestination),
+                                   isActive: $isShowingDBP) {
+                        EmptyView()
+                    }
+                    .hidden()
+                )
             }
         }
     }
@@ -370,6 +409,8 @@ struct SettingsSubscriptionView: View {
         
     var body: some View {
         Group {
+            freemiumPIRSettingsEntryPointSection
+
             if isShowingSubscription {
 
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
@@ -420,6 +461,7 @@ struct SettingsSubscriptionView: View {
                 .onReceive(subscriptionNavigationCoordinator.$shouldPopToAppSettings) { shouldDismiss in
                     if shouldDismiss {
                         isShowingRestoreFlow = false
+                        isShowingDBP = false
                         subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = false
                     }
                 }

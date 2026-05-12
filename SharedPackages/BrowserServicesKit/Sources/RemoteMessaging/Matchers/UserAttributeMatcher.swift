@@ -37,6 +37,9 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
     private let shouldShowWinBackOfferUrgencyMessage: Bool
+    private let isFreemiumPIREligible: Bool
+    private let isFreemiumPIRActivated: Bool
+    private let freemiumPIRFirstScanResult: String?
     private let isCurrentPIRUser: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
@@ -66,11 +69,17 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 enabledFeatureFlags: [String],
                 isSyncEnabled: Bool,
                 shouldShowWinBackOfferUrgencyMessage: Bool,
+                isFreemiumPIREligible: Bool = false,
+                isFreemiumPIRActivated: Bool = false,
+                freemiumPIRFirstScanResult: String? = nil,
                 isCurrentPIRUser: Bool = false
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
         self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
+        self.isFreemiumPIREligible = isFreemiumPIREligible
+        self.isFreemiumPIRActivated = isFreemiumPIRActivated
+        self.freemiumPIRFirstScanResult = freemiumPIRFirstScanResult
         self.isCurrentPIRUser = isCurrentPIRUser
 
         commonUserAttributeMatcher = .init(
@@ -107,6 +116,12 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isSyncEnabled)
         case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
             return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
+        case let matchingAttribute as FreemiumPIREligibleMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIREligible)
+        case let matchingAttribute as FreemiumPIRDidActivateMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIRActivated)
+        case let matchingAttribute as FreemiumPIRFirstScanResultMatchingAttribute:
+            return matchingAttribute.evaluate(for: freemiumPIRFirstScanResult)
         case let matchingAttribute as PIRCurrentUserMatchingAttribute:
             return matchingAttribute.evaluate(for: isCurrentPIRUser)
         default:

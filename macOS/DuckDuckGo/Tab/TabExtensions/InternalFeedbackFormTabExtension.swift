@@ -55,11 +55,11 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
 
         do {
             source = try Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
-                "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-                "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
+                "%OS_VERSION%": Self.jsStringLiteral(ProcessInfo.processInfo.operatingSystemVersion.description),
+                "%APP_VERSION%": Self.jsStringLiteral("\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))"),
                 "%QUICK_MODE%": quickMode ? "true" : "false",
-                "%DIAGNOSTICS%": diagnostics,
-                "%SCREENSHOT_BASE64%": screenshotBase64,
+                "%DIAGNOSTICS%": Self.jsStringLiteral(diagnostics),
+                "%SCREENSHOT_BASE64%": Self.jsStringLiteral(screenshotBase64),
             ])
             super.init()
         } catch {
@@ -68,6 +68,18 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
             }
             fatalError("Failed to load JS for InternalFeedbackFormUserScript: \(error)")
         }
+    }
+
+    /// Produces a JS string literal (including surrounding quotes) for safe inline substitution
+    /// into the autofiller script. Diagnostics in particular contain newlines and may contain
+    /// apostrophes, both of which would otherwise terminate a hand-quoted literal early.
+    private static func jsStringLiteral(_ value: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: [value]),
+              let json = String(data: data, encoding: .utf8),
+              json.count >= 2 else {
+            return "\"\""
+        }
+        return String(json.dropFirst().dropLast())
     }
 }
 

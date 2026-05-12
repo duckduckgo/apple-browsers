@@ -143,7 +143,6 @@ extension MainViewController {
         coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
-        Logger.swipeTabs.debug("refreshUnifiedToggleInput: tabUID=\(tab.tabModel.uid) isAITab=\(tab.isAITab) action=\(String(describing: action))")
 
         switch action {
         case .unbindInactiveNonAITab:
@@ -160,7 +159,6 @@ extension MainViewController {
         }
 
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
-        Logger.swipeTabs.debug("refreshUnifiedToggleInput[done]: aiChatHeaderHidden=\(self.viewCoordinator.aiChatTabChatHeaderContainer.isHidden) utiContainerHidden=\(self.viewCoordinator.unifiedToggleInputContainer.isHidden) navContainerHidden=\(self.viewCoordinator.navigationBarContainer.isHidden) displayState=\(String(describing: coordinator.displayState))")
     }
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {

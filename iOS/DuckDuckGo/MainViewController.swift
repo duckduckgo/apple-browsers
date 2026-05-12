@@ -806,9 +806,7 @@ class MainViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies) { [weak self] tab in
 
-            Logger.swipeTabs.debug("MainViewController.selectTab callback: targetTab uid=\(tab.uid) isAITab=\(tab.isAITab) hasLink=\(tab.link != nil) currentTab.uid=\(self?.tabManager.currentTabsModel.currentTab?.uid ?? "nil")")
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
-                Logger.swipeTabs.debug("MainViewController.selectTab callback: same tab — bailing")
                 return
             }
 
@@ -817,12 +815,10 @@ class MainViewController: UIViewController {
             self?.selectTab(tab)
 
         } newTab: { [weak self] in
-            Logger.swipeTabs.debug("MainViewController.newTab callback (from swipe past last tab)")
             Pixel.fire(pixel: .swipeToOpenNewTab)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
-            Logger.swipeTabs.debug("MainViewController.onSwipeStarted callback")
             self?.performCancel()
             self?.hideKeyboard()
             self?.updatePreviewForCurrentTab()
@@ -856,13 +852,11 @@ class MainViewController: UIViewController {
             // overlay over the live view and we'd cache the overlay instead of the real
             // chrome.
             guard self.tabSwipeOverlayView?.alpha == 0 else {
-                Logger.swipeTabs.debug("captureCurrentTabScreenSnapshotIfPossible: skipping — overlay is active")
                 return
             }
             // Guard against tab having changed since scheduling.
             guard let currentTab = self.tabManager.currentTabsModel.currentTab,
                   currentTab.uid == tabUID else {
-                Logger.swipeTabs.debug("captureCurrentTabScreenSnapshotIfPossible: tab \(tabUID) is no longer current, skipping")
                 return
             }
             guard self.view.window != nil,
@@ -873,7 +867,6 @@ class MainViewController: UIViewController {
                 self.view.drawHierarchy(in: self.view.bounds, afterScreenUpdates: false)
             }
             self.previewsSource.updateFullScreenSnapshot(image, forTab: currentTab)
-            Logger.swipeTabs.debug("captureCurrentTabScreenSnapshotIfPossible: captured snapshot for tab \(tabUID)")
         }
     }
 

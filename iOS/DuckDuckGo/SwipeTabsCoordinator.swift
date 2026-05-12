@@ -20,7 +20,6 @@
 import UIKit
 import Core
 import BrowserServicesKit
-import os.log
 
 class SwipeTabsCoordinator: NSObject {
     
@@ -106,11 +105,7 @@ class SwipeTabsCoordinator: NSObject {
 
     }
     
-    var state: State = .idle {
-        didSet {
-            Logger.swipeTabs.debug("state: \(String(describing: oldValue)) → \(String(describing: self.state))")
-        }
-    }
+    var state: State = .idle
 
     /// Tracks the contentOffset when an external pan (driven by a gesture on a view that overlays
     /// the collection view, e.g. the Unified Toggle Input bar) begins, so `.changed` translations
@@ -121,11 +116,7 @@ class SwipeTabsCoordinator: NSObject {
     /// `currentView` during an external pan — sliding the live views breaks `UIVisualEffectView`
     /// blur and exposes nested shadow/card layers as "stacked screens." See
     /// `prepareAuxiliarySwipeSnapshots` for the snapshot path.
-    var auxiliarySwipeViews: [UIView] = [] {
-        didSet {
-            Logger.swipeTabs.debug("auxiliarySwipeViews set: count=\(self.auxiliarySwipeViews.count) \(self.auxiliarySwipeViews.map { "\(type(of: $0))(hidden=\($0.isHidden))" }.joined(separator: ", "))")
-        }
-    }
+    var auxiliarySwipeViews: [UIView] = []
 
     /// Active snapshot views of `auxiliarySwipeViews` during a swipe, parked in the superview
     /// so they ignore the source view's clipping / hierarchy. Reset by `cleanUpViews`.
@@ -226,7 +217,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
-            Logger.swipeTabs.debug("scrollViewDidScroll[.starting]: startX=\(startPosition.x) currentX=\(scrollView.contentOffset.x) offset=\(offset)")
             if !activateSwipeOverlay() {
                 // Fallback: legacy visual prep when the overlay isn't installed yet.
                 prepareCurrentView()
@@ -253,7 +243,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                     snapshot.transform.tx = offset
                 }
             } else {
-                Logger.swipeTabs.debug("scrollViewDidScroll[.swiping]: sign flipped (\(String(describing: sign)) → \(String(describing: offset.sign))), restarting")
                 cleanUpViews()
                 state = .starting(startPosition)
             }
@@ -270,7 +259,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// during the swipe was the cause of the "stacked screens" / "offset chrome" artifacts.
     private func activateSwipeOverlay() -> Bool {
         guard let overlay = swipeOverlayView else {
-            Logger.swipeTabs.debug("activateSwipeOverlay: skipped — overlay missing")
             return false
         }
 
@@ -309,7 +297,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         overlayActive = true
 
         let cachedCount = snapshots.compactMap { $0 }.count
-        Logger.swipeTabs.debug("activateSwipeOverlay: shown — pages=\(pageCount) currentIndex=\(currentIndex) cached=\(cachedCount)/\(pageCount)")
         return true
     }
 
@@ -318,7 +305,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         guard overlayActive else { return }
         overlayActive = false
         swipeOverlayView?.alpha = 0
-        Logger.swipeTabs.debug("deactivateSwipeOverlay: hidden")
     }
 
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
@@ -354,7 +340,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         for view in auxiliarySwipeViews {
             guard !view.isHidden, view.bounds.width > 0, view.bounds.height > 0 else {
-                Logger.swipeTabs.debug("prepareAuxiliarySwipeSnapshots: skip \(type(of: view)) — hidden or zero-sized")
                 continue
             }
 
@@ -376,7 +361,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             view.alpha = 0
             hiddenAuxiliaryOriginals.append(view)
         }
-        Logger.swipeTabs.debug("prepareAuxiliarySwipeSnapshots: created \(self.auxiliarySwipeViewSnapshots.count) snapshots")
     }
 
     private func teardownAuxiliarySwipeSnapshots() {
@@ -406,23 +390,19 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         if !coordinator.logoContainer.isHidden {
             currentView = coordinator.logoContainer
-            Logger.swipeTabs.debug("prepareCurrentView: logoContainer (NTP)")
         } else {
             currentView = coordinator.contentContainer.subviews.last
-            Logger.swipeTabs.debug("prepareCurrentView: contentContainer.last=\(String(describing: self.currentView.map { type(of: $0) }))")
         }
     }
 
     private func preparePreview(_ offset: CGFloat) {
         guard let index = tabsModel.currentIndex else {
-            Logger.swipeTabs.debug("preparePreview: bailing — no currentIndex")
             return
         }
         let modifier = (offset > 0 ? -1 : 1)
         let nextIndex = index + modifier
 
         guard tabsModel.tabs.indices.contains(nextIndex) || tabsModel.tabs.last?.link != nil else {
-            Logger.swipeTabs.debug("preparePreview: bailing — nextIndex=\(nextIndex) out of range and no \"new tab\" slot")
             return
         }
 
@@ -432,10 +412,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let tab = tabsModel.get(tabAt: nextIndex)
         let isAITab = tab?.isAITab == true
         let hasLink = tab?.link != nil
-        Logger.swipeTabs.debug("preparePreview: currentIndex=\(index) nextIndex=\(nextIndex) modifier=\(modifier) isAITab=\(isAITab) hasLink=\(hasLink) contentContainer=\(String(describing: targetSize))")
 
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
-            Logger.swipeTabs.debug("preparePreview: using cached preview image \(String(describing: image.size))")
             createPreviewFromImage(image)
             if appSettings.currentAddressBarPosition.isBottom,
                tab.link != nil,
@@ -446,20 +424,15 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 // Note: We use the collectionView's height directly instead of navigationBarContainer.height
                 // because the container height can change when the keyboard appears
                 height = targetSize.height - collectionView.frame.size.height
-                Logger.swipeTabs.debug("preparePreview: bottom-bar height correction applied, navBarCollection.h=\(collectionView.frame.size.height) finalPreviewH=\(height)")
             }
             preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
         } else if tab?.link == nil {
-            Logger.swipeTabs.debug("preparePreview: no image and no link — snapshotting logo container")
             let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
             createPreviewFromLogoContainerWithSize(targetFrame.size)
             preview?.frame = targetFrame
-        } else {
-            Logger.swipeTabs.debug("preparePreview: tab=\(String(describing: tab?.uid)) has link but no cached preview image; no preview shown")
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        Logger.swipeTabs.debug("preparePreview: final preview frame=\(self.preview.map { String(describing: $0.frame) } ?? "nil")")
 
         prepareChromePreview(modifier: modifier, destinationTab: tab)
     }
@@ -479,7 +452,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         chromePreview = nil
 
         guard let destinationTab else {
-            Logger.swipeTabs.debug("prepareChromePreview: skip — no destination tab")
             return
         }
 
@@ -488,7 +460,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let destinationIsAI = destinationTab.isAITab
 
         guard currentIsAI != destinationIsAI else {
-            Logger.swipeTabs.debug("prepareChromePreview: skip — both \(destinationIsAI ? "AI" : "regular"), no boundary crossing")
             return
         }
 
@@ -509,7 +480,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             if let utiBar = makeUTIBarSnapshotForAITabDestination() {
                 container.addSubview(utiBar)
             }
-            Logger.swipeTabs.debug("prepareChromePreview: AI destination facade subviews=\(container.subviews.count) frame=\(String(describing: container.frame))")
         } else {
             if let omnibar = makeRegularOmnibarSnapshot(for: destinationTab) {
                 omnibar.frame = CGRect(
@@ -520,7 +490,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 )
                 container.addSubview(omnibar)
             }
-            Logger.swipeTabs.debug("prepareChromePreview: regular destination facade subviews=\(container.subviews.count) frame=\(String(describing: container.frame)) for destinationTab uid=\(destinationTab.uid)")
         }
 
         superview.addSubview(container)
@@ -553,7 +522,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// configuration is a known limitation.
     private func makeRegularOmnibarSnapshot(for tab: Tab) -> UIView? {
         guard let image = cachedLegacyOmnibarSnapshot else {
-            Logger.swipeTabs.debug("makeRegularOmnibarSnapshot: no cached snapshot (user hasn't been on a regular tab in this session)")
             return nil
         }
         _ = tab
@@ -566,7 +534,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// (the pills go flat), so we trade a frame of staleness for visual fidelity.
     private func makeAIHeaderSnapshotForAITabDestination() -> UIView? {
         guard let image = cachedAIHeaderSnapshot else {
-            Logger.swipeTabs.debug("makeAIHeaderSnapshotForAITabDestination: no cached snapshot (user has not been on Duck.ai yet this session)")
             return nil
         }
         let imageView = UIImageView(image: image)
@@ -583,7 +550,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// catches the live shadows / blur, `layer.render` doesn't.
     private func makeUTIBarSnapshotForAITabDestination() -> UIView? {
         guard let image = cachedAIUTIBarSnapshot else {
-            Logger.swipeTabs.debug("makeUTIBarSnapshotForAITabDestination: no cached snapshot")
             return nil
         }
         let imageView = UIImageView(image: image)
@@ -609,7 +575,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         imageView.contentMode = .scaleAspectFill
         coordinator.contentContainer.addSubview(imageView)
         preview = imageView
-        Logger.swipeTabs.debug("createPreviewFromImage: added UIImageView to contentContainer")
     }
 
     private func createPreviewFromLogoContainerWithSize(_ size: CGSize) {
@@ -622,15 +587,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                                                                               withCapInsets: .zero) {
             coordinator.contentContainer.addSubview(snapshotView)
             preview = snapshotView
-            Logger.swipeTabs.debug("createPreviewFromLogoContainerWithSize: added snapshot view")
-        } else {
-            Logger.swipeTabs.error("createPreviewFromLogoContainerWithSize: snapshot returned nil")
         }
         coordinator.logoContainer.isHidden = isHidden
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        Logger.swipeTabs.debug("scrollViewWillBeginDragging: state=\(String(describing: self.state)) contentOffset=\(String(describing: scrollView.contentOffset))")
         switch state {
         case .idle:
             state = .starting(scrollView.contentOffset)
@@ -640,9 +601,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        Logger.swipeTabs.debug("scrollViewDidEndDecelerating: state=\(String(describing: self.state)) contentOffset=\(String(describing: scrollView.contentOffset))")
         guard !state.isIdle else {
-            Logger.swipeTabs.debug("scrollViewDidEndDecelerating: bailing — state idle")
             return
         }
 
@@ -665,26 +624,20 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                             y: coordinator.navigationBarCollectionView.bounds.midY)
 
         guard let index = coordinator.navigationBarCollectionView.indexPathForItem(at: point)?.row else {
-            Logger.swipeTabs.error("scrollViewDidEndDecelerating: no index at midpoint \(String(describing: point)) — collection numItems=\(self.coordinator.navigationBarCollectionView.numberOfItems(inSection: 0))")
             assertionFailure("invalid index")
             return
         }
         feedbackGenerator.selectionChanged()
         if index >= tabsModel.count {
-            Logger.swipeTabs.debug("scrollViewDidEndDecelerating: target index=\(index) is past last tab — newTab()")
             newTab()
         } else {
             if let tab = tabsModel.get(tabAt: index) {
-                Logger.swipeTabs.debug("scrollViewDidEndDecelerating: selectTab index=\(index) isAITab=\(tab.isAITab) hasLink=\(tab.link != nil)")
                 selectTab(tab)
-            } else {
-                Logger.swipeTabs.error("scrollViewDidEndDecelerating: tabsModel.get(\(index)) returned nil")
             }
         }
     }
 
     private func cleanUpViews() {
-        Logger.swipeTabs.debug("cleanUpViews: currentView=\(String(describing: self.currentView.map { type(of: $0) })) preview=\(self.preview != nil) chromePreview=\(self.chromePreview != nil) auxSnapshots=\(self.auxiliarySwipeViewSnapshots.count) overlayActive=\(self.overlayActive)")
         deactivateSwipeOverlay()
         currentView?.transform = .identity
         currentView = nil
@@ -717,19 +670,16 @@ extension SwipeTabsCoordinator {
     func captureLegacyOmnibarSnapshotIfPossible() {
         let barView = coordinator.omniBar.barView
         guard barView.bounds.width > 0, barView.bounds.height > 0 else {
-            Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: skipped — zero-sized")
             return
         }
         guard barView.window != nil else {
             // `drawHierarchy` needs the view in a window for layer composition to be valid.
-            Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: skipped — not in window")
             return
         }
         let renderer = UIGraphicsImageRenderer(size: barView.bounds.size)
         cachedLegacyOmnibarSnapshot = renderer.image { _ in
             barView.drawHierarchy(in: barView.bounds, afterScreenUpdates: false)
         }
-        Logger.swipeTabs.debug("captureLegacyOmnibarSnapshotIfPossible: captured size=\(String(describing: barView.bounds.size))")
     }
 
     /// Captures pixel-perfect images of the AI chrome (header + UTI bar) using `drawHierarchy`
@@ -744,9 +694,6 @@ extension SwipeTabsCoordinator {
             cachedAIHeaderSnapshot = renderer.image { _ in
                 header.drawHierarchy(in: header.bounds, afterScreenUpdates: false)
             }
-            Logger.swipeTabs.debug("captureAIChromeSnapshotsIfPossible: header captured size=\(String(describing: header.bounds.size))")
-        } else {
-            Logger.swipeTabs.debug("captureAIChromeSnapshotsIfPossible: header skipped — hidden or zero-sized")
         }
 
         if let uti = coordinator.unifiedToggleInputContainer,
@@ -756,9 +703,6 @@ extension SwipeTabsCoordinator {
             cachedAIUTIBarSnapshot = renderer.image { _ in
                 uti.drawHierarchy(in: uti.bounds, afterScreenUpdates: false)
             }
-            Logger.swipeTabs.debug("captureAIChromeSnapshotsIfPossible: uti bar captured size=\(String(describing: uti.bounds.size))")
-        } else {
-            Logger.swipeTabs.debug("captureAIChromeSnapshotsIfPossible: uti bar skipped — hidden or zero-sized")
         }
     }
 
@@ -782,7 +726,6 @@ extension SwipeTabsCoordinator {
     /// `scrollViewDidEndDecelerating` to select the destination tab.
     func handleExternalPan(_ gesture: UIPanGestureRecognizer) {
         guard isEnabled, let panView = gesture.view else {
-            Logger.swipeTabs.debug("handleExternalPan: bailing — isEnabled=\(self.isEnabled) panView=\(gesture.view != nil)")
             return
         }
 
@@ -792,7 +735,6 @@ extension SwipeTabsCoordinator {
             // attached recognizer (UTI bar / AI header) may have left non-idle state behind.
             // Reset before starting so `scrollViewWillBeginDragging` (which only transitions
             // from `.idle`) actually arms the state machine for this gesture.
-            Logger.swipeTabs.debug("handleExternalPan[.began]: source=\(type(of: panView)) contentOffset=\(String(describing: self.collectionView.contentOffset))")
             collectionView.layer.removeAllAnimations()
             cleanUpViews()
             state = .idle
@@ -809,7 +751,6 @@ extension SwipeTabsCoordinator {
         case .ended, .cancelled, .failed:
             let pageWidth = collectionView.frame.width
             guard pageWidth > 0 else {
-                Logger.swipeTabs.error("handleExternalPan[.ended]: pageWidth=0 — selecting current")
                 scrollViewDidEndDecelerating(collectionView)
                 return
             }
@@ -833,11 +774,9 @@ extension SwipeTabsCoordinator {
             targetPage = max(0, min(targetPage, max(totalPages - 1, 0)))
 
             let targetOffset = CGPoint(x: CGFloat(targetPage) * pageWidth, y: 0)
-            Logger.swipeTabs.debug("handleExternalPan[.\(String(describing: gesture.state))]: translation=\(translation) velocity=\(velocity) currentPage=\(currentPage) → targetPage=\(targetPage) (of \(totalPages)) targetOffset=\(String(describing: targetOffset))")
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
                 self.collectionView.contentOffset = targetOffset
             }, completion: { _ in
-                Logger.swipeTabs.debug("handleExternalPan: settle animation complete, dispatching to scrollViewDidEndDecelerating")
                 self.scrollViewDidEndDecelerating(self.collectionView)
             })
 

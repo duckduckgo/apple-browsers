@@ -1745,7 +1745,6 @@
 		BBA0000000000000000C0002 /* UnifiedInputStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */; };
 		BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */; };
 		BBA0000000000000000E0002 /* Logger+UnifiedInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */; };
-		015AD17A5BE82983FE53C4E0 /* Logger+SwipeTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC41CEE08BB30CDBC8F853B /* Logger+SwipeTabs.swift */; };
 		6EE9F7F9C41E3A100FBB7C5C /* TabSwipeOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D22C154C1851EFAB573AAE /* TabSwipeOverlayView.swift */; };
 		BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000F0001 /* UnifiedInputTabState.swift */; };
 		BBAFF02D2F6A93F900029537 /* SubscriptionPromoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBAFF02B2F6A93F900029537 /* SubscriptionPromoPresenter.swift */; };
@@ -4337,7 +4336,6 @@
 		BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStore.swift; sourceTree = "<group>"; };
 		BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStoreTests.swift; sourceTree = "<group>"; };
 		BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnifiedInputState.swift"; sourceTree = "<group>"; };
-		6AC41CEE08BB30CDBC8F853B /* Logger+SwipeTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+SwipeTabs.swift"; sourceTree = "<group>"; };
 		87D22C154C1851EFAB573AAE /* TabSwipeOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwipeOverlayView.swift; sourceTree = "<group>"; };
 		BBA0000000000000000F0001 /* UnifiedInputTabState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTabState.swift; sourceTree = "<group>"; };
 		BBAFF0292F6A93F900029537 /* SubscriptionPromoCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoCoordinator.swift; sourceTree = "<group>"; };
@@ -9219,7 +9217,6 @@
 				BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */,
 				BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */,
 				BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */,
-				6AC41CEE08BB30CDBC8F853B /* Logger+SwipeTabs.swift */,
 				87D22C154C1851EFAB573AAE /* TabSwipeOverlayView.swift */,
 				BBA0000000000000000F0001 /* UnifiedInputTabState.swift */,
 				F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */,
@@ -12853,7 +12850,6 @@
 				BBA0000000000000000B0002 /* UnifiedInputStateStoring.swift in Sources */,
 				BBA0000000000000000C0002 /* UnifiedInputStateStore.swift in Sources */,
 				BBA0000000000000000E0002 /* Logger+UnifiedInputState.swift in Sources */,
-				015AD17A5BE82983FE53C4E0 /* Logger+SwipeTabs.swift in Sources */,
 				6EE9F7F9C41E3A100FBB7C5C /* TabSwipeOverlayView.swift in Sources */,
 				BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */,
 				F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */,

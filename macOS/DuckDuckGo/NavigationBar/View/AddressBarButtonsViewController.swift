@@ -218,6 +218,11 @@ final class AddressBarButtonsViewController: NSViewController {
             updateButtons()
         }
     }
+    /// Overrides the `isAIChatPanelActive` suppression of `permissionCenterButton` so the
+    /// Permission Center popover can anchor to it. Used by the Duck.ai voice-chat failure
+    /// flow (`handleAIChatVoiceChatPermissionRequested`) where the popover is the entire
+    /// remediation surface. Reset when the popover closes (`popoverDidClose`).
+    private var isForcingPermissionCenterButtonVisible: Bool = false
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
@@ -624,6 +629,20 @@ final class AddressBarButtonsViewController: NSViewController {
         if let existing = permissionCenterPopover, existing.isShown {
             return
         }
+        // Force the shield button visible for the duration of this popover. On duck.ai the
+        // AI chat omnibar panel normally suppresses left-side indicators
+        // (`isAIChatPanelActive`); without this override the Permission Center popover would
+        // have no anchor. The flag is cleared by `popoverDidClose` when the popover closes.
+        isForcingPermissionCenterButtonVisible = true
+        updateButtons()
+        // The button was just flipped from hidden→shown; force a layout pass so its frame is
+        // current before we anchor the popover, otherwise `permissionCenterButton.bounds`
+        // can be `.zero` and the popover is positioned at a degenerate rect.
+        view.layoutSubtreeIfNeeded()
+        guard permissionCenterButton.isVisible else {
+            isForcingPermissionCenterButtonVisible = false
+            return
+        }
         permissionCenterButtonAction(self)
     }
 
@@ -778,12 +797,19 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
 
-        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
-            isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
-            isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-            hasAnyPersistedPermissions: hasAnyPersistedPermissions,
-            hasPendingBarInput: hasPendingBarInput
-        ) && !isAIChatPanelActive
+        if isForcingPermissionCenterButtonVisible {
+            // Voice-chat failure flow needs the shield as a popover anchor regardless of the
+            // current address-bar state (focused text field, AI chat omnibar suppression).
+            // Reset by `popoverDidClose` once the Permission Center popover closes.
+            permissionCenterButton.isShown = true
+        } else {
+            permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+                isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
+                isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
+                hasAnyPersistedPermissions: hasAnyPersistedPermissions,
+                hasPendingBarInput: hasPendingBarInput
+            ) && !isAIChatPanelActive
+        }
 
         showOrHidePermissionCenterPopoverIfNeeded()
     }
@@ -2547,6 +2573,12 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
             permissionCenterButton.mouseOverColor = .buttonMouseOver
+            // If we forced the button visible for the voice-chat failure flow, let the next
+            // `updateButtons()` re-apply the normal `isAIChatPanelActive` suppression.
+            if isForcingPermissionCenterButtonVisible {
+                isForcingPermissionCenterButtonVisible = false
+                updateButtons()
+            }
         default:
             break
         }

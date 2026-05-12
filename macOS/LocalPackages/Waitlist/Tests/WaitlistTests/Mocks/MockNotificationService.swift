@@ -1,5 +1,5 @@
 //
-//  MockWaitlistFeatureSetupHandler.swift
+//  MockNotificationService.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -17,11 +17,24 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
+import UserNotifications
 @testable import Waitlist
 
-struct MockWaitlistFeatureSetupHandler: WaitlistFeatureSetupHandler {
-    func confirmFeature() {
+struct MockNotificationService: NotificationService {
 
+    init(isAuthorized: Bool = true, authorizationStatus: UNAuthorizationStatus = .authorized) {
+        self.isAuthorized = isAuthorized
+        self.authorizationStatus = authorizationStatus
+    }
+
+    var isAuthorized: Bool
+    var authorizationStatus: UNAuthorizationStatus
+
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
+        isAuthorized
+    }
+
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        authorizationStatus
     }
 }

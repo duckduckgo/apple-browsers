@@ -1,5 +1,5 @@
 //
-//  MockWaitlistTermsAndConditionsActionHandler.swift
+//  MockWaitlistFeatureSetupHandler.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +17,10 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
 @testable import Waitlist
 
-struct MockWaitlistTermsAndConditionsActionHandler: WaitlistTermsAndConditionsActionHandler {
-    var acceptedTermsAndConditions: Bool = false
-
-    func didShow() {
-
-    }
-
-    func didAccept() {
+struct MockWaitlistFeatureSetupHandler: WaitlistFeatureSetupHandler {
+    func confirmFeature() {
 
     }
 }

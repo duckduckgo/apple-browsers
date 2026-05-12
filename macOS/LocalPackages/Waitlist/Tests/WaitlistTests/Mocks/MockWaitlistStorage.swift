@@ -17,7 +17,6 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
 @testable import Waitlist
 
 class MockWaitlistStorage: WaitlistStorage {

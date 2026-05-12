@@ -385,10 +385,6 @@
 		3170D0E82F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */; };
 		3170D0E92F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */; };
 		3170D0EA2F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */; };
-		317295D22AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */; };
-		317295D32AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */; };
-		317295D42AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */; };
-		317295D52AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */; };
 		317307262CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */; };
 		317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */; };
 		317307292CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */; };
@@ -1706,14 +1702,6 @@
 		4B980E212817604000282EE1 /* NSNotificationName+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B980E202817604000282EE1 /* NSNotificationName+Debug.swift */; };
 		4B98D27A28D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B98D27928D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift */; };
 		4B98D27C28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B98D27B28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift */; };
-		4B9DB0542A983B55000927DB /* MockWaitlistStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB04F2A983B55000927DB /* MockWaitlistStorage.swift */; };
-		4B9DB0552A983B55000927DB /* MockWaitlistStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB04F2A983B55000927DB /* MockWaitlistStorage.swift */; };
-		4B9DB0562A983B55000927DB /* MockNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0502A983B55000927DB /* MockNotificationService.swift */; };
-		4B9DB0572A983B55000927DB /* MockNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0502A983B55000927DB /* MockNotificationService.swift */; };
-		4B9DB05A2A983B55000927DB /* MockWaitlistRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0522A983B55000927DB /* MockWaitlistRequest.swift */; };
-		4B9DB05B2A983B55000927DB /* MockWaitlistRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0522A983B55000927DB /* MockWaitlistRequest.swift */; };
-		4B9DB05C2A983B55000927DB /* WaitlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0532A983B55000927DB /* WaitlistViewModelTests.swift */; };
-		4B9DB05D2A983B55000927DB /* WaitlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9DB0532A983B55000927DB /* WaitlistViewModelTests.swift */; };
 		4B9EE3142D76C7F900DDC75C /* Bookmarks in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3132D76C7F900DDC75C /* Bookmarks */; };
 		4B9EE3162D76C80000DDC75C /* BrokenSitePrompt in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3152D76C80000DDC75C /* BrokenSitePrompt */; };
 		4B9EE3182D76C80800DDC75C /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3172D76C80800DDC75C /* BrowserServicesKit */; };
@@ -4865,8 +4853,6 @@
 		316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionErrorViewController.swift; sourceTree = "<group>"; };
 		3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarMenu.swift; sourceTree = "<group>"; };
 		3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarPopover.swift; sourceTree = "<group>"; };
-		317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistTermsAndConditionsActionHandler.swift; sourceTree = "<group>"; };
-		317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistFeatureSetupHandler.swift; sourceTree = "<group>"; };
 		317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingPopover.swift; sourceTree = "<group>"; };
 		317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingViewController.swift; sourceTree = "<group>"; };
 		3173072B2CD2490300C492AB /* AutofillToolbarOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingView.swift; sourceTree = "<group>"; };
@@ -5361,10 +5347,6 @@
 		4B980E202817604000282EE1 /* NSNotificationName+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSNotificationName+Debug.swift"; sourceTree = "<group>"; };
 		4B98D27928D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumFaviconsReaderTests.swift; sourceTree = "<group>"; };
 		4B98D27B28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxFaviconsReaderTests.swift; sourceTree = "<group>"; };
-		4B9DB04F2A983B55000927DB /* MockWaitlistStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistStorage.swift; sourceTree = "<group>"; };
-		4B9DB0502A983B55000927DB /* MockNotificationService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockNotificationService.swift; sourceTree = "<group>"; };
-		4B9DB0522A983B55000927DB /* MockWaitlistRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistRequest.swift; sourceTree = "<group>"; };
-		4B9DB0532A983B55000927DB /* WaitlistViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WaitlistViewModelTests.swift; sourceTree = "<group>"; };
 		4BA1A69A258B076900F6F690 /* FileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStore.swift; sourceTree = "<group>"; };
 		4BA1A6A4258B07DF00F6F690 /* EncryptedValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptedValueTransformer.swift; sourceTree = "<group>"; };
 		4BA1A6BC258B082300F6F690 /* EncryptionKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionKeyStore.swift; sourceTree = "<group>"; };
@@ -8982,27 +8964,6 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
-		4B9DB04D2A983B55000927DB /* Waitlist */ = {
-			isa = PBXGroup;
-			children = (
-				4B9DB04E2A983B55000927DB /* Mocks */,
-				4B9DB0532A983B55000927DB /* WaitlistViewModelTests.swift */,
-			);
-			path = Waitlist;
-			sourceTree = "<group>";
-		};
-		4B9DB04E2A983B55000927DB /* Mocks */ = {
-			isa = PBXGroup;
-			children = (
-				317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */,
-				317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */,
-				4B9DB04F2A983B55000927DB /* MockWaitlistStorage.swift */,
-				4B9DB0502A983B55000927DB /* MockNotificationService.swift */,
-				4B9DB0522A983B55000927DB /* MockWaitlistRequest.swift */,
-			);
-			path = Mocks;
-			sourceTree = "<group>";
-		};
 		4BA1A691258B06F600F6F690 /* FileSystem */ = {
 			isa = PBXGroup;
 			children = (
@@ -10690,7 +10651,6 @@
 				CCF40A6B2ED7434C00CBF271 /* UserChurn */,
 				7B0C7F1A2EDF1D0800A338FD /* UserNotifications */,
 				B5E197EA2E8C645500C447CC /* VisualRefresh */,
-				4B9DB04D2A983B55000927DB /* Waitlist */,
 				8434D9562F23713000B4796F /* WarnBeforeQuit */,
 				3776582B27F7163B009A6B35 /* WebsiteBreakageReport */,
 				BB77F8CC2EB3990800D035A7 /* WinBackOffer */,
@@ -15884,7 +15844,6 @@
 				9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
 				CD34F0C22C886482006826BE /* MaliciousSiteProtectionMocks.swift in Sources */,
 				3706FDE1293F661700E42796 /* AdjacentItemEnumeratorTests.swift in Sources */,
-				4B9DB0572A983B55000927DB /* MockNotificationService.swift in Sources */,
 				3706FDE4293F661700E42796 /* TabLazyLoaderTests.swift in Sources */,
 				CC951AC42EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */,
 				84AECC512DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */,
@@ -15907,7 +15866,6 @@
 				CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */,
 				5677A93C2C98414800DA7B0A /* ContextualDialogsManagerTests.swift in Sources */,
 				CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */,
-				4B9DB05D2A983B55000927DB /* WaitlistViewModelTests.swift in Sources */,
 				3706FDEF293F661700E42796 /* PinnedTabsManagerTests.swift in Sources */,
 				CC951AD82EB524240047E245 /* MockDefaultBrowserAndDockPromptUserActivityStore.swift in Sources */,
 				56A054292C201D05007D8FAB /* MockSchemeTask.swift in Sources */,
@@ -16020,7 +15978,6 @@
 				1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
 				3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */,
-				4B9DB0552A983B55000927DB /* MockWaitlistStorage.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
 				BBE497E02EDF9AE6000C3DB5 /* QuitSurveyViewModelTests.swift in Sources */,
@@ -16102,7 +16059,6 @@
 				CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				9FBB0C0A2CBD3B800006B6A6 /* ViewHighlighterTests.swift in Sources */,
-				317295D32AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */,
 				7B0C7F1C2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */,
 				9F0FFFB52BCCAE37007C87DD /* BookmarkAllTabsDialogCoordinatorViewModelTests.swift in Sources */,
 				3706FE34293F661700E42796 /* PermissionStoreTests.swift in Sources */,
@@ -16173,7 +16129,6 @@
 				9F8D57332BCCCB9A00AEA660 /* UserDefaultsBookmarkFoldersStoreTests.swift in Sources */,
 				F1F861172C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */,
 				BBE5FD8A2E393ADE008674A2 /* VPNMocks.swift in Sources */,
-				317295D52AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
 				56504F0D2E0D900300333A1E /* SubscriptionNavigationCoordinatorTests.swift in Sources */,
 				3706FE49293F661700E42796 /* BookmarkNodePathTests.swift in Sources */,
 				37AA017D2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
@@ -16260,7 +16215,6 @@
 				567A23DC2C88980B0010F66C /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				F1AFDBD72C23221700710F2C /* SubscriptionErrorReporterTests.swift in Sources */,
 				3706FE6E293F661700E42796 /* FirefoxBookmarksReaderTests.swift in Sources */,
-				4B9DB05B2A983B55000927DB /* MockWaitlistRequest.swift in Sources */,
 				37918CFA2D6F341A00250F1A /* HistoryViewActionsHandlerTests.swift in Sources */,
 				9F1556812DDC41E600A35DBA /* MockDefaultBrowserAndDockPromptStorage.swift in Sources */,
 				CCD899FF2ECDD222008E738B /* DefaultBrowserAndDockPromptServiceTests.swift in Sources */,
@@ -18118,7 +18072,6 @@
 				4B9292BC2667103100AD2C21 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				37697D802D4A0D12004C0CBB /* NewTabPageShownPixelSenderTests.swift in Sources */,
 				9F97B31F2DE8311000653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift in Sources */,
-				4B9DB05A2A983B55000927DB /* MockWaitlistRequest.swift in Sources */,
 				BB9851922E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
 				3727A5AA2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */,
 				4B6D15722EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */,
@@ -18324,7 +18277,6 @@
 				7B1522AF2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,
 				9F3910622B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
-				4B9DB0562A983B55000927DB /* MockNotificationService.swift in Sources */,
 				4B02199C25E063DE00ED7DEA /* FireproofDomainsTests.swift in Sources */,
 				9FFBEE812DDF0AC90058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifierTests.swift in Sources */,
 				9F872DA02B90644800138637 /* ContextualMenuTests.swift in Sources */,
@@ -18375,7 +18327,6 @@
 				9F0A2CF82B96A58600C5B8C0 /* BaseBookmarkEntityTests.swift in Sources */,
 				EE2868502EAFC38200AB597F /* LegacyDataImportViewModelTests.swift in Sources */,
 				373A1AAA283ED86C00586521 /* BookmarksHTMLReaderTests.swift in Sources */,
-				317295D42AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
 				5681ED462BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */,
 				9FBD84772BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift in Sources */,
 				B6106BB126A7D8720013B453 /* PermissionStoreTests.swift in Sources */,
@@ -18490,7 +18441,6 @@
 				5681ED432BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
 				4BBF09232830812900EE1418 /* FileSystemDSL.swift in Sources */,
 				7B4C5CF52BE51D640007A164 /* VPNUninstallerTests.swift in Sources */,
-				4B9DB05C2A983B55000927DB /* WaitlistViewModelTests.swift in Sources */,
 				CC0943012E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */,
 				BBDF565E2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */,
 				37A0BA282D747BC900130447 /* CapturingHistoryViewDataProvider.swift in Sources */,
@@ -18501,7 +18451,6 @@
 				4B723E0526B0003E00E14D75 /* DataImportMocks.swift in Sources */,
 				3646AC482F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift in Sources */,
 				B6656E0D2B29C733008798A1 /* FileImportViewLocalizationTests.swift in Sources */,
-				4B9DB0542A983B55000927DB /* MockWaitlistStorage.swift in Sources */,
 				4BF4EA5027C71F26004E57C4 /* PasswordManagementListSectionTests.swift in Sources */,
 				37D315C22D4A42280019C1F8 /* RecentActivityFavoritesHandlerTests.swift in Sources */,
 				31E163BD293A579E00963C10 /* PrivacyReferenceTestHelper.swift in Sources */,
@@ -18580,7 +18529,6 @@
 				BBE497E12EDF9AE6000C3DB5 /* QuitSurveyViewModelTests.swift in Sources */,
 				5650E3732D3FDC8900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
 				562984712AC469E400AC20EB /* SyncPreferencesTests.swift in Sources */,
-				317295D22AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */,
 				372D43D72DF2573A00A3A10D /* MockFireproofDomains.swift in Sources */,
 				B6C843DA2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */,
 				B63ED0D826AE729600A9DAD1 /* PermissionModelTests.swift in Sources */,

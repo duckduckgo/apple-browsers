@@ -1,5 +1,5 @@
 //
-//  MockNotificationService.swift
+//  MockWaitlistTermsAndConditionsActionHandler.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -17,25 +17,16 @@
 //
 
 import Foundation
-import UserNotifications
-@testable import DuckDuckGo_Privacy_Browser
 @testable import Waitlist
 
-struct MockNotificationService: NotificationService {
+struct MockWaitlistTermsAndConditionsActionHandler: WaitlistTermsAndConditionsActionHandler {
+    var acceptedTermsAndConditions: Bool = false
 
-    init(isAuthorized: Bool = true, authorizationStatus: UNAuthorizationStatus = .authorized) {
-        self.isAuthorized = isAuthorized
-        self.authorizationStatus = authorizationStatus
+    func didShow() {
+
     }
 
-    var isAuthorized: Bool
-    var authorizationStatus: UNAuthorizationStatus
+    func didAccept() {
 
-    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
-        isAuthorized
-    }
-
-    func authorizationStatus() async -> UNAuthorizationStatus {
-        authorizationStatus
     }
 }

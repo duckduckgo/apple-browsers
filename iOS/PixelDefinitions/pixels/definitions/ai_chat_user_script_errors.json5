@@ -8,6 +8,8 @@
             "appVersion",
             "errorDomain",
             "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "failureReason",
                 "description": "The native decode failure category",
@@ -25,6 +27,8 @@
             "appVersion",
             "errorDomain",
             "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "failureReason",
                 "description": "The native decode failure category",

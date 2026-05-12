@@ -120,8 +120,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             "errorDomain",
             "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "failureReason",
                 "description": "The native decode failure category",

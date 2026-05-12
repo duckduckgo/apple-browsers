@@ -394,7 +394,12 @@ private extension OnboardingIntroViewModel {
 
         switch resumeStep {
         case .duckAIQuerySelection:
-            guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+            // The step is reachable either as an experimental insertion in the default flow,
+            // or as a standard step in the Duck.ai tailored flow — the two flags are independent.
+            guard
+                featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) ||
+                    onboardingManager.currentOnboardingFlow == .duckAI
+            else {
                 OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
                 return
             }

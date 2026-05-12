@@ -1317,6 +1317,47 @@ extension OnboardingIntroViewModelTests {
         XCTAssertNil(resumeStepRawValue(in: store))
     }
 
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOn_ThenOnAppearShowsDuckAIQuery() {
+        let store = MockKeyValueStore()
+        setResumeStep(.duckAIQuerySelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
+        let sut = makeSUT(featureFlagger: featureFlagger, resumeStepStore: store)
+        sut.onAppear()
+        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+            // OK
+        } else {
+            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+        }
+    }
+
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDuckAIFlow_AndExperimentFlagIsOff_ThenOnAppearShowsDuckAIQuery() {
+        // Regression: the Duck.ai tailored flow includes .duckAIQuerySelection as a standard step,
+        // so a resume on that step must succeed even when the (independent) experiment flag is off.
+        let store = MockKeyValueStore()
+        setResumeStep(.duckAIQuerySelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(featureFlagger: MockFeatureFlagger(), resumeStepStore: store)
+        sut.onAppear()
+        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+            // OK
+        } else {
+            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+        }
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.duckAIQuerySelection.rawValue)
+    }
+
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOff_ThenStoreIsCleared() {
+        let store = MockKeyValueStore()
+        setResumeStep(.duckAIQuerySelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .default
+        _ = makeSUT(featureFlagger: MockFeatureFlagger(), resumeStepStore: store)
+        XCTAssertNil(resumeStepRawValue(in: store))
+    }
+
 }
 
 extension OnboardingIntroViewModelTests {

@@ -876,13 +876,20 @@ final class AIChatOmnibarController {
             // sees the discriminator (presence = tab-picker context), except for the entry whose
             // tab UUID matches the active tab: that one becomes the no-`tabId` form, i.e. "the
             // page you're chatting about", per the tech design.
+            //
+            // When there are no attached tabs we skip the `await` entirely — keeping the
+            // submit Task linear in the common case (and matching the pre-M8 number of
+            // suspension points, which a number of tests rely on).
             let tabAttachments = self.activeTabAttachments
-            let activeTabUUID = self.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
-            let pageContextPayload: AIChatPageContextPayload? = await self.extractPageContextsForOmnibarSubmit(
-                tabAttachments: tabAttachments,
-                activeTabUUID: activeTabUUID
-            )
-            if !tabAttachments.isEmpty {
+            let pageContextPayload: AIChatPageContextPayload?
+            if tabAttachments.isEmpty {
+                pageContextPayload = nil
+            } else {
+                let activeTabUUID = self.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+                pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
+                    tabAttachments: tabAttachments,
+                    activeTabUUID: activeTabUUID
+                )
                 PixelKit.fire(
                     AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: tabAttachments.count),
                     frequency: .dailyAndCount,

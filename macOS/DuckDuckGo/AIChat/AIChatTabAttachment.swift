@@ -30,13 +30,6 @@ struct AIChatTabAttachment: Identifiable {
     /// Resolved favicon for native rendering. `nil` when unavailable; the UI falls back to a
     /// generic page glyph in that case.
     let favicon: NSImage?
-
-    init(id: String, title: String, url: URL, favicon: NSImage?) {
-        self.id = id
-        self.title = title
-        self.url = url
-        self.favicon = favicon
-    }
 }
 
 extension AIChatTabAttachment: Equatable {

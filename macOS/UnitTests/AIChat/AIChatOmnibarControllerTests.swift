@@ -602,7 +602,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // When
         controller.submit()
-        await Task.yield()
+        // Submit awaits per-tab page-context extraction (M8) before clearing shared state.
+        for _ in 0..<5 { await Task.yield() }
 
         // Then — submit clears the active tab's saved tab attachments (the publisher then drives
         // the carousel back to empty). The active tab's image attachments are cleared by the same
@@ -624,7 +625,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // When
         controller.submit()
-        await Task.yield()
+        // Multiple yields because the submit Task awaits the per-tab page-context extraction
+        // (M8) before reaching `promptHandler.setData(prompt)`. One yield isn't enough.
+        for _ in 0..<5 { await Task.yield() }
 
         // Then — submit didn't crash, the tab-opener was called, and the prompt was posted as
         // a `.query` tool. The fact that the tab ids existed at submit time is enough to

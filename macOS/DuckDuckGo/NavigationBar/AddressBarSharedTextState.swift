@@ -167,60 +167,53 @@ final class AddressBarSharedTextState: ObservableObject {
         updatedTabs: [AIChatTabAttachment]? = nil,
         updatedFiles: [AIChatFileAttachment]? = nil
     ) -> [AIChatPanelAttachment] {
-        var result: [AIChatPanelAttachment] = []
-
         if let updatedImages {
-            let imagesById: [UUID: AIChatImageAttachment] = Dictionary(uniqueKeysWithValues: updatedImages.map { ($0.id, $0) })
-            var consumedImageIds = Set<UUID>()
-            for entry in aiChatPanelAttachments {
-                switch entry {
-                case .tab, .file:
-                    result.append(entry)
-                case .image(let existing):
-                    if let updated = imagesById[existing.id] {
-                        result.append(.image(updated))
-                        consumedImageIds.insert(existing.id)
-                    }
-                    // else: dropped from the new list — omit.
+            return reconcile(
+                replacingKindWith: updatedImages.map(AIChatPanelAttachment.image),
+                matchesKind: { if case .image = $0 { return true } else { return false } }
+            )
+        }
+        if let updatedTabs {
+            return reconcile(
+                replacingKindWith: updatedTabs.map(AIChatPanelAttachment.tab),
+                matchesKind: { if case .tab = $0 { return true } else { return false } }
+            )
+        }
+        if let updatedFiles {
+            return reconcile(
+                replacingKindWith: updatedFiles.map(AIChatPanelAttachment.file),
+                matchesKind: { if case .file = $0 { return true } else { return false } }
+            )
+        }
+        return aiChatPanelAttachments
+    }
+
+    /// Replaces all entries of a single kind in the panel attachment list with a fresh list of
+    /// that kind, preserving the position of *other-kind* entries. Newly-introduced ids of the
+    /// replaced kind are appended at the end. Used by `reconcilePanelAttachments` once per
+    /// kind so the cyclomatic complexity stays linear.
+    private func reconcile(
+        replacingKindWith updatedOfKind: [AIChatPanelAttachment],
+        matchesKind: (AIChatPanelAttachment) -> Bool
+    ) -> [AIChatPanelAttachment] {
+        let updatedById: [String: AIChatPanelAttachment] = Dictionary(
+            uniqueKeysWithValues: updatedOfKind.map { ($0.attachmentId, $0) }
+        )
+        var consumed = Set<String>()
+        var result: [AIChatPanelAttachment] = []
+        for entry in aiChatPanelAttachments {
+            if matchesKind(entry) {
+                if let updated = updatedById[entry.attachmentId] {
+                    result.append(updated)
+                    consumed.insert(entry.attachmentId)
                 }
+                // else: dropped from the new list — omit.
+            } else {
+                result.append(entry)
             }
-            for image in updatedImages where !consumedImageIds.contains(image.id) {
-                result.append(.image(image))
-            }
-        } else if let updatedTabs {
-            let tabsById: [String: AIChatTabAttachment] = Dictionary(uniqueKeysWithValues: updatedTabs.map { ($0.id, $0) })
-            var consumedTabIds = Set<String>()
-            for entry in aiChatPanelAttachments {
-                switch entry {
-                case .image, .file:
-                    result.append(entry)
-                case .tab(let existing):
-                    if let updated = tabsById[existing.id] {
-                        result.append(.tab(updated))
-                        consumedTabIds.insert(existing.id)
-                    }
-                }
-            }
-            for tab in updatedTabs where !consumedTabIds.contains(tab.id) {
-                result.append(.tab(tab))
-            }
-        } else if let updatedFiles {
-            let filesById: [UUID: AIChatFileAttachment] = Dictionary(uniqueKeysWithValues: updatedFiles.map { ($0.id, $0) })
-            var consumedFileIds = Set<UUID>()
-            for entry in aiChatPanelAttachments {
-                switch entry {
-                case .image, .tab:
-                    result.append(entry)
-                case .file(let existing):
-                    if let updated = filesById[existing.id] {
-                        result.append(.file(updated))
-                        consumedFileIds.insert(existing.id)
-                    }
-                }
-            }
-            for file in updatedFiles where !consumedFileIds.contains(file.id) {
-                result.append(.file(file))
-            }
+        }
+        for entry in updatedOfKind where !consumed.contains(entry.attachmentId) {
+            result.append(entry)
         }
 
         return result

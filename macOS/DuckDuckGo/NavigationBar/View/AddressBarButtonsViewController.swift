@@ -802,6 +802,12 @@ final class AddressBarButtonsViewController: NSViewController {
             // current address-bar state (focused text field, AI chat omnibar suppression).
             // Reset by `popoverDidClose` once the Permission Center popover closes.
             permissionCenterButton.isShown = true
+        } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
+            // On duck.ai, the mic permission is auto-granted by migration and the voice chat
+            // FE owns the in-page UI for active mic usage — so we don't need the shield to
+            // appear for mic alone. It surfaces only when our voice-chat failure flow flips
+            // `isForcingPermissionCenterButtonVisible` (OS-denied case).
+            permissionCenterButton.isShown = false
         } else {
             permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
                 isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
@@ -816,6 +822,24 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updatePermissionCenterButtonIcon(forRequestedPermission permissionType: PermissionType? = nil) {
         permissionCenterButton.image = permissionType?.icon ?? DesignSystemImages.Glyphs.Size16.permissions
+    }
+
+    /// Whether the shield button should be hidden on duck.ai. On duck.ai we auto-grant the
+    /// per-site mic permission and the FE handles in-page voice-chat UI, so the shield has
+    /// nothing actionable to surface by default — neither the auto-granted persisted mic
+    /// nor an active mic in `usedPermissions` should make it appear. The voice-chat failure
+    /// flow uses `isForcingPermissionCenterButtonVisible` to surface the button when the OS
+    /// has denied access. Non-mic permissions (e.g. user-granted notifications) still keep
+    /// the button visible.
+    private func shouldSuppressShieldOnDuckAi(forDomain domain: String, tabViewModel: TabViewModel) -> Bool {
+        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
+              domain == URL.duckAi.host else {
+            return false
+        }
+        let hasOtherPersisted = permissionManager.persistedPermissionTypes(forDomain: domain)
+            .contains { $0 != .microphone }
+        let hasOtherUsed = tabViewModel.usedPermissions.keys.contains { $0 != .microphone }
+        return !hasOtherPersisted && !hasOtherUsed
     }
 
     private func showOrHidePermissionCenterPopoverIfNeeded() {

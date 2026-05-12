@@ -694,7 +694,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
-        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
+        // The toolbar is still in the hierarchy under the unified input, so the keyboard-relative
+        // centering sits visually too high — shift the dax down by this constant to compensate.
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset + Metrics.toolbarCompensationOffset)
         updateSectionTitle()
     }
 
@@ -705,6 +707,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let escapeHatchLogoOffset: CGFloat = 120
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10
+        static let toolbarCompensationOffset: CGFloat = 80
     }
 }
 

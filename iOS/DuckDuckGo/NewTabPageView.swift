@@ -341,7 +341,7 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
         self.homeMessages = homeMessages
     }
 
-    func refresh() {
+    func refresh(openedAfterIdle: Bool) {
 
     }
 

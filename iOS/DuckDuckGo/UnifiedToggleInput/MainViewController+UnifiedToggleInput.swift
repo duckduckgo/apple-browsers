@@ -662,7 +662,7 @@ extension MainViewController {
             floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
         floatingVC.didMove(toParent: self)
-        floatingVC.subscribe(to: coordinator.textChangePublisher)
+        floatingVC.subscribe(to: coordinator.floatingSubmitStatePublisher)
         floatingVC.view.isHidden = true
     }
 
@@ -891,9 +891,7 @@ extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
 
     func floatingSubmitDidTapSubmit() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        let text = coordinator.currentText
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        coordinator.switchBarHandler.submitText(text)
+        coordinator.submitCurrentInputFromFloatingSubmit()
     }
 
     func floatingSubmitDidTapVoice() {

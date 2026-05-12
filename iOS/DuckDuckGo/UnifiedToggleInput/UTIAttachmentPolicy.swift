@@ -19,6 +19,7 @@
 
 import AIChat
 import Foundation
+import UniformTypeIdentifiers
 
 struct UTIAttachmentPolicy {
 
@@ -121,10 +122,11 @@ struct UTIAttachmentPolicy {
     }
 
     func fileSubmissionValidationMessage() -> String? {
-        let pendingFiles = pendingAttachments.compactMap { attachment -> AIChatFileAttachment? in
-            guard case .file(let fileAttachment) = attachment else { return nil }
-            return fileAttachment
+        if let invalidAttachment = pendingAttachments.first(where: \.isInvalid) {
+            return invalidAttachment.validationMessage
         }
+
+        let pendingFiles = pendingAttachments.compactMap(\.fileAttachment)
         guard !pendingFiles.isEmpty else { return nil }
         guard model?.supportsFileUpload == true else {
             return UserText.aiChatAttachmentUnsupportedFileType
@@ -188,6 +190,8 @@ struct UTIAttachmentPolicy {
             return model?.supportsImageUpload == true
         case .file(let fileAttachment):
             return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
+        case .invalidFile(let fileAttachment):
+            return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
         }
     }
 
@@ -210,11 +214,11 @@ private extension UTIAttachmentPolicy {
     }
 
     var pendingFileCount: Int {
-        pendingAttachments.filter(\.isFile).count
+        pendingAttachments.compactMap(\.fileAttachment).count
     }
 
     var pendingFileSizeBytes: Int {
-        pendingAttachments.reduce(0) { $0 + $1.fileSizeBytes }
+        pendingAttachments.compactMap(\.fileAttachment).reduce(0) { $0 + $1.fileSizeBytes }
     }
 
     var maxImagesPerTurn: Int? {
@@ -267,10 +271,10 @@ private extension UTIAttachmentPolicy {
     }
 
     var acceptedFileTypeNames: [String] {
-        model?.supportedFileTypes.compactMap(Self.fileTypeName(for:)) ?? []
+        model?.supportedFileTypes.map(Self.fileTypeName(for:)) ?? []
     }
 
-    static func fileTypeName(for mimeType: String) -> String? {
+    static func fileTypeName(for mimeType: String) -> String {
         switch mimeType {
         case "application/pdf":
             return "PDF"
@@ -283,7 +287,12 @@ private extension UTIAttachmentPolicy {
         case "image/gif":
             return "GIF"
         default:
-            return nil
+            if let filenameExtension = UTType(mimeType: mimeType)?.preferredFilenameExtension {
+                return filenameExtension.uppercased()
+            }
+
+            let subtype = mimeType.split(separator: "/").last.map(String.init) ?? mimeType
+            return (subtype.split(separator: ".").last.map(String.init) ?? subtype).uppercased()
         }
     }
 }

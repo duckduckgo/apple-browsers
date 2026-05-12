@@ -24,7 +24,7 @@ typealias TabUID = String
 struct TabInputState: Equatable {
     var text: String
     var toggleMode: TextEntryMode
-    var attachments: [AIChatImageAttachment]
+    var attachments: [UnifiedToggleInputAttachment]
     var selectedModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
     var selectedTool: AIChatRAGTool?
@@ -35,7 +35,7 @@ struct TabInputState: Equatable {
     init(
         text: String = "",
         toggleMode: TextEntryMode = .search,
-        attachments: [AIChatImageAttachment] = [],
+        attachments: [UnifiedToggleInputAttachment] = [],
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
@@ -50,7 +50,6 @@ struct TabInputState: Equatable {
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
     }
 
-    // AIChatImageAttachment is Identifiable but not Equatable, so compare attachments by id.
     static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
         lhs.text == rhs.text
             && lhs.toggleMode == rhs.toggleMode

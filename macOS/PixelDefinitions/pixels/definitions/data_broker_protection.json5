@@ -635,7 +635,8 @@
                 "key": "keystoreField",
                 "description": "Present only when the underlying failure is a SecureVault keystore read error. Identifies the keychain account that failed to read (free-form string set by the secure storage layer).",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_opt_out_submission": {

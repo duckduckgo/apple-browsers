@@ -17,6 +17,7 @@
 //
 
 import Combine
+import JavaScriptCore
 import PrivacyConfig
 import WebKit
 import XCTest
@@ -161,6 +162,41 @@ final class InternalFeedbackFormTabExtensionTests: XCTestCase {
 
         XCTAssertEqual(afterClear, "SCRIPT|quick=false|diag=|shot=")
         XCTAssertEqual(builderInvocations.count, 2, "Clearing popup context should revert to the cached default without rebuilding")
+    }
+
+    // MARK: - JS literal escaping (regression: diagnostics with newlines/quotes/separators)
+
+    /// Diagnostics include arbitrary user/system text — newlines, apostrophes, backslashes, and
+    /// even U+2028/U+2029 (which terminate JS string literals). The helper must produce a literal
+    /// that parses as valid JavaScript and round-trips back to the original string.
+    func testJSStringLiteralProducesValidJSLiteralForAdversarialInput() throws {
+        let adversarial = """
+        Line 1 with 'apostrophe' and "quote"
+        Line 2 with backslash \\ and literal \\n sequence
+        Line 3 with U+2028 line sep:\u{2028}and U+2029 para sep:\u{2029}end
+        Line 4 with carriage return\rand tab\tand null \0 byte
+        Line 5 with </script> closer and Unicode 🦆
+        """
+
+        let literal = InternalFeedbackFormTabExtension.jsStringLiteral(adversarial)
+
+        let context = try XCTUnwrap(JSContext())
+        var exception: JSValue?
+        context.exceptionHandler = { _, value in exception = value }
+
+        let result = context.evaluateScript("(\(literal))")
+
+        XCTAssertNil(exception, "jsStringLiteral output must parse as JavaScript. Error: \(exception?.toString() ?? "")")
+        XCTAssertEqual(result?.toString(), adversarial, "JS literal must round-trip back to the original string")
+    }
+
+    func testJSStringLiteralProducesEmptyStringLiteralForEmptyInput() throws {
+        let literal = InternalFeedbackFormTabExtension.jsStringLiteral("")
+
+        let context = try XCTUnwrap(JSContext())
+        let result = context.evaluateScript("(\(literal))")
+
+        XCTAssertEqual(result?.toString(), "")
     }
 
     // MARK: - Protocol exposure

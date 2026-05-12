@@ -73,13 +73,15 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
     /// Produces a JS string literal (including surrounding quotes) for safe inline substitution
     /// into the autofiller script. Diagnostics in particular contain newlines and may contain
     /// apostrophes, both of which would otherwise terminate a hand-quoted literal early.
-    private static func jsStringLiteral(_ value: String) -> String {
+    /// Mirrors `DuckAiNativeStorageBootstrapUserScript.jsStringLiteral`.
+    /// `internal` (not `private`) so unit tests can verify the JS-literal contract directly.
+    static func jsStringLiteral(_ value: String) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: [value]),
-              let json = String(data: data, encoding: .utf8),
-              json.count >= 2 else {
+              let array = String(data: data, encoding: .utf8) else {
             return "\"\""
         }
-        return String(json.dropFirst().dropLast())
+        // Strip the surrounding `[` `]` to get the quoted-and-escaped string.
+        return String(array.dropFirst().dropLast())
     }
 }
 

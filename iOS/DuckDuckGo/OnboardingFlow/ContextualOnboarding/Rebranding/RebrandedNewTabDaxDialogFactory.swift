@@ -173,30 +173,28 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        let daxAnimation = OnboardingRebranding.OnboardingEndOfJourneyDialog.daxAnimation
-
-        return ZStack {
-            FadeInView {
-                ScrollView(.vertical, showsIndicators: false) {
-                    OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey
-                        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                        dismissAction: { [weak self] in
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                            onCompletion(true)
-                        },
-                        onManualDismiss: { [weak self] in
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                            onManualDismiss()
-                        }
-                    )
-                }
-                .scrollIfNeeded()
+        // Dax is rendered by `OnboardingEndOfJourneyDialog`'s own `ScreenBottomDaxOverlay`
+        // on every non-compact device (including large iPads) — that overlay tracks the
+        // keyboard. The previous large-screen `DaxAnimationOverlay` rendered here as a
+        // sibling did not follow the keyboard, so on iPad Pro 13″ the keyboard ended up
+        // covering Dax. Letting the dialog own the placement everywhere keeps tracking
+        // consistent.
+        return FadeInView {
+            ScrollView(.vertical, showsIndicators: false) {
+                OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey
+                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                    dismissAction: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                        onCompletion(true)
+                    },
+                    onManualDismiss: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                        onManualDismiss()
+                    }
+                )
             }
-
-            if !OnboardingBubbleAnimationMetrics.isCompactDevice && OnboardingBubbleAnimationMetrics.isLargeScreen {
-                DaxAnimationOverlay(animation: daxAnimation, playForward: true, isExiting: false)
-            }
+            .scrollIfNeeded()
         }
         .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
         .onFirstAppear { [weak self] in

@@ -90,11 +90,13 @@ extension OnboardingRebranding {
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             .overlay {
-                // On iPhone, position Dax at the screen bottom using global coordinates.
-                // On iPad, DaxAnimationOverlay is added by RebrandedNewTabDaxDialogFactory instead.
-                if showsDaxAnimation
-                    && !OnboardingBubbleAnimationMetrics.isCompactDevice
-                    && !OnboardingBubbleAnimationMetrics.isLargeScreen {
+                // Single keyboard-aware Dax placement for both iPhone and iPad. The previous
+                // split — `ScreenBottomDaxOverlay` on iPhone, a factory-side `DaxAnimationOverlay`
+                // on large iPads — meant iPad lost keyboard tracking (`DaxAnimationOverlay`
+                // doesn't follow the keyboard). Using `ScreenBottomDaxOverlay` everywhere keeps
+                // Dax above the keyboard when it appears; see the factory for the matching
+                // removal of the duplicate large-screen overlay.
+                if showsDaxAnimation && !OnboardingBubbleAnimationMetrics.isCompactDevice {
                     ScreenBottomDaxOverlay(animation: Self.daxAnimation)
                 }
             }
@@ -103,11 +105,11 @@ extension OnboardingRebranding {
 
 }
 
-// MARK: - Screen-Bottom Dax Overlay (iPhone only)
+// MARK: - Screen-Bottom Dax Overlay
 
 /// Positions the Dax animation at the bottom of the screen using global coordinate calculation.
 /// The animation renders beyond the hosting controller's bounds (clipsToBounds = false on UIHostingController).
-/// Used only on iPhone where the bubble is close enough to the screen bottom that clipping is not an issue.
+/// Used on both iPhone and iPad so the same keyboard-tracking logic applies on every device.
 ///
 /// When the on-screen keyboard is visible, Dax re-anchors to the keyboard's top edge instead of
 /// the screen bottom so it doesn't get covered (e.g. when the address bar is focused on the

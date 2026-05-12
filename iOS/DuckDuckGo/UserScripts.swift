@@ -189,6 +189,7 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
+            debugScript,
             findInPageScript,
             fullScreenVideoScript,
             autofillUserScript,

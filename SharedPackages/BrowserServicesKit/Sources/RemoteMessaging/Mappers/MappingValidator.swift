@@ -72,6 +72,12 @@ struct MappingValidator<Root> {
         return result
     }
 
+    func mapEnumIfPresent<T, E: RawRepresentable>(_ keyPath: KeyPath<Root, T?>, to enumType: E.Type) throws(MappingError) -> E? where E.RawValue == T {
+        guard let value = root[keyPath: keyPath] else { return nil }
+        guard let result = E(rawValue: value) else { throw .invalidValue(keyPath) }
+        return result
+    }
+
     func mapRequired<T, U>(_ keyPath: KeyPath<Root, T?>, _ transform: (T) throws(MappingError) -> U?) throws(MappingError) -> U {
         let wrappedValue = try notNil(keyPath)
         guard let mappedValue = try transform(wrappedValue) else { throw .invalidValue(keyPath) }

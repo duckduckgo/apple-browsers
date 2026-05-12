@@ -27,6 +27,7 @@ final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
     private(set) var didCallSearchForQuery = false
     private(set) var didCallNavigateToURL = false
     private(set) var didCallDidAcknowledgeContextualOnboardingSearch = false
+    private(set) var didCallDidNavigateAwayFromContextualOnboardingDialog = false
     private(set) var urlToNavigateTo: URL?
 
     func didShowContextualOnboardingTrackersDialog() {
@@ -39,6 +40,10 @@ final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
 
     func didTapDismissContextualOnboardingAction() {
         didCallDidTapDismissContextualOnboardingAction = true
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+        didCallDidNavigateAwayFromContextualOnboardingDialog = true
     }
 
     func searchFromOnboarding(for query: String) {

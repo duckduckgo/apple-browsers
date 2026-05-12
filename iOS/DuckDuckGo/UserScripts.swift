@@ -60,7 +60,6 @@ final class UserScripts: UserScriptsProvider {
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
-    private(set) var debugScript = DebugUserScript()
     let webEventsSubfeature: WebEventsSubfeature
 
     private let isAutoconsentExtensionAvailable: Bool
@@ -189,7 +188,6 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
-            debugScript,
             findInPageScript,
             fullScreenVideoScript,
             autofillUserScript,

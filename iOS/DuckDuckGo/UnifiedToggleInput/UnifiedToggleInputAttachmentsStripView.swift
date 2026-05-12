@@ -26,18 +26,27 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         static let spacing: CGFloat = 4
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
-        static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.totalSize
+        static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
     }
 
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.alwaysBounceHorizontal = true
+        scrollView.clipsToBounds = true
+        return scrollView
+    }()
+
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.spacing = Constants.spacing
-        stack.alignment = .bottom
+        stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -53,12 +62,24 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
+        let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
         attachments.append(attachment)
-        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
-        thumbnail.onRemove = { [weak self] id in
-            self?.removeAttachment(id: id)
+        stackView.addArrangedSubview(makeThumbnail(for: attachment))
+        onAttachmentsChanged?()
+        if shouldAutoScroll {
+            scheduleScrollToTrailingEdge()
         }
-        stackView.addArrangedSubview(thumbnail)
+    }
+
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        guard let index = attachments.firstIndex(where: { $0.id == id }) else { return }
+        attachments[index] = attachment
+        let thumbnailViews = stackView.arrangedSubviews.compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+        guard let view = thumbnailViews.first(where: { $0.attachmentId == id }),
+              let arrangedIndex = stackView.arrangedSubviews.firstIndex(of: view) else { return }
+        stackView.removeArrangedSubview(view)
+        view.removeFromSuperview()
+        stackView.insertArrangedSubview(makeThumbnail(for: attachment), at: arrangedIndex)
         onAttachmentsChanged?()
     }
 
@@ -86,14 +107,51 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
-        addSubview(stackView)
-        let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        addSubview(scrollView)
+        scrollView.addSubview(stackView)
+        let bottomConstraint = scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         bottomConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            scrollView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight),
             bottomConstraint,
+
+            stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: Constants.horizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -Constants.horizontalPadding),
+            stackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
         ])
+    }
+
+    private func makeThumbnail(for attachment: UnifiedToggleInputAttachment) -> UnifiedToggleInputAttachmentThumbnailView {
+        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
+        thumbnail.onRemove = { [weak self] id in
+            self?.removeAttachment(id: id)
+        }
+        return thumbnail
+    }
+
+    private func scrollToTrailingEdge() {
+        layoutIfNeeded()
+        let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
+        scrollView.setContentOffset(CGPoint(x: maximumOffset, y: 0), animated: false)
+    }
+
+    private func shouldAutoScrollAfterAddingAttachment() -> Bool {
+        guard !scrollView.isTracking, !scrollView.isDragging, !scrollView.isDecelerating else { return false }
+        let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
+        return maximumOffset == 0 || scrollView.contentOffset.x >= maximumOffset - 1
+    }
+
+    private func scheduleScrollToTrailingEdge() {
+        setNeedsLayout()
+        DispatchQueue.main.async { [weak self] in
+            self?.superview?.layoutIfNeeded()
+            self?.layoutIfNeeded()
+            self?.scrollToTrailingEdge()
+        }
     }
 }

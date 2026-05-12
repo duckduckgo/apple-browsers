@@ -64,7 +64,7 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let table = try tableView(in: vc)
         XCTAssertNil(table.tableHeaderView)
 
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
 
         XCTAssertNotNil(table.tableHeaderView)
         XCTAssertGreaterThan(table.tableHeaderView?.bounds.height ?? 0, 0)
@@ -73,10 +73,10 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 
     func test_setEscapeHatch_withNil_removesTableHeaderView() throws {
         let vc = makeViewController()
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
         XCTAssertNotNil(try tableView(in: vc).tableHeaderView)
 
-        vc.setEscapeHatch(nil, onTapped: nil)
+        vc.setEscapeHatch(nil, openTabCount: 0, onTapped: nil, onTabSwitcherTapped: nil)
 
         XCTAssertNil(try tableView(in: vc).tableHeaderView)
         XCTAssertTrue(vc.children.isEmpty, "hatch hosting controller should be removed from children")
@@ -85,10 +85,10 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
     func test_setEscapeHatch_calledTwiceWithDifferentModels_replacesExistingHostingController() {
         // Each `.testFixture` build a new Tab with a fresh uid, so the two models compare unequal.
         let vc = makeViewController()
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
         let firstChild = vc.children.first
 
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
 
         XCTAssertEqual(vc.children.count, 1)
         XCTAssertFalse(vc.children.first === firstChild, "different model → hosting controller is replaced")
@@ -97,10 +97,10 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
     func test_setEscapeHatch_calledTwiceWithIdenticalModel_isNoOp() {
         let vc = makeViewController()
         let model: EscapeHatchModel = .testFixture
-        vc.setEscapeHatch(model, onTapped: {})
+        vc.setEscapeHatch(model, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
         let firstChild = vc.children.first
 
-        vc.setEscapeHatch(model, onTapped: {})
+        vc.setEscapeHatch(model, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
 
         XCTAssertEqual(vc.children.count, 1)
         XCTAssertTrue(vc.children.first === firstChild, "identical model → short-circuit; existing hosting controller is preserved")

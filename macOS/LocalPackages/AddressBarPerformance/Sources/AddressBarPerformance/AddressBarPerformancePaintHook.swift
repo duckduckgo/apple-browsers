@@ -133,12 +133,17 @@ final class AddressBarPerformancePaintHook {
         return CGMainDisplayID()
     }
 
-    /// Converts a `CVTimeStamp.hostTime` (mach_absolute_time units) to seconds in the host clock.
-    /// Values are directly comparable to `CACurrentMediaTime()`.
-    nonisolated private static func hostTimeToSeconds(_ hostTime: UInt64) -> TimeInterval {
+    /// Pre-baked `hostTime → seconds` multiplier. `mach_timebase_info` is constant per boot,
+    /// so we fetch it once and fold the nanosecond conversion in.
+    nonisolated private static let hostTicksToSeconds: Double = {
         var info = mach_timebase_info_data_t()
         mach_timebase_info(&info)
-        let nanoseconds = Double(hostTime) * Double(info.numer) / Double(info.denom)
-        return nanoseconds / 1_000_000_000
+        return Double(info.numer) / Double(info.denom) / 1_000_000_000
+    }()
+
+    /// Converts a `CVTimeStamp.hostTime` (mach_absolute_time units) to seconds in the host clock.
+    /// Values are directly comparable to `CACurrentMediaTime()`.
+    nonisolated static func hostTimeToSeconds(_ hostTime: UInt64) -> TimeInterval {
+        Double(hostTime) * hostTicksToSeconds
     }
 }

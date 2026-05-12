@@ -1173,13 +1173,9 @@ class TabViewController: UIViewController {
 
         if url == nil {
             url = newURL
-        } else if shouldUpdateAddressBar(for: newURL) {
+        } else if addressBarURLFilter.shouldUpdate(for: newURL) {
             url = newURL
         }
-    }
-
-    private func shouldUpdateAddressBar(for newURL: URL) -> Bool {
-        return addressBarURLFilter.shouldUpdate(for: newURL)
     }
 
     @available(iOS 18.4, *)
@@ -2259,7 +2255,7 @@ extension TabViewController: WKNavigationDelegate {
         self.privacyInfo = makePrivacyInfo(url: url)
         onPrivacyInfoChanged()
 
-        if shouldUpdateAddressBar(for: url) {
+        if addressBarURLFilter.shouldUpdate(for: url) {
             self.url = url
         }
 

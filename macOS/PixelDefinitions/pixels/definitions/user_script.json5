@@ -20,6 +20,7 @@
                     "autoconsent-bundle",
                     "autofill",
                     "autofill-debug",
+                    "contentblockerrules",
                     "contentScope",
                     "contentScopeIsolated",
                     "duckAiChatHistory",

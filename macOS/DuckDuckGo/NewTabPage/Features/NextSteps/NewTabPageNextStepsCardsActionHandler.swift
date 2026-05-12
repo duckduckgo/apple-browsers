@@ -52,6 +52,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
     }
 
+    let youtubeAdBlockingURL = "https://www.youtube.com/watch?v=yKWIA-Pys4c"
+
     init(defaultBrowserProvider: DefaultBrowserProvider,
          dockCustomizer: DockCustomization,
          dataImportProvider: DataImportStatusProviding,
@@ -158,7 +160,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     @MainActor
     func performYoutubeAdBlockingAction() {
-        if let videoUrl = URL(string: duckPlayerURL) {
+        if let videoUrl = URL(string: youtubeAdBlockingURL) {
             let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
             tabOpener.openTab(tab)
         }

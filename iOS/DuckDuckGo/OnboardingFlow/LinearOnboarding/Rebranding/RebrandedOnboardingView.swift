@@ -192,10 +192,16 @@ extension OnboardingRebranding {
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
-        /// Measured height of the *intro* dialog bubble. Drives Dax's adaptive sizing so that as
-        /// the bubble grows (longer copy, larger Dynamic Type) Dax shrinks 1:1 , and disappears
-        /// entirely once it would fall below `IntroDialogContent.daxAnimation`'s minimum.
+        /// Live measured height of the intro bubble. Dax sizing reads
+        /// `lockedIntroBubbleHeight` instead — see below.
         @State private var introBubbleHeight: CGFloat = 0
+        /// First non-zero intro bubble height captured after entering the intro step (or after
+        /// a `dynamicTypeSize` change). The intro bubble swaps between two visible content
+        /// configurations ("Let's get started" / "I've been here before" ↔ "Start browsing" /
+        /// "Show tutorial"); each swap re-measures the bubble. Ignoring those subsequent
+        /// measurements keeps Dax a stable size across the swap. Reset to `0` on font-size
+        /// change so the next measurement re-captures at the new size.
+        @State private var lockedIntroBubbleHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
         @State private var skipTypingAnimation: Bool = false
         /// `true` → Dax plays forward (entrance); `false` → plays in reverse (exit).
@@ -297,28 +303,33 @@ extension OnboardingRebranding {
                 // the closure runs, the captured `self` can still expose the previous env value,
                 // which would otherwise make `activeDaxAnimation` return the wrong answer (and
                 // either leave Dax stranded or fail to bring it back when leaving an AX size).
+                //
+                // Reset `lockedIntroBubbleHeight` too: at the new font size the bubble's
+                // measured height will differ, and Dax's size should track that change. The
+                // next `IntroBubbleHeightPreferenceKey` firing after the bubble re-lays out
+                // will re-capture the value.
+                lockedIntroBubbleHeight = 0
                 currentDaxAnimation = activeDaxAnimation(for: newDynamicTypeSize)
                 daxAnimationID += 1
                 daxExiting = false
             }
             .onPreferenceChange(IntroBubbleHeightPreferenceKey.self) { introBubbleHeight = $0 }
-            .onChange(of: introBubbleHeight) { _ in
-                // Bubble height drives the intro Dax sizing , refresh `currentDaxAnimation`
-                // when it changes so Dax shrinks/grows/disappears in step with the bubble.
-                // Gate to the intro step: when the user advances past intro, the bubble
-                // unmounts and the preference value drops to 0; without this guard the
-                // resize would target the *next* step's overlay.
+            .onChange(of: introBubbleHeight) { newHeight in
+                // Capture the first non-zero measurement and ignore subsequent ones. The intro
+                // bubble swaps between two content configurations ("Let's get started" / "I've
+                // been here before" ↔ "Start browsing" / "Show tutorial"); each swap re-measures
+                // with a different height, which would otherwise resize Dax on every swap.
                 //
-                // Intentionally do NOT bump `daxAnimationID` here: the intro Dax must
-                // stay alive across the internal swap between the two intro bubble
-                // configurations ("Let's get started" / "I've been here before" ↔
-                // "Start browsing" / "Show tutorial"). The swap shifts the bubble's
-                // measured height, which fires this preference change , recreating the
-                // overlay at that point makes Dax visibly disappear and reappear.
-                // Updating only the animation lets `DaxAnimationOverlay`'s `.frame(...)`
-                // resize in place while Lottie keeps playing.
+                // Step-type guard: the preference also fires with 0 when the user advances past
+                // intro and the bubble unmounts; without the guard that would target the next
+                // step's overlay.
+                //
+                // Intentionally do NOT bump `daxAnimationID` here either: the intro Dax must
+                // stay alive across the internal bubble content swap.
                 guard case let .onboarding(viewState) = model.state,
                       case .startOnboardingDialog = viewState.type else { return }
+                guard lockedIntroBubbleHeight == 0, newHeight > 0 else { return }
+                lockedIntroBubbleHeight = newHeight
                 currentDaxAnimation = activeDaxAnimation
                 daxExiting = false
             }
@@ -673,7 +684,9 @@ extension OnboardingRebranding {
             guard !OnboardingBubbleAnimationMetrics.isCompactDevice else { return nil }
             guard !dynamicTypeSize.isAccessibilitySize else { return nil }
             switch type {
-            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: introBubbleHeight)
+            // Read `lockedIntroBubbleHeight` — not the live `introBubbleHeight` — so Dax keeps
+            // a stable size across internal swaps between the two intro content configurations.
+            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: lockedIntroBubbleHeight)
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation

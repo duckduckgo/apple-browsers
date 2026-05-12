@@ -113,6 +113,7 @@ class SwipeTabsCoordinator: NSObject {
     private var externalPanStartOffset: CGPoint = .zero
 
     private var pendingSettleCleanup: DispatchWorkItem?
+    private var pendingSnapCommit: DispatchWorkItem?
 
     /// Chrome views (e.g. UTI bar overlay, AI tab header) snapshotted and slid in lockstep with
     /// `currentView` during an external pan — sliding the live views breaks `UIVisualEffectView`
@@ -737,6 +738,8 @@ extension SwipeTabsCoordinator {
             // from `.idle`) actually arms the state machine for this gesture.
             pendingSettleCleanup?.cancel()
             pendingSettleCleanup = nil
+            pendingSnapCommit?.cancel()
+            pendingSnapCommit = nil
             collectionView.layer.removeAllAnimations()
             cleanUpViews()
             state = .idle
@@ -776,11 +779,25 @@ extension SwipeTabsCoordinator {
             targetPage = max(0, min(targetPage, max(totalPages - 1, 0)))
 
             let targetOffset = CGPoint(x: CGFloat(targetPage) * pageWidth, y: 0)
+            pendingSnapCommit?.cancel()
+            let commit = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.pendingSnapCommit = nil
+                self.scrollViewDidEndDecelerating(self.collectionView)
+            }
+            pendingSnapCommit = commit
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
                 self.collectionView.contentOffset = targetOffset
             }, completion: { [weak self] finished in
-                guard let self, finished else { return }
-                self.scrollViewDidEndDecelerating(self.collectionView)
+                guard let self else { return }
+                if finished {
+                    commit.perform()
+                } else if !commit.isCancelled {
+                    commit.cancel()
+                    self.pendingSnapCommit = nil
+                    self.cleanUpViews()
+                    self.state = .idle
+                }
             })
 
         default:

@@ -4092,6 +4092,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatPressed() {
+        onAIChatPressed(prefilledText: nil)
+    }
+
+    func onAIChatPressed(prefilledText: String?) {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
@@ -4099,7 +4103,7 @@ extension MainViewController: OmniBarDelegate {
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
-            openAIChatFromAddressBar()
+            openAIChatFromAddressBar(prefilledText: prefilledText)
         }
     }
 
@@ -4119,10 +4123,17 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.onShareAction(forLink: link, fromView: targetView)
     }
 
-    private func openAIChatFromAddressBar() {
+    private func openAIChatFromAddressBar(prefilledText: String?) {
 
-        let isEditing = omniBar.isTextFieldEditing
-        let textFieldValue = omniBar.text
+        let isEditing: Bool
+        let textFieldValue: String?
+        if let prefilledText {
+            isEditing = true
+            textFieldValue = prefilledText
+        } else {
+            isEditing = omniBar.isTextFieldEditing
+            textFieldValue = omniBar.text
+        }
         omniBar.endEditing()
 
         OpenAIChatFromAddressBarHandling().determineOpeningStrategy(

@@ -1374,7 +1374,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestAIChat()
+        delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: viewController.handler.currentText)
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {

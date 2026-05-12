@@ -2479,6 +2479,14 @@ public struct UserText {
                     )
                 }
             }
+
+            public enum BrowserComparison {
+                public static let title = NotLocalizedString(
+                    "onboarding.duckai.browser.title",
+                    value: "Want to make DuckDuckGo your default browser?",
+                    comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
+                )
+            }
         }
 
         enum ContextualOnboarding {

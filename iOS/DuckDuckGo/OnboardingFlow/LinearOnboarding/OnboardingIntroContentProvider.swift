@@ -139,8 +139,13 @@ struct OnboardingBrowserComparisonContent: Equatable {
 extension OnboardingIntroContentProvider {
 
     var browserComparisonContent: OnboardingBrowserComparisonContent {
-        OnboardingBrowserComparisonContent(
-            title: UserText.Onboarding.BrowsersComparison.title,
+        let title = switch flowType {
+        case .default: UserText.Onboarding.BrowsersComparison.title
+        case .duckAI: UserText.Onboarding.DuckAICPP.BrowserComparison.title
+        }
+
+        return OnboardingBrowserComparisonContent(
+            title: title,
             features: RebrandedBrowsersComparisonModel.defaultFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip

@@ -301,10 +301,13 @@ struct OnboardingIntroContentProviderTests {
     struct BrowserComparisonContent {
 
         @Test(
-            "Check browser comparison title is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check browser comparison title is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.Onboarding.BrowsersComparison.title, UserText.Onboarding.DuckAICPP.BrowserComparison.title]
+            )
         )
-        func checkBrowserComparisonTitle(flow: OnboardingFlowType) {
+        func checkBrowserComparisonTitle(flow: OnboardingFlowType, expectedTitle: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -312,7 +315,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.browserComparisonContent
 
             // THEN
-            #expect(result.title == UserText.Onboarding.BrowsersComparison.title)
+            #expect(result.title == expectedTitle)
         }
 
         @Test(

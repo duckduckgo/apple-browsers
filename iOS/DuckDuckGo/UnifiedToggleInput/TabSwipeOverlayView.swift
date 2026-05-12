@@ -22,14 +22,11 @@ import DesignResourcesKit
 
 /// Single overlay used to render a tab-swipe transition. Hosts full-screen `UIImage`
 /// snapshots of each tab side-by-side in a horizontal scroll view; chrome and content move as
-/// one unit because they're part of the same snapshot. Driven externally by the swipe gesture
-/// — native paging/scrolling is disabled so the same overlay works for the legacy address-bar
-/// pan and the UTI/AI-header external pans.
-///
-/// While the overlay is visible the real `MainViewController` children are hidden, so the user
-/// is interacting with snapshots only during the swipe. On settle, the overlay hands the
-/// destination index back to its caller, the real views are restored, and the overlay hides
-/// itself.
+/// one unit because they're part of the same snapshot. Driven externally via
+/// `setContentOffsetX` — native paging/scrolling is disabled so the same overlay works for the
+/// legacy address-bar pan and the UTI/AI-header external pans. The overlay sits on top of the
+/// (unhidden) live views and occludes them with its opaque pages; raising/lowering is just
+/// `alpha = 1/0` from the coordinator.
 final class TabSwipeOverlayView: UIView {
 
     private let scrollView = UIScrollView()
@@ -117,26 +114,4 @@ final class TabSwipeOverlayView: UIView {
     func setContentOffsetX(_ x: CGFloat) {
         scrollView.contentOffset.x = x
     }
-
-    /// Animates to the page nearest `targetIndex`. Reports back the settled index on
-    /// completion so the caller can call `selectTab`. Always reports `targetIndex` unless the
-    /// animation is cancelled by another offset write.
-    func settle(toPage targetIndex: Int, duration: TimeInterval = 0.3, completion: @escaping (Int) -> Void) {
-        let width = bounds.width
-        let target = CGPoint(x: CGFloat(targetIndex) * width, y: 0)
-        UIView.animate(withDuration: duration, delay: 0, options: .curveEaseOut, animations: {
-            self.scrollView.contentOffset = target
-        }, completion: { _ in
-            completion(targetIndex)
-        })
-    }
-
-    var currentPage: Int {
-        guard bounds.width > 0 else { return 0 }
-        return Int((scrollView.contentOffset.x / bounds.width).rounded())
-    }
-
-    var contentOffsetX: CGFloat { scrollView.contentOffset.x }
-
-    var pageWidth: CGFloat { bounds.width }
 }

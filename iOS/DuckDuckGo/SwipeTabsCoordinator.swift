@@ -117,15 +117,10 @@ class SwipeTabsCoordinator: NSObject {
     /// resolve to an absolute offset.
     private var externalPanStartOffset: CGPoint = .zero
 
-    /// Chrome views (e.g. UTI bar overlay, AI tab header) that should slide horizontally in
-    /// lockstep with `currentView` during an external pan. At swipe start we snapshot each
-    /// visible view via `snapshotView(afterScreenUpdates:)` (captures glass effects, shadows,
-    /// and child layouts as a single flat image), hide the originals, and slide the snapshots.
-    /// Sliding the *live* views was visually broken — `UIVisualEffectView` blur can't
-    /// recompute mid-translation, so the iOS 26 glass pills rendered as flat dark rectangles,
-    /// and the nested cardView / shadow views read as "stacked screens." Cell-based legacy
-    /// swipes don't need this: the omnibar is inside the collection view's scroll, so it
-    /// tracks naturally.
+    /// Chrome views (e.g. UTI bar overlay, AI tab header) snapshotted and slid in lockstep with
+    /// `currentView` during an external pan — sliding the live views breaks `UIVisualEffectView`
+    /// blur and exposes nested shadow/card layers as "stacked screens." See
+    /// `prepareAuxiliarySwipeSnapshots` for the snapshot path.
     var auxiliarySwipeViews: [UIView] = [] {
         didSet {
             Logger.swipeTabs.debug("auxiliarySwipeViews set: count=\(self.auxiliarySwipeViews.count) \(self.auxiliarySwipeViews.map { "\(type(of: $0))(hidden=\($0.isHidden))" }.joined(separator: ", "))")
@@ -150,10 +145,7 @@ class SwipeTabsCoordinator: NSObject {
     /// facade, contentContainer preview) are bypassed.
     weak var swipeOverlayView: TabSwipeOverlayView?
 
-    /// Lookup of tab UIDs in the same order as `tabsModel.tabs` — used to build the overlay's
-    /// page array. Refreshed at swipe start.
     private var overlayActive = false
-    private var overlayPageStartOffset: CGFloat = 0
 
     /// Off-screen snapshot of the destination tab's chrome (omnibar / AI header) that slides in
     /// from the lead edge alongside the webview preview. Built only when crossing the
@@ -299,7 +291,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let pageCount = tabs.count + extras
         let snapshots: [UIImage?] = (0..<pageCount).map { idx in
             if idx == currentIndex {
-                return sourceImage  // always fresh
+                return sourceImage
             }
             guard idx < tabs.count else { return nil }
             // Full-screen snapshot preferred (chrome included). Fall back to the legacy
@@ -315,7 +307,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         overlay.populate(snapshots: snapshots, currentIndex: currentIndex)
         overlay.alpha = 1
         overlayActive = true
-        overlayPageStartOffset = overlay.contentOffsetX
 
         let cachedCount = snapshots.compactMap { $0 }.count
         Logger.swipeTabs.debug("activateSwipeOverlay: shown — pages=\(pageCount) currentIndex=\(currentIndex) cached=\(cachedCount)/\(pageCount)")
@@ -512,9 +503,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         container.backgroundColor = .clear
 
         if destinationIsAI {
-            // AI destination: header at top + UTI bar at bottom. Snapshot the existing chrome
-            // containers — they're already configured (from a previous AI-tab visit, or initial
-            // setup) and `layer.render` captures their layer contents even when hidden.
             if let aiHeader = makeAIHeaderSnapshotForAITabDestination() {
                 container.addSubview(aiHeader)
             }
@@ -523,9 +511,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             }
             Logger.swipeTabs.debug("prepareChromePreview: AI destination facade subviews=\(container.subviews.count) frame=\(String(describing: container.frame))")
         } else {
-            // Regular destination: template omnibar at the user's preferred address-bar
-            // position. Rendered fresh because the destination's omnibar isn't currently
-            // mounted (we're on an AI tab whose collection-view cells are alpha=0).
             if let omnibar = makeRegularOmnibarSnapshot(for: destinationTab) {
                 omnibar.frame = CGRect(
                     x: 0,

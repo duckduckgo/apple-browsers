@@ -17,17 +17,21 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Core
 import UIKit
 
 struct FilePreviewHelper {
-    
-    static func fileHandlerForDownload(_ download: Download, viewController: UIViewController) -> FilePreview? {
+
+    static func fileHandlerForDownload(_ download: Download, viewController: UIViewController, featureFlagger: FeatureFlagger) -> FilePreview? {
         guard let filePath = download.location else { return nil }
         switch download.mimeType {
         case .passbook:
             return PassKitPreviewHelper(filePath, viewController: viewController)
         case .multipass:
             return ZippedPassKitPreviewHelper(filePath, viewController: viewController)
+        case .calendar where featureFlagger.isFeatureOn(.icsCalendarLinks):
+            return CalendarEventPreviewHelper(filePath, viewController: viewController)
         default:
             return QuickLookPreviewHelper(filePath, viewController: viewController)
         }

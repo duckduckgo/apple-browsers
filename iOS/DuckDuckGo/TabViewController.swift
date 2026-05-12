@@ -254,6 +254,7 @@ class TabViewController: UIViewController {
     
     var temporaryDownloadForPreviewedFile: Download?
     var mostRecentAutoPreviewDownloadID: UUID?
+    private var pendingCalendarPreview: CalendarEventPreviewHelper?
     private var blobDownloadTargetFrame: WKFrameInfo?
 
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
@@ -3023,15 +3024,24 @@ extension TabViewController {
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
               FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType),
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {
+            retainCalendarPreviewIfNeeded(fileHandler)
             fileHandler.preview()
         } else {
             let pixelParameters = [PixelParameters.mimeType: download.mimeType.rawValue,
                                    PixelParameters.downloadListCount: "\(AppDependencyProvider.shared.downloadManager.downloadList.count)"]
             Pixel.fire(pixel: .downloadTriedToPresentPreviewWithoutTab, withAdditionalParameters: pixelParameters)
+        }
+    }
+
+    private func retainCalendarPreviewIfNeeded(_ fileHandler: FilePreview) {
+        guard let calendarHandler = fileHandler as? CalendarEventPreviewHelper else { return }
+        pendingCalendarPreview = calendarHandler
+        calendarHandler.onDismiss = { [weak self] in
+            self?.pendingCalendarPreview = nil
         }
     }
 }

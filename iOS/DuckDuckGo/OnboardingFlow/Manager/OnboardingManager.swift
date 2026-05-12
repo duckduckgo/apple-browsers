@@ -63,6 +63,7 @@ final class OnboardingManager {
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
@@ -97,7 +98,8 @@ final class OnboardingManager {
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
+        onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
@@ -106,6 +108,7 @@ final class OnboardingManager {
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
+        self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
     }
 }
 
@@ -234,6 +237,11 @@ extension OnboardingManager: OnboardingFlowManaging {
         default:
             resolvedFlow = evaluatedOnboarding.flow
         }
+
+        // Clear any stale resume checkpoint persisted before the flow was configured
+        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
+        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
         persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)

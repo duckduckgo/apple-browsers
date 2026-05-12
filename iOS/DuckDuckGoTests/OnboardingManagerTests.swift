@@ -382,6 +382,53 @@ struct OnboardingFlowConfiguration {
         #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
+    @Test("Check stale resume checkpoint is cleared when configuring the flow for the first time")
+    func clearsStaleResumeCheckpointWhenConfiguringFlowFirstTime() {
+        // GIVEN - resume step persisted by a prior build that never set onboardingFlowType
+        let sharedPixelStorage = makePixelStore()
+        let resumeStore: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        resumeStore.resumeStep = .appIconSelection
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage,
+            onboardingResumeStepStore: resumeStore
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        #expect(resumeStore.resumeStep == .appIconSelection)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: URL(string: "ddgCPP://duckAI"))
+
+        // THEN - resume checkpoint is wiped so we don't restore into a step that may not exist in the resolved flow
+        #expect(resumeStore.resumeStep == nil)
+    }
+
+    @Test("Check resume checkpoint is preserved when flow is already configured")
+    func preservesResumeCheckpointWhenFlowAlreadyConfigured() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let resumeStore: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        resumeStore.resumeStep = .appIconSelection
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .default
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage,
+            onboardingResumeStepStore: resumeStore
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: URL(string: "ddgCPP://duckAI"))
+
+        // THEN - flow was already set, no reconfiguration, no clear
+        #expect(resumeStore.resumeStep == .appIconSelection)
+    }
+
     private func makePixelStore(source: OnboardingPixelParameter.Source? = nil,
                                 flow: OnboardingPixelParameter.Flow? = nil) -> any KeyedStoring<OnboardingSharedPixelsKeys> {
         let mockStore = InMemoryKeyValueStore()

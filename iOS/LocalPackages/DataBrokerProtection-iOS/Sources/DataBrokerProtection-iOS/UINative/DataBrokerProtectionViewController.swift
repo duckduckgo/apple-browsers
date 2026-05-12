@@ -189,6 +189,16 @@ final public class DataBrokerProtectionViewController: UIViewController {
             await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
         }
     }
+
+    private func shouldOpenExternally(_ url: URL) -> Bool {
+        guard let selectedURL = URL(string: webUISettings.selectedURL),
+              let selectedHost = selectedURL.host,
+              url.host?.caseInsensitiveCompare(selectedHost) == .orderedSame else {
+            return false
+        }
+
+        return url.path == "/subscriptions" || url.path == "/subscriptions/plans"
+    }
 }
 
 extension DataBrokerProtectionViewController: DBPUIViewModelOpenFeedbackFormDelegate {
@@ -230,6 +240,17 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
         }
 
         return .allow
+    }
+
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard navigationAction.targetFrame?.isMainFrame == true,
+              let url = navigationAction.request.url,
+              shouldOpenExternally(url) else {
+            return .allow
+        }
+
+        openURLHandler(url)
+        return .cancel
     }
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

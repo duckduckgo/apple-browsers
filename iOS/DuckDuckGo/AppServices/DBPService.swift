@@ -80,6 +80,15 @@ final class DBPService: NSObject {
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
+                    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                       components.path == "/subscriptions" || components.path == "/subscriptions/plans" {
+                        let urlInterceptor = TabURLInterceptorDefault(featureFlagger: appDependencies.featureFlagger) {
+                            appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
+                        }
+
+                        guard urlInterceptor.allowsNavigatingTo(url: url) else { return }
+                    }
+
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
                     UIApplication.shared.open(quickLinkURL)
                 },

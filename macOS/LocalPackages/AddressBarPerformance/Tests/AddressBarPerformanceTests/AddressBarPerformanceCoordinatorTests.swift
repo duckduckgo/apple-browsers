@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfCoordinatorTests.swift
+//  AddressBarPerformanceCoordinatorTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import XCTest
 @testable import AddressBarPerformance
 
-final class AddressBarPerfCoordinatorTests: XCTestCase {
+final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     private final class TestClock {
         var now: TimeInterval = 0
@@ -29,9 +29,9 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     /// Captures pixels fired by the coordinator. Thread-safe so background-dispatched emits can append.
     private final class PixelCapture {
         private let lock = NSLock()
-        private var pixels: [AddressBarPerfPixel] = []
+        private var pixels: [AddressBarPerformancePixel] = []
 
-        var firer: (AddressBarPerfPixel) -> Void {
+        var firer: (AddressBarPerformancePixel) -> Void {
             { [weak self] pixel in
                 self?.lock.lock()
                 self?.pixels.append(pixel)
@@ -39,7 +39,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
             }
         }
 
-        func snapshot() -> [AddressBarPerfPixel] {
+        func snapshot() -> [AddressBarPerformancePixel] {
             lock.lock(); defer { lock.unlock() }
             return pixels
         }
@@ -47,7 +47,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
 
     private var clock: TestClock!
     private var capture: PixelCapture!
-    private var coordinator: AddressBarPerfCoordinator!
+    private var coordinator: AddressBarPerformanceCoordinator!
 
     /// Small delay so async dispatch fires within the test timeout but predictably after a brief wait.
     private let testDeferredEmitDelay: TimeInterval = 0.02
@@ -56,8 +56,8 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         super.setUp()
         clock = TestClock()
         capture = PixelCapture()
-        let recorder = AddressBarPerfRecorder(clock: { [unowned self] in self.clock.read() })
-        coordinator = AddressBarPerfCoordinator(
+        let recorder = AddressBarPerformanceRecorder(clock: { [unowned self] in self.clock.read() })
+        coordinator = AddressBarPerformanceCoordinator(
             recorder: recorder,
             deferredEmitDelay: testDeferredEmitDelay,
             pixelFirer: capture.firer

@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfPixel.swift
+//  AddressBarPerformancePixel.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -30,7 +30,7 @@ import PixelKit
 /// macOS divergence is intentional — both stages share trigger, snapshot, and deferred dispatch,
 /// so a single pixel halves the network traffic in the case where both stages have data.
 /// Backend aggregation accommodates the divergence via a macOS-specific Prefect case.
-struct AddressBarPerfPixel: PixelKitEvent {
+struct AddressBarPerformancePixel: PixelKitEvent {
 
     /// Names which halves of the pixel carry real data. A pixel is only emitted when at least one
     /// stage has samples, so a "neither" case is never sent.
@@ -67,8 +67,8 @@ struct AddressBarPerfPixel: PixelKitEvent {
     }
 
     private static func histogramParameters(prefix: String, basisPoints: [Int]) -> [String: String] {
-        precondition(basisPoints.count == AddressBarPerfBucketing.bandCount,
-                     "Histogram must have exactly \(AddressBarPerfBucketing.bandCount) bands")
+        precondition(basisPoints.count == AddressBarPerformanceBucketing.bandCount,
+                     "Histogram must have exactly \(AddressBarPerformanceBucketing.bandCount) bands")
         return [
             "\(prefix)bp_0_16":      String(basisPoints[0]),
             "\(prefix)bp_16_50":     String(basisPoints[1]),

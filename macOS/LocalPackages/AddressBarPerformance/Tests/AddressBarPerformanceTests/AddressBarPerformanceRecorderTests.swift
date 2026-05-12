@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfRecorderTests.swift
+//  AddressBarPerformanceRecorderTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import XCTest
 @testable import AddressBarPerformance
 
-final class AddressBarPerfRecorderTests: XCTestCase {
+final class AddressBarPerformanceRecorderTests: XCTestCase {
 
     /// A controllable clock for deterministic timing in tests.
     private final class TestClock {
@@ -28,12 +28,12 @@ final class AddressBarPerfRecorderTests: XCTestCase {
     }
 
     private var clock: TestClock!
-    private var recorder: AddressBarPerfRecorder!
+    private var recorder: AddressBarPerformanceRecorder!
 
     override func setUp() {
         super.setUp()
         clock = TestClock()
-        recorder = AddressBarPerfRecorder(clock: { [unowned self] in self.clock.read() })
+        recorder = AddressBarPerformanceRecorder(clock: { [unowned self] in self.clock.read() })
     }
 
     override func tearDown() {

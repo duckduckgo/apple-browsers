@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfPaintHook.swift
+//  AddressBarPerformancePaintHook.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -28,7 +28,7 @@ import Darwin
 ///
 /// The hook recreates its underlying display link when the window moves to a different screen,
 /// so a single instance keeps measuring correctly across multi-display setups.
-final class AddressBarPerfPaintHook {
+final class AddressBarPerformancePaintHook {
 
     /// Receives the upcoming frame's output time, in `CACurrentMediaTime`-equivalent seconds.
     typealias Callback = (TimeInterval) -> Void

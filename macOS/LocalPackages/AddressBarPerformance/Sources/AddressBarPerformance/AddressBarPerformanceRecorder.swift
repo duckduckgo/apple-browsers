@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfRecorder.swift
+//  AddressBarPerformanceRecorder.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -31,7 +31,7 @@ import QuartzCore
 ///   each with its own latency.
 /// - Suggest keeps only the latest keystroke; the suggestions pipeline coalesces a typing
 ///   burst into a single render, attributable to the last keystroke before that render.
-final class AddressBarPerfRecorder {
+final class AddressBarPerformanceRecorder {
 
     typealias Clock = () -> TimeInterval
 
@@ -47,7 +47,7 @@ final class AddressBarPerfRecorder {
     private var charSamplesMs: [Int] = []
     private var suggestSamplesMs: [Int] = []
 
-    init(clock: @escaping Clock = CACurrentMediaTime, sampleCapMs: Int = AddressBarPerfRecorder.defaultSampleCapMs) {
+    init(clock: @escaping Clock = CACurrentMediaTime, sampleCapMs: Int = AddressBarPerformanceRecorder.defaultSampleCapMs) {
         self.clock = clock
         self.sampleCapMs = sampleCapMs
     }

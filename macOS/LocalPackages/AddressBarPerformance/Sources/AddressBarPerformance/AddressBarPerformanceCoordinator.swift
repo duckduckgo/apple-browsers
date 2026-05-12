@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfCoordinator.swift
+//  AddressBarPerformanceCoordinator.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -27,19 +27,19 @@ import PixelKit
 /// at terminators, and scheduling the deferred pixel emission.
 ///
 /// All public methods are expected on the main thread.
-public final class AddressBarPerfCoordinator {
+public final class AddressBarPerformanceCoordinator {
 
-    typealias PixelFirer = (AddressBarPerfPixel) -> Void
+    typealias PixelFirer = (AddressBarPerformancePixel) -> Void
 
     /// Default delay between terminator and pixel emission. Avoids competing with the
     /// post-navigation CPU window we're trying to keep clean for the SLO measurement itself.
     static let defaultDeferredEmitDelay: TimeInterval = 1.0
 
-    private let recorder: AddressBarPerfRecorder
+    private let recorder: AddressBarPerformanceRecorder
     private let deferredEmitDelay: TimeInterval
     private let pixelFirer: PixelFirer
 
-    private var paintHook: AddressBarPerfPaintHook?
+    private var paintHook: AddressBarPerformancePaintHook?
     private var pendingCharStartTime: TimeInterval?
     private var charNeedsRender = false
     private var suggestNeedsRender = false
@@ -47,8 +47,8 @@ public final class AddressBarPerfCoordinator {
 
     public convenience init() {
         self.init(
-            recorder: AddressBarPerfRecorder(),
-            deferredEmitDelay: AddressBarPerfCoordinator.defaultDeferredEmitDelay,
+            recorder: AddressBarPerformanceRecorder(),
+            deferredEmitDelay: AddressBarPerformanceCoordinator.defaultDeferredEmitDelay,
             pixelFirer: { pixel in
                 PixelKit.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
             }
@@ -56,7 +56,7 @@ public final class AddressBarPerfCoordinator {
     }
 
     init(
-        recorder: AddressBarPerfRecorder,
+        recorder: AddressBarPerformanceRecorder,
         deferredEmitDelay: TimeInterval,
         pixelFirer: @escaping PixelFirer
     ) {
@@ -75,7 +75,7 @@ public final class AddressBarPerfCoordinator {
     /// bar's window becomes available.
     public func attach(to window: NSWindow) {
         paintHook?.stop()
-        paintHook = AddressBarPerfPaintHook(window: window) { [weak self] outputTime in
+        paintHook = AddressBarPerformancePaintHook(window: window) { [weak self] outputTime in
             self?.handlePaint(at: outputTime)
         }
         paintHook?.start()
@@ -150,9 +150,9 @@ public final class AddressBarPerfCoordinator {
         guard !snapshot.char.isEmpty || !snapshot.suggest.isEmpty else { return }
         cancelPendingEmit()
 
-        let charBP = AddressBarPerfBucketing.basisPoints(for: snapshot.char)
-        let suggestBP = AddressBarPerfBucketing.basisPoints(for: snapshot.suggest)
-        let stages: AddressBarPerfPixel.Stages
+        let charBP = AddressBarPerformanceBucketing.basisPoints(for: snapshot.char)
+        let suggestBP = AddressBarPerformanceBucketing.basisPoints(for: snapshot.suggest)
+        let stages: AddressBarPerformancePixel.Stages
         if !snapshot.char.isEmpty && !snapshot.suggest.isEmpty {
             stages = .both
         } else if !snapshot.char.isEmpty {
@@ -160,7 +160,7 @@ public final class AddressBarPerfCoordinator {
         } else {
             stages = .suggestion
         }
-        let pixel = AddressBarPerfPixel(
+        let pixel = AddressBarPerformancePixel(
             charBasisPoints: charBP,
             suggestBasisPoints: suggestBP,
             stages: stages

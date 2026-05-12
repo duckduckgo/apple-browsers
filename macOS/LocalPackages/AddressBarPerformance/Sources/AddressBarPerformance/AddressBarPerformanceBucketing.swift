@@ -1,5 +1,5 @@
 //
-//  AddressBarPerfBucketing.swift
+//  AddressBarPerformanceBucketing.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -28,7 +28,7 @@ import Foundation
 ///
 /// Per-band value: `floor(count[i] * 10000 / N)`.
 /// Per-pixel sums fall in [9992, 10000] (floor-rounding loss).
-enum AddressBarPerfBucketing {
+enum AddressBarPerformanceBucketing {
 
     /// Number of histogram bands.
     static let bandCount = 9

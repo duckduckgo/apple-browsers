@@ -412,7 +412,11 @@ extension OnboardingRebranding {
             AIComparisonContent(
                 content: content,
                 showContent: $showBubbleContent,
-                continueAction: model.aiComparisonAction
+                continueAction: {
+                    animateContentTransition {
+                        model.aiComparisonAction()
+                    }
+                }
             )
         }
 

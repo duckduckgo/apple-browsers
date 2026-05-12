@@ -48,9 +48,15 @@ extension OnboardingRebranding.OnboardingView {
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RoundedRectangle(cornerRadius: 12)
-                        .foregroundStyle(Color.blue)
-                        .frame(height: 300)
+                    RebrandedOnboardingComparisonTableView(
+                        header: .textAndIcons(
+                            title: content.subHeader,
+                            leftIcon: OnboardingRebrandingImages.Comparison.popularAIsIcon,
+                            rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
+                        ),
+                        features: content.features,
+                        availableFeatureAnimation: .animated(startAnimation: showContent)
+                    )
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: continueAction) {

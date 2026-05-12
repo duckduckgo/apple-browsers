@@ -66,7 +66,7 @@ extension OnboardingBrowserComparisonContent {
     static let mock = OnboardingBrowserComparisonContent(
         title: "Browser Comparison Title",
         features: [
-            .init(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available)
+            .init(type: .privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary"

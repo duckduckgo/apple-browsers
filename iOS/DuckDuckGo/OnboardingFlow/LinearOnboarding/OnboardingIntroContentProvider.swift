@@ -131,7 +131,7 @@ extension OnboardingIntroContentProvider {
 
 struct OnboardingBrowserComparisonContent: Equatable {
     let title: String
-    let features: [RebrandedBrowsersComparisonModel.Feature]
+    let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
     let secondaryCTA: String
 }
@@ -146,7 +146,7 @@ extension OnboardingIntroContentProvider {
 
         return OnboardingBrowserComparisonContent(
             title: title,
-            features: RebrandedBrowsersComparisonModel.defaultFeatures,
+            features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip
         )
@@ -159,7 +159,7 @@ extension OnboardingIntroContentProvider {
 struct OnboardingAIComparisonContent: Equatable {
     let title: String
     let subHeader: String
-    let features: [RebrandedBrowsersComparisonModel.Feature]
+    let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
 }
 
@@ -167,10 +167,10 @@ extension OnboardingIntroContentProvider {
 
     var aiComparisonContent: OnboardingAIComparisonContent {
         OnboardingAIComparisonContent(
-            title: UserText.Onboarding.BrowsersComparison.title,
-            subHeader: "",
-            features: [],
-            primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
+            title: UserText.Onboarding.DuckAICPP.AIComparison.title,
+            subHeader: UserText.Onboarding.DuckAICPP.AIComparison.subHeader,
+            features: RebrandedComparisonTableModel.defaultAIFeatures,
+            primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
         )
     }
 

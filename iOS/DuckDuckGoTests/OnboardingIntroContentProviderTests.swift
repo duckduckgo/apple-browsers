@@ -360,7 +360,72 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.browserComparisonContent
 
             // THEN
-            #expect(result.features == RebrandedBrowsersComparisonModel.defaultFeatures)
+            #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
+        }
+
+    }
+
+    @Suite("AI Comparison Content")
+    struct AIComparisonContent {
+
+        @Test(
+            "Check AI comparison title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.AIComparison.title)
+        }
+
+        @Test(
+            "Check AI comparison sub-header is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonSubHeader(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+        }
+
+        @Test(
+            "Check AI comparison primary CTA is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.DuckAICPP.AIComparison.cta)
+        }
+
+        @Test(
+            "Check AI comparison features default to the model's default AI list",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonFeatures(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
         }
 
     }

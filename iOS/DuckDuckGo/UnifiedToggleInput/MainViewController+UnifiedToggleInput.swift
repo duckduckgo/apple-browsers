@@ -99,18 +99,34 @@ extension MainViewController {
     }
 
     /// True when FE has asked us to hide the native chat input for the current AI tab via
-    /// `hideChatInput` (voice mode, sidebar open, etc.). Persisted per tab in `TabInputState`.
+    /// `hideChatInput`. Persisted per tab in `TabInputState`.
     var isAIChatInputHiddenForCurrentTab: Bool {
         guard currentTab?.isAITab == true else { return false }
         return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
     }
 
-    /// Hides the AI-tab chrome (left pill + bottom UTI bar) when FE asks to hide the chat input.
-    /// Idempotent; call from every refresh.
+    /// True when FE has signalled a voice session is in progress on the current AI tab via
+    /// `voiceSessionStarted`. Persisted per tab in `TabInputState`.
+    var isVoiceSessionActiveForCurrentTab: Bool {
+        guard currentTab?.isAITab == true else { return false }
+        return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
+    }
+
+    /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
     func reconcileAIChatInputChromeForCurrentTab() {
-        let hidden = isAIChatInputHiddenForCurrentTab
-        aiChatTabChatHeaderView?.setAIChatInputHidden(hidden)
-        viewCoordinator.setAITabBottomChromeHidden(hidden)
+        viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
+    }
+
+    /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
+    func reconcileVoiceSessionChromeForCurrentTab() {
+        aiChatTabChatHeaderView?.setVoiceSessionActive(isVoiceSessionActiveForCurrentTab)
+    }
+
+    /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
+    /// per-tab signal doesn't require remembering all three call sites.
+    func reconcileAIChromeForCurrentTab() {
+        reconcileAIChatInputChromeForCurrentTab()
+        reconcileVoiceSessionChromeForCurrentTab()
     }
 
     /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
@@ -346,6 +362,14 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        unifiedToggleInputCoordinator?.isVoiceSessionActivePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reconcileVoiceSessionChromeForCurrentTab()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -357,34 +381,51 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // FE does not emit `showChatInput`, so `voiceSessionEnded` is the recovery signal that
-        // unhides the AI-tab chrome once the user leaves voice. The notification carries the
-        // source webView (matching macOS), so we route per-tab — back-grounded voice tabs are
-        // restored too, without disturbing tabs hidden for unrelated reasons.
+        // Per-tab so background voice tabs persist their state until re-activated.
+        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.updateVoiceSessionActive(true, for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.handleVoiceSessionEnded(for: webView)
+                self?.updateVoiceSessionActive(false, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    private func handleVoiceSessionEnded(for webView: WKWebView) {
+    /// URL-driven recovery for when the user navigates away from voice via WebKit gestures, which
+    /// don't give FE a chance to emit `voiceSessionEnded`.
+    private func endVoiceSessionIfLeftVoiceURL(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
+        let onVoiceURL = (tab.url ?? tab.link?.url)?.isDuckAIVoiceMode == true
+        guard !onVoiceURL, coordinator.isVoiceSessionActive else { return }
+        applyVoiceSessionTransition(active: false, to: coordinator)
+    }
+
+    private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
-        if controller === currentTab,
-           let coordinator = unifiedToggleInputCoordinator,
-           coordinator.aiChatInputBoxVisibility == .hidden {
-            // Coordinator setter persists via `didSet`, and the publisher subscription
-            // reconciles the chrome — no manual reconcile needed.
-            coordinator.aiChatInputBoxVisibility = .visible
+        if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
+            applyVoiceSessionTransition(active: active, to: coordinator)
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
-        var state = stateStore.state(for: controller.tabModel.uid)
-        guard state.aiChatInputBoxVisibility == .hidden else { return }
-        state.aiChatInputBoxVisibility = .visible
-        stateStore.update(state, for: controller.tabModel.uid)
+        let current = stateStore.state(for: controller.tabModel.uid)
+        let updated = current.applyingVoiceSessionTransition(active: active)
+        if updated != current {
+            stateStore.update(updated, for: controller.tabModel.uid)
+        }
+    }
+
+    private func applyVoiceSessionTransition(active: Bool, to coordinator: UnifiedToggleInputCoordinator) {
+        coordinator.isVoiceSessionActive = active
+        if !active, coordinator.aiChatInputBoxVisibility == .hidden {
+            coordinator.aiChatInputBoxVisibility = .visible
+        }
     }
 
     func subscribeToToggleSettings() {
@@ -443,7 +484,7 @@ private extension MainViewController {
         // `refreshNonAITab`) — at app launch this runs before `SwipeTabsCoordinator`'s
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
     }
 
     func refreshAITab(
@@ -453,8 +494,9 @@ private extension MainViewController {
     ) -> Bool {
         let hasExistingChat = (tab.url ?? tab.link?.url)?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
+        endVoiceSessionIfLeftVoiceURL(tab: tab, coordinator: coordinator)
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
@@ -532,7 +574,7 @@ private extension MainViewController {
         tab.borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         tab.borderView.isBottomVisible = true
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
         showBars()
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()

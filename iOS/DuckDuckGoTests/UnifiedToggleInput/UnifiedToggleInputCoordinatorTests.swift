@@ -190,6 +190,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
     }
 
+    func test_unbind_preservesVoiceSessionActive() {
+        sut.isVoiceSessionActive = true
+        sut.unbind()
+        XCTAssertTrue(sut.isVoiceSessionActive)
+    }
+
     // MARK: - VC Delegate: Collapsed Tap
 
     func test_collapsedTap_setsExpandedState() {

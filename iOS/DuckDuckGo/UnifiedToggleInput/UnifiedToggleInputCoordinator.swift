@@ -177,6 +177,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+    var isVoiceSessionActivePublisher: Published<Bool>.Publisher { $isVoiceSessionActive }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
     var persistedReasoningEffort: AIChatReasoningEffort? {
         guard let selectedModel else { return nil }
@@ -201,6 +202,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            persistDraftToStore()
+        }
+    }
+    @Published var isVoiceSessionActive: Bool = false {
+        didSet {
+            guard oldValue != isVoiceSessionActive else { return }
             persistDraftToStore()
         }
     }
@@ -429,6 +436,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
+        isVoiceSessionActive = state.isVoiceSessionActive
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -465,7 +473,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
-            aiChatInputBoxVisibility: aiChatInputBoxVisibility
+            aiChatInputBoxVisibility: aiChatInputBoxVisibility,
+            isVoiceSessionActive: isVoiceSessionActive
         )
     }
 

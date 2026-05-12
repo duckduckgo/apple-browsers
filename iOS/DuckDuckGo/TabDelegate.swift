@@ -86,11 +86,6 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestAIChat(tab: TabViewController)
 
-    /// Called when the in-page Duck.ai "New Chat" button asks the host to open the next
-    /// chat in a new tab. Distinct from `didRequestNewTabForUrl` so the host can treat it
-    /// as an explicit "raise the keyboard" signal.
-    func tab(_ tab: TabViewController, didRequestNewAIChatTabForUrl url: URL)
-
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
              source: AutofillSettingsSource,

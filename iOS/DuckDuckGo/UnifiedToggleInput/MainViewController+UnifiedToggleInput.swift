@@ -440,15 +440,7 @@ private extension MainViewController {
         let hasExistingChat = tabURL?.duckAIChatID != nil
         let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
         let isSidebarOpen = tabURL?.isDuckAISidebarOpen == true
-        // Auto-expand is gated on an explicit user intent queued by the entry point (native
-        // quick action, in-page New Chat button). All other paths land on the AI tab
-        // collapsed and leave the keyboard hidden.
-        let userRequestedExpand = coordinator.consumePendingAutoExpand()
-        let shouldExpandAfterRefresh = userRequestedExpand
-            && !hasExistingChat
-            && !coordinator.hasSubmittedPrompt
-            && !isVoiceMode
-            && !isSidebarOpen
+        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 

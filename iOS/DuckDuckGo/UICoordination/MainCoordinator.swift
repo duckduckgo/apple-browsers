@@ -712,8 +712,6 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              // Explicit user intent — raise the UTI keyboard for this new chat.
-              self.controller.unifiedToggleInputCoordinator?.queuePendingAutoExpand()
               self.controller.openAIChat()
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)

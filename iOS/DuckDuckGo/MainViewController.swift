@@ -4696,12 +4696,6 @@ extension MainViewController: TabDelegate {
         loadUrlInNewTab(url, inheritedAttribution: attribution)
     }
 
-    func tab(_ tab: TabViewController, didRequestNewAIChatTabForUrl url: URL) {
-        // Explicit user intent — raise the UTI keyboard for this new chat.
-        unifiedToggleInputCoordinator?.queuePendingAutoExpand()
-        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
-    }
-
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,

@@ -415,6 +415,39 @@ class SubscriptionManagerTests: XCTestCase {
         }
     }
 
+    func testConfirmPurchase_TierFeaturesError_SubscriptionStillPresent() async throws {
+        // Regression test: a transient tier-features failure must not clear the cache.
+        // A user who just paid should still see a subscription even if enrichment fails.
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        let purchasedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-1)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionEndpointService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: nil, subscription: purchasedSubscription))
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
+
+        do {
+            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", additionalParams: nil)
+            XCTFail("Error expected from tier-features failure")
+        } catch {
+            // The cache must hold the raw (unenriched) subscription — not be empty.
+            XCTAssertTrue(subscriptionManager.isSubscriptionPresent(), "isSubscriptionPresent() must be true after a tier-features failure post-purchase")
+            XCTAssertNotNil(mockSubscriptionCachingService.cachedSubscription, "Cache must contain the raw subscription when enrichment fails")
+        }
+    }
+
     // MARK: - Tests for save and loadEnvironmentFrom
 
     var subscriptionEnvironment: SubscriptionEnvironment!

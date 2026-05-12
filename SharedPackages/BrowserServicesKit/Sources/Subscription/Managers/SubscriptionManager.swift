@@ -431,8 +431,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
-        subscriptionCachingService.reset()
-        let enrichedSubscription = try await enrichSubscriptionWithFeatures(subscription)
+        let enrichedSubscription: DuckDuckGoSubscription
+        do {
+            enrichedSubscription = try await enrichSubscriptionWithFeatures(subscription)
+        } catch {
+            // Enrichment failed (e.g. transient tier-features error) — cache the raw subscription
+            // so isSubscriptionPresent() stays truthful for a caller that just confirmed a purchase.
+            await subscriptionCachingService.set(subscription)
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
+            throw error
+        }
         await subscriptionCachingService.set(enrichedSubscription)
         NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: enrichedSubscription])
         return enrichedSubscription

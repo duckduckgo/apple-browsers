@@ -511,6 +511,29 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
     }
 
+    /// `.systemDisabled` is unreachable for microphone today (AVCaptureDevice never returns
+    /// it for audio), but the switch is exhaustive so we cover the case. Treated like
+    /// `.authorized` — nothing actionable in the row, so it's hidden.
+    func testWhenFlagOn_duckAiMic_osSystemDisabled_rowIsHidden() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        mockSystemPermissionManager.authorizationStateToReturn = .systemDisabled
+        var usedPermissions = Permissions()
+        usedPermissions[.microphone] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "duck.ai",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
+    }
+
     /// `.notDetermined` means the OS hasn't been asked yet — the OS prompt will fire
     /// naturally on first mic use, so we shouldn't pre-emptively show a "System Settings"
     /// row that wouldn't help.

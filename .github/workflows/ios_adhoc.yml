@@ -256,6 +256,7 @@ jobs:
             --acl public-read --content-type "text/html; charset=utf-8"
 
           echo "install-url=${install_url}" >> $GITHUB_OUTPUT
+          echo "title=${TITLE}" >> $GITHUB_OUTPUT
 
       - name: Report success
         env:
@@ -265,17 +266,40 @@ jobs:
           DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
           INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
+          TITLE: ${{ steps.generate-ota.outputs.title }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
+          set -euo pipefail
+
           echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
 
-          if [[ -n "$ASANA_TASK_URL" ]]; then
-            bundle exec fastlane run asana_add_comment \
-              task_url:"$ASANA_TASK_URL" \
-              comment:"New build is available. Install on iPhone (open in Safari): ${INSTALL_URL} — IPA: ${IPA_URL}"
+          if [[ -z "$ASANA_TASK_URL" ]]; then
+            exit 0
           fi
+
+          # Extract task GID from either the legacy /0/<project>/<task> or the
+          # current /1/<workspace>/.../task/<task> URL shapes.
+          asana_task_id=$(perl -pe '
+            s|.*https://app\.asana\.com/0/[0-9]+/([0-9]+)(?:/f)?.*|\1|;
+            s|.*https://app\.asana\.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+).*|\1|;
+          ' <<< "$ASANA_TASK_URL")
+          asana_task_id="${asana_task_id//[^0-9]/}"
+
+          if [[ -z "$asana_task_id" ]]; then
+            echo "Could not parse Asana task GID from: ${ASANA_TASK_URL}" >&2
+            exit 1
+          fi
+
+          html_body="<body><strong>${TITLE} ${app_version} (${build_number})</strong><ul><li><a href=\"${INSTALL_URL}\">Install on iPhone</a> — open in Safari</li><li><a href=\"${IPA_URL}\">Download IPA</a></li><li><a href=\"${WORKFLOW_URL}\">Workflow run</a></li></ul></body>"
+          payload=$(jq -nc --arg t "$html_body" '{data: {html_text: $t}}')
+
+          curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${asana_task_id}/stories" \
+            -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --output /dev/null \
+            -d "$payload"

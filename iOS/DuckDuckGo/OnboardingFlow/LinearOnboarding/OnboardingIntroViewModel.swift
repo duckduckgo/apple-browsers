@@ -406,6 +406,8 @@ private extension OnboardingIntroViewModel {
 
         case .browserComparison where introSteps.contains(.browserComparison):
             currentIntroStep = .browserComparison
+        case .aiComparison where introSteps.contains(.aiComparison):
+            currentIntroStep = .aiComparison
         case .addToDockPromo where introSteps.contains(.addToDockPromo):
             currentIntroStep = .addToDockPromo
         case .appIconSelection where introSteps.contains(.appIconSelection):

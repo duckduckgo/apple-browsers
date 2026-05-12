@@ -146,6 +146,7 @@ extension OnboardingIntroStep {
         switch self {
         case .introDialog: return nil
         case .browserComparison: return .browserComparison
+        case .aiComparison: return .aiComparison
         case .addToDockPromo: return .addToDockPromo
         case .appIconSelection: return .appIconSelection
         case .addressBarPositionSelection: return .addressBarPositionSelection
@@ -158,6 +159,7 @@ extension OnboardingIntroStep {
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
     case browserComparison
+    case aiComparison
     case addToDockPromo
     case appIconSelection
     case addressBarPositionSelection

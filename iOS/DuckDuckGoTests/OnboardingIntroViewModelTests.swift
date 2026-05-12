@@ -1189,6 +1189,15 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.browserComparison.rawValue)
     }
 
+    func testWhenAdvancingToAIComparisonThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        sut.startOnboardingAction()
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.aiComparison.rawValue)
+    }
+
     func testWhenAdvancingToAddToDockPromoThenResumeStepIsPersisted() {
         let store = MockKeyValueStore()
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
@@ -1234,6 +1243,15 @@ extension OnboardingIntroViewModelTests {
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
         XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog(content: .mock))
+    }
+
+    func testWhenResumeStepIsAIComparisonThenOnAppearShowsAIComparison() {
+        let store = MockKeyValueStore()
+        setResumeStep(.aiComparison, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .aiComparisonDialog(content: .mock))
     }
 
     func testWhenResumeStepIsAddToDockPromoThenOnAppearShowsAddToDock() {

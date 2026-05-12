@@ -60,9 +60,11 @@ final class AIChatTabChatHeaderView: UIView {
         var forceBackButtonVisible: Bool = false
 
         var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }
-        var showsNavPair: Bool { effectiveCanGoBack && canGoForward }
-        var showsStandaloneBack: Bool { effectiveCanGoBack && !canGoForward }
-        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack }
+        // The forced exit-back never pairs with web forward — they have different semantics
+        // (tab switcher vs web navigation) and shouldn't read as a visually unified control.
+        var showsNavPair: Bool { canGoBack && canGoForward }
+        var showsStandaloneBack: Bool { effectiveCanGoBack && !showsNavPair }
+        var showsStandaloneForward: Bool { canGoForward && !showsNavPair }
         var isNavigationVisible: Bool { effectiveCanGoBack || canGoForward }
     }
 

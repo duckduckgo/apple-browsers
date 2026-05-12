@@ -19,6 +19,7 @@
 import Foundation
 import UserNotifications
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Waitlist
 
 struct MockNotificationService: NotificationService {
 

@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Waitlist
 
 final class WaitlistViewModelTests: XCTestCase {
 

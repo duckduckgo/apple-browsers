@@ -464,14 +464,32 @@ extension URL {
         return debugSettings.effectiveBaseURL
     }
 
+    /// Storage for the AI Chat debug menu's "Set Custom URL" setting. Read lazily so we can
+    /// pick up changes made at runtime without restarting the app.
+    private static let aiChatDebugURLStorage: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
+
     /// Base URL for Duck.ai (overridable by internal users, CI, or UI tests only).
     ///
     /// For external users in production, this always returns `https://duck.ai`.
-    /// For internal users or test environments, this can be overridden via
-    /// the `DUCKAI_BASE_URL` environment variable (launch time).
+    /// For internal users or test environments, this can be overridden via, in priority order:
+    /// 1. The AI Chat debug menu's "Set Custom URL" setting (runtime).
+    /// 2. The `DUCKAI_BASE_URL` environment variable (launch time).
     private static var duckAiBase: String {
         guard isOverrideAllowed else {
             return "https://duck.ai"
+        }
+
+        if let debugURL = aiChatDebugURLStorage.customURL,
+           !debugURL.isEmpty,
+           let url = URL(string: debugURL),
+           let scheme = url.scheme,
+           let host = url.host {
+            // Reconstruct just the origin (scheme://host[:port]) so trailing paths or query
+            // strings from the debug setting don't end up duplicated by call sites.
+            if let port = url.port {
+                return "\(scheme)://\(host):\(port)"
+            }
+            return "\(scheme)://\(host)"
         }
 
         return ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]

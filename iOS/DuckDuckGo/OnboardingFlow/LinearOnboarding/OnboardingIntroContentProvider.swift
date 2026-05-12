@@ -190,6 +190,11 @@ struct OnboardingAddToDockContent: Equatable {
 extension OnboardingIntroContentProvider {
 
     var addToDockContent: OnboardingAddToDockContent {
+        let promoMessage = switch flowType {
+        case .default: UserText.AddToDockOnboarding.Promo.introMessage
+        case .duckAI: UserText.Onboarding.DuckAICPP.AddToDock.Promo.message
+        }
+
         let tutorial = OnboardingAddToDockContent.TutorialStepContent(
             title: UserText.AddToDockOnboarding.Tutorial.title,
             message: UserText.AddToDockOnboarding.Tutorial.message,
@@ -198,7 +203,7 @@ extension OnboardingIntroContentProvider {
 
         return OnboardingAddToDockContent(
             title: UserText.AddToDockOnboarding.Promo.title,
-            message: UserText.AddToDockOnboarding.Promo.introMessage,
+            message: promoMessage,
             primaryCTA: UserText.AddToDockOnboarding.Buttons.tutorial,
             secondaryCTA: UserText.AddToDockOnboarding.Buttons.skip,
             tutorialStepContent: tutorial

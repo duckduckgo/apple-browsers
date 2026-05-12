@@ -2469,6 +2469,16 @@ public struct UserText {
                     comment: "Title for the onboarding Duck.ai query screen."
                 )
             }
+
+            public enum AddToDock {
+                public enum Promo {
+                    static let message = NotLocalizedString(
+                        "onboarding.duckai.addToDock.promo.message",
+                        value: "I'll nest in easy reach for all your daily AI chats and browsing.",
+                        comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock."
+                    )
+                }
+            }
         }
 
         enum ContextualOnboarding {

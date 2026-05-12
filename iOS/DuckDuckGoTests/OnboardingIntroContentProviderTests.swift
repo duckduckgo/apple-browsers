@@ -381,10 +381,13 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check add to dock message is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check add to dock message is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.AddToDockOnboarding.Promo.introMessage, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
+            )
         )
-        func checkAddToDockMessage(flow: OnboardingFlowType) {
+        func checkAddToDockMessage(flow: OnboardingFlowType, expectedMessage: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -392,7 +395,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.addToDockContent
 
             // THEN
-            #expect(result.message == UserText.AddToDockOnboarding.Promo.introMessage)
+            #expect(result.message == expectedMessage)
         }
 
         @Test(

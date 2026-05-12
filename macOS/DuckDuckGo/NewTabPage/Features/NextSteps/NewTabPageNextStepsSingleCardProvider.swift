@@ -320,9 +320,6 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .addAppToDockMac:
             return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
-            // Duck Player Next Steps card is deprecated and replaced by `.youtubeAdBlocking`.
-            // Returning false also protects users with a stale `.duckplayer` entry in their persisted
-            // advanced-ordering list (`persistor.orderedCardIDs`) from a prior app version.
             return false
         case .emailProtection:
             return !emailManager.isSignedIn

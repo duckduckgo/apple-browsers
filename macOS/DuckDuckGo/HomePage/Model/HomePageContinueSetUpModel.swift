@@ -269,11 +269,7 @@ extension HomePage.Models {
         }
 
         private var shouldDuckPlayerCardBeVisible: Bool {
-            // `.youtubeAdBlocking` takes precedence — hide Duck Player when YT ad-blocking is eligible.
-            persistor.shouldShowDuckPlayerSetting
-            && duckPlayerPreferences.duckPlayerModeBool == nil
-            && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
-            && !adBlockingAvailability.isEnabled
+            persistor.shouldShowDuckPlayerSetting && duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
         }
 
         private var shouldEmailProtectionCardBeVisible: Bool {

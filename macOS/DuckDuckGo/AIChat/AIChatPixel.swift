@@ -205,6 +205,7 @@ enum AIChatPixel: PixelKitEvent {
 
     case aiChatTermsAcceptedDuplicateSyncOff
     case aiChatTermsAcceptedDuplicateSyncOn
+    case aiChatReportMetricDecodeError(NSError?, failureReason: AIChatUserScriptErrorFailureReason)
 
     // MARK: - Image Attachments
 
@@ -477,6 +478,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_terms_accepted_duplicate_sync_off"
         case .aiChatTermsAcceptedDuplicateSyncOn:
             return "aichat_terms_accepted_duplicate_sync_on"
+        case .aiChatReportMetricDecodeError:
+            return "aichat_report_metric_decode_error"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -681,6 +684,17 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncDecryptionError(let reason),
                 .aiChatSyncHistoryEnabledError(let reason):
             return ["reason": reason]
+        case .aiChatReportMetricDecodeError(_, let failureReason):
+            return ["failureReason": failureReason.rawValue]
+        }
+    }
+
+    var error: NSError? {
+        switch self {
+        case .aiChatReportMetricDecodeError(let error, _):
+            return error
+        default:
+            return nil
         }
     }
 
@@ -763,6 +777,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatReportMetricDecodeError,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,

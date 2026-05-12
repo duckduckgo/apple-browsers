@@ -2009,6 +2009,7 @@ class MainViewController: UIViewController {
 
     private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.setContentOverlaySuppressed(false)
         coordinator.deactivateToOmnibar()
         if !tab.isAITab {
             coordinator.hide()

@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antworten anpassen";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Text in Bilder umwandeln";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Bild erstellen";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Aktuelle Informationen finden";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Das ist die DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dich schützt und dir die Entscheidung überlässt, wann und wie du KI einsetzt?";
+"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dir die Kontrolle gibt?\n\nKI ist immer optional, und der Datenschutz ist immer aktiviert.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hallo.";

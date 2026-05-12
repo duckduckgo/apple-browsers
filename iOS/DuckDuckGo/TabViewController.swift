@@ -1599,7 +1599,7 @@ class TabViewController: UIViewController {
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
-                                                                     autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
+                                                                     autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
@@ -3240,7 +3240,6 @@ extension TabViewController: UserContentControllerDelegate {
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
@@ -3452,18 +3451,18 @@ extension TabViewController: AdClickAttributionLogicDelegate {
         userScripts?.trackerProtectionSubfeature.currentAdClickAttributionVendor = vendor
         userScripts?.trackerProtectionSubfeature.currentAttributionTrackerData = rules?.trackerData
 
-        if let rules = rules {
+        let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
 
-            let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-            let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
-
-            if vendor != nil {
-                userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
-                try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            } else {
-                userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-                try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            }
+        if let rules, vendor != nil {
+            userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
+            try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
+        } else if vendor == nil {
+            // No active attribution — tear down any previously installed local list and
+            // re-enable the global attribution list, even when `rules` is nil (e.g. on the
+            // initial pre-compilation call from `AdClickAttributionLogic.applyRules`).
+            userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
+            try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
         }
     }
 
@@ -4187,6 +4186,15 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // Reset last visited onboarding site and last dax dialog shown.
         contextualOnboardingLogic.setDaxDialogDismiss()
 
+        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+        // Collapse the dialog immediately so the user isn't left looking at the visit-site bubble
+        // while the chosen page is loading. Crucially this does NOT call `setDaxDialogDismiss()` —
+        // we want the natural next contextual spec (trackers / no-trackers / etc.) to surface
+        // once the page finishes loading, which depends on `lastShownDaxDialogType` /
+        // `lastVisitedOnboardingWebsiteURL` not being cleared.
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
     }
 

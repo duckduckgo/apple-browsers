@@ -162,18 +162,32 @@ private extension NewTabPageView {
 
     private var shouldShowLogoInEmptyState: Bool {
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
+        if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
     }
 
+    /// On iPad regular size class, widen the hatch to match the favorites grid container.
+    /// iPhone (including Plus/Max in landscape, where horizontal size class is regular) keeps
+    /// the original `messageMaximumWidth` because the favorites grid stays compact (4 cols).
+    private var escapeHatchMaxWidth: CGFloat {
+        if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
+            return Metrics.escapeHatchMaximumWidthPad
+        }
+        return Metrics.messageMaximumWidth
+    }
+
     @ViewBuilder
     private var escapeHatchSectionView: some View {
         if let escapeHatch = viewModel.escapeHatch {
-            ReturnToTabCard(model: escapeHatch) {
-                viewModel.onEscapeHatchTap?()
-            }
-            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            EscapeHatchView(
+                model: escapeHatch,
+                openTabCount: viewModel.openTabCount,
+                onCardTap: { viewModel.onEscapeHatchTap?() },
+                onTabSwitcherTap: { viewModel.onTabSwitcherTap?() }
+            )
+            .frame(maxWidth: escapeHatchMaxWidth)
             .padding(.top, Metrics.nonGridSectionTopPadding)
             .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
         }
@@ -244,6 +258,9 @@ private struct Metrics {
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455
+    /// Matches the favorites grid's content width on iPad regular size class (5 cols × 96pt
+    /// max item width + 4 × 32pt spacing) so the escape hatch row aligns visually with the grid.
+    static let escapeHatchMaximumWidthPad: CGFloat = 608
 
     static let verySmallScreenWidth: CGFloat = 320
 }
@@ -324,7 +341,7 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
         self.homeMessages = homeMessages
     }
 
-    func refresh() {
+    func refresh(openedAfterIdle: Bool) {
 
     }
 

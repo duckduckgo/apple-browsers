@@ -129,6 +129,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let aiVoiceChatButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var aiVoiceChatButtonTappedPublisher: AnyPublisher<Void, Never> {
+        aiVoiceChatButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> {
         clearButtonTappedSubject.eraseToAnyPublisher()
@@ -177,6 +182,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
+    func submitAIChatAttachmentOnlyPrompt() {
+        textSubmissionSubject.send((text: "", mode: .aiChat))
+    }
+
     func setToggleState(_ state: TextEntryMode) {
         guard currentToggleState != state else { return }
         currentToggleState = state
@@ -189,6 +198,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func microphoneButtonTapped() {
         microphoneButtonTappedSubject.send()
+    }
+
+    func aiVoiceChatButtonTapped() {
+        aiVoiceChatButtonTappedSubject.send()
     }
 
     func markUserInteraction() {
@@ -222,7 +235,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
@@ -233,7 +247,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            // Search-go-to is the only escape hatch back to search when the toggle is off.
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly

@@ -289,7 +289,7 @@ final class AIChatOmnibarToolButton: NSView {
 
             let effectiveTint: NSColor?
             if showPressedEffect {
-                if let activeBackgroundColor, let activePressedBackgroundColor {
+                if activeBackgroundColor != nil, let activePressedBackgroundColor {
                     backgroundLayer.backgroundColor = activePressedBackgroundColor.cgColor
                 } else {
                     backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor

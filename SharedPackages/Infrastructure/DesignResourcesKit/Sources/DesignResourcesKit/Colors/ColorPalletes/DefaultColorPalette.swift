@@ -46,6 +46,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x4D4D4D = Color(0x4D4D4D)
     private static let x1C1C1C = Color(0x1C1C1C)
     private static let x7295F6 = Color(0x7295F6)
+    private static let xF6CDD1 = Color(0xF6CDD1)
+    private static let x5A2A2A = Color(0x5A2A2A)
+    private static let xD4452F = Color(0xD4452F)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -276,6 +279,12 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
+        case .unifiedToggleInputAttachmentErrorBannerBackground:
+            return DynamicColor(lightColor: xF6CDD1, darkColor: x5A2A2A)
+        case .unifiedToggleInputAttachmentErrorText:
+            return DynamicColor(lightColor: .black.opacity(0.84), darkColor: .white.opacity(0.88))
+        case .unifiedToggleInputAttachmentErrorIcon:
+            return DynamicColor(staticColor: xD4452F)
         case .tabSwitcherTrackerCountBackground:
             return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
         case let .rebranding(rebrandingColor):

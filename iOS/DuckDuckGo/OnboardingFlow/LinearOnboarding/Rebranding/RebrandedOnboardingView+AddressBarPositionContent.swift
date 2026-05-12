@@ -17,24 +17,39 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-46879
     struct AddressBarPositionContent: View {
-        @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding private var isVisible: Bool
         private let action: () -> Void
 
-        init(action: @escaping () -> Void) {
+        init(isVisible: Binding<Bool>, action: @escaping () -> Void) {
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(UserText.Onboarding.AddressBarPosition.title)
+                TypingText(UserText.Onboarding.AddressBarPosition.title,
+                           startAnimating: $shouldStartTyping,
+                           onTypingFinished: { [reduceMotion] in
+                               if reduceMotion {
+                                   showContent = true
+                               } else {
+                                   withAnimation { showContent = true }
+                               }
+                           })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -47,7 +62,10 @@ extension OnboardingRebranding.OnboardingView {
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 

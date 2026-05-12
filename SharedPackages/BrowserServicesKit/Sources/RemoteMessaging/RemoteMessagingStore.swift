@@ -213,7 +213,7 @@ extension RemoteMessagingStore {
 
 extension RemoteMessagingStore {
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, trigger: MessageTrigger? = nil) -> RemoteMessageModel? {
 
         func predicateForSurfaces(_ surfaces: RemoteMessageSurfaceType) -> NSPredicate {
             // Match any message whose surfaces bitmask overlaps with the requested surfaces
@@ -251,13 +251,27 @@ extension RemoteMessagingStore {
                     continue
                 }
 
+                if let dismissAfterDays = remoteMessage.displayConditions?.dismissAfterDaysShown,
+                   dismissAfterDays > 0,
+                   let firstShown = remoteMessageManagedObject.firstShownDate,
+                   let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day,
+                   daysSinceFirstShown >= dismissAfterDays {
+                    self.dismissExpiredMessage(withID: id)
+                    continue
+                }
+
+                if let messageTrigger = remoteMessage.displayConditions?.trigger, messageTrigger != trigger {
+                    continue
+                }
+
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,
                     surfaces: remoteMessageManagedObject.surfaces.flatMap { RemoteMessageSurfaceType(rawValue: $0.int16Value) } ?? .newTabPage,
                     content: remoteMessage.content,
                     matchingRules: [],
                     exclusionRules: [],
-                    isMetricsEnabled: remoteMessage.isMetricsEnabled
+                    isMetricsEnabled: remoteMessage.isMetricsEnabled,
+                    displayConditions: remoteMessage.displayConditions
                 )
                 break
             }
@@ -381,6 +395,9 @@ extension RemoteMessagingStore {
                         return
                     }
                     message.shown = shown
+                    if shown && message.firstShownDate == nil {
+                        message.firstShownDate = Date()
+                    }
                     try context.save()
                 } catch {
                     errorEvents?.fire(.updateMessageShownFailed, error: error)
@@ -441,6 +458,12 @@ extension RemoteMessagingStore {
                 remoteMessageManagedObject.id = remoteMessage.id
                 remoteMessageManagedObject.shown = false
             }
+        }
+    }
+
+    private func dismissExpiredMessage(withID id: String) {
+        Task {
+            await dismissRemoteMessage(withID: id)
         }
     }
 

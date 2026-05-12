@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
-            "version": "0.1"
+            "version": "1.0"
         },
         "feature": {
             "name": "authv2-token-refresh",
@@ -43,25 +43,8 @@
                         "type": "integer",
                         "description": "The latency value of the JWKS call.",
                         "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-                    }
-                },
-                "error": {
-                    "domain": {
-                        "type": "string",
-                        "description": "The top level error domain"
                     },
-                    "code": {
-                        "type": "integer",
-                        "description": "The top level error code"
-                    },
-                    "underlying_domain": {
-                        "type": "string",
-                        "description": "The underlying error domain"
-                    },
-                    "underlying_code": {
-                        "type": "integer",
-                        "description": "The underlying error code"
-                    }
+                    "error": "errorParameters"
                 }
             }
         }

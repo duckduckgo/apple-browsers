@@ -39,7 +39,7 @@ final class DuckAIURLSuggestionsLoader {
     )
     /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
     private var latestDispatchedQuery: String?
-    /// Settle-tracking: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
+    /// Settle marker: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 

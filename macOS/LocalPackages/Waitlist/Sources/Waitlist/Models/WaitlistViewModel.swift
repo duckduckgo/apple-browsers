@@ -18,7 +18,6 @@
 
 import AppKit
 import Foundation
-import VPN
 import UserNotifications
 
 protocol WaitlistViewModelDelegate: AnyObject {

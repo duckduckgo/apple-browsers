@@ -17,8 +17,6 @@
 //
 
 import Foundation
-import UserNotifications
-import BrowserServicesKit
 
 protocol WaitlistViewControllerPresenter {
     static func show(completion: (() -> Void)?)

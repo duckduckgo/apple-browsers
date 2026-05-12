@@ -18,7 +18,6 @@
 
 import AppKit
 import SwiftUI
-import UserNotifications
 
 extension Notification.Name {
     static let waitlistModalViewControllerShouldDismiss = Notification.Name(rawValue: "waitlistModalViewControllerShouldDismiss")

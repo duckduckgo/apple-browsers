@@ -17,8 +17,6 @@
 //
 
 import Foundation
-import UserNotifications
-import PixelKit
 
 protocol WaitlistTermsAndConditionsActionHandler {
     var acceptedTermsAndConditions: Bool { get }

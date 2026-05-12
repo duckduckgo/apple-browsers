@@ -19,10 +19,6 @@
 import Foundation
 import Networking
 import UserNotifications
-import VPN
-import BrowserServicesKit
-import Common
-import Subscription
 
 protocol WaitlistConstants {
     static var identifier: String { get }

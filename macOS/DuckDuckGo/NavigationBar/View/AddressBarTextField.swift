@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AddressBarPerformance
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox

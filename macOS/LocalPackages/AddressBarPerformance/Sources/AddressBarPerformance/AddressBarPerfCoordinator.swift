@@ -27,7 +27,7 @@ import PixelKit
 /// at terminators, and scheduling the deferred pixel emission.
 ///
 /// All public methods are expected on the main thread.
-final class AddressBarPerfCoordinator {
+public final class AddressBarPerfCoordinator {
 
     typealias PixelFirer = (AddressBarPerfPixel) -> Void
 
@@ -45,12 +45,20 @@ final class AddressBarPerfCoordinator {
     private var suggestNeedsRender = false
     private var pendingEmit: DispatchWorkItem?
 
+    public convenience init() {
+        self.init(
+            recorder: AddressBarPerfRecorder(),
+            deferredEmitDelay: AddressBarPerfCoordinator.defaultDeferredEmitDelay,
+            pixelFirer: { pixel in
+                PixelKit.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
+            }
+        )
+    }
+
     init(
-        recorder: AddressBarPerfRecorder = AddressBarPerfRecorder(),
-        deferredEmitDelay: TimeInterval = AddressBarPerfCoordinator.defaultDeferredEmitDelay,
-        pixelFirer: @escaping PixelFirer = { pixel in
-            PixelKit.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
-        }
+        recorder: AddressBarPerfRecorder,
+        deferredEmitDelay: TimeInterval,
+        pixelFirer: @escaping PixelFirer
     ) {
         self.recorder = recorder
         self.deferredEmitDelay = deferredEmitDelay
@@ -65,7 +73,7 @@ final class AddressBarPerfCoordinator {
 
     /// Binds the coordinator's paint hook to `window` and starts ticking. Call when the address
     /// bar's window becomes available.
-    func attach(to window: NSWindow) {
+    public func attach(to window: NSWindow) {
         paintHook?.stop()
         paintHook = AddressBarPerfPaintHook(window: window) { [weak self] outputTime in
             self?.handlePaint(at: outputTime)
@@ -74,7 +82,7 @@ final class AddressBarPerfCoordinator {
     }
 
     /// Stops and discards the paint hook. Call when the address bar's window is no longer available.
-    func detach() {
+    public func detach() {
         paintHook?.stop()
         paintHook = nil
     }
@@ -82,7 +90,7 @@ final class AddressBarPerfCoordinator {
     // MARK: - Event signals
 
     /// Resets pending state for a new interaction. Call on focus-gained.
-    func resetForNewInteraction() {
+    public func resetForNewInteraction() {
         cancelPendingEmit()
         recorder.reset()
         pendingCharStartTime = nil
@@ -93,7 +101,7 @@ final class AddressBarPerfCoordinator {
     /// Records a user-driven keystroke. Stamps the suggest stage's anchor immediately so a
     /// suggestions update that arrives before the buffer commit still finds it, and stashes
     /// the same t₀ for the char stage to consume at commit time.
-    func markKeystroke() {
+    public func markKeystroke() {
         pendingCharStartTime = recorder.markKeystrokeForSuggest()
     }
 
@@ -101,7 +109,7 @@ final class AddressBarPerfCoordinator {
     /// t₀ into the char pending list and arms the next-paint flag. No-op when the buffer
     /// changed without a preceding `markKeystroke()` (programmatic edits) or after a previous
     /// suppressed keystroke whose slot was overwritten — those produce no char sample.
-    func armCharRenderIfPending() {
+    public func armCharRenderIfPending() {
         guard let t = pendingCharStartTime else { return }
         pendingCharStartTime = nil
         recorder.appendCharStartTime(at: t)
@@ -109,14 +117,14 @@ final class AddressBarPerfCoordinator {
     }
 
     /// Arms the suggest-render path. Call when the suggestions model emits an update.
-    func markSuggestionsUpdated() {
+    public func markSuggestionsUpdated() {
         suggestNeedsRender = true
     }
 
     /// Snapshots the buffers synchronously and schedules a deferred pixel emission.
     /// Call on each interaction terminator (focus loss, navigation commit, AI-mode toggle,
     /// tab switch, window deactivate, app deactivate).
-    func terminateInteraction() {
+    public func terminateInteraction() {
         let snapshot = recorder.takeAndClear()
         pendingCharStartTime = nil
         charNeedsRender = false

@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+@testable import AddressBarPerformance
 
 final class AddressBarPerfRecorderTests: XCTestCase {
 

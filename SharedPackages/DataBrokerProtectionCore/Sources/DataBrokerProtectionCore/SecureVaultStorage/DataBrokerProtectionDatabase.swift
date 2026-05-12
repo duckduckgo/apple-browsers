@@ -71,12 +71,11 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
-    func hasScanHistoryEvents() throws -> Bool
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
-    func fetchMostRecentFinishedScanEventDate() throws -> Date?
+    func hasScanHistoryEvents() throws -> Bool
     func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
@@ -504,15 +503,6 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.hasMatches()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.hasMatches")
-            throw error
-        }
-    }
-
-    public func fetchMostRecentFinishedScanEventDate() throws -> Date? {
-        do {
-            return try vault.fetchMostRecentFinishedScanEventDate()
-        } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.fetchMostRecentFinishedScanEventDate")
             throw error
         }
     }

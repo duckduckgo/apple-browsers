@@ -129,8 +129,6 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
 
     func hasMatches() throws -> Bool
 
-    func fetchMostRecentFinishedScanEventDate() throws -> Date?
-
     func fetchAllAttempts() throws -> [OptOutAttemptDB]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> OptOutAttemptDB?
     func save(_ optOutAttemptDB: OptOutAttemptDB) throws
@@ -816,25 +814,6 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     public func hasMatches() throws -> Bool {
         try db.read { db in
             return try OptOutDB.fetchCount(db) > 0
-        }
-    }
-
-    public func fetchMostRecentFinishedScanEventDate() throws -> Date? {
-        try db.read { db in
-            let events = try ScanHistoryEventDB
-                .order(ScanHistoryEventDB.Columns.timestamp.desc)
-                .fetchCursor(db)
-
-            while let event = try events.next() {
-                let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
-                switch eventType {
-                case .matchesFound, .noMatchFound, .reAppearence, .error:
-                    return event.timestamp
-                default:
-                    continue
-                }
-            }
-            return nil
         }
     }
 

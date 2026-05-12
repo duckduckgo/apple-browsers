@@ -113,61 +113,45 @@ public final class DataBrokerProtectionEngagementPixels {
             return
         }
 
-        let mostRecentScan: Date?
-        do {
-            mostRecentScan = try database.fetchMostRecentFinishedScanEventDate()
-        } catch {
-            Logger.dataBrokerProtection.error("Failed to fetch most recent finished scan event date for engagement pixels: \(error.localizedDescription, privacy: .public)")
-            return
-        }
-
         let isFreeScan = !isAuthenticated
 
-        if shouldWeFireDailyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
+        if shouldWeFireDailyPixel(date: currentDate) {
             handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh, isFreeScan: isFreeScan))
             repository.markDailyPixelSent()
         }
 
-        if shouldWeFireWeeklyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
+        if shouldWeFireWeeklyPixel(date: currentDate) {
             handler.fire(.weeklyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markWeeklyPixelSent()
         }
 
-        if shouldWeFireMonthlyPixel(date: currentDate, mostRecentScan: mostRecentScan) {
+        if shouldWeFireMonthlyPixel(date: currentDate) {
             handler.fire(.monthlyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markMonthlyPixelSent()
         }
     }
 
-    private func shouldWeFireDailyPixel(date: Date, mostRecentScan: Date?) -> Bool {
-        if let latestPixelFire = repository.getLatestDailyPixel(),
-           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily) {
-            return false
+    private func shouldWeFireDailyPixel(date: Date) -> Bool {
+        guard let latestPixelFire = repository.getLatestDailyPixel() else {
+            return true
         }
-        return isWithin(.daily, of: date, scan: mostRecentScan)
+
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily)
     }
 
-    private func shouldWeFireWeeklyPixel(date: Date, mostRecentScan: Date?) -> Bool {
-        if let latestPixelFire = repository.getLatestWeeklyPixel(),
-           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly) {
-            return false
+    private func shouldWeFireWeeklyPixel(date: Date) -> Bool {
+        guard let latestPixelFire = repository.getLatestWeeklyPixel() else {
+            return true
         }
-        return isWithin(.weekly, of: date, scan: mostRecentScan)
+
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly)
     }
 
-    private func shouldWeFireMonthlyPixel(date: Date, mostRecentScan: Date?) -> Bool {
-        if let latestPixelFire = repository.getLatestMonthlyPixel(),
-           !DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly) {
-            return false
+    private func shouldWeFireMonthlyPixel(date: Date) -> Bool {
+        guard let latestPixelFire = repository.getLatestMonthlyPixel() else {
+            return true
         }
-        return isWithin(.monthly, of: date, scan: mostRecentScan)
-    }
 
-    private func isWithin(_ frequency: Frequency, of date: Date, scan: Date?) -> Bool {
-        guard let scan,
-              let diff = DataBrokerProtectionSharedPixelsUtilities.numberOfDaysFrom(startDate: scan, endDate: date) else {
-            return false
-        }
-        return diff < frequency.rawValue
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly)
     }
 }

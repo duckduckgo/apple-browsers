@@ -40,178 +40,118 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
         handler.clear()
     }
 
-    // MARK: - Activity gate
-
     func testWhenThereIsNoProfile_thenNoEngagementPixelIsFired() {
-        seedScanCompletedDaysAgo(0, currentDate: Date())
         database.setFetchedProfile(nil)
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
+        // We test we have no interactions with the repository
         XCTAssertFalse(repository.wasDailyPixelSent)
         XCTAssertFalse(repository.wasWeeklyPixelSent)
         XCTAssertFalse(repository.wasMonthlyPixelSent)
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.isEmpty)
-    }
-
-    func testWhenNoScanHasFinished_thenNoEngagementPixelIsFired() {
-        seedScanCompletedDaysAgo(nil, currentDate: Date())
-        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
-
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
-
-        XCTAssertFalse(repository.wasDailyPixelSent)
+        XCTAssertFalse(repository.wasGetLatestDailyPixelCalled)
         XCTAssertFalse(repository.wasWeeklyPixelSent)
         XCTAssertFalse(repository.wasMonthlyPixelSent)
+
+        // The pixel should not be fired
         XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.isEmpty)
     }
 
-    // MARK: - DAU
-
-    func testWhenLatestDailyPixelIsNilAndScanFinishedToday_thenWeFireDailyPixel() {
-        let now = dateFromString("2024-02-21")
-        seedScanCompletedDaysAgo(0, currentDate: now)
+    func testWhenLatestDailyPixelIsNil_thenWeFireDailyPixel() {
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestDailyPixel = nil
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
         XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
-    func testWhenCurrentDayIsDifferentToLatestDailyPixelAndScanFinishedRecently_thenWeFireDailyPixel() {
-        let now = dateFromString("2024-02-21")
-        seedScanCompletedDaysAgo(0, currentDate: now)
-        repository.setLatestDailyPixel = dateFromString("2024-02-20")
+    func testWhenCurrentDayIsDifferentToLatestDailyPixel_thenWeFireDailyPixel() {
+        database.setFetchedProfile(fakeProfile)
+        repository.setLatestWeeklyPixel = dateFromString("2024-02-20")
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-21"))
 
         XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
     func testWhenCurrentDayIsEqualToLatestDailyPixel_thenWeDoNotFireDailyPixel() {
-        let now = Date()
-        seedScanCompletedDaysAgo(0, currentDate: now)
-        repository.setLatestDailyPixel = now
+        database.setFetchedProfile(fakeProfile)
+        repository.setLatestDailyPixel = Date()
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
         XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertFalse(repository.wasDailyPixelSent)
     }
 
-    func testWhenTimeElapsedButLastScanFinishedTooLongAgo_thenWeDoNotFireDailyPixel() {
-        let now = dateFromString("2024-02-21")
-        seedScanCompletedDaysAgo(2, currentDate: now)
-        repository.setLatestDailyPixel = nil
-        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
-
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
-
-        XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
-        XCTAssertFalse(repository.wasDailyPixelSent)
-    }
-
-    // MARK: - WAU
-
-    func testWhenLatestWeeklyPixelIsNilAndScanFinishedThisWeek_thenWeFireWeeklyPixel() {
-        let now = dateFromString("2024-02-21")
-        seedScanCompletedDaysAgo(3, currentDate: now)
+    func testWhenLatestWeeklyPixelIsNil_thenWeFireWeeklyPixel() {
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestWeeklyPixel = nil
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
         XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasWeeklyPixelSent)
     }
 
-    func testWhenCurrentDayIsSevenDatesEqualOrGreaterThanLatestWeeklyAndScanFinishedRecently_thenWeFireWeeklyPixel() {
-        let now = dateFromString("2024-02-27")
-        seedScanCompletedDaysAgo(1, currentDate: now)
+    func testWhenCurrentDayIsSevenDatesEqualOrGreaterThanLatestWeekly_thenWeFireWeeklyPixel() {
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestWeeklyPixel = dateFromString("2024-02-20")
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-27"))
 
         XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasWeeklyPixelSent)
     }
 
     func testWhenCurrentDayIsSevenDatesLessThanLatestWeekly_thenWeDoNotFireWeeklyPixel() {
-        let now = dateFromString("2024-02-26")
-        seedScanCompletedDaysAgo(0, currentDate: now)
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestWeeklyPixel = dateFromString("2024-02-20")
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-26"))
 
         XCTAssertFalse(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertFalse(repository.wasWeeklyPixelSent)
     }
 
-    func testWhenTimeElapsedButLastScanFinishedMoreThan7DaysAgo_thenWeDoNotFireWeeklyPixel() {
-        let now = dateFromString("2024-02-27")
-        seedScanCompletedDaysAgo(8, currentDate: now)
-        repository.setLatestWeeklyPixel = dateFromString("2024-02-20")
-        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
-
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
-
-        XCTAssertFalse(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
-        XCTAssertFalse(repository.wasWeeklyPixelSent)
-    }
-
-    // MARK: - MAU
-
-    func testWhenLatestMonthlyPixelIsNilAndScanFinishedThisMonth_thenWeFireMonthlyPixel() {
-        let now = dateFromString("2024-02-21")
-        seedScanCompletedDaysAgo(10, currentDate: now)
+    func testWhenLatestMonthlyPixelIsNil_thenWeFireMonthlyPixel() {
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestMonthlyPixel = nil
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
         XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasMonthlyPixelSent)
     }
 
-    func testWhenCurrentMonthIs28DatesGreaterOrEqualThanLatestMonthlyPixelAndScanFinishedRecently_thenWeFireMonthlyPixel() {
-        let now = dateFromString("2024-03-19")
-        seedScanCompletedDaysAgo(1, currentDate: now)
+    func testWhenCurrentMonthIs28DatesGreaterOrEqualThanLatestMonthlyPixel_thenWeFireMonthlyPixel() {
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestMonthlyPixel = dateFromString("2024-02-20")
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-03-19"))
 
         XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasMonthlyPixelSent)
     }
 
     func testWhenCurrentIsNot28DatesGreaterOrEqualToLatestMonthlyPixel_thenWeDoNotFireMonthlyPixel() {
-        let now = dateFromString("2024-03-18")
-        seedScanCompletedDaysAgo(0, currentDate: now)
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestMonthlyPixel = dateFromString("2024-02-20")
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
-
-        XCTAssertFalse(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
-        XCTAssertFalse(repository.wasMonthlyPixelSent)
-    }
-
-    func testWhenTimeElapsedButLastScanFinishedMoreThan28DaysAgo_thenWeDoNotFireMonthlyPixel() {
-        let now = dateFromString("2024-03-19")
-        seedScanCompletedDaysAgo(29, currentDate: now)
-        repository.setLatestMonthlyPixel = dateFromString("2024-02-20")
-        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
-
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-03-18"))
 
         XCTAssertFalse(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertFalse(repository.wasMonthlyPixelSent)
@@ -220,47 +160,32 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
     // MARK: - Free scan parameter
 
     func testWhenUserIsAuthenticated_thenEngagementPixelsIncludeFreeScanFalse() {
-        let now = Date()
-        seedScanCompletedDaysAgo(0, currentDate: now)
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestDailyPixel = nil
         repository.setLatestWeeklyPixel = nil
         repository.setLatestMonthlyPixel = nil
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: true, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
-        XCTAssertFalse(firedPixels.isEmpty)
         for pixel in firedPixels {
             XCTAssertEqual(pixel.parameters?["free_scan"], "false", "Expected free_scan=false for authenticated user on pixel \(pixel.name)")
         }
     }
 
     func testWhenUserIsNotAuthenticated_thenEngagementPixelsIncludeFreeScanTrue() {
-        let now = Date()
-        seedScanCompletedDaysAgo(0, currentDate: now)
+        database.setFetchedProfile(fakeProfile)
         repository.setLatestDailyPixel = nil
         repository.setLatestWeeklyPixel = nil
         repository.setLatestMonthlyPixel = nil
         let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
 
-        sut.fireEngagementPixel(isAuthenticated: false, currentDate: now)
+        sut.fireEngagementPixel(isAuthenticated: false, currentDate: Date())
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
-        XCTAssertFalse(firedPixels.isEmpty)
         for pixel in firedPixels {
             XCTAssertEqual(pixel.parameters?["free_scan"], "true", "Expected free_scan=true for unauthenticated user on pixel \(pixel.name)")
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func seedScanCompletedDaysAgo(_ daysAgo: Int?, currentDate: Date) {
-        database.setFetchedProfile(fakeProfile)
-        if let daysAgo {
-            database.mostRecentFinishedScanEventDateToReturn = Calendar.current.date(byAdding: .day, value: -daysAgo, to: currentDate)!
-        } else {
-            database.mostRecentFinishedScanEventDateToReturn = nil
         }
     }
 
@@ -271,6 +196,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
     private func dateFromString(_ string: String) -> Date {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
+
         return dateFormatter.date(from: string)!
     }
 }

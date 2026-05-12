@@ -518,7 +518,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .duckAIQueryExperimentSelection)
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
 
         // WHEN
         sut.selectDuckAIQueryExperimentAction(selection: .duckAI)

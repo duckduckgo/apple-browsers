@@ -23,7 +23,7 @@ enum UnifiedToggleInputFileEncoder {
 
     static func encode(_ attachments: [UnifiedToggleInputAttachment]) -> [AIChatNativePrompt.NativePromptFile]? {
         let files = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptFile? in
-            guard case .file(let fileAttachment) = attachment else { return nil }
+            guard let fileAttachment = attachment.fileAttachment else { return nil }
             return AIChatNativePrompt.NativePromptFile(
                 data: fileAttachment.data.base64EncodedString(),
                 fileName: fileAttachment.fileName,

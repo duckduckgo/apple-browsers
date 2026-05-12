@@ -29,6 +29,8 @@ class SwitchBarTextEntryView: UIView {
         case automatic
         case microphone
         case aiVoicePlain
+        /// Suppress the in-pill voice button (e.g. when an external flank already provides it).
+        case hidden
     }
 
     private enum Constants {
@@ -126,6 +128,14 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
+    /// value, so the placeholder doesn't sit lopsided under the icon.
+    var placeholderTextAlignment: NSTextAlignment = .natural {
+        didSet {
+            updatePlaceholderAlignment()
+        }
+    }
+
     var isUsingIncreasedButtonPadding: Bool = false {
         didSet {
             updateButtonsPadding()
@@ -183,6 +193,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
+        placeholderLabel.lineBreakMode = .byTruncatingTail
 
         setupButtonsView()
 
@@ -265,9 +276,11 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
+            placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
-            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
+            // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
+            // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
+            placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])
@@ -327,8 +340,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
-        let newButtonState = handler.buttonState
+        // Update handler-side flags first so `handler.buttonState` reflects the new appearance.
         updateVoiceButtonStyle()
+        let newButtonState = handler.buttonState
 
         if newButtonState != currentButtonState {
             // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
@@ -338,13 +352,19 @@ class SwitchBarTextEntryView: UIView {
                 UIView.performWithoutAnimation {
                     self.currentButtonState = newButtonState
                     self.adjustTextViewContentInset()
+                    self.updatePlaceholderAlignment()
                     self.layoutIfNeeded()
                 }
             }
         }
     }
 
+    private func updatePlaceholderAlignment() {
+        placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
     private func updateVoiceButtonStyle() {
+        handler.hidesVoiceButton = voiceButtonAppearance == .hidden
         let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
         switch voiceButtonAppearance {
         case .automatic:
@@ -353,6 +373,8 @@ class SwitchBarTextEntryView: UIView {
             buttonsView.voiceButtonStyle = .microphone
         case .aiVoicePlain:
             buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
+        case .hidden:
+            break
         }
     }
 
@@ -614,7 +636,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
-    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    /// `.textTertiary` matches the spec ("Text/Placeholder, Labels/Tertiary, System/System Text Tertiary").
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textTertiary) }
 
     // Two transient overlays composite directly over the parent background (the original label is
     // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which

@@ -23,8 +23,13 @@ import Foundation
 /// previous boolean soup (`isExpanded` + `showToggle` + `alwaysShowToolbar`) with a single value
 /// callers compose explicitly.
 enum UnifiedToggleInputCardLayout: Equatable {
-    /// Single-line bar; toggle row and toolbar both hidden.
+    /// Single-line slim pill with no surrounding accessories. Today its dimensions
+    /// (44pt tall, 16pt corner radius, leading-aligned placeholder) mimic the regular
+    /// omnibar, so the snap between the two reads as one continuous pill.
     case collapsed
+    /// Single-line pill flanked by accessory buttons on either side (fire / voice on
+    /// Duck.ai today). Slightly taller (48pt capsule) to match the accessory height.
+    case flanked
     /// Multi-line card. Each component independently visible.
     case expanded(showsToggle: Bool, showsToolbar: Bool)
 

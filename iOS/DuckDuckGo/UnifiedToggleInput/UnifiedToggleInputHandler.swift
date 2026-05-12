@@ -182,6 +182,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
+    func submitAIChatAttachmentOnlyPrompt() {
+        textSubmissionSubject.send((text: "", mode: .aiChat))
+    }
+
     func setToggleState(_ state: TextEntryMode) {
         guard currentToggleState != state else { return }
         currentToggleState = state
@@ -243,7 +247,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            // Search-go-to is the only escape hatch back to search when the toggle is off.
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly

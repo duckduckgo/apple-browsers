@@ -55,6 +55,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+    private let tutorialSettings: TutorialSettings
 
     var onViewDidAppear: (() -> Void)?
 
@@ -71,12 +72,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
-         appWidthObserver: AppWidthObserver = .shared) {
+         appWidthObserver: AppWidthObserver = .shared,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -84,6 +87,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
+        self.tutorialSettings = tutorialSettings
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
@@ -95,7 +99,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
-                                                fireModePromotionEligibility: fireModePromotionEligibility)
+                                                fireModePromotionEligibility: fireModePromotionEligibility,
+                                                isOpenedAfterIdle: hasEscapeHatch)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -119,10 +124,19 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                 guard let self else { return }
                 self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
             }
+            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestTabSwitcher(self)
+            }
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil
+            newTabPageViewModel.onTabSwitcherTap = nil
         }
         updateBorderView()
+    }
+
+    func setOpenTabCount(_ count: Int) {
+        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
@@ -284,6 +298,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
+        // If linear onboarding is not completed do not attempt to present any Dax dialog.
+        guard tutorialSettings.hasSeenOnboarding else { return }
+        // Present Dax dialog if needed.
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 

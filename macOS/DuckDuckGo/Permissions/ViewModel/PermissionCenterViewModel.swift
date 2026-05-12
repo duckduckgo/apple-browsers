@@ -468,8 +468,10 @@ final class PermissionCenterViewModel: ObservableObject {
 
         let (externalSchemePermissions, otherPermissions) = collectPermissions()
 
-        // Build items for non-external-scheme permissions
-        var items: [PermissionCenterItem] = otherPermissions.map { buildPermissionItem(for: $0) }
+        // Build items for non-external-scheme permissions; `buildPermissionItem` may return
+        // nil for rows that have nothing actionable to show (e.g. duck.ai locked mic when
+        // OS access is authorized).
+        var items: [PermissionCenterItem] = otherPermissions.compactMap { buildPermissionItem(for: $0) }
 
         // Group all external schemes into a single row
         if let groupedItem = buildExternalSchemesItem(from: externalSchemePermissions) {
@@ -522,7 +524,22 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
-    private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem {
+    private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem? {
+        let isLocked = isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType)
+
+        // Locked rows are read-only by design — their only purpose is to surface the
+        // system-disabled warning. If the OS access is authorized (granted) or notDetermined
+        // (not yet asked, the OS will prompt naturally), there's nothing meaningful to show,
+        // so we omit the row entirely.
+        if isLocked {
+            switch systemPermissionManager.cachedAuthorizationState(for: permissionType) {
+            case .authorized, .notDetermined:
+                return nil
+            case .denied, .restricted:
+                break
+            }
+        }
+
         let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         let state = usedPermissions[permissionType] ?? .inactive
 
@@ -540,7 +557,7 @@ final class PermissionCenterViewModel: ObservableObject {
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
-        item.isLocked = isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType)
+        item.isLocked = isLocked
 
         // Async check for permissions whose OS-level state may surface a system-disabled warning
         if shouldSurfaceSystemDisabledWarning(for: permissionType) {
@@ -550,13 +567,13 @@ final class PermissionCenterViewModel: ObservableObject {
         return item
     }
 
-    /// Wraps `PermissionType.surfacesSystemDisabledWarning` to layer in the
-    /// `aiChatNativeVoicePermissionFlow`-gated `.microphone` case (warning is only surfaced
-    /// for mic when the flag is on).
+    /// Wraps `PermissionType.surfacesSystemDisabledWarning` to layer in the duck.ai-scoped
+    /// `.microphone` case. The mic warning is intentionally limited to duck.ai (where we
+    /// auto-grant per-site permission and own the voice-chat flow) to avoid changing the
+    /// Permission Center UX for unrelated sites that happen to have mic persisted.
     private func shouldSurfaceSystemDisabledWarning(for permissionType: PermissionType) -> Bool {
         if permissionType.surfacesSystemDisabledWarning { return true }
-        if permissionType == .microphone,
-           featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) {
+        if isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType) {
             return true
         }
         return false

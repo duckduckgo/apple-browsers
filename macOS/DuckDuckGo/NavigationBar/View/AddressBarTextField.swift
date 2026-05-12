@@ -150,8 +150,8 @@ final class AddressBarTextField: NSTextField {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.performanceCoordinator.markSuggestionsUpdated()
                 if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
+                    self.performanceCoordinator.markSuggestionsUpdated()
                     self.showSuggestionWindow()
                 }
             }

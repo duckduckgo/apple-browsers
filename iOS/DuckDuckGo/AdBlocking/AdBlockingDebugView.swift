@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import Persistence
 import SwiftUI
 
@@ -60,9 +61,32 @@ struct AdBlockingDebugView: View {
             } header: {
                 Text(verbatim: "Disclosure visibility")
             }
+
+            Section {
+                Button("Clear today's detection-pixel stamps") {
+                    clearDetectionPixelDailyStamps()
+                }
+            } header: {
+                Text(verbatim: "Detection pixels")
+            } footer: {
+                Text(verbatim: "Clears today's last-fired stamps for the five m_web_extension_adblocking_detected_*_daily pixels so they can fire again today.")
+            }
         }
         .navigationTitle("Ad Blocking")
         .onAppear(perform: refresh)
+    }
+
+    private func clearDetectionPixelDailyStamps() {
+        let pixels: [Pixel.Event] = [
+            .webExtensionAdBlockingDetectedAdBlockerDaily,
+            .webExtensionAdBlockingDetectedPlayabilityErrorDaily,
+            .webExtensionAdBlockingDetectedVideoAdDaily,
+            .webExtensionAdBlockingDetectedStaticAdDaily,
+            .webExtensionAdBlockingDetectedBufferingDaily
+        ]
+        for pixel in pixels {
+            try? DailyPixel.storage.set(nil, forKey: pixel.name)
+        }
     }
 
     @ViewBuilder

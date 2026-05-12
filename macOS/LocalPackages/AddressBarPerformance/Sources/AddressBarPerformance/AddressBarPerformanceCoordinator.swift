@@ -31,8 +31,6 @@ import PixelKit
 /// A re-focus or new keystroke within the linger cancels the stop, so Cmd-Tab cycles don't lose
 /// measurements. A static `currentActive` enforces that at most one coordinator's hook ticks
 /// across the app — a new activation displaces any other active coordinator immediately.
-///
-/// All public methods are expected on the main thread.
 @MainActor
 public final class AddressBarPerformanceCoordinator {
 
@@ -46,8 +44,7 @@ public final class AddressBarPerformanceCoordinator {
 
     /// At most one coordinator's paint hook ticks at a time across the app. Activating a
     /// new coordinator immediately stops any previously-active one (skipping its linger).
-    /// `nonisolated(unsafe)` so `deinit` can touch it; all writes happen on main.
-    nonisolated(unsafe) static weak var currentActive: AddressBarPerformanceCoordinator?
+    static weak var currentActive: AddressBarPerformanceCoordinator?
 
     private let recorder: AddressBarPerformanceRecorder
     private let deferredEmitDelay: TimeInterval
@@ -85,9 +82,6 @@ public final class AddressBarPerformanceCoordinator {
     deinit {
         pendingEmit?.cancel()
         pendingHookStopTask?.cancel()
-        if AddressBarPerformanceCoordinator.currentActive === self {
-            AddressBarPerformanceCoordinator.currentActive = nil
-        }
     }
 
     // MARK: - Lifecycle

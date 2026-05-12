@@ -32,7 +32,7 @@ final class QuickFeedbackService: NSObject {
 
     private var contentOverlayPopover: ContentOverlayPopover?
 
-    /// `hasSuffix` (not `contains`) so unrelated domains like `casanaresort.com` aren't purged.
+    /// Suffix match (not substring) so only Asana-owned cookies are cleared on sign-out.
     private static let asanaDomainSuffix = "asana.com"
 
     /// Hides the form section until the autofiller's `hideIrrelevantFields` runs (8s fallback)

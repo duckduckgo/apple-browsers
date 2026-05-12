@@ -74,7 +74,6 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
     /// into the autofiller script. Diagnostics in particular contain newlines and may contain
     /// apostrophes, both of which would otherwise terminate a hand-quoted literal early.
     /// Mirrors `DuckAiNativeStorageBootstrapUserScript.jsStringLiteral`.
-    /// `internal` (not `private`) so unit tests can verify the JS-literal contract directly.
     static func jsStringLiteral(_ value: String) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: [value]),
               let array = String(data: data, encoding: .utf8) else {

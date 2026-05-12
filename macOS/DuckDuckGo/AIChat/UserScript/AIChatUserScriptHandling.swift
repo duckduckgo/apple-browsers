@@ -660,7 +660,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
         // No-op when the feature flag is off — FE should never reach here in that case
-        // (it sees `supportsNativeVoiceChatPermissionPrompt: false` and keeps its tooltip),
+        // (it sees `supportsNativeVoicePermissionHandler: false` and keeps its tooltip),
         // but stale clients or local-override misuse could fire it. Fail closed.
         guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return nil }
         let reason: String = {

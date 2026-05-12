@@ -934,23 +934,23 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("When aiChatNativeVoicePermissionFlow is enabled, supportsNativeVoiceChatPermissionPrompt is true", .timeLimit(.minutes(1)))
+    @Test("When aiChatNativeVoicePermissionFlow is enabled, supportsNativeVoicePermissionHandler is true", .timeLimit(.minutes(1)))
     func testWhenAIChatNativeVoicePermissionFlowEnabledThenSupportsNativeVoiceChatPermissionPromptIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared)
 
-        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoiceChatPermissionPrompt == true)
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == true)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("When aiChatNativeVoicePermissionFlow is disabled, supportsNativeVoiceChatPermissionPrompt is false", .timeLimit(.minutes(1)))
+    @Test("When aiChatNativeVoicePermissionFlow is disabled, supportsNativeVoicePermissionHandler is false", .timeLimit(.minutes(1)))
     func testWhenAIChatNativeVoicePermissionFlowDisabledThenSupportsNativeVoiceChatPermissionPromptIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: false)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared)
 
-        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoiceChatPermissionPrompt == false)
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
     }
 
     // MARK: - voiceChatStartFailed flag gating

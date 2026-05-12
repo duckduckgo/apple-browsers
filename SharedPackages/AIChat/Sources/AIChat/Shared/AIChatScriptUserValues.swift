@@ -92,7 +92,7 @@ public struct AIChatNativeConfigValues: Codable {
     /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
     /// after `getUserMedia` rejects.
-    public let supportsNativeVoiceChatPermissionPrompt: Bool
+    public let supportsNativeVoicePermissionHandler: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -113,7 +113,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoiceChatPermissionPrompt: false)
+                                        supportsNativeVoicePermissionHandler: false)
 #endif
 
 #if os(macOS)
@@ -134,7 +134,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoiceChatPermissionPrompt: true)
+                                        supportsNativeVoicePermissionHandler: true)
 #endif
     }
 
@@ -156,7 +156,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
-                supportsNativeVoiceChatPermissionPrompt: Bool = false) {
+                supportsNativeVoicePermissionHandler: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -176,7 +176,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
-        self.supportsNativeVoiceChatPermissionPrompt = supportsNativeVoiceChatPermissionPrompt
+        self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
     }
 }
 

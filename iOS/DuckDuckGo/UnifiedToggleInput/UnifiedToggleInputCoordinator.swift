@@ -499,6 +499,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private var isNewChatPending = false
 
+    /// One-shot request from an explicit "start a new Duck.ai chat" entry point (native quick
+    /// action, in-page New Chat button) to auto-expand the UTI on the next fresh AI tab refresh.
+    private var pendingAutoExpand = false
+
+    func queuePendingAutoExpand() {
+        pendingAutoExpand = true
+    }
+
+    func consumePendingAutoExpand() -> Bool {
+        let value = pendingAutoExpand
+        pendingAutoExpand = false
+        return value
+    }
+
     // MARK: - AI Tab State
 
     func showCollapsed() {

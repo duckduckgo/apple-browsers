@@ -111,7 +111,7 @@ extension TabViewController: AITabController {
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewAIChatTabForUrl: newChatURL)
     }
 
     /// Reloads the full mode AI Chat tab if this is an AI tab.

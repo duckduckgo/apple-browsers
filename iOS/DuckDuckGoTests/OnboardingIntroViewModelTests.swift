@@ -184,6 +184,24 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .restoreData), step: .hidden)))
     }
 
+    func testWhenReturningUserAndRestorePromptEligibilityIsTrue_AndIsDuckAIFlow_ThenDoesNotShowRestorePrompt() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: true)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: true),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN - restore prompt is suppressed in the Duck.ai tailored flow even when the user is eligible
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .skipTutorial), step: .hidden)))
+    }
+
     func testWhenReturningUserAndRestorePromptEligibilityIsFalseThenDoesNotShowRestorePrompt() {
         // GIVEN
         let restorePromptHandlerMock = MockRestorePromptHandler()

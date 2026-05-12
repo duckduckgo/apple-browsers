@@ -486,6 +486,10 @@ private extension OnboardingIntroViewModel {
         guard isReturningUser else {
             return .default
         }
+        // Restore-data prompt is suppressed in the Duck.ai tailored flow.
+        guard onboardingManager.currentOnboardingFlow != .duckAI else {
+            return .skipTutorial
+        }
         return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial
     }
 

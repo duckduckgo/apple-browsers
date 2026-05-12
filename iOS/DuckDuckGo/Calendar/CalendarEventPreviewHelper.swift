@@ -28,8 +28,20 @@ import UIKit
 /// Owner must keep a strong reference until `onDismiss` fires — the editor's delegate is weak.
 final class CalendarEventPreviewHelper: NSObject, FilePreview {
 
+    /// Reason the helper couldn't auto-add the event. Surfaced via `onFailure` so the caller
+    /// can show a toast in the appropriate location.
+    enum Failure {
+        case multipleEvents
+        case unrecognizedTimeZone
+        case parseFailure
+    }
+
     /// Fires after the editor dismisses, or immediately when we fall back to QuickLook.
     var onDismiss: (() -> Void)?
+
+    /// Fires before falling back to QuickLook when we can't auto-add the event. Not fired for
+    /// pre-iOS-17 devices, since the feature simply isn't supported there.
+    var onFailure: ((Failure) -> Void)?
 
     private let filePath: URL
     private weak var viewController: UIViewController?
@@ -41,20 +53,44 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
     }
 
     func preview() {
-        if #available(iOS 17.0, *), let event = singleEvent() {
-            presentEventEditor(for: event)
-        } else {
+        switch readICSFile() {
+        case .singleEvent(let event):
+            if #available(iOS 17.0, *) {
+                presentEventEditor(for: event)
+            } else {
+                fallbackToQuickLook()
+            }
+        case .multipleEvents:
+            onFailure?(.multipleEvents)
+            fallbackToQuickLook()
+        case .unrecognizedTimeZone:
+            onFailure?(.unrecognizedTimeZone)
+            fallbackToQuickLook()
+        case .parseFailure:
+            onFailure?(.parseFailure)
             fallbackToQuickLook()
         }
     }
 
-    private func singleEvent() -> ICSEvent? {
-        guard let data = try? Data(contentsOf: filePath),
-              let events = try? ICSParser.parse(data: data),
-              events.count == 1 else {
-            return nil
+    private enum ReadResult {
+        case singleEvent(ICSEvent)
+        case multipleEvents
+        case unrecognizedTimeZone
+        case parseFailure
+    }
+
+    private func readICSFile() -> ReadResult {
+        guard let data = try? Data(contentsOf: filePath) else {
+            return .parseFailure
         }
-        return events[0]
+        do {
+            let events = try ICSParser.parse(data: data)
+            return events.count == 1 ? .singleEvent(events[0]) : .multipleEvents
+        } catch ICSParser.Error.unrecognizedTimeZone(_) {
+            return .unrecognizedTimeZone
+        } catch {
+            return .parseFailure
+        }
     }
 
     @available(iOS 17.0, *)

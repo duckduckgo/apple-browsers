@@ -3043,6 +3043,25 @@ extension TabViewController {
         calendarHandler.onDismiss = { [weak self] in
             self?.pendingCalendarPreview = nil
         }
+        calendarHandler.onFailure = { [weak self] failure in
+            self?.showCalendarAddFailureToast(for: failure)
+        }
+    }
+
+    private func showCalendarAddFailureToast(for failure: CalendarEventPreviewHelper.Failure) {
+        let message: String
+        switch failure {
+        case .multipleEvents:
+            message = UserText.icsAddToCalendarMultipleEvents
+        case .unrecognizedTimeZone:
+            message = UserText.icsAddToCalendarUnrecognizedTimeZone
+        case .parseFailure:
+            message = UserText.icsAddToCalendarParseFailure
+        }
+        ActionMessageView.present(
+            message: message,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
     }
 }
 

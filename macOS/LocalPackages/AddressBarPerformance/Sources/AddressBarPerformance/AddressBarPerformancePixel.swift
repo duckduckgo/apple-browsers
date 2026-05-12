@@ -70,14 +70,14 @@ struct AddressBarPerformancePixel: PixelKitEvent {
         precondition(basisPoints.count == AddressBarPerformanceBucketing.bandCount,
                      "Histogram must have exactly \(AddressBarPerformanceBucketing.bandCount) bands")
         return [
-            "\(prefix)bp_0_16":      String(basisPoints[0]),
-            "\(prefix)bp_16_50":     String(basisPoints[1]),
-            "\(prefix)bp_50_100":    String(basisPoints[2]),
-            "\(prefix)bp_100_150":   String(basisPoints[3]),
-            "\(prefix)bp_150_200":   String(basisPoints[4]),
-            "\(prefix)bp_200_300":   String(basisPoints[5]),
-            "\(prefix)bp_300_500":   String(basisPoints[6]),
-            "\(prefix)bp_500_1000":  String(basisPoints[7]),
+            "\(prefix)bp_0_16": String(basisPoints[0]),
+            "\(prefix)bp_16_50": String(basisPoints[1]),
+            "\(prefix)bp_50_100": String(basisPoints[2]),
+            "\(prefix)bp_100_150": String(basisPoints[3]),
+            "\(prefix)bp_150_200": String(basisPoints[4]),
+            "\(prefix)bp_200_300": String(basisPoints[5]),
+            "\(prefix)bp_300_500": String(basisPoints[6]),
+            "\(prefix)bp_500_1000": String(basisPoints[7]),
             "\(prefix)bp_1000_plus": String(basisPoints[8])
         ]
     }

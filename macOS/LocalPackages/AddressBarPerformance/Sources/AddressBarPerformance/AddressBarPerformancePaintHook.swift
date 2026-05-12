@@ -28,10 +28,12 @@ import Darwin
 ///
 /// The hook recreates its underlying display link when the window moves to a different screen,
 /// so a single instance keeps measuring correctly across multi-display setups.
+@MainActor
 final class AddressBarPerformancePaintHook {
 
     /// Receives the upcoming frame's output time, in `CACurrentMediaTime`-equivalent seconds.
-    typealias Callback = (TimeInterval) -> Void
+    /// `@MainActor` to carry isolation through to the coordinator's `handlePaint(at:)`.
+    typealias Callback = @MainActor (TimeInterval) -> Void
 
     private weak var window: NSWindow?
     private let onTick: Callback
@@ -92,9 +94,9 @@ final class AddressBarPerformancePaintHook {
         }
 
         let setHandlerResult = CVDisplayLinkSetOutputHandler(link) { [weak self] _, _, outputTimePtr, _, _ in
-            guard let self else { return kCVReturnSuccess }
+            guard self != nil else { return kCVReturnSuccess }
             let outputSeconds = Self.hostTimeToSeconds(outputTimePtr.pointee.hostTime)
-            DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
                 self?.onTick(outputSeconds)
             }
             return kCVReturnSuccess
@@ -117,7 +119,9 @@ final class AddressBarPerformancePaintHook {
             object: window,
             queue: .main
         ) { [weak self] _ in
-            self?.rebindToCurrentScreen()
+            Task { @MainActor [weak self] in
+                self?.rebindToCurrentScreen()
+            }
         }
     }
 
@@ -131,7 +135,7 @@ final class AddressBarPerformancePaintHook {
 
     /// Converts a `CVTimeStamp.hostTime` (mach_absolute_time units) to seconds in the host clock.
     /// Values are directly comparable to `CACurrentMediaTime()`.
-    private static func hostTimeToSeconds(_ hostTime: UInt64) -> TimeInterval {
+    nonisolated private static func hostTimeToSeconds(_ hostTime: UInt64) -> TimeInterval {
         var info = mach_timebase_info_data_t()
         mach_timebase_info(&info)
         let nanoseconds = Double(hostTime) * Double(info.numer) / Double(info.denom)

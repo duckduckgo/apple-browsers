@@ -19,6 +19,7 @@
 import XCTest
 @testable import AddressBarPerformance
 
+@MainActor
 final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     private final class TestClock {
@@ -70,7 +71,8 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     }
 
     private func makeCoordinator() -> AddressBarPerformanceCoordinator {
-        let recorder = AddressBarPerformanceRecorder(clock: { [unowned self] in self.clock.read() })
+        let testClock = clock!
+        let recorder = AddressBarPerformanceRecorder(clock: { testClock.read() })
         return AddressBarPerformanceCoordinator(
             recorder: recorder,
             deferredEmitDelay: testDeferredEmitDelay,
@@ -323,32 +325,28 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     // MARK: - Hook lifecycle
 
-    /// Spin the runloop just past `testHookStopDelay` so deferred hook-stop work items can fire.
-    private func waitForHookStop() {
-        RunLoop.current.run(until: Date().addingTimeInterval(testHookStopDelay + 0.05))
-    }
-
-    func test_terminate_schedulesDeferredHookStop_andStopsAfterDelay() {
+    func test_terminate_schedulesDeferredHookStop_andStopsAfterDelay() async {
         coordinator.resetForNewInteraction()
         XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinator)
 
         coordinator.terminateInteraction()
-        XCTAssertNotNil(coordinator.pendingHookStop, "Terminator must schedule a deferred hook stop")
-        XCTAssertFalse(coordinator.pendingHookStop?.isCancelled ?? true)
+        let task = coordinator.pendingHookStopTask
+        XCTAssertNotNil(task, "Terminator must schedule a deferred hook stop")
+        XCTAssertFalse(task?.isCancelled ?? true)
 
-        waitForHookStop()
-        XCTAssertNil(coordinator.pendingHookStop, "Deferred stop must clear the work item")
+        await task?.value
+        XCTAssertNil(coordinator.pendingHookStopTask, "Deferred stop must clear the task")
         XCTAssertNil(AddressBarPerformanceCoordinator.currentActive, "Deferred stop must clear currentActive")
     }
 
     func test_resetForNewInteraction_cancelsDeferredHookStop() {
         coordinator.resetForNewInteraction()
         coordinator.terminateInteraction()
-        let scheduled = coordinator.pendingHookStop
+        let scheduled = coordinator.pendingHookStopTask
         XCTAssertNotNil(scheduled)
 
         coordinator.resetForNewInteraction()
-        XCTAssertNil(coordinator.pendingHookStop, "Reset must clear the pending stop")
+        XCTAssertNil(coordinator.pendingHookStopTask, "Reset must clear the pending stop")
         XCTAssertTrue(scheduled?.isCancelled ?? false)
         XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinator)
     }
@@ -356,27 +354,27 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_markKeystroke_cancelsDeferredHookStop() {
         coordinator.resetForNewInteraction()
         coordinator.terminateInteraction()
-        let scheduled = coordinator.pendingHookStop
+        let scheduled = coordinator.pendingHookStopTask
         XCTAssertNotNil(scheduled)
 
         coordinator.markKeystroke()
-        XCTAssertNil(coordinator.pendingHookStop, "markKeystroke must clear the pending stop (Cmd-Tab-back safety)")
+        XCTAssertNil(coordinator.pendingHookStopTask, "markKeystroke must clear the pending stop (Cmd-Tab-back safety)")
         XCTAssertTrue(scheduled?.isCancelled ?? false)
     }
 
     func test_backToBackTerminators_onlyLatestStopIsLive() {
         coordinator.resetForNewInteraction()
         coordinator.terminateInteraction()
-        let firstWork = coordinator.pendingHookStop
+        let firstTask = coordinator.pendingHookStopTask
 
         coordinator.terminateInteraction()
-        let secondWork = coordinator.pendingHookStop
+        let secondTask = coordinator.pendingHookStopTask
 
-        XCTAssertNotNil(firstWork)
-        XCTAssertNotNil(secondWork)
-        XCTAssertFalse(firstWork === secondWork, "Second terminator must replace the work item, not stack")
-        XCTAssertTrue(firstWork?.isCancelled ?? false, "The earlier stop must be cancelled")
-        XCTAssertFalse(secondWork?.isCancelled ?? true)
+        XCTAssertNotNil(firstTask)
+        XCTAssertNotNil(secondTask)
+        XCTAssertNotEqual(firstTask, secondTask, "Second terminator must replace the task, not stack")
+        XCTAssertTrue(firstTask?.isCancelled ?? false, "The earlier stop must be cancelled")
+        XCTAssertFalse(secondTask?.isCancelled ?? true)
     }
 
     func test_secondCoordinator_displacesFirstImmediately() {
@@ -386,23 +384,23 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         coordinatorA.resetForNewInteraction()
         XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinatorA)
         coordinatorA.terminateInteraction()
-        let aWork = coordinatorA.pendingHookStop
-        XCTAssertNotNil(aWork)
+        let aTask = coordinatorA.pendingHookStopTask
+        XCTAssertNotNil(aTask)
 
         coordinatorB.resetForNewInteraction()
         XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinatorB, "B activation displaces A")
-        XCTAssertNil(coordinatorA.pendingHookStop, "Displacement clears A's pending stop")
-        XCTAssertTrue(aWork?.isCancelled ?? false)
+        XCTAssertNil(coordinatorA.pendingHookStopTask, "Displacement clears A's pending stop")
+        XCTAssertTrue(aTask?.isCancelled ?? false)
     }
 
     func test_detach_cancelsPendingStop_andClearsCurrentActive() {
         coordinator.resetForNewInteraction()
         coordinator.terminateInteraction()
-        let scheduled = coordinator.pendingHookStop
+        let scheduled = coordinator.pendingHookStopTask
         XCTAssertNotNil(scheduled)
 
         coordinator.detach()
-        XCTAssertNil(coordinator.pendingHookStop)
+        XCTAssertNil(coordinator.pendingHookStopTask)
         XCTAssertTrue(scheduled?.isCancelled ?? false)
         XCTAssertNil(AddressBarPerformanceCoordinator.currentActive)
     }

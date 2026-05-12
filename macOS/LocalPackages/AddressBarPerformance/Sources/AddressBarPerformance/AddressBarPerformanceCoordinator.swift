@@ -33,6 +33,7 @@ import PixelKit
 /// across the app — a new activation displaces any other active coordinator immediately.
 ///
 /// All public methods are expected on the main thread.
+@MainActor
 public final class AddressBarPerformanceCoordinator {
 
     typealias PixelFirer = (AddressBarPerformancePixel) -> Void
@@ -47,7 +48,8 @@ public final class AddressBarPerformanceCoordinator {
 
     /// At most one coordinator's paint hook ticks at a time across the app. Activating a
     /// new coordinator immediately stops any previously-active one (skipping its linger).
-    static weak var currentActive: AddressBarPerformanceCoordinator?
+    /// `nonisolated(unsafe)` so `deinit` can touch it; all writes happen on main.
+    nonisolated(unsafe) static weak var currentActive: AddressBarPerformanceCoordinator?
 
     private let recorder: AddressBarPerformanceRecorder
     private let deferredEmitDelay: TimeInterval
@@ -59,7 +61,7 @@ public final class AddressBarPerformanceCoordinator {
     private var charNeedsRender = false
     private var suggestNeedsRender = false
     private var pendingEmit: DispatchWorkItem?
-    var pendingHookStop: DispatchWorkItem?
+    var pendingHookStopTask: Task<Void, Never>?
 
     public convenience init() {
         self.init(
@@ -86,7 +88,7 @@ public final class AddressBarPerformanceCoordinator {
 
     deinit {
         pendingEmit?.cancel()
-        pendingHookStop?.cancel()
+        pendingHookStopTask?.cancel()
         if AddressBarPerformanceCoordinator.currentActive === self {
             AddressBarPerformanceCoordinator.currentActive = nil
         }
@@ -218,21 +220,21 @@ public final class AddressBarPerformanceCoordinator {
 
     private func scheduleHookStop() {
         cancelPendingHookStop()
-        let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
+        let delayInNanoseconds = UInt64(hookStopDelay * Double(NSEC_PER_SEC))
+        pendingHookStopTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: delayInNanoseconds)
+            guard !Task.isCancelled, let self else { return }
             self.paintHook?.stop()
-            self.pendingHookStop = nil
+            self.pendingHookStopTask = nil
             if AddressBarPerformanceCoordinator.currentActive === self {
                 AddressBarPerformanceCoordinator.currentActive = nil
             }
         }
-        pendingHookStop = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + hookStopDelay, execute: work)
     }
 
     private func cancelPendingHookStop() {
-        pendingHookStop?.cancel()
-        pendingHookStop = nil
+        pendingHookStopTask?.cancel()
+        pendingHookStopTask = nil
     }
 
     /// Immediate hook stop bypassing the linger — used when another coordinator displaces this one.

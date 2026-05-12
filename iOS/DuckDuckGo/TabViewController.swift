@@ -1588,7 +1588,7 @@ class TabViewController: UIViewController {
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
-                                                                     autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
+                                                                     autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)

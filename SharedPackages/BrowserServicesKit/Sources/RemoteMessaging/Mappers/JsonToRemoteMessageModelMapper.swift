@@ -126,13 +126,22 @@ struct JsonToRemoteMessageModelMapper {
                 return
             }
 
+            let displayConditions: DisplayConditions?
+            do {
+                displayConditions = try mapToDisplayConditions(message: message)
+            } catch {
+                Logger.remoteMessaging.debug("Invalid display conditions for message \(message.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return
+            }
+
             var remoteMessage = RemoteMessageModel(
                 id: message.id,
                 surfaces: surfaces,
                 content: content,
                 matchingRules: message.matchingRules ?? [],
                 exclusionRules: message.exclusionRules ?? [],
-                isMetricsEnabled: message.isMetricsEnabled
+                isMetricsEnabled: message.isMetricsEnabled,
+                displayConditions: displayConditions
             )
 
             if let translation = getTranslation(from: message.translations, for: Locale.current) {
@@ -142,6 +151,15 @@ struct JsonToRemoteMessageModelMapper {
             remoteMessages.append(remoteMessage)
         }
         return remoteMessages
+    }
+
+    static func mapToDisplayConditions(message: RemoteMessageResponse.JsonRemoteMessage) throws -> DisplayConditions? {
+        try message.displayConditions.flatMap { conditions in
+            let validator = MappingValidator(root: conditions)
+            let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
+            let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+        }
     }
 
     static func mapToSurfaces(jsonSurfaces: [String]?, supportedSurfacesForMessage: RemoteMessageSurfaceType, messageId: String) -> RemoteMessageSurfaceType? {

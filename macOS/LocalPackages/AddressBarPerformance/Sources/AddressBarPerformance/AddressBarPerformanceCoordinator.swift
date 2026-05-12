@@ -26,6 +26,12 @@ import PixelKit
 /// handles the rest: pairing keystrokes with paints, clamping outliers, snapshotting buffers
 /// at terminators, and scheduling the deferred pixel emission.
 ///
+/// The paint hook is bound at `attach(to:)` but only ticks while there's an active interaction:
+/// it starts on focus-gained, and a terminator schedules a deferred stop after `hookStopDelay`.
+/// A re-focus or new keystroke within the linger cancels the stop, so Cmd-Tab cycles don't lose
+/// measurements. A static `currentActive` enforces that at most one coordinator's hook ticks
+/// across the app — a new activation displaces any other active coordinator immediately.
+///
 /// All public methods are expected on the main thread.
 public final class AddressBarPerformanceCoordinator {
 
@@ -35,8 +41,17 @@ public final class AddressBarPerformanceCoordinator {
     /// post-navigation CPU window we're trying to keep clean for the SLO measurement itself.
     static let defaultDeferredEmitDelay: TimeInterval = 1.0
 
+    /// Default linger between terminator and paint-hook stop. Sized to absorb typical
+    /// Cmd-Tab cycles and brief sheet dismissals so a quick return cancels the stop.
+    static let defaultHookStopDelay: TimeInterval = 10.0
+
+    /// At most one coordinator's paint hook ticks at a time across the app. Activating a
+    /// new coordinator immediately stops any previously-active one (skipping its linger).
+    static weak var currentActive: AddressBarPerformanceCoordinator?
+
     private let recorder: AddressBarPerformanceRecorder
     private let deferredEmitDelay: TimeInterval
+    private let hookStopDelay: TimeInterval
     private let pixelFirer: PixelFirer
 
     private var paintHook: AddressBarPerformancePaintHook?
@@ -44,11 +59,13 @@ public final class AddressBarPerformanceCoordinator {
     private var charNeedsRender = false
     private var suggestNeedsRender = false
     private var pendingEmit: DispatchWorkItem?
+    var pendingHookStop: DispatchWorkItem?
 
     public convenience init() {
         self.init(
             recorder: AddressBarPerformanceRecorder(),
             deferredEmitDelay: AddressBarPerformanceCoordinator.defaultDeferredEmitDelay,
+            hookStopDelay: AddressBarPerformanceCoordinator.defaultHookStopDelay,
             pixelFirer: { pixel in
                 PixelKit.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
             }
@@ -58,50 +75,68 @@ public final class AddressBarPerformanceCoordinator {
     init(
         recorder: AddressBarPerformanceRecorder,
         deferredEmitDelay: TimeInterval,
+        hookStopDelay: TimeInterval,
         pixelFirer: @escaping PixelFirer
     ) {
         self.recorder = recorder
         self.deferredEmitDelay = deferredEmitDelay
+        self.hookStopDelay = hookStopDelay
         self.pixelFirer = pixelFirer
     }
 
     deinit {
         pendingEmit?.cancel()
+        pendingHookStop?.cancel()
+        if AddressBarPerformanceCoordinator.currentActive === self {
+            AddressBarPerformanceCoordinator.currentActive = nil
+        }
     }
 
     // MARK: - Lifecycle
 
-    /// Binds the coordinator's paint hook to `window` and starts ticking. Call when the address
-    /// bar's window becomes available.
+    /// Binds the coordinator's paint hook to `window`. The hook is not started here; it begins
+    /// ticking on the next `resetForNewInteraction()` (focus-gained).
     public func attach(to window: NSWindow) {
         paintHook?.stop()
         paintHook = AddressBarPerformancePaintHook(window: window) { [weak self] outputTime in
             self?.handlePaint(at: outputTime)
         }
-        paintHook?.start()
     }
 
     /// Stops and discards the paint hook. Call when the address bar's window is no longer available.
     public func detach() {
+        cancelPendingHookStop()
         paintHook?.stop()
         paintHook = nil
+        if AddressBarPerformanceCoordinator.currentActive === self {
+            AddressBarPerformanceCoordinator.currentActive = nil
+        }
     }
 
     // MARK: - Event signals
 
     /// Resets pending state for a new interaction. Call on focus-gained.
     public func resetForNewInteraction() {
+        if let other = AddressBarPerformanceCoordinator.currentActive, other !== self {
+            other.forceStopHookImmediately()
+        }
+        AddressBarPerformanceCoordinator.currentActive = self
+        cancelPendingHookStop()
         cancelPendingEmit()
         recorder.reset()
         pendingCharStartTime = nil
         charNeedsRender = false
         suggestNeedsRender = false
+        paintHook?.start()
     }
 
     /// Records a user-driven keystroke. Stamps the suggest stage's anchor immediately so a
     /// suggestions update that arrives before the buffer commit still finds it, and stashes
-    /// the same t₀ for the char stage to consume at commit time.
+    /// the same t₀ for the char stage to consume at commit time. Also cancels any pending
+    /// hook stop — a Cmd-Tab cycle that returns to typing without re-acquiring first responder
+    /// still keeps the hook alive.
     public func markKeystroke() {
+        cancelPendingHookStop()
         pendingCharStartTime = recorder.markKeystrokeForSuggest()
     }
 
@@ -123,13 +158,15 @@ public final class AddressBarPerformanceCoordinator {
 
     /// Snapshots the buffers synchronously and schedules a deferred pixel emission.
     /// Call on each interaction terminator (focus loss, navigation commit, AI-mode toggle,
-    /// tab switch, window deactivate, app deactivate).
+    /// tab switch, window deactivate, app deactivate). Also schedules a deferred paint-hook
+    /// stop — re-focus or a new keystroke within `hookStopDelay` cancels it.
     public func terminateInteraction() {
         let snapshot = recorder.takeAndClear()
         pendingCharStartTime = nil
         charNeedsRender = false
         suggestNeedsRender = false
         scheduleEmit(snapshot)
+        scheduleHookStop()
     }
 
     // MARK: - Internals
@@ -177,5 +214,33 @@ public final class AddressBarPerformanceCoordinator {
     private func cancelPendingEmit() {
         pendingEmit?.cancel()
         pendingEmit = nil
+    }
+
+    private func scheduleHookStop() {
+        cancelPendingHookStop()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.paintHook?.stop()
+            self.pendingHookStop = nil
+            if AddressBarPerformanceCoordinator.currentActive === self {
+                AddressBarPerformanceCoordinator.currentActive = nil
+            }
+        }
+        pendingHookStop = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + hookStopDelay, execute: work)
+    }
+
+    private func cancelPendingHookStop() {
+        pendingHookStop?.cancel()
+        pendingHookStop = nil
+    }
+
+    /// Immediate hook stop bypassing the linger — used when another coordinator displaces this one.
+    private func forceStopHookImmediately() {
+        cancelPendingHookStop()
+        paintHook?.stop()
+        if AddressBarPerformanceCoordinator.currentActive === self {
+            AddressBarPerformanceCoordinator.currentActive = nil
+        }
     }
 }

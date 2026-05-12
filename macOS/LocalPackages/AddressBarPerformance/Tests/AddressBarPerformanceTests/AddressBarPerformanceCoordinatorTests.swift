@@ -51,24 +51,32 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     /// Small delay so async dispatch fires within the test timeout but predictably after a brief wait.
     private let testDeferredEmitDelay: TimeInterval = 0.02
+    private let testHookStopDelay: TimeInterval = 0.05
 
     override func setUp() {
         super.setUp()
+        AddressBarPerformanceCoordinator.currentActive = nil
         clock = TestClock()
         capture = PixelCapture()
-        let recorder = AddressBarPerformanceRecorder(clock: { [unowned self] in self.clock.read() })
-        coordinator = AddressBarPerformanceCoordinator(
-            recorder: recorder,
-            deferredEmitDelay: testDeferredEmitDelay,
-            pixelFirer: capture.firer
-        )
+        coordinator = makeCoordinator()
     }
 
     override func tearDown() {
         coordinator = nil
         capture = nil
         clock = nil
+        AddressBarPerformanceCoordinator.currentActive = nil
         super.tearDown()
+    }
+
+    private func makeCoordinator() -> AddressBarPerformanceCoordinator {
+        let recorder = AddressBarPerformanceRecorder(clock: { [unowned self] in self.clock.read() })
+        return AddressBarPerformanceCoordinator(
+            recorder: recorder,
+            deferredEmitDelay: testDeferredEmitDelay,
+            hookStopDelay: testHookStopDelay,
+            pixelFirer: capture.firer
+        )
     }
 
     // MARK: - Helpers
@@ -311,5 +319,91 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         XCTAssertEqual(pixels.count, 1)
         // Three measurements: 16 → band 0, 11 → band 0, 6 → band 0. All in band 0.
         XCTAssertEqual(pixels[0].charBasisPoints[0], 10_000)
+    }
+
+    // MARK: - Hook lifecycle
+
+    /// Spin the runloop just past `testHookStopDelay` so deferred hook-stop work items can fire.
+    private func waitForHookStop() {
+        RunLoop.current.run(until: Date().addingTimeInterval(testHookStopDelay + 0.05))
+    }
+
+    func test_terminate_schedulesDeferredHookStop_andStopsAfterDelay() {
+        coordinator.resetForNewInteraction()
+        XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinator)
+
+        coordinator.terminateInteraction()
+        XCTAssertNotNil(coordinator.pendingHookStop, "Terminator must schedule a deferred hook stop")
+        XCTAssertFalse(coordinator.pendingHookStop?.isCancelled ?? true)
+
+        waitForHookStop()
+        XCTAssertNil(coordinator.pendingHookStop, "Deferred stop must clear the work item")
+        XCTAssertNil(AddressBarPerformanceCoordinator.currentActive, "Deferred stop must clear currentActive")
+    }
+
+    func test_resetForNewInteraction_cancelsDeferredHookStop() {
+        coordinator.resetForNewInteraction()
+        coordinator.terminateInteraction()
+        let scheduled = coordinator.pendingHookStop
+        XCTAssertNotNil(scheduled)
+
+        coordinator.resetForNewInteraction()
+        XCTAssertNil(coordinator.pendingHookStop, "Reset must clear the pending stop")
+        XCTAssertTrue(scheduled?.isCancelled ?? false)
+        XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinator)
+    }
+
+    func test_markKeystroke_cancelsDeferredHookStop() {
+        coordinator.resetForNewInteraction()
+        coordinator.terminateInteraction()
+        let scheduled = coordinator.pendingHookStop
+        XCTAssertNotNil(scheduled)
+
+        coordinator.markKeystroke()
+        XCTAssertNil(coordinator.pendingHookStop, "markKeystroke must clear the pending stop (Cmd-Tab-back safety)")
+        XCTAssertTrue(scheduled?.isCancelled ?? false)
+    }
+
+    func test_backToBackTerminators_onlyLatestStopIsLive() {
+        coordinator.resetForNewInteraction()
+        coordinator.terminateInteraction()
+        let firstWork = coordinator.pendingHookStop
+
+        coordinator.terminateInteraction()
+        let secondWork = coordinator.pendingHookStop
+
+        XCTAssertNotNil(firstWork)
+        XCTAssertNotNil(secondWork)
+        XCTAssertFalse(firstWork === secondWork, "Second terminator must replace the work item, not stack")
+        XCTAssertTrue(firstWork?.isCancelled ?? false, "The earlier stop must be cancelled")
+        XCTAssertFalse(secondWork?.isCancelled ?? true)
+    }
+
+    func test_secondCoordinator_displacesFirstImmediately() {
+        let coordinatorA = coordinator! // already constructed in setUp
+        let coordinatorB = makeCoordinator()
+
+        coordinatorA.resetForNewInteraction()
+        XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinatorA)
+        coordinatorA.terminateInteraction()
+        let aWork = coordinatorA.pendingHookStop
+        XCTAssertNotNil(aWork)
+
+        coordinatorB.resetForNewInteraction()
+        XCTAssertTrue(AddressBarPerformanceCoordinator.currentActive === coordinatorB, "B activation displaces A")
+        XCTAssertNil(coordinatorA.pendingHookStop, "Displacement clears A's pending stop")
+        XCTAssertTrue(aWork?.isCancelled ?? false)
+    }
+
+    func test_detach_cancelsPendingStop_andClearsCurrentActive() {
+        coordinator.resetForNewInteraction()
+        coordinator.terminateInteraction()
+        let scheduled = coordinator.pendingHookStop
+        XCTAssertNotNil(scheduled)
+
+        coordinator.detach()
+        XCTAssertNil(coordinator.pendingHookStop)
+        XCTAssertTrue(scheduled?.isCancelled ?? false)
+        XCTAssertNil(AddressBarPerformanceCoordinator.currentActive)
     }
 }

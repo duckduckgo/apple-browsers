@@ -69,7 +69,11 @@ final class AddressBarTextField: NSTextField {
     private var windowFrameCancellable: AnyCancellable?
     private var sharedTextStateCancellable: AnyCancellable?
 
-    private let performanceCoordinator = AddressBarPerformanceCoordinator()
+    private let performanceCoordinator: AddressBarPerformanceCoordinator? = {
+        Application.appDelegate.featureFlagger.isFeatureOn(.addressBarPerformanceInstrumentation)
+            ? AddressBarPerformanceCoordinator()
+            : nil
+    }()
     private var perfTerminatorCancellables: Set<AnyCancellable> = []
     private var perfAIModeTerminatorCancellable: AnyCancellable?
 
@@ -131,15 +135,15 @@ final class AddressBarTextField: NSTextField {
         super.viewDidMoveToWindow()
         perfTerminatorCancellables.removeAll()
         if let window {
-            performanceCoordinator.attach(to: window)
+            performanceCoordinator?.attach(to: window)
             NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: window)
-                .sink { [weak self] _ in self?.performanceCoordinator.terminateInteraction() }
+                .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
                 .store(in: &perfTerminatorCancellables)
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
-                .sink { [weak self] _ in self?.performanceCoordinator.terminateInteraction() }
+                .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
                 .store(in: &perfTerminatorCancellables)
         } else {
-            performanceCoordinator.detach()
+            performanceCoordinator?.detach()
         }
     }
 
@@ -151,7 +155,7 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
-                    self.performanceCoordinator.markSuggestionsUpdated()
+                    self.performanceCoordinator?.markSuggestionsUpdated()
                     self.showSuggestionWindow()
                 }
             }
@@ -169,7 +173,7 @@ final class AddressBarTextField: NSTextField {
             .compactMap { $0 }
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
-                performanceCoordinator.terminateInteraction()
+                performanceCoordinator?.terminateInteraction()
                 hideSuggestionWindow()
                 /// Point sharedTextState at the incoming tab before `restoreValueIfPossible` runs. Otherwise
                 /// `updateValue`'s `sharedTextState?.reset()` would clear the OUTGOING tab's state (including the
@@ -222,7 +226,7 @@ final class AddressBarTextField: NSTextField {
 
         perfAIModeTerminatorCancellable = sharedTextState.$isInDuckAIMode
             .dropFirst()
-            .sink { [weak self] _ in self?.performanceCoordinator.terminateInteraction() }
+            .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
 
         sharedTextStateCancellable = sharedTextState.$text
             .receive(on: DispatchQueue.main)
@@ -572,7 +576,7 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
-            performanceCoordinator.resetForNewInteraction()
+            performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
         }
         return result
@@ -1157,12 +1161,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
-        performanceCoordinator.terminateInteraction()
+        performanceCoordinator?.terminateInteraction()
         focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     func controlTextDidChange(_ obj: Notification) {
-        performanceCoordinator.armCharRenderIfPending()
+        performanceCoordinator?.armCharRenderIfPending()
         handleTextDidChange()
         onboardingDelegate?.measureAddressBarTypedIn()
     }
@@ -1300,7 +1304,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
 extension AddressBarTextField: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, userTypedString typedString: String, at insertionNsRange: NSRange, callback: () -> Void) {
-        performanceCoordinator.markKeystroke()
+        performanceCoordinator?.markKeystroke()
 
         let oldValue = stringValueWithoutSuffix
         let insertionRange = Range(insertionNsRange, in: oldValue) ?? oldValue.startIndex..<oldValue.endIndex

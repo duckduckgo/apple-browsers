@@ -71,23 +71,41 @@ class DuckPlayerTests: UITestCase {
         let scrollView = app.scrollViews.element(boundBy: 0)
         scrollView.swipeUp()
 
-        let duckPlayerButton = app.buttons["PreferencesSidebar.duckplayerButton"]
-        duckPlayerButton.click()
+        // When `adBlockingExtension` is enabled the standalone Duck Player
+        // sidebar entry is replaced by YouTube Ad Blocking, which embeds the
+        // Duck Player controls in its pane.
+        let youTubeAdBlockingButton = app.buttons["PreferencesSidebar.youTubeAdBlockingButton"]
+        youTubeAdBlockingButton.click()
+    }
+
+    private func setDuckPlayerEnableToggle(on: Bool) {
+        let toggle = app.checkBoxes["DuckPlayer.enableToggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if (toggle.value as? Bool) != on {
+            toggle.click()
+        }
+    }
+
+    private func setDuckPlayerAlwaysOpenToggle(on: Bool) {
+        let toggle = app.checkBoxes["DuckPlayer.alwaysOpenToggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if (toggle.value as? Bool) != on {
+            toggle.click()
+        }
     }
 
     private func selectAlwaysOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.enabled"]
-        alwaysOpenRadioButton.click()
+        setDuckPlayerEnableToggle(on: true)
+        setDuckPlayerAlwaysOpenToggle(on: true)
     }
 
     private func selectNeverOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.disabled"]
-        alwaysOpenRadioButton.click()
+        setDuckPlayerEnableToggle(on: false)
     }
 
     private func selectAskOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.alwaysAsk"]
-        alwaysOpenRadioButton.click()
+        setDuckPlayerEnableToggle(on: true)
+        setDuckPlayerAlwaysOpenToggle(on: false)
     }
 
     private func verifyDuckPlayerLoads() {

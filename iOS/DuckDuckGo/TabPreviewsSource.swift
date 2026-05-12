@@ -29,12 +29,6 @@ protocol TabPreviewsSource: AnyObject {
     func removePreviewsWithIdNotIn(_ ids: Set<String>) -> Result<Void, Error>
     func totalStoredPreviews() -> Int?
     func preview(for tab: Tab) -> UIImage?
-
-    /// Per-tab full-screen snapshot of `MainViewController.view` — chrome included. Used by
-    /// `TabSwipeOverlayView` to render an adjacent tab during a swipe. Distinct from
-    /// `preview(for:)` (which is webview-only, no chrome): aspect-filling a webview-only
-    /// thumbnail into the full-screen overlay produces a visible zoom-in artifact, so we keep a
-    /// second, properly-sized image per tab.
     func fullScreenSnapshot(for tab: Tab) -> UIImage?
     func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: Tab)
 
@@ -151,8 +145,6 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         guard let directory = previewStoreDir else { return nil }
 
         let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
-        // Filter to thumbnail PNGs only — the FullScreen subdirectory also lives in this
-        // directory and would otherwise inflate the count, tripping `assertTabPreviewCount`.
         return contents?.filter { $0.hasSuffix(".png") }.count
     }
     

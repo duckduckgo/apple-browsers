@@ -19,16 +19,8 @@
 
 import UIKit
 
-/// Marker subclass — used to identify "our" pan recognizers in `gestureRecognizerShouldBegin`
-/// without having to maintain a list of `pan.view` comparisons that grows with every surface.
 final class UnifiedInputSwipeTabsPanGestureRecognizer: UIPanGestureRecognizer {}
 
-// Bridges swipe-between-tabs to the Unified Toggle Input surfaces. With UTI on, the bar that
-// replaces the omnibar (and, on AI tabs, the chat header) sits as a sibling on top of
-// `navigationBarCollectionView`, so the legacy swipe path — touches on the omnibar driving the
-// collection view's pan recognizer — never fires. We attach our own pan recognizers and forward
-// them to `SwipeTabsCoordinator.handleExternalPan(_:)`, which scrubs `contentOffset` to reuse
-// the existing animation + tab-selection state machine.
 extension MainViewController {
 
     func installSwipeTabsGesturesForUnifiedInput() {
@@ -60,12 +52,6 @@ extension MainViewController {
             return false
         }
 
-        // Don't use `isInputEditing` here — it lumps `.aiTab(.expanded)` (Duck.ai's normal
-        // "chat input is expanded" layout, no keyboard required) in with real editing sessions
-        // and would block every pan while sitting on Duck.ai. Block only the two states where
-        // a horizontal page swipe would genuinely steal from the user's current task:
-        //   1. `.omnibar(.active)` — suggestion tray is open + keyboard up for URL editing.
-        //   2. The input is first responder — user is actively typing somewhere.
         if case .omnibar(.active) = coordinator.displayState {
             return false
         }
@@ -73,8 +59,6 @@ extension MainViewController {
             return false
         }
 
-        // Horizontal-dominant only; lets vertical scrolls in nearby surfaces (e.g. the
-        // suggestion tray, or future drag-to-dismiss gestures) win.
         let velocity = pan.velocity(in: pan.view)
         let allow = abs(velocity.x) > abs(velocity.y)
         return allow

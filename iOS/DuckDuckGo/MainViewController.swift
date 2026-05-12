@@ -827,10 +827,7 @@ class MainViewController: UIViewController {
         installTabSwipeOverlay()
     }
 
-    /// Mounts the swipe overlay as the topmost subview of `MainViewController.view` and hands
-    /// it to the coordinator. The overlay is alpha=0 by default and
-    /// isUserInteractionEnabled=false — touches pass through to the underlying chrome's
-    /// gesture recognizers when it's hidden, and it can be raised by setting alpha=1.
+
     private func installTabSwipeOverlay() {
         let overlay = TabSwipeOverlayView(frame: view.bounds)
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -840,21 +837,12 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    /// Best-effort capture for tabs the user reaches via tap (not swipe). Defers with a small
-    /// delay so post-refresh layout settles, then captures only if the overlay isn't covering
-    /// the screen and the tab is still current. The swipe path also captures its own source at
-    /// swipe start, so this is purely a "fill in the cache for non-swiped tabs" hook —
-    /// skipping it is always safe.
     func captureCurrentTabScreenSnapshotIfPossible(tabUID: String) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self else { return }
-            // Skip while the swipe overlay is on top — `drawHierarchy` would render the
-            // overlay over the live view and we'd cache the overlay instead of the real
-            // chrome.
             guard self.tabSwipeOverlayView?.alpha == 0 else {
                 return
             }
-            // Guard against tab having changed since scheduling.
             guard let currentTab = self.tabManager.currentTabsModel.currentTab,
                   currentTab.uid == tabUID else {
                 return

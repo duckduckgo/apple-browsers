@@ -20,13 +20,6 @@
 import UIKit
 import DesignResourcesKit
 
-/// Single overlay used to render a tab-swipe transition. Hosts full-screen `UIImage`
-/// snapshots of each tab side-by-side in a horizontal scroll view; chrome and content move as
-/// one unit because they're part of the same snapshot. Driven externally via
-/// `setContentOffsetX` — native paging/scrolling is disabled so the same overlay works for the
-/// legacy address-bar pan and the UTI/AI-header external pans. The overlay sits on top of the
-/// (unhidden) live views and occludes them with its opaque pages; raising/lowering is just
-/// `alpha = 1/0` from the coordinator.
 final class TabSwipeOverlayView: UIView {
 
     private let scrollView = UIScrollView()
@@ -44,14 +37,7 @@ final class TabSwipeOverlayView: UIView {
     }
 
     private func setupUI() {
-        // Pass-through user interaction so the underlying gesture recognizers (UTI pan, legacy
-        // collection view pan) still receive touches when the overlay is on top.
         isUserInteractionEnabled = false
-        // Opaque background so areas not covered by a page imageView — e.g. when the external
-        // driver pans the contentOffset beyond contentSize at the trailing/leading edge —
-        // don't reveal the live `MainViewController.view` underneath. Matches the design-
-        // system panel tone used by the navigation bar / toolbar, which is what the legacy
-        // non-UTI swipe shows when the user pans past the last tab.
         let chromeColor = UIColor(designSystemColor: .panel)
         backgroundColor = chromeColor
 
@@ -93,9 +79,6 @@ final class TabSwipeOverlayView: UIView {
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
-            // Pages without a snapshot (trailing "new tab" slot, uncached tabs) show the
-            // chrome tone so they blend with the surrounding backdrop rather than flashing a
-            // contrasting system colour.
             imageView.backgroundColor = chromeColor
             imageView.image = snapshot
             imageView.frame = CGRect(x: CGFloat(idx) * width, y: 0, width: width, height: height)

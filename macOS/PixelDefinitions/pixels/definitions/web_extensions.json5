@@ -288,7 +288,8 @@
                 "key": "extension_type",
                 "type": "string",
                 "description": "The web extension type the scriptlets were being installed for"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_daily_ad_blocking_state": {
@@ -303,6 +304,95 @@
                 "key": "is_enabled",
                 "type": "string",
                 "description": "Whether ad blocking is currently enabled (true/false)"
+            },
+            {
+                "key": "analytics_enabled",
+                "type": "string",
+                "description": "Whether the user opted in to anonymous breakage reports for YouTube ad blocking (true/false)"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_adblocking_detected_ad_blocker": {
+        "description": "Fires once daily when content-scope-scripts detects an ad blocker challenge while playing a YouTube video.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "loginState",
+                "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
+                "description": "User's YouTube login state at the time of detection"
+            }
+        ]
+    },
+    "m_mac_web_extension_adblocking_detected_playability_error": {
+        "description": "Fires once daily when content-scope-scripts detects a YouTube playability error.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "loginState",
+                "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
+                "description": "User's YouTube login state at the time of detection"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_adblocking_detected_video_ad": {
+        "description": "Fires once daily when content-scope-scripts detects a YouTube video ad.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "loginState",
+                "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
+                "description": "User's YouTube login state at the time of detection"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_adblocking_detected_static_ad": {
+        "description": "Fires once daily when content-scope-scripts detects a YouTube static (non-video) ad.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "loginState",
+                "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
+                "description": "User's YouTube login state at the time of detection"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_adblocking_detected_buffering": {
+        "description": "Fires once daily when content-scope-scripts detects YouTube playback buffering.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "loginState",
+                "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
+                "description": "User's YouTube login state at the time of detection"
             },
             "channel"
         ]

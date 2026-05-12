@@ -4922,6 +4922,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Hirdetések blokkolása a YouTube-on";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Amikor be van kapcsolva, a DuckDuckGo névtelenül észleli a hirdetésblokkolási interferenciát vagy a YouTube-hibákat, hogy mindenki számára jobb élményt nyújtson. A DuckDuckGo soha nem látja, hogy mely videókat nézed meg, és nem fér hozzá személyazonosításra alkalmas információkhoz sem.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "További részletek";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Könyvjelzők";
 

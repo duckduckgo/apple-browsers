@@ -112,6 +112,8 @@ class SwipeTabsCoordinator: NSObject {
     /// resolve to an absolute offset.
     private var externalPanStartOffset: CGPoint = .zero
 
+    private var pendingSettleCleanup: DispatchWorkItem?
+
     /// Chrome views (e.g. UTI bar overlay, AI tab header) snapshotted and slid in lockstep with
     /// `currentView` during an external pan — sliding the live views breaks `UIVisualEffectView`
     /// blur and exposes nested shadow/card layers as "stacked screens." See
@@ -610,12 +612,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         // outgoing currentView has snapped back to its on-screen position while the destination
         // isn't yet rendered. That's the flash. Async-deferring `cleanUpViews` lets the
         // destination settle before we lift the overlays.
-        defer {
-            DispatchQueue.main.async { [weak self] in
-                self?.cleanUpViews()
-                self?.state = .idle
-            }
+        pendingSettleCleanup?.cancel()
+        let cleanup = DispatchWorkItem { [weak self] in
+            self?.cleanUpViews()
+            self?.state = .idle
         }
+        pendingSettleCleanup = cleanup
+        defer { DispatchQueue.main.async(execute: cleanup) }
 
         let point = CGPoint(x: coordinator.navigationBarCollectionView.bounds.midX,
                             y: coordinator.navigationBarCollectionView.bounds.midY)
@@ -732,6 +735,8 @@ extension SwipeTabsCoordinator {
             // attached recognizer (UTI bar / AI header) may have left non-idle state behind.
             // Reset before starting so `scrollViewWillBeginDragging` (which only transitions
             // from `.idle`) actually arms the state machine for this gesture.
+            pendingSettleCleanup?.cancel()
+            pendingSettleCleanup = nil
             collectionView.layer.removeAllAnimations()
             cleanUpViews()
             state = .idle
@@ -773,7 +778,8 @@ extension SwipeTabsCoordinator {
             let targetOffset = CGPoint(x: CGFloat(targetPage) * pageWidth, y: 0)
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
                 self.collectionView.contentOffset = targetOffset
-            }, completion: { _ in
+            }, completion: { [weak self] finished in
+                guard let self, finished else { return }
                 self.scrollViewDidEndDecelerating(self.collectionView)
             })
 

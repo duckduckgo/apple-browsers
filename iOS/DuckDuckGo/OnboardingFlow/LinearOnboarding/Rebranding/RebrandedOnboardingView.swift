@@ -657,7 +657,7 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 content: content,
                 defaultMode: defaultMode,

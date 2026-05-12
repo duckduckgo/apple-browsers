@@ -32,7 +32,7 @@ protocol OnboardingIntroContentProviding {
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
-    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent { get }
+    var duckAIQueryContent: OnboardingDuckAIQueryContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -284,19 +284,29 @@ extension OnboardingIntroContentProvider {
 
 // MARK: - Content Provider + Duck.ai Query Experiment (Ready to get started?)
 
-struct OnboardingDuckAIQueryExperimentContent: Equatable {
+struct OnboardingDuckAIQueryContent: Equatable {
     let title: String
     let searchPlaceholder: String
     let aiPlaceholder: String
+
+    let shouldToggleBeVisible: Bool
 }
 
 extension OnboardingIntroContentProvider {
 
-    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent {
-        OnboardingDuckAIQueryExperimentContent(
-            title: UserText.Onboarding.DuckAIQueryExperiment.title,
+    var duckAIQueryContent: OnboardingDuckAIQueryContent {
+        let (title, shouldToggleBeVisible) = switch flowType {
+        case .default:
+            (UserText.Onboarding.DuckAIQueryExperiment.title, true)
+        case .duckAI:
+            (UserText.Onboarding.DuckAICPP.DuckAIQuery.title, false)
+        }
+
+        return OnboardingDuckAIQueryContent(
+            title: title,
             searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
-            aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
+            aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
+            shouldToggleBeVisible: shouldToggleBeVisible
         )
     }
 

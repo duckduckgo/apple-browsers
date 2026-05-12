@@ -29,7 +29,7 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
-    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent = .mock
+    var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
 }
 
 // MARK: - Helpers
@@ -122,10 +122,11 @@ extension OnboardingSearchExperienceContent {
     )
 }
 
-extension OnboardingDuckAIQueryExperimentContent {
-    static let mock = OnboardingDuckAIQueryExperimentContent(
-        title: "Duck.ai Query Experiment Title",
+extension OnboardingDuckAIQueryContent {
+    static let mock = OnboardingDuckAIQueryContent(
+        title: "Duck.ai Query Title",
         searchPlaceholder: "Search Placeholder",
-        aiPlaceholder: "AI Placeholder"
+        aiPlaceholder: "AI Placeholder",
+        shouldToggleBeVisible: true
     )
 }

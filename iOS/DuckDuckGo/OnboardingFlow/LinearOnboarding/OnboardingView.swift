@@ -353,7 +353,7 @@ extension OnboardingView.ViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode)
+        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode)
     }
 
     struct StepInfo: Equatable {

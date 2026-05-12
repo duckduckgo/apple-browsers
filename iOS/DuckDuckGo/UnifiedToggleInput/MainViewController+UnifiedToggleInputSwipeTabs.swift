@@ -33,19 +33,10 @@ final class UnifiedInputSwipeTabsPanGestureRecognizer: UIPanGestureRecognizer {}
 extension MainViewController {
 
     func installSwipeTabsGesturesForUnifiedInput() {
-        Logger.swipeTabs.debug("installSwipeTabsGesturesForUnifiedInput: attaching to unifiedToggleInputContainer + aiChatTabChatHeaderContainer")
-        // Attach to the *containers*, not the inner views. The containers cover the full
-        // visible chrome strip (including any padding / extension areas around the inner views)
-        // and are stable views owned by `MainViewCoordinator`, so the gesture stays attached for
-        // the controller's lifetime regardless of inner-view rebuilds.
+        Logger.swipeTabs.debug("installSwipeTabsGesturesForUnifiedInput: attaching to unifiedToggleInputContainer + aiChatTabChatHeaderContainer + toolbar")
         viewCoordinator.unifiedToggleInputContainer.addGestureRecognizer(makeSwipeTabsPanGesture())
         viewCoordinator.aiChatTabChatHeaderContainer.addGestureRecognizer(makeSwipeTabsPanGesture())
-
-        // Hand the chrome surfaces to SwipeTabsCoordinator so it slides them in lockstep with
-        // the webview during an external pan; otherwise the content scrolls under a stationary
-        // bar and the transition reads as two halves rather than one continuous swipe.
-        // Hidden views (e.g. AI tab header on non-AI tabs) accept the transform without any
-        // visible effect, so it's safe to set both unconditionally.
+        viewCoordinator.toolbar.addGestureRecognizer(makeSwipeTabsPanGesture())
         swipeTabsCoordinator?.auxiliarySwipeViews = [
             viewCoordinator.unifiedToggleInputContainer,
             viewCoordinator.aiChatTabChatHeaderContainer,

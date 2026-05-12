@@ -20,7 +20,7 @@ import Foundation
 import Testing
 @testable import ICSParser
 
-@Suite("ICSParser integration")
+@Suite("ICSParser API")
 struct ICSParserTests {
 
     @available(iOS 16, macOS 13, *)

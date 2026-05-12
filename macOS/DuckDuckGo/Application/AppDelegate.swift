@@ -873,15 +873,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 duckAiNativeStorageHandler = nil
             }
             burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
-            if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) {
-                DuckAiVoiceChatPermissionMigration(
-                    permissionManager: permissionManager,
-                    storageHandler: duckAiNativeStorageHandler
-                ).tryToMigrateVoiceChatPermission()
-            }
         } else {
             duckAiNativeStorageHandler = nil
             burnerDuckAiStorageRegistry = nil
+        }
+
+        // Run independently of `aiChatNativeStorage` — auto-granting the per-site mic
+        // permission only touches `permissionManager`. The native-storage handler is an
+        // optional dependency used to clear the in-app voice-mode consent on the `.deny`
+        // path, and the migration nil-checks it internally.
+        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) {
+            DuckAiVoiceChatPermissionMigration(
+                permissionManager: permissionManager,
+                storageHandler: duckAiNativeStorageHandler
+            ).tryToMigrateVoiceChatPermission()
         }
 
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,

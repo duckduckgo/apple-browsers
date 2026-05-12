@@ -180,9 +180,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                     self.syncSetupExperimentPixels.fireSignupDirect()
-                    try await Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                                         withAdditionalParameters: [PixelParameters.source: "signup"],
-                                         includedParameters: [.appVersion])
+                    Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                               withAdditionalParameters: [PixelParameters.source: "signup"],
+                               includedParameters: [.appVersion],
+                               onComplete: { _ in })
                     self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
@@ -206,9 +207,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                 self.syncSetupExperimentPixels.fireSignupDirect()
-                try await Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                                     withAdditionalParameters: [PixelParameters.source: "signup"],
-                                     includedParameters: [.appVersion])
+                Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                           withAdditionalParameters: [PixelParameters.source: "signup"],
+                           includedParameters: [.appVersion],
+                           onComplete: { _ in })
                 self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)

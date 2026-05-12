@@ -1117,7 +1117,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog)
+        XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog(content: .mock))
     }
 
     func testWhenResumeStepIsAddToDockPromoThenOnAppearShowsAddToDock() {
@@ -1126,7 +1126,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog)
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog(content: .mock))
     }
 
     func testWhenResumeStepIsAppIconSelectionThenOnAppearShowsAppIconPicker() {
@@ -1135,7 +1135,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog(content: .mock))
     }
 
     func testWhenResumeStepIsAddressBarPositionSelectionThenOnAppearShowsAddressBarPicker() {
@@ -1144,7 +1144,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
     }
 
     func testWhenResumeStepIsSearchExperienceSelectionThenOnAppearShowsSearchExperience() {
@@ -1153,7 +1153,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog)
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
     }
 
     func testWhenResumeStepIsNotInCurrentFlowThenStoreIsClearedAndOnboardingStartsFromBeginning() {

@@ -173,12 +173,8 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        // Dax is rendered by `OnboardingEndOfJourneyDialog`'s own `ScreenBottomDaxOverlay`
-        // on every non-compact device (including large iPads) — that overlay tracks the
-        // keyboard. The previous large-screen `DaxAnimationOverlay` rendered here as a
-        // sibling did not follow the keyboard, so on iPad Pro 13″ the keyboard ended up
-        // covering Dax. Letting the dialog own the placement everywhere keeps tracking
-        // consistent.
+        // Dax placement is owned by the dialog's `ScreenBottomDaxOverlay` (keyboard-aware).
+        // The previous large-screen `DaxAnimationOverlay` here didn't track the keyboard.
         return FadeInView {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey

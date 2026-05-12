@@ -31,10 +31,8 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var shouldStartTyping = false
         @State private var showContent = false
-        /// Bound to the parent's bubble visibility flag. Driving the typing/content reveal off the
-        /// parent's bubble lifecycle (rather than `onAppear`) avoids re-triggering the animation
-        /// when the app returns from background — a transition that re-fires `onAppear` but does not
-        /// toggle `isVisible`.
+        /// Drives typing/content reveal off the parent's bubble lifecycle so the animation
+        /// doesn't re-fire on background return (which re-fires `onAppear` but not `isVisible`).
         @Binding var isVisible: Bool
 
         private let startBrowsingAction: () -> Void
@@ -94,8 +92,8 @@ extension OnboardingRebranding.OnboardingView {
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Builds the skip message as a composed Text, bolding the "Fire Button" product name.
-        /// Uses Text concatenation so the bold weight inherits from the outer `.font(...)` modifier.
+        /// Composes the skip message with bold "Fire Button". Uses `Text` concatenation so the
+        /// bold weight inherits from the outer `.font(...)`.
         private func styledMessage() -> Text {
             let message = UserText.Onboarding.Skip.message
             let highlight = OnboardingRebranding.OnboardingView.SkipOnboardingContent.fireButtonCopy

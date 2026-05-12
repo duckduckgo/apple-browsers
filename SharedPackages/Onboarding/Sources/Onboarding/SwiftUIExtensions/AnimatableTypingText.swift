@@ -32,10 +32,9 @@ public struct AnimatableTypingText: View {
     private var startAnimating: Binding<Bool>
     private var skipAnimation: Binding<Bool>
     private var onTypingFinished: (() -> Void)?
-    /// Horizontal alignment of the typed text within its own infinite-width frame. Defaults to
-    /// `.leading` to preserve the original behavior; callers that center the surrounding layout
-    /// (e.g. the contextual SubscriptionPromo dialog title) should pass `.center` so the inner
-    /// `Text` doesn't anchor to the leading edge regardless of the parent's `.multilineTextAlignment`.
+    /// Alignment of the typed text inside its infinite-width frame. Defaults to `.leading`;
+    /// centered callers must pass `.center` (otherwise the inner `Text` ignores the parent's
+    /// `.multilineTextAlignment`).
     private let alignment: Alignment
 
     @StateObject private var model: AnimatableTypingTextModel

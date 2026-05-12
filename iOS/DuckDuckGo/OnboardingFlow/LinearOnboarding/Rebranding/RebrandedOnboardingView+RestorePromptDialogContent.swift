@@ -115,13 +115,13 @@ extension OnboardingRebranding.OnboardingView {
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Runs a three-phase child transition (hide -> resize -> show) to switch to the skip dialog.
-        /// Uses explicit withAnimation because this is an internal view switch, not a parent state.type change.
+        /// Hide → resize → show transition into the skip dialog. Internal view swap, so we drive
+        /// the resize explicitly with `withAnimation`.
         private func showSkipOnboardingDialog() {
             isVisible = false
             skipAction()
 
-            // Reduced motion: jump straight to the final state, no hide → resize → show.
+            // Reduce Motion: jump to the final state.
             guard !reduceMotion else {
                 showSkipOnboarding = true
                 isVisible = true

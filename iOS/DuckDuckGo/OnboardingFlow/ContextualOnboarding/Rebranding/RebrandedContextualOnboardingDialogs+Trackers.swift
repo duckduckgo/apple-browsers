@@ -25,14 +25,9 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
-    /// Screen-level wrapper that hosts the Trackers dialog together with its Dax animation.
-    ///
-    /// The Dax overlay is rendered as a sibling of the dialog (not nested inside it), so its
-    /// view extent matches the contextual onboarding background — i.e. the full screen — on
-    /// every device class. Nesting the overlay inside the dialog body causes
-    /// `OnboardingConditionalCenteredScrollableContainerView`'s `.fixedSize(vertical: true)`
-    /// on iPad to collapse the GeometryReader to the bubble's intrinsic height, anchoring Dax
-    /// to the bubble bottom instead of the screen bottom.
+    /// Screen wrapper that hosts the Trackers dialog plus its Dax. Dax is a sibling (not nested
+    /// in the dialog) so it spans the full background — nesting inside the bubble would let
+    /// iPad's `.fixedSize` ScrollView anchor Dax to the bubble bottom instead of the screen.
     struct OnboardingTrackersBlockedDialogScreen: View {
         @State private var showNextScreen: Bool = false
 
@@ -44,8 +39,7 @@ extension OnboardingRebranding {
 
         var body: some View {
             ZStack(alignment: .top) {
-                // Sibling of the dialog so the Dax view spans the same area as the background.
-                // Hidden when transitioning to the Fire follow-up.
+                // Sibling overlay; hidden during the Fire follow-up.
                 if !OnboardingBubbleAnimationMetrics.isCompactDevice && !showNextScreen {
                     DaxAnimationOverlay(
                         animation: OnboardingTrackersBlockedDialog.daxAnimation,

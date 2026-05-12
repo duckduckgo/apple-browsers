@@ -104,9 +104,8 @@ extension OnboardingView {
         @State private var hasStartedEntranceSequence = false
         @State private var hasPassedInitialFocusDelay = false
         @State private var shouldFocusWhenInitialDelayPasses = false
-        /// Local trigger for the rebranded title's `TypingText` animation. The legacy path drives
-        /// typing through the parent-owned `animateTitle` binding; the rebranded call site doesn't
-        /// pass one, so the typing start is held in local state instead.
+        /// Local typing-start trigger for the rebranded `TypingText` (the rebranded call site
+        /// doesn't pass an `animateTitle` binding).
         @State private var rebrandedAnimateTitle = false
 
         // MARK: Constants
@@ -232,9 +231,7 @@ extension OnboardingView {
                 shouldFocusWhenInitialDelayPasses = false
                 suggestionSequenceStarted = false
                 scheduleInitialFocusGate()
-                // Both visual styles run through `handleTitleAnimationFinished` once typing
-                // completes; only the binding driving the start differs (rebranded uses local
-                // `@State`, legacy uses the parent-supplied binding).
+                // Both styles end up in `handleTitleAnimationFinished`; only the start binding differs.
                 if visualStyle == .rebranded {
                     rebrandedAnimateTitle = true
                 } else {
@@ -276,9 +273,8 @@ extension OnboardingView {
             guard !hasStartedEntranceSequence else { return }
             hasStartedEntranceSequence = true
 
-            // Reduce Motion: collapse the entrance choreography. Show the controls and
-            // suggestions immediately and request keyboard focus without the staggered
-            // delays — Reduce Motion users get the page in its final state at once.
+            // Reduce Motion: skip the staggered entrance — show controls + suggestions and
+            // focus the input immediately.
             if reduceMotion {
                 guard !isTransitioningOut else { return }
                 showInteractiveControls = true
@@ -453,9 +449,7 @@ extension OnboardingView {
         private func startSuggestionSequenceIfNeeded() {
             guard !suggestionSequenceStarted, showInteractiveControls else { return }
             suggestionSequenceStarted = true
-            // Reduce Motion: skip the artificial delay and the staggered spring reveal.
-            // Show all suggestions at once, immediately, so the page is presented in
-            // its final state with no entrance choreography.
+            // Reduce Motion: show all suggestions at once, no staggered reveal.
             guard !reduceMotion else {
                 guard !isTransitioningOut else { return }
                 visibleSuggestionCount = Metrics.maxSuggestionCount

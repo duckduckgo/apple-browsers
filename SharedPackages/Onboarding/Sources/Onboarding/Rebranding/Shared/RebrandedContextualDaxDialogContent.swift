@@ -234,9 +234,8 @@ private extension OnboardingRebranding {
         let onTypingFinished: () -> Void
 
         #if os(iOS)
-        /// iOS-only: controls the static message's opacity. Stays at 0 until the title finishes
-        /// typing (or the no-title path is triggered) so the message respects the bubble's
-        /// fade-in lifecycle instead of appearing instantly with full content.
+        /// Drives the static message's fade-in after the title finishes typing (or after the
+        /// no-title path triggers it).
         @State private var showStaticMessage = false
         #endif
 
@@ -250,21 +249,14 @@ private extension OnboardingRebranding {
                 messageTypingView(alignment: messageAlignment)
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
-            // In horizontal layouts (text + button side-by-side), SwiftUI will
-            // truncate the text to a single line unless we tell it to size to
-            // its content vertically — wrap instead of truncate.
+            // Horizontal layouts otherwise truncate to a single line; force vertical sizing.
             .fixedSize(horizontal: false, vertical: true)
         }
 
         #if os(iOS)
-        // Per design (iOS): only the title types; the message is rendered statically.
-        // - The title's `onTypingFinished` wires straight to the parent's callback (skipping
-        //   the macOS-style chain through `startTypingMessage`) and reveals the static
-        //   message via `showStaticMessage`, so the message fades in *after* the title's
-        //   typing finishes rather than appearing instantly alongside an empty title.
-        // - The static message view also watches `startTypingMessage` so the no-title flow —
-        //   where the parent flips that flag directly — still reveals the message and
-        //   forwards completion.
+        // iOS: only the title types; message is static and fades in once typing completes.
+        // No-title path: the parent flips `startTypingMessage` directly — handled in
+        // `messageTypingView` below.
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
             AnimatableTypingText(
@@ -286,8 +278,7 @@ private extension OnboardingRebranding {
                 .frame(maxWidth: .infinity, alignment: Alignment(alignment))
                 .opacity(showStaticMessage ? 1 : 0)
                 .onChange(of: startTypingMessage) { shouldStart in
-                    // No-title path: the parent flips this flag directly. Reveal the message
-                    // and forward completion ourselves.
+                    // No-title path: parent flips this directly; reveal + forward completion here.
                     if shouldStart { revealStaticMessageAndFinish() }
                 }
         }

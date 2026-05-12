@@ -118,9 +118,7 @@ extension OnboardingRebranding.OnboardingView {
             // Exit animations (fade out logo and text)
             static let exitFadeDuration: TimeInterval = 0.3
 
-            /// Time the landing screen stays visible before transitioning to the next page when
-            /// Reduce Motion is enabled. Mirrors how long the user typically sees the final state
-            /// of the standard entrance + exit sequence, so the screen doesn't flash by.
+            /// How long the landing screen stays visible under Reduce Motion before advancing.
             static let reduceMotionHoldDuration: TimeInterval = 3.0
 
             // Lottie playback parameters
@@ -203,8 +201,7 @@ extension OnboardingRebranding.OnboardingView {
             let textScale = isSmallScreen ? Metrics.textScaleSmallScreen : 1.0
 
             return VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
-                // Logo Lottie (internal animation plays the Dax entrance; no opacity fade).
-                // Reduce Motion: freeze at the last frame so Dax appears settled.
+                // Logo: Lottie plays Dax's entrance; Reduce Motion freezes on the last frame.
                 Lottie.LottieView {
                     try await DotLottieFile.asset(named: Assets.logoLottieFileName)
                 }
@@ -238,8 +235,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var backgroundView: some View {
-            // Reduce Motion: freeze the illustration at its last frame so it appears
-            // fully drawn rather than animating from the start.
+            // Reduce Motion: freeze the illustration at its last frame.
             let playback: LottiePlaybackMode = reduceMotion
                 ? .paused(at: .progress(1.0))
                 : .playing(.fromProgress(
@@ -265,10 +261,8 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Animation Sequencing
 
         private func animateEntrance() {
-            // Reduced motion: snap to the entrance end-state immediately, hold the landing
-            // page in its final, fully-visible state for `reduceMotionHoldDuration` seconds so
-            // the user actually sees it, then notify the parent to advance the flow. We skip
-            // the exit fade — Reduce Motion users opt out of fades.
+            // Reduce Motion: snap to the end-state, hold for `reduceMotionHoldDuration`, then
+            // advance. No exit fade.
             guard !reduceMotion else {
                 groupScale = 1.0
                 groupOffsetY = 0

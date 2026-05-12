@@ -26,38 +26,27 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
 
-        /// Dax "Thumbs Up" animation, sized as a function of the dialog bubble's measured height
-        /// (captured by the parent and passed in). The bigger the bubble — typically because the
-        /// user picked a larger Dynamic Type size or longer copy is being shown — the smaller
-        /// Dax becomes, so the two never overlap. Once Dax would shrink below the minimum
-        /// `minDaxHeight`, this returns `nil` and the parent suppresses the overlay entirely.
-        ///
-        /// `bubbleHeight` of `0` means "no measurement yet"; we render Dax at full size in that
-        /// case so the very first frame (before the parent has captured the bubble's geometry)
-        /// doesn't briefly hide Dax.
+        /// Dax "Thumbs Up", sized inversely to the bubble height so the two never overlap.
+        /// Returns `nil` when Dax would shrink below `minDaxHeight`. `bubbleHeight = 0`
+        /// (no measurement yet) renders Dax at full size so the first frame doesn't blink.
         static func daxAnimation(forBubbleHeight bubbleHeight: CGFloat = 0) -> DaxAnimation? {
             let baseSize = CGSize(width: 258.0, height: 352.0)
             let baseBottomPadding: CGFloat = 110.0
             let baseEntranceXOffset: CGFloat = -20.0
             let baseLargeScreenXOffset: CGFloat = 200.0
             let baseLeftXOffset: CGFloat = -40.0
-            /// Bubble height at default text size / minimum copy. While the bubble stays at or
-            /// below this threshold Dax keeps its full size; growth beyond this shrinks Dax 1:1.
+            /// Threshold above which the bubble starts shrinking Dax 1:1.
             let referenceBubbleHeight: CGFloat = 280.0
-            /// Below this height Dax disappears altogether (per design — at very large Dynamic
-            /// Type sizes there's simply not enough vertical space to render anything readable).
+            /// Below this height Dax is hidden entirely (per design).
             let minDaxHeight: CGFloat = 170.0
 
-            // Each point of bubble growth past the reference height takes one point off Dax,
-            // until the minimum is reached.
             let extraBubbleHeight = max(0, bubbleHeight - referenceBubbleHeight)
             let targetHeight = baseSize.height - extraBubbleHeight
             guard targetHeight >= minDaxHeight else { return nil }
 
             let scale = targetHeight / baseSize.height
             let size = CGSize(width: baseSize.width * scale, height: targetHeight)
-            // Lower the bottom inset proportionally so Dax keeps the same visual relationship
-            // to the screen bottom as it shrinks.
+            // Scale the bottom inset with Dax so the screen-bottom relationship is preserved.
             let bottomPadding = baseBottomPadding * scale
 
             return DaxAnimation(
@@ -66,7 +55,7 @@ extension OnboardingRebranding.OnboardingView {
                 position: .left(bottomPadding: bottomPadding, xOffset: baseLeftXOffset),
                 largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: baseLargeScreenXOffset),
                 entranceOffset: CGPoint(x: baseEntranceXOffset, y: 0),
-                // Slide off-screen by exactly the (scaled) animation width so exit fully clears.
+                // Slide left by the full (scaled) width so exit fully clears the screen.
                 exitOffset: CGPoint(x: -size.width, y: 0),
                 exitDuration: 0.5,
                 fadeOut: true,
@@ -85,11 +74,11 @@ extension OnboardingRebranding.OnboardingView {
         private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
-        /// Controls when the TypingText animation begins (delayed until the bubble fade-in finishes).
+        /// Gates the title's typing animation (waits until the bubble has faded in).
         @State private var shouldStartTyping = false
-        /// Drives the opacity fade-in of everything below the title (set after typing completes).
+        /// Fade-in for everything below the title (set after typing completes).
         @State private var showContent = false
-        /// Bound to the parent's `showBubbleContent` -- used to coordinate the hide/show cycle.
+        /// Bound to the parent's `showBubbleContent` for hide/show coordination.
         @Binding var isVisible: Bool
 
         init(
@@ -183,15 +172,13 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        /// Runs a three-phase child transition (hide -> resize -> show) to switch to the skip dialog.
-        /// Unlike parent-level step changes, this is an internal view switch so we need an explicit
-        /// withAnimation to drive the bubble resize.
+        /// Hide → resize → show transition into the skip dialog. Internal view swap (not a
+        /// step change), so we drive the resize explicitly with `withAnimation`.
         private func showSkipOnboardingDialog() {
             isVisible = false
             skipAction()
 
-            // Reduced motion: skip the hide → resize → show choreography. Set the final state
-            // immediately so the transition is instantaneous.
+            // Reduce Motion: jump to the final state, no choreography.
             guard !reduceMotion else {
                 showSkipOnboarding = true
                 isVisible = true

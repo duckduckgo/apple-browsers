@@ -24,63 +24,53 @@ import SwiftUI
 
 /// Configuration for a Dax Lottie animation overlaid between the scrollable background and the dialog bubble.
 struct DaxAnimation {
-    
+
     /// Anchoring position relative to the view's bottom edge.
     enum Position {
-        /// Bottom-leading corner anchor; `bottomPadding` lifts above the bottom, `xOffset` shifts right (+) / left (−).
+        /// Bottom-leading anchor. `bottomPadding` lifts above the bottom; `xOffset` shifts right (+) / left (−).
         case left(bottomPadding: CGFloat = 0, xOffset: CGFloat = 0)
-        /// Bottom-trailing corner anchor; `bottomPadding` lifts above the bottom, `xOffset` shifts left (+) / right (−).
+        /// Bottom-trailing anchor. `bottomPadding` lifts above the bottom; `xOffset` shifts left (+) / right (−).
         case right(bottomPadding: CGFloat = 0, xOffset: CGFloat = 0)
-        /// Centered horizontally at the bottom; `leftCenterOffset` shifts from center (positive = left, negative = right), `yOffset` lifts above the bottom (+) / pushes below (−).
+        /// Bottom-center anchor. `leftCenterOffset` shifts from center (+ = left); `yOffset` lifts (+).
         case bottom(leftCenterOffset: CGFloat = 0, yOffset: CGFloat = 0)
-        /// Fixed offset from the bottom-leading corner: x right (+) / left (−), y up (+) / down (−).
+        /// Absolute offset from the bottom-leading corner: x right (+); y up (+).
         case absolute(x: CGFloat, y: CGFloat)
     }
 
-    /// Asset catalog name of the Lottie animation (`.lottie` or `.json`).
+    /// Lottie asset name (`.lottie` or `.json`).
     let animationName: String
-    /// Display size of the animation in points.
+    /// Display size in points.
     let size: CGSize
-    /// Where to place the animation within the screen.
+    /// Anchor within the screen.
     let position: Position
-    /// When non-nil, the view starts at `finalCenter + entranceOffset` and slides to `finalCenter`
-    /// at the same time the Lottie animation begins playing.
+    /// When set, the view starts at `finalCenter + entranceOffset` and slides to `finalCenter` on appear.
     let entranceOffset: CGPoint?
-    /// When non-nil, the view slides from `finalCenter` to `finalCenter + exitOffset`
-    /// when the animation is played in reverse.
+    /// When set, the view slides from `finalCenter` to `finalCenter + exitOffset` on exit.
     let exitOffset: CGPoint?
-    /// When non-nil, the Lottie animation is split into two stages:
-    /// - **Entrance** — plays from frame 0 to this progress value (0…1).
-    /// - **Exit** — plays from this progress value to 1.0 when `isExiting` becomes `true`.
-    ///
-    /// When `nil` (the default), the animation plays fully forward (0 → 1) on entrance
-    /// and fully in reverse (1 → 0) on exit, using the `playForward` flag.
+    /// Splits the Lottie into two stages: entrance plays 0 → this progress, exit plays
+    /// this progress → 1.0 when `isExiting` becomes `true`. Nil = single-stage (reverse on exit).
     let twoStagesAnimation: Double?
-    /// Duration of the exit animation in seconds.
-    /// When `nil` (the default), falls back to `OnboardingBubbleAnimationMetrics.daxExitDuration`.
+    /// Exit duration; falls back to `daxExitDuration` when nil.
     let exitDuration: TimeInterval?
-    /// When `true`, the overlay fades from fully opaque to transparent during the exit animation.
+    /// Fade the overlay to transparent during exit.
     let fadeOut: Bool
-    /// When `true`, the Lottie animation loops indefinitely instead of stopping on the last frame.
+    /// Loop the Lottie indefinitely instead of stopping on the last frame.
     let loop: Bool
-    /// When non-nil, the overlay starts at 0% opacity and fades in to 100% over this duration on appear.
+    /// When set, the overlay fades from 0 → 1 over this duration on appear.
     let fadeInTime: TimeInterval?
-    /// Delay in seconds before the Lottie animation starts playing on appear.
+    /// Delay before Lottie playback begins on appear.
     let startDelay: TimeInterval
 
-    /// `true` when the animation slides off-screen **before** the step transition.
-    /// The parent must delay the action call by `effectiveExitDuration`.
+    /// Animation slides off-screen *before* the step transition; parent must delay the action.
     var hasSlideExit: Bool { exitOffset != nil }
 
-    /// `true` when the animation fades out **simultaneously** with the step transition.
-    /// The parent fires the action immediately and delays overlay recreation instead.
+    /// Animation fades out *with* the step transition; parent fires the action immediately.
     var hasFadeExit: Bool { fadeOut }
 
-    /// `true` when `twoStagesAnimation` is set and the exit stage (midpoint → 1.0) should play
-    /// simultaneously with the step transition.
+    /// Two-stage exit plays *with* the step transition.
     var hasTwoStagesExit: Bool { twoStagesAnimation != nil }
 
-    /// Resolved exit animation duration — custom value when set, otherwise the shared default.
+    /// Custom exit duration, or the shared default.
     var effectiveExitDuration: TimeInterval { exitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration }
 
     init(animationName: String,
@@ -115,51 +105,37 @@ struct DaxAnimation {
 
 // MARK: - Dax Animation Overlay
 
-/// Full-screen overlay that plays a Dax Lottie animation at a design-specified position.
+/// Full-screen overlay that plays a Dax Lottie at the configured position. Z-order: background
+/// < Dax < dialog.
 ///
-/// Rendered between `ScrollableOnboardingBackground` and the dialog bubble in
-/// `OnboardingRebranding.OnboardingView`, so the z-order is: background < Dax < dialog.
-///
-/// ## Entrance
-/// If `animation.entranceOffset` is set, the view starts at `finalCenter + entranceOffset` and
-/// slides to `finalCenter` on `onAppear`, in sync with Lottie beginning to play.
-///
-/// ## Exit
-/// Set `isExiting = true` to slide the view from `finalCenter` to `finalCenter + animation.exitOffset`.
-/// The parent must wait `OnboardingBubbleAnimationMetrics.daxExitDuration` before destroying the view.
-///
-/// ## Two-stage playback
-/// If `animation.twoStagesAnimation` is set, the animation is split at that progress point:
-/// entrance plays 0 → midpoint, exit plays midpoint → 1.0.
-/// The `playForward` flag is ignored for two-stage animations.
+/// - Entrance: starts at `finalCenter + entranceOffset` (when set) and slides to `finalCenter`.
+/// - Exit: setting `isExiting = true` slides to `finalCenter + exitOffset`; the parent must
+///   wait `daxExitDuration` before destroying the view.
+/// - Two-stage: when `twoStagesAnimation` is set, entrance plays 0 → midpoint and exit plays
+///   midpoint → 1.0; `playForward` is ignored.
 struct DaxAnimationOverlay: View {
 
     let animation: DaxAnimation
-    /// `true` to play forward (entrance); `false` to play in reverse (exit).
-    /// Ignored when `animation.twoStagesAnimation` is set — stage is determined by `isExiting` instead.
+    /// `true` to play forward; `false` to reverse. Ignored for two-stage animations.
     let playForward: Bool
-    /// Set to `true` to trigger the slide-out exit animation (requires `animation.exitOffset`).
+    /// Triggers the slide-out exit (requires `exitOffset`).
     let isExiting: Bool
 
-    /// Skip native SwiftUI entrance/exit animations (slide-in offset, fade) when reduced motion
-    /// is on, and freeze Lottie at the animation's "intended final frame" so the playback never
-    /// moves. The intended final frame is `twoStagesAnimation` (when set, e.g. 0.5 for animations
-    /// where the entrance settles at the midpoint and the exit plays from there to 1.0); for all
-    /// other animations — including looping idle ones — it's the last frame (progress 1.0).
+    /// On Reduce Motion: skip slide-in / fade and freeze Lottie at the intended final frame
+    /// (`twoStagesAnimation` when set, otherwise `1.0`).
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Frozen progress used when Reduce Motion is enabled.
     private var reducedMotionFinalProgress: AnimationProgressTime {
         animation.twoStagesAnimation.map { AnimationProgressTime($0) } ?? 1.0
     }
 
-    /// Current displacement from `finalCenter`. Zero means the view is at its design position.
-    /// Seeded from `entranceOffset` so the very first render is already off-screen — no jump.
+    /// Displacement from `finalCenter`. Seeded from `entranceOffset` so the first render is
+    /// already off-screen (no jump).
     @State private var positionOffset: CGPoint
-    /// Opacity: starts at 0 when `fadeInTime` is set, otherwise 1. Driven to 0 on exit when `fadeOut` is `true`.
+    /// Starts at 0 when `fadeInTime` is set, otherwise 1; driven to 0 on `fadeOut` exit.
     @State private var opacity: Double
 
-    /// `false` until `startDelay` elapses; the entire overlay is hidden until then.
+    /// `false` until `startDelay` elapses; hides the entire overlay.
     @State private var started: Bool
 
     init(animation: DaxAnimation, playForward: Bool, isExiting: Bool) {
@@ -171,14 +147,10 @@ struct DaxAnimationOverlay: View {
         _started = State(initialValue: animation.startDelay <= 0)
     }
 
-    /// Lottie playback mode derived from the current state.
-    ///
-    /// - **Reduce Motion**: paused at the intended final frame (`twoStagesAnimation` when set,
-    ///   otherwise `1.0`). The frame is frozen on entrance and stays frozen on exit — the parent
-    ///   handles the visual departure (fade / slide / step transition).
-    /// - **Standard** (`twoStagesAnimation == nil`): `playForward` controls direction.
-    /// - **Two-stage** (`twoStagesAnimation != nil`): entrance plays 0 → midpoint;
-    ///   exit (`isExiting == true`) plays midpoint → 1.0.
+    /// Lottie playback derived from the current state.
+    /// - Reduce Motion: frozen at the intended final frame (parent handles the visual exit).
+    /// - Two-stage: entrance plays 0 → midpoint; exit plays midpoint → 1.0.
+    /// - Otherwise: `playForward` controls direction, or loops when `animation.loop`.
     private var lottiePlaybackMode: LottiePlaybackMode {
         guard started else {
             return .paused
@@ -206,20 +178,15 @@ struct DaxAnimationOverlay: View {
             Lottie.LottieView {
                 try await DotLottieFile.asset(named: animation.animationName)
             }
-            // Play once and stop on the last frame so Dax stays visible at rest.
             .playbackMode(lottiePlaybackMode)
             .resizable()
-            // Stable ID keeps the same LottieView instance across re-renders triggered by
-            // positionOffset changes. Without it, the async closure re-runs on each re-render
-            // and restarts the animation.
+            // Stable ID prevents the async asset closure from re-running on every re-render.
             .id(animation.animationName)
             .frame(width: animation.size.width, height: animation.size.height)
-            // Position by center so .position(x:y:) receives the view's midpoint.
             .position(x: finalCenter.x + positionOffset.x, y: finalCenter.y + positionOffset.y)
         }
-        // Expand proxy.size to the full screen so positions are computed against the true screen
-        // bottom, not the safe-area-inset bottom.
         .opacity(opacity)
+        // Anchors positions against the screen bottom, not the safe-area bottom.
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .onAppear {
@@ -242,7 +209,7 @@ struct DaxAnimationOverlay: View {
                     opacity = 1
                 }
             }
-            // Reduced motion: skip the start delay entirely so Dax shows immediately.
+            // Reduce Motion: skip the start delay.
             if animation.startDelay > 0 && !reduceMotion {
                 DispatchQueue.main.asyncAfter(deadline: .now() + animation.startDelay, execute: begin)
             } else {
@@ -273,10 +240,8 @@ struct DaxAnimationOverlay: View {
         }
     }
 
-    /// Returns the center point of the animation frame within a container of the given size.
-    ///
-    /// `.position(x:y:)` expects the center of the view, so each case adds half the animation
-    /// dimensions to the anchor corner's origin.
+    /// Center of the animation frame in the container. `.position(x:y:)` takes the midpoint,
+    /// so each case adds half the animation size to the anchor.
     private func center(in size: CGSize) -> CGPoint {
         switch animation.position {
         case .left(let bottomPadding, let xOffset):
@@ -289,14 +254,12 @@ struct DaxAnimationOverlay: View {
             return CGPoint(x: size.width / 2 - leftCenterOffset,
                            y: bottomAnchoredY(in: size, bottomPadding: yOffset))
         case .absolute(let x, let y):
-            // x: distance from leading edge (may be negative to go off-screen left)
-            // y: distance from bottom edge (positive = above the bottom)
+            // x from leading edge (can be negative); y from bottom (positive = above).
             return CGPoint(x: x + animation.size.width / 2,
                            y: bottomAnchoredY(in: size, bottomPadding: y))
         }
     }
 
-    /// Y coordinate of the animation center when anchored at `bottomPadding` points above the bottom.
     private func bottomAnchoredY(in size: CGSize, bottomPadding: CGFloat) -> CGFloat {
         size.height - bottomPadding - animation.size.height / 2
     }

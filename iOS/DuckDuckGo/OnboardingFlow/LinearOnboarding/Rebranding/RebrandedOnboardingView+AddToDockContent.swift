@@ -116,13 +116,13 @@ extension OnboardingRebranding.OnboardingView {
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTypingTitle, showContent: $showContent)
         }
 
-        /// Runs a three-phase child transition (hide -> resize -> show) to switch from promo to tutorial.
-        /// Uses explicit withAnimation because this is an internal view switch, not a parent state.type change.
+        /// Hide → resize → show transition into the tutorial. Internal view swap, so we drive
+        /// the resize explicitly with `withAnimation`.
         private func showTutorial() {
             isVisible = false
             showTutorialAction()
 
-            // Reduced motion: jump to the final tutorial state, no hide → resize → show.
+            // Reduce Motion: jump to the final tutorial state.
             guard !reduceMotion else {
                 showAddToDockTutorial = true
                 isVisible = true

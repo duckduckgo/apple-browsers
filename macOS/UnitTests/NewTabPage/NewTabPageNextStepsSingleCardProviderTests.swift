@@ -654,7 +654,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.orderedCardIDs = nil
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: false)
+        let testProvider = createProvider(
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true),
+            isAppStoreBuild: false
+        )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
 
         XCTAssertEqual(testProvider.cards, expectedCards)
@@ -665,7 +670,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.orderedCardIDs = nil
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: true)
+        let testProvider = createProvider(
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true),
+            isAppStoreBuild: true
+        )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
 
         XCTAssertEqual(testProvider.cards, expectedCards)

@@ -17,14 +17,16 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-42055
     struct RestorePromptDialogContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private typealias Copy = UserText.Onboarding.RestorePrompt
 
@@ -34,17 +36,19 @@ extension OnboardingRebranding.OnboardingView {
         private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
-        @Binding var showContent: Bool
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
 
         init(
             skipOnboardingView: AnyView?,
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
         ) {
             self.skipOnboardingView = skipOnboardingView
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.restoreAction = restoreAction
             self.skipAction = skipAction
             self.onSkipOnboardingPresented = onSkipOnboardingPresented
@@ -73,18 +77,24 @@ extension OnboardingRebranding.OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
-                message:
-                    AnyView(
-                        Text(Copy.body)
-                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                            .font(onboardingTheme.typography.body)
-                            .multilineTextAlignment(.center)
-                ),
-                title: {
-                    Text(Copy.title)
+                message: AnyView(
+                    Text(Copy.body)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
+                        .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
+                ),
+                showContent: $showContent,
+                title: {
+                    TypingText(Copy.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
@@ -102,44 +112,35 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Handles the transition from restore dialog to skip onboarding dialog with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content immediately (no fade-out animation)
-        /// 2. Switch to skip dialog and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Hide → resize → show transition into the skip dialog. Internal view swap, so we drive
+        /// the resize explicitly with `withAnimation`.
         private func showSkipOnboardingDialog() {
-            // Phase 1: Hide current content immediately
-            showContent = false
+            isVisible = false
             skipAction()
 
+            // Reduce Motion: jump to the final state.
+            guard !reduceMotion else {
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
+
             if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             } else {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 }
-
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             }
         }

@@ -17,24 +17,33 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-44303
     struct SkipOnboardingContent: View {
         private static let fireButtonCopy = "Fire Button"
-
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        /// Drives typing/content reveal off the parent's bubble lifecycle so the animation
+        /// doesn't re-fire on background return (which re-fires `onAppear` but not `isVisible`).
+        @Binding var isVisible: Bool
 
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
         init(
+            isVisible: Binding<Bool>,
             startBrowsingAction: @escaping () -> Void,
             resumeOnboardingAction: @escaping () -> Void
         ) {
+            self._isVisible = isVisible
             self.startBrowsingAction = startBrowsingAction
             self.resumeOnboardingAction = resumeOnboardingAction
         }
@@ -48,16 +57,23 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(Self.styledMessage())
+                    styledMessage()
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(UserText.Onboarding.Skip.title)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .font(onboardingTheme.typography.title)
+                    TypingText(UserText.Onboarding.Skip.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .font(onboardingTheme.typography.title)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
@@ -73,17 +89,17 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Builds the message with bold applied to "Fire Button" via SwiftUI's
-        /// attribute system so the theme's body font applies uniformly.
-        private static func styledMessage() -> AttributedString {
-            var attributed = AttributedString(UserText.Onboarding.Skip.message)
-            if let range = attributed.range(of: fireButtonCopy) {
-                attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
-            }
-            return attributed
+        /// Composes the skip message with bold "Fire Button". Uses `Text` concatenation so the
+        /// bold weight inherits from the outer `.font(...)`.
+        private func styledMessage() -> Text {
+            let message = UserText.Onboarding.Skip.message
+            let highlight = OnboardingRebranding.OnboardingView.SkipOnboardingContent.fireButtonCopy
+            let parts = message.components(separatedBy: highlight)
+            guard parts.count == 2 else { return Text(message) }
+            return Text(parts[0]) + Text(highlight).bold() + Text(parts[1])
         }
-
     }
 }

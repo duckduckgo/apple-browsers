@@ -17,35 +17,60 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=7412-24499
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=7419-54020
     struct BrowsersComparisonContent: View {
-        @Environment(\.onboardingTheme) private var onboardingTheme
 
-        @Binding var showContent: Bool
+        /// Dax "Wing Wave Up" animation
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingBottom",
+                size: CGSize(width: 159.33, height: 180.33),
+                position: .bottom(),
+                twoStagesAnimation: 0.5,
+                exitDuration: 1.0
+            )
+        }
+
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @Binding var isVisible: Bool
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
         private let title: String
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
 
         init(
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             title: String,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.title = title
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
 
+        // Uses a custom layout instead of LinearDialogContentContainer because
+        // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(title)
+                TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                    if reduceMotion {
+                        showContent = true
+                    } else {
+                        withAnimation { showContent = true }
+                    }
+                })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -65,7 +90,10 @@ extension OnboardingRebranding.OnboardingView {
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
     }

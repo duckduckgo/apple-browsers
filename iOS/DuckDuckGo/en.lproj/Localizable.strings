@@ -247,6 +247,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Customize Responses";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Turn text into images";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Create Image";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Find current information";
 
@@ -2873,7 +2879,7 @@ https://duckduckgo.com/mac";
 "onboarding.rebranding.first-search-done.title" = "That’s DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
+"onboarding.rebranding.intro.message" = "Ready for a faster browser that puts you in control?\n\nAI is always optional, and privacy protection is always on.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";

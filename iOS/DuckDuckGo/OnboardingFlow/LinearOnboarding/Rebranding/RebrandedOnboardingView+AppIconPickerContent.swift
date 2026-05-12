@@ -23,15 +23,30 @@ import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-45897
     struct AppIconPickerContent: View {
+
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingRight",
+                size: CGSize(width: 116, height: 208.33),
+                position: .right(bottomPadding: 107.0),
+                twoStagesAnimation: 0.5,
+                exitDuration: 0.5
+            )
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
-        
-        private var showContent: Binding<Bool>
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
         private let action: () -> Void
 
-        init(showContent: Binding<Bool> = .constant(false),
+        init(isVisible: Binding<Bool> = .constant(false),
              action: @escaping () -> Void) {
-            self.showContent = showContent
+            self._isVisible = isVisible
             self.action = action
         }
 
@@ -52,8 +67,17 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     RebrandedOnboardingView.AppIconPicker()
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(UserText.Onboarding.AppIconSelection.title)
+                    TypingText(UserText.Onboarding.AppIconSelection.title,
+                               startAnimating: $shouldStartTyping,
+                               onTypingFinished: { [reduceMotion] in
+                                   if reduceMotion {
+                                       showContent = true
+                                   } else {
+                                       withAnimation { showContent = true }
+                                   }
+                               })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -65,6 +89,7 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 }

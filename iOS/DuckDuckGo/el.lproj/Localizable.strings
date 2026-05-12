@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Μετατροπή κειμένου σε εικόνες";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Δημιουργία εικόνας";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Βρείτε τρέχουσες πληροφορίες";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
+"onboarding.rebranding.intro.message" = "Είσαι έτοιμος για ένα ταχύτερο πρόγραμμα περιήγησης που σου δίνει τον έλεγχο;\n\nΗ τεχνητή νοημοσύνη είναι πάντα προαιρετική και η προστασία προσωπικών δεδομένων είναι πάντα ενεργοποιημένη.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Γεια σας.";

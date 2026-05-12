@@ -207,6 +207,8 @@ private enum CircleCheckViewAnimation {
 }
 
 struct CircleCheckView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var circleScale: CGFloat = 0
     @State private var checkTrim: CGFloat = 0
     @State private var checkScale: CGFloat = CircleCheckViewMetrics.initialCheckScale
@@ -240,25 +242,39 @@ struct CircleCheckView: View {
                 )
                 .scaleEffect(checkScale)
         }
-        .onAppear {
+        .onAppear { [reduceMotion] in
             // Handle case where shouldAnimate is already true when view appears (e.g., previews or timing changes)
             if shouldAnimate {
-                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
-                    animate()
+                if reduceMotion {
+                    snapToFinalState()
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+                        animate()
+                    }
                 }
             }
         }
-        .onChange(of: shouldAnimate) { newValue in
+        .onChange(of: shouldAnimate) { [reduceMotion] newValue in
             // Handle case where shouldAnimate transitions from false to true after view appears
             if newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
-                    animate()
+                if reduceMotion {
+                    snapToFinalState()
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+                        animate()
+                    }
                 }
             }
         }
     }
 
     // MARK: Animation sequence
+
+    private func snapToFinalState() {
+        circleScale = 1
+        checkScale = 1
+        checkTrim = 1
+    }
 
     private func animate() {
         // Phase 1 — circle springs in

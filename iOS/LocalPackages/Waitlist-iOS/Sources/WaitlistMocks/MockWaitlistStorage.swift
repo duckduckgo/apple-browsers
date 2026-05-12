@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import Waitlist
+import Waitlist_iOS
 
 public class MockWaitlistStorage: WaitlistStorage {
 

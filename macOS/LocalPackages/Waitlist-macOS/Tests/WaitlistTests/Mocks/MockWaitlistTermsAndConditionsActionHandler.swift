@@ -17,7 +17,7 @@
 //
 
 import Foundation
-@testable import Waitlist
+@testable import Waitlist_macOS
 
 struct MockWaitlistTermsAndConditionsActionHandler: WaitlistTermsAndConditionsActionHandler {
     var acceptedTermsAndConditions: Bool = false

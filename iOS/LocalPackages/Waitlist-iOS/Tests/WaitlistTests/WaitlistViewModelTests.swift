@@ -22,7 +22,7 @@ import UserNotifications
 import WaitlistMocks
 import XCTest
 
-@testable import Waitlist
+@testable import Waitlist_iOS
 
 class WaitlistViewModelTests: XCTestCase {
 

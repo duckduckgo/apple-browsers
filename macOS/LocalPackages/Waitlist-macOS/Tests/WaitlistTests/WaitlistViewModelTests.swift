@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import Waitlist
+@testable import Waitlist_macOS
 
 final class WaitlistViewModelTests: XCTestCase {
 

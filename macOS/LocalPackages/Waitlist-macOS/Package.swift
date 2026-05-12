@@ -21,10 +21,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "Waitlist",
+    name: "Waitlist-macOS",
     platforms: [ .macOS("11.4") ],
     products: [
-        .library(name: "Waitlist", targets: ["Waitlist"]),
+        .library(name: "Waitlist-macOS", targets: ["Waitlist-macOS"]),
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
@@ -32,7 +32,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Waitlist",
+            name: "Waitlist-macOS",
             dependencies: [
                 .product(name: "Networking", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),

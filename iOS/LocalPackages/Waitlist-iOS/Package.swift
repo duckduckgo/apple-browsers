@@ -4,15 +4,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "Waitlist",
+    name: "Waitlist-iOS",
     platforms: [
         .iOS(.v15)
     ],
 
     products: [
         .library(
-            name: "Waitlist",
-            targets: ["Waitlist", "WaitlistMocks"])
+            name: "Waitlist-iOS",
+            targets: ["Waitlist-iOS", "WaitlistMocks"])
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Waitlist",
+            name: "Waitlist-iOS",
             dependencies: [
                 "DesignResourcesKit",
             ],
@@ -30,14 +30,14 @@ let package = Package(
         ),
         .target(
             name: "WaitlistMocks",
-            dependencies: ["Waitlist"],
+            dependencies: ["Waitlist-iOS"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .testTarget(
             name: "WaitlistTests",
-            dependencies: ["Waitlist", "WaitlistMocks"]
+            dependencies: ["Waitlist-iOS", "WaitlistMocks"]
         )
     ]
 )

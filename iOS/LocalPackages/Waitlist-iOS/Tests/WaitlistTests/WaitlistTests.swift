@@ -19,7 +19,7 @@
 
 import XCTest
 import WaitlistMocks
-@testable import Waitlist
+@testable import Waitlist_iOS
 
 class WaitlistTests: XCTestCase {
 

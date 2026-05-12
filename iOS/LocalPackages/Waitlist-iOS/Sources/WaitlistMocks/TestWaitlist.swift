@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import Waitlist
+import Waitlist_iOS
 
 public struct TestWaitlist: Waitlist {
     public static var shared: TestWaitlist = .init(store: MockWaitlistStorage(), request: MockWaitlistRequest.failure())

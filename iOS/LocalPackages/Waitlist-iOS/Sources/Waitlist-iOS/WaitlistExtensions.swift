@@ -20,7 +20,6 @@
 import Foundation
 import Core
 import UserNotifications
-import Waitlist
 import Networking
 
 extension Waitlist {

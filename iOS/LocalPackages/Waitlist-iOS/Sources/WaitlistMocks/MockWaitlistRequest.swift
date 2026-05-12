@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import Waitlist
+import Waitlist_iOS
 
 public struct MockWaitlistRequest: WaitlistRequest {
 

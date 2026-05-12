@@ -18,7 +18,7 @@
 
 import Foundation
 import UserNotifications
-@testable import Waitlist
+@testable import Waitlist_macOS
 
 struct MockNotificationService: NotificationService {
 

@@ -119,7 +119,10 @@ public class TabsModel: NSObject, NSCoding, NSCopying, TabsModelManaging {
 
     public func copy(with zone: NSZone? = nil) -> Any {
         let tabsCopy = tabs.compactMap { $0.copy() as? Tab }
-        return TabsModel(tabs: tabsCopy, currentIndex: _currentIndex, desktop: false, mode: mode)
+        return TabsModel(tabs: tabsCopy,
+                         currentIndex: _currentIndex,
+                         desktop: UIDevice.current.userInterfaceIdiom == .pad,
+                         mode: mode)
     }
 
     var currentTab: Tab? {

@@ -228,6 +228,9 @@ extension OnboardingManager: OnboardingFlowManaging {
         case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
             Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
             resolvedFlow = .default
+        case .duckAI where !isIphone:
+            Logger.onboarding.debug("Duck.ai onboarding not available for iPad. Reverting to default onboarding")
+            resolvedFlow = .default
         default:
             resolvedFlow = evaluatedOnboarding.flow
         }

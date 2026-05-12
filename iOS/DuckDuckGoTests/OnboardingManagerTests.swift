@@ -313,6 +313,30 @@ struct OnboardingFlowConfiguration {
         #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
+    @Test("Check Duck.ai flow falls back to default on iPad")
+    func fallsBackToDefaultWhenDeviceIsIPad() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            isIphone: false,
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should fall back to .default since Duck.ai onboarding is iPhone-only
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
     @Test("Check Duck.ai flow is configured when feature flag is enabled")
     func configuresDuckAIFlowWhenFeatureFlagEnabled() {
         // GIVEN

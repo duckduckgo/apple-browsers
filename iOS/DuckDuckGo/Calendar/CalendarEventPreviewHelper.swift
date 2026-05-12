@@ -64,6 +64,16 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
             return
         }
         let store = EKEventStore()
+        let editor = EKEventEditViewController()
+        editor.event = Self.makeEKEvent(from: icsEvent, in: store)
+        editor.eventStore = store
+        editor.editViewDelegate = self
+        viewController.present(editor, animated: true)
+    }
+
+    /// Bridges `ICSEvent` to `EKEvent`. Shared by the UIKit and SwiftUI presentation paths.
+    @available(iOS 17.0, *)
+    static func makeEKEvent(from icsEvent: ICSEvent, in store: EKEventStore) -> EKEvent {
         let event = EKEvent(eventStore: store)
         event.title = icsEvent.title
         event.startDate = icsEvent.startDate
@@ -75,12 +85,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         if let rule = icsEvent.recurrenceRule {
             event.recurrenceRules = [rule]
         }
-
-        let editor = EKEventEditViewController()
-        editor.event = event
-        editor.eventStore = store
-        editor.editViewDelegate = self
-        viewController.present(editor, animated: true)
+        return event
     }
 
     private func fallbackToQuickLook() {

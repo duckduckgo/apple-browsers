@@ -29,15 +29,17 @@ private struct ShareButtonFramePreferenceKey: PreferenceKey {
 
 struct CompleteDownloadRow: View {
     @State private var isPreviewPresented = false
+    @State private var pendingCalendarEvent: PreparedCalendarEvent?
     @State private var shareButtonFrame: CGRect = .zero
-    
+
     var rowModel: CompleteDownloadRowViewModel
-    
+
     var shareButtonAction: (CGRect) -> Void
-    
+
     var body: some View {
         HStack {
             Button {
+                self.pendingCalendarEvent = rowModel.preparePreviewEvent()
                 self.isPreviewPresented = true
             } label: {
                 VStack(alignment: .leading) {
@@ -60,11 +62,20 @@ struct CompleteDownloadRow: View {
         .listRowInsets(EdgeInsets.rowInsets)
         .contentShape(Rectangle())
         .sheet(isPresented: $isPreviewPresented, content: {
-            QuickLookPreviewView(localFileURL: rowModel.fileURL)
-                .edgesIgnoringSafeArea(.all)
+            calendarOrQuickLookSheet
         })
     }
-    
+
+    @ViewBuilder
+    private var calendarOrQuickLookSheet: some View {
+        if #available(iOS 17, *), let preparedEvent = pendingCalendarEvent {
+            CalendarEventEditView(preparedEvent: preparedEvent, onDismiss: { isPreviewPresented = false })
+        } else {
+            QuickLookPreviewView(localFileURL: rowModel.fileURL)
+                .edgesIgnoringSafeArea(.all)
+        }
+    }
+
     private var shareButton: some View {
         Button {
             self.shareButtonAction(shareButtonFrame)

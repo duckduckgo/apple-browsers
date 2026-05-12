@@ -453,6 +453,7 @@
 		5B6D65122FB39F5800BDCF4D /* CalendarEventPreviewHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65112FB39F5400BDCF4D /* CalendarEventPreviewHelper.swift */; };
 		5B6D65152FB39FA000BDCF4D /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6D65132FB39FA000BDCF4D /* EventKit.framework */; };
 		5B6D65162FB39FA000BDCF4D /* EventKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6D65142FB39FA000BDCF4D /* EventKitUI.framework */; };
+		5B6D65182FB3B48500BDCF4D /* CalendarEventEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */; };
 		5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */ = {isa = PBXBuildFile; productRef = 5B7CA46A2FAE693000D69C83 /* ICSParser */; };
 		5B941E722FA29A2C00AF2CE7 /* QuickActionsMediumWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */; };
 		5B941E752FA29FC800AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
@@ -2989,6 +2990,7 @@
 		5B6D65112FB39F5400BDCF4D /* CalendarEventPreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventPreviewHelper.swift; sourceTree = "<group>"; };
 		5B6D65132FB39FA000BDCF4D /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		5B6D65142FB39FA000BDCF4D /* EventKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKitUI.framework; path = System/Library/Frameworks/EventKitUI.framework; sourceTree = SDKROOT; };
+		5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventEditView.swift; sourceTree = "<group>"; };
 		5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsMediumWidgetTests.swift; sourceTree = "<group>"; };
 		5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOption.swift; sourceTree = "<group>"; };
 		5BCF854D2F7D774A0053B95E /* AddressBarURLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarURLFilter.swift; sourceTree = "<group>"; };
@@ -6609,6 +6611,7 @@
 		5B6D65102FB39F4800BDCF4D /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
+				5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */,
 				5B6D65112FB39F5400BDCF4D /* CalendarEventPreviewHelper.swift */,
 			);
 			path = Calendar;
@@ -12356,6 +12359,7 @@
 				C1D8B58E2F2F5A8500553D02 /* UIResponder+FirstResponder.swift in Sources */,
 				9FB71CB72F39841B000AD042 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */,
 				4B2DF8A42E64BBF800FBF11E /* WideEventService.swift in Sources */,
+				5B6D65182FB3B48500BDCF4D /* CalendarEventEditView.swift in Sources */,
 				3151F0F02735802800226F58 /* VoiceSearchViewController.swift in Sources */,
 				D6FEB8B32B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift in Sources */,
 				80F8207D2F4D4AC0007CA7C9 /* AutoconsentManagementProvider.swift in Sources */,

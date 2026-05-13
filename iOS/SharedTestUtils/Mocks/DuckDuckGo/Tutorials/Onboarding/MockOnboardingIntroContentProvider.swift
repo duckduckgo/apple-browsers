@@ -77,7 +77,9 @@ extension OnboardingAIComparisonContent {
     static let mock = OnboardingAIComparisonContent(
         title: "AI Comparison Title",
         subHeader: "AI Comparison SubHeader",
-        features: [],
+        features: [
+            .init(type: RebrandedComparisonTableModel.Feature.AIFeatureType.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available)
+        ],
         primaryCTA: "AI Comparison Primary"
     )
 }

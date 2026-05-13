@@ -3504,7 +3504,7 @@
 "settings.address.trackers.animation" = "Zobraziť v adresnom riadku";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vyber, čo sa zobrazí po návrate po %@ nečinnosti.";
+"settings.afterInactivity.footer.format" = "Vyber si, čo sa zobrazí po návrate do DuckDuckGo po %@ minútach nečinnosti.";
 
 /* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
 "settings.afterInactivity.footer.none" = "Vyber si, čo uvidíš po návrate na DuckDuckGo.";
@@ -3534,7 +3534,7 @@
 "settings.afterInactivity.interval.label" = "Časovač nečinnosti";
 
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po nečinnosti";
+"settings.afterInactivity.label" = "Uvítacia obrazovka";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";

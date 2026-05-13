@@ -3504,7 +3504,7 @@
 "settings.address.trackers.animation" = "Vis i adressefeltet";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Velg hva du vil se, når du kommer tilbake etter %@ med inaktivitet.";
+"settings.afterInactivity.footer.format" = "Velg hva du vil se, når du kommer tilbake til DuckDuckGo etter %@ med inaktivitet.";
 
 /* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
 "settings.afterInactivity.footer.none" = "Velg hva du vil se, når du kommer tilbake til DuckDuckGo.";
@@ -3534,7 +3534,7 @@
 "settings.afterInactivity.interval.label" = "Inaktivitetstidtaker";
 
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Etter inaktivitet";
+"settings.afterInactivity.label" = "Gjenopptaksskjerm";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Sist brukte fane";

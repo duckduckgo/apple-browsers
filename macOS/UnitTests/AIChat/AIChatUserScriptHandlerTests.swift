@@ -935,7 +935,7 @@ struct AIChatUserScriptHandlerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("When aiChatNativeVoicePermissionFlow is enabled, supportsNativeVoicePermissionHandler is true", .timeLimit(.minutes(1)))
-    func testWhenAIChatNativeVoicePermissionFlowEnabledThenSupportsNativeVoiceChatPermissionPromptIsTrue() {
+    func testWhenAIChatNativeVoicePermissionFlowEnabledThenSupportsNativeVoicePermissionHandlerIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared)
@@ -945,7 +945,7 @@ struct AIChatUserScriptHandlerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("When aiChatNativeVoicePermissionFlow is disabled, supportsNativeVoicePermissionHandler is false", .timeLimit(.minutes(1)))
-    func testWhenAIChatNativeVoicePermissionFlowDisabledThenSupportsNativeVoiceChatPermissionPromptIsFalse() {
+    func testWhenAIChatNativeVoicePermissionFlowDisabledThenSupportsNativeVoicePermissionHandlerIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: false)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared)

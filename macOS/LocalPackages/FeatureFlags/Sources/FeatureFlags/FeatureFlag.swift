@@ -372,7 +372,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// macOS only. Gates the native-driven Duck.ai voice-chat microphone permission flow
     /// (auto-grant at launch, locked Permission Center row, system-disabled warning UI,
     /// FE→native failure handler that surfaces the popover).
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214713654448759
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214713654448759
     case aiChatNativeVoicePermissionFlow
 }
 

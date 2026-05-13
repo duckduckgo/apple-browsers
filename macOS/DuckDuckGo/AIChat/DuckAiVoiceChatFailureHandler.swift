@@ -85,6 +85,11 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
         guard !permissionCenterPresenter.isPermissionCenterPresented(for: sourceWebView) else { return }
 
         permissionCenterPresenter.presentPermissionCenter(for: sourceWebView)
+        // Fired when we _request_ the popover, not when AppKit confirms it's on screen.
+        // Posting the notification synchronously delivers it to the address-bar observer
+        // on the same run loop turn, but if no observer matches (background window, tab
+        // already gone) the popover won't actually appear. Treat this as "attempted to
+        // surface", not "definitely shown".
         pixelFiring?.fire(
             AIChatPixel.aiChatVoiceChatStartFailed(reason: .micOsDenied),
             frequency: .dailyAndCount

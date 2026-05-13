@@ -376,8 +376,10 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     // MARK: - aiChatNativeVoicePermissionFlow flag
 
-    func testWhenFlagOn_andMicrophoneOnDuckAi_andOSMicDenied_thenItemIsLocked() {
+    func testWhenFlagOn_andMicrophoneOnDuckAi_thenItemIsLocked() {
         mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        // OS state .denied keeps the row visible so we can inspect `isLocked` — the lock
+        // itself depends on flag + host + permission type, not on the OS state.
         mockSystemPermissionManager.authorizationStateToReturn = .denied
         var usedPermissions = Permissions()
         usedPermissions[.microphone] = .active

@@ -55,14 +55,26 @@ final class DuckAiVoiceChatPermissionMigration: DuckAiVoiceChatPermissionMigrati
     func tryToMigrateVoiceChatPermission() {
         guard let host = aiChatURL.host else { return }
 
+        let isPersisted = permissionManager.hasPermissionPersisted(forDomain: host, permissionType: .microphone)
+
         switch permissionManager.permission(forDomain: host, permissionType: .microphone) {
         case .deny:
+            // `aiChatNativeStorage` is at 100% rollout in production, so `storageHandler`
+            // is effectively always non-nil here. In dev builds with that flag off the
+            // FE's `hasVoiceModeConsent` lives in localStorage out of native's reach,
+            // and the consent-clear becomes a no-op — accepted since it can't reach prod.
             try? storageHandler?.putEntry(key: Self.voiceModeConsentKey, value: false)
             permissionManager.setPermission(.allow, forDomain: host, permissionType: .microphone)
             pixelFiring?.fire(AIChatPixel.aiChatVoiceChatPermissionAutoGranted(from: .deny), frequency: .dailyAndCount)
         case .ask:
             permissionManager.setPermission(.allow, forDomain: host, permissionType: .microphone)
-            pixelFiring?.fire(AIChatPixel.aiChatVoiceChatPermissionAutoGranted(from: .ask), frequency: .dailyAndCount)
+            // `.ask` is also the fallback when nothing is persisted, so fresh installs read
+            // as `.ask` too. Only fire the migration pixel when the user actually had a
+            // persisted `.ask` decision — otherwise telemetry conflates "fresh user we
+            // pre-allowed" with "explicit `.ask` we migrated".
+            if isPersisted {
+                pixelFiring?.fire(AIChatPixel.aiChatVoiceChatPermissionAutoGranted(from: .ask), frequency: .dailyAndCount)
+            }
         case .allow:
             break
         }

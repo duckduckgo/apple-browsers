@@ -572,6 +572,11 @@ final class AddressBarButtonsViewController: NSViewController {
             }
             closePrivacyDashboard()
             closePermissionPopovers()
+            // The force-show flag is owned by the controller (one per window), not by a tab.
+            // If we just closed a Permission Center popover that was being held open by the
+            // voice-chat-failure flow, drop the override here too — otherwise it can leak
+            // onto the next tab's button visibility until `popoverDidClose` finally fires.
+            isForcingPermissionCenterButtonVisible = false
 
             self.tabViewModel = tabViewModel
             subscribeToUrl()

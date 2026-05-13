@@ -66,10 +66,13 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    // MARK: - .ask (no entry persisted)
+    // MARK: - .ask (no entry persisted — fresh install)
 
-    func testWhenNothingPersisted_thenSetsToAllowAndFiresFromAsk() {
-        // No prior entry → permission(forDomain:permissionType:) returns .ask
+    func testWhenNothingPersisted_thenSetsToAllowAndDoesNotFirePixel() {
+        // No prior entry → permission(forDomain:permissionType:) returns .ask by default,
+        // but hasPermissionPersisted is false. We still pin to .allow so the user gets the
+        // seamless flow, but we don't fire the migration pixel — there was nothing to
+        // migrate, this is a fresh install.
 
         sut.tryToMigrateVoiceChatPermission()
 
@@ -81,12 +84,8 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
 
         XCTAssertEqual(storageHandler.putEntryCalls.count, 0)
 
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
-            ExpectedFireCall(
-                pixel: AIChatPixel.aiChatVoiceChatPermissionAutoGranted(from: .ask),
-                frequency: .dailyAndCount
-            )
-        ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty,
+                      "Pixel must not fire for fresh installs — no decision was migrated")
     }
 
     func testWhenStoredDecisionIsAsk_thenSetsToAllowAndFiresFromAsk() {

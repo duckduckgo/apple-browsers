@@ -19,6 +19,7 @@
 
 import AIChat
 import ContentBlocking
+import Persistence
 import PrivacyConfig
 import Core
 import DDGSync
@@ -40,6 +41,7 @@ final class ContentBlockingService {
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          internalUserDecider: InternalUserDecider,
          syncErrorHandler: SyncErrorHandler,
+         keyValueStore: ThrowingKeyValueStoring,
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil) {
@@ -59,6 +61,7 @@ final class ContentBlockingService {
                                                                            webExtensionAvailability: webExtensionAvailability)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
-                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                           keyValueStore: keyValueStore)
     }
 }

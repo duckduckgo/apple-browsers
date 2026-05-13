@@ -236,6 +236,20 @@ public class Tab: NSObject, NSCoding {
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
 
+    /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
+    func archivalSnapshot() -> Tab {
+        Tab(uid: uid,
+            link: link?.copy() as? Link,
+            viewed: viewed,
+            desktop: isDesktop,
+            lastViewedDate: lastViewedDate,
+            daxEasterEggLogoURL: daxEasterEggLogoURL,
+            contextualChatURL: contextualChatURL,
+            supportsTabHistory: supportsTabHistory,
+            fireTab: fireTab,
+            unifiedInputState: unifiedInputState)
+    }
+
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
         return uid == other.uid

@@ -63,6 +63,7 @@ public struct SyncWithServerView: View {
         } foregroundContent: {
             VStack(spacing: 8) {
                 Button {
+                    model.delegate?.fireSyncSetupPixel(event: .signupConfirmedTapped)
                     model.startSyncPressed()
                 } label: {
                     Text(UserText.connectWithServerSheetButton)

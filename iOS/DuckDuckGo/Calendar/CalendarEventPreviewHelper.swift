@@ -54,17 +54,19 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
     }
 
     func preview() {
+        // No EKEventEditViewController flow on iOS <17, so skip classification — failure
+        // toasts would wrongly imply the file is the problem.
+        guard #available(iOS 17.0, *) else {
+            fallbackToQuickLook()
+            return
+        }
         let result = ICSFileReader.read(at: filePath)
         if result.warnings.contains(.unsupportedRRulePart) {
             Pixel.fire(pixel: .icsCalendarUnsupportedRRule)
         }
         switch result.outcome {
         case .singleEvent(let event):
-            if #available(iOS 17.0, *) {
-                presentEventEditor(for: event)
-            } else {
-                fallbackToQuickLook()
-            }
+            presentEventEditor(for: event)
         case .multipleEvents:
             Pixel.fire(pixel: .icsCalendarFallbackMultipleEvents)
             onFailure?(.multipleEvents)

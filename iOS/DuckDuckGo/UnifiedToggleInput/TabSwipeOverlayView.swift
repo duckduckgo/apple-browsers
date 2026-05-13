@@ -76,6 +76,8 @@ final class TabSwipeOverlayView: UIView {
 
         let chromeColor = UIColor(designSystemColor: .panel)
         for (idx, snapshot) in snapshots.enumerated() {
+            // Skip non-adjacent pages: a single swipe can't reach them
+            guard let snapshot else { continue }
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true

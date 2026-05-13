@@ -280,14 +280,15 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         // Include the trailing "new tab" cell so swiping past the last tab works.
         let extras = tabs.last?.link != nil ? 1 : 0
         let pageCount = tabs.count + extras
+        // A single swipe can only reach an adjacent page, so we only need snapshots for
+        // current ± 1. Non-adjacent pages stay nil — the overlay skips view creation for them.
         let snapshots: [UIImage?] = (0..<pageCount).map { idx in
             if idx == currentIndex {
                 return sourceImage
             }
-            guard idx < tabs.count else { return nil }
+            guard abs(idx - currentIndex) == 1, idx < tabs.count else { return nil }
             // Full-screen snapshot preferred (chrome included). Fall back to the legacy
-            // webview-only preview if we haven't captured this tab's screen yet — better than
-            // blank.
+            // webview-only preview if we haven't captured this tab's screen yet
             if let cached = tabPreviewsSource.fullScreenSnapshot(for: tabs[idx]) {
                 return cached
             }

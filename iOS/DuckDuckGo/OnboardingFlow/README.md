@@ -4,7 +4,7 @@
 |---|---|
 | ① Landing | `hasSeenOnboarding = false` + FF `onboardingRebranding = ON` + launch app |
 | ②a Intro `.default` | reach ① + `onboardingUserType = .newUser` (Debug menu) |
-| ②b Intro `.restoreData` | reach ① + `onboardingUserType = .returningUser` + sync account exists (eligible for restore) |
+| ②b Intro `.restoreData` | reach ① + `onboardingUserType = .returningUser` + sync account exists (eligible for restore). Shortcut: Debug menu → Onboarding → toggle **"Force Restore Prompt Eligible"** (DEBUG/ALPHA only). |
 | ②c Intro `.skipTutorial` | reach ① + `onboardingUserType = .returningUser` + no sync account |
 | ③ Skip confirmation | reach any ② + tap **Skip** |
 | ④ Browsers Comparison | reach ②a/②c + tap **Continue** (or ②b + Skip without restore) |

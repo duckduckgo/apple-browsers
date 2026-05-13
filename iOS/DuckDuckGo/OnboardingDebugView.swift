@@ -86,6 +86,18 @@ struct OnboardingDebugView: View {
                         Text(verbatim: "Type:")
                     }
                 )
+
+                Toggle(
+                    isOn: $viewModel.forceRestorePromptEligible,
+                    label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: "Force Restore Prompt Eligible")
+                            Text(verbatim: "Sets Returning User and forces the .restoreData intro on next launch.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                )
             } header: {
                 Text(verbatim: "Onboarding User Type")
             }
@@ -123,12 +135,24 @@ final class OnboardingDebugViewModel: ObservableObject {
         }
     }
 
+    @Published var forceRestorePromptEligible: Bool {
+        didSet {
+            appSettings.onboardingForceRestorePromptEligible = forceRestorePromptEligible
+            // Restore prompt only shows for returning users — flip the picker so the
+            // combination needed to reach Intro (.restoreData) is set from one toggle.
+            if forceRestorePromptEligible, onboardingUserType != .returningUser {
+                onboardingUserType = .returningUser
+            }
+        }
+    }
+
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsUserDefaults
     private let searchExperience: OnboardingSearchExperience
     private let userDefaults: UserDefaults
+    private var appSettings: OnboardingDebugAppSettings
 
     /// Key used by `OnboardingPixelReporter` to flag the second-site-visit pixel.
     /// Duplicated here (rather than exposed publicly) to avoid widening the reporter's API
@@ -141,7 +165,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
         searchExperience: OnboardingSearchExperience = OnboardingSearchExperience(),
-        userDefaults: UserDefaults = .app
+        userDefaults: UserDefaults = .app,
+        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings
     ) {
         self.manager = manager
         self.settings = settings
@@ -149,7 +174,9 @@ final class OnboardingDebugViewModel: ObservableObject {
         self.statisticsStore = statisticsStore
         self.searchExperience = searchExperience
         self.userDefaults = userDefaults
+        self.appSettings = appSettings
         onboardingUserType = manager.onboardingUserTypeDebugValue
+        forceRestorePromptEligible = appSettings.onboardingForceRestorePromptEligible
     }
 
     func resetAllOnboarding() {
@@ -170,6 +197,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         searchExperience.resetForDebug()
         // Reset the "user already visited a second site" flag used by pixel reporting.
         userDefaults.removeObject(forKey: Self.siteVisitedUserDefaultsKey)
+        // Clear the debug override that forces the restore prompt to be eligible.
+        forceRestorePromptEligible = false
         resetDaxDialogs()
     }
 

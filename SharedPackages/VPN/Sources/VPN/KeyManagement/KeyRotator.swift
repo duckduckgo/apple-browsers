@@ -27,19 +27,16 @@ final class KeyRotator {
     private let settings: VPNSettings
     private let events: EventMapping<PacketTunnelProvider.Event>
 
-    private weak var tunnelState: (any TunnelStateProviding)?
     private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
 
     init(keyStore: NetworkProtectionKeyStore,
          settings: VPNSettings,
          events: EventMapping<PacketTunnelProvider.Event>,
-         tunnelState: any TunnelStateProviding,
          tunnelLifecycle: any TunnelLifecycleManaging) {
 
         self.keyStore = keyStore
         self.settings = settings
         self.events = events
-        self.tunnelState = tunnelState
         self.tunnelLifecycle = tunnelLifecycle
     }
 
@@ -55,16 +52,12 @@ final class KeyRotator {
 
         events.fire(.rekeyAttempt(.begin))
 
-        guard let tunnelState, let tunnelLifecycle else {
+        guard let tunnelLifecycle else {
             return
         }
 
         do {
-            try await tunnelLifecycle.updateTunnelConfiguration(
-                updateMethod: .selectServer(tunnelState.currentServerSelectionMethod),
-                reassert: false,
-                regenerateKey: true)
-
+            try await tunnelLifecycle.performRekey()
             events.fire(.rekeyAttempt(.success))
         } catch {
             events.fire(.rekeyAttempt(.failure(error)))

@@ -31,6 +31,7 @@ protocol TunnelStateProviding: AnyObject {
 protocol TunnelLifecycleManaging: AnyObject {
     @MainActor func cancelTunnel(with error: Error) async
     @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, regenerateKey: Bool) async throws
+    @MainActor func performRekey() async throws
     @MainActor func restartAdapter() async throws
     @MainActor func resetRegistrationKey()
     @MainActor func removeToken() async throws

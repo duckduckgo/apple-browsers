@@ -481,7 +481,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             keyStore: keyStore,
             settings: settings,
             events: providerEvents,
-            tunnelState: self,
             tunnelLifecycle: self
         )
 
@@ -1802,6 +1801,13 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
 
     func removeToken() async throws {
         try await tokenHandlerProvider.removeToken()
+    }
+
+    func performRekey() async throws {
+        try await updateTunnelConfiguration(
+            updateMethod: .selectServer(currentServerSelectionMethod),
+            reassert: false,
+            regenerateKey: true)
     }
 }
 

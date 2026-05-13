@@ -37,7 +37,6 @@ final class KeyRotatorTests: XCTestCase {
     private var settings: VPNSettings!
     private var firedEvents: FiredEventsBox!
     private var events: EventMapping<PacketTunnelProvider.Event>!
-    private var tunnelState: MockTunnelStateProvider!
     private var tunnelLifecycle: MockTunnelLifecycleManager!
     private var rotator: KeyRotator!
 
@@ -59,7 +58,6 @@ final class KeyRotatorTests: XCTestCase {
             }
         }
 
-        tunnelState = MockTunnelStateProvider()
         tunnelLifecycle = MockTunnelLifecycleManager()
 
         // Tests hold strong references to the mocks — the rotator stores them
@@ -68,7 +66,6 @@ final class KeyRotatorTests: XCTestCase {
             keyStore: keyStore,
             settings: settings,
             events: events,
-            tunnelState: tunnelState,
             tunnelLifecycle: tunnelLifecycle
         )
     }
@@ -76,7 +73,6 @@ final class KeyRotatorTests: XCTestCase {
     override func tearDown() {
         rotator = nil
         tunnelLifecycle = nil
-        tunnelState = nil
         events = nil
         firedEvents = nil
         settings = nil
@@ -96,17 +92,15 @@ final class KeyRotatorTests: XCTestCase {
             XCTFail("Expected .userBecameActive, got \(firedEvents.events[0])")
             return
         }
-        XCTAssertFalse(tunnelLifecycle.updateTunnelConfigurationCalled)
+        XCTAssertFalse(tunnelLifecycle.performRekeyCalled)
     }
 
     // MARK: - rekey() success
 
-    func testRekey_success_callsUpdateTunnelConfigurationWithRegenerateKey() async throws {
+    func testRekey_success_callsPerformRekey() async throws {
         try await rotator.rekey()
 
-        XCTAssertTrue(tunnelLifecycle.updateTunnelConfigurationCalled)
-        XCTAssertEqual(tunnelLifecycle.lastReassert, false)
-        XCTAssertEqual(tunnelLifecycle.lastRegenerateKey, true)
+        XCTAssertTrue(tunnelLifecycle.performRekeyCalled)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
     }
 
@@ -114,7 +108,7 @@ final class KeyRotatorTests: XCTestCase {
 
     func testRekey_genericError_firesFailureAndRethrows_doesNotHandleAccessRevoked() async {
         struct SomeError: Error {}
-        tunnelLifecycle.errorToThrowFromUpdateTunnelConfiguration = SomeError()
+        tunnelLifecycle.errorToThrowFromPerformRekey = SomeError()
 
         do {
             try await rotator.rekey()
@@ -132,7 +126,7 @@ final class KeyRotatorTests: XCTestCase {
     func testRekey_vpnAccessRevoked_firesFailureCallsHandleAccessRevokedAndRethrows() async {
         struct Underlying: Error {}
         let revoked = PacketTunnelProvider.TunnelError.vpnAccessRevoked(Underlying())
-        tunnelLifecycle.errorToThrowFromUpdateTunnelConfiguration = revoked
+        tunnelLifecycle.errorToThrowFromPerformRekey = revoked
 
         do {
             try await rotator.rekey()

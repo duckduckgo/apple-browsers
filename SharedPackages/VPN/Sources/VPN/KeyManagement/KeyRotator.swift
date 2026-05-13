@@ -29,21 +29,18 @@ final class KeyRotator {
 
     private weak var tunnelState: (any TunnelStateProviding)?
     private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
-    private weak var tunnelReconfigurer: (any TunnelReconfiguring)?
 
     init(keyStore: NetworkProtectionKeyStore,
          settings: VPNSettings,
          events: EventMapping<PacketTunnelProvider.Event>,
          tunnelState: any TunnelStateProviding,
-         tunnelLifecycle: any TunnelLifecycleManaging,
-         tunnelReconfigurer: any TunnelReconfiguring) {
+         tunnelLifecycle: any TunnelLifecycleManaging) {
 
         self.keyStore = keyStore
         self.settings = settings
         self.events = events
         self.tunnelState = tunnelState
         self.tunnelLifecycle = tunnelLifecycle
-        self.tunnelReconfigurer = tunnelReconfigurer
     }
 
     func rekey() async throws {
@@ -58,12 +55,12 @@ final class KeyRotator {
 
         events.fire(.rekeyAttempt(.begin))
 
-        guard let tunnelState, let tunnelReconfigurer else {
+        guard let tunnelState, let tunnelLifecycle else {
             return
         }
 
         do {
-            try await tunnelReconfigurer.updateTunnelConfiguration(
+            try await tunnelLifecycle.updateTunnelConfiguration(
                 updateMethod: .selectServer(tunnelState.currentServerSelectionMethod),
                 reassert: false,
                 regenerateKey: true)
@@ -72,7 +69,7 @@ final class KeyRotator {
         } catch {
             events.fire(.rekeyAttempt(.failure(error)))
             if case PacketTunnelProvider.TunnelError.vpnAccessRevoked = error {
-                await tunnelLifecycle?.handleAccessRevoked(dueTo: error)
+                await tunnelLifecycle.handleAccessRevoked(dueTo: error)
             }
             throw error
         }

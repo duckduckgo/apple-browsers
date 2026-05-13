@@ -21,32 +21,6 @@ import Foundation
 import XCTest
 @testable import VPN
 
-// MARK: - Test Doubles
-
-// Tests must hold strong references to these mocks: the rotator stores them
-// as weak protocol refs to match the production wiring pattern.
-
-@MainActor
-private final class MockTunnelReconfigurer: TunnelReconfiguring {
-    var updateCallCount = 0
-    var lastUpdateMethod: PacketTunnelProvider.TunnelUpdateMethod?
-    var lastReassert: Bool?
-    var lastRegenerateKey: Bool?
-    var errorToThrow: Error?
-
-    func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod,
-                                   reassert: Bool,
-                                   regenerateKey: Bool) async throws {
-        updateCallCount += 1
-        lastUpdateMethod = updateMethod
-        lastReassert = reassert
-        lastRegenerateKey = regenerateKey
-        if let errorToThrow {
-            throw errorToThrow
-        }
-    }
-}
-
 /// Reference holder for fired events. EventMapping's closure is @Sendable, so we
 /// can't directly capture `self` (XCTestCase isn't Sendable). The box is only ever
 /// written/read from MainActor via assumeIsolated, so @unchecked is safe.
@@ -65,7 +39,6 @@ final class KeyRotatorTests: XCTestCase {
     private var events: EventMapping<PacketTunnelProvider.Event>!
     private var tunnelState: MockTunnelStateProvider!
     private var tunnelLifecycle: MockTunnelLifecycleManager!
-    private var tunnelReconfigurer: MockTunnelReconfigurer!
     private var rotator: KeyRotator!
 
     override func setUp() {
@@ -88,21 +61,20 @@ final class KeyRotatorTests: XCTestCase {
 
         tunnelState = MockTunnelStateProvider()
         tunnelLifecycle = MockTunnelLifecycleManager()
-        tunnelReconfigurer = MockTunnelReconfigurer()
 
+        // Tests hold strong references to the mocks — the rotator stores them
+        // as weak protocol refs to match the production wiring pattern.
         rotator = KeyRotator(
             keyStore: keyStore,
             settings: settings,
             events: events,
             tunnelState: tunnelState,
-            tunnelLifecycle: tunnelLifecycle,
-            tunnelReconfigurer: tunnelReconfigurer
+            tunnelLifecycle: tunnelLifecycle
         )
     }
 
     override func tearDown() {
         rotator = nil
-        tunnelReconfigurer = nil
         tunnelLifecycle = nil
         tunnelState = nil
         events = nil
@@ -124,7 +96,7 @@ final class KeyRotatorTests: XCTestCase {
             XCTFail("Expected .userBecameActive, got \(firedEvents.events[0])")
             return
         }
-        XCTAssertEqual(tunnelReconfigurer.updateCallCount, 0)
+        XCTAssertFalse(tunnelLifecycle.updateTunnelConfigurationCalled)
     }
 
     // MARK: - rekey() success
@@ -132,9 +104,9 @@ final class KeyRotatorTests: XCTestCase {
     func testRekey_success_callsUpdateTunnelConfigurationWithRegenerateKey() async throws {
         try await rotator.rekey()
 
-        XCTAssertEqual(tunnelReconfigurer.updateCallCount, 1)
-        XCTAssertEqual(tunnelReconfigurer.lastReassert, false)
-        XCTAssertEqual(tunnelReconfigurer.lastRegenerateKey, true)
+        XCTAssertTrue(tunnelLifecycle.updateTunnelConfigurationCalled)
+        XCTAssertEqual(tunnelLifecycle.lastReassert, false)
+        XCTAssertEqual(tunnelLifecycle.lastRegenerateKey, true)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
     }
 
@@ -142,7 +114,7 @@ final class KeyRotatorTests: XCTestCase {
 
     func testRekey_genericError_firesFailureAndRethrows_doesNotHandleAccessRevoked() async {
         struct SomeError: Error {}
-        tunnelReconfigurer.errorToThrow = SomeError()
+        tunnelLifecycle.errorToThrowFromUpdateTunnelConfiguration = SomeError()
 
         do {
             try await rotator.rekey()
@@ -160,7 +132,7 @@ final class KeyRotatorTests: XCTestCase {
     func testRekey_vpnAccessRevoked_firesFailureCallsHandleAccessRevokedAndRethrows() async {
         struct Underlying: Error {}
         let revoked = PacketTunnelProvider.TunnelError.vpnAccessRevoked(Underlying())
-        tunnelReconfigurer.errorToThrow = revoked
+        tunnelLifecycle.errorToThrowFromUpdateTunnelConfiguration = revoked
 
         do {
             try await rotator.rekey()

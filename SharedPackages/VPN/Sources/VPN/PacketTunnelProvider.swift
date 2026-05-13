@@ -482,8 +482,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             settings: settings,
             events: providerEvents,
             tunnelState: self,
-            tunnelLifecycle: self,
-            tunnelReconfigurer: self
+            tunnelLifecycle: self
         )
 
         self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
@@ -1795,10 +1794,7 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
     // cancelTunnel(with:) — already internal @MainActor
     // resetRegistrationKey() — already internal @MainActor
     // handleAccessRevoked(dueTo:) — already internal @MainActor
-
-    func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod, reassert: Bool) async throws {
-        try await updateTunnelConfiguration(updateMethod: updateMethod, reassert: reassert, regenerateKey: false)
-    }
+    // updateTunnelConfiguration(updateMethod:reassert:regenerateKey:) — already internal @MainActor
 
     func restartAdapter() async throws {
         try await handleRestartAdapter()
@@ -1821,12 +1817,6 @@ extension PacketTunnelProvider: LeakCheckControlling {
         Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
         await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
     }
-}
-
-// MARK: - TunnelReconfiguring
-
-extension PacketTunnelProvider: TunnelReconfiguring {
-    // updateTunnelConfiguration(updateMethod:reassert:regenerateKey:) — already internal @MainActor
 }
 
 // MARK: - Error Description Helper

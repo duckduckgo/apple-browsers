@@ -1,5 +1,5 @@
 //
-//  KeyRotator.swift
+//  RekeyCoordinator.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,8 +20,25 @@ import Common
 import Foundation
 import os.log
 
+/// Coordinates the rekey lifecycle without performing the rotation itself.
+///
+/// In scope:
+/// - Gating on `VPNSettings.disableRekeying` (short-circuits when the user has opted out).
+/// - Firing `.rekeyAttempt(.begin/.success/.failure)` telemetry around the operation.
+/// - Delegating the actual key regeneration to the injected `performRekey` closure
+///   (the caller — typically the packet tunnel provider — owns the WireGuard
+///   tunnel-reconfiguration plumbing).
+/// - Clearing the locally-cached registration keypair via `resetRegistrationKey()`
+///   so the next config request regenerates one.
+///
+/// Out of scope:
+/// - Performing the rotation itself (the closure does that).
+/// - Subscription / access-revoked routing — the caller's rekey closure wraps
+///   `rekey()` with `subscriptionAccessErrorHandler` for that.
+/// - Leak-check scheduling around rekey — also handled in the caller's closure.
+/// - Deciding *when* to rekey — `KeyExpirationTester` owns that.
 @MainActor
-final class KeyRotator {
+final class RekeyCoordinator {
 
     private let keyStore: NetworkProtectionKeyStore
     private let settings: VPNSettings

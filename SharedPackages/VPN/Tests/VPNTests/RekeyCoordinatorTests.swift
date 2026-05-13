@@ -1,5 +1,5 @@
 //
-//  KeyRotatorTests.swift
+//  RekeyCoordinatorTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -45,14 +45,14 @@ private final class PerformRekeyRecorder {
 // MARK: - Tests
 
 @MainActor
-final class KeyRotatorTests: XCTestCase {
+final class RekeyCoordinatorTests: XCTestCase {
 
     private var keyStore: NetworkProtectionKeyStoreMock!
     private var settings: VPNSettings!
     private var firedEvents: FiredEventsBox!
     private var events: EventMapping<PacketTunnelProvider.Event>!
     private var performRekeyRecorder: PerformRekeyRecorder!
-    private var rotator: KeyRotator!
+    private var coordinator: RekeyCoordinator!
 
     override func setUp() {
         super.setUp()
@@ -63,7 +63,7 @@ final class KeyRotatorTests: XCTestCase {
 
         let box = FiredEventsBox()
         firedEvents = box
-        // Events are fired from @MainActor contexts in KeyRotator, so capture
+        // Events are fired from @MainActor contexts in RekeyCoordinator, so capture
         // synchronously via assumeIsolated — tests can assert on firedEvents
         // immediately after each call without waiting.
         events = EventMapping<PacketTunnelProvider.Event> { event, _, _, _ in
@@ -75,7 +75,7 @@ final class KeyRotatorTests: XCTestCase {
         let recorder = PerformRekeyRecorder()
         performRekeyRecorder = recorder
 
-        rotator = KeyRotator(
+        coordinator = RekeyCoordinator(
             keyStore: keyStore,
             settings: settings,
             events: events,
@@ -86,7 +86,7 @@ final class KeyRotatorTests: XCTestCase {
     }
 
     override func tearDown() {
-        rotator = nil
+        coordinator = nil
         performRekeyRecorder = nil
         events = nil
         firedEvents = nil
@@ -100,7 +100,7 @@ final class KeyRotatorTests: XCTestCase {
     func testRekey_whenRekeyingDisabled_firesNoEventsAndReturns() async throws {
         settings.disableRekeying = true
 
-        try await rotator.rekey()
+        try await coordinator.rekey()
 
         XCTAssertEqual(firedEvents.events.count, 0)
         XCTAssertEqual(performRekeyRecorder.callCount, 0)
@@ -109,7 +109,7 @@ final class KeyRotatorTests: XCTestCase {
     // MARK: - rekey() success
 
     func testRekey_success_callsPerformRekey() async throws {
-        try await rotator.rekey()
+        try await coordinator.rekey()
 
         XCTAssertEqual(performRekeyRecorder.callCount, 1)
         assertEventSequence([.rekeyBegin, .rekeySuccess])
@@ -122,7 +122,7 @@ final class KeyRotatorTests: XCTestCase {
         performRekeyRecorder.errorToThrow = SomeError()
 
         do {
-            try await rotator.rekey()
+            try await coordinator.rekey()
             XCTFail("Expected error to be rethrown")
         } catch is SomeError {
             // expected
@@ -139,7 +139,7 @@ final class KeyRotatorTests: XCTestCase {
         keyStore.keyPair = KeyPair(privateKey: PrivateKey(), expirationDate: Date())
         XCTAssertNotNil(keyStore.keyPair)
 
-        rotator.resetRegistrationKey()
+        coordinator.resetRegistrationKey()
 
         XCTAssertNil(keyStore.keyPair)
     }

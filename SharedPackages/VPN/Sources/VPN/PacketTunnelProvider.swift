@@ -303,11 +303,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     public let tokenHandlerProvider: any SubscriptionTokenHandling
 
-    private var keyRotator: KeyRotator!
+    private var rekeyCoordinator: RekeyCoordinator!
 
     @MainActor
     func resetRegistrationKey() {
-        keyRotator.resetRegistrationKey()
+        rekeyCoordinator.resetRegistrationKey()
     }
 
     private func subscriptionAccessErrorHandler(_ error: Error) async {
@@ -477,7 +477,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
-        self.keyRotator = KeyRotator(
+        self.rekeyCoordinator = RekeyCoordinator(
             keyStore: keyStore,
             settings: settings,
             events: providerEvents,
@@ -504,7 +504,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             guard let self else { return }
             let preRekeyEgress = self.currentEgressInfo()
             do {
-                try await self.keyRotator.rekey()
+                try await self.rekeyCoordinator.rekey()
             } catch {
                 await self.subscriptionAccessErrorHandler(error)
                 throw error

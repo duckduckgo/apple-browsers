@@ -169,5 +169,4 @@ final class AIChatDebugMenu: NSMenu {
             _ = callback(nil)
         }
     }
-
 }

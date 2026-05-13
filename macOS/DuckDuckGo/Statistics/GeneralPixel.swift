@@ -316,6 +316,7 @@ enum GeneralPixel: PixelKitEvent {
     case duckAiNativeStorageFileGetError
     case duckAiNativeStorageFileListError
     case duckAiNativeStorageFileDeleteError
+    case duckAiNativeStorageLastUsedModelParseError
 
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
@@ -1047,6 +1048,7 @@ enum GeneralPixel: PixelKitEvent {
         case .duckAiNativeStorageFileGetError: return "m_mac_duck-ai_native-storage_file-get_error"
         case .duckAiNativeStorageFileListError: return "m_mac_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_mac_duck-ai_native-storage_file-delete_error"
+        case .duckAiNativeStorageLastUsedModelParseError: return "m_mac_duck-ai_native-storage_last-used-model-parse_error"
 
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"

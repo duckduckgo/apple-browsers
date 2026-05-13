@@ -278,6 +278,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
+    private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
@@ -315,6 +317,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
@@ -333,6 +336,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )
+        self.lastUsedModelProvider = lastUsedModelProvider
+            ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
@@ -409,6 +414,40 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript = nil
         boundUserScriptIdentifier = nil
         resetSessionState()
+    }
+
+    /// Subscribes to bridge-side chat-update events so the UTI's model/tools reflect any
+    /// model change the FE makes on the active chat (e.g. user picks a different model
+    /// mid-conversation). Replaces any previous subscription.
+    func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
+        chatUpdatesCancellable = publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] updatedChatID in
+                guard let self else { return }
+                guard let activeChatID = self.boundUserScript?.webView?.url?.duckAIChatID,
+                      activeChatID == updatedChatID else {
+                    return
+                }
+                self.restoreLastUsedModel(forChatID: activeChatID)
+            }
+    }
+
+    /// Reads the last-used model from native storage for `chatID` and applies it to the
+    /// model store so the toolbar (model chip + tools) reflects the model the chat last
+    /// used. No-op when the provider is unavailable or the chat has no recorded model.
+    /// Safe to call before models have loaded — `handleModelsUpdated()` will reconcile.
+    func restoreLastUsedModel(forChatID chatID: String) {
+        guard let lastUsedModelProvider else {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no provider configured")
+            return
+        }
+        guard let modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID) else {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no last-used model recorded")
+            return
+        }
+        Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
+        modelStore.updateSelectedModel(modelID)
+        handleModelsUpdated()
     }
 
     // MARK: - Per-Tab State

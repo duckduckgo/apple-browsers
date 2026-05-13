@@ -24,7 +24,7 @@ import TrackerRadarKit
 final class DaxDialogsNewTabTests: XCTestCase {
 
     var daxDialogs: DaxDialogs!
-    var settings: DaxDialogsSettings!
+    var settings: MockDaxDialogsSettings!
 
     override func setUp() {
         settings = MockDaxDialogsSettings()

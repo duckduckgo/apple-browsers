@@ -191,6 +191,7 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     func setFinalOnboardingDialogSeen() {}
 
     func setChatPathVisitSiteSeen() {}
+    func setAsChatFirstPath() {}
 
     var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
     var isChatFirstPath: Bool { false }

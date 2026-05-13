@@ -2053,6 +2053,9 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.action = #selector(quickFeedbackButtonClicked)
 
         button.image = DesignSystemImages.Glyphs.Size16.feedback
+        let iconsColor = theme.colorsProvider.iconsColor
+        button.contentTintColor = iconsColor
+        button.normalTintColor = iconsColor
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.setCornerRadius(theme.toolbarButtonsCornerRadius)
 

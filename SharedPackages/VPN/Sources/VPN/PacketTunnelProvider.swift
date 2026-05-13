@@ -303,11 +303,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     public let tokenHandlerProvider: any SubscriptionTokenHandling
 
-    private var rekeyCoordinator: RekeyCoordinator!
+    private var keyRotator: KeyRotator!
 
     @MainActor
     func resetRegistrationKey() {
-        rekeyCoordinator.resetRegistrationKey()
+        keyRotator.resetRegistrationKey()
     }
 
     private func subscriptionAccessErrorHandler(_ error: Error) async {
@@ -477,11 +477,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
-        self.rekeyCoordinator = RekeyCoordinator(
+        self.keyRotator = KeyRotator(
             keyStore: keyStore,
             settings: settings,
             events: providerEvents,
-            performRekey: { @MainActor [weak self] in
+            rotateKey: { @MainActor [weak self] in
                 // Provider deinit mid-rekey: surface as failure rather than silently succeeding,
                 // so .rekeyAttempt(.success) is never fired for a rekey that didn't run.
                 guard let self else { throw CancellationError() }
@@ -504,7 +504,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             guard let self else { return }
             let preRekeyEgress = self.currentEgressInfo()
             do {
-                try await self.rekeyCoordinator.rekey()
+                try await self.keyRotator.rekey()
             } catch {
                 await self.subscriptionAccessErrorHandler(error)
                 throw error

@@ -1,5 +1,5 @@
 //
-//  RekeyCoordinatorTests.swift
+//  KeyRotatorTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -28,9 +28,9 @@ private final class FiredEventsBox: @unchecked Sendable {
     var events: [PacketTunnelProvider.Event] = []
 }
 
-/// Records performRekey invocations and lets a test inject an error to throw.
+/// Records rotateKey invocations and lets a test inject an error to throw.
 @MainActor
-private final class PerformRekeyRecorder {
+private final class RotateKeyRecorder {
     var callCount = 0
     var errorToThrow: Error?
 
@@ -45,14 +45,14 @@ private final class PerformRekeyRecorder {
 // MARK: - Tests
 
 @MainActor
-final class RekeyCoordinatorTests: XCTestCase {
+final class KeyRotatorTests: XCTestCase {
 
     private var keyStore: NetworkProtectionKeyStoreMock!
     private var settings: VPNSettings!
     private var firedEvents: FiredEventsBox!
     private var events: EventMapping<PacketTunnelProvider.Event>!
-    private var performRekeyRecorder: PerformRekeyRecorder!
-    private var coordinator: RekeyCoordinator!
+    private var rotateKeyRecorder: RotateKeyRecorder!
+    private var rotator: KeyRotator!
 
     override func setUp() {
         super.setUp()
@@ -63,7 +63,7 @@ final class RekeyCoordinatorTests: XCTestCase {
 
         let box = FiredEventsBox()
         firedEvents = box
-        // Events are fired from @MainActor contexts in RekeyCoordinator, so capture
+        // Events are fired from @MainActor contexts in KeyRotator, so capture
         // synchronously via assumeIsolated — tests can assert on firedEvents
         // immediately after each call without waiting.
         events = EventMapping<PacketTunnelProvider.Event> { event, _, _, _ in
@@ -72,22 +72,22 @@ final class RekeyCoordinatorTests: XCTestCase {
             }
         }
 
-        let recorder = PerformRekeyRecorder()
-        performRekeyRecorder = recorder
+        let recorder = RotateKeyRecorder()
+        rotateKeyRecorder = recorder
 
-        coordinator = RekeyCoordinator(
+        rotator = KeyRotator(
             keyStore: keyStore,
             settings: settings,
             events: events,
-            performRekey: { @MainActor in
+            rotateKey: { @MainActor in
                 try await recorder.call()
             }
         )
     }
 
     override func tearDown() {
-        coordinator = nil
-        performRekeyRecorder = nil
+        rotator = nil
+        rotateKeyRecorder = nil
         events = nil
         firedEvents = nil
         settings = nil
@@ -100,18 +100,18 @@ final class RekeyCoordinatorTests: XCTestCase {
     func testRekey_whenRekeyingDisabled_firesNoEventsAndReturns() async throws {
         settings.disableRekeying = true
 
-        try await coordinator.rekey()
+        try await rotator.rekey()
 
         XCTAssertEqual(firedEvents.events.count, 0)
-        XCTAssertEqual(performRekeyRecorder.callCount, 0)
+        XCTAssertEqual(rotateKeyRecorder.callCount, 0)
     }
 
     // MARK: - rekey() success
 
     func testRekey_success_callsPerformRekey() async throws {
-        try await coordinator.rekey()
+        try await rotator.rekey()
 
-        XCTAssertEqual(performRekeyRecorder.callCount, 1)
+        XCTAssertEqual(rotateKeyRecorder.callCount, 1)
         assertEventSequence([.rekeyBegin, .rekeySuccess])
     }
 
@@ -119,10 +119,10 @@ final class RekeyCoordinatorTests: XCTestCase {
 
     func testRekey_error_firesFailureAndRethrows() async {
         struct SomeError: Error {}
-        performRekeyRecorder.errorToThrow = SomeError()
+        rotateKeyRecorder.errorToThrow = SomeError()
 
         do {
-            try await coordinator.rekey()
+            try await rotator.rekey()
             XCTFail("Expected error to be rethrown")
         } catch is SomeError {
             // expected
@@ -139,7 +139,7 @@ final class RekeyCoordinatorTests: XCTestCase {
         keyStore.keyPair = KeyPair(privateKey: PrivateKey(), expirationDate: Date())
         XCTAssertNotNil(keyStore.keyPair)
 
-        coordinator.resetRegistrationKey()
+        rotator.resetRegistrationKey()
 
         XCTAssertNil(keyStore.keyPair)
     }

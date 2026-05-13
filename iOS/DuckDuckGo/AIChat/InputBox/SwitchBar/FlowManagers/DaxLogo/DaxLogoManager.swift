@@ -108,16 +108,28 @@ final class DaxLogoManager {
         daxLogoView.logoAnimation.currentProgress
     }
 
+    /// Whether the logo container is currently visible.
+    var isLogoVisible: Bool {
+        logoContainerView.alpha > 0 && !forcedHidden
+    }
+
     /// Plays the Lottie transition to the given mode.
     /// Call after `updateVisibility` has set the new state — this method restores
-    /// the previous Lottie progress and animates to the target.
-    /// Plays the Lottie transition to the given mode.
-    /// Call after `updateVisibility` has set the new state — this method restores
-    /// the previous Lottie progress and animates to the target.
-    func animateLogoTransition(toMode mode: TextEntryMode, fromProgress previousProgress: CGFloat) {
+    /// the previous Lottie progress and animates to the target. If the logo was
+    /// not visible before (e.g. favorites were covering it), snaps directly to
+    /// the target without animating.
+    func animateLogoTransition(toMode mode: TextEntryMode,
+                               fromProgress previousProgress: CGFloat,
+                               wasLogoVisible: Bool) {
         guard !isFireTab, !forcedHidden else { return }
         let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
         guard previousProgress != targetProgress else { return }
+
+        guard wasLogoVisible else {
+            daxLogoView.updateProgress(targetProgress)
+            return
+        }
+
         isAnimatingLogoTransition = true
         daxLogoView.updateProgress(previousProgress)
         daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import EventKit
 import EventKitUI
 import ICSParser
@@ -61,12 +62,15 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
                 fallbackToQuickLook()
             }
         case .multipleEvents:
+            Pixel.fire(pixel: .icsCalendarFallbackMultipleEvents)
             onFailure?(.multipleEvents)
             fallbackToQuickLook()
         case .unrecognizedTimeZone:
+            Pixel.fire(pixel: .icsCalendarFallbackUnrecognizedTimeZone)
             onFailure?(.unrecognizedTimeZone)
             fallbackToQuickLook()
         case .parseFailure:
+            Pixel.fire(pixel: .icsCalendarFallbackParseFailure)
             onFailure?(.parseFailure)
             fallbackToQuickLook()
         }
@@ -84,8 +88,11 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
             return .parseFailure
         }
         do {
-            let events = try ICSParser.parse(data: data)
-            return events.count == 1 ? .singleEvent(events[0]) : .multipleEvents
+            let result = try ICSParser.parse(data: data)
+            if result.warnings.contains(.unsupportedRRulePart) {
+                Pixel.fire(pixel: .icsCalendarUnsupportedRRule)
+            }
+            return result.events.count == 1 ? .singleEvent(result.events[0]) : .multipleEvents
         } catch ICSParser.Error.unrecognizedTimeZone(_) {
             return .unrecognizedTimeZone
         } catch {
@@ -104,6 +111,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         editor.event = Self.makeEKEvent(from: icsEvent, in: store)
         editor.eventStore = store
         editor.editViewDelegate = self
+        Pixel.fire(pixel: .icsCalendarEditorPresented)
         viewController.present(editor, animated: true)
     }
 
@@ -135,6 +143,14 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
 extension CalendarEventPreviewHelper: EKEventEditViewDelegate {
 
     func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+        switch action {
+        case .saved:
+            Pixel.fire(pixel: .icsCalendarEditorSaved)
+        case .canceled, .deleted:
+            Pixel.fire(pixel: .icsCalendarEditorCancelled)
+        @unknown default:
+            break
+        }
         controller.dismiss(animated: true) { [weak self] in
             self?.onDismiss?()
         }

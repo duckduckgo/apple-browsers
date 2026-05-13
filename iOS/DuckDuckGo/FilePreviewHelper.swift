@@ -33,6 +33,10 @@ struct FilePreviewHelper {
         case .calendar where featureFlagger.isFeatureOn(.icsCalendarLinks):
             return CalendarEventPreviewHelper(filePath, viewController: viewController)
         default:
+            if featureFlagger.isFeatureOn(.icsCalendarLinks), filePath.pathExtension.lowercased() == "ics" {
+                Pixel.fire(pixel: .icsCalendarRoutedByExtension)
+                return CalendarEventPreviewHelper(filePath, viewController: viewController)
+            }
             return QuickLookPreviewHelper(filePath, viewController: viewController)
         }
     }
@@ -47,5 +51,13 @@ struct FilePreviewHelper {
         default:
             return false
         }
+    }
+
+    /// True when the URL points at an `.ics` file and we should auto-preview it as a calendar
+    /// event despite the MIME type being something other than `text/calendar`. Gated on the
+    /// ICS feature flag so behaviour on flag-off matches the pre-feature world.
+    static func canAutoPreviewICSByExtension(_ url: URL?, featureFlagger: FeatureFlagger) -> Bool {
+        guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
+        return url?.pathExtension.lowercased() == "ics"
     }
 }

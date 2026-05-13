@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import EventKit
 import EventKitUI
 import SwiftUI
@@ -39,6 +40,7 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
         editor.event = preparedEvent.event
         editor.eventStore = preparedEvent.store
         editor.editViewDelegate = context.coordinator
+        Pixel.fire(pixel: .icsCalendarEditorPresented)
         return editor
     }
 
@@ -56,6 +58,14 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
         }
 
         func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+            switch action {
+            case .saved:
+                Pixel.fire(pixel: .icsCalendarEditorSaved)
+            case .canceled, .deleted:
+                Pixel.fire(pixel: .icsCalendarEditorCancelled)
+            @unknown default:
+                break
+            }
             controller.dismiss(animated: true)
             onDismiss()
         }

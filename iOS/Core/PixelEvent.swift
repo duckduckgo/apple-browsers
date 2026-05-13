@@ -377,6 +377,15 @@ extension Pixel {
         case downloadStartedDueToUnhandledMIMEType
         case downloadTriedToPresentPreviewWithoutTab
         case downloadsListOpened
+
+        case icsCalendarEditorPresented
+        case icsCalendarEditorSaved
+        case icsCalendarEditorCancelled
+        case icsCalendarFallbackMultipleEvents
+        case icsCalendarFallbackUnrecognizedTimeZone
+        case icsCalendarFallbackParseFailure
+        case icsCalendarRoutedByExtension
+        case icsCalendarUnsupportedRRule
         
         case downloadsListOngoingDownloadCancelled
         case downloadsListCompleteDownloadDeleted
@@ -2189,6 +2198,15 @@ extension Pixel.Event {
         case .downloadStartedDueToUnhandledMIMEType: return "m_download_started_due_to_unhandled_mime_type"
         case .downloadTriedToPresentPreviewWithoutTab: return "m_download_tried_to_present_preview_without_tab"
         case .downloadsListOpened: return "m_downloads_list_opened"
+
+        case .icsCalendarEditorPresented: return "m_ics_calendar_editor_presented"
+        case .icsCalendarEditorSaved: return "m_ics_calendar_editor_saved"
+        case .icsCalendarEditorCancelled: return "m_ics_calendar_editor_cancelled"
+        case .icsCalendarFallbackMultipleEvents: return "m_ics_calendar_fallback_multiple_events"
+        case .icsCalendarFallbackUnrecognizedTimeZone: return "m_ics_calendar_fallback_unrecognized_time_zone"
+        case .icsCalendarFallbackParseFailure: return "m_ics_calendar_fallback_parse_failure"
+        case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
+        case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
             
         case .downloadsListOngoingDownloadCancelled: return "m_downloads_list_ongoing_download_cancelled"
         case .downloadsListCompleteDownloadDeleted: return "m_downloads_list_complete_download_deleted"

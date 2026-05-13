@@ -1807,7 +1807,8 @@ extension TabViewController: WKNavigationDelegate {
                 // First we need to trigger download to handle it then in webView:navigationAction:didBecomeDownload
                 return .download
             }
-        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) {
+        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) ||
+                    FilePreviewHelper.canAutoPreviewICSByExtension(navigationResponse.response.url, featureFlagger: featureFlagger) {
             // 2. For this MIME type we are able to provide a better custom preview via FilePreviewHelper so it takes priority
             let (policy, download) = await startDownload(with: navigationResponse)
             mostRecentAutoPreviewDownloadID = download?.id
@@ -3021,9 +3022,11 @@ extension TabViewController {
     }
 
     private func previewDownloadedFileIfNecessary(_ download: Download) {
+        let canAutoPreview = FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType) ||
+            FilePreviewHelper.canAutoPreviewICSByExtension(download.location, featureFlagger: featureFlagger)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
-              FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType),
+              canAutoPreview,
               let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
         else { return }
 

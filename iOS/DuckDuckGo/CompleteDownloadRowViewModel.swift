@@ -44,12 +44,12 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
               featureFlagger.isFeatureOn(.icsCalendarLinks),
               fileURL.pathExtension.lowercased() == "ics",
               let data = try? Data(contentsOf: fileURL),
-              let events = try? ICSParser.parse(data: data),
-              events.count == 1 else {
+              let result = try? ICSParser.parse(data: data),
+              result.events.count == 1 else {
             return nil
         }
         let store = EKEventStore()
-        let event = CalendarEventPreviewHelper.makeEKEvent(from: events[0], in: store)
+        let event = CalendarEventPreviewHelper.makeEKEvent(from: result.events[0], in: store)
         return PreparedCalendarEvent(event: event, store: store)
     }
 }

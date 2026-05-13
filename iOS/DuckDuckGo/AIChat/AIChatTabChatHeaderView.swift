@@ -321,12 +321,15 @@ final class AIChatTabChatHeaderView: UIView {
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
         titleLabel.isHidden = state.isSubscriptionActive != true
+        // Voice session locks the user in — hide every left-side pill so they can only exit via
+        // the in-page mic dismiss (which triggers FE → voiceSessionEnded → chrome restores).
+        let hideLeft = state.isVoiceSessionActive
         // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
-        titleHolder.isHidden = state.showsNavPair
-        backPill.isHidden = !state.showsStandaloneBack
-        forwardPill.isHidden = !state.showsStandaloneForward
-        navPairPill.isHidden = !state.showsNavPair
-        leftPairPill.isHidden = state.isVoiceSessionActive
+        titleHolder.isHidden = state.showsNavPair || hideLeft
+        backPill.isHidden = hideLeft || !state.showsStandaloneBack
+        forwardPill.isHidden = hideLeft || !state.showsStandaloneForward
+        navPairPill.isHidden = hideLeft || !state.showsNavPair
+        leftPairPill.isHidden = hideLeft
         // Compose suppressed when nav arrows are visible — the row gets cluttered.
         newChatButton.isHidden = state.isNavigationVisible
         // When the title slot is hidden the left stack needs the freed width — otherwise the

@@ -425,14 +425,6 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// URL-driven recovery for when the user navigates away from voice via WebKit gestures, which
-    /// don't give FE a chance to emit `voiceSessionEnded`.
-    private func endVoiceSessionIfLeftVoiceURL(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        let onVoiceURL = (tab.url ?? tab.link?.url)?.isDuckAIVoiceMode == true
-        guard !onVoiceURL, coordinator.isVoiceSessionActive else { return }
-        applyVoiceSessionTransition(active: false, to: coordinator)
-    }
-
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
@@ -519,7 +511,6 @@ private extension MainViewController {
     ) -> Bool {
         let hasExistingChat = (tab.url ?? tab.link?.url)?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
-        endVoiceSessionIfLeftVoiceURL(tab: tab, coordinator: coordinator)
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
 

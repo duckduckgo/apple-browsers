@@ -61,4 +61,10 @@ struct FilePreviewHelper {
         guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
         return url?.pathExtension.lowercased() == "ics"
     }
+
+    /// ICS files must persist so the user can retry from Downloads when auto-add fails.
+    static func shouldPersistInDownloads(mimeType: MIMEType, url: URL?, featureFlagger: FeatureFlagger) -> Bool {
+        guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
+        return mimeType == .calendar || url?.pathExtension.lowercased() == "ics"
+    }
 }

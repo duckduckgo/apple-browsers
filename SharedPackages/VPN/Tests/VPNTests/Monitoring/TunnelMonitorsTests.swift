@@ -319,7 +319,7 @@ final class TunnelMonitorsTests: XCTestCase {
         await latencyMonitor.fire(.quality(.unknown))
 
         let reported = firedEvents.events.contains { event in
-            if case .reportLatency(.quality(_), _) = event { return true }
+            if case .reportLatency(.quality, _) = event { return true }
             return false
         }
         XCTAssertTrue(reported)

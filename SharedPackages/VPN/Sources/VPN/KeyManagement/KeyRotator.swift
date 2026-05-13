@@ -20,17 +20,6 @@ import Common
 import Foundation
 import os.log
 
-// MARK: - Dependency Protocols
-
-@MainActor
-protocol TunnelReconfiguring: AnyObject {
-    func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod,
-                                   reassert: Bool,
-                                   regenerateKey: Bool) async throws
-}
-
-// MARK: - KeyRotator
-
 @MainActor
 final class KeyRotator {
 

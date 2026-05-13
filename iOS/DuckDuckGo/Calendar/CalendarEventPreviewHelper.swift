@@ -84,7 +84,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
 
     @available(iOS 17.0, *)
     private func presentEventEditor(for icsEvent: ICSEvent) {
-        guard let viewController else {
+        guard let presenter = viewController?.topmostPresentedViewController else {
             onDismiss?()
             return
         }
@@ -94,7 +94,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         editor.eventStore = store
         editor.editViewDelegate = self
         Pixel.fire(pixel: .icsCalendarEditorPresented)
-        viewController.present(editor, animated: true)
+        presenter.present(editor, animated: true)
     }
 
     /// Bridges `ICSEvent` to `EKEvent`. Shared by the UIKit and SwiftUI presentation paths.

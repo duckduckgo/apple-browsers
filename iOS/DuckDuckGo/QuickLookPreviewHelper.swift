@@ -20,25 +20,38 @@
 import UIKit
 import QuickLook
 
-class QuickLookPreviewHelper: FilePreview {
+class QuickLookPreviewHelper: NSObject, FilePreview {
     private weak var viewController: UIViewController?
     private let filePath: URL
+
+    /// QLPreviewController holds its data source weakly; self-retain until dismissal.
+    private var selfRetain: QuickLookPreviewHelper?
 
     private lazy var qlPreview: QLPreviewController = {
         let preview = QLPreviewController()
         preview.dataSource = self
+        preview.delegate = self
         return preview
     }()
-    
+
     required init(_ filePath: URL, viewController: UIViewController) {
         self.filePath = filePath
         self.viewController = viewController
+        super.init()
     }
-    
+
     func preview() {
-        viewController?.present(qlPreview, animated: true, completion: nil)
+        guard let viewController else { return }
+        selfRetain = self
+        // Front-of-stack modals (address-bar editing, etc.) make UIKit drop our present silently.
+        let present = { [qlPreview] in viewController.present(qlPreview, animated: true) }
+        if let presented = viewController.presentedViewController {
+            presented.dismiss(animated: false, completion: present)
+        } else {
+            present()
+        }
     }
-    
+
     static func canPreview(_ url: URL) -> Bool {
         let previewItem = url as NSURL
         return QLPreviewController.canPreview(previewItem)
@@ -49,9 +62,15 @@ extension QuickLookPreviewHelper: QLPreviewControllerDataSource {
     func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
         return 1
     }
-    
+
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
         let string = self.filePath.absoluteString
         return NSURL(string: string)!
+    }
+}
+
+extension QuickLookPreviewHelper: QLPreviewControllerDelegate {
+    func previewControllerDidDismiss(_ controller: QLPreviewController) {
+        selfRetain = nil
     }
 }

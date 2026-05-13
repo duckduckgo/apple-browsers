@@ -55,6 +55,7 @@ public extension DesignSystemImages {
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }
+            public static var feedback: DesignSystemImage { .init(resource: .feedback12) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch12) }
             public static var fingerprint: DesignSystemImage { .init(resource: .fingerprint12) }
             public static var fire: DesignSystemImage { .init(resource: .fire12) }

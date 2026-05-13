@@ -120,7 +120,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
 }
 
 final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
-    let sendFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.feedback
+    let sendFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size12.feedback
     let addToDockIcon: NSImage = DesignSystemImages.Glyphs.Size16.addToHome
     let setAsDefaultBrowserIcon: NSImage = DesignSystemImages.Glyphs.Size16.setAsDefault
     let newTabIcon: NSImage = DesignSystemImages.Glyphs.Size16.add

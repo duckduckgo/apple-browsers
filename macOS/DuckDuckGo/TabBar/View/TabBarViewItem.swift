@@ -1423,12 +1423,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addNewToTheRightMenuItem(to menu: NSMenu) {
         let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
+        newTabMenuItem.image = DesignSystemImages.Glyphs.Size12.tabNew
         newTabMenuItem.target = self
         menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
         let duplicateMenuItem = NSMenuItem(title: UserText.duplicateTab, action: #selector(duplicateAction(_:)), keyEquivalent: "")
+        duplicateMenuItem.image = DesignSystemImages.Glyphs.Size12.windowDuplicate
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
@@ -1444,7 +1446,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
-        pinMenuItem.image = DesignSystemImages.Glyphs.Size12.pin
+        pinMenuItem.image = isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false

@@ -1971,6 +1971,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size12.feedback)
         }
     }
 

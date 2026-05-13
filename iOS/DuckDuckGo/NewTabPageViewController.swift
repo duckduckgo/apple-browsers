@@ -276,6 +276,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setNavigationBarHidden(false)
             (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
         }
         delegate = nil

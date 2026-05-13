@@ -40,10 +40,16 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         static let previewsDirectoryName = "Previews"
         static let fullScreenSubdirectoryName = "FullScreen"
         static let fullScreenJPEGQuality: CGFloat = 0.85
+        // buffer so quick back-and-forth swipes don't hit disk on every traversal.
+        static let fullScreenCacheCountLimit = 8
     }
 
     private var cache = [String: UIImage]()
-    private var fullScreenCache = [String: UIImage]()
+    private let fullScreenCache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = Constants.fullScreenCacheCountLimit
+        return cache
+    }()
 
     private lazy var tabSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
 
@@ -108,7 +114,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     
     func removeAllPreviews() -> Result<Void, Error> {
         cache.removeAll()
-        fullScreenCache.removeAll()
+        fullScreenCache.removeAllObjects()
         guard let dirUrl = previewStoreDir else { return .success(()) }
 
         var encounteredError: Error?
@@ -259,7 +265,8 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     // MARK: - Full-screen snapshots
 
     func fullScreenSnapshot(for tab: Tab) -> UIImage? {
-        if let cached = fullScreenCache[tab.uid] {
+        let key = tab.uid as NSString
+        if let cached = fullScreenCache.object(forKey: key) {
             return cached
         }
         guard let url = fullScreenSnapshotLocation(forTabUID: tab.uid),
@@ -267,12 +274,12 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
               let image = UIImage(data: data) else {
             return nil
         }
-        fullScreenCache[tab.uid] = image
+        fullScreenCache.setObject(image, forKey: key)
         return image
     }
 
     func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: Tab) {
-        fullScreenCache[tab.uid] = snapshot
+        fullScreenCache.setObject(snapshot, forKey: tab.uid as NSString)
         storeFullScreenSnapshot(snapshot, forTabUID: tab.uid)
     }
 
@@ -298,7 +305,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     }
 
     private func removeFullScreenSnapshot(forTabUID uid: String) {
-        fullScreenCache[uid] = nil
+        fullScreenCache.removeObject(forKey: uid as NSString)
         guard let url = fullScreenSnapshotLocation(forTabUID: uid) else { return }
         DispatchQueue.global(qos: .utility).async {
             try? FileManager.default.removeItem(at: url)
@@ -306,7 +313,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     }
 
     private func pruneFullScreenSnapshots(retainingTabUIDs ids: Set<String>) {
-        fullScreenCache = fullScreenCache.filter { ids.contains($0.key) }
+        fullScreenCache.removeAllObjects()
         guard let dir = fullScreenStoreDir else { return }
         DispatchQueue.global(qos: .utility).async {
             let files = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []

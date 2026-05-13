@@ -1,86 +1,62 @@
 flowchart TD
-    Launch([App launch / cold start])
-    Launch -->|"tutorialSettings.hasSeenOnboarding == true"| Browser([Browser — no onboarding])
-    Launch -->|"hasSeenOnboarding == false"| Configure
+    Start([App launch])
 
-    Configure["OnboardingManager.configureOnboardingFlow(from: url)<br/>evaluates CPP deep link"]
-    Configure -->|"evaluatedFlow == .duckAI<br/>AND FF onboardingDuckAIFlow == ON"| FlowDuckAI[onboardingFlowType = .duckAI]
-    Configure -->|"evaluatedFlow == .default<br/>OR FF onboardingDuckAIFlow == OFF"| FlowDefault[onboardingFlowType = .default]
+    Start -->|"hasSeenOnboarding == false<br/>FF onboardingRebranding = ON"| P1
 
-    FlowDuckAI --> Segue
-    FlowDefault --> Segue
+    P1["<b>① Landing</b><br/>Welcome to DuckDuckGo<br/>splash (waits for tap)"]
+    P1 -->|"user taps anywhere<br/>(isSkipped = true)"| IntroPicker
 
-    Segue{"MainViewController+Segues.swift:62<br/>segueToDaxOnboarding"}
-    Segue -->|"FF onboardingRebranding == OFF"| Legacy([Legacy OnboardingView — out of scope])
-    Segue -->|"FF onboardingRebranding == ON"| Rebranded[["OnboardingIntroViewController.rebranded<br/>+ RebrandedOnboardingView"]]
+    IntroPicker{Pick intro variant}
+    IntroPicker -->|"appDefaults.onboardingUserType == .newUser<br/>OR variant != VariantIOS.returningUser"| P2a
+    IntroPicker -->|"onboardingUserType == .returningUser<br/>AND restorePromptHandler.isEligibleForRestorePrompt() == true"| P2b
+    IntroPicker -->|"onboardingUserType == .returningUser<br/>AND NOT eligible for restore"| P2c
 
-    Rebranded --> Resume{"resumeStepStore.resumeStep != nil ?"}
-    Resume -->|"== .duckAIQuerySelection<br/>AND FF onboardingDuckAIQueryExperiment == ON"| StepDuckAIQuery
-    Resume -->|"== .browserComparison / .addToDockPromo / .appIconSelection /<br/>.addressBarPositionSelection / .searchExperienceSelection"| StepResumed[Resume at stored step]
-    Resume -->|"nil OR stored step not in current flow"| StepIntro
+    P2a["<b>②a Intro (.default)</b><br/>Hi! I'm Dax. Ready to take<br/>your privacy to the next level?<br/>[Let's do it!] [Skip]"]
+    P2b["<b>②b Intro (.restoreData)</b><br/>Welcome back! Restore your data?<br/>[Restore] [Skip]"]
+    P2c["<b>②c Intro (.skipTutorial)</b><br/>Welcome back! Skip tutorial?<br/>[Continue] [Skip]"]
 
-    StepResumed --> StepDispatcher
+    P2a -->|"tap Skip"| P3
+    P2b -->|"tap Skip"| P3
+    P2c -->|"tap Skip"| P3
+    P2b -->|"tap Restore<br/>→ restoreSyncAccountAction"| Browser
 
-    subgraph Linear ["Rebranded Linear Onboarding (state machine in OnboardingIntroViewModel)"]
-        direction TB
+    P3["<b>③ Skip confirmation</b><br/>Are you sure you want to skip?<br/>[Yes, skip] [Resume]"]
+    P3 -->|"Resume → back to intro"| IntroPicker
+    P3 -->|"Yes, skip<br/>hasSkippedOnboarding = true<br/>contextual dialogs disabled"| Browser
 
-        StepIntro(["Step: introDialog (isReturningUser)<br/>resumeStep = nil"])
-        StepIntro -->|"isNewUser == true<br/>(VariantManager.currentVariant != VariantIOS.returningUser)<br/>→ .default dialog"| StepDispatcher
-        StepIntro -->|"isNewUser == false<br/>AND restorePromptHandler.isEligibleForRestorePrompt() == true<br/>→ .restoreData prompt → Restore OR Skip CTA"| StepDispatcher
-        StepIntro -->|"isNewUser == false<br/>AND NOT eligible for restore<br/>→ .skipTutorial dialog"| StepDispatcher
-        StepIntro -->|"user taps Skip → confirmSkipOnboardingAction<br/>hasSkippedOnboarding = true<br/>contextualDaxDialogs.disableContextualDaxDialogs()"| SkipExit
+    P2a -->|"Let's do it!"| P4
+    P2c -->|"Continue"| P4
 
-        StepDispatcher{"OnboardingManager.stepsForCurrentFlow"}
-        StepDispatcher -->|"UIDevice.userInterfaceIdiom == .phone<br/>→ iPhoneFlow"| StepBrowserCmp
-        StepDispatcher -->|"UIDevice.userInterfaceIdiom == .pad<br/>→ iPadFlow"| StepBrowserCmp
+    P4["<b>④ Browsers Comparison</b><br/>How DuckDuckGo compares<br/>vs Chrome / Safari etc.<br/>[Next]"]
+    P4 -->|"idiom == .phone (iPhoneFlow)"| P5
+    P4 -->|"idiom == .pad (iPadFlow)"| P7
 
-        StepBrowserCmp(["Step: browserComparison<br/>resumeStep = .browserComparison"])
-        StepBrowserCmp -->|"idiom == .phone (iPhoneFlow)"| StepAddToDock
-        StepBrowserCmp -->|"idiom == .pad (iPadFlow skips addToDock)"| StepAppIcon
+    P5["<b>⑤ Add to Dock — Promo</b><br/>(iPhone only)<br/>Add me to your Dock<br/>[Show me how] [Skip]"]
+    P5 -->|"Show me how"| P5b
+    P5 -->|"Skip"| P7
 
-        StepAddToDock(["Step: addToDockPromo<br/>resumeStep = .addToDockPromo<br/>(iPhone only)"])
-        StepAddToDock -->|"makeNextViewState — unconditional"| StepAppIcon
+    P5b["<b>⑤b Add to Dock — Tutorial</b><br/>Animated tutorial<br/>[Got it]"]
+    P5b -->|"Got it"| P7
 
-        StepAppIcon(["Step: appIconSelection<br/>resumeStep = .appIconSelection"])
-        StepAppIcon -->|"idiom == .phone"| StepAddressBar
-        StepAppIcon -->|"idiom == .pad<br/>(end of iPadFlow array)"| Complete
+    P7["<b>⑥ App Icon Picker</b><br/>Which color looks best on me?<br/>[Next]"]
+    P7 -->|"idiom == .phone"| P8
+    P7 -->|"idiom == .pad<br/>END OF iPad FLOW"| Browser
 
-        StepAddressBar(["Step: addressBarPositionSelection<br/>resumeStep = .addressBarPositionSelection"])
-        StepAddressBar -->|"unconditional next"| StepSearchExp
+    P8["<b>⑦ Address Bar Position</b><br/>(iPhone only)<br/>Top vs Bottom<br/>[Next]"]
+    P8 -->|"Next"| P9
 
-        StepSearchExp(["Step: searchExperienceSelection<br/>resumeStep = .searchExperienceSelection"])
-        StepSearchExp -->|"didEnableAIChatSearchInputDuringOnboarding == true<br/>AND FF onboardingDuckAIQueryExperiment == ON<br/>AND resolveCohort ∈ {treatmentA, treatmentB}<br/>→ insertExperimentStepIfNeeded"| StepDuckAIQuery
-        StepSearchExp -->|"chose search-only<br/>OR experiment FF OFF<br/>OR cohort == .control / nil"| Complete
+    P9["<b>⑧ Search Experience</b><br/>(iPhone only)<br/>Easy access to private AI?<br/>[AI Chat] [Search only]"]
+    P9 -->|"chose Search only<br/>OR FF onboardingDuckAIQueryExperiment == OFF<br/>OR cohort ∈ {control, nil}"| Browser
+    P9 -->|"chose AI Chat<br/>AND FF onboardingDuckAIQueryExperiment == ON<br/>AND cohort ∈ {treatmentA, treatmentB}"| P10
 
-        StepDuckAIQuery(["Step: duckAIQuerySelection<br/>resumeStep = .duckAIQuerySelection"])
-        StepDuckAIQuery -->|"cohort == .treatmentA → defaultMode = .duckAI"| Complete
-        StepDuckAIQuery -->|"cohort == .treatmentB → defaultMode = .search"| Complete
-    end
+    P10["<b>⑨ Duck.ai Query Experiment</b><br/>Try a query (search or AI)<br/>defaultMode = duckAI if cohort=A<br/>defaultMode = search if cohort=B<br/>[Submit]"]
+    P10 -->|"Submit query"| Browser
 
-    Complete[/"completeOnboardingIntro<br/>tutorialSettings.hasSeenOnboarding = true<br/>OnboardingResumeCheckpointStore.clearAll<br/>(except duckAIAnswerStep handoff)"/]
-    SkipExit[/"Skipped: bypass contextual dialogs"/]
+    Browser([Browser opens<br/>hasSeenOnboarding = true])
 
-    SkipExit --> Browser
-    Complete --> ContextualGate
-
-    ContextualGate{"DaxDialogs.BrowsingSpec request<br/>ContextualDaxDialogsProvider.factory"}
-    ContextualGate -->|"FF onboardingRebranding == ON<br/>→ RebrandedContextualDaxDialogFactory"| Contextual
-    ContextualGate -->|"FF onboardingRebranding == OFF<br/>→ legacy factory (out of scope)"| Browser
-
-    subgraph Contextual ["Rebranded Contextual Dax Dialogs (in-browser)"]
-        direction TB
-        FirstSearch[afterSearch spec]
-        VisitWeb[visitWebsite spec<br/>shown on new tab]
-        Trackers["trackers specs:<br/>siteIsMajorTracker / siteOwnedByMajorTracker /<br/>withOneTracker / withMultipleTrackers / withoutTrackers"]
-        Fire["fire spec<br/>fireVariant from BrowsingSpec.SpecType.FireVariant"]
-        EndJourney[final / endOfJourney spec]
-        NewTabExtras["NewTab dialogs (RebrandedNewTabDaxDialogFactory):<br/>subscriptionPromo, addFavorite, trySearch, trySite"]
-    end
-
-    Contextual --> Browser
-
-    classDef flag fill:#fff3cd,stroke:#856404,color:#000
-    classDef gate fill:#cfe2ff,stroke:#084298,color:#000
-    classDef sink fill:#d1e7dd,stroke:#0f5132,color:#000
-    class Configure,Segue,Resume,StepDispatcher,ContextualGate gate
-    class Complete,SkipExit,Browser sink
+    classDef screen fill:#e8f4fd,stroke:#0366d6,stroke-width:2px,color:#000
+    classDef gate fill:#fff3cd,stroke:#856404,color:#000
+    classDef terminal fill:#d1e7dd,stroke:#0f5132,color:#000
+    class P1,P2a,P2b,P2c,P3,P4,P5,P5b,P7,P8,P9,P10 screen
+    class IntroPicker gate
+    class Browser,Start terminal

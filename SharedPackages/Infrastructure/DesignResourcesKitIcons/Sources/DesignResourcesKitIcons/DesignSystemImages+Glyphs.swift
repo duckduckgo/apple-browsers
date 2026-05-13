@@ -34,6 +34,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft12) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight12) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp12) }
+            public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight12) }
             public static var assist: DesignSystemImage { .init(resource: .assist12) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt12) }
             public static var audio: DesignSystemImage { .init(resource: .audio12) }
@@ -60,6 +61,7 @@ public extension DesignSystemImages {
             public static var email: DesignSystemImage { .init(resource: .email12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }
             public static var expand: DesignSystemImage { .init(resource: .expand12) }
+            public static var export: DesignSystemImage { .init(resource: .export12) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite12) }
             public static var feedback: DesignSystemImage { .init(resource: .feedback12) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert12) }
@@ -77,6 +79,7 @@ public extension DesignSystemImages {
             public static var history: DesignSystemImage { .init(resource: .history12) }
             public static var home: DesignSystemImage { .init(resource: .home12) }
             public static var images: DesignSystemImage { .init(resource: .images12) }
+            public static var `import`: DesignSystemImage { .init(resource: .import12) }
             public static var info: DesignSystemImage { .init(resource: .info12) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid12) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin12) }
@@ -85,6 +88,7 @@ public extension DesignSystemImages {
             public static var lockSolid: DesignSystemImage { .init(resource: .lockSolid12) }
             public static var maps: DesignSystemImage { .init(resource: .maps12) }
             public static var network: DesignSystemImage { .init(resource: .network12) }
+            public static var news: DesignSystemImage { .init(resource: .news12) }
             public static var night: DesignSystemImage { .init(resource: .night12) }
             public static var note: DesignSystemImage { .init(resource: .note12) }
             public static var open: DesignSystemImage { .init(resource: .open12) }
@@ -95,6 +99,7 @@ public extension DesignSystemImages {
             public static var policeBadge: DesignSystemImage { .init(resource: .policeBadge12) }
             public static var profile: DesignSystemImage { .init(resource: .profile12) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked12) }
+            public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }
             public static var sensor: DesignSystemImage { .init(resource: .sensor12) }
@@ -115,6 +120,7 @@ public extension DesignSystemImages {
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp12) }
             public static var toolbar: DesignSystemImage { .init(resource: .toolbar12) }
             public static var translateAi: DesignSystemImage { .init(resource: .translateAi12) }
+            public static var trash: DesignSystemImage { .init(resource: .trash12) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize12) }
             public static var voice: DesignSystemImage { .init(resource: .voice12) }
             public static var vpnOn: DesignSystemImage { .init(resource: .vpnOn12) }

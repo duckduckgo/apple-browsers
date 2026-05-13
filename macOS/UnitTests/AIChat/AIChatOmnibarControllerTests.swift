@@ -603,7 +603,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         // When
         controller.submit()
         // Submit awaits per-tab page-context extraction (M8) before clearing shared state.
-        for _ in 0..<5 { await Task.yield() }
+        // See sibling test for the rationale on sleep vs yield-loop.
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then — submit clears the active tab's saved tab attachments (the publisher then drives
         // the carousel back to empty). The active tab's image attachments are cleared by the same
@@ -625,9 +626,13 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // When
         controller.submit()
-        // Multiple yields because the submit Task awaits the per-tab page-context extraction
-        // (M8) before reaching `promptHandler.setData(prompt)`. One yield isn't enough.
-        for _ in 0..<5 { await Task.yield() }
+        // Brief sleep instead of `Task.yield`s: submit's `await extractPageContextsForOmnibarSubmit`
+        // dispatches a `withTaskGroup` with one `@MainActor` child task per attached tab. With
+        // both child tasks competing for the main actor with the submit task itself, the
+        // scheduler interleaving isn't deterministic across runs — a fixed-count yield loop
+        // sometimes finishes before the group's `for await pair in group` drains. Sleeping
+        // hands the scheduler a real time slice so everything settles before we assert.
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then — submit didn't crash, the tab-opener was called, and the prompt was posted as
         // a `.query` tool. The fact that the tab ids existed at submit time is enough to
@@ -667,7 +672,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenSubmitWithFileAttachments_ThenPromptCarriesFiles() async {
         // Given — a model that supports file upload, plus an attached PDF
         mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "pdf-model", entityHasAccess: true)
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
         ]
         mockPreferences.selectedModelId = "pdf-model"
         controller.onOmnibarActivated()
@@ -701,7 +706,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     func testWhenSubmitWithFileAttachments_ThenSharedStateClearsFileAttachments() async {
         mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "pdf-model", entityHasAccess: true)
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
         ]
         mockPreferences.selectedModelId = "pdf-model"
         controller.onOmnibarActivated()
@@ -1361,9 +1366,15 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// Creates a remote model for testing. Access is resolved locally from `accessTier`
     /// (not `entityHasAccess`), so `accessTier` must include `"free"` for the model to be
     /// accessible to the default free-tier test user.
+    ///
+    /// `supportedFileTypes` defaults to `nil` (no file upload support). Tests that exercise
+    /// the PDF/file-attachment submission path must pass a non-empty array — the controller's
+    /// `selectedModelSupportsFileUpload` gate is `!supportedFileTypes.isEmpty`, and the
+    /// submit body silently drops the file payload when that returns `false`.
     private func makeRemoteModel(
         id: String,
         supportsImageUpload: Bool = false,
+        supportedFileTypes: [String]? = nil,
         entityHasAccess: Bool = true,
         supportedTools: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = []
@@ -1375,6 +1386,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             provider: "openai",
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             accessTier: entityHasAccess ? ["free"] : ["plus", "pro"],
             supportedReasoningEffort: supportedReasoningEffort

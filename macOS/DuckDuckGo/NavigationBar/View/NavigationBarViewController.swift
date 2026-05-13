@@ -1080,8 +1080,8 @@ final class NavigationBarViewController: NSViewController {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
             downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton,
-            networkProtectionButton
-        ]
+            networkProtectionButton, feedbackButton
+        ].compactMap { $0 }
 
         let colorsProvider = theme.colorsProvider
 

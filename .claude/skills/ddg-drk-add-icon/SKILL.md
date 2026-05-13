@@ -1,9 +1,9 @@
 ---
-name: drk-add-icon
-description: Invoke ONLY when the user explicitly runs /drk-add-icon or names this skill by name (e.g. "use drk-add-icon to add these SVGs"). Do NOT auto-invoke from symptom/intent matching — the skill mutates the apple-browsers asset catalog and Swift files and creates a git commit, so it must be user-initiated. If the user asks about adding icons or Swift package assets without naming this skill, answer directly instead. Inputs are a list of local paths and/or HTTP URLs (one entry per icon); category (Glyph/Color/Recolorable) and size are derived from each filename. Handles imageset/symbolset creation, Contents.json variants, and the camelCase accessor in the matching DesignSystemImages+*.swift file, in a single batch commit.
+name: ddg-drk-add-icon
+description: Invoke ONLY when the user explicitly runs /ddg-drk-add-icon or names this skill by name (e.g. "use ddg-drk-add-icon to add these SVGs"). Do NOT auto-invoke from symptom/intent matching — the skill mutates the apple-browsers asset catalog and Swift files and creates a git commit, so it must be user-initiated. If the user asks about adding icons or Swift package assets without naming this skill, answer directly instead. Inputs are a list of local paths and/or HTTP URLs (one entry per icon); category (Glyph/Color/Recolorable) and size are derived from each filename. Handles imageset/symbolset creation, Contents.json variants, and the camelCase accessor in the matching DesignSystemImages+*.swift file, in a single batch commit.
 ---
 
-# drk-add-icon
+# ddg-drk-add-icon
 
 ## Overview
 

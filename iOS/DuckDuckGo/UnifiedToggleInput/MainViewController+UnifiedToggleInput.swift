@@ -835,6 +835,12 @@ private extension MainViewController {
 
             // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
             newTabPageViewController?.setLogoHidden(true)
+
+            // If the UTI Logo is showing the duck.ai state, morph it to the search state
+            // so it matches the NTP Logo by the time the swap happens.
+            if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
+                coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
+            }
         }
 
         UIView.animate(

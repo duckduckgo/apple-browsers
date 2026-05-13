@@ -108,6 +108,11 @@ final class DaxLogoManager {
         daxLogoView.logoAnimation.currentProgress
     }
 
+    /// Plays the Lottie from its current progress to the given target.
+    func animateProgress(to targetProgress: CGFloat) {
+        daxLogoView.animateProgress(to: targetProgress)
+    }
+
     /// Whether the logo container is currently visible.
     var isLogoVisible: Bool {
         logoContainerView.alpha > 0 && !forcedHidden

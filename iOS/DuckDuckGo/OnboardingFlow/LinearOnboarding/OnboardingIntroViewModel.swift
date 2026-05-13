@@ -470,7 +470,7 @@ private extension OnboardingIntroViewModel {
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
         // TODO: Remove this
-        return .treatmentA
+        return .treatmentB
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
         return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }

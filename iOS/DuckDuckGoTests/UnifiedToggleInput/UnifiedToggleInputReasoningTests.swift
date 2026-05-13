@@ -268,9 +268,11 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
     func unifiedToggleInputDidRequestAIVoiceChat() {}
-    func unifiedToggleInputDidRequestAIChat() {}
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }
 
 private final class MockAIChatReasoningPreferences: AIChatPreferencesPersisting {

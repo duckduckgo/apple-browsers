@@ -56,16 +56,19 @@ struct StartupOnboardingDecision {
 
     init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus,
          tutorialSettings: TutorialSettings,
-         resumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
-        let resumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
-        if resumeStepStore.resumeStep == .duckAIQueryExperimentSelection {
+         resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
+        let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
+        switch resumeStepStore.resumeStep {
+        case .browserComparison, .addToDockPromo, .appIconSelection,
+             .addressBarPositionSelection, .searchExperienceSelection,
+             .duckAIQuerySelection:
             shouldShowOnboarding = true
             return
-        }
-
-        if resumeStepStore.resumeStep == .duckAIAnswerStep {
+        case .duckAIAnswerStep:
             shouldShowOnboarding = false
             return
+        case .none:
+            break
         }
 
         switch onboardingStatus {
@@ -276,6 +279,7 @@ class MainViewController: UIViewController {
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
+    let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -310,7 +314,7 @@ class MainViewController: UIViewController {
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
-    let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
+    let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = {
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         return AdBlockingAvailability(
@@ -414,6 +418,7 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
+        onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
         daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
         daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
@@ -438,7 +443,7 @@ class MainViewController: UIViewController {
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil,
+        onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
         onboardingManager: OnboardingManaging
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -486,10 +491,14 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
-        self.duckAIOnboardingResumeStepStore = if let duckAIOnboardingResumeStepStore { duckAIOnboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
+        self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: daxDialogsManager
+        )
         self.daxEasterEggLogoStore = daxEasterEggLogoStore
         self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
@@ -551,6 +560,13 @@ class MainViewController: UIViewController {
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
+
+    /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
+    /// the swipe moves chrome+content as a single visual unit instead of as N separately
+    /// translated layers. Hidden when not swiping; populated and made visible by
+    /// `SwipeTabsCoordinator` at swipe start.
+    private var tabSwipeOverlayView: TabSwipeOverlayView?
+
     private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
@@ -678,7 +694,7 @@ class MainViewController: UIViewController {
         let startupOnboardingDecision = StartupOnboardingDecision(
             onboardingStatus: LaunchOptionsHandler().onboardingStatus,
             tutorialSettings: tutorialSettings,
-            resumeStepStore: duckAIOnboardingResumeStepStore
+            resumeStepStore: onboardingResumeStepStore
         )
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -794,13 +810,15 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
-                                                    omnibarDependencies: omnibarDependencies) { [weak self] in
+                                                    omnibarDependencies: omnibarDependencies) { [weak self] tab in
 
-            guard $0 !== self?.tabManager.currentTabsModel.currentTab else { return }
+            guard tab !== self?.tabManager.currentTabsModel.currentTab else {
+                return
+            }
 
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.selectTab($0)
+            self?.selectTab(tab)
 
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
@@ -810,6 +828,40 @@ class MainViewController: UIViewController {
             self?.performCancel()
             self?.hideKeyboard()
             self?.updatePreviewForCurrentTab()
+        }
+
+        installTabSwipeOverlay()
+    }
+
+    private func installTabSwipeOverlay() {
+        guard unifiedToggleInputFeature.isAvailable else { return }
+
+        let overlay = TabSwipeOverlayView(frame: view.bounds)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        overlay.alpha = 0
+        view.addSubview(overlay)
+        tabSwipeOverlayView = overlay
+        swipeTabsCoordinator?.swipeOverlayView = overlay
+    }
+
+    func captureCurrentTabScreenSnapshotIfPossible(tabUID: String) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else { return }
+            guard (self.tabSwipeOverlayView?.alpha ?? 0) == 0 else {
+                return
+            }
+            guard let currentTab = self.tabManager.currentTabsModel.currentTab,
+                  currentTab.uid == tabUID else {
+                return
+            }
+            guard self.view.window != nil,
+                  self.view.bounds.width > 0,
+                  self.view.bounds.height > 0 else { return }
+            let renderer = UIGraphicsImageRenderer(size: self.view.bounds.size)
+            let image = renderer.image { _ in
+                self.view.drawHierarchy(in: self.view.bounds, afterScreenUpdates: false)
+            }
+            self.previewsSource.updateFullScreenSnapshot(image, forTab: currentTab)
         }
     }
 
@@ -1525,6 +1577,13 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
+        // with the AI header shown and the standard toolbar hidden. Some attach paths
+        // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so
+        // without this the user lands on NTP with no visible bars.
+        viewCoordinator.hideAITabChrome()
+        reconcileToolbarVisibilityForCurrentTab()
+
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
@@ -1534,7 +1593,9 @@ class MainViewController: UIViewController {
         
         currentTab?.dismiss()
         removeHomeScreen()
-        homePageConfiguration.refresh()
+
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
+        homePageConfiguration.refresh(openedAfterIdle: hatch != nil)
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
@@ -1567,6 +1628,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   fireModePromotionEligibility: fireModePromotionEligibility,
+                                                  hasEscapeHatch: hatch != nil,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -1579,8 +1641,8 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
+        controller.setOpenTabCount(tabManager.currentTabsModel.count)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
@@ -1588,19 +1650,7 @@ class MainViewController: UIViewController {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
 
-        if let hatch {
-            let targetTab = hatch.targetTab
-            unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
-                guard let self else { return }
-                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    clearEscapeHatch()
-                    return
-                }
-                onSwitchToTab(targetTab)
-            })
-        } else {
-            clearEscapeHatch()
-        }
+        configureUnifiedInputEscapeHatch(hatch)
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
@@ -1627,6 +1677,29 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {
+        guard let hatch else {
+            clearEscapeHatch()
+            return
+        }
+        let targetTab = hatch.targetTab
+        unifiedToggleInputCoordinator?.setEscapeHatch(
+            hatch,
+            openTabCount: tabManager.currentTabsModel.count,
+            onTapped: { [weak self] in
+                guard let self else { return }
+                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
+                    clearEscapeHatch()
+                    return
+                }
+                onSwitchToTab(targetTab)
+            },
+            onTabSwitcherTapped: { [weak self] in
+                self?.requestTabSwitcher()
+            }
+        )
     }
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
@@ -1979,6 +2052,7 @@ class MainViewController: UIViewController {
 
     private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.setContentOverlaySuppressed(false)
         coordinator.deactivateToOmnibar()
         if !tab.isAITab {
             coordinator.hide()
@@ -2080,6 +2154,13 @@ class MainViewController: UIViewController {
         refreshBackForwardMenuItems()
         updateChromeForDuckPlayer()
         refreshMiddleButton()
+        aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
+                                                  canGoForward: currentTab?.canGoForward ?? false)
+        // Belt-and-braces reconciliation. Most explicit transitions also call this directly
+        // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
+        // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
+        // the caller having to remember.
+        reconcileToolbarVisibilityForCurrentTab()
     }
 
     private func refreshMiddleButton() {
@@ -2098,6 +2179,9 @@ class MainViewController: UIViewController {
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode
+        aiChatTabChatHeaderView?.tabSwitcherButton.tabCount = count
+        aiChatTabChatHeaderView?.tabSwitcherButton.hasUnread = hasUnread
+        aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
     private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
@@ -2322,7 +2406,8 @@ class MainViewController: UIViewController {
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
-               !self.isInMinimalChromeLayout {
+               !self.isInMinimalChromeLayout,
+               !self.isCurrentTabUsingUnifiedInputAIChrome {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -2361,7 +2446,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private var isInMinimalChromeLayout: Bool = false
+    private(set) var isInMinimalChromeLayout: Bool = false
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
@@ -2375,7 +2460,7 @@ class MainViewController: UIViewController {
     private func applyLargeWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = false
-        viewCoordinator.toolbar.isHidden = true
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.omniBar.enterPadState()
 
         swipeTabsCoordinator?.isEnabled = false
@@ -2384,7 +2469,7 @@ class MainViewController: UIViewController {
     private func applySmallWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = true
-        viewCoordinator.toolbar.isHidden = false
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.constraints.toolbarBottom.constant = 0
         viewCoordinator.omniBar.enterPhoneState()
 
@@ -3320,6 +3405,12 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar
     }
 
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.setContentOverlaySuppressed(suppressed)
+        updateUnifiedInputContentVisibility(for: coordinator)
+    }
+
     private func hideKeyboard() {
         dismissOmniBar()
         _ = findInPageView?.resignFirstResponder()
@@ -4057,6 +4148,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatPressed() {
+        onAIChatPressed(prefilledText: nil)
+    }
+
+    func onAIChatPressed(prefilledText: String?) {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
@@ -4064,7 +4159,7 @@ extension MainViewController: OmniBarDelegate {
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
-            openAIChatFromAddressBar()
+            openAIChatFromAddressBar(prefilledText: prefilledText)
         }
     }
 
@@ -4084,10 +4179,17 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.onShareAction(forLink: link, fromView: targetView)
     }
 
-    private func openAIChatFromAddressBar() {
+    private func openAIChatFromAddressBar(prefilledText: String?) {
 
-        let isEditing = omniBar.isTextFieldEditing
-        let textFieldValue = omniBar.text
+        let isEditing: Bool
+        let textFieldValue: String?
+        if let prefilledText {
+            isEditing = true
+            textFieldValue = prefilledText
+        } else {
+            isEditing = omniBar.isTextFieldEditing
+            textFieldValue = omniBar.text
+        }
         omniBar.endEditing()
 
         OpenAIChatFromAddressBarHandling().determineOpeningStrategy(
@@ -4295,7 +4397,7 @@ extension MainViewController: OmniBarDelegate {
     private func clearEscapeHatch() {
         newTabPageViewController?.setEscapeHatch(nil)
         currentNTPEscapeHatch = nil
-        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+        unifiedToggleInputCoordinator?.clearEscapeHatch()
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
@@ -4322,6 +4424,10 @@ extension MainViewController: OmniBarDelegate {
             closeTab(currentTab)
         }
         selectTab(tab)
+    }
+
+    func onTabSwitcherRequested() {
+        requestTabSwitcher()
     }
 
     func onToggleModeSwitched() {
@@ -4488,6 +4594,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         selectTab(tab)
         clearEscapeHatch()
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        requestTabSwitcher()
     }
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
@@ -5067,6 +5177,17 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
+        requestTabSwitcher()
+    }
+
+    /// Single entry point for every tab-switcher request — toolbar button, all five pill
+    /// surfaces (regular NTP, UTI Search/Duck.ai, legacy editing-state Search/Duck.ai).
+    /// Fires the same counted/daily pixels and runs `performCancel()` which handles all
+    /// possible modal states (legacy editing state via `endEditing()`, UTI via
+    /// `deactivateToOmnibar()`), so every entry produces identical behaviour.
+    /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
+    /// calls it from another file.
+    func requestTabSwitcher() {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
@@ -5104,6 +5225,13 @@ extension MainViewController: TabSwitcherButtonDelegate {
 extension MainViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if let pan = gestureRecognizer as? UnifiedInputSwipeTabsPanGestureRecognizer {
+            return shouldBeginUnifiedInputSwipeTabsPan(pan)
+        }
         return true
     }
 }
@@ -5781,6 +5909,15 @@ extension MainViewController: MessageNavigationDelegate {
         switch presentationStyle {
         case .dismissModalsAndPresentFromRoot:
             segueToAppearanceSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToGeneralSettings()
         case .withinCurrentContext:
             assertionFailure("Not implemented yet.")
         }

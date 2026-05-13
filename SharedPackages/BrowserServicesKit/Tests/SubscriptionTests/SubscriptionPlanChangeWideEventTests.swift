@@ -238,10 +238,14 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_PAYMENT")
-        XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
-        XCTAssertEqual(params["feature.data.error.code"], "2")
-        XCTAssertEqual(params["feature.data.error.underlying_domain"], "UnderlyingError")
-        XCTAssertEqual(params["feature.data.error.underlying_code"], "456")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "SKErrorDomain")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "2")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_domain"], "UnderlyingError")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_code"], "456")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
+        XCTAssertNil(params["feature.data.error.underlying_domain"])
+        XCTAssertNil(params["feature.data.error.underlying_code"])
         XCTAssertEqual(params["feature.data.ext.payment_latency_ms_bucketed"], "10000")
     }
 
@@ -283,8 +287,10 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_ACTIVATION")
-        XCTAssertEqual(params["feature.data.error.domain"], "SubscriptionError")
-        XCTAssertEqual(params["feature.data.error.code"], "100")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "SubscriptionError")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "100")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
         XCTAssertEqual(params["feature.data.ext.payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.confirmation_latency_ms_bucketed"], "30000")
     }

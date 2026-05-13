@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personaliza las respuestas";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Convierte texto en imágenes";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Crear imagen";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Busca información actualizada";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "¡Eso es DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "¿Listo para un navegador más rápido que te protege y te permite decidir cuándo y cómo usar la IA?";
+"onboarding.rebranding.intro.message" = "¿Listo para un navegador más rápido que te da el control?\n\nLa IA es siempre opcional y la protección de privacidad está siempre activada.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hola.";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloquear anuncios en YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Cuando esté activado, DuckDuckGo detectará de forma anónima las interferencias en el bloqueo de anuncios o los errores de YouTube para mejorar tu experiencia y la de todos. DuckDuckGo nunca ve los vídeos que ves ni ningún dato de identificación personal.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Más información";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Marcadores";

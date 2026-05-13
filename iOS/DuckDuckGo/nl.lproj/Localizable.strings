@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antwoorden aanpassen";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Tekst omzetten in afbeeldingen";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Afbeelding maken";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Actuele informatie zoeken";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Dat is DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Klaar voor een snellere browser die je beschermt en je zelf laat bepalen wanneer en hoe je AI gebruikt?";
+"onboarding.rebranding.intro.message" = "Ben je klaar voor een snellere browser waarmee jij de controle hebt?\n\nAI is altijd optioneel en privacybescherming staat altijd aan.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hoi.";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Advertenties op YouTube blokkeren";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Als deze optie is ingeschakeld, detecteert DuckDuckGo anoniem verstoring van advertentieblokkeringen of YouTube-fouten, om de ervaring voor iedereen te verbeteren. DuckDuckGo ziet niet welke video's je bekijkt en heeft geen toegang tot je persoonlijk identificeerbare informatie.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Meer informatie";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bladwijzers";

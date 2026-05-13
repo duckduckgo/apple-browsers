@@ -134,6 +134,7 @@ struct Launching: LaunchingHandling {
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             syncErrorHandler: syncService.syncErrorHandler,
+                                                            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController)

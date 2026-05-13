@@ -261,7 +261,7 @@ extension URL {
     }
 
     static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
-        var params: [String: String?] = [
+        let params: [String: String?] = [
             DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
             DuckDuckGoParameters.ATB.atb: atbWithVariant,
             DuckDuckGoParameters.ATB.setAtb: setAtb

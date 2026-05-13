@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizează răspunsurile";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Transformă textul în imagini";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Creează imaginea";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Găsește informații actuale";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Acesta este DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
+"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care îți oferă control deplin?\n\nInteligența artificială este întotdeauna opțională, iar protecția confidențialității este întotdeauna activată.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blochează reclamele pe YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "În cazul activării, DuckDuckGo va detecta anonim interferențele de blocare a reclamelor sau erorile YouTube, pentru a îmbunătăți experiența pentru toți utilizatorii. DuckDuckGo nu vede niciodată videoclipurile pe care le vizionezi sau orice informație de identificare personală.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Află mai multe";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Semne de carte";

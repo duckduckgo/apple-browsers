@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Metni görsele dönüştürün";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Görsel Oluşturun";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Güncel bilgilere erişin";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Sizi koruyan ve yapay zekâyı ne zaman ve nasıl kullanacağınıza karar vermenizi sağlayan daha hızlı bir tarayıcıya hazır mısınız?";
+"onboarding.rebranding.intro.message" = "Kontrolü size verecek daha hızlı bir tarayıcıya hazır mısınız?\n\nYapay zeka her zaman isteğe bağlıdır ve gizlilik koruması her zaman etkindir.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Merhaba.";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "YouTube'da reklamları engelleyin";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Etkinleştirildiğinde, DuckDuckGo herkesin deneyimini iyileştirmek için reklam engelleme müdahalesini veya YouTube hatalarını anonim olarak algılar. DuckDuckGo, hangi videoları izlediğinizi veya kişisel olarak tanımlanabilir bilgileri asla görmez.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Daha Fazla Bilgi";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Yer İmleri";

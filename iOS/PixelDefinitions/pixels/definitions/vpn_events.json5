@@ -20,6 +20,27 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_netp_ev_enable_attempt": {
+        "description": "Fired at the start of a VPN connection attempt",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
+    "m_netp_ev_enable_attempt_success": {
+        "description": "Fired when a VPN connection attempt succeeds",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
+    "m_netp_ev_enable_attempt_failure": {
+        "description": "Fired when a VPN connection attempt fails",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_ios_wide_vpn_connection": {
         "description": "Wide pixel sent at the end of a vpn connection flow",
@@ -38,10 +59,14 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced."
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -161,7 +186,6 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",

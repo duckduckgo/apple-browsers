@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Käännä teksti kuviksi";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Luo kuva";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Löydä ajankohtaiset tiedot";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka suojaa sinua ja antaa sinun päättää, milloin ja miten käytät tekoälyä?";
+"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka antaa sinulle hallinnan?\n\nTekoäly on aina valinnainen, ja yksityisyyden suoja on aina päällä.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hei!";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Estä mainokset YouTubessa";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kun tämä toiminto on käytössä, DuckDuckGo tunnistaa nimettömästi mainosten eston aiheuttamat häiriöt tai YouTube-virheet parantaakseen kaikkien käyttökokemusta. DuckDuckGo ei koskaan näe, mitä videoita katsot tai mitään henkilökohtaisesti tunnistettavia tietoja.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Lue lisää";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Kirjanmerkit";

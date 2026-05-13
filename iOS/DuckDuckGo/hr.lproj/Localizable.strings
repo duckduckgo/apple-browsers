@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odgovore";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pretvori tekst u slike";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Izradi sliku";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Pronađi aktualne informacije";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Jesi li spreman za brži preglednik koji te štiti i omogućuje ti da odlučiš kada i kako koristiti AI?";
+"onboarding.rebranding.intro.message" = "Jesi li spreman za brži preglednik koji ti daje kontrolu?\n\nUmjetna inteligencija uvijek je neobavezna, a zaštita privatnosti uvijek aktivna.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Bok!";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTubeu";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kad je uključen, DuckDuckGo će anonimno otkriti smetnje u blokiranju oglasa ili pogreške na YouTubeu kako bi poboljšao iskustvo za sve. DuckDuckGo nikad ne vidi koje videozapise gledaš niti bilo kakve osobne podatke.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Saznaj više";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Knjižne oznake";

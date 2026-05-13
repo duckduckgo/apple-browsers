@@ -91,7 +91,8 @@ private extension AIChatSuggestion {
             title: title,
             pinned: isPinned,
             lastEdit: Self.formatISO8601Date(timestamp),
-            firstUserMessageContent: firstUserMessageContent
+            firstUserMessageContent: firstUserMessageContent,
+            model: model
         )
     }
 

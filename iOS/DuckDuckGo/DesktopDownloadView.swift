@@ -62,7 +62,7 @@ struct DesktopDownloadView: View {
                     if !viewModel.browserDetails.summary.isEmpty {
                         Text(viewModel.browserDetails.summary)
                             .daxBodyRegular()
-                            .foregroundColor(.waitlistTextSecondary)
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
                             .multilineTextAlignment(.center)
                             .lineSpacing(6)
                             .padding(.horizontal, padding)
@@ -71,13 +71,13 @@ struct DesktopDownloadView: View {
 
                     Text(viewModel.browserDetails.onYourString)
                         .daxBodyRegular()
-                        .foregroundColor(.waitlistTextSecondary)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
                         .multilineTextAlignment(.center)
                         .padding(.top, 12)
 
                     menuView
                         .daxHeadline()
-                        .foregroundColor(.waitlistBlue)
+                        .foregroundColor(Color(designSystemColor: .accent))
                         .fixedSize()
                     
                     Button(
@@ -126,7 +126,7 @@ struct DesktopDownloadView: View {
                         }, label: {
                             Text(viewModel.browserDetails.otherPlatformText)
                                 .daxHeadline()
-                                .foregroundColor(.waitlistBlue)
+                                .foregroundColor(Color(designSystemColor: .accent))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(5)
                         }
@@ -152,7 +152,7 @@ struct DesktopDownloadView: View {
 
                 Text(viewModel.browserDetails.title)
                     .daxTitle3()
-                    .foregroundColor(.waitlistTextPrimary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                     .multilineTextAlignment(.center)
                     .fixMultilineScrollableText()
             }

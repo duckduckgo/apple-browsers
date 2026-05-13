@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tilpass svar";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Gjør tekst om til bilder";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Lag bilde";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Finn oppdatert informasjon";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det er DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Er du klar for en raskere nettleser som beskytter deg og lar deg selv bestemme når og hvordan du skal bruke AI?";
+"onboarding.rebranding.intro.message" = "Klar for en raskere nettleser som du har kontroll over?\n\nAI er alltid valgfritt, og personvern er alltid på.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Heisann.";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokker annonser på YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Når dette er aktivert, registrerer DuckDuckGo anonymt forstyrrelser i annonseblokkering eller feil i YouTube, for å forbedre opplevelsen for alle. DuckDuckGo ser aldri hvilke videoer du ser på, eller noen personlig identifiserbar informasjon.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Finn ut mer";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmerker";

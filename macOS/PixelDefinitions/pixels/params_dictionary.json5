@@ -125,28 +125,22 @@
         "description": "Optional reason accompanying the feature status"
     },
     "wideEventErrorDomain": {
-        "key": "feature.data.error.domain",
+        "key": "feature.data.ext.error.domain",
         "type": "string",
         "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
     },
     "wideEventErrorCode": {
-        "key": "feature.data.error.code",
+        "key": "feature.data.ext.error.code",
         "type": "integer",
         "description": "Error code for the failure, when applicable"
     },
-    "wideEventErrorDescription": {
-        "key": "feature.data.error.description",
-        "type": "string",
-        "description": "Error description for the failure, when applicable",
-        "examples": ["saveToPreferencesFailed", "startVPNFailed"]
-    },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
+        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_code[0-9]?",
         "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
@@ -290,6 +284,12 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
     },
     "locale": {
         "key": "locale",

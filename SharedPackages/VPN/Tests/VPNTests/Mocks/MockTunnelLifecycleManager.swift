@@ -28,8 +28,7 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
     private(set) var updateTunnelConfigurationCalled = false
     private(set) var lastUpdateMethod: PacketTunnelProvider.TunnelUpdateMethod?
     private(set) var lastReassert: Bool?
-    private(set) var lastRegenerateKey: Bool?
-    var errorToThrowFromUpdateTunnelConfiguration: Error?
+    private(set) var lastAttemptSource: PacketTunnelProvider.ConnectionAttemptSource?
 
     private(set) var restartAdapterCalled = false
 
@@ -45,14 +44,11 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
         cancelTunnelError = error
     }
 
-    func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, regenerateKey: Bool) async throws {
+    func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, attemptSource: PacketTunnelProvider.ConnectionAttemptSource) async throws {
         updateTunnelConfigurationCalled = true
         lastUpdateMethod = updateMethod
         lastReassert = reassert
-        lastRegenerateKey = regenerateKey
-        if let errorToThrowFromUpdateTunnelConfiguration {
-            throw errorToThrowFromUpdateTunnelConfiguration
-        }
+        lastAttemptSource = attemptSource
     }
 
     func restartAdapter() async throws {

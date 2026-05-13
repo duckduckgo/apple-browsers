@@ -61,6 +61,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    let webEventsSubfeature: WebEventsSubfeature
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -147,6 +148,18 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }
 
+        let youTubeAdBlockingStorage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
+        webEventsSubfeature = WebEventsSubfeature(
+            isUserOptedIn: {
+                (youTubeAdBlockingStorage.youTubeAdBlockingEnabled ?? false)
+                    && (youTubeAdBlockingStorage.youTubeAnalyticsEnabled ?? false)
+            },
+            onEvent: { type, loginState in
+                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState.rawValue) else { return }
+                PixelKit.fire(pixel, frequency: .daily)
+            }
+        )
+
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
         autoconsentUserScript = AutoconsentUserScript(
@@ -201,6 +214,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)

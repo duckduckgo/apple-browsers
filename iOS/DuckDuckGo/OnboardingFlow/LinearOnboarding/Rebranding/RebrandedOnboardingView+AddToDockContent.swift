@@ -21,34 +21,49 @@ import DuckUI
 import Onboarding
 import SwiftUI
 
-private enum AddToDockContentMetrics {
-    static let messageFont = Font.system(size: 16)
-    static let additionalTopMargin: CGFloat = 0
-}
-
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-26425
     struct AddToDockPromoContent: View {
+
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingLeft",
+                size: CGSize(width: 116, height: 208.33),
+                position: .left(bottomPadding: 70.0),
+                twoStagesAnimation: 0.5
+            )
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var showAddToDockTutorial = false
-        @Binding var showContent: Bool
+        @State private var shouldStartTypingTitle = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
+        private let content: OnboardingAddToDockContent
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
-            showContent: Binding<Bool>,
+            content: OnboardingAddToDockContent,
+            isVisible: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
-            self._showContent = showContent
+            self.content = content
+            self._isVisible = isVisible
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             if showAddToDockTutorial {
-                RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                RebrandedOnboardingView.AddToDockTutorialContent(
+                    content: content.tutorialStepContent,
+                    isVisible: $isVisible
+                ) {
                     dismissAction(true)
                 }
             } else {
@@ -65,94 +80,98 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UserText.AddToDockOnboarding.Promo.introMessage)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.body)
-                        .multilineTextAlignment(.center)
+                    Text(content.message)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.body)
+                    .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
-                    addToDockPromoView
+                    RebrandedOnboardingView.AddToDockPromoView()
+                        .padding(.vertical)
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(UserText.AddToDockOnboarding.Promo.title)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    TypingText(
+                        content.title,
+                        startAnimating: $shouldStartTypingTitle,
+                        onTypingFinished: { [reduceMotion] in
+                            if reduceMotion {
+                                showContent = true
+                            } else {
+                                withAnimation { showContent = true }
+                            }
+                        })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: showTutorial) {
-                            Text(UserText.AddToDockOnboarding.Buttons.tutorial)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: { dismissAction(false) }) {
-                            Text(UserText.AddToDockOnboarding.Buttons.skip)
+                            Text(content.secondaryCTA)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTypingTitle, showContent: $showContent)
         }
 
-        private var addToDockPromoView: some View {
-            RebrandedOnboardingView.AddToDockPromoView()
-                .padding(.vertical)
-        }
-
-        /// Handles the transition from promo to tutorial with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content (sets opacity to 0 via parent's showContent binding)
-        /// 2. Switch to tutorial view and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showAddToDockTutorial.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Hide → resize → show transition into the tutorial. Internal view swap, so we drive
+        /// the resize explicitly with `withAnimation`.
         private func showTutorial() {
-            // Phase 1: Hide current content
-            showContent = false
+            isVisible = false
             showTutorialAction()
 
+            // Reduce Motion: jump to the final tutorial state.
+            guard !reduceMotion else {
+                showAddToDockTutorial = true
+                isVisible = true
+                return
+            }
+
             if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showAddToDockTutorial = true
                 } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             } else {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showAddToDockTutorial = true
                 }
-
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             }
         }
     }
 
+    /// Thin wrapper that passes the localised tutorial copy to `AddToDockTutorialView`.
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-27033
     struct AddToDockTutorialContent: View {
-        let title = UserText.AddToDockOnboarding.Tutorial.title
-        let message = UserText.AddToDockOnboarding.Tutorial.message
-
-        let cta: String
+        @Binding var isVisible: Bool
+        let content: OnboardingAddToDockContent.TutorialStepContent
         let dismissAction: () -> Void
+
+        init(content: OnboardingAddToDockContent.TutorialStepContent, isVisible: Binding<Bool>, dismissAction: @escaping () -> Void) {
+            self.content = content
+            self._isVisible = isVisible
+            self.dismissAction = dismissAction
+        }
 
         var body: some View {
             RebrandedOnboardingView.AddToDockTutorialView(
-                title: title,
-                message: message,
-                cta: cta,
+                title: content.title,
+                message: content.message,
+                isVisible: $isVisible,
+                cta: content.primaryCTA,
                 action: dismissAction
             )
         }

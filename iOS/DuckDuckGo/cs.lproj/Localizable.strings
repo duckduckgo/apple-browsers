@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Přizpůsobit odpovědi";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Vytvořit obrázky z textu";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Vytvořit obrázek";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Hledání aktuálních informací";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Už se těšíš na rychlejší prohlížeč, který tě ochrání a umožní ti rozhodnout, kdy a jak používat AI?";
+"onboarding.rebranding.intro.message" = "Chceš rychlejší prohlížeč, se kterým budeš mít vše pod kontrolou?\n\nUmělá inteligence je vždy volitelná a ochrana soukromí je vždy zapnutá.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Zdravíme tě.";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokovat reklamy na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Když je toto zapnuté, DuckDuckGo anonymně detekuje rušení blokováním reklam nebo chyby YouTube a vylepšuje zážitek pro všechny. DuckDuckGo nikdy nevidí, která videa si prohlížíš ani žádné osobní údaje.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Více informací";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Záložky";

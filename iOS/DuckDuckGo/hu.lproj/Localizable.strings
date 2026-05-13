@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Válaszok testreszabása";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Szövegből képek létrehozása";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Kép létrehozása";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Aktuális információk keresése";
 
@@ -3019,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Készen állsz egy gyorsabb böngészőre, amely védelmet nyújt, és lehetővé teszi, hogy eldöntsd, mikor és hogyan használd az AI-t?";
+"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely saját kezedbe adja az irányítást?\n\nAz AI mindig opcionális, az adatvédelem pedig állandóan be van kapcsolva.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Szia!";
@@ -4876,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Hirdetések blokkolása a YouTube-on";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Amikor be van kapcsolva, a DuckDuckGo névtelenül észleli a hirdetésblokkolási interferenciát vagy a YouTube-hibákat, hogy mindenki számára jobb élményt nyújtson. A DuckDuckGo soha nem látja, hogy mely videókat nézed meg, és nem fér hozzá személyazonosításra alkalmas információkhoz sem.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "További részletek";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Könyvjelzők";

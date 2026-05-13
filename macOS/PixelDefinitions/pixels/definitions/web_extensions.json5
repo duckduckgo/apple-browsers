@@ -326,7 +326,8 @@
                 "type": "string",
                 "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_adblocking_detected_playability_error": {

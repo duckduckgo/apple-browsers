@@ -122,6 +122,7 @@ public extension DesignSystemImages {
             public static var translateAi: DesignSystemImage { .init(resource: .translateAi12) }
             public static var trash: DesignSystemImage { .init(resource: .trash12) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize12) }
+            public static var updateRecolorable: DesignSystemImage { .init(resource: .updateRecolorable12) }
             public static var voice: DesignSystemImage { .init(resource: .voice12) }
             public static var vpnOn: DesignSystemImage { .init(resource: .vpnOn12) }
             public static var vpnUnlock: DesignSystemImage { .init(resource: .vpnUnlock12) }

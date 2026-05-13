@@ -57,7 +57,7 @@ struct MenuItemWithBadgeConstants {
     static let iconSize: CGFloat = 12
 
     /// Spacing between icon and title text
-    static let iconTitleSpacing: CGFloat = 6
+    static let iconTitleSpacing: CGFloat = 8
 
     /// Spacing between title and badge
     static let titleBadgeSpacing: CGFloat = 16

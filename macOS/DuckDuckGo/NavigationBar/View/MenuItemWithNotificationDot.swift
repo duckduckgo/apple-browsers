@@ -37,9 +37,9 @@ struct MenuItemWithNotificationDot: View {
                 Image(nsImage: leftImage)
                     .resizable()
                     .foregroundColor(isHovered ? .white : .blackWhite100)
-                    .frame(width: 16, height: 16)
-                    .padding(.trailing, 6)
-                    .padding(.leading, 14)
+                    .frame(width: 12, height: 12)
+                    .padding(.trailing, 8)
+                    .padding(.leading, 18)
 
                 Text(title)
                     .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))

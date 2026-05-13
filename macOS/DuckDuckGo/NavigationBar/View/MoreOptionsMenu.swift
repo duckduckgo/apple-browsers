@@ -181,7 +181,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         setupMenuItems()
     }
 
-    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(.zoomIn)
+    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
 
     @MainActor
     private func setupMenuItems() {
@@ -574,7 +574,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
             let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = DesignSystemImages.Glyphs.Size16.duckAi
+            aiChatItem.image = DesignSystemImages.Glyphs.Size12.duckAi
             aiChatItem.target = self
             aiChatItem.submenu = makeAIChatMenu()
             addItem(aiChatItem)
@@ -977,13 +977,13 @@ final class FeedbackSubMenu: NSMenu, NSMenuDelegate {
         let reportABrowserProblemItem = NSMenuItem(title: UserText.reportBrowserProblem,
                                                    action: #selector(AppDelegate.openReportABrowserProblem(_:)),
                                                    keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.feedbackAlert)
+            .withImage(DesignSystemImages.Glyphs.Size12.feedbackAlert)
         addItem(reportABrowserProblemItem)
 
         let requestANewFeatureItem = NSMenuItem(title: UserText.requestNewFeature,
                                                 action: #selector(AppDelegate.openRequestANewFeature(_:)),
                                                 keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
         addItem(requestANewFeatureItem)
     }
 

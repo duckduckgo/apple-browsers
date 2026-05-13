@@ -108,6 +108,7 @@ public extension DesignSystemImages {
             public static var shieldFilled: DesignSystemImage { .init(resource: .shieldFilled12E) }
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage12) }
             public static var storageCard: DesignSystemImage { .init(resource: .storageCard12) }
+            public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown12) }
@@ -116,6 +117,7 @@ public extension DesignSystemImages {
             public static var translateAi: DesignSystemImage { .init(resource: .translateAi12) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize12) }
             public static var voice: DesignSystemImage { .init(resource: .voice12) }
+            public static var vpnOn: DesignSystemImage { .init(resource: .vpnOn12) }
             public static var vpnUnlock: DesignSystemImage { .init(resource: .vpnUnlock12) }
             public static var wand: DesignSystemImage { .init(resource: .wand12) }
             public static var wifi: DesignSystemImage { .init(resource: .wifi12) }

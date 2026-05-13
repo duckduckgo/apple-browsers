@@ -860,10 +860,15 @@ private extension MainViewController {
             },
             completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                // Reveal the NTP Logo and force a layout pass before hiding the UTI
+                // content container, so the NTP Logo is rendered in the same frame
+                // and there's no one-frame gap where neither logo is visible.
+                self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.view.setNeedsLayout()
+                self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.contentViewController.setLogoHidden(false)
-                self.newTabPageViewController?.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()

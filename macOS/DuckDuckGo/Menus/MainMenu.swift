@@ -89,14 +89,20 @@ final class MainMenu: NSMenu {
 
     // MARK: File
     let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
     let newBurnerWindowMenuItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.fireWindow)
     let newTabMenuItem = NSMenuItem(title: UserText.mainMenuFileNewTab, action: #selector(AppDelegate.newTab), keyEquivalent: "t")
+        .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowUpRight)
     let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.`import`)
     let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
@@ -109,7 +115,9 @@ final class MainMenu: NSMenu {
     let toggleFullscreenMenuItem = NSMenuItem(title: UserText.mainMenuViewEnterFullScreen, action: #selector(NSWindow.toggleFullScreen), keyEquivalent: [.control, .command, "f"])
     let actualSizeMenuItem = NSMenuItem(title: UserText.mainMenuViewActualSize, action: #selector(MainViewController.actualSize), keyEquivalent: "0")
     let zoomInMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomIn, action: #selector(MainViewController.zoomIn), keyEquivalent: "+")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
     let zoomOutMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomOut, action: #selector(MainViewController.zoomOut), keyEquivalent: "-")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomOut)
 
     // MARK: History
     @MainActor
@@ -123,8 +131,10 @@ final class MainMenu: NSMenu {
     // MARK: Bookmarks
     let manageBookmarksMenuItem = NSMenuItem(title: UserText.mainMenuHistoryManageBookmarks, action: #selector(MainViewController.showManageBookmarks), keyEquivalent: [.command, .option, "b"])
         .withAccessibilityIdentifier("MainMenu.manageBookmarksMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     var bookmarksMenuToggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
     let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBookmarksWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.`import`)
     let bookmarksMenu = NSMenu(title: UserText.bookmarks)
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
@@ -179,9 +189,12 @@ final class MainMenu: NSMenu {
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
         .withImage(DesignSystemImages.Glyphs.Size12.browserDefault)
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
+        .withImage(DesignSystemImages.Glyphs.Size12.note)
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
+        .withImage(DesignSystemImages.Glyphs.Size12.news)
 
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
+        .withImage(DesignSystemImages.Glyphs.Size12.feedback)
 
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
         .withImage(DesignSystemImages.Glyphs.Size12.info)
@@ -329,6 +342,7 @@ final class MainMenu: NSMenu {
             closeAllWindowsMenuItem
             closeTabMenuItem
             NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), keyEquivalent: "s")
+                .withImage(DesignSystemImages.Glyphs.Size12.save)
             NSMenuItem.separator()
 
             importBrowserDataMenuItem
@@ -336,13 +350,16 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.mainMenuFileExportPasswords, action: #selector(AppDelegate.openExportLogins))
                 NSMenuItem(title: UserText.mainMenuFileExportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
             }
+            .withImage(DesignSystemImages.Glyphs.Size12.export)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
+                .withImage(NSImage(systemSymbolName: "printer", accessibilityDescription: nil))
         }
     }
 
@@ -470,6 +487,7 @@ final class MainMenu: NSMenu {
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
                     .withAccessibilityIdentifier("MainMenu.addBookmark")
+                    .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem
@@ -482,11 +500,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.favorites)
                     .submenu(favoritesMenu.buildItems {
                         NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage))
-                            .withImage(.favorite)
+                            .withImage(DesignSystemImages.Glyphs.Size12.favorite)
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
 
                 NSMenuItem.separator()
             })
@@ -500,8 +518,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
+                    .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
                 NSMenuItem(title: UserText.duplicateTab, action: #selector(MainViewController.duplicateTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.windowDuplicate)
                 NSMenuItem(title: UserText.pinTab, action: #selector(MainViewController.pinOrUnpinTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.pin)
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))
                 NSMenuItem(title: UserText.mainMenuWindowMergeAllWindows, action: #selector(NSWindow.mergeAllWindows))
                 NSMenuItem.separator()

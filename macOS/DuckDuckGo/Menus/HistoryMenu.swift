@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import DesignResourcesKitIcons
 import FeatureFlags
 import History
 import os.log
@@ -43,11 +44,13 @@ final class HistoryMenu: NSMenu {
         keyEquivalent: "y",
         representedObject: location
     )
+        .withImage(DesignSystemImages.Glyphs.Size12.history)
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
                                                      action: #selector(AppDelegate.clearAllHistory),
                                                      keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
+        .withImage(DesignSystemImages.Glyphs.Size12.trash)
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider

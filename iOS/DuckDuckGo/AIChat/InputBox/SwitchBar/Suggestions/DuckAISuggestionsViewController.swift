@@ -60,6 +60,24 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let recentChatsHeaderBottomPadding: CGFloat = 24
     }
 
+    struct LayoutConfiguration {
+        let tableHorizontalInset: CGFloat
+        let escapeHatchHorizontalInset: CGFloat
+        let escapeHatchMaxWidth: CGFloat?
+
+        static let standard = LayoutConfiguration(
+            tableHorizontalInset: 0,
+            escapeHatchHorizontalInset: Constants.horizontalInset,
+            escapeHatchMaxWidth: HomeMessageCollectionViewCell.maximumWidth
+        )
+
+        static let unifiedToggleInput = LayoutConfiguration(
+            tableHorizontalInset: 10,
+            escapeHatchHorizontalInset: Constants.horizontalInset,
+            escapeHatchMaxWidth: nil
+        )
+    }
+
     /// Suppresses the "Recent Chats" section header per the unified-input redesign.
     /// Flip to `true` to restore the header; rendering logic below is preserved.
     private static let areSectionHeadersEnabled = false
@@ -69,6 +87,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let chatViewModel: AIChatSuggestionsViewModel
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
+    private let layoutConfiguration: LayoutConfiguration
 
     /// Absorbs the gap between the two fetcher debounces so a single reload renders both. Coupled to
     /// `AIChatHistoryManager.Constants.debounceMilliseconds` (150ms) and `DuckAIURLSuggestionsLoader.debounceMilliseconds` (100ms).
@@ -117,10 +136,12 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
-         queryProvider: @escaping () -> String) {
+         queryProvider: @escaping () -> String,
+         layoutConfiguration: LayoutConfiguration = .standard) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
+        self.layoutConfiguration = layoutConfiguration
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -133,8 +154,8 @@ final class DuckAISuggestionsViewController: UIViewController {
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: layoutConfiguration.tableHorizontalInset),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -layoutConfiguration.tableHorizontalInset),
             tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         ])
 
@@ -269,22 +290,45 @@ final class DuckAISuggestionsViewController: UIViewController {
 
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(hosting.view)
-            let maxWidth = HomeMessageCollectionViewCell.maximumWidth
-            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
-            preferredWidth.priority = .defaultHigh
-            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
-            minimumLeading.priority = .required - 1
-            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
-            minimumTrailing.priority = .required - 1
-            NSLayoutConstraint.activate([
-                hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-                preferredWidth,
-                minimumLeading,
-                minimumTrailing,
+            var constraints = [
                 hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
-            ])
+            ]
+
+            if let maxWidth = layoutConfiguration.escapeHatchMaxWidth {
+                let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+                preferredWidth.priority = .defaultHigh
+                let minimumLeading = hosting.view.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: container.leadingAnchor,
+                    constant: layoutConfiguration.escapeHatchHorizontalInset
+                )
+                minimumLeading.priority = .required - 1
+                let minimumTrailing = hosting.view.trailingAnchor.constraint(
+                    lessThanOrEqualTo: container.trailingAnchor,
+                    constant: -layoutConfiguration.escapeHatchHorizontalInset
+                )
+                minimumTrailing.priority = .required - 1
+                constraints.append(contentsOf: [
+                    hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                    hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                    preferredWidth,
+                    minimumLeading,
+                    minimumTrailing
+                ])
+            } else {
+                constraints.append(contentsOf: [
+                    hosting.view.leadingAnchor.constraint(
+                        equalTo: container.leadingAnchor,
+                        constant: layoutConfiguration.escapeHatchHorizontalInset
+                    ),
+                    hosting.view.trailingAnchor.constraint(
+                        equalTo: container.trailingAnchor,
+                        constant: -layoutConfiguration.escapeHatchHorizontalInset
+                    )
+                ])
+            }
+
+            NSLayoutConstraint.activate(constraints)
             container.layoutIfNeeded()
             tableView.tableHeaderView = container
         }

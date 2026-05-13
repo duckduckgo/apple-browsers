@@ -84,6 +84,7 @@ extension MainViewController {
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
         installFloatingSubmitViewController()
+        installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)
@@ -129,6 +130,15 @@ extension MainViewController {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else {
             return
+        }
+
+        // Capture the current tab's screen snapshot regardless of which refresh branch we
+        // take — `.unbindInactiveNonAITab` early-returns without falling through, but we
+        // still want a fresh snapshot for the swipe overlay every time the tab becomes the
+        // active one. `captureCurrentTabScreenSnapshotIfPossible` defers to the next runloop
+        // so any layout changes the branches apply have settled by capture time.
+        defer {
+            captureCurrentTabScreenSnapshotIfPossible(tabUID: tab.tabModel.uid)
         }
 
         coordinator.activateForTab(tab.tabModel.uid)
@@ -797,8 +807,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onDuckAIVoiceModeRequested()
     }
 
-    func unifiedToggleInputDidRequestAIChat() {
-        onAIChatPressed()
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
+        let trimmed = prefilledText.trimmingWhitespace()
+        unifiedToggleInputCoordinator?.clearText()
+        unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
+        onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
     }
 
     func unifiedToggleInputDidChangeHeight() {

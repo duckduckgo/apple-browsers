@@ -32,20 +32,23 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let urlLoader: DuckAIURLSuggestionsLoader
     }
 
-    private func makeHarness(query: String = "") -> Harness {
+    private func makeHarness(query: String = "",
+                             layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
         let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         let vc = DuckAISuggestionsViewController(
             chatViewModel: viewModel,
             urlLoader: loader,
-            queryProvider: { query }
+            queryProvider: { query },
+            layoutConfiguration: layoutConfiguration
         )
         vc.loadViewIfNeeded()
         return Harness(viewController: vc, chatViewModel: viewModel, urlLoader: loader)
     }
 
-    private func makeViewController(query: String = "") -> DuckAISuggestionsViewController {
-        makeHarness(query: query).viewController
+    private func makeViewController(query: String = "",
+                                    layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) -> DuckAISuggestionsViewController {
+        makeHarness(query: query, layoutConfiguration: layoutConfiguration).viewController
     }
 
     private func makeChat(id: String) -> AIChatSuggestion {
@@ -69,6 +72,39 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertNotNil(table.tableHeaderView)
         XCTAssertGreaterThan(table.tableHeaderView?.bounds.height ?? 0, 0)
         XCTAssertEqual(vc.children.count, 1, "hatch hosting controller should be added as a child view controller")
+    }
+
+    func test_defaultLayout_preservesFullWidthTableView() throws {
+        let vc = makeViewController()
+        vc.view.frame = CGRect(x: 0, y: 0, width: 430, height: 800)
+        vc.view.layoutIfNeeded()
+
+        let table = try tableView(in: vc)
+
+        XCTAssertEqual(table.frame.minX, 0, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, 0, accuracy: 0.5)
+    }
+
+    func test_unifiedToggleInputLayout_matchesRecentChatsHorizontalInset() throws {
+        let vc = makeViewController(layoutConfiguration: .unifiedToggleInput)
+        vc.view.frame = CGRect(x: 0, y: 0, width: 430, height: 800)
+        vc.view.layoutIfNeeded()
+
+        let table = try tableView(in: vc)
+        vc.setEscapeHatch(.testFixture, openTabCount: 0, onTapped: {}, onTabSwitcherTapped: {})
+        vc.view.layoutIfNeeded()
+
+        let header = try XCTUnwrap(table.tableHeaderView)
+        let hatchView = try XCTUnwrap(header.subviews.first)
+        let hatchFrame = hatchView.convert(hatchView.bounds, to: vc.view)
+        let expectedTableInset: CGFloat = 10
+        let expectedHatchInset: CGFloat = 26
+
+        XCTAssertEqual(table.frame.minX, expectedTableInset, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, expectedTableInset, accuracy: 0.5)
+        XCTAssertEqual(header.bounds.width, table.bounds.width, accuracy: 0.5)
+        XCTAssertEqual(hatchFrame.minX, expectedHatchInset, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - hatchFrame.maxX, expectedHatchInset, accuracy: 0.5)
     }
 
     func test_setEscapeHatch_withNil_removesTableHeaderView() throws {

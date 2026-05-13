@@ -33,10 +33,12 @@ struct NewTabPageView: View {
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
+    let layoutConfiguration: NewTabPageLayoutConfiguration
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
+         layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
@@ -46,6 +48,7 @@ struct NewTabPageView: View {
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
+        self.layoutConfiguration = layoutConfiguration
 
         self.messagesModel.load()
     }
@@ -78,6 +81,16 @@ struct NewTabPageView: View {
             emptyStateView
         }
     }
+}
+
+struct NewTabPageLayoutConfiguration {
+    let expandsEscapeHatchToAvailableWidth: Bool
+    let escapeHatchHorizontalPadding: CGFloat
+
+    static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
+                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding)
+    static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
+                                                                  escapeHatchHorizontalPadding: 0)
 }
 
 private extension NewTabPageView {
@@ -168,10 +181,12 @@ private extension NewTabPageView {
         return true
     }
 
-    /// On iPad regular size class, widen the hatch to match the favorites grid container.
-    /// iPhone (including Plus/Max in landscape, where horizontal size class is regular) keeps
-    /// the original `messageMaximumWidth` because the favorites grid stays compact (4 cols).
+    /// The unified toggle input design lets the hatch fill the same content span as favorites.
+    /// Legacy NTP keeps its existing max widths so the flag-off UI remains unchanged.
     private var escapeHatchMaxWidth: CGFloat {
+        if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
+            return .infinity
+        }
         if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
             return Metrics.escapeHatchMaximumWidthPad
         }
@@ -189,7 +204,7 @@ private extension NewTabPageView {
             )
             .frame(maxWidth: escapeHatchMaxWidth)
             .padding(.top, Metrics.nonGridSectionTopPadding)
-            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+            .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
 

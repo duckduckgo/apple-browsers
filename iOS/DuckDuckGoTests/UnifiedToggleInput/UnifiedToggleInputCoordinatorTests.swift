@@ -1771,6 +1771,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
 
         XCTAssertEqual(mockDelegate.didRequestAIChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_forwardsCurrentText() {
+        sut.viewController.handler.updateCurrentText("hello")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "hello")
     }
 
     // MARK: - Helpers
@@ -1956,7 +1965,11 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
     func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
-    func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
+    var didRequestAIChatPrefilledText: String?
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
+        didRequestAIChatCount += 1
+        didRequestAIChatPrefilledText = prefilledText
+    }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode

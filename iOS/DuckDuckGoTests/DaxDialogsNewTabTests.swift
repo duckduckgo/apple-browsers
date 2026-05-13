@@ -154,41 +154,22 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     // MARK: - Chat Path – chatPathPhase
 
-    func testWhenFireNotShown_ChatPathPhase_IsNone() {
-        settings.fireMessageExperimentShown = false
+    func testWhenChatPathPhaseIsNone_DaxDialogsReturnsNone() {
+        settings.chatPathPhase = .none
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .none)
     }
 
-    func testWhenFireShownAndVisitSiteNotSeen_ChatPathPhase_IsVisitSite() {
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = false
+    func testWhenChatPathPhaseIsVisitSite_DaxDialogsReturnsVisitSite() {
+        settings.chatPathPhase = .visitSite
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .visitSite)
     }
 
-    func testWhenFireAndVisitSiteSeenAndFinalNotShown_ChatPathPhase_IsTrackerToEOJ() {
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = true
-        // The seenBrowsingDialog guard requires that the user actually saw a browsing tracker
-        // dialog before advancing to .trackerToEOJ; without one of these flags the phase stays
-        // at .visitSite to prevent the EOJ from triggering before any site visit.
-        settings.browsingWithTrackersShown = true
-        settings.browsingFinalDialogShown = false
+    func testWhenChatPathPhaseIsTrackerToEOJ_DaxDialogsReturnsTrackerToEOJ() {
+        settings.chatPathPhase = .trackerToEOJ
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .trackerToEOJ)
-    }
-
-    func testWhenFireAndVisitSiteSeenAndFinalShown_ChatPathPhase_IsNone() {
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = true
-        settings.browsingWithTrackersShown = true
-        settings.browsingFinalDialogShown = true
-
-        XCTAssertEqual(daxDialogs.chatPathPhase, .none)
     }
 
     // MARK: - Chat Path – setChatPathVisitSiteSeen
@@ -280,12 +261,5 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
 
     var isChatFirstPath: Bool = false
 
-    var chatPathPhase: DaxDialogs.ChatPathPhase {
-        guard isChatFirstPath && fireMessageExperimentShown else { return .none }
-        if !chatPathVisitSiteSeen { return .visitSite }
-        let seenBrowsingDialog = browsingWithTrackersShown || browsingWithoutTrackersShown || browsingMajorTrackingSiteShown
-        guard seenBrowsingDialog else { return .visitSite }
-        if !browsingFinalDialogShown { return .trackerToEOJ }
-        return .none
-    }
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
 }

@@ -417,6 +417,10 @@ final class SettingsViewModel: ObservableObject {
             set: { newValue in
                 self.afterInactivityIdleInterval = newValue
                 try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
+                DailyPixel.fireDailyAndCount(
+                    pixel: .ntpAfterIdleSettingIdleIntervalChanged,
+                    withAdditionalParameters: ["idle_interval_seconds": String(newValue.seconds)]
+                )
             }
         )
     }

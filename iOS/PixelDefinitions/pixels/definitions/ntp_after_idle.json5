@@ -118,5 +118,12 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_setting_idle_interval_changed": {
+        "description": "Fires when the user changes the inactivity-timer interval. The selected interval is reported via the idle_interval_seconds parameter.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "idle_interval_seconds"]
     }
 }

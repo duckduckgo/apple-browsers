@@ -69,11 +69,7 @@ final class AddressBarTextField: NSTextField {
     private var windowFrameCancellable: AnyCancellable?
     private var sharedTextStateCancellable: AnyCancellable?
 
-    private let performanceCoordinator: AddressBarPerformanceCoordinator? = {
-        Application.appDelegate.featureFlagger.isFeatureOn(.addressBarPerformanceInstrumentation)
-            ? AddressBarPerformanceCoordinator()
-            : nil
-    }()
+    private var performanceCoordinator: AddressBarPerformanceCoordinator?
     private var perfTerminatorCancellables: Set<AnyCancellable> = []
     private var perfAIModeTerminatorCancellable: AnyCancellable?
 
@@ -583,10 +579,26 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            reconcilePerformanceCoordinator()
             performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
         }
         return result
+    }
+
+    /// Creates the coordinator on demand when the FF is on (attaching to the current window),
+    /// or releases it when the FF is off. Called from focus-gained so flag flips take effect
+    /// without an app restart. Re-enabling mid-session works too: the next focus event will
+    /// create a fresh coordinator.
+    private func reconcilePerformanceCoordinator() {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.addressBarPerformanceInstrumentation) else {
+            performanceCoordinator = nil
+            return
+        }
+        guard performanceCoordinator == nil, let window else { return }
+        let coordinator = AddressBarPerformanceCoordinator()
+        coordinator.attach(to: window)
+        performanceCoordinator = coordinator
     }
 
     private func updateTabUrlWithUrl(_ providedUrl: URL, userEnteredValue: String, downloadRequested: Bool, suggestion: Suggestion?) {

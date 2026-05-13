@@ -144,7 +144,6 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         }
     }
 
-
     // MARK: - Coding
 
     /// JSON encodes and stores a Codable object to UserDefaults.

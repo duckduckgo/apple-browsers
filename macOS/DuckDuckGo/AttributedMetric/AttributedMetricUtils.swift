@@ -78,14 +78,14 @@ struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProvi
 
 struct AttributedMetricATBInstallDateProvider: AttributedMetricInstallDateProviding {
 
-    private let statisticsStore: StatisticsStore
+    private let installDateLoader: () -> Date?
 
-    init(statisticsStore: StatisticsStore = LocalStatisticsStore()) {
-        self.statisticsStore = statisticsStore
+    init(installDateLoader: @escaping () -> Date? = { LocalStatisticsStore().installDate }) {
+        self.installDateLoader = installDateLoader
     }
 
     var installDate: Date? {
-        statisticsStore.installDate
+        installDateLoader()
     }
 }
 

@@ -1799,6 +1799,7 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToStopGeneratingTap() {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
+                self?.duckAIWideEventInstrumentation?.stopGeneratingTapped()
                 self?.didPressStopGeneratingButton.send()
             }
             .store(in: &cancellables)

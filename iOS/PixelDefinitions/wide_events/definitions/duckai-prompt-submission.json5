@@ -8,7 +8,7 @@
         },
         "feature": {
             "name": "duckai_prompt_submission",
-            "status": ["SUCCESS", "UNKNOWN"],
+            "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {}
             }

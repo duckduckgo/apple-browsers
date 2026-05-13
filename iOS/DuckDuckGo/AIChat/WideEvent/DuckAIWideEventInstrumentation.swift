@@ -36,6 +36,10 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// completes the active flow as SUCCESS the first time `.ready` is observed
     /// after at least one non-`.ready` value during the flow's lifetime.
     func chatStatusChanged(_ status: AIChatStatusValue)
+
+    /// User tapped the stop-generating button. Completes the active flow as
+    /// CANCELLED. After this, any subsequent `.ready` status is ignored.
+    func stopGeneratingTapped()
 }
 
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
@@ -83,6 +87,12 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         } else {
             hasObservedNonReady = true
         }
+    }
+
+    func stopGeneratingTapped() {
+        guard let activeFlow else { return }
+        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
+        self.activeFlow = nil
     }
 
     // MARK: - Helpers

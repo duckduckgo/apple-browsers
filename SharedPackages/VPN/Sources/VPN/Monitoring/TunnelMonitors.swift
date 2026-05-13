@@ -45,7 +45,7 @@ final class TunnelMonitors: TunnelMonitoring {
 
     private let settings: VPNSettings
     private let events: EventMapping<PacketTunnelProvider.Event>
-    private let entitlementCheck: () async -> Result<Bool, Error>
+    private let entitlementCheck: (() async -> Result<Bool, Error>)?
     private let isConnectionTesterEnabled: @MainActor () -> Bool
 
     private let onReconfigureForMigration: @MainActor () async throws -> Void
@@ -64,7 +64,7 @@ final class TunnelMonitors: TunnelMonitoring {
         tunnelState: any TunnelStateProviding,
         settings: VPNSettings,
         events: EventMapping<PacketTunnelProvider.Event>,
-        entitlementCheck: @escaping () async -> Result<Bool, Error>,
+        entitlementCheck: (() async -> Result<Bool, Error>)?,
         isConnectionTesterEnabled: @escaping @MainActor () -> Bool,
         onReconfigureForMigration: @escaping @MainActor () async throws -> Void,
         onConnectionTestResult: @escaping @MainActor (ConnectionTestingResult) -> Void,
@@ -195,6 +195,12 @@ final class TunnelMonitors: TunnelMonitoring {
             await entitlementMonitor.stop()
         }
 
+        guard let entitlementCheck else {
+            Logger.networkProtection.fault("Expected entitlement check but didn't find one")
+            assertionFailure("Expected entitlement check but didn't find one")
+            return
+        }
+
         await entitlementMonitor.start(entitlementCheck: entitlementCheck) { [weak self] result in
             switch result {
             case .invalidEntitlement:
@@ -206,7 +212,7 @@ final class TunnelMonitors: TunnelMonitoring {
     }
 
     private func isEntitlementInvalid() async -> Bool {
-        guard case .success(false) = await entitlementCheck() else { return false }
+        guard let entitlementCheck, case .success(false) = await entitlementCheck() else { return false }
         return true
     }
 

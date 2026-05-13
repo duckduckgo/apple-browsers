@@ -62,9 +62,7 @@ final class TunnelMonitorsTests: XCTestCase {
         let eventsBox = FiredEventsBox()
         firedEvents = eventsBox
         events = EventMapping<PacketTunnelProvider.Event> { event, _, _, _ in
-            MainActor.assumeIsolated {
-                eventsBox.events.append(event)
-            }
+            eventsBox.events.append(event)
         }
 
         let tunablesBox = TunablesBox()

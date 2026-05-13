@@ -562,12 +562,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             tunnelState: self,
             settings: self.settings,
             events: self.providerEvents,
-            entitlementCheck: { [weak self] in
-                guard let entitlementCheck = self?.entitlementCheck else {
-                    return .success(true)
-                }
-                return await entitlementCheck()
-            },
+            entitlementCheck: self.entitlementCheck,
             isConnectionTesterEnabled: { [weak self] in
                 self?.isConnectionTesterEnabled ?? true
             },

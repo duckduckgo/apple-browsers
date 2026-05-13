@@ -31,8 +31,6 @@ final class QuickFeedbackService: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     private var contentOverlayPopover: ContentOverlayPopover?
-    private var overlayAnchorObserver: NSObjectProtocol?
-    private var lastAutofillInputPosition: CGRect?
 
     /// Suffix match (not substring) so only Asana-owned cookies are cleared on sign-out.
     private static let asanaDomainSuffix = "asana.com"
@@ -138,14 +136,12 @@ final class QuickFeedbackService: NSObject {
     // MARK: - Popup lifecycle
 
     private func hidePopup() {
-        stopAnchoringAutofillOverlay()
         contentOverlayPopover?.viewController.closeContentOverlayPopover()
         windowController?.window?.orderOut(nil)
         screenshotData = nil
     }
 
     private func forceClosePopup() {
-        stopAnchoringAutofillOverlay()
         contentOverlayPopover?.viewController.closeContentOverlayPopover()
         contentOverlayPopover = nil
         windowController?.window?.orderOut(nil)
@@ -247,7 +243,6 @@ extension QuickFeedbackService: TabDelegate {
     }
 
     func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: WebsiteAutofillUserScript?) {
-        stopAnchoringAutofillOverlay()
         overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScriptCloseOverlay(websiteAutofillUserScript)
     }
 
@@ -255,78 +250,12 @@ extension QuickFeedbackService: TabDelegate {
                                    willDisplayOverlayAtClick: CGPoint?,
                                    serializedInputContext: String,
                                    inputPosition: CGRect) {
-        let popover = overlayPopoverCreatingIfNeeded()
-        popover?.websiteAutofillUserScript(
+        overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScript(
             websiteAutofillUserScript,
             willDisplayOverlayAtClick: willDisplayOverlayAtClick,
             serializedInputContext: serializedInputContext,
             inputPosition: inputPosition
         )
-        lastAutofillInputPosition = inputPosition
-        startAnchoringAutofillOverlay()
-    }
-}
-
-// MARK: - Autofill overlay anchoring
-//
-// `ContentOverlayPopover`'s positioning math is tuned for a full browser window and doesn't
-// reliably land inside our 600×700 panel (tall prompts like "Import passwords" end up off
-// the panel). We override its placement by re-anchoring the overlay's top-left to the input
-// field's bottom-left using AppKit view conversion, and re-anchor on resize so async content
-// loads stay anchored. Horizontal position is clamped so the overlay can't poke past the
-// panel's right edge.
-
-private extension QuickFeedbackService {
-
-    func startAnchoringAutofillOverlay() {
-        guard let overlayWindow = contentOverlayPopover?.windowController.window else { return }
-        stopAnchoringAutofillOverlay()
-        overlayAnchorObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResizeNotification,
-            object: overlayWindow,
-            queue: .main
-        ) { [weak self] _ in
-            self?.anchorAutofillOverlayBelowInput()
-        }
-        Task { @MainActor [weak self] in
-            self?.anchorAutofillOverlayBelowInput()
-        }
-    }
-
-    func stopAnchoringAutofillOverlay() {
-        if let observer = overlayAnchorObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        overlayAnchorObserver = nil
-        lastAutofillInputPosition = nil
-    }
-
-    func anchorAutofillOverlayBelowInput() {
-        guard let overlayWindow = contentOverlayPopover?.windowController.window,
-              let inputPosition = lastAutofillInputPosition,
-              let webView = currentTab?.webView,
-              let webViewWindow = webView.window,
-              let panelFrame = windowController?.window?.frame else {
-            return
-        }
-        // JS reports `inputPosition` in top-left-origin viewport coordinates. Flip to AppKit
-        // local coords (bottom-left origin) before letting AppKit handle the rest of the
-        // transform up to screen space.
-        let inputRectInWebView: NSRect = webView.isFlipped
-            ? inputPosition
-            : NSRect(x: inputPosition.minX,
-                     y: webView.bounds.height - inputPosition.maxY,
-                     width: inputPosition.width,
-                     height: inputPosition.height)
-        let inputRectInWindow = webView.convert(inputRectInWebView, to: nil)
-        let inputRectInScreen = webViewWindow.convertToScreen(inputRectInWindow)
-
-        // Overlay's top-left lands at the input's bottom-left so the overlay sits directly
-        // beneath the field.
-        let overlayWidth = overlayWindow.frame.width
-        let anchorX = min(max(inputRectInScreen.minX, panelFrame.minX),
-                          max(panelFrame.minX, panelFrame.maxX - overlayWidth))
-        overlayWindow.setFrameTopLeftPoint(NSPoint(x: anchorX, y: inputRectInScreen.minY))
     }
 }
 

@@ -156,5 +156,12 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_last-used-model-parse_error": {
+        "description": "Fires when decoding the persisted chat JSON to read the last-used model fails (used by the iPad UTI to restore model state on chat resume)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     }
 }

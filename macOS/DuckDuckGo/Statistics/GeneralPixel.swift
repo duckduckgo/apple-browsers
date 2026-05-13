@@ -1766,6 +1766,7 @@ enum GeneralPixel: PixelKitEvent {
                 .duckAiNativeStorageFileGetError,
                 .duckAiNativeStorageFileListError,
                 .duckAiNativeStorageFileDeleteError,
+                .duckAiNativeStorageLastUsedModelParseError,
                 .protectionToggledOffBreakageReport,
                 .debugBreakageExperiment,
                 .passwordImportKeychainPrompt,

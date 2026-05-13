@@ -2900,7 +2900,9 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 guard let self else { return }
-                let onPresented = notification.userInfo?[SettingsDeepLinkUserInfoKey.onPresented] as? (() -> Void)
+                let rawCallback = notification.userInfo?[SettingsDeepLinkUserInfoKey.onPresented]
+                assert(rawCallback == nil || rawCallback is SettingsDeepLinkCallback, "onPresented must be a SettingsDeepLinkCallback")
+                let onPresented = (rawCallback as? SettingsDeepLinkCallback)?.onPresented
                 let handleSettingsDeepLink = {
                     self.handleSettingsDeepLink(notification, onPresented: onPresented)
                 }

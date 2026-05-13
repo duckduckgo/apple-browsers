@@ -273,7 +273,7 @@ extension WebCacheManager {
     }
 
     private func removeContainersIfNeeded(previousCount: Int) async {
-        await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: previousCount)
+        _ = await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: previousCount)
     }
 
     private func clearData(inDataStore dataStore: any DDGWebsiteDataStore,

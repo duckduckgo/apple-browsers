@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Teksto vertimas vaizdais";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Kurti vaizdą";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Naujausios informacijos paieška";
 
@@ -2847,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne dabar";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "DI funkcijos yra privačios ir neprivalomos.\nGalite atlikti pakeitimus Nustatymai > DI funkcijos.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Ar nori lengvai pasiekti privatų DI pokalbį adreso juostoje?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Paieška ir „Duck.ai“";
 
@@ -3013,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ar nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
+"onboarding.rebranding.intro.message" = "Ar nori spartesnės naršyklės, kurią valdai tu?\n\nDI neprivalomas, o privatumo apsauga – visada įjungta.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki.";
@@ -4870,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokuoti reklamas „YouTube“";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kai įjungta, „DuckDuckGo“ anonimiškai aptiks skelbimų blokavimo trukdžius arba „YouTube“ klaidas, kad pagerintų patirtį visiems. „DuckDuckGo“ niekada nemato, kokius vaizdo įrašus žiūrite, ar bet kokios asmenį identifikuojančios informacijos.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Sužinoti daugiau";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Žymės";

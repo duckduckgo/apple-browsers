@@ -102,7 +102,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
             installDateProvider: { Date() }
         )
 

@@ -56,7 +56,8 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage)
         self.thresholdResolver = IdleReturnThresholdResolver(
             privacyConfigurationManager: privacyConfigurationManager,
-            debugOverridesStorage: debugOverridesStorage
+            debugOverridesStorage: debugOverridesStorage,
+            userPreferenceStorage: storage
         )
     }
 

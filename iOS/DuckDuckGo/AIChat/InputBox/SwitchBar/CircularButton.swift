@@ -134,6 +134,11 @@ final class CircularButton: UIButton {
                   pressedBackground: pressedBackground)
     }
 
+    func applyAIVoiceChatStyle() {
+        setColors(foreground: UIColor(designSystemColor: .textPrimary),
+                  background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
 

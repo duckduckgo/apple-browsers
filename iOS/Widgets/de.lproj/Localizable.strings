@@ -85,17 +85,23 @@
 /* Title for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.title" = "Shortcuts konfigurieren";
 
+/* Label for first shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut1" = "Shortcut 1";
+
+/* Label for second shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut2" = "Shortcut 2";
+
+/* Label for third shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut3" = "Shortcut 3";
+
+/* Label for fourth shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut4" = "Shortcut 4";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Durchsuche schnell deine gespeicherten DuckDuckGo-Passwörter.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Passwörter suchen";
-
-/* Description of medium quickActions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.description" = "Shortcuts zu deinen bevorzugten Aktionen.";
-
-/* Display name for medium quick actions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.name" = "Shortcuts";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Du kannst deine Lieblingswebsites privat durchsuchen und anzeigen – einfach durch Antippen!";
@@ -129,6 +135,33 @@
 
 /* Placeholder text in search field on the search and favorites widget */
 "widget.search.duckduckgo" = "Mit DuckDuckGo suchen";
+
+/* Display name shown in the widget configuration picker for the Bookmarks shortcut option */
+"widget.shortcut.option.bookmarks" = "Lesezeichen";
+
+/* Display name shown in the widget configuration picker for the Duck Address (email protection) shortcut option */
+"widget.shortcut.option.duck-address" = "Duck Address";
+
+/* Display name shown in the widget configuration picker for the Duck.ai shortcut option */
+"widget.shortcut.option.duck-ai" = "Duck.ai";
+
+/* Display name shown in the widget configuration picker for the Duck.ai Voice shortcut option */
+"widget.shortcut.option.duck-ai-voice" = "Duck.ai Voice";
+
+/* Display name shown in the widget configuration picker for the Favorites shortcut option */
+"widget.shortcut.option.favorites" = "Favoriten";
+
+/* Display name shown in the widget configuration picker for the Passwords shortcut option */
+"widget.shortcut.option.passwords" = "Passwörter";
+
+/* Type name shown in the widget configuration picker for the shortcut option enum */
+"widget.shortcut.option.type-name" = "Shortcut-Option";
+
+/* Display name shown in the widget configuration picker for the Voice Search shortcut option */
+"widget.shortcut.option.voice-search" = "Sprachsuche";
+
+/* Display name shown in the widget configuration picker for the VPN shortcut option */
+"widget.shortcut.option.vpn" = "VPN";
 
 /* VPN connect button text */
 "widget.vpn.button.connect" = "Verbinden";

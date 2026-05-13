@@ -19,8 +19,10 @@
 
 enum WidgetSourceType: String {
     static let sourceKey = "source"
+    static let shortcutKey = "shortcut"
 
     case quickActions = "widget.quickactions"
+    case quickActionsMedium = "widget.quickactions.medium"
     case favorite = "widget.favorite"
     case lockscreenComplication = "widget.lockscreen.complication"
     case controlCenter = "widget.controlcenter"

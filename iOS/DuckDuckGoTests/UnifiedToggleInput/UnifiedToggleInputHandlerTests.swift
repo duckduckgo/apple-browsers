@@ -114,6 +114,79 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - isCurrentTextValidURL
+
+    func test_updateCurrentText_withValidURL_setsIsCurrentTextValidURLTrue() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        XCTAssertTrue(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withSearchTerm_setsIsCurrentTextValidURLFalse() {
+        sut.updateCurrentText("hello world")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_clearedFromURL_revertsIsCurrentTextValidURLToFalse() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        sut.updateCurrentText("")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withValidURL_publishesTrue() {
+        let expectation = expectation(description: "isCurrentTextValidURLPublisher emits true")
+        sut.isCurrentTextValidURLPublisher
+            .dropFirst()
+            .sink { isValid in
+                XCTAssertTrue(isValid)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.updateCurrentText("https://duckduckgo.com")
+        waitForExpectations(timeout: 1)
+    }
+
+    // MARK: - resetInteractionState
+
+    func test_resetInteractionState_clearsHasUserInteractedWithText() {
+        sut.markUserInteraction()
+        XCTAssertTrue(sut.hasUserInteractedWithText)
+
+        sut.resetInteractionState()
+
+        XCTAssertFalse(sut.hasUserInteractedWithText)
+    }
+
+    func test_resetInteractionState_publishesFalse() {
+        sut.markUserInteraction()
+
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher emits false after reset")
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { hasInteracted in
+                XCTAssertFalse(hasInteracted)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_resetInteractionState_alreadyFalse_doesNotPublishChange() {
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher does not fire when already false")
+        expectation.isInverted = true
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
     // MARK: - clearText
 
     func test_clearText_emptiesCurrentText() {
@@ -168,6 +241,22 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.submitText("   ")
 
         XCTAssertFalse(fired)
+    }
+
+    func test_submitAIChatAttachmentOnlyPrompt_firesEmptyAIChatSubmission() {
+        let expectation = expectation(description: "empty AI chat submission fires")
+        sut.setToggleState(.search)
+
+        sut.textSubmissionPublisher
+            .sink { submission in
+                XCTAssertEqual(submission.text, "")
+                XCTAssertEqual(submission.mode, .aiChat)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.submitAIChatAttachmentOnlyPrompt()
+        waitForExpectations(timeout: 1)
     }
 
     func test_submitText_usesCurrentToggleMode() {
@@ -245,6 +334,48 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .clearOnly)
     }
 
+    func test_setAIVoiceChatEnabled_aiChatModeWithEmptyText_keepsInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_setAIVoiceChatEnabled_collapsedAIChatWithVoiceSearchDisabled_showsVoiceButton() {
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_setAIVoiceChatEnabled_expandedAIChatWithVoiceSearchDisabled_hidesVoiceButton() {
+        sut.isAIVoiceChatEnabled = true
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_setAIVoiceChatEnabled_aiChatModeWithText_keepsClearButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.updateCurrentText("hello")
+
+        XCTAssertEqual(sut.buttonState, .clearOnly)
+    }
+
+    func test_hidesVoiceButton_aiChatModeWithAIVoiceChatEnabled_hidesInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isAIVoiceChatEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.hidesVoiceButton = true
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
     // MARK: - microphoneButtonTapped
 
     func test_microphoneButtonTapped_firesPublisher() {
@@ -254,6 +385,16 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         sut.microphoneButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_aiVoiceChatButtonTapped_firesPublisher() {
+        let expectation = expectation(description: "aiVoiceChatButtonTappedPublisher fires")
+        sut.aiVoiceChatButtonTappedPublisher
+            .sink { expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.aiVoiceChatButtonTapped()
         waitForExpectations(timeout: 1)
     }
 

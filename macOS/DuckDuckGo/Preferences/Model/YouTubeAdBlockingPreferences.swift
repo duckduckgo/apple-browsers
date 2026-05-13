@@ -27,6 +27,8 @@ import SwiftUI
 
 struct YouTubeAdBlockingSettings: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(.youTubeAdBlockingEnabled)
+    let youTubeAnalyticsEnabled = StorageKey<Bool>(.youTubeAnalyticsEnabled)
+    let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(.shouldHideYouTubeAdBlockingDisclosure)
 }
 
 final class YouTubeAdBlockingPreferences: ObservableObject {
@@ -42,11 +44,34 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         didSet {
             guard youTubeAdBlockingEnabled != oldValue else { return }
             settings.youTubeAdBlockingEnabled = youTubeAdBlockingEnabled
+            if !youTubeAdBlockingEnabled {
+                youTubeAnalyticsEnabled = false
+            }
             pixelFiring?.fire(
                 youTubeAdBlockingEnabled ? WebExtensionPixel.adBlockingExtensionEnabled : WebExtensionPixel.adBlockingExtensionDisabled,
                 frequency: .dailyAndCount)
             NotificationCenter.default.post(name: Self.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
         }
+    }
+
+    var youTubeAnalyticsEnabled: Bool {
+        get { settings.youTubeAnalyticsEnabled ?? false }
+        set { settings.youTubeAnalyticsEnabled = newValue }
+    }
+
+    /// `nil` = never set; `true` = disclosure should be hidden; `false` = explicitly shown.
+    @Published private(set) var isDisclosureHidden: Bool
+
+    /// Settings-pane open hook. If the disclosure preference has never been
+    /// written, pin it to the current YouTube Ad Blocking state — existing
+    /// users (toggle already on) get the disclosure hidden, new users (toggle
+    /// off) keep the disclosure until they explicitly opt in. Always refreshes
+    /// `isDisclosureHidden` so external writes (e.g. debug menu) are picked up.
+    func markDisclosureHiddenIfExistingUser() {
+        if settings.shouldHideYouTubeAdBlockingDisclosure == nil {
+            settings.shouldHideYouTubeAdBlockingDisclosure = youTubeAdBlockingEnabled
+        }
+        isDisclosureHidden = settings.shouldHideYouTubeAdBlockingDisclosure == true
     }
 
     var duckPlayerPreferences: DuckPlayerPreferences
@@ -101,13 +126,21 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         duckPlayerPreferences.openLearnMoreContingencyURL()
     }
 
+    @MainActor
+    func openLearnMoreURL() {
+        guard let url = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously") else { return }
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
+
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
          pixelFiring: PixelFiring? = nil) {
-        self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
+        let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
+        self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
-        youTubeAdBlockingEnabled = self.settings.youTubeAdBlockingEnabled ?? false
+        youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled ?? false
+        isDisclosureHidden = resolvedSettings.shouldHideYouTubeAdBlockingDisclosure == true
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in

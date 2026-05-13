@@ -25,7 +25,7 @@ enum SubscriptionFunnelOrigin: String {
     case onboarding = "funnel_onboarding_ios"
 
     /// User entered the funnel via the skipped-onboarding promo modal.
-    case skippedOnboarding = "funnel_skippedonboarding_ios"
+    case skippedOnboarding = "funnel_modal_ios__skippedonboardingupsell"
 
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"

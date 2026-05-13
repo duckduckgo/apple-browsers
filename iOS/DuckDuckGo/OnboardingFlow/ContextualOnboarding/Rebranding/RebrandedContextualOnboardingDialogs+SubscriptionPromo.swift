@@ -25,8 +25,10 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-52621&m=dev
     struct OnboardingSubscriptionPromoDialog: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         let title: String
         let message: AttributedString
@@ -36,9 +38,23 @@ extension OnboardingRebranding {
         let dismissAction: () -> Void
         let onManualDismiss: () -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-FloatingLeft",
+            size: CGSize(width: 112, height: 222),
+            position: .left(bottomPadding: 18)
+        )
+
         var body: some View {
+            ZStack(alignment: .top) {
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
+                }
+
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : .bottom(offset: 0.2, direction: .leading),
+                    onDismiss: onManualDismiss
+                ) {
                     VStack {
                         OnboardingRebrandingImages.Contextual.promoShield
                             .resizable()
@@ -50,17 +66,10 @@ extension OnboardingRebranding {
                             message: message,
                             messageTextAlignment: .center
                         ) {
-                            VStack(spacing: 8) {
-                                Button(action: proceedAction) {
-                                    Text(proceedText)
-                                }
-                                .buttonStyle(theme.primaryButtonStyle.style)
-
-                                Button(action: dismissAction) {
-                                    Text(dismissText)
-                                }
-                                .buttonStyle(theme.secondaryButtonStyle.style)
+                            Button(action: proceedAction) {
+                                Text(proceedText)
                             }
+                            .buttonStyle(theme.primaryButtonStyle.style)
                         }
                     }
                 }
@@ -68,6 +77,8 @@ extension OnboardingRebranding {
             }
             .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            } // ZStack
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

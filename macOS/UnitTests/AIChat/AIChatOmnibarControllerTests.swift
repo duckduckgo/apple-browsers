@@ -1157,7 +1157,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         await waitForModels()
 
         // Then
-        XCTAssertEqual(controller.displayedReasoningEffort, .none)
+        XCTAssertEqual(controller.displayedReasoningEffort, AIChatReasoningEffort.none)
         XCTAssertEqual(controller.effectiveReasoningEffort, .minimal)
     }
 

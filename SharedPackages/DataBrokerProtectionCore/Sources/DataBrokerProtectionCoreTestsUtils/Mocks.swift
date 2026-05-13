@@ -1487,6 +1487,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var fireOptOutSubmitCalled = false
     public var fireOptOutEmailReceiveCalled = false
     public var fireOptOutEmailConfirmCalled = false
+    public var fireOptOutEmailGetDataCalled = false
     public var fireOptOutValidateCalled = false
     public var fireOptOutSubmitSuccessCalled = false
     public var fireOptOutFillFormCalled = false
@@ -1547,6 +1548,10 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
 
     public func fireOptOutEmailConfirm() {
         fireOptOutEmailConfirmCalled = true
+    }
+
+    public func fireOptOutEmailGetData() {
+        fireOptOutEmailGetDataCalled = true
     }
 
     public func fireOptOutValidate() {
@@ -1626,6 +1631,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireOptOutSubmitCalled = false
         fireOptOutEmailReceiveCalled = false
         fireOptOutEmailConfirmCalled = false
+        fireOptOutEmailGetDataCalled = false
         fireOptOutValidateCalled = false
         fireOptOutSubmitSuccessCalled = false
         fireOptOutFillFormCalled = false

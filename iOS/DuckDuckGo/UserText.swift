@@ -1599,16 +1599,19 @@ public struct UserText {
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
 
     // After Inactivity (NTP / Last Used Tab)
-    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "After Inactivity", comment: "Settings picker label for what to show when returning after inactivity")
+    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "Opening Screen", comment: "Settings picker label for what to show when returning after inactivity")
     public static let settingsAfterInactivityOptionNewTab = NSLocalizedString("settings.afterInactivity.option.newTab", value: "New Tab", comment: "Option: show New Tab when returning after inactivity")
     public static let settingsAfterInactivityOptionLastUsedTab = NSLocalizedString("settings.afterInactivity.option.lastUsedTab", value: "Last Used Tab", comment: "Option: show last used tab when returning after inactivity")
-    public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
+    public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return to DuckDuckGo after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
     public static let settingsAfterInactivityIdleIntervalSecondSingular = NSLocalizedString("settings.afterInactivity.idle.interval.second", value: "1 second", comment: "Idle interval 1 second for settings footer")
     public static let settingsAfterInactivityIdleIntervalMinuteSingular = NSLocalizedString("settings.afterInactivity.idle.interval.minute", value: "1 minute", comment: "Idle interval 1 minute for settings footer")
     public static let settingsAfterInactivityIdleIntervalSecondsFormat = NSLocalizedString("settings.afterInactivity.idle.interval.seconds", value: "%d seconds", comment: "Idle interval in seconds for settings footer (plural)")
     public static let settingsAfterInactivityIdleIntervalMinutesFormat = NSLocalizedString("settings.afterInactivity.idle.interval.minutes", value: "%d minutes", comment: "Idle interval in minutes for settings footer (plural)")
     public static let settingsAfterInactivityIdleIntervalHourSingular = NSLocalizedString("settings.afterInactivity.idle.interval.hour", value: "1 hour", comment: "Idle interval 1 hour for settings footer")
     public static let settingsAfterInactivityIdleIntervalHoursFormat = NSLocalizedString("settings.afterInactivity.idle.interval.hours", value: "%d hours", comment: "Idle interval in hours for settings footer (plural)")
+    public static let settingsAfterInactivityIntervalLabel = NotLocalizedString("settings.afterInactivity.interval.label", value: "Inactivity Timer", comment: "Settings picker label for the inactivity duration before showing New Tab")
+    public static let settingsAfterInactivityIdleIntervalAlways = NotLocalizedString("settings.afterInactivity.idle.interval.always", value: "None", comment: "Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold)")
+    public static let settingsAfterInactivityFooterAlways = NotLocalizedString("settings.afterInactivity.footer.always", value: "Choose what you see when you return to DuckDuckGo.", comment: "Section footer when the user has selected to always show the New Tab Page on return")
 
     // Escape Hatch (Return to Tab Card)
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
@@ -1648,6 +1651,9 @@ public struct UserText {
 
     public static let settingsPProVPNTitle = NSLocalizedString("settings.subscription.VPN.title", value: "VPN", comment: "VPN cell title for privacy pro")
     public static let settingsPProDBPTitle = NSLocalizedString("settings.subscription.DBP.title", value: "Personal Information Removal", comment: "Data Broker protection cell title for privacy pro")
+    public static let settingsPProOtherProtectionsSection = NotLocalizedString("settings.subscription.otherProtections.section", value: "Other protections", comment: "Freemium PIR section title for eligible users")
+    public static let settingsPProFreemiumDBPSubtitle = NotLocalizedString("settings.subscription.DBP.freemium.subtitle", value: "Find your personal info on sites that sell it.", comment: "Freemium PIR subtitle for eligible users")
+    public static let settingsPProFreemiumDBPFreeScanCTA = NotLocalizedString("settings.subscription.DBP.freemium.freeScan", value: "Free Scan", comment: "Freemium PIR CTA for eligible users")
     public static let settingsSubscriptionAiChatTitle = NSLocalizedString("settings.subscription.AIChat.title", value: "Duck.ai", comment: "Paid AIChat protection cell title for subscription")
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
@@ -2023,6 +2029,8 @@ public struct UserText {
     public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "YouTube Ad Blocking", comment: "Settings screen title for YouTube Ad Blocking")
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
+    public static let youTubeAdBlockingToggleFooter = NSLocalizedString("youtube.ad.blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
+    public static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("youtube.ad.blocking.toggle.footer.learn-more", value: "Learn More", comment: "Learn More link appended after the YouTube ad blocking toggle description")
 
     // Duck Player View
     public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
@@ -2055,6 +2063,8 @@ public struct UserText {
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
     public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
+    public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
     public static let aiChatReasoningModeFastTitle = NSLocalizedString("aichat.reasoning.fast.title", value: "Fast", comment: "Title for the fast reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeFastSubtitle = NSLocalizedString("aichat.reasoning.fast.subtitle", value: "Answers quickly", comment: "Subtitle for the fast reasoning mode in the Duck.ai reasoning picker")
@@ -2123,6 +2133,8 @@ public struct UserText {
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
+    public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
+    public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat / compose button in the Duck.ai tab header")
     public static let aiChatAdvancedModelsMenuTitle = NotLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     public static let aiChatAdvancedModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-advanced-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when the user has an active subscription")
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
@@ -2261,6 +2273,10 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
 
+    // MARK: - New Address Bar Picker Refresh
+    public static let newAddressBarPickerRefreshHeadline = NSLocalizedString("new.address.bar.picker.refresh.headline", value: "Want easy access to private\nAI chat in the address bar?", comment: "Headline for the refreshed Duck.ai Toggle Prompt")
+    public static let newAddressBarPickerRefreshFooter = NSLocalizedString("new.address.bar.picker.refresh.footer", value: "AI features are private and optional.\nYou can make changes in Settings > AI Features.", comment: "Footer for the refreshed Duck.ai Toggle Prompt")
+
     // MARK: - Default Omnibar Mode Setting
     public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
     public static let settingsDefaultOmnibarModeFooter = NSLocalizedString("settings.default.omnibar.mode.footer", value: "Default toggle position on new tabs.", comment: "Footer text explaining the toggle position setting in AI Features settings")
@@ -2286,7 +2302,7 @@ public struct UserText {
                 public static var title: String {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
-                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that puts you in control?\n\nAI is always optional, and privacy protection is always on.", comment: "The message of the onboarding dialog popup")
             }
         }
 

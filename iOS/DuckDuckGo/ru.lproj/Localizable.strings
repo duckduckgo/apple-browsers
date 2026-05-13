@@ -233,6 +233,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Создавайте изображения по текстовому описанию";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Создать изображение";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Найдите актуальную информацию";
 
@@ -2847,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Не сейчас";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно.\nИх можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Поиск и Duck.ai";
 
@@ -3013,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
+"onboarding.rebranding.intro.message" = "Нужен быстрый браузер, где все контролируете вы?\n\nЗдесь ИИ — всегда лишь дополнительная опция, а защита конфиденциальности всегда включена.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
@@ -4870,6 +4882,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Блокировать рекламу на YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Если функция включена, DuckDuckGo будет анонимно выявлять проблемы при блокировке рекламы и ошибки YouTube, чтобы улучшить работу сервиса для всех. DuckDuckGo не получает данные о просмотренных вами видео или ваши персональные данные.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Подробнее";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Закладки";

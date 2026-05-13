@@ -162,6 +162,10 @@ final class AIChatContextualInputViewController: UIViewController {
     func setChipTapCallback(_ callback: @escaping () -> Void) {
         nativeInputViewController.setChipTapCallback(callback)
     }
+
+    func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
+        quickActionsView.configure(with: actions)
+    }
 }
 
 // MARK: - Private Setup
@@ -260,10 +264,6 @@ private extension AIChatContextualInputViewController {
             guard let self else { return }
             delegate?.contextualInputViewController(self, didSelectQuickAction: action)
         }
-    }
-
-    internal func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
-        quickActionsView.configure(with: actions)
     }
 
     func configureWelcomeLabel() {

@@ -55,7 +55,6 @@ public final class AddressBarPerformanceCoordinator {
     private var pendingCharStartTime: TimeInterval?
     private var charNeedsRender = false
     private var suggestNeedsRender = false
-    private var pendingEmit: DispatchWorkItem?
     var pendingHookStopTask: Task<Void, Never>?
 
     public convenience init(pixelFiring: PixelFiring? = PixelKit.shared) {
@@ -80,7 +79,6 @@ public final class AddressBarPerformanceCoordinator {
     }
 
     deinit {
-        pendingEmit?.cancel()
         pendingHookStopTask?.cancel()
     }
 
@@ -114,7 +112,6 @@ public final class AddressBarPerformanceCoordinator {
         }
         AddressBarPerformanceCoordinator.currentActive = self
         cancelPendingHookStop()
-        cancelPendingEmit()
         recorder.reset()
         pendingCharStartTime = nil
         charNeedsRender = false
@@ -177,7 +174,6 @@ public final class AddressBarPerformanceCoordinator {
 
     private func scheduleEmit(_ snapshot: (char: [Int], suggest: [Int])) {
         guard !snapshot.char.isEmpty || !snapshot.suggest.isEmpty else { return }
-        cancelPendingEmit()
 
         let charBP = AddressBarPerformanceBucketing.basisPoints(for: snapshot.char)
         let suggestBP = AddressBarPerformanceBucketing.basisPoints(for: snapshot.suggest)
@@ -199,13 +195,7 @@ public final class AddressBarPerformanceCoordinator {
         let work = DispatchWorkItem {
             firing?.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
         }
-        pendingEmit = work
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + deferredEmitDelay, execute: work)
-    }
-
-    private func cancelPendingEmit() {
-        pendingEmit?.cancel()
-        pendingEmit = nil
     }
 
     private func scheduleHookStop() {

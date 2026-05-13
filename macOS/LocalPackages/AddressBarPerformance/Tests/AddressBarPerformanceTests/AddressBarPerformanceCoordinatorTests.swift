@@ -132,8 +132,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     /// Regression guard for the duplicate-terminator path. Cmd-Tab fires window-deactivate and
     /// app-deactivate back to back: the first terminator snapshots a non-empty buffer and
-    /// schedules emission, the second sees an empty recorder. The empty-snapshot guard must
-    /// run before cancellation so the second terminator can't drop the first one's pixel.
+    /// schedules emission, the second sees an empty recorder. The first pixel must still fire.
     func test_duplicateTerminator_doesNotCancelFirstPixel() {
         clock.now = 0
         coordinator.markKeystroke()
@@ -294,7 +293,10 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
-    func test_resetForNewInteraction_cancelsPendingEmit() {
+    /// Regression guard for the Cmd-Tab cycle: the user types, switches apps, returns within
+    /// the deferred-emit window, and types again. The first interaction's pixel must still
+    /// fire — we never drop a captured measurement in flight.
+    func test_resetForNewInteraction_doesNotCancelPendingEmit() {
         clock.now = 0
         coordinator.markKeystroke()
         coordinator.armCharRenderIfPending()
@@ -306,7 +308,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         coordinator.resetForNewInteraction()
 
         waitForPixelEmission()
-        XCTAssertTrue(capture.snapshot().isEmpty)
+        XCTAssertEqual(capture.snapshot().count, 1)
     }
 
     // MARK: - Burst behaviour

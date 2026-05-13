@@ -827,8 +827,9 @@ class MainViewController: UIViewController {
         installTabSwipeOverlay()
     }
 
-
     private func installTabSwipeOverlay() {
+        guard unifiedToggleInputFeature.isAvailable else { return }
+
         let overlay = TabSwipeOverlayView(frame: view.bounds)
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         overlay.alpha = 0

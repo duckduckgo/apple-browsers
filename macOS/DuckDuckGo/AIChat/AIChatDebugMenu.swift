@@ -21,8 +21,6 @@ import AIChatDebugServer
 import DebugServer
 import AppKit
 import Persistence
-import UserScript
-import WebKit
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
@@ -52,12 +50,6 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
-                .targetting(self)
-
-            NSMenuItem.separator()
-
-            NSMenuItem(title: "Send voiceChatStartFailed (NotAllowedError) from Duck.ai",
-                       action: #selector(sendVoiceChatStartFailedFromDuckAi))
                 .targetting(self)
 
             NSMenuItem.separator()
@@ -178,36 +170,4 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
-    /// Calls the current tab's `AIChatUserScriptHandler.voiceChatStartFailed` exactly as if
-    /// Duck.ai's FE had posted it after `getUserMedia` rejected. The full handler pipeline
-    /// runs from there (decode reason → AVCaptureDevice check → popover presentation when
-    /// OS mic is denied → pixel). Bypasses the JS bridge, which uses HMAC-signed messages
-    /// that aren't reproducible from native code, so we skip directly to the entry point
-    /// every signed message ultimately hits.
-    @MainActor
-    @objc func sendVoiceChatStartFailedFromDuckAi() {
-        guard let tab = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController?
-                .mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab,
-              let handler = tab.aiChat?.aiChatUserScript?.handler
-        else { return }
-
-        let message = SimulatedVoiceChatStartFailedMessage(webView: tab.webView)
-        Task { @MainActor in
-            _ = await handler.voiceChatStartFailed(
-                params: ["reason": DuckAiVoiceChatFailureHandler.notAllowedErrorReason],
-                message: message
-            )
-        }
-    }
-}
-
-/// Minimal `UserScriptMessage` stub for the debug-menu dispatch. Only `messageWebView` is
-/// inspected by `voiceChatStartFailed`; the rest are placeholders.
-private struct SimulatedVoiceChatStartFailedMessage: UserScriptMessage {
-    let webView: WKWebView?
-    var messageName: String { AIChatUserScriptMessages.voiceChatStartFailed.rawValue }
-    var messageBody: Any { ["reason": DuckAiVoiceChatFailureHandler.notAllowedErrorReason] }
-    var messageHost: String { webView?.url?.host ?? "" }
-    var isMainFrame: Bool { true }
-    var messageWebView: WKWebView? { webView }
 }

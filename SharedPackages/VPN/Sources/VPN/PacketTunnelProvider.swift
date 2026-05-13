@@ -483,11 +483,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             events: providerEvents,
             tunnelState: self,
             tunnelLifecycle: self,
-            tunnelEgress: self,
-            tunnelReconfigurer: self,
-            scheduleLeakCheckAfterRekey: { [weak self] in
-                await self?.leakCheckService?.scheduleCheck(trigger: .rekey)
-            }
+            tunnelReconfigurer: self
         )
 
         self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
@@ -499,7 +495,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await self.updateBandwidthAnalyzer()
             return await self.bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
-            try await self?.keyRotator.rekey()
+            guard let self else { return }
+            // A rekey that landed back on the same server can't have changed the egress path, so
+            // skip the leak check and let the periodic timer handle the routine validation. We
+            // only force an immediate check when the server (or its IP) actually changed.
+            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
+            // service would skip the check anyway, so don't bother scheduling.
+            let preRekeyEgress = self.currentEgressInfo()
+            try await self.keyRotator.rekey()
+            if let postRekeyEgress = self.currentEgressInfo(), preRekeyEgress != postRekeyEgress {
+                await self.leakCheckService?.scheduleCheck(trigger: .rekey)
+            }
         }
 
         self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(
@@ -1279,7 +1285,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// `handleRestartAdapter()`, or any future code path that mutates `lastSelectedServer` without
     /// going through `handleAdapterStarted`.
     @MainActor
-    func currentEgressInfo() -> LeakCheckEgressInfo? {
+    private func currentEgressInfo() -> LeakCheckEgressInfo? {
         guard let info = lastSelectedServerInfo,
               let ip = info.ipv4?.debugDescription else {
             return nil
@@ -1819,12 +1825,6 @@ extension PacketTunnelProvider: LeakCheckControlling {
         Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
         await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
     }
-}
-
-// MARK: - TunnelEgressProviding
-
-extension PacketTunnelProvider: TunnelEgressProviding {
-    // currentEgressInfo() — already internal @MainActor
 }
 
 // MARK: - TunnelReconfiguring

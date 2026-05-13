@@ -27,25 +27,12 @@ import XCTest
 // as weak protocol refs to match the production wiring pattern.
 
 @MainActor
-private final class MockTunnelEgressProvider: TunnelEgressProviding {
-    var egressInfo: LeakCheckEgressInfo?
-
-    func currentEgressInfo() -> LeakCheckEgressInfo? {
-        egressInfo
-    }
-}
-
-@MainActor
 private final class MockTunnelReconfigurer: TunnelReconfiguring {
     var updateCallCount = 0
     var lastUpdateMethod: PacketTunnelProvider.TunnelUpdateMethod?
     var lastReassert: Bool?
     var lastRegenerateKey: Bool?
     var errorToThrow: Error?
-
-    /// Called inside updateTunnelConfiguration before it returns/throws, so tests can mutate
-    /// the egress mock to simulate the egress path changing across the rekey boundary.
-    var onUpdate: (@MainActor () -> Void)?
 
     func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod,
                                    reassert: Bool,
@@ -54,7 +41,6 @@ private final class MockTunnelReconfigurer: TunnelReconfiguring {
         lastUpdateMethod = updateMethod
         lastReassert = reassert
         lastRegenerateKey = regenerateKey
-        onUpdate?()
         if let errorToThrow {
             throw errorToThrow
         }
@@ -79,9 +65,7 @@ final class KeyRotatorTests: XCTestCase {
     private var events: EventMapping<PacketTunnelProvider.Event>!
     private var tunnelState: MockTunnelStateProvider!
     private var tunnelLifecycle: MockTunnelLifecycleManager!
-    private var tunnelEgress: MockTunnelEgressProvider!
     private var tunnelReconfigurer: MockTunnelReconfigurer!
-    private var leakCheckScheduledCount: Int!
     private var rotator: KeyRotator!
 
     override func setUp() {
@@ -93,6 +77,9 @@ final class KeyRotatorTests: XCTestCase {
 
         let box = FiredEventsBox()
         firedEvents = box
+        // Events are fired from @MainActor contexts in KeyRotator, so capture
+        // synchronously via assumeIsolated — tests can assert on firedEvents
+        // immediately after each call without waiting.
         events = EventMapping<PacketTunnelProvider.Event> { event, _, _, _ in
             MainActor.assumeIsolated {
                 box.events.append(event)
@@ -101,9 +88,7 @@ final class KeyRotatorTests: XCTestCase {
 
         tunnelState = MockTunnelStateProvider()
         tunnelLifecycle = MockTunnelLifecycleManager()
-        tunnelEgress = MockTunnelEgressProvider()
         tunnelReconfigurer = MockTunnelReconfigurer()
-        leakCheckScheduledCount = 0
 
         rotator = KeyRotator(
             keyStore: keyStore,
@@ -111,19 +96,13 @@ final class KeyRotatorTests: XCTestCase {
             events: events,
             tunnelState: tunnelState,
             tunnelLifecycle: tunnelLifecycle,
-            tunnelEgress: tunnelEgress,
-            tunnelReconfigurer: tunnelReconfigurer,
-            scheduleLeakCheckAfterRekey: { [weak self] in
-                self?.leakCheckScheduledCount += 1
-            }
+            tunnelReconfigurer: tunnelReconfigurer
         )
     }
 
     override func tearDown() {
         rotator = nil
-        leakCheckScheduledCount = nil
         tunnelReconfigurer = nil
-        tunnelEgress = nil
         tunnelLifecycle = nil
         tunnelState = nil
         events = nil
@@ -131,24 +110,6 @@ final class KeyRotatorTests: XCTestCase {
         settings = nil
         keyStore = nil
         super.tearDown()
-    }
-
-    // MARK: - shouldScheduleLeakCheck (pure)
-
-    func testShouldScheduleLeakCheck_returnsFalseWhenPostEgressIsNil() {
-        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
-        XCTAssertFalse(KeyRotator.shouldScheduleLeakCheck(preRekeyEgress: pre, postRekeyEgress: nil))
-    }
-
-    func testShouldScheduleLeakCheck_returnsFalseWhenPreAndPostAreEqual() {
-        let info = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
-        XCTAssertFalse(KeyRotator.shouldScheduleLeakCheck(preRekeyEgress: info, postRekeyEgress: info))
-    }
-
-    func testShouldScheduleLeakCheck_returnsTrueWhenEgressChanged() {
-        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
-        let post = LeakCheckEgressInfo(ipAddress: "5.6.7.8", name: "eu-west")
-        XCTAssertTrue(KeyRotator.shouldScheduleLeakCheck(preRekeyEgress: pre, postRekeyEgress: post))
     }
 
     // MARK: - rekey() short-circuit
@@ -164,34 +125,16 @@ final class KeyRotatorTests: XCTestCase {
             return
         }
         XCTAssertEqual(tunnelReconfigurer.updateCallCount, 0)
-        XCTAssertEqual(leakCheckScheduledCount, 0)
     }
 
     // MARK: - rekey() success
 
-    func testRekey_success_doesNotScheduleLeakCheckWhenEgressUnchanged() async throws {
-        let info = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
-        tunnelEgress.egressInfo = info
-
+    func testRekey_success_callsUpdateTunnelConfigurationWithRegenerateKey() async throws {
         try await rotator.rekey()
 
         XCTAssertEqual(tunnelReconfigurer.updateCallCount, 1)
         XCTAssertEqual(tunnelReconfigurer.lastReassert, false)
         XCTAssertEqual(tunnelReconfigurer.lastRegenerateKey, true)
-        XCTAssertEqual(leakCheckScheduledCount, 0)
-        assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
-    }
-
-    func testRekey_success_schedulesLeakCheckWhenEgressChanged() async throws {
-        tunnelEgress.egressInfo = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
-        tunnelReconfigurer.onUpdate = { [weak self] in
-            self?.tunnelEgress.egressInfo = LeakCheckEgressInfo(ipAddress: "5.6.7.8", name: "eu-west")
-        }
-
-        try await rotator.rekey()
-
-        XCTAssertEqual(tunnelReconfigurer.updateCallCount, 1)
-        XCTAssertEqual(leakCheckScheduledCount, 1)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
     }
 
@@ -211,7 +154,6 @@ final class KeyRotatorTests: XCTestCase {
         }
 
         XCTAssertFalse(tunnelLifecycle.handleAccessRevokedCalled)
-        XCTAssertEqual(leakCheckScheduledCount, 0)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeyFailure])
     }
 
@@ -236,7 +178,6 @@ final class KeyRotatorTests: XCTestCase {
         } else {
             XCTFail("Expected handleAccessRevoked called with vpnAccessRevoked, got \(String(describing: tunnelLifecycle.handleAccessRevokedError))")
         }
-        XCTAssertEqual(leakCheckScheduledCount, 0)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeyFailure])
     }
 

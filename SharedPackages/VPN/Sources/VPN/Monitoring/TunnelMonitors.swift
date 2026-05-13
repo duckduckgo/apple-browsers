@@ -21,34 +21,10 @@ import Foundation
 import Network
 import os.log
 
-/// Owns the lifecycle of the tunnel's monitoring subsystem: starts/stops the 6
-/// monitors as a group, gates each on its preconditions, and translates monitor
-/// signals into action requests for the caller. Does not perform the actions
-/// itself, and does not decide *when* monitoring should run — the tunnel does.
-///
-/// In scope:
-/// - Owning the 6 monitor instances: tunnel-failure, latency, entitlement,
-///   server-status, key-expiration tester, connection tester.
-/// - `start(testImmediately:)` / `stop()` — group lifecycle with idempotent
-///   restart (`isStarted` → stop → start) for each monitor.
-/// - Per-monitor start preconditions: latency needs server IP and valid
-///   entitlement; server-status needs server name; connection-tester needs
-///   interface name + feature flag.
-/// - Firing monitor-domain telemetry: `.reportTunnelFailure`, `.reportLatency`,
-///   `.serverMigrationAttempt`.
-/// - Failure recovery: owns `FailureRecoveryHandler`, starts/stops it in
-///   response to detected/recovered signals.
-/// - Routing monitor signals upward as action requests via injected hooks.
-///
-/// Out of scope:
-/// - The monitor algorithms themselves — each monitor class owns its own logic.
-/// - Performing the requested actions (`updateTunnelConfiguration`,
-///   `handleAccessRevoked`, `handleConnectionTestResult`) — those run in the
-///   caller, reached via hooks or `TunnelLifecycleManaging`.
-/// - Knowing when to start/stop — the caller decides based on tunnel state.
-/// - Connection-state management — `connectionStatus` and its transitions.
-/// - Reading tunnel/server state directly — asks via `TunnelStateProviding`.
-/// - Sleep/wake, snooze, wide events, subscription/token concerns.
+/// Groups the tunnel's monitors behind one start/stop so the subsystem can be
+/// exercised without `NEPacketTunnelProvider`. Wires preconditions and routes
+/// signals out via injected hooks; the caller decides *when* monitoring runs
+/// and *how* to act on each signal.
 @MainActor
 protocol TunnelMonitoring: AnyObject {
     func start(testImmediately: Bool) async throws

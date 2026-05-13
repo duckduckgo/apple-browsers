@@ -20,6 +20,7 @@ import XCTest
 import BrowserServicesKit
 import Combine
 import DDGSync
+import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SyncCreditCardsAdapterTests: XCTestCase {
@@ -27,11 +28,13 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
     var errorHandler: CapturingAdapterErrorHandler!
     var adapter: SyncCreditCardsAdapter!
     var metadataStore: MockMetadataStore! = .init()
+    var keyValueStore: MockThrowingKeyValueStore!
     var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
         errorHandler = CapturingAdapterErrorHandler()
         adapter = SyncCreditCardsAdapter(syncErrorHandler: errorHandler)
+        keyValueStore = MockThrowingKeyValueStore()
         cancellables = []
     }
 
@@ -40,12 +43,15 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
         adapter = nil
         cancellables = nil
         metadataStore = nil
+        keyValueStore = nil
     }
 
     func testWhenSyncErrorPublished_ThenErrorHandlerHandleCreditCardErrorCalled() async {
         let expectation = XCTestExpectation(description: "Sync did fail")
         let expectedError = NSError(domain: "some error", code: 400)
-        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory, metadataStore: metadataStore)
+        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
+                                      metadataStore: metadataStore,
+                                      keyValueStore: keyValueStore)
         adapter.provider!.syncErrorPublisher
             .sink { error in
                 expectation.fulfill()
@@ -61,7 +67,9 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
 
     func testWhenSyncErrorPublished_ThenErrorHandlerSyncCreditCardsSuccededCalled() async {
         let expectation = XCTestExpectation(description: "Sync Did Update")
-        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory, metadataStore: metadataStore)
+        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
+                                      metadataStore: metadataStore,
+                                      keyValueStore: keyValueStore)
 
         Task {
             adapter.provider?.syncDidUpdateData()

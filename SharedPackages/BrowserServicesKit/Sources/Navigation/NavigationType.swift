@@ -174,7 +174,7 @@ public struct HistoryItemIdentity: Hashable {
     public init(backForwardListItem: WKBackForwardListItem) {
         self.identifier = ObjectIdentifier(backForwardListItem)
         self.title = backForwardListItem.title
-        self.url = backForwardListItem.url
+        self.url = backForwardListItem.safeURL
     }
 
     public static func == (lhs: HistoryItemIdentity, rhs: HistoryItemIdentity) -> Bool {

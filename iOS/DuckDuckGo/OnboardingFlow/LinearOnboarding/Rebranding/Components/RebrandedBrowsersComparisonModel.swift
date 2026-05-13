@@ -23,52 +23,10 @@ import Onboarding
 struct RebrandedBrowsersComparisonModel {
 
     struct Feature: Equatable {
-        let type: FeatureType
+        let icon: Image
+        let title: String
         let safariAvailability: Availability
         let ddgAvailability: Availability
-
-        enum FeatureType: Equatable {
-            case privateSearch
-            case privateAIChat
-            case blockTrackers
-            case blockCookies
-            case blockAds
-            case eraseData
-
-            var title: String {
-                switch self {
-                case .privateSearch:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch
-                case .privateAIChat:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChat
-                case .blockTrackers:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
-                case .blockCookies:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
-                case .blockAds:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
-                case .eraseData:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData
-                }
-            }
-
-            var icon: Image {
-                switch self {
-                case .privateSearch:
-                    return OnboardingRebrandingImages.Comparison.privateSearchIcon
-                case .privateAIChat:
-                    return OnboardingRebrandingImages.Comparison.privateAIChatIcon
-                case .blockTrackers:
-                    return OnboardingRebrandingImages.Comparison.blockTrackersIcon
-                case .blockCookies:
-                    return OnboardingRebrandingImages.Comparison.blockCookiesIcon
-                case .blockAds:
-                    return OnboardingRebrandingImages.Comparison.blockAdsIcon
-                case .eraseData:
-                    return OnboardingRebrandingImages.Comparison.eraseDataIcon
-                }
-            }
-        }
 
         enum Availability {
             case available
@@ -88,7 +46,7 @@ struct RebrandedBrowsersComparisonModel {
         }
     }
 
-    static var features: [Feature] {
+    static var defaultFeatures: [Feature] {
         return [
             Feature(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available),
             Feature(type: .privateAIChat, safariAvailability: .unavailable, ddgAvailability: .available),
@@ -97,4 +55,55 @@ struct RebrandedBrowsersComparisonModel {
             Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
         ]
     }
+}
+
+extension RebrandedBrowsersComparisonModel.Feature {
+
+    enum FeatureType: Equatable {
+        case privateSearch
+        case privateAIChat
+        case blockTrackers
+        case blockCookies
+        case blockAds
+        case eraseData
+
+        var title: String {
+            switch self {
+            case .privateSearch:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch
+            case .privateAIChat:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChat
+            case .blockTrackers:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
+            case .blockCookies:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
+            case .blockAds:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
+            case .eraseData:
+                return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData
+            }
+        }
+
+        var icon: Image {
+            switch self {
+            case .privateSearch:
+                return OnboardingRebrandingImages.Comparison.privateSearchIcon
+            case .privateAIChat:
+                return OnboardingRebrandingImages.Comparison.privateAIChatIcon
+            case .blockTrackers:
+                return OnboardingRebrandingImages.Comparison.blockTrackersIcon
+            case .blockCookies:
+                return OnboardingRebrandingImages.Comparison.blockCookiesIcon
+            case .blockAds:
+                return OnboardingRebrandingImages.Comparison.blockAdsIcon
+            case .eraseData:
+                return OnboardingRebrandingImages.Comparison.eraseDataIcon
+            }
+        }
+    }
+
+    init(type: FeatureType, safariAvailability: Availability, ddgAvailability: Availability) {
+        self.init(icon: type.icon, title: type.title, safariAvailability: safariAvailability, ddgAvailability: ddgAvailability)
+    }
+
 }

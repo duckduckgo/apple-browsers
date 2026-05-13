@@ -243,6 +243,22 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(fired)
     }
 
+    func test_submitAIChatAttachmentOnlyPrompt_firesEmptyAIChatSubmission() {
+        let expectation = expectation(description: "empty AI chat submission fires")
+        sut.setToggleState(.search)
+
+        sut.textSubmissionPublisher
+            .sink { submission in
+                XCTAssertEqual(submission.text, "")
+                XCTAssertEqual(submission.mode, .aiChat)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.submitAIChatAttachmentOnlyPrompt()
+        waitForExpectations(timeout: 1)
+    }
+
     func test_submitText_usesCurrentToggleMode() {
         let expectation = expectation(description: "mode in submission matches toggle")
         sut.setToggleState(.search)

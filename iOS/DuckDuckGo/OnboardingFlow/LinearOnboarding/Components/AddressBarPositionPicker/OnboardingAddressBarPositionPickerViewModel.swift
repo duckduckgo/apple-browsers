@@ -33,9 +33,26 @@ final class OnboardingAddressBarPositionPickerViewModel: ObservableObject {
     @Published private(set) var items: [DisplayModel] = []
 
     private let addressBarPositionManager: AddressBarPositionManaging
+    private let topOption: OnboardingAddressBarPositionContent.OptionContent
+    private let bottomOption: OnboardingAddressBarPositionContent.OptionContent
+    private let defaultIndicator: String
 
-    init(addressBarPositionManager: AddressBarPositionManaging = AppUserDefaults()) {
+    init(
+        addressBarPositionManager: AddressBarPositionManaging = AppUserDefaults(),
+        topOption: OnboardingAddressBarPositionContent.OptionContent = .init(
+            title: UserText.Onboarding.AddressBarPosition.topTitle,
+            message: UserText.Onboarding.AddressBarPosition.topMessage
+        ),
+        bottomOption: OnboardingAddressBarPositionContent.OptionContent = .init(
+            title: UserText.Onboarding.AddressBarPosition.bottomTitle,
+            message: UserText.Onboarding.AddressBarPosition.bottomMessage
+        ),
+        defaultIndicator: String = UserText.Onboarding.AddressBarPosition.defaultOption
+    ) {
         self.addressBarPositionManager = addressBarPositionManager
+        self.topOption = topOption
+        self.bottomOption = bottomOption
+        self.defaultIndicator = defaultIndicator
         makeDisplayModels()
     }
 
@@ -46,7 +63,7 @@ final class OnboardingAddressBarPositionPickerViewModel: ObservableObject {
 
     private func makeDisplayModels() {
         items = AddressBarPosition.allCases.map { addressBarPosition in
-            let info = addressBarPosition.titleAndMessage
+            let info = titleAndMessage(for: addressBarPosition)
 
             return DisplayModel(
                 type: addressBarPosition,
@@ -54,6 +71,26 @@ final class OnboardingAddressBarPositionPickerViewModel: ObservableObject {
                 title: info.title,
                 message: info.message,
                 isSelected: addressBarPositionManager.currentAddressBarPosition == addressBarPosition
+            )
+        }
+    }
+
+    private func titleAndMessage(for position: AddressBarPosition) -> (title: NSAttributedString, message: String) {
+        switch position {
+        case .top:
+            let firstPart = NSAttributedString(string: topOption.title)
+                .withFont(UIFont.daxBodyBold())
+                .withTextColor(UIColor.label)
+            let secondPart = NSAttributedString(string: defaultIndicator)
+                .withFont(UIFont.daxBodyRegular())
+                .withTextColor(UIColor.secondaryLabel)
+
+            return (firstPart + " " + secondPart, topOption.message)
+        case .bottom:
+            return (
+                NSAttributedString(string: bottomOption.title)
+                    .withFont(UIFont.daxBodyBold()),
+                bottomOption.message
             )
         }
     }
@@ -70,29 +107,6 @@ extension AppUserDefaults: AddressBarPositionManaging {}
 // MARK: - AddressBarPosition Helpers
 
 private extension AddressBarPosition {
-
-    var titleAndMessage: (title: NSAttributedString, message: String) {
-        switch self {
-        case .top:
-            let firstPart = NSAttributedString(string: UserText.Onboarding.AddressBarPosition.topTitle)
-                .withFont(UIFont.daxBodyBold())
-                .withTextColor(UIColor.label)
-            let secondPart = NSAttributedString(string: UserText.Onboarding.AddressBarPosition.defaultOption)
-                .withFont(UIFont.daxBodyRegular())
-                .withTextColor(UIColor.secondaryLabel)
-
-            return (
-                firstPart + " " + secondPart,
-                UserText.Onboarding.AddressBarPosition.topMessage
-            )
-        case .bottom:
-            return (
-                NSAttributedString(string: UserText.Onboarding.AddressBarPosition.bottomTitle)
-                    .withFont(UIFont.daxBodyBold()),
-                UserText.Onboarding.AddressBarPosition.bottomMessage
-            )
-        }
-    }
 
     var image: ImageResource {
         switch self {

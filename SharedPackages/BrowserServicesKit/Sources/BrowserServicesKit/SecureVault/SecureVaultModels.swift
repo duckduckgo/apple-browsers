@@ -227,7 +227,7 @@ public struct SecureVaultModels {
             return type.displayCardType
         }
 
-        static func suffix(from cardNumber: String) -> String {
+        public static func suffix(from cardNumber: String) -> String {
             let trimmedCardNumber = cardNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             return String(trimmedCardNumber.suffix(4))
         }

@@ -74,6 +74,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
 
@@ -121,6 +122,7 @@ final class AIChatContextualSheetCoordinator {
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -133,6 +135,7 @@ final class AIChatContextualSheetCoordinator {
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
@@ -287,6 +290,7 @@ private extension AIChatContextualSheetCoordinator {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             isFireTab: isFireTab,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }

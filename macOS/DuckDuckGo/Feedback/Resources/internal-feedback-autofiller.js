@@ -89,6 +89,22 @@ function hideFormQuestion(labelText) {
     }
 }
 
+function rehideFieldsWhenReturningToNativeApps() {
+    var wasNativeApps = true;
+    const observer = new MutationObserver(() => {
+        const selected = document.querySelector('[aria-label^="Which product area or team does this feedback relate to?"]');
+        if (!selected) return;
+        const isNativeApps = selected.textContent.trim().includes('Native Apps');
+        if (isNativeApps && !wasNativeApps) {
+            fillOutFormAfterNativeAppsSelected();
+        }
+        wasNativeApps = isNativeApps;
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
+var quickModeUIInjected = false;
+
 function addEmailFieldPadding() {
     var emailLabel = Array.from(document.querySelectorAll('label'))
         .find(function(l) {
@@ -104,7 +120,6 @@ function addEmailFieldPadding() {
 
 function hideIrrelevantFields() {
     const fieldsToHide = [
-        'Which product area or team',
         'Which platform?',
         'Which macOS version',
         'Which version of the DuckDuckGo',
@@ -116,11 +131,15 @@ function hideIrrelevantFields() {
     ];
     fieldsToHide.forEach(hideFormQuestion);
 
+    if (quickModeUIInjected) return;
+    quickModeUIInjected = true;
+
     addEmailFieldPadding();
     moveSubmitButtonUnderDescription();
     injectDiagnosticsSection();
     injectScreenshotSection();
     hookSubmitForDiagnostics();
+    rehideFieldsWhenReturningToNativeApps();
 
     var hider = document.getElementById('ddg-form-hider');
     if (hider) {

@@ -146,26 +146,26 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutConditionNotFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
-    // KPIs - engagement
+    // engagement
     case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
     case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
     case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - user interaction (PIR dashboard presentations)
+    // user interaction (PIR dashboard presentations)
     case dailyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
     case weeklyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
     case monthlyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - dashboard opens
+    // dashboard opens
     case dashboardOpen(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - first scan
+    // first scan
     case firstScan(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - freemium → paid upsell
+    // freemium → paid upsell
     case freemiumUpsell
 
-    // KPIs - events
+    // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
@@ -265,23 +265,23 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
         case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
-            // KPIs - engagement
+            // engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
         case .weeklyActiveUser: return "dbp_engagement_wau"
         case .monthlyActiveUser: return "dbp_engagement_mau"
 
-            // KPIs - user interaction
+            // user interaction
         case .dailyInteractedUser: return "dbp_interaction_dau"
         case .weeklyInteractedUser: return "dbp_interaction_wau"
         case .monthlyInteractedUser: return "dbp_interaction_mau"
 
-            // KPIs - dashboard opens
+            // dashboard opens
         case .dashboardOpen: return "dbp_dashboard_open"
 
-            // KPIs - first scan
+            // first scan
         case .firstScan: return "dbp_first_scan_u"
 
-            // KPIs - freemium upsell
+            // freemium upsell
         case .freemiumUpsell: return "dbp_freemium_upsell_u"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"

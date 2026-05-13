@@ -496,14 +496,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             return await self.bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
             guard let self else { return }
-            // A rekey that landed back on the same server can't have changed the egress path, so
-            // skip the leak check and let the periodic timer handle the routine validation. We
-            // only force an immediate check when the server (or its IP) actually changed.
-            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
-            // service would skip the check anyway, so don't bother scheduling.
             let preRekeyEgress = self.currentEgressInfo()
             try await self.keyRotator.rekey()
-            if let postRekeyEgress = self.currentEgressInfo(), preRekeyEgress != postRekeyEgress {
+            let postRekeyEgress = self.currentEgressInfo()
+            if VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: preRekeyEgress, postRekey: postRekeyEgress) {
                 await self.leakCheckService?.scheduleCheck(trigger: .rekey)
             }
         }

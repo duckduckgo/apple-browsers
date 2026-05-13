@@ -24,10 +24,12 @@ import Persistence
 enum AfterInactivityStorageKeys: String, StorageKeyDescribing {
     case afterInactivityOption = "idle-return-after-inactivity-option"
     case idleReturnNewUser = "idle-return-new-user"
+    case idleReturnIntervalSeconds = "idle-return-interval-seconds"
 }
 
 /// StoringKeys for after-inactivity setting.
 struct AfterInactivitySettingKeys: StoringKeys {
     let afterInactivityOption = StorageKey<String>(AfterInactivityStorageKeys.afterInactivityOption)
     let idleReturnNewUser = StorageKey<Bool>(AfterInactivityStorageKeys.idleReturnNewUser)
+    let idleReturnIntervalSeconds = StorageKey<Int>(AfterInactivityStorageKeys.idleReturnIntervalSeconds)
 }

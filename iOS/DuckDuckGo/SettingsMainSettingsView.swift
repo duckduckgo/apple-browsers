@@ -118,7 +118,7 @@ struct SettingsMainSettingsView: View {
         }
 
         @ViewBuilder func buildSyncEntry(viewModel: SettingsViewModel) -> AnyView {
-            let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
+            let statusIndicator = StatusIndicatorView(status: viewModel.syncStatus)
             let label = viewModel.state.sync.title
             AnyView(SettingsCellView(label: label,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.sync),

@@ -72,6 +72,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -98,7 +99,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
-                                                fireModePromotionEligibility: fireModePromotionEligibility)
+                                                fireModePromotionEligibility: fireModePromotionEligibility,
+                                                isOpenedAfterIdle: hasEscapeHatch)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -122,10 +124,19 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                 guard let self else { return }
                 self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
             }
+            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestTabSwitcher(self)
+            }
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil
+            newTabPageViewModel.onTabSwitcherTap = nil
         }
         updateBorderView()
+    }
+
+    func setOpenTabCount(_ count: Int) {
+        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {

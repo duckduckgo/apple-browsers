@@ -29,6 +29,7 @@ import UIKit
 /// Delegate protocol for handling interactions with the unified toggle input composite view.
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
@@ -269,8 +270,16 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.attachments
     }
 
+    var isToolbarSubmitEnabled: Bool {
+        toolsToolbar.isSubmitEnabled
+    }
+
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         attachmentsStrip.addAttachment(attachment)
+    }
+
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        attachmentsStrip.replaceAttachment(id: id, with: attachment)
     }
 
     func removeAttachment(id: UUID) {
@@ -868,6 +877,18 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
+
+    private func updateSubmitButtonAvailability() {
+        let state = UnifiedToggleInputFloatingSubmitState(
+            text: handler.currentText,
+            mode: handler.currentToggleState,
+            attachments: attachmentsStrip.attachments)
+        toolsToolbar.isSubmitEnabled = state.canSubmit
+    }
+
+    private func submitCurrentInput() {
+        delegate?.unifiedToggleInputViewDidRequestSubmitCurrentInput(self)
+    }
 }
 
 // MARK: - Inline Dismiss
@@ -1055,6 +1076,7 @@ private extension UnifiedToggleInputView {
         attachmentsStrip.onAttachmentsChanged = { [weak self] in
             guard let self else { return }
             updateAttachmentsStripLayout()
+            updateSubmitButtonAvailability()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()
             onAttachmentsLayoutDidChange?()
@@ -1069,7 +1091,7 @@ private extension UnifiedToggleInputView {
         toolsToolbar.alpha = 0
         toolsToolbar.onSubmitTapped = { [weak self] in
             guard let self else { return }
-            handler.submitText(handler.currentText)
+            submitCurrentInput()
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
@@ -1185,8 +1207,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self else { return }
-                let hasSubmittableText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                toolsToolbar.isSubmitEnabled = hasSubmittableText
+                updateSubmitButtonAvailability()
                 delegate?.unifiedToggleInputViewDidChangeText(self, text: text)
             }
             .store(in: &cancellables)
@@ -1197,6 +1218,7 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
+                updateSubmitButtonAvailability()
             }
             .store(in: &cancellables)
 

@@ -53,6 +53,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: keyValueStore,
             settingHandlers: [],
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),

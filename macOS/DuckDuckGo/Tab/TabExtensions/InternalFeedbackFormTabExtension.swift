@@ -138,7 +138,7 @@ final class InternalFeedbackFormTabExtension {
 extension InternalFeedbackFormTabExtension: NavigationResponder {
 
     func navigationDidFinish(_ navigation: Navigation) {
-        guard internalUserDecider.isInternalUser, let webView, navigation.navigationAction.isForMainFrame, isInternalFeedbackURL(navigation.url) else {
+        guard internalUserDecider.isInternalUser, let webView, navigation.navigationAction.isForMainFrame, Self.isInternalFeedbackURL(navigation.url) else {
             return
         }
         webView.evaluateJavaScript(scriptSourceForCurrentNavigation())
@@ -148,7 +148,7 @@ extension InternalFeedbackFormTabExtension: NavigationResponder {
     /// query items in the webView URL that shouldn't be affecting the logic.
     /// So we're comparing the host, path and that webView URL query items are superset
     /// of the reference URL query items.
-    private func isInternalFeedbackURL(_ url: URL) -> Bool {
+    static func isInternalFeedbackURL(_ url: URL) -> Bool {
         guard let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return false
         }

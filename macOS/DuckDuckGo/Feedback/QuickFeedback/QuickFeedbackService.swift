@@ -31,6 +31,7 @@ final class QuickFeedbackService: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     private var contentOverlayPopover: ContentOverlayPopover?
+    private var overlayClampObserver: NSObjectProtocol?
 
     /// Suffix match (not substring) so only Asana-owned cookies are cleared on sign-out.
     private static let asanaDomainSuffix = "asana.com"
@@ -97,7 +98,6 @@ final class QuickFeedbackService: NSObject {
             self?.signOut()
         }
         controller.window?.delegate = self
-        controller.setSignOutVisible(true)
         windowController = controller
 
         tab.autofill?.setDelegate(self)
@@ -137,12 +137,14 @@ final class QuickFeedbackService: NSObject {
     // MARK: - Popup lifecycle
 
     private func hidePopup() {
+        stopClampingAutofillOverlay()
         contentOverlayPopover?.viewController.closeContentOverlayPopover()
         windowController?.window?.orderOut(nil)
         screenshotData = nil
     }
 
     private func forceClosePopup() {
+        stopClampingAutofillOverlay()
         contentOverlayPopover?.viewController.closeContentOverlayPopover()
         contentOverlayPopover = nil
         windowController?.window?.orderOut(nil)
@@ -182,7 +184,6 @@ final class QuickFeedbackService: NSObject {
             dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: asanaRecords) {
                 Task { @MainActor [weak self] in
                     self?.currentTab?.webView.load(URLRequest(url: .internalFeedbackForm))
-                    self?.windowController?.setSignOutVisible(true)
                 }
             }
         }
@@ -232,12 +233,20 @@ extension QuickFeedbackService: TabDelegate {
 
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {}
     func tabDidStartNavigation(_ tab: Tab) {}
-    func tabPageDOMLoaded(_ tab: Tab) {}
+
+    /// Bar visibility follows the rendered page: visible only when the form URL is loaded
+    /// (i.e. user is signed in). Hidden on the login screen and during transient navigations.
+    func tabPageDOMLoaded(_ tab: Tab) {
+        let isOnFeedbackForm = tab.webView.url.map(InternalFeedbackFormTabExtension.isInternalFeedbackURL) ?? false
+        windowController?.setSignOutVisible(isOnFeedbackForm)
+    }
+
     func closeTab(_ tab: Tab) {
         forceClosePopup()
     }
 
     func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: WebsiteAutofillUserScript?) {
+        stopClampingAutofillOverlay()
         overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScriptCloseOverlay(websiteAutofillUserScript)
     }
 
@@ -245,12 +254,61 @@ extension QuickFeedbackService: TabDelegate {
                                    willDisplayOverlayAtClick: CGPoint?,
                                    serializedInputContext: String,
                                    inputPosition: CGRect) {
-        overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScript(
+        let popover = overlayPopoverCreatingIfNeeded()
+        popover?.websiteAutofillUserScript(
             websiteAutofillUserScript,
             willDisplayOverlayAtClick: willDisplayOverlayAtClick,
             serializedInputContext: serializedInputContext,
             inputPosition: inputPosition
         )
+        startClampingAutofillOverlay()
+    }
+}
+
+// MARK: - Autofill overlay clamping
+//
+// `ContentOverlayPopover` positions itself relative to the focused input and is sized to fit
+// its content -- in a regular browser window the host is large enough that this never spills
+// out. The feedback popup is only 600×700, so tall overlays (e.g. the "Import passwords"
+// prompt) can extend outside the panel. We clamp the overlay's screen frame to the panel and
+// re-clamp on every resize so async content loads stay contained.
+
+private extension QuickFeedbackService {
+
+    func startClampingAutofillOverlay() {
+        guard let overlayWindow = contentOverlayPopover?.windowController.window else { return }
+        stopClampingAutofillOverlay()
+        overlayClampObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification,
+            object: overlayWindow,
+            queue: .main
+        ) { [weak self] _ in
+            self?.clampAutofillOverlayToPanel()
+        }
+        Task { @MainActor [weak self] in
+            self?.clampAutofillOverlayToPanel()
+        }
+    }
+
+    func stopClampingAutofillOverlay() {
+        if let observer = overlayClampObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        overlayClampObserver = nil
+    }
+
+    func clampAutofillOverlayToPanel() {
+        guard let overlayWindow = contentOverlayPopover?.windowController.window,
+              let panelFrame = windowController?.window?.frame else {
+            return
+        }
+        let overlayFrame = overlayWindow.frame
+        let clampedX = min(max(overlayFrame.minX, panelFrame.minX), max(panelFrame.minX, panelFrame.maxX - overlayFrame.width))
+        let clampedY = min(max(overlayFrame.minY, panelFrame.minY), max(panelFrame.minY, panelFrame.maxY - overlayFrame.height))
+        let clamped = NSRect(x: clampedX, y: clampedY, width: overlayFrame.width, height: overlayFrame.height)
+        if clamped != overlayFrame {
+            overlayWindow.setFrame(clamped, display: true)
+        }
     }
 }
 

@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 import UIKit
 
 struct FilePreviewHelper {

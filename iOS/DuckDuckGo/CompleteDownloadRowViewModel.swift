@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 import EventKit
 import Foundation
+import PrivacyConfig
 
 class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL

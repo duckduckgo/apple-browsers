@@ -233,6 +233,16 @@
                ReferencedContainer = "container:../SharedPackages/WebExtensions">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "ICSParserTests"
+               BuildableName = "ICSParserTests"
+               BlueprintName = "ICSParserTests"
+               ReferencedContainer = "container:../SharedPackages/ICSParser">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

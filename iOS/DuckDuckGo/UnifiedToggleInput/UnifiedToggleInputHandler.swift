@@ -182,6 +182,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
+    func submitAIChatAttachmentOnlyPrompt() {
+        textSubmissionSubject.send((text: "", mode: .aiChat))
+    }
+
     func setToggleState(_ state: TextEntryMode) {
         guard currentToggleState != state else { return }
         currentToggleState = state

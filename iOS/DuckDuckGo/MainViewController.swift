@@ -279,6 +279,7 @@ class MainViewController: UIViewController {
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
+    let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -417,6 +418,7 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
+        onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
         daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
         daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
@@ -493,6 +495,10 @@ class MainViewController: UIViewController {
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: daxDialogsManager
+        )
         self.daxEasterEggLogoStore = daxEasterEggLogoStore
         self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
@@ -1544,7 +1550,9 @@ class MainViewController: UIViewController {
         
         currentTab?.dismiss()
         removeHomeScreen()
-        homePageConfiguration.refresh()
+
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
+        homePageConfiguration.refresh(openedAfterIdle: hatch != nil)
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
@@ -1577,6 +1585,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   fireModePromotionEligibility: fireModePromotionEligibility,
+                                                  hasEscapeHatch: hatch != nil,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -1589,8 +1598,8 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
+        controller.setOpenTabCount(tabManager.currentTabsModel.count)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
@@ -1598,19 +1607,7 @@ class MainViewController: UIViewController {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
 
-        if let hatch {
-            let targetTab = hatch.targetTab
-            unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
-                guard let self else { return }
-                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    clearEscapeHatch()
-                    return
-                }
-                onSwitchToTab(targetTab)
-            })
-        } else {
-            clearEscapeHatch()
-        }
+        configureUnifiedInputEscapeHatch(hatch)
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
@@ -1637,6 +1634,29 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {
+        guard let hatch else {
+            clearEscapeHatch()
+            return
+        }
+        let targetTab = hatch.targetTab
+        unifiedToggleInputCoordinator?.setEscapeHatch(
+            hatch,
+            openTabCount: tabManager.currentTabsModel.count,
+            onTapped: { [weak self] in
+                guard let self else { return }
+                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
+                    clearEscapeHatch()
+                    return
+                }
+                onSwitchToTab(targetTab)
+            },
+            onTabSwitcherTapped: { [weak self] in
+                self?.requestTabSwitcher()
+            }
+        )
     }
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
@@ -1989,6 +2009,7 @@ class MainViewController: UIViewController {
 
     private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.setContentOverlaySuppressed(false)
         coordinator.deactivateToOmnibar()
         if !tab.isAITab {
             coordinator.hide()
@@ -3341,6 +3362,12 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar
     }
 
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.setContentOverlaySuppressed(suppressed)
+        updateUnifiedInputContentVisibility(for: coordinator)
+    }
+
     private func hideKeyboard() {
         dismissOmniBar()
         _ = findInPageView?.resignFirstResponder()
@@ -4316,7 +4343,7 @@ extension MainViewController: OmniBarDelegate {
     private func clearEscapeHatch() {
         newTabPageViewController?.setEscapeHatch(nil)
         currentNTPEscapeHatch = nil
-        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+        unifiedToggleInputCoordinator?.clearEscapeHatch()
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
@@ -4343,6 +4370,10 @@ extension MainViewController: OmniBarDelegate {
             closeTab(currentTab)
         }
         selectTab(tab)
+    }
+
+    func onTabSwitcherRequested() {
+        requestTabSwitcher()
     }
 
     func onToggleModeSwitched() {
@@ -4509,6 +4540,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         selectTab(tab)
         clearEscapeHatch()
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        requestTabSwitcher()
     }
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
@@ -5097,6 +5132,17 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
+        requestTabSwitcher()
+    }
+
+    /// Single entry point for every tab-switcher request — toolbar button, all five pill
+    /// surfaces (regular NTP, UTI Search/Duck.ai, legacy editing-state Search/Duck.ai).
+    /// Fires the same counted/daily pixels and runs `performCancel()` which handles all
+    /// possible modal states (legacy editing state via `endEditing()`, UTI via
+    /// `deactivateToOmnibar()`), so every entry produces identical behaviour.
+    /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
+    /// calls it from another file.
+    func requestTabSwitcher() {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
@@ -5811,6 +5857,15 @@ extension MainViewController: MessageNavigationDelegate {
         switch presentationStyle {
         case .dismissModalsAndPresentFromRoot:
             segueToAppearanceSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToGeneralSettings()
         case .withinCurrentContext:
             assertionFailure("Not implemented yet.")
         }

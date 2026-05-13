@@ -34,22 +34,19 @@ final class SwitchBarTextView: UITextView {
         onTouchesBeganHandler?()
     }
 
-    /// Block first-responder when any ancestor is hidden — covers iOS's modal-dismiss FR
-    /// restoration path which otherwise wakes the textView up while its host UTI is still
-    /// hidden, firing `textViewDidBeginEditing` on a surface the user isn't interacting with.
+    /// Block FR when any ancestor is hidden — covers iOS's modal-dismiss FR restoration path.
     override func becomeFirstResponder() -> Bool {
-        guard isPartOfVisibleHierarchy else { return false }
+        guard !hasHiddenAncestor else { return false }
         return super.becomeFirstResponder()
     }
 
-    private var isPartOfVisibleHierarchy: Bool {
-        guard window != nil else { return false }
+    private var hasHiddenAncestor: Bool {
         var view: UIView? = self
         while let current = view {
-            if current.isHidden { return false }
+            if current.isHidden { return true }
             view = current.superview
         }
-        return true
+        return false
     }
 
 }

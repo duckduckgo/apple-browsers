@@ -21,15 +21,43 @@ import AIChat
 import Foundation
 import UIKit
 
+struct UnifiedToggleInputInvalidFileAttachment: Identifiable {
+    let id: UUID
+    let fileName: String
+    let mimeType: String
+    let fileSizeBytes: Int
+    let validationMessage: String
+    let sourceURL: URL?
+
+    init(
+        id: UUID = UUID(),
+        fileName: String,
+        mimeType: String,
+        fileSizeBytes: Int,
+        validationMessage: String,
+        sourceURL: URL? = nil
+    ) {
+        self.id = id
+        self.fileName = fileName
+        self.mimeType = mimeType
+        self.fileSizeBytes = fileSizeBytes
+        self.validationMessage = validationMessage
+        self.sourceURL = sourceURL
+    }
+}
+
 enum UnifiedToggleInputAttachment: Identifiable {
     case image(AIChatImageAttachment)
     case file(AIChatFileAttachment)
+    case invalidFile(UnifiedToggleInputInvalidFileAttachment)
 
     var id: UUID {
         switch self {
         case .image(let attachment):
             return attachment.id
         case .file(let attachment):
+            return attachment.id
+        case .invalidFile(let attachment):
             return attachment.id
         }
     }
@@ -40,6 +68,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
             return attachment.fileName
         case .file(let attachment):
             return attachment.fileName
+        case .invalidFile(let attachment):
+            return attachment.fileName
         }
     }
 
@@ -48,6 +78,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
         case .image:
             return 0
         case .file(let attachment):
+            return attachment.fileSizeBytes
+        case .invalidFile(let attachment):
             return attachment.fileSizeBytes
         }
     }
@@ -60,10 +92,40 @@ enum UnifiedToggleInputAttachment: Identifiable {
     }
 
     var isFile: Bool {
-        if case .file = self {
+        switch self {
+        case .file, .invalidFile:
+            return true
+        case .image:
+            return false
+        }
+    }
+
+    var isInvalid: Bool {
+        if case .invalidFile = self {
             return true
         }
         return false
+    }
+
+    var validationMessage: String? {
+        guard case .invalidFile(let attachment) = self else { return nil }
+        return attachment.validationMessage
+    }
+
+    var fileAttachment: AIChatFileAttachment? {
+        guard case .file(let attachment) = self else { return nil }
+        return attachment
+    }
+
+    var mimeType: String? {
+        switch self {
+        case .image:
+            return nil
+        case .file(let attachment):
+            return attachment.mimeType
+        case .invalidFile(let attachment):
+            return attachment.mimeType
+        }
     }
 
     var image: UIImage? {
@@ -71,10 +133,4 @@ enum UnifiedToggleInputAttachment: Identifiable {
         return attachment.image
     }
 
-    var fileExtensionDisplayName: String? {
-        guard case .file = self else { return nil }
-        let pathExtension = (fileName as NSString).pathExtension
-        guard !pathExtension.isEmpty else { return nil }
-        return pathExtension.uppercased()
-    }
 }

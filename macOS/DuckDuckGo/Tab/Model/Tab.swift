@@ -689,7 +689,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = webView.title?.trimmingWhitespace()
 
         if let wkBackForwardListItem = webView.backForwardList.currentItem,
-           content.urlForWebView == wkBackForwardListItem.url,
+           let itemURL = wkBackForwardListItem.safeURL,
+           content.urlForWebView == itemURL,
            !webView.isLoading,
            title?.isEmpty == false {
             wkBackForwardListItem.tabTitle = title

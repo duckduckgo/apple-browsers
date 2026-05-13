@@ -19,7 +19,7 @@
 import Foundation
 @testable import Waitlist_macOS
 
-class MockWaitlistStorage: WaitlistStorage {
+final class MockWaitlistStorage: WaitlistStorage {
 
     init() {}
 

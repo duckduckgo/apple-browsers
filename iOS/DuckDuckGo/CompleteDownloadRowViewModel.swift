@@ -21,7 +21,6 @@ import BrowserServicesKit
 import Core
 import EventKit
 import Foundation
-import ICSParser
 
 class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL
@@ -43,13 +42,11 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
         guard #available(iOS 17, *),
               featureFlagger.isFeatureOn(.icsCalendarLinks),
               fileURL.pathExtension.lowercased() == "ics",
-              let data = try? Data(contentsOf: fileURL),
-              let result = try? ICSParser.parse(data: data),
-              result.events.count == 1 else {
+              case .singleEvent(let icsEvent) = ICSFileReader.read(at: fileURL).outcome else {
             return nil
         }
         let store = EKEventStore()
-        let event = CalendarEventPreviewHelper.makeEKEvent(from: result.events[0], in: store)
+        let event = CalendarEventPreviewHelper.makeEKEvent(from: icsEvent, in: store)
         return PreparedCalendarEvent(event: event, store: store)
     }
 }

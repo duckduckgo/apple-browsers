@@ -454,6 +454,7 @@
 		5B6D65152FB39FA000BDCF4D /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6D65132FB39FA000BDCF4D /* EventKit.framework */; };
 		5B6D65162FB39FA000BDCF4D /* EventKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6D65142FB39FA000BDCF4D /* EventKitUI.framework */; };
 		5B6D65182FB3B48500BDCF4D /* CalendarEventEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */; };
+		5B6D651A2FB4BB8000BDCF4D /* ICSFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65192FB4BB7E00BDCF4D /* ICSFileReader.swift */; };
 		5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */ = {isa = PBXBuildFile; productRef = 5B7CA46A2FAE693000D69C83 /* ICSParser */; };
 		5B941E722FA29A2C00AF2CE7 /* QuickActionsMediumWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */; };
 		5B941E752FA29FC800AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
@@ -2991,6 +2992,7 @@
 		5B6D65132FB39FA000BDCF4D /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		5B6D65142FB39FA000BDCF4D /* EventKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKitUI.framework; path = System/Library/Frameworks/EventKitUI.framework; sourceTree = SDKROOT; };
 		5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventEditView.swift; sourceTree = "<group>"; };
+		5B6D65192FB4BB7E00BDCF4D /* ICSFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICSFileReader.swift; sourceTree = "<group>"; };
 		5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsMediumWidgetTests.swift; sourceTree = "<group>"; };
 		5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOption.swift; sourceTree = "<group>"; };
 		5BCF854D2F7D774A0053B95E /* AddressBarURLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarURLFilter.swift; sourceTree = "<group>"; };
@@ -6611,6 +6613,7 @@
 		5B6D65102FB39F4800BDCF4D /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
+				5B6D65192FB4BB7E00BDCF4D /* ICSFileReader.swift */,
 				5B6D65172FB3B47F00BDCF4D /* CalendarEventEditView.swift */,
 				5B6D65112FB39F5400BDCF4D /* CalendarEventPreviewHelper.swift */,
 			);
@@ -12389,6 +12392,7 @@
 				CBAD0F1B2D02EE42006267B8 /* IdleReturnEvaluator.swift in Sources */,
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
+				5B6D651A2FB4BB8000BDCF4D /* ICSFileReader.swift in Sources */,
 				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
 				80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */,
 				CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */,

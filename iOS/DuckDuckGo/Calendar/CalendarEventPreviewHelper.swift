@@ -54,7 +54,11 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
     }
 
     func preview() {
-        switch readICSFile() {
+        let result = ICSFileReader.read(at: filePath)
+        if result.warnings.contains(.unsupportedRRulePart) {
+            Pixel.fire(pixel: .icsCalendarUnsupportedRRule)
+        }
+        switch result.outcome {
         case .singleEvent(let event):
             if #available(iOS 17.0, *) {
                 presentEventEditor(for: event)
@@ -73,30 +77,6 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
             Pixel.fire(pixel: .icsCalendarFallbackParseFailure)
             onFailure?(.parseFailure)
             fallbackToQuickLook()
-        }
-    }
-
-    private enum ReadResult {
-        case singleEvent(ICSEvent)
-        case multipleEvents
-        case unrecognizedTimeZone
-        case parseFailure
-    }
-
-    private func readICSFile() -> ReadResult {
-        guard let data = try? Data(contentsOf: filePath) else {
-            return .parseFailure
-        }
-        do {
-            let result = try ICSParser.parse(data: data)
-            if result.warnings.contains(.unsupportedRRulePart) {
-                Pixel.fire(pixel: .icsCalendarUnsupportedRRule)
-            }
-            return result.events.count == 1 ? .singleEvent(result.events[0]) : .multipleEvents
-        } catch ICSParser.Error.unrecognizedTimeZone(_) {
-            return .unrecognizedTimeZone
-        } catch {
-            return .parseFailure
         }
     }
 

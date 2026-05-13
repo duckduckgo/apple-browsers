@@ -56,10 +56,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     var suggestionTrayDependencies: SuggestionTrayDependencies?
 
-    /// Called in `viewWillDisappear` before the dismiss animation begins.
-    /// Use to move any embedded child content back to an underlying VC before it animates away.
-    var onViewWillDisappear: (() -> Void)?
-
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
     var useNewTransitionBehaviour = false
@@ -236,7 +232,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        onViewWillDisappear?()
     }
 
     override func viewDidDisappear(_ animated: Bool) {

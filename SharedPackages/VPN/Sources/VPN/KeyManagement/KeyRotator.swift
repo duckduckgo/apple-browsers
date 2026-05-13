@@ -61,9 +61,6 @@ final class KeyRotator {
             events.fire(.rekeyAttempt(.success))
         } catch {
             events.fire(.rekeyAttempt(.failure(error)))
-            if case PacketTunnelProvider.TunnelError.vpnAccessRevoked = error {
-                await tunnelLifecycle.handleAccessRevoked(dueTo: error)
-            }
             throw error
         }
     }

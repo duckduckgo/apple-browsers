@@ -495,7 +495,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         } rekey: { @MainActor [weak self] in
             guard let self else { return }
             let preRekeyEgress = self.currentEgressInfo()
-            try await self.keyRotator.rekey()
+            do {
+                try await self.keyRotator.rekey()
+            } catch {
+                await self.subscriptionAccessErrorHandler(error)
+                throw error
+            }
             let postRekeyEgress = self.currentEgressInfo()
             if VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: preRekeyEgress, postRekey: postRekeyEgress) {
                 await self.leakCheckService?.scheduleCheck(trigger: .rekey)

@@ -106,7 +106,7 @@ final class KeyRotatorTests: XCTestCase {
 
     // MARK: - rekey() failure
 
-    func testRekey_genericError_firesFailureAndRethrows_doesNotHandleAccessRevoked() async {
+    func testRekey_error_firesFailureAndRethrows() async {
         struct SomeError: Error {}
         tunnelLifecycle.errorToThrowFromPerformRekey = SomeError()
 
@@ -119,31 +119,6 @@ final class KeyRotatorTests: XCTestCase {
             XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(tunnelLifecycle.handleAccessRevokedCalled)
-        assertEventSequence([.userBecameActive, .rekeyBegin, .rekeyFailure])
-    }
-
-    func testRekey_vpnAccessRevoked_firesFailureCallsHandleAccessRevokedAndRethrows() async {
-        struct Underlying: Error {}
-        let revoked = PacketTunnelProvider.TunnelError.vpnAccessRevoked(Underlying())
-        tunnelLifecycle.errorToThrowFromPerformRekey = revoked
-
-        do {
-            try await rotator.rekey()
-            XCTFail("Expected error to be rethrown")
-        } catch PacketTunnelProvider.TunnelError.vpnAccessRevoked {
-            // expected
-        } catch {
-            XCTFail("Unexpected error type: \(error)")
-        }
-
-        XCTAssertTrue(tunnelLifecycle.handleAccessRevokedCalled)
-        if let captured = tunnelLifecycle.handleAccessRevokedError,
-           case PacketTunnelProvider.TunnelError.vpnAccessRevoked = captured {
-            // expected — the same error is forwarded
-        } else {
-            XCTFail("Expected handleAccessRevoked called with vpnAccessRevoked, got \(String(describing: tunnelLifecycle.handleAccessRevokedError))")
-        }
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeyFailure])
     }
 

@@ -33,6 +33,8 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingAddToDockV
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
 
+    var currentOnboardingFlow: OnboardingFlowType = .default
+
     func configureOnboardingFlow(from url: URL?) {
         didCallConfigureOnboardingFlow = true
         capturedURL = url

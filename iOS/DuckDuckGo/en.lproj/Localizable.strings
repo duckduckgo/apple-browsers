@@ -4654,6 +4654,12 @@ https://duckduckgo.com/windows";
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Block ads on YouTube";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Learn More";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bookmarks";
 

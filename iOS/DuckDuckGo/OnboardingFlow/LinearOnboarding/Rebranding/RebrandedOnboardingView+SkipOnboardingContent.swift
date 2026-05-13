@@ -35,14 +35,17 @@ extension OnboardingRebranding.OnboardingView {
         /// doesn't re-fire on background return (which re-fires `onAppear` but not `isVisible`).
         @Binding var isVisible: Bool
 
+        private let content: OnboardingIntroStepContent.SkipFlowStepContent
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
         init(
+            content: OnboardingIntroStepContent.SkipFlowStepContent,
             isVisible: Binding<Bool>,
             startBrowsingAction: @escaping () -> Void,
             resumeOnboardingAction: @escaping () -> Void
         ) {
+            self.content = content
             self._isVisible = isVisible
             self.startBrowsingAction = startBrowsingAction
             self.resumeOnboardingAction = resumeOnboardingAction
@@ -64,7 +67,7 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(UserText.Onboarding.Skip.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
                         if reduceMotion {
                             showContent = true
                         } else {
@@ -78,12 +81,12 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: startBrowsingAction) {
-                            Text(UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: resumeOnboardingAction) {
-                            Text(UserText.Onboarding.Skip.resumeOnboardingCTA)
+                            Text(content.secondaryCTA)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
@@ -95,10 +98,9 @@ extension OnboardingRebranding.OnboardingView {
         /// Composes the skip message with bold "Fire Button". Uses `Text` concatenation so the
         /// bold weight inherits from the outer `.font(...)`.
         private func styledMessage() -> Text {
-            let message = UserText.Onboarding.Skip.message
-            let highlight = OnboardingRebranding.OnboardingView.SkipOnboardingContent.fireButtonCopy
-            let parts = message.components(separatedBy: highlight)
-            guard parts.count == 2 else { return Text(message) }
+            let highlight = Self.fireButtonCopy
+            let parts = content.message.components(separatedBy: highlight)
+            guard parts.count == 2 else { return Text(content.message) }
             return Text(parts[0]) + Text(highlight).bold() + Text(parts[1])
         }
     }

@@ -4883,6 +4883,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Annonsblockering på YouTube";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "När det här alternativet är på identifierar DuckDuckGo anonymt störningar i annonsblockeringen eller YouTube-fel för att förbättra upplevelsen för dig och alla andra. DuckDuckGo ser aldrig vilka videor du tittar på eller någon personligt identifierbar information.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Läs mer";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmärken";
 

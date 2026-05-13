@@ -4883,6 +4883,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloķēt reklāmas pakalpojumā YouTube";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kad DuckDuckGo ir ieslēgts, tas anonīmi noteiks reklāmu bloķēšanas traucējumus vai YouTube kļūdas, lai uzlabotu pieredzi visiem. DuckDuckGo nekad neredz, kādus videoklipus skaties, vai jebkādu personiski identificējamu informāciju.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Uzzināt vairāk";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Grāmatzīmes";
 

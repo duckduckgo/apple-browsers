@@ -655,7 +655,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)))
         case .adBlockingExtension:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)))
+            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)))
         case .autofillOnboardingDismissExperiment:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingDismissExperiment)), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:

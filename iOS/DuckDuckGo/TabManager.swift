@@ -473,6 +473,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return controller
     }
 
+    @MainActor
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
@@ -624,6 +625,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
+    @MainActor
     func save() -> Result<Void, Error> {
         return tabsModelProvider.save()
     }

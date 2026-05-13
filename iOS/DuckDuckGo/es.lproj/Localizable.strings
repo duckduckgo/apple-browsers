@@ -4883,6 +4883,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloquear anuncios en YouTube";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Cuando esté activado, DuckDuckGo detectará de forma anónima las interferencias en el bloqueo de anuncios o los errores de YouTube para mejorar tu experiencia y la de todos. DuckDuckGo nunca ve los vídeos que ves ni ningún dato de identificación personal.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Más información";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Marcadores";
 

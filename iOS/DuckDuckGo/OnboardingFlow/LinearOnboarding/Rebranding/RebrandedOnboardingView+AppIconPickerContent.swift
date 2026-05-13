@@ -42,10 +42,15 @@ extension OnboardingRebranding.OnboardingView {
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding var isVisible: Bool
+        private let content: OnboardingAppIconColorContent
         private let action: () -> Void
 
-        init(isVisible: Binding<Bool> = .constant(false),
-             action: @escaping () -> Void) {
+        init(
+            content: OnboardingAppIconColorContent,
+            isVisible: Binding<Bool> = .constant(false),
+            action: @escaping () -> Void
+        ) {
+            self.content = content
             self._isVisible = isVisible
             self.action = action
         }
@@ -59,7 +64,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UserText.Onboarding.AppIconSelection.message)
+                    Text(content.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
@@ -69,22 +74,24 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(UserText.Onboarding.AppIconSelection.title,
-                               startAnimating: $shouldStartTyping,
-                               onTypingFinished: { [reduceMotion] in
-                                   if reduceMotion {
-                                       showContent = true
-                                   } else {
-                                       withAnimation { showContent = true }
-                                   }
-                               })
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    TypingText(
+                        content.title,
+                        startAnimating: $shouldStartTyping,
+                        onTypingFinished: { [reduceMotion] in
+                            if reduceMotion {
+                                showContent = true
+                            } else {
+                                withAnimation { showContent = true }
+                            }
+                        }
+                    )
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     Button(action: action) {
-                        Text(UserText.Onboarding.AppIconSelection.cta)
+                        Text(content.primaryCTA)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }

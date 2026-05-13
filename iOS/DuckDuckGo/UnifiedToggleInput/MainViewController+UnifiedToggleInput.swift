@@ -55,9 +55,10 @@ extension MainViewController {
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)
         self.unifiedInputStateStore = stateStore
 
+        let initialToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
-            isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isToggleEnabled: initialToggleEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
@@ -245,6 +246,13 @@ extension MainViewController {
 
 private extension MainViewController {
 
+    /// While Dax Dialogs are still in progress, the onboarding Search vs Search & Duck.ai choice
+    /// is not applied to AIChatSettings yet. Use that pending choice for UTI presentation so
+    /// Search-only hides the toggle, while Search & Duck.ai keeps it visible.
+    func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
+        onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+    }
+
     enum UnifiedToggleInputRefreshAction {
         case unbindInactiveNonAITab
         case refreshAITab(AITabRefreshBehavior)
@@ -300,6 +308,16 @@ private extension MainViewController {
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator,
                       coordinator.isAITabExpanded, coordinator.inputMode == .search else { return }
+                self.updateUnifiedInputContentVisibility(for: coordinator)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        // Refresh Dax overlay visibility while onboarding as omnibar text changes.
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                      !self.daxDialogsManager.hasSeenOnboarding,
+                      coordinator.isOmnibarSession else { return }
                 self.updateUnifiedInputContentVisibility(for: coordinator)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -432,10 +450,9 @@ private extension MainViewController {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 self.aiChatTabChatHeaderView?.setForceBackButtonVisible(!enabled)
-                guard let coordinator = self.unifiedToggleInputCoordinator else { return }
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -790,6 +807,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
         let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
+        let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+        coordinator.updateToggleEnabled(isToggleEnabled)
+        coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -820,8 +840,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onDuckAIVoiceModeRequested()
     }
 
-    func unifiedToggleInputDidRequestAIChat() {
-        onAIChatPressed()
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
+        let trimmed = prefilledText.trimmingWhitespace()
+        unifiedToggleInputCoordinator?.clearText()
+        unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
+        onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
     }
 
     func unifiedToggleInputDidChangeHeight() {

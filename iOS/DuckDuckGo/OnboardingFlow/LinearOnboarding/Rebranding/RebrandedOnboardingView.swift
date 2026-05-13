@@ -213,11 +213,10 @@ extension OnboardingRebranding {
         var body: some View {
             ZStack(alignment: .topTrailing) {
                 switch model.state {
-                case .landing:
+                case let .landing(content):
                     onboardingTheme.colorPalette.background
                         .ignoresSafeArea()
-
-                    landingView
+                    landingView(content: content)
                         .transition(reduceMotion ? .identity : AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
                     onboardingTheme.colorPalette.background
@@ -324,8 +323,11 @@ extension OnboardingRebranding {
             .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
         }
 
-        private var landingView: some View {
-            LandingView(animationNamespace: animationNamespace) { [reduceMotion] in
+        private func landingView(content: OnboardingLandingContent) -> some View {
+            LandingView(
+                content: content,
+                animationNamespace: animationNamespace
+            ) { [reduceMotion] in
                 if reduceMotion {
                     model.onAppear()
                 } else {
@@ -337,12 +339,13 @@ extension OnboardingRebranding {
         }
 
         @ViewBuilder
-        private func introView(dialogType: ViewState.Intro.IntroDialogType) -> some View {
+        private func introView(content: OnboardingIntroStepContent, dialogType: ViewState.Intro.IntroDialogType) -> some View {
             let skipOnboardingView: AnyView? = if dialogType == .default {
                 nil
             } else {
                 AnyView(
                     SkipOnboardingContent(
+                        content: content.skipFlowStepContent,
                         isVisible: $showBubbleContent,
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
@@ -357,6 +360,7 @@ extension OnboardingRebranding {
             switch dialogType {
             case .restoreData:
                 RestorePromptDialogContent(
+                    content: content.restorePromptStepContent,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
                     restoreAction: {
@@ -375,8 +379,7 @@ extension OnboardingRebranding {
                 )
             case .skipTutorial, .default:
                 IntroDialogContent(
-                    title: UserText.Onboarding.Rebranding.Intro.title,
-                    message: UserText.Onboarding.Rebranding.Intro.message,
+                    content: content,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
                     continueAction: {
@@ -392,10 +395,10 @@ extension OnboardingRebranding {
             }
         }
 
-        private var browsersComparisonView: some View {
+        private func browsersComparisonView(content: OnboardingBrowserComparisonContent) -> some View {
             BrowsersComparisonContent(
+                content: content,
                 isVisible: $showBubbleContent,
-                title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: {
                     animateContentTransition {
@@ -468,20 +471,20 @@ extension OnboardingRebranding {
         @ViewBuilder
         private func bubbleBackedDialogContent(for type: ViewState.Intro.IntroType) -> some View {
             switch type {
-            case .startOnboardingDialog(let dialogType):
-                introView(dialogType: dialogType)
-            case .browsersComparisonDialog:
-                browsersComparisonView
-            case .addToDockPromoDialog:
-                addToDockPromoView
-            case .chooseAppIconDialog:
-                appIconPickerView
-            case .chooseAddressBarPositionDialog:
-                addressBarPositionView
-            case .chooseSearchExperienceDialog:
-                searchExperienceSelectionView
-            case .duckAIQueryExperimentDialog(let defaultMode):
-                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
+            case let .startOnboardingDialog(content, dialogType):
+                introView(content: content, dialogType: dialogType)
+            case let .browsersComparisonDialog(content):
+                browsersComparisonView(content: content)
+            case let .addToDockPromoDialog(content):
+                addToDockPromoView(content: content)
+            case let .chooseAppIconDialog(content):
+                appIconPickerView(content: content)
+            case let .chooseAddressBarPositionDialog(content):
+                addressBarPositionView(content: content)
+            case let .chooseSearchExperienceDialog(content):
+                searchExperienceSelectionView(content: content)
+            case let .duckAIQueryExperimentDialog(content, defaultMode):
+                experimentSearchExperienceSelectionView(content: content, defaultMode: defaultMode)
             }
         }
 
@@ -543,8 +546,9 @@ extension OnboardingRebranding {
             }
         }
 
-        private var addToDockPromoView: some View {
+        private func addToDockPromoView(content: OnboardingAddToDockContent) -> some View {
             AddToDockPromoContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 showTutorialAction: {
                     // The child view manages its own hide/show sequence for the promo -> tutorial switch.
@@ -568,8 +572,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var appIconPickerView: some View {
+        private func appIconPickerView(content: OnboardingAppIconColorContent) -> some View {
             AppIconPickerContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {
@@ -579,8 +584,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var addressBarPositionView: some View {
+        private func addressBarPositionView(content: OnboardingAddressBarPositionContent) -> some View {
             AddressBarPositionContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {
@@ -590,8 +596,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var searchExperienceSelectionView: some View {
+        private func searchExperienceSelectionView(content: OnboardingSearchExperienceContent) -> some View {
             SearchExperienceContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {
@@ -636,8 +643,9 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
+                content: content,
                 defaultMode: defaultMode,
                 visualStyle: .rebranded,
                 onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),

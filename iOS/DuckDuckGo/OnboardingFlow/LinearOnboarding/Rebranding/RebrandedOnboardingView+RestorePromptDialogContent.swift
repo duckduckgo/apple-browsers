@@ -28,8 +28,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        private typealias Copy = UserText.Onboarding.RestorePrompt
-
+        private let content: OnboardingIntroStepContent.RestorePromptStepContent
         private let skipOnboardingView: AnyView?
         private let restoreAction: () -> Void
         private let skipAction: () -> Void
@@ -41,12 +40,14 @@ extension OnboardingRebranding.OnboardingView {
         @Binding var isVisible: Bool
 
         init(
+            content: OnboardingIntroStepContent.RestorePromptStepContent,
             skipOnboardingView: AnyView?,
             isVisible: Binding<Bool>,
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
         ) {
+            self.content = content
             self.skipOnboardingView = skipOnboardingView
             self._isVisible = isVisible
             self.restoreAction = restoreAction
@@ -77,15 +78,16 @@ extension OnboardingRebranding.OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
-                message: AnyView(
-                    Text(Copy.body)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.body)
-                        .multilineTextAlignment(.center)
+                message:
+                    AnyView(
+                        Text(content.message)
+                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                            .font(onboardingTheme.typography.body)
+                            .multilineTextAlignment(.center)
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(Copy.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
                         if reduceMotion {
                             showContent = true
                         } else {
@@ -99,13 +101,13 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: restoreAction) {
-                            Text(Copy.restoreCTA)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
                             Button(action: showSkipOnboardingDialog) {
-                                Text(Copy.skipCTA)
+                                Text(content.secondaryCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }

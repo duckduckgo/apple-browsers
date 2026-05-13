@@ -88,6 +88,9 @@ extension DebugScreensViewModel {
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
+            .view(title: "Ad Blocking", { d in
+                AdBlockingDebugView(keyValueStore: d.keyValueStore)
+            }),
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),

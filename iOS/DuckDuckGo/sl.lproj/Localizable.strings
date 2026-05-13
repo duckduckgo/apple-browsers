@@ -4883,6 +4883,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTube";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Ko je to vklopljeno, DuckDuckGo anonimno zaznava motnje pri blokiranju oglasov ali napake v YouTubu, da izboljša izkušnjo za vse uporabnike. DuckDuckGo nikoli ne vidi, katere videoposnetke si ogledujete, niti nobenih osebnih podatkov.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Več o tem";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zaznamki";
 

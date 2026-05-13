@@ -4883,6 +4883,12 @@
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Reklaamide blokeerimine YouTube'is";
 
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kui DuckDuckGo on sisse lülitatud, tuvastab see anonüümselt reklaamiblokeerimise häireid või YouTube'i vigu, et parandada kõigi kasutuskogemust. DuckDuckGo ei näe kunagi, milliseid videoid sa vaatad, ega mingeid isikuandmeid.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Loe edasi";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Järjehoidjad";
 

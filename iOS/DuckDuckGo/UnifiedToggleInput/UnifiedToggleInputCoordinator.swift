@@ -239,6 +239,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
+    private var isContentOverlaySuppressed = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -993,6 +994,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.setInputMode(mode, animated: animated)
     }
 
+    func setContentOverlaySuppressed(_ suppressed: Bool) {
+        isContentOverlaySuppressed = suppressed
+    }
+
     // MARK: - Render State
 
     func computeRenderState() -> UTIRenderState {
@@ -1043,10 +1048,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isFloatingSubmitVisible = displayState == .omnibar(.active)
             && cardPosition == .top
             && inputMode == .aiChat
+        let shouldSuppressContentOverlay = isOmnibarSession && isContentOverlaySuppressed && textState != .userTyped
+        let effectiveContentVisible = isContentVisible && !shouldSuppressContentOverlay
 
         return UTIRenderState(
             isInputVisible: isInputVisible,
-            isContentVisible: isContentVisible,
+            isContentVisible: effectiveContentVisible,
             cardLayout: cardLayout(forIsExpanded: isExpanded),
             cardPosition: cardPosition,
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
@@ -1391,7 +1398,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestAIChat()
+        delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: viewController.handler.currentText)
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {

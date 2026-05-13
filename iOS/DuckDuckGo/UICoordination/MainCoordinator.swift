@@ -161,10 +161,15 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider
+        )
+        let onboardingSearchExperienceSettingsResolver = OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: onboardingSearchExperienceProvider,
+            daxDialogsStatusProvider: daxDialogs
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
@@ -270,6 +275,7 @@ final class MainCoordinator {
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
+                                        onboardingSearchExperienceSettingsResolver: onboardingSearchExperienceSettingsResolver,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                         freemiumPIRDebugSettings: freemiumPIRDebugSettings,
@@ -597,9 +603,14 @@ final class MainCoordinator {
 
     private func fireDailyAdBlockingPixel() {
         let isEnabled = controller.adBlockingAvailability.isEnabled
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
         DailyPixel.fire(
             pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+            withAdditionalParameters: [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
         )
     }
 

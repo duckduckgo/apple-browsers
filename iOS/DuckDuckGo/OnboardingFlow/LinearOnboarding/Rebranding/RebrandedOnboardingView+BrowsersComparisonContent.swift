@@ -44,18 +44,18 @@ extension OnboardingRebranding.OnboardingView {
         @Binding var isVisible: Bool
         @State private var shouldStartTyping = false
         @State private var showContent = false
-        private let title: String
+        private let content: OnboardingBrowserComparisonContent
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
 
         init(
+            content: OnboardingBrowserComparisonContent,
             isVisible: Binding<Bool>,
-            title: String,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
+            self.content = content
             self._isVisible = isVisible
-            self.title = title
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
@@ -64,28 +64,35 @@ extension OnboardingRebranding.OnboardingView {
         // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
-                    if reduceMotion {
-                        showContent = true
-                    } else {
-                        withAnimation { showContent = true }
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
                     }
-                })
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedBrowsersComparisonTable(availableFeatureAnimation: .animated(startAnimation: showContent))
+                    RebrandedBrowsersComparisonTable(
+                        features: content.features,
+                        availableFeatureAnimation: .animated(startAnimation: showContent)
+                    )
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: setAsDefaultBrowserAction) {
-                            Text(UserText.Onboarding.BrowsersComparison.cta)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: cancelAction) {
-                            Text(UserText.onboardingSkip)
+                            Text(content.secondaryCTA)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }

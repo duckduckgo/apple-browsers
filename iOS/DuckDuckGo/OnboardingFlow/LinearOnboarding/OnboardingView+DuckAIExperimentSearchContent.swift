@@ -83,6 +83,7 @@ extension OnboardingView {
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        private let content: OnboardingDuckAIQueryExperimentContent
         private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
@@ -123,6 +124,11 @@ extension OnboardingView {
         ]
 
         init(
+            content: OnboardingDuckAIQueryExperimentContent = .init(
+                title: UserText.Onboarding.DuckAIQueryExperiment.title,
+                searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
+            ),
             defaultMode: DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
@@ -132,6 +138,7 @@ extension OnboardingView {
             measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
+            self.content = content
             self.onModeConfirmed = onModeConfirmed
             self.openAIChatAction = openAIChatAction
             self.openSearchAction = openSearchAction
@@ -157,13 +164,13 @@ extension OnboardingView {
                 Group {
                     if visualStyle == .rebranded {
                         TypingText(
-                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            content.title,
                             startAnimating: $rebrandedAnimateTitle,
                             onTypingFinished: handleTitleAnimationFinished
                         )
                     } else {
                         AnimatableTypingText(
-                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            content.title,
                             startAnimating: animateTitle,
                             onTypingFinished: handleTitleAnimationFinished
                         )
@@ -319,8 +326,8 @@ extension OnboardingView {
                 OnboardingQueryField(
                     text: $query,
                     placeholder: selectedMode == .duckAI
-                    ? UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
-                    : UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                    ? content.aiPlaceholder
+                    : content.searchPlaceholder,
                     isFocused: $isInputFocused,
                     isSingleLine: selectedMode != .duckAI,
                     onSubmit: handlePrimaryAction

@@ -272,6 +272,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -386,9 +387,13 @@ extension NewTabPageViewController {
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        dismissHostingController(didFinishNTPOnboarding: false)
+        dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
 
-        guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
+        guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
+            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            return
+        }
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
             guard let self else { return }
@@ -446,11 +451,14 @@ extension NewTabPageViewController {
         newTabPageViewModel.startOnboarding()
     }
 
-    private func dismissHostingController(didFinishNTPOnboarding: Bool) {
+    private func dismissHostingController(didFinishNTPOnboarding: Bool, updateUnifiedInputContentOverlaySuppression: Bool = true) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        if updateUnifiedInputContentOverlaySuppression {
+            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        }
         isShowingDuckAICompletionDialog = false
         if didDismissDuckAICompletionDialog {
             delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)

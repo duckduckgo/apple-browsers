@@ -390,6 +390,44 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isInputExpanded)
     }
 
+    func test_computeRenderState_whenContentOverlayNotSuppressed_keepsContentVisibleForPrefilledText() {
+        sut.activateFromOmnibar(prefilledText: "example.com")
+
+        XCTAssertTrue(sut.computeRenderState().isContentVisible)
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActive_hidesContentButKeepsInputVisible() {
+        sut.activateFromOmnibar()
+
+        sut.setContentOverlaySuppressed(true)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertFalse(renderState.isContentVisible)
+        XCTAssertTrue(sut.isOmnibarSession)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActiveWithPrefilledText_hidesContentButKeepsInputVisible() {
+        sut.activateFromOmnibar(prefilledText: "example.com")
+
+        sut.setContentOverlaySuppressed(true)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertFalse(renderState.isContentVisible)
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActiveAndTextEntered_keepsContentVisible() {
+        sut.activateFromOmnibar()
+        sut.setContentOverlaySuppressed(true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "duck")
+
+        XCTAssertTrue(sut.computeRenderState().isContentVisible)
+    }
+
     func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
         sut.activateFromOmnibar(cardPosition: .bottom)
         // Bottom pre-stages to collapsed; the show animation expands it.
@@ -1756,6 +1794,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
 
         XCTAssertEqual(mockDelegate.didRequestAIChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_forwardsCurrentText() {
+        sut.viewController.handler.updateCurrentText("hello")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "hello")
     }
 
     // MARK: - Helpers
@@ -1941,7 +1988,11 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
     func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
-    func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
+    var didRequestAIChatPrefilledText: String?
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
+        didRequestAIChatCount += 1
+        didRequestAIChatPrefilledText = prefilledText
+    }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode

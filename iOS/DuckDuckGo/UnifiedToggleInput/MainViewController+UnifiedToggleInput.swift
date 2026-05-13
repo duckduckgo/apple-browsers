@@ -791,6 +791,38 @@ private extension MainViewController {
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+
+        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
+        let ntpStartCenterY = ntpLogoWindowCenterY()
+
+        // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
+        // natural (post-dismiss) position. The NTP Logo's current Y is shifted by the
+        // expanded nav bar — compensate using the nav bar height delta so we target
+        // the final resting position.
+        if isLogoToLogo,
+           let utiY = utiStartCenterY {
+            // How much taller the nav bar is right now vs. its post-dismiss standard height.
+            let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
+                - viewCoordinator.standardNavigationBarContainerHeight
+
+            // The NTP Logo center after the nav bar shrinks back: the contentContainer grows
+            // by navHeightDelta and its top moves up by the same amount, so the center shifts
+            // up by half the delta.
+            let ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2
+
+            // How far the UTI Logo needs to move to land at the NTP Logo's final position.
+            let offset = ntpNaturalY - utiY
+
+            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
+            // to the NTP Logo's post-dismiss position.
+            let currentConstant = coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant ?? 0
+            coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant = currentConstant + offset
+
+            // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
+            newTabPageViewController?.setLogoHidden(true)
+        }
+
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -799,7 +831,9 @@ private extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                if !isLogoToLogo {
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -808,6 +842,8 @@ private extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.contentViewController.setLogoHidden(false)
+                self.newTabPageViewController?.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()

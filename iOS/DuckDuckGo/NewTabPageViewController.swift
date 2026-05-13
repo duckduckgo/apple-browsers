@@ -37,6 +37,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         return true
     }
 
+    func setLogoHidden(_ hidden: Bool) {
+        newTabPageViewModel.isLogoHidden = hidden
+    }
+
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding

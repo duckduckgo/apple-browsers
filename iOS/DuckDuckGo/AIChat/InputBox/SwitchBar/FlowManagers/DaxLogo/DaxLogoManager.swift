@@ -131,6 +131,13 @@ final class DaxLogoManager {
         fireTabHostingController?.additionalSafeAreaInsets = insets
     }
 
+    /// The logo container's center Y in window coordinates, or `nil` if not installed.
+    var logoWindowCenterY: CGFloat? {
+        guard let window = logoContainerView.window else { return nil }
+        let center = logoContainerView.convert(CGPoint(x: 0, y: logoContainerView.bounds.midY), to: window)
+        return center.y
+    }
+
     /// Removes the managed views from the hierarchy so the manager can be discarded.
     func tearDown() {
         fireTabHostingController?.willMove(toParent: nil)

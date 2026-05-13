@@ -174,6 +174,7 @@ private extension NewTabPageView {
     }
 
     private var shouldShowLogoInEmptyState: Bool {
+        guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
         if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }

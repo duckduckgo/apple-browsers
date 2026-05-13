@@ -124,6 +124,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "idle_interval_seconds"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "idle_interval_seconds",
+                "type": "string",
+                "description": "Selected inactivity-timer threshold in seconds. 0 means None (NTP is shown every time the user returns).",
+                "enum": ["0", "60", "300", "600", "1800", "3600", "43200"]
+            }
+        ]
     }
 }

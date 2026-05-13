@@ -180,20 +180,10 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
 
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        // Dax placement is owned by the dialog's `ScreenBottomDaxOverlay` (keyboard-aware).
-        let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .trackerToEOJ
-                      && daxDialogsFlowCoordinator.isAIChatEnabled
-
-        let message = isChatPath
-            ? UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
-            : UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage
-
-        let backgroundType: ContextualOnboardingBackgroundType = isChatPath ? .endOfJourneyNTPChat : .endOfJourneyNTP
-
         return FadeInView {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: message,
+                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                     cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                     dismissAction: { [weak self] in
                         self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
@@ -207,14 +197,10 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
             .scrollIfNeeded()
         }
-        .applyNewTabOnboardingBackground(backgroundType: backgroundType)
+        .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            if isChatPath {
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-            } else {
-                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            }
+            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }

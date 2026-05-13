@@ -639,11 +639,16 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         // presentChatPathOnboardingCompletionIfNeeded; suppress the standard .final here
         // to prevent a duplicate dialog and duplicate pixel fires.
         // (Standard-path users never set isChatFirstPath, so they fall through to .final below.)
+        // Exception: if AI Chat is disabled at this point, presentChatPathOnboardingCompletionIfNeeded
+        // will no-op, so fall through to the standard .final EOJ instead.
         if settings.isChatFirstPath && settings.fireMessageExperimentShown {
             if !nonDDGBrowsingMessageSeen && !settings.chatPathVisitSiteSeen {
                 return .subsequent
             }
-            return nil
+            if isAIChatEnabled {
+                return nil
+            }
+            // AI Chat disabled — show standard EOJ as fallback.
         }
 
         // Check final first as if we skip anonymous searches we don't want to show this.

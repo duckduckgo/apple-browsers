@@ -19,7 +19,6 @@
 
 import Foundation
 import BrowserServicesKit
-import Waitlist
 import VPN
 import Core
 import Subscription

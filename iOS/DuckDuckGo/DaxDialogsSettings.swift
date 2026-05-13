@@ -18,6 +18,7 @@
 //
 
 import Core
+import Persistence
 
 protocol DaxDialogsSettings: AnyObject {
 
@@ -105,11 +106,24 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     @UserDefaultsWrapper(key: .daxSubscriptionPromotionDialogShown, defaultValue: false)
     var subscriptionPromotionDialogShown: Bool
 
-    @UserDefaultsWrapper(key: .daxChatPathVisitSiteSeen, defaultValue: false)
-    var chatPathVisitSiteSeen: Bool
+    // Stored via KeyValueStoring (not @UserDefaultsWrapper) to comply with deprecation policy.
+    // Keys preserved from the original UserDefaultsKey enum values.
+    private enum ChatPathKey {
+        static let visitSiteSeen = "com.duckduckgo.ios.daxOnboardingChatPathVisitSiteSeen"
+        static let isChatFirstPath = "com.duckduckgo.ios.daxOnboardingIsChatFirstPath"
+    }
 
-    @UserDefaultsWrapper(key: .daxIsChatFirstPath, defaultValue: false)
-    var isChatFirstPath: Bool
+    private let chatPathStore: KeyValueStoring = UserDefaults.standard
+
+    var chatPathVisitSiteSeen: Bool {
+        get { (try? chatPathStore.object(forKey: ChatPathKey.visitSiteSeen) as? Bool) ?? false }
+        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.visitSiteSeen) }
+    }
+
+    var isChatFirstPath: Bool {
+        get { (try? chatPathStore.object(forKey: ChatPathKey.isChatFirstPath) as? Bool) ?? false }
+        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.isChatFirstPath) }
+    }
 
     var chatPathPhase: DaxDialogs.ChatPathPhase {
         guard isChatFirstPath && fireMessageExperimentShown else { return .none }

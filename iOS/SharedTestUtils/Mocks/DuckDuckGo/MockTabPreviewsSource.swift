@@ -58,4 +58,11 @@ class MockTabPreviewsSource: TabPreviewsSource {
         return nil
     }
 
+    func fullScreenSnapshot(for tab: DuckDuckGo.Tab) -> UIImage? {
+        return nil
+    }
+
+    func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: DuckDuckGo.Tab) {
+    }
+
 }

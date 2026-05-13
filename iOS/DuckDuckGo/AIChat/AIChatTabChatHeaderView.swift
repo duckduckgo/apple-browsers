@@ -312,7 +312,7 @@ final class AIChatTabChatHeaderView: UIView {
     /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
     /// When locked, the settings, new-chat, and upgrade buttons are disabled until the fire step passes.
     func setOnboardingLocked(_ locked: Bool) {
-        settingsButton.isEnabled = !locked
+        appMenuButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         titleContainer.isUserInteractionEnabled = !locked
         titleContainer.alpha = locked ? 0.5 : 1

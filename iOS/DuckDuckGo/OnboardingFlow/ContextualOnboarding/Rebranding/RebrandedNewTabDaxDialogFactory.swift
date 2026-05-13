@@ -272,7 +272,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                        userInfo: [SettingsDeepLinkUserInfoKey.onPresented: { onDismiss(false) } as () -> Void]
+                        userInfo: [SettingsDeepLinkUserInfoKey.onPresented: SettingsDeepLinkCallback(onPresented: { onDismiss(false) })]
                     )
                 },
                 dismissAction: { [weak self] in

@@ -78,7 +78,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
-         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          appWidthObserver: AppWidthObserver = .shared,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
@@ -106,7 +105,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
-                                            layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
@@ -457,24 +455,6 @@ extension NewTabPageViewController {
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
-
-        // For the chat-path "try visiting a site" dialog the keyboard must be visible. We activate
-        // the editing state first, then embed the dialog inside it on the next run loop (once
-        // `presentedViewController` is set) — mirroring how the completion dialog is embedded.
-        if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
-            // If the tab is already loading the user typed a URL manually. The NTP may have been
-            // re-created by attachHomeScreen while tab.link was nil, meaning onFirstAppear on the
-            // previous dialog might not have fired — chatPathPhase may still read .visitSite even
-            // though navigation is in progress. Skip; the dialog re-appears on the next
-            // viewDidAppear once navigation resolves.
-            guard (parent as? MainViewController)?.currentTab?.isLoading != true else { return }
-            chromeDelegate?.omniBar.beginEditing(animated: true)
-            DispatchQueue.main.async { [weak self, weak hostingController] in
-                guard let self, let hostingController else { return }
-                self.embedDialogInEditingState(hostingController)
-            }
-            return
-        }
 
         addChild(hostingController)
         view.addSubview(hostingController.view)

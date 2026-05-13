@@ -113,30 +113,6 @@ struct SettingsYouTubeAdBlockingView: View {
         base.append(link)
         return base
     }
-
-    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
-
-    private var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
-        base.append(AttributedString(" "))
-        var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
-        link.foregroundColor = Color(designSystemColor: .accent)
-        link.link = Self.learnMoreURL
-        base.append(link)
-        return base
-    }
-
-    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
-
-    private var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
-        base.append(AttributedString(" "))
-        var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
-        link.foregroundColor = Color(designSystemColor: .accent)
-        link.link = Self.learnMoreURL
-        base.append(link)
-        return base
-    }
 }
 
 private struct ContingencyMessageView: View {

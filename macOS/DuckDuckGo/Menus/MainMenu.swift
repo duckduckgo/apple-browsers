@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Common
 import Combine
+import DesignResourcesKitIcons
 import FeatureFlags
 import History
 import OSLog
@@ -84,6 +85,7 @@ final class MainMenu: NSMenu {
     // MARK: DuckDuckGo
     let servicesMenu = NSMenu(title: UserText.mainMenuAppServices)
     let preferencesMenuItem = NSMenuItem(title: UserText.mainMenuAppPreferences, action: #selector(AppDelegate.openPreferences), keyEquivalent: ",").withAccessibilityIdentifier("MainMenu.preferencesMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.settings)
 
     // MARK: File
     let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "")
@@ -171,14 +173,18 @@ final class MainMenu: NSMenu {
 
     let helpMenu = NSMenu(title: UserText.mainMenuHelp)
     let aboutMenuItem = NSMenuItem(title: UserText.about, action: #selector(AppDelegate.showAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
     let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(AppDelegate.addToDock))
+        .withImage(DesignSystemImages.Glyphs.Size12.addToTaskbar)
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
+        .withImage(DesignSystemImages.Glyphs.Size12.browserDefault)
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
 
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
 
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool

@@ -97,16 +97,12 @@ final class KeyRotatorTests: XCTestCase {
 
     // MARK: - rekey() short-circuit
 
-    func testRekey_whenRekeyingDisabled_firesOnlyUserBecameActiveAndReturns() async throws {
+    func testRekey_whenRekeyingDisabled_firesNoEventsAndReturns() async throws {
         settings.disableRekeying = true
 
         try await rotator.rekey()
 
-        XCTAssertEqual(firedEvents.events.count, 1)
-        guard case .userBecameActive = firedEvents.events[0] else {
-            XCTFail("Expected .userBecameActive, got \(firedEvents.events[0])")
-            return
-        }
+        XCTAssertEqual(firedEvents.events.count, 0)
         XCTAssertEqual(performRekeyRecorder.callCount, 0)
     }
 
@@ -116,7 +112,7 @@ final class KeyRotatorTests: XCTestCase {
         try await rotator.rekey()
 
         XCTAssertEqual(performRekeyRecorder.callCount, 1)
-        assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
+        assertEventSequence([.rekeyBegin, .rekeySuccess])
     }
 
     // MARK: - rekey() failure
@@ -134,7 +130,7 @@ final class KeyRotatorTests: XCTestCase {
             XCTFail("Unexpected error type: \(error)")
         }
 
-        assertEventSequence([.userBecameActive, .rekeyBegin, .rekeyFailure])
+        assertEventSequence([.rekeyBegin, .rekeyFailure])
     }
 
     // MARK: - resetRegistrationKey
@@ -154,7 +150,6 @@ final class KeyRotatorTests: XCTestCase {
     /// rather than raw Event values because RekeyAttemptStep wraps an Error in .failure,
     /// which has no Equatable conformance.
     private enum ExpectedEvent {
-        case userBecameActive
         case rekeyBegin
         case rekeySuccess
         case rekeyFailure
@@ -170,8 +165,7 @@ final class KeyRotatorTests: XCTestCase {
         for (index, (firedEvent, want)) in zip(fired, expected).enumerated() {
             let matches: Bool
             switch (firedEvent, want) {
-            case (.userBecameActive, .userBecameActive),
-                 (.rekeyAttempt(.begin), .rekeyBegin),
+            case (.rekeyAttempt(.begin), .rekeyBegin),
                  (.rekeyAttempt(.success), .rekeySuccess),
                  (.rekeyAttempt(.failure), .rekeyFailure):
                 matches = true

@@ -40,10 +40,6 @@ final class KeyRotator {
     }
 
     func rekey() async throws {
-        // Intentional: KeyExpirationTester's canRekey closure also fires .userBecameActive
-        // before invoking rekey. Both fires are preserved to match pre-refactor behavior.
-        events.fire(.userBecameActive)
-
         guard !settings.disableRekeying else {
             Logger.networkProtectionKeyManagement.log("Rekeying disabled")
             return

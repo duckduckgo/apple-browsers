@@ -178,7 +178,7 @@ final class InternalFeedbackFormTabExtensionTests: XCTestCase {
         Line 5 with </script> closer and Unicode 🦆
         """
 
-        let literal = InternalFeedbackFormTabExtension.jsStringLiteral(adversarial)
+        let literal = InternalFeedbackFormUserScript.jsStringLiteral(adversarial)
 
         let context = try XCTUnwrap(JSContext())
         var exception: JSValue?
@@ -191,7 +191,7 @@ final class InternalFeedbackFormTabExtensionTests: XCTestCase {
     }
 
     func testJSStringLiteralProducesEmptyStringLiteralForEmptyInput() throws {
-        let literal = InternalFeedbackFormTabExtension.jsStringLiteral("")
+        let literal = InternalFeedbackFormUserScript.jsStringLiteral("")
 
         let context = try XCTUnwrap(JSContext())
         let result = context.evaluateScript("(\(literal))")

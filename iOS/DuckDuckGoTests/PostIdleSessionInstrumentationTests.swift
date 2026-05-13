@@ -268,4 +268,71 @@ struct PostIdleSessionInstrumentationTests {
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.count == 1)
     }
+
+    // MARK: - Orphan cleanup
+
+    @available(iOS 16, *)
+    @Test("sessionStarted completes orphaned flows as UNKNOWN with app_terminated", .timeLimit(.minutes(1)))
+    func sessionStartedCompletesOrphansAsAppTerminated() {
+        let (sut, wideEvent, _) = makeSUT()
+        let orphan = PostIdleSessionWideEventData(surface: .ntp)
+        wideEvent.startFlow(orphan)
+
+        sut.sessionStarted(surface: .ntp)
+
+        let orphanCompletion = wideEvent.completions.first {
+            ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
+        }
+        guard let orphanCompletion else {
+            Issue.record("Expected the orphan to be completed")
+            return
+        }
+        if case .unknown(let reason) = orphanCompletion.1 {
+            #expect(reason == PostIdleSessionWideEventData.appTerminatedReason)
+        } else {
+            Issue.record("Expected .unknown status, got \(orphanCompletion.1)")
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("Orphan cleanup happens before the new flow is started", .timeLimit(.minutes(1)))
+    func orphanCleanupHappensBeforeNewFlowStarts() {
+        let (sut, wideEvent, _) = makeSUT()
+        let orphan = PostIdleSessionWideEventData(surface: .ntp)
+        wideEvent.startFlow(orphan)
+
+        sut.sessionStarted(surface: .lut)
+
+        #expect(wideEvent.started.count == 2)
+        #expect((wideEvent.started[1] as? PostIdleSessionWideEventData)?.surface == .lut)
+        let orphanCompleted = wideEvent.completions.contains {
+            ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
+        }
+        #expect(orphanCompleted)
+    }
+
+    @available(iOS 16, *)
+    @Test("Multiple orphans are all completed", .timeLimit(.minutes(1)))
+    func multipleOrphansAllCompleted() {
+        let (sut, wideEvent, _) = makeSUT()
+        let firstOrphan = PostIdleSessionWideEventData(surface: .ntp)
+        let secondOrphan = PostIdleSessionWideEventData(surface: .lut)
+        wideEvent.startFlow(firstOrphan)
+        wideEvent.startFlow(secondOrphan)
+
+        sut.sessionStarted(surface: .ntp)
+
+        let unknownCompletions = wideEvent.completions.filter {
+            if case .unknown = $0.1 { return true } else { return false }
+        }
+        #expect(unknownCompletions.count == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("sessionStarted with no orphans does not produce spurious completions", .timeLimit(.minutes(1)))
+    func sessionStartedWithoutOrphansProducesNoCompletions() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        #expect(wideEvent.completions.isEmpty)
+    }
 }

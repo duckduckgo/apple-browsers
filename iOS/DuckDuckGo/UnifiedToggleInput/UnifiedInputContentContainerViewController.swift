@@ -37,6 +37,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
+    func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
 }
@@ -95,7 +96,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
+    private var escapeHatchOpenTabCount: Int = 0
     private var escapeHatchTapHandler: (() -> Void)?
+    private var escapeHatchTabSwitcherTapHandler: (() -> Void)?
 
     private(set) var daxLogoManager: DaxLogoManager
     private var isDaxLogoForcedHidden = false
@@ -229,14 +232,25 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+    func setEscapeHatch(_ model: EscapeHatchModel?,
+                        openTabCount: Int,
+                        onTapped: (() -> Void)?,
+                        onTabSwitcherTapped: (() -> Void)?) {
         escapeHatchModel = model
+        escapeHatchOpenTabCount = openTabCount
         escapeHatchTapHandler = onTapped
-        suggestionTrayManager?.setEscapeHatch(model)
+        escapeHatchTabSwitcherTapHandler = onTabSwitcherTapped
+        suggestionTrayManager?.setEscapeHatch(model, openTabCount: openTabCount)
         // Fire tabs render their own empty state via DaxLogoManager — suppress the hatch to avoid stacking affordances.
         let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
         let duckAIHatchHandler = switchBarHandler.isFireTab ? nil : onTapped
-        duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel, onTapped: duckAIHatchHandler)
+        let duckAITabSwitcherHandler = switchBarHandler.isFireTab ? nil : onTabSwitcherTapped
+        duckAISuggestionsCoordinator?.setEscapeHatch(
+            duckAIHatchModel,
+            openTabCount: openTabCount,
+            onTapped: duckAIHatchHandler,
+            onTabSwitcherTapped: duckAITabSwitcherHandler
+        )
         updateEscapeHatchTopInset()
     }
 
@@ -427,7 +441,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
         let trayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: trayEscapeHatch)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: trayEscapeHatch, openTabCount: escapeHatchOpenTabCount)
         suggestionTrayManager = manager
     }
 
@@ -506,7 +520,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
         coordinator.setAdditionalTopInset(duckAITopInset)
         if let escapeHatchModel, !switchBarHandler.isFireTab {
-            coordinator.setEscapeHatch(escapeHatchModel, onTapped: escapeHatchTapHandler)
+            coordinator.setEscapeHatch(
+                escapeHatchModel,
+                openTabCount: escapeHatchOpenTabCount,
+                onTapped: escapeHatchTapHandler,
+                onTabSwitcherTapped: escapeHatchTabSwitcherTapHandler
+            )
         }
         duckAISuggestionsCoordinator = coordinator
     }
@@ -675,7 +694,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
-        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
+        // The toolbar is still in the hierarchy under the unified input, so the keyboard-relative
+        // centering sits visually too high — shift the dax down by this constant to compensate.
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset + Metrics.toolbarCompensationOffset)
         updateSectionTitle()
     }
 
@@ -686,6 +707,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let escapeHatchLogoOffset: CGFloat = 120
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10
+        static let toolbarCompensationOffset: CGFloat = 80
     }
 }
 
@@ -826,6 +848,10 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager) {
+        delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
     }
 
     func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {

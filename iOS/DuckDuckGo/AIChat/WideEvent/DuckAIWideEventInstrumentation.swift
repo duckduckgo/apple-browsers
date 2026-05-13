@@ -30,7 +30,7 @@ import PixelKit
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
-    func submissionStarted()
+    func submissionStarted(modelId: String?, userTier: AIChatUserTier)
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
@@ -55,7 +55,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         self.wideEvent = wideEvent
     }
 
-    func submissionStarted() {
+    func submissionStarted(modelId: String?, userTier: AIChatUserTier) {
         // Complete any orphaned flows left in storage from a previous app
         // lifecycle (e.g., the app was killed mid-stream). Runs synchronously
         // before the new flow is created, avoiding a race with
@@ -71,7 +71,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             self.activeFlow = nil
         }
 
-        let data = DuckAIPromptSubmissionWideEventData()
+        let data = DuckAIPromptSubmissionWideEventData(
+            modelId: modelId,
+            userTier: userTier.rawValue
+        )
         activeFlow = data
         hasObservedNonReady = false
         wideEvent.startFlow(data)

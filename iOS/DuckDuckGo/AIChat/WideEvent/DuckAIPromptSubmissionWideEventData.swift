@@ -18,11 +18,10 @@
 //
 
 import Foundation
+import Common
 import PixelKit
 
-/// Wide-event payload for the Duck.ai prompt submission journey. v0 carries no
-/// feature-specific fields; properties are added in follow-ups once the
-/// lifecycle is wired up end-to-end.
+/// Wide-event payload for the Duck.ai prompt submission journey.
 final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
@@ -39,9 +38,16 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var appData: WideEventAppData
     var errorData: WideEventErrorData?
 
-    init(contextData: WideEventContextData = WideEventContextData(),
+    var modelId: String?
+    var userTier: String
+
+    init(modelId: String?,
+         userTier: String,
+         contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
+        self.modelId = modelId
+        self.userTier = userTier
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -61,6 +67,17 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 extension DuckAIPromptSubmissionWideEventData {
 
     func jsonParameters() -> [String: Encodable] {
-        [:]
+        Dictionary(compacting: [
+            (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
+        ])
+    }
+}
+
+extension WideEventParameter {
+
+    enum DuckAIPromptSubmissionFeature {
+        static let modelId = "feature.data.ext.model_id"
+        static let userTier = "feature.data.ext.user_tier"
     }
 }

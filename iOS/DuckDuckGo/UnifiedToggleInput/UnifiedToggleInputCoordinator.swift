@@ -1306,7 +1306,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            duckAIWideEventInstrumentation?.submissionStarted()
+            duckAIWideEventInstrumentation?.submissionStarted(
+                modelId: persistedModelId,
+                userTier: subscriptionState.userTier
+            )
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
                 return

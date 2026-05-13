@@ -130,6 +130,14 @@ extension MainViewController {
         reconcileVoiceSessionChromeForCurrentTab()
     }
 
+    /// Force-shows the header back arrow when the toggle UI is unavailable so the user always
+    /// has an exit. Wraps the onboarding-aware lookup so both callers (refreshControls + the
+    /// settings sink) stay in sync — keeps the raw setting and the onboarding-deferred value
+    /// from racing during onboarding hand-off.
+    func reconcileBackArrowForceVisibility() {
+        aiChatTabChatHeaderView?.setForceBackButtonVisible(!isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
+    }
+
     /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
     /// Safe to call with the feature flag off — `isCurrentTabUsingUnifiedInputAIChrome` is
     /// already flag-gated, so the else branch reduces to the legacy width/minimal-chrome rule.
@@ -452,7 +460,7 @@ private extension MainViewController {
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
-                self.aiChatTabChatHeaderView?.setForceBackButtonVisible(!enabled)
+                self.reconcileBackArrowForceVisibility()
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)

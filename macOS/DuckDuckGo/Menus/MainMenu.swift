@@ -102,7 +102,7 @@ final class MainMenu: NSMenu {
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
-        .withImage(DesignSystemImages.Glyphs.Size12.`import`)
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
@@ -134,7 +134,7 @@ final class MainMenu: NSMenu {
         .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     var bookmarksMenuToggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
     let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBookmarksWindow))
-        .withImage(DesignSystemImages.Glyphs.Size12.`import`)
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let bookmarksMenu = NSMenu(title: UserText.bookmarks)
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
@@ -495,6 +495,7 @@ final class MainMenu: NSMenu {
 
                 importBookmarksMenuItem
                 NSMenuItem(title: UserText.exportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
+                    .withImage(DesignSystemImages.Glyphs.Size12.export)
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.favorites)

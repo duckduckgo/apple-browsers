@@ -1148,6 +1148,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
             .withModifierMask([.command])
             .targetting(target)
             .withAccessibilityIdentifier("MoreOptionsMenu.bookmarkPage")
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
 
         bookmarkPageItem.isEnabled = tabCollectionViewModel.selectedTabViewModel?.canBeBookmarked == true
 
@@ -1167,6 +1168,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
         addItem(withTitle: UserText.bookmarksManageBookmarks, action: #selector(MoreOptionsMenu.openBookmarksManagementInterface), keyEquivalent: "b")
             .withModifierMask([.command, .option])
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         addItem(NSMenuItem.separator())
 
@@ -1199,8 +1201,10 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.importBookmarks, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.import)
 
         let exportBookmarItem = NSMenuItem(title: UserText.exportBookmarks, action: #selector(MoreOptionsMenu.openBookmarkExportInterface(_:)), keyEquivalent: "").targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.export)
         exportBookmarItem.isEnabled = bookmarkManager.list?.totalBookmarks != 0
         addItem(exportBookmarItem)
 

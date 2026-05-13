@@ -679,25 +679,47 @@ final class AIChatOmnibarController {
         persistFileAttachmentsToActiveTab(current)
     }
 
+    /// UUID of the tab the omnibar is currently overlaid on, or `nil` when no tab is selected.
+    /// Surfaced for tab pickers so they can pin the current tab at the top and render its row
+    /// with a "(Current Tab)" trailing badge.
+    var currentTabUUID: String? {
+        tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+    }
+
     /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
     /// attachments, with native `NSImage` favicons resolved from the favicon manager. Used by the
-    /// omnibar attach menu to populate the "Attach Page Content" submenu. Non-URL tabs (settings,
-    /// new-tab page, etc.) are filtered out.
+    /// omnibar attach menu and the `@`-mention picker to populate their tab lists.
+    ///
+    /// - Note: `tabCollectionViewModel` is the window-scoped TCVM injected at init, so the result
+    /// is intentionally restricted to **this window's** tabs — other browser windows aren't
+    /// surfaced. Non-URL tabs (settings, new-tab page, etc.) are filtered out, as are URLs the
+    /// sidebar's shared `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` rules out
+    /// (DDG homepage, `about:blank`, duck.ai itself).
+    ///
+    /// The current tab (if it survives the filters) is hoisted to the front of the returned list
+    /// so menus that pin "Current Tab" at the top get the right ordering for free.
     func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
         let pinnedTabs = tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
         let regularTabs = tabCollectionViewModel.tabCollection.tabs
         let allTabs = pinnedTabs + regularTabs
         let faviconManager = NSApp.delegateTyped.faviconManager
-        return allTabs.compactMap { tab in
+        let candidates = allTabs.compactMap { tab -> AIChatTabAttachment? in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            // Route through the shared filter the sidebar's tab picker uses so both
-            // surfaces agree on what's a useful attachment candidate. Excludes the DDG
-            // homepage (SERP URLs stay), `about:blank`, and duck.ai itself.
             guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             let title = tab.title ?? url.host ?? ""
             let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
             return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
         }
+        // Move the current tab to the front so the picker pins it on top.
+        guard let currentTabUUID,
+              let currentIndex = candidates.firstIndex(where: { $0.id == currentTabUUID }),
+              currentIndex != 0 else {
+            return candidates
+        }
+        var reordered = candidates
+        let current = reordered.remove(at: currentIndex)
+        reordered.insert(current, at: 0)
+        return reordered
     }
 
     func cleanup() {

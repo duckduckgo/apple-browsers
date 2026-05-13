@@ -41,11 +41,13 @@ final class AIChatTabPickerMenuRowView: NSView {
         static let iconSize: CGFloat = 16
         static let spacingAfterCheckmark: CGFloat = 6
         static let spacingAfterIcon: CGFloat = 4
+        static let spacingBeforeAccessory: CGFloat = 6
     }
 
     private let checkmarkView = NSImageView()
     private let faviconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
+    private let accessoryLabel = NSTextField(labelWithString: "")
     private var trackingArea: NSTrackingArea?
 
     private(set) var isAttached: Bool {
@@ -66,7 +68,7 @@ final class AIChatTabPickerMenuRowView: NSView {
         NSSize(width: Layout.width, height: Layout.height)
     }
 
-    init(attachment: AIChatTabAttachment, isAttached: Bool, onToggle: @escaping () -> Void) {
+    init(attachment: AIChatTabAttachment, isAttached: Bool, isCurrentTab: Bool, onToggle: @escaping () -> Void) {
         self.isAttached = isAttached
         self.onToggle = onToggle
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
@@ -105,20 +107,45 @@ final class AIChatTabPickerMenuRowView: NSView {
         faviconView.autoresizingMask = []
         addSubview(faviconView)
 
+        // Trailing "(Current Tab)" badge in secondary-label color. Measured once and pinned at
+        // the trailing edge; the title gets whatever remains. Hidden + zero-width when not the
+        // current tab so non-current rows match the pre-J1 layout exactly.
+        let menuFont = NSFont.menuFont(ofSize: 0)
+        accessoryLabel.font = menuFont
+        accessoryLabel.textColor = .secondaryLabelColor
+        accessoryLabel.lineBreakMode = .byClipping
+        accessoryLabel.maximumNumberOfLines = 1
+        accessoryLabel.usesSingleLineMode = true
+        accessoryLabel.stringValue = isCurrentTab ? UserText.aiChatTabPickerCurrentTabSuffix : ""
+        accessoryLabel.isHidden = !isCurrentTab
+        accessoryLabel.autoresizingMask = []
+        let accessoryWidth: CGFloat
+        if isCurrentTab {
+            let measured = NSAttributedString(
+                string: UserText.aiChatTabPickerCurrentTabSuffix,
+                attributes: [.font: menuFont]
+            )
+            accessoryWidth = ceil(measured.size().width)
+        } else {
+            accessoryWidth = 0
+        }
+
         // Title — sized to its natural height and vertically centered. Filling the row's full
         // height would leave the text top-aligned (NSTextField's default) which makes the title
         // sit higher than the favicon; computing the height from the font's line metrics and
         // recentering matches AppKit's standard menu-item baseline.
         let titleX = faviconX + Layout.iconSize + Layout.spacingAfterIcon
-        let titleWidth = Layout.width - titleX - Layout.trailingPadding
-        let menuFont = NSFont.menuFont(ofSize: 0)
+        let titleHeight = ceil(menuFont.ascender - menuFont.descender)
+        let availableForTitleAndAccessory = Layout.width - titleX - Layout.trailingPadding
+        let titleWidth = accessoryWidth > 0
+            ? max(0, availableForTitleAndAccessory - Layout.spacingBeforeAccessory - accessoryWidth)
+            : availableForTitleAndAccessory
         titleLabel.font = menuFont
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.maximumNumberOfLines = 1
         titleLabel.usesSingleLineMode = true
         titleLabel.stringValue = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
         titleLabel.toolTip = attachment.url.absoluteString
-        let titleHeight = ceil(menuFont.ascender - menuFont.descender)
         titleLabel.frame = NSRect(
             x: titleX,
             y: (Layout.height - titleHeight) / 2,
@@ -127,6 +154,18 @@ final class AIChatTabPickerMenuRowView: NSView {
         )
         titleLabel.autoresizingMask = [.width]
         addSubview(titleLabel)
+
+        if accessoryWidth > 0 {
+            let accessoryX = Layout.width - Layout.trailingPadding - accessoryWidth
+            accessoryLabel.frame = NSRect(
+                x: accessoryX,
+                y: (Layout.height - titleHeight) / 2,
+                width: accessoryWidth,
+                height: titleHeight
+            )
+            accessoryLabel.autoresizingMask = [.minXMargin]
+            addSubview(accessoryLabel)
+        }
 
         updateColors()
     }
@@ -142,6 +181,11 @@ final class AIChatTabPickerMenuRowView: NSView {
         let foreground: NSColor = isHovering ? .alternateSelectedControlTextColor : .labelColor
         titleLabel.textColor = foreground
         checkmarkView.contentTintColor = foreground
+        // The "(Current Tab)" badge stays muted normally; hovered selection flips it to a slightly
+        // de-emphasized version of the selection foreground so it doesn't compete with the title.
+        accessoryLabel.textColor = isHovering
+            ? .alternateSelectedControlTextColor.withAlphaComponent(0.85)
+            : .secondaryLabelColor
     }
 
     // MARK: - Hover highlight

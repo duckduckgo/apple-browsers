@@ -1236,6 +1236,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
         let candidates = omnibarController.openTabsForOmnibarPicker()
+        let currentTabId = omnibarController.currentTabUUID
 
         guard !candidates.isEmpty else {
             let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
@@ -1248,11 +1249,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         header.isEnabled = false
         menu.addItem(header)
 
+        // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
+        // "(Current Tab)" pinned on top.
         for candidate in candidates {
             let item = NSMenuItem()
             let row = AIChatTabPickerMenuRowView(
                 attachment: candidate,
                 isAttached: attachedIds.contains(candidate.id),
+                isCurrentTab: candidate.id == currentTabId,
                 onToggle: { [weak omnibarController] in
                     omnibarController?.toggleTabAttachment(candidate)
                 }

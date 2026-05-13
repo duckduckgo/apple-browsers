@@ -2,7 +2,7 @@
 set -eu
 
 # Warn when the Xcode compilation cache exceeds this size, in GB.
-LIMIT_GB=2
+LIMIT_GB=20
 
 cache_dir="${COMPILATION_CACHE_CAS_PATH:-}"
 limit_gb="${DDG_COMPILATION_CACHE_LIMIT_GB:-$LIMIT_GB}"

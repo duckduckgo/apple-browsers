@@ -1,0 +1,86 @@
+flowchart TD
+    Launch([App launch / cold start])
+    Launch -->|"tutorialSettings.hasSeenOnboarding == true"| Browser([Browser — no onboarding])
+    Launch -->|"hasSeenOnboarding == false"| Configure
+
+    Configure["OnboardingManager.configureOnboardingFlow(from: url)<br/>evaluates CPP deep link"]
+    Configure -->|"evaluatedFlow == .duckAI<br/>AND FF onboardingDuckAIFlow == ON"| FlowDuckAI[onboardingFlowType = .duckAI]
+    Configure -->|"evaluatedFlow == .default<br/>OR FF onboardingDuckAIFlow == OFF"| FlowDefault[onboardingFlowType = .default]
+
+    FlowDuckAI --> Segue
+    FlowDefault --> Segue
+
+    Segue{"MainViewController+Segues.swift:62<br/>segueToDaxOnboarding"}
+    Segue -->|"FF onboardingRebranding == OFF"| Legacy([Legacy OnboardingView — out of scope])
+    Segue -->|"FF onboardingRebranding == ON"| Rebranded[["OnboardingIntroViewController.rebranded<br/>+ RebrandedOnboardingView"]]
+
+    Rebranded --> Resume{"resumeStepStore.resumeStep != nil ?"}
+    Resume -->|"== .duckAIQuerySelection<br/>AND FF onboardingDuckAIQueryExperiment == ON"| StepDuckAIQuery
+    Resume -->|"== .browserComparison / .addToDockPromo / .appIconSelection /<br/>.addressBarPositionSelection / .searchExperienceSelection"| StepResumed[Resume at stored step]
+    Resume -->|"nil OR stored step not in current flow"| StepIntro
+
+    StepResumed --> StepDispatcher
+
+    subgraph Linear ["Rebranded Linear Onboarding (state machine in OnboardingIntroViewModel)"]
+        direction TB
+
+        StepIntro(["Step: introDialog (isReturningUser)<br/>resumeStep = nil"])
+        StepIntro -->|"isNewUser == true<br/>(VariantManager.currentVariant != VariantIOS.returningUser)<br/>→ .default dialog"| StepDispatcher
+        StepIntro -->|"isNewUser == false<br/>AND restorePromptHandler.isEligibleForRestorePrompt() == true<br/>→ .restoreData prompt → Restore OR Skip CTA"| StepDispatcher
+        StepIntro -->|"isNewUser == false<br/>AND NOT eligible for restore<br/>→ .skipTutorial dialog"| StepDispatcher
+        StepIntro -->|"user taps Skip → confirmSkipOnboardingAction<br/>hasSkippedOnboarding = true<br/>contextualDaxDialogs.disableContextualDaxDialogs()"| SkipExit
+
+        StepDispatcher{"OnboardingManager.stepsForCurrentFlow"}
+        StepDispatcher -->|"UIDevice.userInterfaceIdiom == .phone<br/>→ iPhoneFlow"| StepBrowserCmp
+        StepDispatcher -->|"UIDevice.userInterfaceIdiom == .pad<br/>→ iPadFlow"| StepBrowserCmp
+
+        StepBrowserCmp(["Step: browserComparison<br/>resumeStep = .browserComparison"])
+        StepBrowserCmp -->|"idiom == .phone (iPhoneFlow)"| StepAddToDock
+        StepBrowserCmp -->|"idiom == .pad (iPadFlow skips addToDock)"| StepAppIcon
+
+        StepAddToDock(["Step: addToDockPromo<br/>resumeStep = .addToDockPromo<br/>(iPhone only)"])
+        StepAddToDock -->|"makeNextViewState — unconditional"| StepAppIcon
+
+        StepAppIcon(["Step: appIconSelection<br/>resumeStep = .appIconSelection"])
+        StepAppIcon -->|"idiom == .phone"| StepAddressBar
+        StepAppIcon -->|"idiom == .pad<br/>(end of iPadFlow array)"| Complete
+
+        StepAddressBar(["Step: addressBarPositionSelection<br/>resumeStep = .addressBarPositionSelection"])
+        StepAddressBar -->|"unconditional next"| StepSearchExp
+
+        StepSearchExp(["Step: searchExperienceSelection<br/>resumeStep = .searchExperienceSelection"])
+        StepSearchExp -->|"didEnableAIChatSearchInputDuringOnboarding == true<br/>AND FF onboardingDuckAIQueryExperiment == ON<br/>AND resolveCohort ∈ {treatmentA, treatmentB}<br/>→ insertExperimentStepIfNeeded"| StepDuckAIQuery
+        StepSearchExp -->|"chose search-only<br/>OR experiment FF OFF<br/>OR cohort == .control / nil"| Complete
+
+        StepDuckAIQuery(["Step: duckAIQuerySelection<br/>resumeStep = .duckAIQuerySelection"])
+        StepDuckAIQuery -->|"cohort == .treatmentA → defaultMode = .duckAI"| Complete
+        StepDuckAIQuery -->|"cohort == .treatmentB → defaultMode = .search"| Complete
+    end
+
+    Complete[/"completeOnboardingIntro<br/>tutorialSettings.hasSeenOnboarding = true<br/>OnboardingResumeCheckpointStore.clearAll<br/>(except duckAIAnswerStep handoff)"/]
+    SkipExit[/"Skipped: bypass contextual dialogs"/]
+
+    SkipExit --> Browser
+    Complete --> ContextualGate
+
+    ContextualGate{"DaxDialogs.BrowsingSpec request<br/>ContextualDaxDialogsProvider.factory"}
+    ContextualGate -->|"FF onboardingRebranding == ON<br/>→ RebrandedContextualDaxDialogFactory"| Contextual
+    ContextualGate -->|"FF onboardingRebranding == OFF<br/>→ legacy factory (out of scope)"| Browser
+
+    subgraph Contextual ["Rebranded Contextual Dax Dialogs (in-browser)"]
+        direction TB
+        FirstSearch[afterSearch spec]
+        VisitWeb[visitWebsite spec<br/>shown on new tab]
+        Trackers["trackers specs:<br/>siteIsMajorTracker / siteOwnedByMajorTracker /<br/>withOneTracker / withMultipleTrackers / withoutTrackers"]
+        Fire["fire spec<br/>fireVariant from BrowsingSpec.SpecType.FireVariant"]
+        EndJourney[final / endOfJourney spec]
+        NewTabExtras["NewTab dialogs (RebrandedNewTabDaxDialogFactory):<br/>subscriptionPromo, addFavorite, trySearch, trySite"]
+    end
+
+    Contextual --> Browser
+
+    classDef flag fill:#fff3cd,stroke:#856404,color:#000
+    classDef gate fill:#cfe2ff,stroke:#084298,color:#000
+    classDef sink fill:#d1e7dd,stroke:#0f5132,color:#000
+    class Configure,Segue,Resume,StepDispatcher,ContextualGate gate
+    class Complete,SkipExit,Browser sink

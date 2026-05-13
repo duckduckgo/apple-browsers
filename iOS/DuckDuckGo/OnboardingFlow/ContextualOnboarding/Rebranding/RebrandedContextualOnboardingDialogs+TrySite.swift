@@ -25,6 +25,7 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-38684&m=dev
     struct OnboardingTrySiteDialog: View {
         @Environment(\.onboardingTheme) private var theme
 

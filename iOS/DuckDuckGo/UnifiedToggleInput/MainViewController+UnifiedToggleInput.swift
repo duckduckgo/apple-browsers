@@ -55,9 +55,10 @@ extension MainViewController {
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)
         self.unifiedInputStateStore = stateStore
 
+        let initialToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
-            isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isToggleEnabled: initialToggleEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
@@ -229,6 +230,13 @@ extension MainViewController {
 
 private extension MainViewController {
 
+    /// While Dax Dialogs are still in progress, the onboarding Search vs Search & Duck.ai choice
+    /// is not applied to AIChatSettings yet. Use that pending choice for UTI presentation so
+    /// Search-only hides the toggle, while Search & Duck.ai keeps it visible.
+    func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
+        onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+    }
+
     enum UnifiedToggleInputRefreshAction {
         case unbindInactiveNonAITab
         case refreshAITab(AITabRefreshBehavior)
@@ -284,6 +292,16 @@ private extension MainViewController {
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator,
                       coordinator.isAITabExpanded, coordinator.inputMode == .search else { return }
+                self.updateUnifiedInputContentVisibility(for: coordinator)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        // Refresh Dax overlay visibility while onboarding as omnibar text changes.
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                      !self.daxDialogsManager.hasSeenOnboarding,
+                      coordinator.isOmnibarSession else { return }
                 self.updateUnifiedInputContentVisibility(for: coordinator)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -392,7 +410,7 @@ private extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-                let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+                let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -662,7 +680,7 @@ extension MainViewController {
             floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
         floatingVC.didMove(toParent: self)
-        floatingVC.subscribe(to: coordinator.textChangePublisher)
+        floatingVC.subscribe(to: coordinator.floatingSubmitStatePublisher)
         floatingVC.view.isHidden = true
     }
 
@@ -746,6 +764,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
         let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
+        let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+        coordinator.updateToggleEnabled(isToggleEnabled)
+        coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -836,6 +857,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onSwitchToTab(tab)
     }
 
+    func unifiedInputEditingStateDidRequestTabSwitcher() {
+        requestTabSwitcher()
+    }
+
     func unifiedInputEditingStateDidRequestTryFireMode() {
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
         showTabSwitcher(forceFireTabsTip: true)
@@ -887,9 +912,7 @@ extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
 
     func floatingSubmitDidTapSubmit() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        let text = coordinator.currentText
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        coordinator.switchBarHandler.submitText(text)
+        coordinator.submitCurrentInputFromFloatingSubmit()
     }
 
     func floatingSubmitDidTapVoice() {

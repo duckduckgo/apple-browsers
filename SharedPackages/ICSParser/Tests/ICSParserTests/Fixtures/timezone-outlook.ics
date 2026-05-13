@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DDG Tests//ICSParser//EN
+BEGIN:VEVENT
+UID:tz-outlook-001@duckduckgo.com
+DTSTAMP:20260501T120000Z
+DTSTART;TZID=Eastern Standard Time:20260601T140000
+DTEND;TZID=Eastern Standard Time:20260601T150000
+SUMMARY:Outlook Time Event (2 PM ET)
+DESCRIPTION:DTSTART uses Microsoft-Outlook-style TZID. Parser should map via CLDR to America/New_York and resolve.
+LOCATION:Outlook-style timezone
+END:VEVENT
+END:VCALENDAR

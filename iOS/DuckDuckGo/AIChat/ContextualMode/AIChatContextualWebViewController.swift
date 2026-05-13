@@ -48,6 +48,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let isFireTab: Bool
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
@@ -128,6 +129,7 @@ final class AIChatContextualWebViewController: UIViewController {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          isFireTab: Bool = false,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
@@ -140,6 +142,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.isFireTab = isFireTab
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
@@ -374,6 +377,11 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireTab,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)

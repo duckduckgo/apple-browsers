@@ -85,7 +85,7 @@ struct OnboardingView: View {
                     content: {
                         VStack {
                             switch state.type {
-                            case .startOnboardingDialog(let dialogType):
+                            case .startOnboardingDialog(_, let dialogType):
                                 introView(dialogType: dialogType)
                             case .browsersComparisonDialog:
                                 browsersComparisonView
@@ -97,7 +97,7 @@ struct OnboardingView: View {
                                 addressBarPreferenceSelectionView
                             case .chooseSearchExperienceDialog:
                                 searchExperienceSelectionView
-                            case .duckAIQueryExperimentDialog(let defaultMode):
+                            case .duckAIQueryExperimentDialog(_, let defaultMode):
                                 experimentSearchExperienceSelectionView(defaultMode: defaultMode)
                             }
                         }
@@ -115,7 +115,7 @@ struct OnboardingView: View {
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
                     model.introState.showDaxDialogBox = true
-                    if case .startOnboardingDialog(type: .restoreData) = state.type {
+                    if case .startOnboardingDialog(_, .restoreData) = state.type {
                         model.restorePromptState.animateTitle = true
                     } else {
                         model.introState.animateIntroText = true
@@ -184,7 +184,7 @@ struct OnboardingView: View {
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         case .skipTutorial, .default:
             IntroDialogContent(
-                title: model.copy.introTitle,
+                title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
                 animateText: $model.introState.animateIntroText,
                 showCTA: $model.introState.showIntroButton,
@@ -204,7 +204,7 @@ struct OnboardingView: View {
 
     private var browsersComparisonView: some View {
         BrowsersComparisonContent(
-            title: model.copy.browserComparisonTitle,
+            title: UserText.Onboarding.BrowsersComparison.title,
             animateText: $model.browserComparisonState.animateComparisonText,
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
@@ -311,7 +311,7 @@ struct OnboardingView: View {
 extension OnboardingView {
 
     enum ViewState: Equatable {
-        case landing
+        case landing(OnboardingLandingContent)
         case onboarding(Intro)
 
         var intro: Intro? {
@@ -344,13 +344,13 @@ extension OnboardingView.ViewState.Intro {
     }
 
     enum IntroType: Equatable {
-        case startOnboardingDialog(type: IntroDialogType)
-        case browsersComparisonDialog
-        case addToDockPromoDialog
-        case chooseAppIconDialog
-        case chooseAddressBarPositionDialog
-        case chooseSearchExperienceDialog
-        case duckAIQueryExperimentDialog(defaultMode: DuckAIQueryExperimentMode)
+        case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
+        case browsersComparisonDialog(content: OnboardingBrowserComparisonContent)
+        case addToDockPromoDialog(content: OnboardingAddToDockContent)
+        case chooseAppIconDialog(content: OnboardingAppIconColorContent)
+        case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
+        case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
+        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode)
     }
 
     struct StepInfo: Equatable {
@@ -372,7 +372,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
     }
 
     var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode? {
-        if case .duckAIQueryExperimentDialog(let mode) = self {
+        if case .duckAIQueryExperimentDialog(_, let mode) = self {
             return mode
         }
         return nil
@@ -414,6 +414,8 @@ struct OnboardingView_Previews: PreviewProvider {
     }
 
     class MockOnboardingManager: OnboardingManaging {
+        let currentOnboardingFlow: OnboardingFlowType = .default
+
         let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
 
         let userHasSeenAddToDockPromoDuringOnboarding: Bool = false

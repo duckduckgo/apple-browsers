@@ -1574,7 +1574,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireDailyAdBlockingPixel() {
-        PixelKit.fire(WebExtensionPixel.dailyAdBlockingState(isEnabled: adBlockingAvailability.isEnabled), frequency: .daily)
+        let isEnabled = adBlockingAvailability.isEnabled
+        let storage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
+        let analyticsEnabled = isEnabled && (storage.youTubeAnalyticsEnabled ?? false)
+        PixelKit.fire(
+            WebExtensionPixel.dailyAdBlockingState(
+                isEnabled: isEnabled,
+                analyticsEnabled: analyticsEnabled
+            ),
+            frequency: .daily
+        )
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -2065,6 +2074,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
             appearancePreferences: appearancePreferences,
+            keyValueStore: keyValueStore,
             syncErrorHandler: syncErrorHandler
         )
         let syncService = DDGSync(

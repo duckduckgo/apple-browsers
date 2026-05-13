@@ -45,7 +45,11 @@ protocol OnboardingAddToDockVisibilityManager {
     var userHasSeenAddToDockPromoDuringOnboarding: Bool { get }
 }
 
-protocol OnboardingFlowManaging {
+protocol OnboardingFlowProviding {
+    var currentOnboardingFlow: OnboardingFlowType { get }
+}
+
+protocol OnboardingFlowManaging: OnboardingFlowProviding {
     func configureOnboardingFlow(from url: URL?)
 }
 
@@ -186,6 +190,14 @@ extension OnboardingManager: OnboardingAddToDockVisibilityManager {
 }
 
 // MARK: - Onboarding Manager + Onboarding Flows
+
+extension OnboardingManager: OnboardingFlowProviding {
+
+    var currentOnboardingFlow: OnboardingFlowType {
+        tutorialSettings.onboardingFlowType ?? .default
+    }
+
+}
 
 extension OnboardingManager: OnboardingFlowManaging {
 

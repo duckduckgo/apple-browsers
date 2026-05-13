@@ -27,6 +27,39 @@ protocol UnifiedToggleInputFloatingSubmitDelegate: AnyObject {
     func floatingSubmitDidTapVoice()
 }
 
+struct UnifiedToggleInputFloatingSubmitState: Equatable {
+    let hasText: Bool
+    let hasValidAttachment: Bool
+    let hasInvalidAttachment: Bool
+
+    static let empty = UnifiedToggleInputFloatingSubmitState(
+        hasText: false,
+        hasValidAttachment: false,
+        hasInvalidAttachment: false
+    )
+
+    init(hasText: Bool, hasValidAttachment: Bool, hasInvalidAttachment: Bool) {
+        self.hasText = hasText
+        self.hasValidAttachment = hasValidAttachment
+        self.hasInvalidAttachment = hasInvalidAttachment
+    }
+
+    init(text: String, mode: TextEntryMode, attachments: [UnifiedToggleInputAttachment]) {
+        let isAIChatMode = mode == .aiChat
+        hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        hasValidAttachment = isAIChatMode && attachments.contains { !$0.isInvalid }
+        hasInvalidAttachment = isAIChatMode && attachments.contains(where: \.isInvalid)
+    }
+
+    var canSubmit: Bool {
+        !hasInvalidAttachment && (hasText || hasValidAttachment)
+    }
+
+    var canRequestVoice: Bool {
+        !hasInvalidAttachment && !hasText && !hasValidAttachment
+    }
+}
+
 final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
 
     weak var delegate: UnifiedToggleInputFloatingSubmitDelegate?
@@ -42,7 +75,11 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         didSet { updateIcon() }
     }
 
-    private var hasText = false
+    var isSubmitButtonEnabled: Bool {
+        button.isEnabled
+    }
+
+    private var submitState = UnifiedToggleInputFloatingSubmitState.empty
     private var isFireTab = false
     private var cancellables = Set<AnyCancellable>()
 
@@ -70,21 +107,24 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         updateIcon()
     }
 
-    func subscribe(to textPublisher: AnyPublisher<String, Never>) {
-        textPublisher
-            .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    func subscribe(to submitStatePublisher: AnyPublisher<UnifiedToggleInputFloatingSubmitState, Never>) {
+        submitStatePublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] hasText in
-                self?.hasText = hasText
-                self?.updateIcon()
+            .sink { [weak self] state in
+                self?.updateState(state)
             }
             .store(in: &cancellables)
     }
 
+    func updateState(_ state: UnifiedToggleInputFloatingSubmitState) {
+        submitState = state
+        updateIcon()
+    }
+
     private func updateIcon() {
-        let showVoice = !hasText && isAIVoiceChatEnabled
-        let isActive = hasText || showVoice
+        let showVoice = submitState.canRequestVoice && isAIVoiceChatEnabled
+        let isActive = submitState.canSubmit || showVoice
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         button.setImage(icon, for: .normal)
         button.isEnabled = isActive
@@ -98,9 +138,9 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
     }
 
     @objc private func buttonTapped() {
-        if hasText {
+        if submitState.canSubmit {
             delegate?.floatingSubmitDidTapSubmit()
-        } else if isAIVoiceChatEnabled {
+        } else if submitState.canRequestVoice && isAIVoiceChatEnabled {
             delegate?.floatingSubmitDidTapVoice()
         }
     }

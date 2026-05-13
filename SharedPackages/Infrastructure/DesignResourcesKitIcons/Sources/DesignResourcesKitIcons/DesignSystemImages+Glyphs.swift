@@ -56,6 +56,7 @@ public extension DesignSystemImages {
             public static var fire: DesignSystemImage { .init(resource: .fire12) }
             public static var flag: DesignSystemImage { .init(resource: .flag12) }
             public static var globe: DesignSystemImage { .init(resource: .globe12) }
+            public static var goBackCircleRecolorable: DesignSystemImage { .init(resource: .goBackCircleRecolorable12) }
             public static var history: DesignSystemImage { .init(resource: .history12) }
             public static var images: DesignSystemImage { .init(resource: .images12) }
             public static var info: DesignSystemImage { .init(resource: .info12) }

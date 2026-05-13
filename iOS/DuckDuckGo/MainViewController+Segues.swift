@@ -37,6 +37,12 @@ extension MainViewController {
         }, deepLinkTarget: .appearance)
     }
 
+    func segueToGeneralSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .general)
+        }, deepLinkTarget: .general)
+    }
+
     func segueToCustomizeAddressBarSettings() {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)

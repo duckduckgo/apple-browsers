@@ -60,6 +60,15 @@ Run steps 1–6 **for each input icon in the list** (they're independent — fet
    }
    ```
 
+   **Glyph with `Recolorable` in the filename** (e.g. `Check-Recolorable-16.svg`) — same category and folder layout as a regular Glyph, but **omit the `properties` block entirely** so the asset is treated as "Default image" (preserves the SVG's own colors) instead of "Template image" (tinted by foreground color):
+   ```json
+   {
+     "images" : [{ "filename" : "Check-Recolorable-16.svg", "idiom" : "universal" }],
+     "info" : { "author" : "xcode", "version" : 1 }
+   }
+   ```
+   The accessor still keeps the full base name (including `Recolorable`), e.g. `checkRecolorable: DesignSystemImage { .init(resource: .checkRecolorable16) }`. Only the `Recolorable` (`.symbolset`) category drops the suffix from the accessor — Glyphs do not.
+
    **Color** (no `properties`):
    ```json
    {
@@ -105,7 +114,7 @@ Commit landed as `41d4ea6e95 Add Pin-Remove and Window-Duplicate 12px icons` —
 
 ## Common mistakes
 
-- **Wrong Contents.json for category.** Glyph without `template-rendering-intent` renders as filled black — not tinted. Color with `template-rendering-intent` strips the colors.
+- **Wrong Contents.json for category.** Glyph without `template-rendering-intent` renders as filled black — not tinted. Color with `template-rendering-intent` strips the colors. **Exception:** Glyphs whose filename contains `Recolorable` (e.g. `Check-Recolorable-16.svg`) must omit `template-rendering-intent` so they render as Default and keep their own colors.
 - **`.imageset` for Recolorable.** Recolorable must be `.symbolset` with `symbols` (not `images`) — Xcode silently ignores it otherwise.
 - **`Color/32px/` instead of `Color/32x/`.** The 32-size directory is `32x` in this repo. All other sizes are `{N}px`.
 - **Alphabetical insertion drift.** Several existing files (notably `+Color.swift` Size32 and Size128) aren't strictly alphabetical. Don't replicate the disorder — insert your line in the correct alphabetical position and leave neighbours alone.

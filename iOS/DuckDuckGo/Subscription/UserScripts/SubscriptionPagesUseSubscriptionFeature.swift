@@ -154,6 +154,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let tierEventReporter: SubscriptionTierEventReporting
     private let pendingTransactionHandler: PendingTransactionHandling
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
     private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
@@ -171,7 +172,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
          pendingTransactionHandler: PendingTransactionHandling,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting,
-         requestValidator: any ScriptRequestValidator) {
+         requestValidator: any ScriptRequestValidator,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { true }
+         )) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -184,6 +190,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.pendingTransactionHandler = pendingTransactionHandler
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter
         self.requestValidator = requestValidator
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -850,12 +857,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     private func fireFreemiumUpsellPixel() {
-        let freemiumState = DefaultFreemiumDBPUserStateManager(
-            userDefaults: .dbp,
-            isUserAuthenticated: { false },
-            isFreemiumEnabled: { true }
-        )
-        guard freemiumState.didActivate, let pixelKit = PixelKit.shared else { return }
+        guard freemiumDBPUserStateManager.didActivate, let pixelKit = PixelKit.shared else { return }
         DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS).fire(.freemiumUpsell)
     }
 }

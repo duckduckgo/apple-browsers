@@ -21,7 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 /// A horizontal card representing one tab the user has attached to the duck.ai omnibar prompt.
-/// Sits in `AIChatTabAttachmentsCarouselView` above the image attachments row.
+/// Sits in `AIChatAttachmentsCarouselView` alongside the image and file thumbnails.
 ///
 /// Visual structure mirrors how the duck.ai web app renders attached pages: a 36×36 page-thumbnail
 /// graphic on the leading edge (favicon plus the stylised "text bars" that suggest page content),

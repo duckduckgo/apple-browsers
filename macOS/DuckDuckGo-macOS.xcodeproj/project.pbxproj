@@ -2214,9 +2214,9 @@
 		7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
-		7BAB1A0100000000A000000D /* AIChatTabAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatTabAttachmentsCarouselView.swift */; };
-		7BAB1A0100000000A000000E /* AIChatTabAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatTabAttachmentsCarouselView.swift */; };
-		7BAB1A0100000000A000000F /* AIChatTabAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatTabAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
 		7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
 		7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
 		7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
@@ -5616,7 +5616,7 @@
 		7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachment.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerMenuRowView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachmentCardView.swift; sourceTree = "<group>"; };
-		7BAB1A0100000000A000000C /* AIChatTabAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachmentsCarouselView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachmentsCarouselView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPanelAttachment.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFileAttachmentCardView.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
@@ -7628,7 +7628,7 @@
 				7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */,
 				7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */,
 				7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */,
-				7BAB1A0100000000A000000C /* AIChatTabAttachmentsCarouselView.swift */,
+				7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */,
 				7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */,
 				7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */,
 			);
@@ -15447,7 +15447,7 @@
 				7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */,
 				7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */,
 				7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */,
-				7BAB1A0100000000A000000D /* AIChatTabAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000015 /* AIChatFileAttachmentCardView.swift in Sources */,
 				31267C6B2B640C5200FEF811 /* DataBrokerProtectionAppEvents.swift in Sources */,
@@ -15882,7 +15882,7 @@
 				7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */,
 				7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */,
 				7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */,
-				7BAB1A0100000000A000000E /* AIChatTabAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000016 /* AIChatFileAttachmentCardView.swift in Sources */,
 				B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */,
@@ -17803,7 +17803,7 @@
 				1DB433792FAB390D0047762C /* AIChatTabAttachment.swift in Sources */,
 				7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */,
 				7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */,
-				7BAB1A0100000000A000000F /* AIChatTabAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000017 /* AIChatFileAttachmentCardView.swift in Sources */,
 				B6DA06E62913F39400225DE2 /* MenuItemSelectors.swift in Sources */,

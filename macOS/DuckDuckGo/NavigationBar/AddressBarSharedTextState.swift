@@ -127,9 +127,9 @@ final class AddressBarSharedTextState: ObservableObject {
     /// existing image entries keep their slots (or get refreshed in place for resize replacements),
     /// removed images drop out, and new images are appended at the end.
     func setAIChatAttachments(_ attachments: [AIChatImageAttachment]) {
-        let unchanged = attachments.count == aiChatAttachments.count
-            && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id && $0.image === $1.image }
-        guard !unchanged else { return }
+        // `AIChatImageAttachment: Equatable` compares by `id` + image instance identity (see
+        // its own conformance), which is exactly the change-detection rule we want here.
+        guard attachments != aiChatAttachments else { return }
         aiChatAttachments = attachments
         aiChatPanelAttachments = reconcilePanelAttachments(updatedImages: attachments)
     }
@@ -150,9 +150,9 @@ final class AddressBarSharedTextState: ObservableObject {
     /// semantics as the image and tab setters — id-equality is the change check (`AIChatFileAttachment`
     /// is immutable once attached).
     func setAIChatFileAttachments(_ attachments: [AIChatFileAttachment]) {
-        let unchanged = attachments.count == aiChatFileAttachments.count
-            && zip(attachments, aiChatFileAttachments).allSatisfy { $0.id == $1.id }
-        guard !unchanged else { return }
+        // `AIChatFileAttachment: Equatable` is id-only (files are immutable post-init), which
+        // matches the change-detection rule we want here.
+        guard attachments != aiChatFileAttachments else { return }
         aiChatFileAttachments = attachments
         aiChatPanelAttachments = reconcilePanelAttachments(updatedFiles: attachments)
     }

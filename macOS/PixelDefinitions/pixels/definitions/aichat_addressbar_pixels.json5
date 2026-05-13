@@ -107,6 +107,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "imageCount",
                 "type": "integer",
@@ -122,6 +123,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "tabCount",
                 "type": "integer",
@@ -144,6 +146,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "fileCount",
                 "type": "integer",

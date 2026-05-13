@@ -71,15 +71,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let fileAttachmentsDisplayCap: Int = AIChatOmnibarController.fileAttachmentsDisplayCap
         /// Carousel's outer height when populated — includes the row content height plus an
         /// internal shadow-margin band on top and bottom, so card shadows render without clipping.
-        static let tabAttachmentsRowHeight: CGFloat = AIChatTabAttachmentsCarouselView.expandedHeight
+        static let attachmentsCarouselRowHeight: CGFloat = AIChatAttachmentsCarouselView.expandedHeight
         /// Visible vertical spacing between the cards' bottom edge and the tools row.
-        static let tabAttachmentsBottomSpacing: CGFloat = 8
+        static let attachmentsCarouselBottomSpacing: CGFloat = 8
         /// Anchor offset for the carousel's bottom: the carousel's lower shadow-margin band
         /// already provides part of the visual spacing, so the actual constraint constant is the
         /// remaining gap = `bottomSpacing - shadowMargin`. Negated for the layout API.
-        static let tabAttachmentsCarouselBottomAnchorOffset: CGFloat = -(tabAttachmentsBottomSpacing - AIChatTabAttachmentsCarouselView.shadowMargin)
+        static let attachmentsCarouselBottomAnchorOffset: CGFloat = -(attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         /// Total panel height the carousel + below-spacing reserves when populated.
-        static let tabAttachmentsTotalPanelReservation: CGFloat = AIChatTabAttachmentsCarouselView.expandedHeight + (tabAttachmentsBottomSpacing - AIChatTabAttachmentsCarouselView.shadowMargin)
+        static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         static let suggestionsBottomPadding: CGFloat = 4
     }
 
@@ -95,9 +95,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let reasoningPickerButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     // No image-attachments container view: image / file / tab attachment data all lives on
-    // `AddressBarSharedTextState`, and the unified `AIChatTabAttachmentsCarouselView` is the
+    // `AddressBarSharedTextState`, and the unified `AIChatAttachmentsCarouselView` is the
     // sole rendering surface.
-    private let tabAttachmentsCarouselView = AIChatTabAttachmentsCarouselView()
+    private let attachmentsCarouselView = AIChatAttachmentsCarouselView()
 
     private let attachmentsErrorLabel: NSTextField = {
         let label = NSTextField(labelWithString: UserText.aiChatAttachmentsLimitError)
@@ -111,17 +111,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
 
-    /// Tracks ongoing resize tasks by attachment ID. Used to ensure resizes complete before submission.
+    /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
     /// Unified attachments carousel height constraint — 0 when both image and tab attachment
-    /// lists are empty, `tabAttachmentsRowHeight + tabAttachmentsBottomSpacing` otherwise.
-    /// (Named `tabAttachmentsHeightConstraint` for the property's introduction history; it now
+    /// lists are empty, `attachmentsCarouselRowHeight + attachmentsCarouselBottomSpacing` otherwise.
+    /// (Named `attachmentsCarouselHeightConstraint` for the property's introduction history; it now
     /// drives the combined image + tab row.)
-    private var tabAttachmentsHeightConstraint: NSLayoutConstraint?
+    private var attachmentsCarouselHeightConstraint: NSLayoutConstraint?
 
     /// True while the attach menu is open. We defer the carousel's panel-reflow (height
     /// constraint update + `onPassthroughHeightNeedsUpdate`) until the menu closes — otherwise
@@ -232,19 +232,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
-    /// Extra height needed beyond text and suggestions for dynamic content like attachments.
-    /// This must be added to the container height calculation by the parent.
-    var additionalContentHeight: CGFloat {
+    /// Combined "carousel + error label" reservation. Single source of truth so
+    /// `additionalContentHeight` and `totalPassthroughHeight` can't drift apart on the
+    /// gating rule (the carousel is populated only via tools UI today, but each method
+    /// previously open-coded the same arithmetic with subtly different gates).
+    private var attachmentRowReservation: CGFloat {
         var height: CGFloat = 0
         // The carousel filters out attachments the model can't accept, so its `attachments`
         // count reflects what the user actually sees.
-        if !tabAttachmentsCarouselView.attachments.isEmpty {
-            height += Constants.tabAttachmentsTotalPanelReservation
+        if !attachmentsCarouselView.attachments.isEmpty {
+            height += Constants.attachmentsCarouselTotalPanelReservation
         }
         if hasVisibleImageExcess || hasVisibleFileExcess {
             height += Constants.attachmentsErrorHeight
         }
         return height
+    }
+
+    /// Extra height needed beyond text and suggestions for dynamic content like attachments.
+    /// This must be added to the container height calculation by the parent.
+    var additionalContentHeight: CGFloat {
+        attachmentRowReservation
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
@@ -258,13 +266,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
             height += Constants.toolButtonSize + Constants.toolButtonBottomInset
-
-            if !tabAttachmentsCarouselView.attachments.isEmpty {
-                height += Constants.tabAttachmentsTotalPanelReservation
-            }
-            if hasVisibleImageExcess || hasVisibleFileExcess {
-                height += Constants.attachmentsErrorHeight
-            }
+            height += attachmentRowReservation
         }
         return height
     }
@@ -545,9 +547,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.isHidden = !shouldShowModelPicker
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
 
-        // The carousel row's height is recomputed centrally via `updateTabAttachmentsLayout()`.
+        // The carousel row's height is recomputed centrally via `updateAttachmentsCarouselLayout()`.
         if !shouldShowAttachments {
-            updateTabAttachmentsLayout()
+            updateAttachmentsCarouselLayout()
         }
 
         updateToolsLeadingConstraint()
@@ -723,27 +725,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         containerView.addSubview(attachmentsErrorLabel)
 
-        tabAttachmentsCarouselView.translatesAutoresizingMaskIntoConstraints = false
-        tabAttachmentsCarouselView.onAttachmentsChanged = { [weak self] in
-            self?.updateTabAttachmentsLayout()
+        attachmentsCarouselView.translatesAutoresizingMaskIntoConstraints = false
+        attachmentsCarouselView.onAttachmentsChanged = { [weak self] in
+            self?.updateAttachmentsCarouselLayout()
         }
         // X clicks on a card route through the controller, which writes to shared state; the
         // `$aiChatPanelAttachments` publisher then drives the carousel re-render. Single source
         // of truth for the order; the carousel itself never mutates its own state.
-        tabAttachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
+        attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
             PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
             self.omnibarController.removeImageAttachmentFromActiveTab(id: id)
         }
-        tabAttachmentsCarouselView.onTabAttachmentRemoveRequested = { [weak self] id in
+        attachmentsCarouselView.onTabAttachmentRemoveRequested = { [weak self] id in
             self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
         }
-        tabAttachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
+        attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
             self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
-        containerView.addSubview(tabAttachmentsCarouselView)
+        containerView.addSubview(attachmentsCarouselView)
 
         // Single subscription drives the carousel for both restore-on-tab-switch and live
         // mutations. `@Published.sink` delivers the current value on subscribe so the initial
@@ -800,21 +802,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // The unified attachments carousel sits directly above the tools row. It contains the
             // image attachments view (leading) and the tab cards (trailing) — both flow into one
             // horizontally-scrollable strip.
-            tabAttachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
-            tabAttachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
+            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
+            attachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
             // The carousel's bottom shadow-margin band already accounts for part of the visual
             // gap to the tools row; the constraint adds the remainder so the visible card-to-tools
-            // distance is `tabAttachmentsBottomSpacing`.
-            tabAttachmentsCarouselView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor, constant: Constants.tabAttachmentsCarouselBottomAnchorOffset),
+            // distance is `attachmentsCarouselBottomSpacing`.
+            attachmentsCarouselView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor, constant: Constants.attachmentsCarouselBottomAnchorOffset),
 
-            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: tabAttachmentsCarouselView.leadingAnchor),
-            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: tabAttachmentsCarouselView.topAnchor, constant: -2),
+            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: attachmentsCarouselView.leadingAnchor),
+            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: attachmentsCarouselView.topAnchor, constant: -2),
         ])
 
-        // Carousel height: 0 when empty, `tabAttachmentsRowHeight` when there's at least one
+        // Carousel height: 0 when empty, `attachmentsCarouselRowHeight` when there's at least one
         // image thumbnail or tab card. The row collapses to nothing when both kinds are empty.
-        tabAttachmentsHeightConstraint = tabAttachmentsCarouselView.heightAnchor.constraint(equalToConstant: 0)
-        tabAttachmentsHeightConstraint?.isActive = true
+        attachmentsCarouselHeightConstraint = attachmentsCarouselView.heightAnchor.constraint(equalToConstant: 0)
+        attachmentsCarouselHeightConstraint?.isActive = true
 
         // Model picker trailing: next to submit button when visible, or near container edge when hidden
         // Submit button is always visible, so model picker always sits to its left
@@ -919,7 +921,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var shouldSuppressSuggestions: Bool {
         omnibarController.isImageGenerationMode
             || !omnibarController.activeImageAttachments.isEmpty
-            || !tabAttachmentsCarouselView.attachments.isEmpty
+            || !attachmentsCarouselView.attachments.isEmpty
             || isSuggestionsCollapsedByUnfocus
     }
 
@@ -935,7 +937,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
-        // Track the real height even when suppressed
+        // Record the real height even when suppressed
         if !shouldSuppressSuggestions {
             lastKnownSuggestionsHeight = newHeight
         }
@@ -1148,7 +1150,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            // Track per-kind slot consumption so we never overshoot either cap. Both kinds use
+            // Hold per-kind slot consumption so we never overshoot either cap. Both kinds use
             // a `displayCap = max + 1` so the carousel can render exactly one item past the
             // limit as a visible cue, with the error label calling it out.
             var imagesAdded = self.omnibarController.activeImageAttachments.count
@@ -1364,8 +1366,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.hasImageAttachments = hasAttachments
 
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
-        // jointly through `updateTabAttachmentsLayout()` (single source of truth for the row).
-        updateTabAttachmentsLayout()
+        // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
+        updateAttachmentsCarouselLayout()
 
         let fileExcess = hasExcessFileAttachments
         // File excess takes priority — the file copy is more recently introduced and the more
@@ -1423,7 +1425,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 return true
             }
         }
-        tabAttachmentsCarouselView.setAttachments(filtered)
+        attachmentsCarouselView.setAttachments(filtered)
         guard !isDeferringCarouselLayout else { return }
         updateAttachmentsLayout()
     }
@@ -1436,14 +1438,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
     }
 
-    private func updateTabAttachmentsLayout() {
+    private func updateAttachmentsCarouselLayout() {
         // Row collapses when both image and tab attachments are empty; expanded row otherwise.
         // Just the carousel's `expandedHeight` — the visible 8pt gap to the tools row is split
         // between the carousel's lower shadow-margin band and the bottomAnchor offset.
-        let hasAnyAttachment = !tabAttachmentsCarouselView.attachments.isEmpty
+        let hasAnyAttachment = !attachmentsCarouselView.attachments.isEmpty
             || !omnibarController.activeImageAttachments.isEmpty
-        tabAttachmentsHeightConstraint?.constant = hasAnyAttachment
-            ? Constants.tabAttachmentsRowHeight
+        attachmentsCarouselHeightConstraint?.constant = hasAnyAttachment
+            ? Constants.attachmentsCarouselRowHeight
             : 0
         // Adding/removing a tab attachment changes whether suggestions should be visible —
         // mirroring the behavior of the image attachments path. (`shouldSuppressSuggestions`
@@ -1606,7 +1608,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if !showImageSide {
             // Image side disappearing — recompute the shared row height; if tabs/files are
             // present the carousel stays at row height, otherwise it collapses.
-            updateTabAttachmentsLayout()
+            updateAttachmentsCarouselLayout()
             attachmentsErrorLabel.isHidden = true
         } else {
             updateAttachmentsLayout()

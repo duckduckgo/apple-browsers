@@ -1,5 +1,5 @@
 //
-//  AIChatTabAttachmentsCarouselView.swift
+//  AIChatAttachmentsCarouselView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -29,7 +29,7 @@ import AIChat
 /// `onTabAttachmentRemoveRequested` callbacks; the container VC routes those into the data
 /// model (shared state), the publisher fires, and the carousel re-renders. Single source of
 /// truth, no in-carousel mutation.
-final class AIChatTabAttachmentsCarouselView: NSView {
+final class AIChatAttachmentsCarouselView: NSView {
 
     private enum Constants {
         static let cardSpacing: CGFloat = 6
@@ -181,17 +181,6 @@ final class AIChatTabAttachmentsCarouselView: NSView {
         }
 
         onAttachmentsChanged?()
-    }
-
-    /// Wipes the carousel without firing `onAttachmentsChanged` — used by panel teardown where
-    /// the upstream shared state must not be persisted to.
-    func clearWithoutNotification() {
-        attachments = []
-        for view in viewsByAttachmentId.values {
-            stackView.removeArrangedSubview(view)
-            view.removeFromSuperview()
-        }
-        viewsByAttachmentId.removeAll()
     }
 
     private func makeView(for entry: AIChatPanelAttachment) -> NSView {

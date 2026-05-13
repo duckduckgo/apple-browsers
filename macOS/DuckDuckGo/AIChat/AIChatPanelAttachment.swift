@@ -44,22 +44,7 @@ enum AIChatPanelAttachment: Equatable {
         }
     }
 
-    static func == (lhs: AIChatPanelAttachment, rhs: AIChatPanelAttachment) -> Bool {
-        switch (lhs, rhs) {
-        case let (.image(a), .image(b)):
-            // `AIChatImageAttachment` doesn't conform to `Equatable`. Match what the existing
-            // shared-state setter does when deciding "did the list actually change": id plus
-            // `===` identity on the `NSImage` instance (so a resize-replacement is treated as a
-            // change but the same instance arriving twice isn't).
-            return a.id == b.id && a.image === b.image
-        case let (.tab(a), .tab(b)):
-            return a == b
-        case let (.file(a), .file(b)):
-            // `AIChatFileAttachment` doesn't conform to `Equatable`. Files are immutable once
-            // attached, so an id match is sufficient.
-            return a.id == b.id
-        default:
-            return false
-        }
-    }
+    // Equatable conformance is synthesized — every associated value's type provides its
+    // own `==`: `AIChatImageAttachment` (id + image identity), `AIChatTabAttachment`
+    // (id + title + url + favicon identity), and `AIChatFileAttachment` (id only).
 }

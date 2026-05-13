@@ -690,6 +690,10 @@ final class AIChatOmnibarController {
         let faviconManager = NSApp.delegateTyped.faviconManager
         return allTabs.compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
+            // Route through the shared filter the sidebar's tab picker uses so both
+            // surfaces agree on what's a useful attachment candidate. Excludes the DDG
+            // homepage (SERP URLs stay), `about:blank`, and duck.ai itself.
+            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             let title = tab.title ?? url.host ?? ""
             let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
             return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
@@ -851,66 +855,90 @@ final class AIChatOmnibarController {
             PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        // Capture mode/model/toolChoice/reasoning before async work — cleanup() may reset state
+        // Snapshot everything that could change between now and when the async submit Task
+        // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
+        // `sharedTextState` is rebound on tab change — without the snapshot, every post-await
+        // read would reflect whichever tab is active when the await resumes, not the tab the
+        // user pressed submit on. That meant attachments from tab B could ship in the payload
+        // for the prompt typed on tab A, and the `tabId`-stripping discriminator would be
+        // computed against the wrong active tab.
+        //
+        // Snapshotting before the Task closure is the cheap fix: each capture is a value-type
+        // copy (or a closure capture of the model state at submit time), so the task body
+        // operates on a frozen view of "what the user actually clicked submit on".
+        //
+        // We intentionally do NOT re-check `isOmnibarTabPickerEnabled` inside the task. If the
+        // privacy config remotely disables the omnibar tab picker between submit-click and
+        // task resume, the in-flight `pageContext` payload still ships — the user expressed
+        // clear intent before the flag flipped, and silently dropping attachments mid-submit
+        // would be worse UX than the corner-case rollback. Surface gating still kicks in the
+        // *next* time the user opens the omnibar.
         let modelId = effectiveModelId
         let mode = effectiveMode
         let toolChoice = effectiveToolChoice
         let reasoningEffort = effectiveReasoningEffort
+        let snapshotImageAttachments: [AIChatImageAttachment] = canSendImages ? activeImageAttachments : []
+        let snapshotTabAttachments: [AIChatTabAttachment] = activeTabAttachments
+        let snapshotFileAttachments: [AIChatFileAttachment] = selectedModelSupportsFileUpload ? activeFileAttachments : []
+        let snapshotActiveTabUUID: String? = tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        let supportedImageFormats = selectedModelImageFormats
 
         Task { @MainActor in
-            // Wait for any pending image resizes to complete
+            // Wait for any pending image resizes to complete. NOTE: the read of the *image
+            // bytes* is deferred past this await because resize-replacement updates the same
+            // `AIChatImageAttachment.id` in place — the snapshot captured the identity, the
+            // resize finalizes the pixels.
             await waitForAttachmentsReady?()
 
-            // Get attachments after resizes are complete — only include if model supports images or in image gen mode
-            let attachments = canSendImages ? self.activeImageAttachments : []
-            let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
+            let postResizeImages: [AIChatImageAttachment] = snapshotImageAttachments.compactMap { attachment in
+                // Re-read by id from current shared state; the resize task swapped the image
+                // instance on the same id. If the attachment has been removed in the meantime
+                // (which shouldn't happen for a snapshot we already captured, but defend), the
+                // entry is dropped.
+                self.activeImageAttachments.first(where: { $0.id == attachment.id }) ?? attachment
+            }
+            let images = Self.nativePromptImages(from: postResizeImages, supportedFormats: supportedImageFormats)
 
-            if !attachments.isEmpty {
-                PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+            if !postResizeImages.isEmpty {
+                PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: postResizeImages.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
 
-            // Snapshot attached tabs from the active tab's shared state, then extract each tab's
-            // current `AIChatPageContextData` in parallel — same per-tab extractor the sidebar's
-            // JS-bridge (`getAIChatTabContent`) uses, so the page-content + favicon enrichment is
-            // byte-identical across both flows. Each entry carries `tabId` so the duck.ai web app
-            // sees the discriminator (presence = tab-picker context), except for the entry whose
-            // tab UUID matches the active tab: that one becomes the no-`tabId` form, i.e. "the
-            // page you're chatting about", per the tech design.
+            // Extract each picked tab's current `AIChatPageContextData` in parallel — same
+            // per-tab extractor the sidebar's JS-bridge (`getAIChatTabContent`) uses, so the
+            // page-content + favicon enrichment is byte-identical across both flows. Each
+            // entry carries `tabId` so the duck.ai web app sees the discriminator (presence =
+            // tab-picker context), except for the entry whose tab UUID matches the snapshot's
+            // active tab: that one becomes the no-`tabId` form, i.e. "the page you're chatting
+            // about", per the tech design.
             //
             // When there are no attached tabs we skip the `await` entirely — keeping the
-            // submit Task linear in the common case (and matching the pre-M8 number of
-            // suspension points, which a number of tests rely on).
-            let tabAttachments = self.activeTabAttachments
+            // submit Task linear in the common case.
             let pageContextPayload: AIChatPageContextPayload?
-            if tabAttachments.isEmpty {
+            if snapshotTabAttachments.isEmpty {
                 pageContextPayload = nil
             } else {
-                let activeTabUUID = self.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
                 pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
-                    tabAttachments: tabAttachments,
-                    activeTabUUID: activeTabUUID
+                    tabAttachments: snapshotTabAttachments,
+                    activeTabUUID: snapshotActiveTabUUID
                 )
                 PixelKit.fire(
-                    AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: tabAttachments.count),
+                    AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: snapshotTabAttachments.count),
                     frequency: .dailyAndCount,
                     includeAppVersionParameter: true
                 )
             }
 
-            // Snapshot file attachments (PDFs etc.) from the active tab. Only included when the
-            // current model advertises support — otherwise we'd send a payload the model can't
-            // process. Encode each `AIChatFileAttachment.data` as base64 for the JSON bridge.
-            let fileAttachments = self.selectedModelSupportsFileUpload ? self.activeFileAttachments : []
-            let files: [AIChatNativePrompt.NativePromptFile]? = fileAttachments.isEmpty ? nil : fileAttachments.map { attachment in
+            // Encode each `AIChatFileAttachment.data` as base64 for the JSON bridge.
+            let files: [AIChatNativePrompt.NativePromptFile]? = snapshotFileAttachments.isEmpty ? nil : snapshotFileAttachments.map { attachment in
                 AIChatNativePrompt.NativePromptFile(
                     data: attachment.data.base64EncodedString(),
                     fileName: attachment.fileName,
                     mimeType: attachment.mimeType
                 )
             }
-            if !fileAttachments.isEmpty {
+            if !snapshotFileAttachments.isEmpty {
                 PixelKit.fire(
-                    AIChatPixel.aiChatAddressBarSubmitWithFiles(fileCount: fileAttachments.count),
+                    AIChatPixel.aiChatAddressBarSubmitWithFiles(fileCount: snapshotFileAttachments.count),
                     frequency: .dailyAndCount,
                     includeAppVersionParameter: true
                 )

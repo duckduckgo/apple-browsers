@@ -196,6 +196,7 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     func setAsChatFirstPath() {}
 
     var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
+    var isChatFirstPath: Bool { false }
     var isAIChatEnabled: Bool { true }
 
     func setPrivacyButtonPulseSeen() { }

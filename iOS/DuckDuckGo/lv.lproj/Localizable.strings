@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Pārslēdzies starp\nmeklēšanu un Duck.ai";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Pārslēdzies starp\nmeklēšanu un Ask AI";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Meklēt tikai";

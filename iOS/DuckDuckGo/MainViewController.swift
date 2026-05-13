@@ -1652,6 +1652,14 @@ class MainViewController: UIViewController {
 
         configureUnifiedInputEscapeHatch(hatch)
 
+        // Suppress the NTP before it enters the view hierarchy so the Dax logo can't flash
+        // on the one frame between addToContentContainer and the async alpha-0 set inside
+        // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageViewController
+        // on every dismissal path.
+        if daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled {
+            controller.view.alpha = 0
+        }
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
@@ -3471,12 +3479,19 @@ extension MainViewController: BrowserChromeDelegate {
 
     func setNavigationBarHidden(_ hidden: Bool) {
         if hidden { hideKeyboard() }
-        
+
+        if viewCoordinator.addressBarPosition.isBottom {
+            if hidden {
+                viewCoordinator.hideNavigationBarWithBottomPosition()
+            } else {
+                viewCoordinator.showNavigationBarWithBottomPosition()
+            }
+        }
+
         updateNavBarConstant(hidden ? 0 : 1.0)
         viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
-        
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {

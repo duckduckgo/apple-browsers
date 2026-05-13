@@ -447,7 +447,9 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+        // Exclude returning users (including those who restored data) from the experiment.
+        guard case .introDialog(isReturningUser: false) = introSteps.first,
+              let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
               let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
               !introSteps.contains(.duckAIQuerySelection) else {
             return

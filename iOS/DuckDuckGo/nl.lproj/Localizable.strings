@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Instellingen > AI-functies.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Schakelen tussen\nzoeken en Duck.ai";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Schakelen tussen\nzoeken en Ask AI";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Alleen zoeken";

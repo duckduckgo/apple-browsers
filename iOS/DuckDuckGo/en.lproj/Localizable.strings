@@ -2842,8 +2842,8 @@ https://duckduckgo.com/mac";
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Settings > AI Features.";
 
-/* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Toggle between\nSearch and Duck.ai";
+/* Title for the search and Ask AI option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Toggle between\nSearch and Ask AI";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Search only";

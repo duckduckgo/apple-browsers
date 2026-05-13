@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ayarlar > AI Özellikleri";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Arama ile\nDuck.ai arasında geçiş yapın";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Arama ile\nAsk AI arasında geçiş yapın";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Yalnızca Arama";

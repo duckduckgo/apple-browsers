@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavení > Funkce AI.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Přepínej mezi\nHledáním a Duck.ai";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Přepínej mezi\nHledáním a Ask AI";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Jen vyhledávání";

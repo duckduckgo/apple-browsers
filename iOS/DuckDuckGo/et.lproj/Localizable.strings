@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Seaded > Tehisintellekti funktsioonid.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Lülita \n Otsingu ja Duck.ai vahel";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Lülita \n Otsingu ja Ask AI vahel";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Ainult otsi";

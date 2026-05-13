@@ -50,6 +50,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
+    private var didHideBarsForChatPathVisitSiteDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -275,6 +276,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+        }
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -458,22 +463,20 @@ extension NewTabPageViewController {
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
 
-        // For the chat-path "try visiting a site" dialog the keyboard must be visible. We activate
-        // the editing state first, then embed the dialog inside it on the next run loop (once
-        // `presentedViewController` is set) — mirroring how the completion dialog is embedded.
+        // For the chat-path "try visiting a site" dialog hide the address bar and lock toolbar
+        // controls so the user can only choose from the preset suggestions. Showing the address
+        // bar or leaving controls interactive lets users bypass the onboarding step (by typing a
+        // search or switching tabs), causing edge-cases.
+        // Defer the bar hide to the next run loop so that any pending beginEditing() call in
+        // onboardingCompleted() finishes activating the keyboard before we hide the bar
+        // (setNavigationBarHidden calls hideKeyboard internally).
         if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
-            // If the tab is already loading the user typed a URL manually. The NTP may have been
-            // re-created by attachHomeScreen while tab.link was nil, meaning onFirstAppear on the
-            // previous dialog might not have fired — chatPathPhase may still read .visitSite even
-            // though navigation is in progress. Skip; the dialog re-appears on the next
-            // viewDidAppear once navigation resolves.
             guard (parent as? MainViewController)?.currentTab?.isLoading != true else { return }
-            chromeDelegate?.omniBar.beginEditing(animated: true)
-            DispatchQueue.main.async { [weak self, weak hostingController] in
-                guard let self, let hostingController else { return }
-                self.embedDialogInEditingState(hostingController)
+            didHideBarsForChatPathVisitSiteDialog = true
+            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(true)
+            DispatchQueue.main.async { [weak self] in
+                self?.chromeDelegate?.setNavigationBarHidden(true)
             }
-            return
         }
 
         addChild(hostingController)
@@ -568,6 +571,11 @@ extension NewTabPageViewController {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
         isShowingDuckAICompletionDialog = false
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setNavigationBarHidden(false)
+            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+        }
         if didDismissDuckAICompletionDialog {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.

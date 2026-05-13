@@ -395,6 +395,13 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if peekNextHomeScreenMessageExperiment() != nil {
             return true
         }
+        // Chat-path users suppress the standard NTP spec while their EOJ is driven by
+        // presentChatPathOnboardingCompletionIfNeeded, so peekNextHomeScreenMessageExperiment
+        // returns nil during that window. Keep isStillOnboarding = true until the EOJ is seen
+        // to prevent unrelated NTP widgets (e.g. fire-mode promotion) from appearing.
+        if settings.isChatFirstPath && !finalDaxDialogSeen {
+            return true
+        }
         return false
     }
 

@@ -77,6 +77,7 @@ public extension DesignSystemImages {
             public static var open: DesignSystemImage { .init(resource: .open12) }
             public static var options: DesignSystemImage { .init(resource: .options12) }
             public static var pin: DesignSystemImage { .init(resource: .pin12) }
+            public static var pinRemove: DesignSystemImage { .init(resource: .pinRemove12) }
             public static var platform: DesignSystemImage { .init(resource: .platform12) }
             public static var policeBadge: DesignSystemImage { .init(resource: .policeBadge12) }
             public static var profile: DesignSystemImage { .init(resource: .profile12) }
@@ -102,6 +103,7 @@ public extension DesignSystemImages {
             public static var vpnUnlock: DesignSystemImage { .init(resource: .vpnUnlock12) }
             public static var wand: DesignSystemImage { .init(resource: .wand12) }
             public static var wifi: DesignSystemImage { .init(resource: .wifi12) }
+            public static var windowDuplicate: DesignSystemImage { .init(resource: .windowDuplicate12) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew12) }
         }
 

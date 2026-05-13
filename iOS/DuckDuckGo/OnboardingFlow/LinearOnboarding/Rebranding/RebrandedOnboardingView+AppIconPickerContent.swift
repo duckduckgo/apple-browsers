@@ -48,7 +48,7 @@ extension OnboardingRebranding.OnboardingView {
         init(
             content: OnboardingAppIconColorContent,
             isVisible: Binding<Bool> = .constant(false),
-             action: @escaping () -> Void
+            action: @escaping () -> Void
         ) {
             self.content = content
             self._isVisible = isVisible

@@ -11234,7 +11234,7 @@
 			buildConfigurationList = 84E341BA1E2F7EFC00BDBA6F /* Build configuration list for PBXNativeTarget "DuckDuckGo" */;
 			buildPhases = (
 				CBCCF59B29940C3800C02DFE /* Assert Xcode version */,
-				DD60CACE2026051300011710 /* Check Compilation Cache Size */,
+				DD60CACE2026051300011710 /* Common Build Checks */,
 				0A991F5B239418D100AA1F64 /* Prevent Version Override */,
 				98B0CE69251C937D003FB601 /* Update Localizable.strings */,
 				84E3418E1E2F7EFB00BDBA6F /* Sources */,
@@ -12121,7 +12121,7 @@
 			shellPath = /bin/sh;
 			shellScript = "\"$SOURCE_ROOT/scripts/assert_xcode_version.sh\"\n";
 		};
-		DD60CACE2026051300011710 /* Check Compilation Cache Size */ = {
+		DD60CACE2026051300011710 /* Common Build Checks */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -12131,14 +12131,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Check Compilation Cache Size";
+			name = "Common Build Checks";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../scripts/check-compilation-cache-size.sh\"\n";
+			shellScript = "\"${SRCROOT}/../scripts/common-checks.sh\"\n";
 		};
 		EE9286812A812BD2002B7818 /* Embed PacketTunnelProvider */ = {
 			isa = PBXShellScriptBuildPhase;

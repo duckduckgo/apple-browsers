@@ -52,6 +52,7 @@ final class DaxLogoManager {
 
     private(set) var currentProgress: CGFloat = 0
     private var isAnimatingLogoTransition = false
+    private var isSwipeInProgress = false
     private var escapeHatchBaseOffset: CGFloat = 0
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
@@ -99,6 +100,7 @@ final class DaxLogoManager {
     func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
         self.isHomeDaxVisible = isHomeDaxVisible
         self.isAIDaxVisible = isAIDaxVisible
+        self.isSwipeInProgress = false
 
         updateState()
     }
@@ -164,7 +166,18 @@ final class DaxLogoManager {
     }
 
     func updateSwipeProgress(_ progress: CGFloat) {
+        let wasInProgress = isSwipeInProgress
         self.currentProgress = progress
+
+        // A swipe is in progress once it moves away from 0, and stays in progress
+        // until the mode change completes (which calls updateVisibility and resets
+        // the flag). This prevents a one-frame flash when progress lands on 0 or 1
+        // before the mode switch has been processed.
+        if progress > 0 && progress < 1 {
+            isSwipeInProgress = true
+        } else if !wasInProgress {
+            isSwipeInProgress = false
+        }
 
         updateState()
     }
@@ -305,6 +318,11 @@ final class DaxLogoManager {
             if !isAnimatingLogoTransition {
                 daxLogoView.updateProgress(currentProgress)
             }
+            resolvedAlpha = 1
+        } else if usesLottieTransition && isSwipeInProgress && (isHomeDaxVisible || isAIDaxVisible) {
+            // Mid-swipe: only one logo state is active because the mode hasn't switched yet.
+            // Keep the logo visible and scrub the Lottie so the morph plays during the swipe.
+            daxLogoView.updateProgress(currentProgress)
             resolvedAlpha = 1
         } else if usesLottieTransition && isAnimatingLogoTransition {
             // A programmatic logo transition is in flight — don't stomp the Lottie.

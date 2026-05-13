@@ -446,6 +446,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no last-used model recorded")
             return
         }
+        if modelStore.currentModelId == modelID {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: model '\(modelID, privacy: .public)' already current, skipping")
+            return
+        }
         Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
         modelStore.updateSelectedModel(modelID)
         handleModelsUpdated()

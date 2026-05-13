@@ -282,6 +282,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
     private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
+    var onModelAccessUpgradeRequired: ((AIChatModel) -> Void)?
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -1103,6 +1104,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recordUserChoiceToStore()
     }
 
+    func handleModelSelection(_ modelId: String) {
+        print("🚧 [\(String(describing: Self.self))] handleModelSelection")
+        guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
+
+        if model.entityHasAccess {
+            print("🚧 [\(String(describing: Self.self))] has access")
+            updateSelectedModel(modelId)
+        } else {
+            Logger.unifiedInputState.debug("🚧 decide on purchase or upgrade")
+            onModelAccessUpgradeRequired?(model)
+        }
+    }
+
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
@@ -1130,13 +1144,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
-            advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
-                ? UserText.aiChatAdvancedModelsSectionHeader
-                : UserText.aiChatAdvancedModelsMenuTitle,
-            basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
+            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
+            proSectionTitle: UserText.aiChatProModelsSectionHeader
         ) { [weak self] modelId in
-            self?.updateSelectedModel(modelId)
+            self?.handleModelSelection(modelId)
         }
     }
 

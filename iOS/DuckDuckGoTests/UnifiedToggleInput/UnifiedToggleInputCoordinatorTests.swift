@@ -1272,6 +1272,31 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "gpt-5")
     }
 
+    func test_handleModelSelection_whenModelHasAccess_persistsToPreferences() {
+        sut.modelStore.models = [makeModel(id: "plus-model", access: true, accessTier: ["plus"])]
+
+        sut.handleModelSelection("plus-model")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "plus-model")
+    }
+
+    func test_handleModelSelection_whenModelDoesNotHaveAccess_routesUpgradeWithoutChangingSelection() {
+        mockPreferences.selectedModelId = "free-model"
+        sut.modelStore.models = [
+            makeModel(id: "free-model", access: true, accessTier: ["free"]),
+            makeModel(id: "plus-model", access: false, accessTier: ["plus"])
+        ]
+        var upgradeModelId: String?
+        sut.onModelAccessUpgradeRequired = { model in
+            upgradeModelId = model.id
+        }
+
+        sut.handleModelSelection("plus-model")
+
+        XCTAssertEqual(upgradeModelId, "plus-model")
+        XCTAssertEqual(mockPreferences.selectedModelId, "free-model")
+    }
+
     // MARK: - Model Selection: supportsImageUpload
 
     func test_selectedModelSupportsImageUpload_returnsFalse_whenModelsEmpty() {
@@ -1794,10 +1819,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                            access: Bool,
                            supportsImageUpload: Bool = false,
                            supportedTools: [AIChatRAGTool] = [],
+                           accessTier: [String] = [],
                            supportedReasoningEffort: [AIChatReasoningEffort] = []) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload,
                     supportedTools: supportedTools, entityHasAccess: access,
-                    supportedReasoningEffort: supportedReasoningEffort)
+                    accessTier: accessTier, supportedReasoningEffort: supportedReasoningEffort)
     }
 
     private func makeLimits() -> AIChatAttachmentTierLimits {

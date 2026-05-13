@@ -21,6 +21,12 @@ import AIChat
 
 struct UnifiedToggleInputModelMenu: Equatable {
 
+    enum AccessTier: Hashable {
+        case free
+        case plus
+        case pro
+    }
+
     struct Section: Equatable {
         let title: String
         let items: [Item]
@@ -32,6 +38,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
         let provider: AIChatModel.ModelProvider
         let isSelected: Bool
         let isDisabled: Bool
+        let accessTier: AccessTier
     }
 
     let sections: [Section]
@@ -39,83 +46,50 @@ struct UnifiedToggleInputModelMenu: Equatable {
     static func build(
         models: [AIChatModel],
         selectedId: String?,
-        hasActiveSubscription: Bool,
-        advancedSectionTitle: String,
-        basicSectionTitle: String
+        plusSectionTitle: String,
+        proSectionTitle: String
     ) -> UnifiedToggleInputModelMenu {
-        let sections: [Section]
-
-        if hasActiveSubscription {
-            sections = buildSubscribedSections(
-                models: models,
-                selectedId: selectedId,
-                advancedSectionTitle: advancedSectionTitle,
-                basicSectionTitle: basicSectionTitle
-            )
-        } else {
-            sections = buildFreeSections(
-                models: models,
-                selectedId: selectedId,
-                advancedSectionTitle: advancedSectionTitle
-            )
-        }
+        let sections = buildTierSections(
+            models: models,
+            selectedId: selectedId,
+            plusSectionTitle: plusSectionTitle,
+            proSectionTitle: proSectionTitle
+        )
 
         return UnifiedToggleInputModelMenu(sections: sections)
     }
 
-    private static func buildFreeSections(
+    private static func buildTierSections(
         models: [AIChatModel],
         selectedId: String?,
-        advancedSectionTitle: String
+        plusSectionTitle: String,
+        proSectionTitle: String
     ) -> [Section] {
-        let accessible = models.filter { $0.entityHasAccess }
-        let premium = models.filter { !$0.entityHasAccess }
-
-        let accessibleSection = Section(
-            title: "",
-            items: accessible.map { Item(model: $0, selectedId: selectedId, isDisabled: false) }
-        )
-
-        var sections = [accessibleSection]
-
-        if !premium.isEmpty {
-            let premiumSection = Section(
-                title: advancedSectionTitle,
-                items: premium.map { Item(model: $0, selectedId: selectedId, isDisabled: true) }
-            )
-            sections.append(premiumSection)
+        let groupedModels = models.reduce(into: [AccessTier: [AIChatModel]]()) { groups, model in
+            guard let tier = model.lowestPublicAccessTier else { return }
+            groups[tier, default: []].append(model)
         }
-
-        return sections
-    }
-
-    private static func buildSubscribedSections(
-        models: [AIChatModel],
-        selectedId: String?,
-        advancedSectionTitle: String,
-        basicSectionTitle: String
-    ) -> [Section] {
-        let advanced = models.filter { !$0.accessTier.contains("free") }
-        let basic = models.filter { $0.accessTier.contains("free") }
 
         var sections = [Section]()
-
-        if !advanced.isEmpty {
+        if let freeModels = groupedModels[.free], !freeModels.isEmpty {
             sections.append(Section(
-                title: advancedSectionTitle,
-                items: advanced.map { Item(model: $0, selectedId: selectedId, isDisabled: !$0.entityHasAccess) }
+                title: "",
+                items: freeModels.map { Item(model: $0, selectedId: selectedId, accessTier: .free) }
             ))
         }
 
-        if !basic.isEmpty {
+        if let plusModels = groupedModels[.plus], !plusModels.isEmpty {
             sections.append(Section(
-                title: basicSectionTitle,
-                items: basic.map { Item(model: $0, selectedId: selectedId, isDisabled: !$0.entityHasAccess) }
+                title: plusSectionTitle,
+                items: plusModels.map { Item(model: $0, selectedId: selectedId, accessTier: .plus) }
             ))
         }
 
-        if sections.isEmpty {
-            sections.append(Section(title: "", items: []))
+        if let proModels = groupedModels[.pro], !proModels.isEmpty {
+            sections.append(Section(
+                title: proSectionTitle,
+                items: proModels.map { Item(model: $0, selectedId: selectedId, accessTier: .pro) }
+            ))
         }
 
         return sections
@@ -123,11 +97,27 @@ struct UnifiedToggleInputModelMenu: Equatable {
 }
 
 extension UnifiedToggleInputModelMenu.Item {
-    init(model: AIChatModel, selectedId: String?, isDisabled: Bool) {
+    init(model: AIChatModel, selectedId: String?, accessTier: UnifiedToggleInputModelMenu.AccessTier) {
         self.modelId = model.id
         self.name = model.name
         self.provider = model.provider
         self.isSelected = model.id == selectedId
-        self.isDisabled = isDisabled
+        self.isDisabled = false
+        self.accessTier = accessTier
+    }
+}
+
+extension AIChatModel {
+    var lowestPublicAccessTier: UnifiedToggleInputModelMenu.AccessTier? {
+        if accessTier.contains(AIChatUserTier.free.rawValue) {
+            return .free
+        }
+        if accessTier.contains(AIChatUserTier.plus.rawValue) {
+            return .plus
+        }
+        if accessTier.contains(AIChatUserTier.pro.rawValue) {
+            return .pro
+        }
+        return nil
     }
 }

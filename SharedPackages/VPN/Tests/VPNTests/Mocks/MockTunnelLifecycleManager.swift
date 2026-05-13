@@ -31,9 +31,6 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
     private(set) var lastRegenerateKey: Bool?
     var errorToThrowFromUpdateTunnelConfiguration: Error?
 
-    private(set) var performRekeyCalled = false
-    var errorToThrowFromPerformRekey: Error?
-
     private(set) var restartAdapterCalled = false
 
     private(set) var resetRegistrationKeyCalled = false
@@ -55,13 +52,6 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
         lastRegenerateKey = regenerateKey
         if let errorToThrowFromUpdateTunnelConfiguration {
             throw errorToThrowFromUpdateTunnelConfiguration
-        }
-    }
-
-    func performRekey() async throws {
-        performRekeyCalled = true
-        if let errorToThrowFromPerformRekey {
-            throw errorToThrowFromPerformRekey
         }
     }
 

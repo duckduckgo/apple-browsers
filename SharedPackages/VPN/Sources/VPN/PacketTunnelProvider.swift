@@ -481,7 +481,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             keyStore: keyStore,
             settings: settings,
             events: providerEvents,
-            tunnelLifecycle: self
+            performRekey: { @MainActor [weak self] in
+                guard let self else { return }
+                try await self.updateTunnelConfiguration(
+                    updateMethod: .selectServer(self.currentServerSelectionMethod),
+                    reassert: false,
+                    regenerateKey: true)
+            }
         )
 
         self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
@@ -1806,13 +1812,6 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
 
     func removeToken() async throws {
         try await tokenHandlerProvider.removeToken()
-    }
-
-    func performRekey() async throws {
-        try await updateTunnelConfiguration(
-            updateMethod: .selectServer(currentServerSelectionMethod),
-            reassert: false,
-            regenerateKey: true)
     }
 }
 

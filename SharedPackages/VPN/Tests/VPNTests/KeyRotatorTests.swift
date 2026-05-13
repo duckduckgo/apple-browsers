@@ -28,6 +28,20 @@ private final class FiredEventsBox: @unchecked Sendable {
     var events: [PacketTunnelProvider.Event] = []
 }
 
+/// Records performRekey invocations and lets a test inject an error to throw.
+@MainActor
+private final class PerformRekeyRecorder {
+    var callCount = 0
+    var errorToThrow: Error?
+
+    func call() async throws {
+        callCount += 1
+        if let errorToThrow {
+            throw errorToThrow
+        }
+    }
+}
+
 // MARK: - Tests
 
 @MainActor
@@ -37,7 +51,7 @@ final class KeyRotatorTests: XCTestCase {
     private var settings: VPNSettings!
     private var firedEvents: FiredEventsBox!
     private var events: EventMapping<PacketTunnelProvider.Event>!
-    private var tunnelLifecycle: MockTunnelLifecycleManager!
+    private var performRekeyRecorder: PerformRekeyRecorder!
     private var rotator: KeyRotator!
 
     override func setUp() {
@@ -58,21 +72,22 @@ final class KeyRotatorTests: XCTestCase {
             }
         }
 
-        tunnelLifecycle = MockTunnelLifecycleManager()
+        let recorder = PerformRekeyRecorder()
+        performRekeyRecorder = recorder
 
-        // Tests hold strong references to the mocks — the rotator stores them
-        // as weak protocol refs to match the production wiring pattern.
         rotator = KeyRotator(
             keyStore: keyStore,
             settings: settings,
             events: events,
-            tunnelLifecycle: tunnelLifecycle
+            performRekey: { @MainActor in
+                try await recorder.call()
+            }
         )
     }
 
     override func tearDown() {
         rotator = nil
-        tunnelLifecycle = nil
+        performRekeyRecorder = nil
         events = nil
         firedEvents = nil
         settings = nil
@@ -92,7 +107,7 @@ final class KeyRotatorTests: XCTestCase {
             XCTFail("Expected .userBecameActive, got \(firedEvents.events[0])")
             return
         }
-        XCTAssertFalse(tunnelLifecycle.performRekeyCalled)
+        XCTAssertEqual(performRekeyRecorder.callCount, 0)
     }
 
     // MARK: - rekey() success
@@ -100,7 +115,7 @@ final class KeyRotatorTests: XCTestCase {
     func testRekey_success_callsPerformRekey() async throws {
         try await rotator.rekey()
 
-        XCTAssertTrue(tunnelLifecycle.performRekeyCalled)
+        XCTAssertEqual(performRekeyRecorder.callCount, 1)
         assertEventSequence([.userBecameActive, .rekeyBegin, .rekeySuccess])
     }
 
@@ -108,7 +123,7 @@ final class KeyRotatorTests: XCTestCase {
 
     func testRekey_error_firesFailureAndRethrows() async {
         struct SomeError: Error {}
-        tunnelLifecycle.errorToThrowFromPerformRekey = SomeError()
+        performRekeyRecorder.errorToThrow = SomeError()
 
         do {
             try await rotator.rekey()

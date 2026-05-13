@@ -37,6 +37,9 @@ final class DaxLogoManager {
     // MARK: - Properties
 
     private let isFireTab: Bool
+    /// When true, the Lottie morph handles the search/duck.ai transition and the
+    /// alpha-blending crossfade during swipe is skipped.
+    var usesLottieTransition = false
 
     private var logoContainerView: UIView = UIView()
 
@@ -47,7 +50,8 @@ final class DaxLogoManager {
     private var isAIDaxVisible: Bool = false
     private var forcedHidden: Bool = false
 
-    private var progress: CGFloat = 0
+    private(set) var currentProgress: CGFloat = 0
+    private var isAnimatingLogoTransition = false
     private var escapeHatchBaseOffset: CGFloat = 0
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
@@ -99,6 +103,28 @@ final class DaxLogoManager {
         updateState()
     }
 
+    /// The Lottie animation's current frame progress (0 = search, 1 = duck.ai).
+    var lottieProgress: CGFloat {
+        daxLogoView.logoAnimation.currentProgress
+    }
+
+    /// Plays the Lottie transition to the given mode.
+    /// Call after `updateVisibility` has set the new state — this method restores
+    /// the previous Lottie progress and animates to the target.
+    /// Plays the Lottie transition to the given mode.
+    /// Call after `updateVisibility` has set the new state — this method restores
+    /// the previous Lottie progress and animates to the target.
+    func animateLogoTransition(toMode mode: TextEntryMode, fromProgress previousProgress: CGFloat) {
+        guard !isFireTab, !forcedHidden else { return }
+        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
+        guard previousProgress != targetProgress else { return }
+        isAnimatingLogoTransition = true
+        daxLogoView.updateProgress(previousProgress)
+        daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in
+            self?.isAnimatingLogoTransition = false
+        }
+    }
+
     /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
     /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
     /// we still show Dax beneath the hatch.
@@ -121,7 +147,7 @@ final class DaxLogoManager {
     }
 
     func updateSwipeProgress(_ progress: CGFloat) {
-        self.progress = progress
+        self.currentProgress = progress
 
         updateState()
     }
@@ -255,13 +281,22 @@ final class DaxLogoManager {
         if forcedHidden {
             resolvedAlpha = 0
         } else if isFireTab {
-            // Fire-mode empty state is a single shared view (no home/AI variants to blend), so show it whenever either dax slot is active.
             resolvedAlpha = (isHomeDaxVisible || isAIDaxVisible) ? 1 : 0
+        } else if usesLottieTransition && isHomeDaxVisible && isAIDaxVisible {
+            // UTI mode, both logo states active: the Lottie morph handles the
+            // visual transition — keep alpha at 1 and scrub with swipe progress.
+            if !isAnimatingLogoTransition {
+                daxLogoView.updateProgress(currentProgress)
+            }
+            resolvedAlpha = 1
+        } else if usesLottieTransition && isAnimatingLogoTransition {
+            // A programmatic logo transition is in flight — don't stomp the Lottie.
+            resolvedAlpha = 1
         } else if isHomeDaxVisible != isAIDaxVisible {
             daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
 
-            let homeLogoProgress = 1 - progress
-            let aiLogoProgress = progress
+            let homeLogoProgress = 1 - currentProgress
+            let aiLogoProgress = currentProgress
 
             let homeDaxAlphaCoefficient: CGFloat = isHomeDaxVisible ? 1 : 0
             let aiDaxAlphaCoefficient: CGFloat = isAIDaxVisible ? 1 : 0
@@ -271,7 +306,7 @@ final class DaxLogoManager {
 
             resolvedAlpha = max(daxAlpha, aiAlpha)
         } else if isHomeDaxVisible && isAIDaxVisible {
-            daxLogoView.updateProgress(progress)
+            daxLogoView.updateProgress(currentProgress)
 
             resolvedAlpha = 1
         } else {

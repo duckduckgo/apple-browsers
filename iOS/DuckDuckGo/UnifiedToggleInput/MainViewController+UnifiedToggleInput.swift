@@ -368,10 +368,20 @@ private extension MainViewController {
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
+        let previousLottieProgress = coordinator.contentViewController.daxLogoManager.lottieProgress
+        // If the swipe gesture already drove progress to the target, skip the
+        // programmatic animation — the swipe handled the visual transition.
+        let swipeProgress = coordinator.contentViewController.daxLogoManager.currentProgress
+        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
+        let wasSwipeDriven = abs(swipeProgress - targetProgress) < 0.01
+
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
+        if !wasSwipeDriven {
+            coordinator.contentViewController.daxLogoManager.animateLogoTransition(toMode: mode, fromProgress: previousLottieProgress)
+        }
         updateFloatingReturnKeyVisibility()
     }
 

@@ -116,6 +116,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        self.daxLogoManager.usesLottieTransition = true
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -186,6 +187,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func rebuildDaxLogoManager(isFireTab: Bool) {
         daxLogoManager.tearDown()
         daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        daxLogoManager.usesLottieTransition = true
         // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
         daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
         guard isViewLoaded else { return }

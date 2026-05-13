@@ -482,7 +482,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             settings: settings,
             events: providerEvents,
             performRekey: { @MainActor [weak self] in
-                guard let self else { return }
+                // Provider deinit mid-rekey: surface as failure rather than silently succeeding,
+                // so .rekeyAttempt(.success) is never fired for a rekey that didn't run.
+                guard let self else { throw CancellationError() }
                 try await self.updateTunnelConfiguration(
                     updateMethod: .selectServer(self.currentServerSelectionMethod),
                     reassert: false,

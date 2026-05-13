@@ -23,7 +23,7 @@ import os.log
 @MainActor
 final class KeyRotator {
 
-    private var keyStore: NetworkProtectionKeyStore
+    private let keyStore: NetworkProtectionKeyStore
     private let settings: VPNSettings
     private let events: EventMapping<PacketTunnelProvider.Event>
     private let performRekey: @MainActor () async throws -> Void

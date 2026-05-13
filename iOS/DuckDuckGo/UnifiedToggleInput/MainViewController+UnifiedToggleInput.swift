@@ -63,7 +63,10 @@ extension MainViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
-            stateStore: stateStore
+            stateStore: stateStore,
+            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(
+                wideEvent: AppDependencyProvider.shared.wideEvent
+            )
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)

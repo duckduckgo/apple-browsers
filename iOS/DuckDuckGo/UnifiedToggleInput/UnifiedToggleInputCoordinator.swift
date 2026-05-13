@@ -220,6 +220,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let toggleModeStorage: ToggleModeStoring
     private let stateStore: UnifiedInputStateStoring
+    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation?
     private(set) var currentTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
@@ -319,7 +320,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        stateStore: UnifiedInputStateStoring? = nil
+        stateStore: UnifiedInputStateStoring? = nil,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
@@ -328,6 +330,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
         )
+        self.duckAIWideEventInstrumentation = duckAIWideEventInstrumentation
         self.modelStore = UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
@@ -1303,6 +1306,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            duckAIWideEventInstrumentation?.submissionStarted()
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
                 return
@@ -1782,6 +1786,12 @@ private extension UnifiedToggleInputCoordinator {
                 guard let self else { return }
                 self.viewController.isGenerating = isGenerating
                 self.updateImageButtonEnabledState()
+            }
+            .store(in: &cancellables)
+
+        $aiChatStatus
+            .sink { [weak self] status in
+                self?.duckAIWideEventInstrumentation?.chatStatusChanged(status)
             }
             .store(in: &cancellables)
     }

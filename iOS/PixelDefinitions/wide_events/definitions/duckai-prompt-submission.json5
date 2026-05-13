@@ -1,0 +1,17 @@
+{
+    "ios-duckai-prompt-submission": {
+        "description": "Sent at the end of a Duck.ai prompt submission journey on iOS, from the moment the user submits a prompt through the Unified Toggle Input until the page either delivers a response (status returns to `.ready`) or the journey is orphaned by app termination.",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "ios-duckai-prompt-submission",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "duckai_prompt_submission",
+            "status": ["SUCCESS", "UNKNOWN"],
+            "data": {
+                "ext": {}
+            }
+        }
+    }
+}

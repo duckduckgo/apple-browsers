@@ -302,45 +302,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: any SubscriptionTokenHandling
-    @MainActor
-    func resetRegistrationKey() {
-        Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
-        keyStore.resetCurrentKeyPair()
-    }
 
-    private func rekey() async throws {
-        providerEvents.fire(.userBecameActive)
-
-        // Experimental option to disable rekeying.
-        guard !settings.disableRekeying else {
-            Logger.networkProtectionKeyManagement.log("Rekeying disabled")
-            return
-        }
-
-        providerEvents.fire(.rekeyAttempt(.begin))
-
-        let preRekeyEgress = await currentEgressInfo()
-
-        do {
-            try await updateTunnelConfiguration(
-                updateMethod: .selectServer(currentServerSelectionMethod),
-                reassert: false,
-                regenerateKey: true)
-            // A rekey that landed back on the same server can't have changed the egress path, so
-            // skip the leak check and let the periodic timer handle the routine validation. We
-            // only force an immediate check when the server (or its IP) actually changed.
-            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
-            // service would skip the check anyway, so don't bother scheduling.
-            if let postRekeyEgress = await currentEgressInfo(), preRekeyEgress != postRekeyEgress {
-                await leakCheckService?.scheduleCheck(trigger: .rekey)
-            }
-            providerEvents.fire(.rekeyAttempt(.success))
-        } catch {
-            providerEvents.fire(.rekeyAttempt(.failure(error)))
-            await subscriptionAccessErrorHandler(error)
-            throw error
-        }
-    }
+    private var keyRotator: KeyRotator!
 
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
@@ -509,6 +472,19 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
+        self.keyRotator = KeyRotator(
+            keyStore: keyStore,
+            settings: settings,
+            events: providerEvents,
+            tunnelState: self,
+            tunnelLifecycle: self,
+            tunnelEgress: self,
+            tunnelReconfigurer: self,
+            scheduleLeakCheckAfterRekey: { [weak self] in
+                await self?.leakCheckService?.scheduleCheck(trigger: .rekey)
+            }
+        )
+
         self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
             keyStore: keyStore,
             settings: settings
@@ -518,7 +494,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await self.updateBandwidthAnalyzer()
             return await self.bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
-            try await self?.rekey()
+            try await self?.keyRotator.rekey()
         }
 
         self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(
@@ -1017,53 +993,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     @MainActor
-    func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod,
-                                   reassert: Bool,
-                                   regenerateKey: Bool = false) async throws {
-
-        providerEvents.fire(.tunnelUpdateAttempt(.begin))
-        bumpTunnelPathGeneration()
-
-        if reassert {
-            await stopMonitors()
-        }
-
-        do {
-            let tunnelConfiguration: TunnelConfiguration
-
-            switch updateMethod {
-            case .selectServer(let serverSelectionMethod):
-                tunnelConfiguration = try await generateTunnelConfiguration(
-                    serverSelectionMethod: serverSelectionMethod,
-                    dnsSettings: settings.dnsSettings,
-                    regenerateKey: regenerateKey)
-
-            case .useConfiguration(let newTunnelConfiguration):
-                tunnelConfiguration = newTunnelConfiguration
-            }
-
-            try await updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
-
-            if reassert {
-                try await handleAdapterStarted(startReason: .reconnected)
-            }
-
-            providerEvents.fire(.tunnelUpdateAttempt(.success))
-        } catch {
-            providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
-
-            switch error {
-            case WireGuardAdapterError.setWireguardConfig:
-                await cancelTunnel(with: error)
-            default:
-                break
-            }
-
-            throw error
-        }
-    }
-
-    @MainActor
     private func updateAdapterConfiguration(tunnelConfiguration: TunnelConfiguration, reassert: Bool) async throws {
 
         try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<Void, Error>) in
@@ -1297,14 +1226,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// whichever server WireGuard is currently connected to — including changes made by `rekey()`,
     /// `handleRestartAdapter()`, or any future code path that mutates `lastSelectedServer` without
     /// going through `handleAdapterStarted`.
-    @MainActor
-    private func currentEgressInfo() -> LeakCheckEgressInfo? {
-        guard let info = lastSelectedServerInfo,
-              let ip = info.ipv4?.debugDescription else {
-            return nil
-        }
-        return LeakCheckEgressInfo(ipAddress: ip, name: info.name)
-    }
 
     @MainActor
     private func bumpTunnelPathGeneration() {
@@ -1810,8 +1731,12 @@ extension PacketTunnelProvider: TunnelStateProviding {
 
 extension PacketTunnelProvider: TunnelLifecycleManaging {
     // cancelTunnel(with:) — already internal @MainActor
-    // resetRegistrationKey() — already internal @MainActor
     // handleAccessRevoked(dueTo:) — already internal @MainActor
+
+    @MainActor
+    func resetRegistrationKey() {
+        keyRotator.resetRegistrationKey()
+    }
 
     func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod, reassert: Bool) async throws {
         try await updateTunnelConfiguration(updateMethod: updateMethod, reassert: reassert, regenerateKey: false)
@@ -1837,6 +1762,70 @@ extension PacketTunnelProvider: LeakCheckControlling {
     func triggerLeakCheckFromDebugMenu() async {
         Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
         await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
+    }
+}
+
+// MARK: - TunnelEgressProviding
+
+extension PacketTunnelProvider: TunnelEgressProviding {
+    @MainActor
+    func currentEgressInfo() -> LeakCheckEgressInfo? {
+        guard let info = lastSelectedServerInfo,
+              let ip = info.ipv4?.debugDescription else {
+            return nil
+        }
+        return LeakCheckEgressInfo(ipAddress: ip, name: info.name)
+    }
+}
+
+// MARK: - TunnelReconfiguring
+
+extension PacketTunnelProvider: TunnelReconfiguring {
+    @MainActor
+    func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod,
+                                   reassert: Bool,
+                                   regenerateKey: Bool = false) async throws {
+
+        providerEvents.fire(.tunnelUpdateAttempt(.begin))
+        bumpTunnelPathGeneration()
+
+        if reassert {
+            await stopMonitors()
+        }
+
+        do {
+            let tunnelConfiguration: TunnelConfiguration
+
+            switch updateMethod {
+            case .selectServer(let serverSelectionMethod):
+                tunnelConfiguration = try await generateTunnelConfiguration(
+                    serverSelectionMethod: serverSelectionMethod,
+                    dnsSettings: settings.dnsSettings,
+                    regenerateKey: regenerateKey)
+
+            case .useConfiguration(let newTunnelConfiguration):
+                tunnelConfiguration = newTunnelConfiguration
+            }
+
+            try await updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
+
+            if reassert {
+                try await handleAdapterStarted(startReason: .reconnected)
+            }
+
+            providerEvents.fire(.tunnelUpdateAttempt(.success))
+        } catch {
+            providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
+
+            switch error {
+            case WireGuardAdapterError.setWireguardConfig:
+                await cancelTunnel(with: error)
+            default:
+                break
+            }
+
+            throw error
+        }
     }
 }
 

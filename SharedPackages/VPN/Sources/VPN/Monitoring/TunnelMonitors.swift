@@ -18,7 +18,6 @@
 
 import Common
 import Foundation
-import Network
 import os.log
 
 /// Groups the tunnel's monitors behind one start/stop so the subsystem can be
@@ -43,7 +42,6 @@ final class TunnelMonitors: TunnelMonitoring {
     private let failureRecoveryHandler: FailureRecoveryHandling
 
     private weak var tunnelState: (any TunnelStateProviding)?
-    private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
 
     private let settings: VPNSettings
     private let events: EventMapping<PacketTunnelProvider.Event>
@@ -53,6 +51,7 @@ final class TunnelMonitors: TunnelMonitoring {
     private let onReconfigureForMigration: @MainActor () async throws -> Void
     private let onConnectionTestResult: @MainActor (ConnectionTestingResult) -> Void
     private let onFailureRecoveryConfigUpdate: @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
+    private let onAccessRevoked: @MainActor () async -> Void
 
     init(
         tunnelFailureMonitor: TunnelFailureMonitoring,
@@ -63,14 +62,14 @@ final class TunnelMonitors: TunnelMonitoring {
         connectionTester: ConnectionTesting,
         failureRecoveryHandler: FailureRecoveryHandling,
         tunnelState: any TunnelStateProviding,
-        tunnelLifecycle: any TunnelLifecycleManaging,
         settings: VPNSettings,
         events: EventMapping<PacketTunnelProvider.Event>,
         entitlementCheck: @escaping () async -> Result<Bool, Error>,
         isConnectionTesterEnabled: @escaping @MainActor () -> Bool,
         onReconfigureForMigration: @escaping @MainActor () async throws -> Void,
         onConnectionTestResult: @escaping @MainActor (ConnectionTestingResult) -> Void,
-        onFailureRecoveryConfigUpdate: @escaping @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
+        onFailureRecoveryConfigUpdate: @escaping @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void,
+        onAccessRevoked: @escaping @MainActor () async -> Void
     ) {
         self.tunnelFailureMonitor = tunnelFailureMonitor
         self.latencyMonitor = latencyMonitor
@@ -80,7 +79,6 @@ final class TunnelMonitors: TunnelMonitoring {
         self.connectionTester = connectionTester
         self.failureRecoveryHandler = failureRecoveryHandler
         self.tunnelState = tunnelState
-        self.tunnelLifecycle = tunnelLifecycle
         self.settings = settings
         self.events = events
         self.entitlementCheck = entitlementCheck
@@ -88,6 +86,7 @@ final class TunnelMonitors: TunnelMonitoring {
         self.onReconfigureForMigration = onReconfigureForMigration
         self.onConnectionTestResult = onConnectionTestResult
         self.onFailureRecoveryConfigUpdate = onFailureRecoveryConfigUpdate
+        self.onAccessRevoked = onAccessRevoked
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in
             self?.onConnectionTestResult(result)
@@ -199,7 +198,7 @@ final class TunnelMonitors: TunnelMonitoring {
         await entitlementMonitor.start(entitlementCheck: entitlementCheck) { [weak self] result in
             switch result {
             case .invalidEntitlement:
-                await self?.tunnelLifecycle?.handleAccessRevoked(dueTo: PacketTunnelProvider.TunnelError.vpnAccessRevokedDetectedByMonitorCheck)
+                await self?.onAccessRevoked()
             case .validEntitlement, .error:
                 break
             }

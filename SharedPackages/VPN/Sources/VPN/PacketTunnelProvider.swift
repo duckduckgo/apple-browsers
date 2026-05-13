@@ -560,7 +560,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             connectionTester: self.connectionTester,
             failureRecoveryHandler: resolvedFailureRecoveryHandler,
             tunnelState: self,
-            tunnelLifecycle: self,
             settings: self.settings,
             events: self.providerEvents,
             entitlementCheck: { [weak self] in
@@ -585,6 +584,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             },
             onFailureRecoveryConfigUpdate: { @MainActor [weak self] result in
                 try await self?.handleFailureRecoveryConfigUpdate(result: result)
+            },
+            onAccessRevoked: { @MainActor [weak self] in
+                await self?.handleAccessRevoked(dueTo: TunnelError.vpnAccessRevokedDetectedByMonitorCheck)
             }
         )
 

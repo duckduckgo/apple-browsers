@@ -131,7 +131,9 @@ private extension RebrandedNewTabDaxDialogFactory {
         let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .visitSite
 
         let viewModel = OnboardingSiteSuggestionsViewModel(
-            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            title: isChatPath
+                ? UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle
+                : UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
             delegate: delegate,
             onSuggestionPressed: { [weak self] in

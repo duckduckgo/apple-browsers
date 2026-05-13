@@ -50,12 +50,12 @@ struct RebrandedComparisonTableModel {
 
 // MARK: - Helpers
 
-private protocol OnboardingComparisonTableFeatureType {
+protocol OnboardingComparisonTableFeatureType {
     var title: String { get }
     var icon: Image { get }
 }
 
-private extension RebrandedComparisonTableModel.Feature {
+extension RebrandedComparisonTableModel.Feature {
 
     init<T: OnboardingComparisonTableFeatureType>(type: T, competitorAvailability: Availability, ddgAvailability: Availability) {
         self.init(icon: type.icon, title: type.title, competitorAvailability: competitorAvailability, ddgAvailability: ddgAvailability)

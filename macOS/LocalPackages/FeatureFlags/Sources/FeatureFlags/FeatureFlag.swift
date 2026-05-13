@@ -166,6 +166,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
+    /// Address-bar render-performance instrumentation kill switch.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214767817210667?focus=true
+    case addressBarPerformanceInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720972159
     case winBackOffer
 
@@ -494,6 +498,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly)), category: .updates)
         case .unifiedURLPredictor:
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor)))
+        case .addressBarPerformanceInstrumentation:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addressBarPerformanceInstrumentation)))
         case .winBackOffer:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer)), category: .vpn)
         case .blackFridayCampaign:

@@ -505,7 +505,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
-            queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" }
+            queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            layoutConfiguration: .unifiedToggleInput
         )
         coordinator.delegate = self
         coordinator.onContentChanged = { [weak self] in

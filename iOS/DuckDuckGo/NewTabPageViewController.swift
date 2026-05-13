@@ -78,6 +78,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          appWidthObserver: AppWidthObserver = .shared,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
@@ -105,6 +106,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
+                                            layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

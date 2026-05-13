@@ -447,9 +447,9 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        // Exclude returning users (including those who restored data) from the experiment.
-        guard case .introDialog(isReturningUser: false) = introSteps.first,
-              let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+        // TODO: Remove comment-out before shipping — returning users must be excluded.
+        // guard case .introDialog(isReturningUser: false) = introSteps.first,
+        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
               let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
               !introSteps.contains(.duckAIQuerySelection) else {
             return
@@ -469,6 +469,8 @@ private extension OnboardingIntroViewModel {
     }
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
+        // TODO: Remove this
+        return .treatmentA
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
         return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }

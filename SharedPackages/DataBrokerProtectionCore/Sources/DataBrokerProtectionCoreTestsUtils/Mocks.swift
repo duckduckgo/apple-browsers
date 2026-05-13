@@ -912,10 +912,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         false
     }
 
-    public func hasScanHistoryEvents() throws -> Bool {
-        false
-    }
-
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         return [DataBroker]()
     }
@@ -1367,12 +1363,6 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         false
     }
 
-    public var hasScanHistoryEventsToReturn = false
-
-    public func hasScanHistoryEvents() throws -> Bool {
-        hasScanHistoryEventsToReturn
-    }
-
     public func matchRemovedByUser(_ matchID: Int64) throws {
 
     }
@@ -1454,7 +1444,6 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutEvents.removeAll()
         backgroundTaskEventsToReturn.removeAll()
         addHistoryEventError = nil
-        hasScanHistoryEventsToReturn = false
     }
 
     public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []

@@ -97,6 +97,7 @@ struct ReturnToTabCard: View {
         case .regular:
             if let domain = model.domain {
                 DomainFaviconView(domain: domain)
+                    .id(domain)
             } else {
                 RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
                     .fill(Color(designSystemColor: .controlsFillPrimary))

@@ -17,37 +17,67 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-46879
     struct AddressBarPositionContent: View {
-        @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding private var isVisible: Bool
+        private let content: OnboardingAddressBarPositionContent
         private let action: () -> Void
 
-        init(action: @escaping () -> Void) {
+        init(
+            content: OnboardingAddressBarPositionContent,
+            isVisible: Binding<Bool>,
+            action: @escaping () -> Void
+        ) {
+            self.content = content
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(UserText.Onboarding.AddressBarPosition.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedOnboardingView.OnboardingAddressBarPositionPicker()
+                    RebrandedOnboardingView.OnboardingAddressBarPositionPicker(
+                        topOption: content.topOption,
+                        bottomOption: content.bottomOption,
+                        defaultIndicator: content.defaultIndicator
+                    )
 
                     Button(action: action) {
-                        Text(verbatim: UserText.Onboarding.AddressBarPosition.cta)
+                        Text(verbatim: content.primaryCTA)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 

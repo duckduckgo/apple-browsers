@@ -99,7 +99,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              ],
                                              includedParameters: [.appVersion])
             }
-        case .reportConnectionAttempt(attempt: let attempt):
+        case .reportConnectionAttempt(attempt: let attempt, source: let source):
             switch attempt {
             case .connecting:
                 Logger.networkProtection.log("🔵 Connection attempt detected")
@@ -109,11 +109,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 Logger.networkProtection.log("🟢 Connection attempt successful")
             }
 
+            let sourceParameters = ["source": source.rawValue]
+
             switch attempt {
             case .connecting:
                 if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptConnecting,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .success:
                 let versionStore = NetworkProtectionLastVersionRunStore(userDefaults: .networkProtectionGroupDefaults)
@@ -121,11 +124,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .failure:
                 if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             }
         case .reportTunnelFailure(result: let result):

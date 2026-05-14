@@ -110,6 +110,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
+    /// Address-bar render-performance instrumentation kill switch.
+    case addressBarPerformanceInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 
@@ -186,6 +189,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
+    case onboardingRebranding
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -230,8 +236,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
-    case autoplayBlocking
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214749215529034?focus=true
+    case escapeHatchActions
 
     case crashReportOptInStatusResetting
 
@@ -249,9 +255,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
-
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
-    case filterAddressBarUpdates
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

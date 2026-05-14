@@ -42,4 +42,15 @@ struct OnboardingStepsHelper {
     static func expectedIPadStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
         expectedIPadSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
     }
+
+    static func expectedDuckAISteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
+        [
+            .introDialog(isReturningUser: isReturningUser),
+            .aiComparison,
+            .duckAIQuerySelection,
+            .addToDockPromo,
+            .browserComparison,
+            .addressBarPositionSelection
+        ]
+    }
 }

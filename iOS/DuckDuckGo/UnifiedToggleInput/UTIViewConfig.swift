@@ -53,8 +53,9 @@ struct UTIViewConfig: Equatable {
     var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
     var isTopBarPosition: Bool
+    /// True when the UTI is hosted by a Duck.ai tab.
+    var isAITab: Bool
 }

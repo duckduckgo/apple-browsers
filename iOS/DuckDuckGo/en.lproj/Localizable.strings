@@ -247,6 +247,12 @@
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Customize Responses";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Turn text into images";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Create Image";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Find current information";
 
@@ -2873,7 +2879,7 @@ https://duckduckgo.com/mac";
 "onboarding.rebranding.first-search-done.title" = "That’s DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
+"onboarding.rebranding.intro.message" = "Ready for a faster browser that puts you in control?\n\nAI is always optional, and privacy protection is always on.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";
@@ -3271,6 +3277,9 @@ Take back control of your personal information with the browser designed for dat
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
 "settings.afterInactivity.footer.format" = "Choose what you see when you return to DuckDuckGo after %@ of inactivity.";
 
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Choose what you see when you return to DuckDuckGo.";
+
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hour";
 
@@ -3283,11 +3292,17 @@ Take back control of your personal information with the browser designed for dat
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutes";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "None";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 second";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d seconds";
+
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inactivity Timer";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.label" = "Opening Screen";
@@ -4647,6 +4662,12 @@ https://duckduckgo.com/windows";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Block ads on YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Learn More";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bookmarks";

@@ -46,6 +46,10 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
 
     /// The user opened the tab switcher while on the NTP.
     func tabSwitcherSelectedFromNTP(afterIdle: Bool)
+
+    /// The user tapped the tab switcher pill next to the escape hatch card.
+    /// (The escape hatch is only shown after idle return, so no user-initiated variant is needed.)
+    func escapeHatchTabSwitcherTapped()
 }
 
 final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
@@ -92,5 +96,10 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     func tabSwitcherSelectedFromNTP(afterIdle: Bool) {
         guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(afterIdle ? .ntpAfterIdleTabSwitcherSelectedAfterIdle : .ntpAfterIdleTabSwitcherSelectedUserInitiated)
+    }
+
+    func escapeHatchTabSwitcherTapped() {
+        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
+        firePixel(.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle)
     }
 }

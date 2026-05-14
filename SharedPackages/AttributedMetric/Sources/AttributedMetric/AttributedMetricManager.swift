@@ -249,14 +249,14 @@ public final class AttributedMetricManager: @unchecked Sendable {
     public func process(trigger: Trigger) {
         Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
 
-        guard let installDate = installDateProvider.installDate else {
-            Logger.attributedMetric.error("Install date is nil")
-            assertionFailure("Install date is nil")
+        guard isEnabled else {
+            Logger.attributedMetric.log("Feature disabled")
             return
         }
 
-        guard isEnabled else {
-            Logger.attributedMetric.log("Feature disabled")
+        guard let installDate = installDateProvider.installDate else {
+            Logger.attributedMetric.error("Install date is nil")
+            assertionFailure("Install date is nil")
             return
         }
 

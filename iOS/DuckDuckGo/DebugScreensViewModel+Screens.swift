@@ -91,6 +91,9 @@ extension DebugScreensViewModel {
             .action(title: "Reset AI Toggle Selection", resetAIToggleSelection),
 
             // MARK: SwiftUI Views
+            .view(title: "Ad Blocking", { _ in
+                AdBlockingDebugView()
+            }),
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),

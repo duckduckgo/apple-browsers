@@ -31,6 +31,10 @@ public protocol AdBlockingAvailabilityProviding {
     /// Whether ad-blocking is fully enabled (feature available AND user opted in)
     var isEnabled: Bool { get }
 
+    /// Whether the feature has been remotely disabled (e.g. via privacy config) for users
+    /// that previously had it rolled out. UI surfaces should hide the feature when true.
+    var isRemotelyDisabled: Bool { get }
+
     /// Whether the ad-block animation should be shown for the given URL.
     /// Platform conformances use this to add URL-specific checks (e.g., YouTube video pages).
     func shouldShowAnimation(for url: URL) -> Bool
@@ -38,4 +42,5 @@ public protocol AdBlockingAvailabilityProviding {
 
 extension AdBlockingAvailabilityProviding {
     public var isEnabled: Bool { isFeatureAvailable && isEnabledByUser }
+    public var isRemotelyDisabled: Bool { false }
 }

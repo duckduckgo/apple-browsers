@@ -36,6 +36,15 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding {
     var isFeatureAvailable: Bool { featureFlagger.isFeatureOn(.adBlockingExtension) }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
+    // TODO: Replace this UserDefaults-backed placeholder with the real derivation
+    // (likely `!isFeatureAvailable && wasRolledOutByDefault`, or a dedicated
+    // privacy-config flag — to be confirmed with privacy/growth).
+    var isRemotelyDisabled: Bool {
+        UserDefaults.standard.bool(forKey: Self.remotelyDisabledOverrideKey)
+    }
+
+    static let remotelyDisabledOverrideKey = "com.duckduckgo.ios.adBlocking.remotelyDisabledOverride"
+
     func shouldShowAnimation(for url: URL) -> Bool {
         isEnabled && url.isPlayableYoutubeVideoContent
     }

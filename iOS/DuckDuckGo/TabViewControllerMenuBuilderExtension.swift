@@ -993,8 +993,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
 
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {
-        guard validLink?.url.isYoutube == true else { return nil }
-        guard adBlockingAvailability.isFeatureAvailable else { return nil }
+        guard validLink?.url.isYoutube == true,
+              adBlockingAvailability.isFeatureAvailable,
+              !adBlockingAvailability.isRemotelyDisabled
+        else { return nil }
 
         let isEnabled = adBlockingAvailability.isEnabledByUser
         let title = isEnabled ? UserText.youTubeAdBlockingMenuToggle : UserText.youTubeAdBlockingMenuEnable

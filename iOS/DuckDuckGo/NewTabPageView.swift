@@ -147,9 +147,9 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
-                if shouldShowLogoInEmptyState {
-                    NewTabPageDaxLogoView()
-                }
+                NewTabPageDaxLogoView()
+                    .opacity(shouldShowLogoInEmptyState ? 1 : 0)
+                    .allowsHitTesting(false)
 
                 ScrollView {
                     VStack(spacing: Metrics.sectionSpacing) {

@@ -28,12 +28,10 @@ struct NewTabPageDaxLogoView: View {
     }
 
     var body: some View {
-        Lottie.LottieView {
-            LottieAnimation.named(animationName)
-        }
-        .playbackMode(.paused(at: .progress(0)))
-        .frame(height: 162)
-        .id(animationName)
+        Lottie.LottieView(animation: LottieAnimation.named(animationName))
+            .playbackMode(.paused(at: .progress(0)))
+            .frame(height: 162)
+            .id(animationName)
     }
 }
 

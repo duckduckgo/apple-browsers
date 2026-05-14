@@ -1339,6 +1339,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "plus-model")
     }
 
+    func test_handleModelSelection_whenGatedModelBecomesAccessibleAfterSubscriptionRefresh_selectsPendingModel() {
+        mockPreferences.selectedModelId = "plus-model"
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeModel(id: "plus-model", access: true, accessTier: ["plus"]),
+            makeModel(id: "pro-model", access: false, accessTier: ["pro"])
+        ]
+        let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+            guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                  case .subscriptionPlanChangeFlow = deepLink else {
+                return false
+            }
+            return true
+        }
+
+        sut.handleModelSelection("pro-model")
+        wait(for: [notificationExpectation], timeout: 1.0)
+        XCTAssertEqual(mockPreferences.selectedModelId, "plus-model")
+
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .pro, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeModel(id: "plus-model", access: true, accessTier: ["plus"]),
+            makeModel(id: "pro-model", access: true, accessTier: ["pro"])
+        ]
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "pro-model")
+    }
+
     func test_handleModelSelection_whenAddressBarFreeUserSelectsProGatedModel_routesPurchaseFlowWithoutChangingSelection() {
         mockPreferences.selectedModelId = "free-model"
         sut.modelStore.models = [

@@ -247,6 +247,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
+    private var pendingGatedModelId: String?
+    private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -1200,32 +1202,37 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
 
         if model.entityHasAccess {
+            pendingGatedModelId = nil
             updateSelectedModel(modelId)
         } else {
-            routeGatedModelSelection(model)
+            if routeGatedModelSelection(model) {
+                pendingGatedModelId = modelId
+            }
             refreshModelPickerMenuAfterRejectedSelection()
         }
     }
 
-    private func routeGatedModelSelection(_ model: AIChatModel) {
+    @discardableResult
+    private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
         guard let requiredPublicTier = model.lowestPublicAccessTier else {
             Logger.unifiedInputState.debug("Gated model has no public access tier: \(model.id, privacy: .public)")
-            return
+            return false
         }
 
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
             presentPurchaseFlow(source: .modelPicker)
-            return
+            return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
             presentUpgradeFlow(source: .modelPicker)
-            return
+            return true
         }
 
         Logger.unifiedInputState.debug("No native subscription flow for gated model")
+        return false
     }
 
     private func presentPurchaseFlow(source: SubscriptionFlowSource) {
@@ -1280,6 +1287,34 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    @discardableResult
+    private func applyPendingGatedModelSelectionIfPossible() -> Bool {
+        guard let modelId = pendingGatedModelId,
+              modelStore.models.first(where: { $0.id == modelId })?.entityHasAccess == true else {
+            return false
+        }
+
+        pendingGatedModelId = nil
+        updateSelectedModel(modelId)
+        return true
+    }
+
+    private func applyPendingGatedReasoningSelectionIfPossible() {
+        guard let pendingSelection = pendingGatedReasoningSelection else { return }
+        guard let selectedModel, selectedModel.id == pendingSelection.modelId else {
+            pendingGatedReasoningSelection = nil
+            return
+        }
+
+        if let requiredPublicTier = requiredPublicTier(for: pendingSelection.mode, model: selectedModel),
+           !canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            return
+        }
+
+        pendingGatedReasoningSelection = nil
+        updateSelectedReasoningMode(pendingSelection.mode)
+    }
+
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
@@ -1289,14 +1324,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
         guard let selectedModel else { return }
         guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
+            pendingGatedReasoningSelection = nil
             updateSelectedReasoningMode(mode)
             return
         }
 
         if canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            pendingGatedReasoningSelection = nil
             updateSelectedReasoningMode(mode)
         } else {
-            routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier)
+            if routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier) {
+                pendingGatedReasoningSelection = (selectedModel.id, mode)
+            }
             refreshReasoningPickerMenuAfterRejectedSelection()
         }
     }
@@ -1322,20 +1361,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) {
+    @discardableResult
+    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
             presentPurchaseFlow(source: .reasoningPicker)
-            return
+            return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
             presentUpgradeFlow(source: .reasoningPicker)
-            return
+            return true
         }
 
         Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
+        return false
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -1955,6 +1996,10 @@ private extension UnifiedToggleInputCoordinator {
         removeUnsupportedAttachmentsForSelectedModel()
         updateModelChipLabel()
         updateReasoningPicker()
+        if applyPendingGatedModelSelectionIfPossible() {
+            return
+        }
+        applyPendingGatedReasoningSelectionIfPossible()
         updateImageButtonVisibility()
         refreshToolsPresentation()
     }

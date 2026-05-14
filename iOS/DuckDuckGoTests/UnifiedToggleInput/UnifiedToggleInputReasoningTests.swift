@@ -181,6 +181,29 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedReasoningMode, .reasoning)
     }
 
+    func testHandleReasoningModeSelectionWhenGatedReasoningBecomesAccessibleAfterSubscriptionRefresh_selectsPendingReasoningMode() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
+        sut.updateSelectedModel("gpt-5.2")
+        sut.updateSelectedReasoningMode(.reasoning)
+        let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+            guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                  case .subscriptionPlanChangeFlow = deepLink else {
+                return false
+            }
+            return true
+        }
+
+        sut.handleReasoningModeSelection(.extendedReasoning)
+        wait(for: [notificationExpectation], timeout: 1.0)
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .reasoning)
+
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .pro, hasActiveSubscription: true)
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .extendedReasoning)
+    }
+
     func testHandleReasoningModeSelectionWhenProUserSelectsGPT52ExtendedReasoningThenModeIsSelected() {
         sut.modelStore.subscriptionState = SubscriptionState(userTier: .pro, hasActiveSubscription: true)
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]

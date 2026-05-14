@@ -2026,6 +2026,13 @@ public struct UserText {
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
 
+    // YouTube Ad Blocking — browsing menu picker
+    public static let youTubeAdBlockingMenuToggle = NSLocalizedString("youtube.ad.blocking.menu.toggle", value: "Disable YouTube Ad Block", comment: "Browsing menu row that opens the YouTube ad-block mode picker")
+    public static let youTubeAdBlockingPickerTitle = NSLocalizedString("youtube.ad.blocking.picker.title", value: "YouTube Ad Blocking", comment: "Title of the YouTube ad-block mode picker bottom sheet")
+    public static let youTubeAdBlockingModeAlwaysOn = NSLocalizedString("youtube.ad.blocking.mode.always-on", value: "Always On", comment: "Picker option keeping YouTube ad blocking always on")
+    public static let youTubeAdBlockingModeDisableUntilRelaunch = NSLocalizedString("youtube.ad.blocking.mode.disable-until-relaunch", value: "Disable Until Relaunch", comment: "Picker option disabling YouTube ad blocking until the next app launch")
+    public static let youTubeAdBlockingModeAlwaysOff = NSLocalizedString("youtube.ad.blocking.mode.always-off", value: "Always Off", comment: "Picker option keeping YouTube ad blocking always off")
+
     // Duck Player View
     public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
     public static let duckPlayerResumeInDuckPlayer = NSLocalizedString("duckplayer.resume.in.duck.player", value: "Resume in Duck Player", comment: "Button text to resume video in Duck Player")

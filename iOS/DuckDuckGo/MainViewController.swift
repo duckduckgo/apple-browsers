@@ -4479,6 +4479,20 @@ extension MainViewController: TabDelegate {
         navigateToFireMode(source: .menuPromotion)
     }
 
+    func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
+        let controller = UIHostingController(rootView: YouTubeAdBlockPickerView())
+        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        controller.modalPresentationStyle = .pageSheet
+        if let sheet = controller.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(controller, animated: true)
+    }
+
     func tabDidEngageWithPage(_ tab: TabViewController) {
         postIdleSessionInstrumentation.pageEngaged()
     }

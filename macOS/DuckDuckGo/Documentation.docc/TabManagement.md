@@ -49,17 +49,9 @@ Extensions are resolved via `TabExtensions.resolve(_:)` and accessed through com
 
 ### Core Tab Implementation
 
-- **`Tab`** - Tab module
-  - Main Tab class, WebView management, navigation coordination
-  - Handles lifecycle, state, and coordination
-
-- **`TabExtensions`** - Tab module
-  - Extension protocol definitions and registration system
-  - Extension resolution and dependency injection
-
-- **`TabCollection`** - Tab module
-  - Collection management for multiple tabs
-  - Tab ordering, selection, and lifecycle coordination
+- ``Tab`` — the browser's per-page entity. Holds navigation state, title, and per-tab feature state around a `WKWebView`. Features bind to Tab (not the WebView) so they get a stable, browser-aware handle rather than coupling to WebKit details.
+- ``TabExtensions`` — composition layer. Lets feature code (content blocking, autofill, history, …) hang off a Tab without bloating ``Tab`` itself or coupling features to each other; each extension is independently testable.
+- ``TabCollection`` — owns tab ordering, selection, and lifecycle separately from any window, so multiple UI surfaces (tab bar, popovers, recently closed) can share the same source of truth.
 
 ### Extension Implementations
 

@@ -915,6 +915,13 @@ final class AIChatOmnibarController {
         let snapshotTabAttachments: [AIChatTabAttachment] = activeTabAttachments
         let snapshotFileAttachments: [AIChatFileAttachment] = selectedModelSupportsFileUpload ? activeFileAttachments : []
         let snapshotActiveTabUUID: String? = tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        // Capture the *per-tab* shared text state reference itself, not just a copy of its
+        // current attachments. The resize task writes the finalized image back into the same
+        // tab's `aiChatAttachments` storage via this object; `self.sharedTextState` would
+        // otherwise rebind to a different tab if the user tab-switches during the await, and
+        // the post-resize lookup below would read from the wrong tab — losing the resized
+        // bytes for the submission the user actually triggered.
+        let snapshotSharedTextState = sharedTextState
         let supportedImageFormats = selectedModelImageFormats
 
         Task { @MainActor in
@@ -925,11 +932,13 @@ final class AIChatOmnibarController {
             await waitForAttachmentsReady?()
 
             let postResizeImages: [AIChatImageAttachment] = snapshotImageAttachments.compactMap { attachment in
-                // Re-read by id from current shared state; the resize task swapped the image
-                // instance on the same id. If the attachment has been removed in the meantime
-                // (which shouldn't happen for a snapshot we already captured, but defend), the
-                // entry is dropped.
-                self.activeImageAttachments.first(where: { $0.id == attachment.id }) ?? attachment
+                // Re-read by id from the *submit-time* tab's shared state — the resize task
+                // swapped the image instance on the same id, but possibly while the user
+                // tab-switched away. Reading via `snapshotSharedTextState` keeps us pinned
+                // to the tab the user actually pressed submit on. If the attachment has been
+                // removed in the meantime (shouldn't normally happen, but defend), fall back
+                // to the pre-resize snapshot.
+                snapshotSharedTextState?.aiChatAttachments.first(where: { $0.id == attachment.id }) ?? attachment
             }
             let images = Self.nativePromptImages(from: postResizeImages, supportedFormats: supportedImageFormats)
 

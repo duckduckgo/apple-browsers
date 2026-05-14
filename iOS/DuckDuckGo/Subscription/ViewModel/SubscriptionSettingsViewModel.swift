@@ -245,10 +245,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 return false
             }
             state.isLoadingSubscriptionInfo = false
-            await updateSubscriptionsStatusMessage(subscription: subscription,
-                                                   date: subscription.expiresOrRenewsAt,
-                                                   product: subscription.productId,
-                                                   billingPeriod: subscription.billingPeriod)
+            updateSubscriptionsStatusMessage(subscription: subscription,
+                                             date: subscription.expiresOrRenewsAt,
+                                             product: subscription.productId,
+                                             billingPeriod: subscription.billingPeriod)
             return true
         } catch {
             Logger.subscription.error("Failed to fetch subscription details: \(error, privacy: .public)")

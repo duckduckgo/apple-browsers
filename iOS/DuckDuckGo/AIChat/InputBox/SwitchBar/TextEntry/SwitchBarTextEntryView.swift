@@ -291,18 +291,11 @@ class SwitchBarTextEntryView: UIView {
 
     // MARK: - UI Updates
 
-    /// Visual-only override for the dismiss collapse: input text + placeholder match the omnibar
-    /// destination, and the in-pill buttons fade out. Paired with `clearDismissSnapshot()` on the
-    /// next layout pass so the override doesn't leak into the reused view.
-    /// Dismiss = abandon the typed input. Clears the handler draft synchronously (so the X
-    /// disappears via state, not crossfade) and overrides `textView` to the omnibar's
-    /// destination string for the collapse animation. The chip's backdrop fades to 0 over the
-    /// dismiss duration while the icon stays visible.
+    /// Visual-only render override for the dismiss collapse so the UTI lands on the omnibar's
+    /// destination state. Handler is untouched — `currentTextPublisher` runs async via main-queue
+    /// dispatch, so clearing it here would clobber `textView.text` mid-collapse. The real handler
+    /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
-        if !handler.currentText.isEmpty {
-            handler.updateCurrentText("")
-            updateButtonState(animated: false)
-        }
         textView.text = snapshot.text
         placeholderLabel.text = placeholderText(for: snapshot.placeholderMode)
         updatePlaceholderVisibility()

@@ -68,16 +68,21 @@ final class UTIToolsController {
         displayState: UnifiedToggleInputDisplayState,
         modelStore: UTIModelStore
     ) -> Presentation {
+        let toolsMenu = buildToolsMenu(modelStore: modelStore)
         guard canShowTools(displayState: displayState),
-              modelStore.selectedModelSupportsAnyTool else {
+              selectedModelSupportsAnyTool(modelStore: modelStore, toolsMenu: toolsMenu) else {
             return .hidden
         }
 
         return Presentation(
             isToolsButtonHidden: false,
             selectedTool: selectedTool,
-            toolsMenu: buildToolsMenu(modelStore: modelStore)
+            toolsMenu: toolsMenu
         )
+    }
+
+    private func selectedModelSupportsAnyTool(modelStore: UTIModelStore, toolsMenu: UTIToolsMenu) -> Bool {
+        toolsMenu.items.contains { modelStore.selectedModelSupports(tool: $0.tool) }
     }
 }
 
@@ -114,6 +119,15 @@ struct UTIToolsMenu {
         }
 
         var identifier: Identifier {
+            switch self {
+            case .webSearch:
+                return .webSearch
+            case .imageGeneration:
+                return .imageGeneration
+            }
+        }
+
+        var tool: AIChatRAGTool {
             switch self {
             case .webSearch:
                 return .webSearch

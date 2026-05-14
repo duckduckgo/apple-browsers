@@ -435,7 +435,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     return
                 }
                 // Storage changed for this chat; drop the cached model so the next read reflects it.
-                self.lastUsedModelCache.removeObject(forKey: activeChatID as NSString)
+                self.lastUsedModelCache[activeChatID] = nil
                 self.restoreLastUsedModel(forChatID: activeChatID)
             }
     }
@@ -450,12 +450,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         let modelID: String?
-        if let cached = lastUsedModelCache.object(forKey: chatID as NSString) {
-            modelID = cached as String
+        if let cached = lastUsedModelCache[chatID] {
+            modelID = cached
         } else {
             modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID)
             if let modelID {
-                lastUsedModelCache.setObject(modelID as NSString, forKey: chatID as NSString)
+                lastUsedModelCache[chatID] = modelID
             }
         }
         guard let modelID else {
@@ -1897,5 +1897,18 @@ private extension UnifiedToggleInputCoordinator {
                 self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
+    }
+}
+
+private extension NSCache where KeyType == NSString, ObjectType == NSString {
+    subscript(key: String) -> String? {
+        get { object(forKey: key as NSString) as String? }
+        set {
+            if let newValue {
+                setObject(newValue as NSString, forKey: key as NSString)
+            } else {
+                removeObject(forKey: key as NSString)
+            }
+        }
     }
 }

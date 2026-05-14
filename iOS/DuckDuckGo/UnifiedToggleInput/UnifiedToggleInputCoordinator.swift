@@ -1203,7 +1203,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func routeGatedModelSelection(_ model: AIChatModel) {
-        let requiredPublicTier = model.lowestPublicAccessTier
+        guard let requiredPublicTier = model.lowestPublicAccessTier else {
+            Logger.unifiedInputState.debug("Gated model has no public access tier: \(model.id, privacy: .public)")
+            return
+        }
+
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {

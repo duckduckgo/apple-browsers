@@ -1360,6 +1360,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "free-model")
     }
 
+    func test_handleModelSelection_whenGatedModelHasNoPublicTier_doesNotChangeSelectionOrRouteToSubscriptionFlow() {
+        mockPreferences.selectedModelId = "free-model"
+        sut.modelStore.models = [
+            makeModel(id: "free-model", access: true, accessTier: ["free"]),
+            makeModel(id: "internal-model", access: false, accessTier: ["internal"])
+        ]
+        let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil)
+        notificationExpectation.isInverted = true
+
+        sut.handleModelSelection("internal-model")
+
+        wait(for: [notificationExpectation], timeout: 1.0)
+        XCTAssertEqual(mockPreferences.selectedModelId, "free-model")
+    }
+
     func test_handleModelSelection_whenDuckAITabFreeUserSelectsPlusGatedModel_routesPurchaseFlowWithDuckAIOrigin() {
         mockPreferences.selectedModelId = "free-model"
         sut.modelStore.models = [

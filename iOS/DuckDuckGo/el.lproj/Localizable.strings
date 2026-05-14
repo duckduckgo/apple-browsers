@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Εναλλαγή μεταξύ\nΑναζήτησης και Ask AI";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Εναλλαγή μεταξύ\nΑναζήτησης και Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Αναζήτηση μόνο";

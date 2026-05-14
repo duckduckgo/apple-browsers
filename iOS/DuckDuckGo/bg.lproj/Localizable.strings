@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > AI Функции.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Превключвайте между\nТърсене и Ask AI";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Превключвайте между\nТърсене и Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Само търсене";

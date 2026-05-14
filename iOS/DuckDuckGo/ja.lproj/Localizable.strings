@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "設定＞AI機能。";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "検索とAsk AIを切り替える";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "検索とDuck.aiを切り替える";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "検索のみ表示";

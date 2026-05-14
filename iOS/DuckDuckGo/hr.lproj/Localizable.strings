@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Postavke > AI značajke.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Prebacuj se između pretraživanja i Ask AI";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Prebacuj se između pretraživanja i Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Samo pretraživanje";

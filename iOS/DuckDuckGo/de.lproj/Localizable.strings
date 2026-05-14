@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Einstellungen > KI-Funktionen.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Wechseln zwischen\nSuche und Ask AI";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Wechseln zwischen\nSuche und Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Nur Suchen";

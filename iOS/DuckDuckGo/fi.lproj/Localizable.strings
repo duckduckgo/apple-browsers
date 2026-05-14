@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Asetukset > Tekoälyominaisuudet.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Vaihda haun ja\nAsk AI:n välillä";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Vaihda haun ja\nDuck.ai:n välillä";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Vain haku";

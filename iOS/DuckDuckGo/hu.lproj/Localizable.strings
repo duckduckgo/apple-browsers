@@ -2989,7 +2989,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Beállítások > AI-funkciók";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Váltás a keresés\nés a Ask AI között";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Váltás a keresés\nés a Duck.ai között";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Csak keresés";

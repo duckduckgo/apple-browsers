@@ -2371,8 +2371,8 @@ public struct UserText {
 
             public static let searchAndDuckAIOption = NSLocalizedString(
                 "onboarding.highlights.searchExperience.searchAndDuckAI",
-                value: "Toggle between\nSearch and Ask AI",
-                comment: "Title for the search and Ask AI option in onboarding picker."
+                value: "Toggle between\nSearch and Duck.ai",
+                comment: "Title for the search and Duck.ai option in onboarding picker."
             )
             
             static func footerAttributed() -> NSAttributedString {
@@ -2402,6 +2402,11 @@ public struct UserText {
         }
 
         enum DuckAIQueryExperiment {
+            public static let toggleAILabel = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.toggle.ai",
+                value: "Ask AI",
+                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding experiment screen."
+            )
             public static let title = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.title",
                 value: "Ready to get started?\nTry a search or AI chat!",

@@ -279,6 +279,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
+    private var lastUsedModelCache: [String: String] = [:]
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
@@ -429,6 +430,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                       activeChatID == updatedChatID else {
                     return
                 }
+                // Storage changed for this chat; drop the cached model so the next read reflects it.
+                self.lastUsedModelCache.removeValue(forKey: activeChatID)
                 self.restoreLastUsedModel(forChatID: activeChatID)
             }
     }
@@ -442,7 +445,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no provider configured")
             return
         }
-        guard let modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID) else {
+        let modelID: String?
+        if let cached = lastUsedModelCache[chatID] {
+            modelID = cached
+        } else {
+            modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID)
+            if let modelID {
+                lastUsedModelCache[chatID] = modelID
+            }
+        }
+        guard let modelID else {
             Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no last-used model recorded")
             return
         }

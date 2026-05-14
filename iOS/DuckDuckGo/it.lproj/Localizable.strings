@@ -4205,6 +4205,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Stiamo ripristinando l'abbonamento...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Non adesso";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo offre anche un **abbonamento a pagamento facoltativo**, con **VPN ** sicura e **AI avanzata e privata**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Rimuovi da questo dispositivo";
 

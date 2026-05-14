@@ -4205,6 +4205,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne zdaj";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo ima tudi **izbirno plačljivo naročnino** z varnim **VPN** in **napredno, zasebno umetno inteligenco**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrani iz te naprave";
 

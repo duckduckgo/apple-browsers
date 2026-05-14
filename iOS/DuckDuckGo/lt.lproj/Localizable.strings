@@ -4205,6 +4205,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atkuriama prenumerata...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne dabar";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "„DuckDuckGo“ taip pat siūlo **pasirenkamą mokamą prenumeratą** su saugiu **VPN** ir **pažangiu, privačiu DI (dirbtiniu intelektu)**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Pašalinti iš šio įrenginio";
 

@@ -4205,6 +4205,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "後で";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGoには**オプションの有料サブスクリプション**もあり、安全な**VPN**と**高度なプライベートAI**を備えています。";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";
 

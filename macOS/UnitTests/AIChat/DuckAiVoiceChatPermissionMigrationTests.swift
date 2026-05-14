@@ -62,7 +62,7 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
         sut.tryToMigrateVoiceChatPermission()
 
         XCTAssertTrue(permissionManager.setPermissionCalls.isEmpty)
-        XCTAssertEqual(storageHandler.putEntryCalls.count, 0)
+        XCTAssertEqual(storageHandler.deleteEntryCalls.count, 0)
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
@@ -82,7 +82,7 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
         XCTAssertEqual(call.domain, testHost)
         XCTAssertEqual(call.permissionType, .microphone)
 
-        XCTAssertEqual(storageHandler.putEntryCalls.count, 0)
+        XCTAssertEqual(storageHandler.deleteEntryCalls.count, 0)
 
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty,
                       "Pixel must not fire for fresh installs — no decision was migrated")
@@ -94,7 +94,7 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
         sut.tryToMigrateVoiceChatPermission()
 
         XCTAssertEqual(permissionManager.setPermissionCalls.last?.decision, .allow)
-        XCTAssertEqual(storageHandler.putEntryCalls.count, 0,
+        XCTAssertEqual(storageHandler.deleteEntryCalls.count, 0,
                        "Voice-mode consent should NOT be cleared when migrating from .ask")
 
         XCTAssertEqual(pixelFiring.actualFireCalls, [
@@ -114,9 +114,7 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
 
         XCTAssertEqual(permissionManager.setPermissionCalls.last?.decision, .allow)
 
-        XCTAssertEqual(storageHandler.putEntryCalls.count, 1)
-        XCTAssertEqual(storageHandler.putEntryCalls[0].key, "hasVoiceModeConsent")
-        XCTAssertEqual(storageHandler.putEntryCalls[0].value as? Bool, false)
+        XCTAssertEqual(storageHandler.deleteEntryCalls, ["hasVoiceModeConsent"])
 
         XCTAssertEqual(pixelFiring.actualFireCalls, [
             ExpectedFireCall(
@@ -173,20 +171,16 @@ final class DuckAiVoiceChatPermissionMigrationTests: XCTestCase {
 
 private final class SpyDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
-    struct PutEntryCall {
-        let key: String
-        let value: Any
-    }
+    private(set) var deleteEntryCalls: [String] = []
 
-    private(set) var putEntryCalls: [PutEntryCall] = []
-
-    func putEntry(key: String, value: Any) throws {
-        putEntryCalls.append(PutEntryCall(key: key, value: value))
-    }
-
+    func putEntry(key: String, value: Any) throws {}
     func getEntry(key: String) throws -> Any? { nil }
     func getAllEntries() throws -> [String: Any] { [:] }
-    func deleteEntry(key: String) throws {}
+
+    func deleteEntry(key: String) throws {
+        deleteEntryCalls.append(key)
+    }
+
     func deleteAllEntries() throws {}
     func replaceAllEntries(_ entries: [String: Any]) throws {}
 

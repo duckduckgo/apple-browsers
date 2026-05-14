@@ -63,7 +63,7 @@ final class DuckAiVoiceChatPermissionMigration: DuckAiVoiceChatPermissionMigrati
             // is effectively always non-nil here. In dev builds with that flag off the
             // FE's `hasVoiceModeConsent` lives in localStorage out of native's reach,
             // and the consent-clear becomes a no-op — accepted since it can't reach prod.
-            try? storageHandler?.putEntry(key: Self.voiceModeConsentKey, value: false)
+            try? storageHandler?.deleteEntry(key: Self.voiceModeConsentKey)
             permissionManager.setPermission(.allow, forDomain: host, permissionType: .microphone)
             pixelFiring?.fire(AIChatPixel.aiChatVoiceChatPermissionAutoGranted(from: .deny), frequency: .dailyAndCount)
         case .ask:

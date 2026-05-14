@@ -165,12 +165,16 @@ final class UnifiedToggleInputView: UIView {
         handler.currentToggleState
     }
 
+    func insertNewlineAtCursor() {
+        textEntryView.insertNewlineAtCursor()
+    }
+
+    func prepareToolbarSubmitStyleForDismissal() {
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: false)
+    }
+
     private(set) var isExpanded = false
     private var currentLayout: UnifiedToggleInputCardLayout = .collapsed
-
-    var isToolbarSubmitHidden: Bool = false {
-        didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
-    }
 
     var isToolbarAIVoiceChatActive: Bool = false {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
@@ -609,6 +613,7 @@ final class UnifiedToggleInputView: UIView {
 
         let showsToggle = layout.showsToggle
         let showToolbar = layout.showsToolbar
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         let toggleHeight: CGFloat = showsToggle ? Constants.toggleHeight : 0
         // The toggle's leading slot is permanently reserved for the back button so the
         // toggle doesn't slide right as it fades in. Visibility of the dismiss itself is
@@ -705,11 +710,17 @@ final class UnifiedToggleInputView: UIView {
                     self.layoutIfNeeded()
                 },
                 completion: { _ in
+                    if showToolbar {
+                        self.toolsToolbar.finalizeToolbarShown()
+                    }
                 }
             )
         } else {
             changes()
             layoutIfNeeded()
+            if showToolbar {
+                toolsToolbar.finalizeToolbarShown()
+            }
         }
     }
 
@@ -848,6 +859,7 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
         if isToggleEnabled {
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
@@ -860,6 +872,9 @@ final class UnifiedToggleInputView: UIView {
             toolsToolbar.alpha = showToolbar ? 1 : 0
             attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             layoutIfNeeded()
+            if showToolbar {
+                toolsToolbar.finalizeToolbarShown()
+            }
             return
         }
 
@@ -868,6 +883,10 @@ final class UnifiedToggleInputView: UIView {
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
             self.onNeedsHierarchyLayout?()
+        } completion: { _ in
+            if showToolbar {
+                self.toolsToolbar.finalizeToolbarShown()
+            }
         }
     }
 
@@ -879,11 +898,17 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateSubmitButtonAvailability() {
-        let state = UnifiedToggleInputFloatingSubmitState(
-            text: handler.currentText,
-            mode: handler.currentToggleState,
-            attachments: attachmentsStrip.attachments)
-        toolsToolbar.isSubmitEnabled = state.canSubmit
+        let isAIChatMode = handler.currentToggleState == .aiChat
+        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasValidAttachment = isAIChatMode && attachmentsStrip.attachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
+
+        toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
+        updateNewPromptSubmitStyle()
+    }
+
+    private func updateNewPromptSubmitStyle() {
+        toolsToolbar.usesNewPromptSubmitStyle = handler.submitsAIChatOnKeyboardReturn
     }
 
     private func submitCurrentInput() {
@@ -1219,6 +1244,13 @@ private extension UnifiedToggleInputView {
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
                 updateSubmitButtonAvailability()
+            }
+            .store(in: &cancellables)
+
+        handler.submitsAIChatOnKeyboardReturnPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateNewPromptSubmitStyle()
             }
             .store(in: &cancellables)
 

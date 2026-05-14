@@ -25,9 +25,8 @@ struct UTIRenderState: Equatable {
     var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
-    var isFloatingSubmitVisible: Bool
+    var isFloatingReturnKeyVisible: Bool
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
@@ -41,7 +40,6 @@ struct UTIRenderState: Equatable {
             cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
-            isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins,

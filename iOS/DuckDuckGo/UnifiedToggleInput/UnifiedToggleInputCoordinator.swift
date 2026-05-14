@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import os.log
 import Subscription
 import UIKit
@@ -217,7 +218,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private(set) var viewController: UnifiedToggleInputViewController
     private(set) var contentViewController: UnifiedInputContentContainerViewController
-    private(set) var floatingSubmitViewController: UnifiedToggleInputFloatingSubmitViewController
+    private(set) var floatingReturnKeyViewController: UnifiedToggleInputFloatingReturnKeyViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
     private(set) var host: UnifiedToggleInputHost
@@ -282,6 +283,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .aiTab(.expanded) && inputMode == .aiChat
     }
 
+    private var isOmnibarNewAIChatPrompt: Bool {
+        isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
+    }
+
+    private var usesFloatingReturnKey: Bool {
+        displayState == .omnibar(.active) && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
+    }
+
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
@@ -305,11 +314,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let textChangeSubject = PassthroughSubject<String, Never>()
     var textChangePublisher: AnyPublisher<String, Never> {
         textChangeSubject.eraseToAnyPublisher()
-    }
-
-    private let floatingSubmitStateSubject = CurrentValueSubject<UnifiedToggleInputFloatingSubmitState, Never>(.empty)
-    var floatingSubmitStatePublisher: AnyPublisher<UnifiedToggleInputFloatingSubmitState, Never> {
-        floatingSubmitStateSubject.eraseToAnyPublisher()
     }
 
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
@@ -356,8 +360,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
-        floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
-        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
+        floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
         attachmentPresenter.onExpandIfNeeded = { [weak self] in
@@ -501,7 +504,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isApplyingState = true
         defer {
             isApplyingState = false
-            updateFloatingSubmitState()
+            updateFloatingReturnKeyState()
         }
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
@@ -615,7 +618,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             setText(prefilledText)
             textState = .prefilledSelected
         }
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
 
         intentSubject.send(.showExpanded(from: previousDisplayState))
         DispatchQueue.main.async { [weak self] in
@@ -637,6 +640,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
+        syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
         // The live state is no longer authoritative for the previous tab; clearing
         // currentTabUID prevents the next activateForTab from snapshotting the
@@ -645,7 +649,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetToolsSelection()
         clearAttachments()
         setText("")
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -685,7 +689,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else {
             shouldSelectAllText = false
         }
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
 
         let expandedHeight = editingHeight()
 
@@ -718,10 +722,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
+        syncInputBehaviorToHandler()
         // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
 
         if resetView {
             let renderState = computeRenderState()
@@ -746,11 +751,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let effective = effectiveInputMode(for: inputMode)
         guard effective != inputMode else { return }
         inputMode = effective
+        syncInputBehaviorToHandler()
         viewController.apply(computeRenderState().viewConfig, animated: false)
         refreshToolsPresentation()
         modeChangeSubject.send(effective)
         syncAttachmentValidationErrorForCurrentMode()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
     }
 
     /// Without a toggle UI the user can't switch mode, so omnibar locks to `.search` and
@@ -779,7 +785,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textState = text.isEmpty ? .empty : .userTyped
         viewController.text = text
         persistDraftToStore()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
     }
 
     // MARK: - Input Management
@@ -790,7 +796,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
 
+        let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
+        if isDismissingOmnibarNewPromptToolbar {
+            viewController.prepareToolbarSubmitStyleForDismissal()
+        }
+
         inputMode = effectiveMode
+        syncInputBehaviorToHandler()
+        updateFloatingReturnKeyState()
 
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
@@ -816,12 +829,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             syncAttachmentValidationErrorForCurrentMode()
             recordUserChoiceToStore()
         }
-        updateFloatingSubmitState()
     }
 
     func updateAIVoiceChatAvailability(_ enabled: Bool) {
         viewController.handler.isAIVoiceChatEnabled = enabled
-        floatingSubmitViewController.isAIVoiceChatEnabled = enabled
         updateToolbarAIVoiceChat()
     }
 
@@ -832,6 +843,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
+        syncInputBehaviorToHandler()
+        updateFloatingReturnKeyState()
         if needsViewSync {
             viewController.setInputMode(effectiveMode, animated: false)
         }
@@ -840,12 +853,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             refreshToolsPresentation()
         }
         updateToolbarAIVoiceChat()
-        updateFloatingSubmitState()
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
         guard isInputVisibleForKeyboard != isInputVisible else { return }
         isInputVisibleForKeyboard = isInputVisible
+        syncInputBehaviorToHandler()
+        updateFloatingReturnKeyState()
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
         switch (displayState, isInputVisible) {
@@ -863,6 +877,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             cancelTopOmnibarKeyboardPresentationFallback()
             isAwaitingTopOmnibarKeyboardPresentation = false
             displayState = .omnibar(.active)
+            syncInputBehaviorToHandler()
+            updateFloatingReturnKeyState()
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
             intentSubject.send(.showOmnibarActive)
@@ -918,7 +934,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard viewController.handler.isFireTab != isFireTab else { return }
         viewController.handler.isFireTab = isFireTab
         viewController.refreshFireMode(fireMode: isFireTab)
-        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
         contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
@@ -1031,6 +1046,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func setInitialInputMode(_ mode: TextEntryMode) {
         inputMode = mode
         committedInputMode = mode
+        syncInputBehaviorToHandler()
     }
 
     private func commitCurrentToggleState() {
@@ -1105,9 +1121,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             inactiveAppearance = (cardPosition == .bottom)
         }
 
-        let isFloatingSubmitVisible = displayState == .omnibar(.active)
-            && cardPosition == .top
-            && inputMode == .aiChat
+        let floatingReturnKeyState = makeFloatingReturnKeyState()
+        let canShowFloatingReturnKey = floatingReturnKeyState.canInsertReturn
         let shouldSuppressContentOverlay = isOmnibarSession && isContentOverlaySuppressed && textState != .userTyped
         let effectiveContentVisible = isContentVisible && !shouldSuppressContentOverlay
 
@@ -1117,9 +1132,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             cardLayout: cardLayout(forIsExpanded: isExpanded),
             cardPosition: cardPosition,
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
-            isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
-            isFloatingSubmitVisible: isFloatingSubmitVisible,
+            isFloatingReturnKeyVisible: canShowFloatingReturnKey,
             isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
             inputMode: inputMode,
@@ -1401,6 +1415,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             resetToolsSelection()
             clearStoreEntryAfterSubmission()
             clearAttachments()
+            if isOmnibarNewAIChatPrompt {
+                viewController.prepareToolbarSubmitStyleForDismissal()
+            }
             hasSubmittedPrompt = true
             updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
@@ -1423,10 +1440,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if isPerformingDismissCleanup { return }
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
-        textChangeSubject.send(text)
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
+        textChangeSubject.send(text)
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -1444,7 +1461,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
@@ -1472,8 +1489,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
 extension UnifiedToggleInputCoordinator {
 
-    func submitCurrentInputFromFloatingSubmit() {
-        submitCurrentInputFromCoordinator()
+    func insertNewlineFromFloatingReturnKey() {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingReturnPressed)
+        viewController.insertNewlineAtCursor()
     }
 
 }
@@ -1481,9 +1499,12 @@ extension UnifiedToggleInputCoordinator {
 private extension UnifiedToggleInputCoordinator {
 
     func submitCurrentInputFromCoordinator() {
-        let state = makeFloatingSubmitState()
-        guard state.canSubmit else {
-            if state.hasInvalidAttachment {
+        let hasText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasValidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains(where: \.isInvalid)
+
+        guard !hasInvalidAttachment && (hasText || hasValidAttachment) else {
+            if hasInvalidAttachment {
                 syncAttachmentValidationErrorForCurrentMode()
             }
             return
@@ -1630,7 +1651,7 @@ private extension UnifiedToggleInputCoordinator {
     func finishAttachmentRevalidation() {
         persistDraftToStore()
         updateAttachButtonPresentation()
-        updateFloatingSubmitState()
+        updateFloatingReturnKeyState()
         syncAttachmentValidationErrorForCurrentMode()
     }
 
@@ -1745,15 +1766,15 @@ private extension UnifiedToggleInputCoordinator {
         viewController.clearAttachmentValidationError()
     }
 
-    func makeFloatingSubmitState() -> UnifiedToggleInputFloatingSubmitState {
-        UnifiedToggleInputFloatingSubmitState(
+    func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {
+        UnifiedToggleInputFloatingReturnKeyState(
             text: currentText,
             mode: inputMode,
-            attachments: viewController.currentAttachments)
+            usesFloatingReturnKey: usesFloatingReturnKey)
     }
 
-    func updateFloatingSubmitState() {
-        floatingSubmitStateSubject.send(makeFloatingSubmitState())
+    func updateFloatingReturnKeyState() {
+        floatingReturnKeyViewController.updateState(makeFloatingReturnKeyState())
     }
 
     // MARK: Session State
@@ -1779,7 +1800,13 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func syncHasSubmittedPromptToHandler() {
+        syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        updateFloatingReturnKeyState()
+    }
+
+    func syncInputBehaviorToHandler() {
+        viewController.handler.submitsAIChatOnKeyboardReturn = isOmnibarNewAIChatPrompt
     }
 
     func resetSessionState() {

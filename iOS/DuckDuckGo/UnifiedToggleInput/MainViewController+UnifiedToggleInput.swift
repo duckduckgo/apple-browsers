@@ -31,6 +31,11 @@ import WebKit
 extension MainViewController {
 
     enum Constants {
+        static let floatingReturnKeyKeyboardBottomConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.KeyboardBottom"
+        static let floatingReturnKeyInputTopConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.InputTop"
+        static let floatingReturnKeyActiveAnchorPriority = UILayoutPriority(999)
+        static let floatingReturnKeyInactiveAnchorPriority = UILayoutPriority(250)
+
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
@@ -83,7 +88,7 @@ extension MainViewController {
 
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
-        installFloatingSubmitViewController()
+        installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -94,6 +99,7 @@ extension MainViewController {
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
         unifiedToggleInputCoordinator?.updateOmnibarInputVisibility(keyboardVisible)
+        updateFloatingReturnKeyVisibility()
     }
 
     var isCurrentTabUsingUnifiedInputAIChrome: Bool {
@@ -316,6 +322,13 @@ private extension MainViewController {
                 if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
+                updateFloatingReturnKeyVisibility()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -351,6 +364,7 @@ private extension MainViewController {
         } else if coordinator.isAITabState && mode == .aiChat {
             coordinator.showExpanded(inputMode: .aiChat)
         }
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -358,7 +372,7 @@ private extension MainViewController {
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        updateFloatingSubmitVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -724,28 +738,46 @@ extension MainViewController {
         contentVC.didMove(toParent: self)
     }
 
-    func installFloatingSubmitViewController() {
+    func installFloatingReturnKeyViewController() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        let floatingVC = coordinator.floatingSubmitViewController
+        let floatingVC = coordinator.floatingReturnKeyViewController
         floatingVC.delegate = self
 
         addChild(floatingVC)
         floatingVC.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(floatingVC.view)
+        let keyboardBottomConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8)
+        keyboardBottomConstraint.identifier = Constants.floatingReturnKeyKeyboardBottomConstraintIdentifier
+        keyboardBottomConstraint.priority = Constants.floatingReturnKeyActiveAnchorPriority
+        let inputTopConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.topAnchor, constant: -8)
+        inputTopConstraint.identifier = Constants.floatingReturnKeyInputTopConstraintIdentifier
+        inputTopConstraint.priority = Constants.floatingReturnKeyInactiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint = keyboardBottomConstraint
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint = inputTopConstraint
         NSLayoutConstraint.activate([
-            floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8),
+            keyboardBottomConstraint,
+            inputTopConstraint,
             floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
         floatingVC.didMove(toParent: self)
-        floatingVC.subscribe(to: coordinator.floatingSubmitStatePublisher)
         floatingVC.view.isHidden = true
     }
 
-    func updateFloatingSubmitVisibility() {
+    func updateFloatingReturnKeyVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
-        coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
+        updateFloatingReturnKeyAnchor(aboveUnifiedInput: renderState.isFloatingReturnKeyVisible && renderState.cardPosition == .bottom)
+        coordinator.floatingReturnKeyViewController.view.isHidden = !renderState.isFloatingReturnKeyVisible
+    }
+
+    func updateFloatingReturnKeyAnchor(aboveUnifiedInput: Bool) {
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyInactiveAnchorPriority
+            : Constants.floatingReturnKeyActiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyActiveAnchorPriority
+            : Constants.floatingReturnKeyInactiveAnchorPriority
     }
 }
 
@@ -971,16 +1003,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 }
 
-// MARK: - UnifiedToggleInputFloatingSubmitDelegate
+// MARK: - UnifiedToggleInputFloatingReturnKeyDelegate
 
-extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
+extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
 
-    func floatingSubmitDidTapSubmit() {
+    func floatingReturnKeyDidTap() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.submitCurrentInputFromFloatingSubmit()
+        coordinator.insertNewlineFromFloatingReturnKey()
     }
 
-    func floatingSubmitDidTapVoice() {
-        onDuckAIVoiceModeRequested()
-    }
 }

@@ -268,7 +268,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let optOutRequestedDate = Calendar.current.date(byAdding: .day, value: -10, to: Date.now)!
         let historyEvents = [
-            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .matchesFound(count: 1), date: Calendar.current.date(byAdding: .day, value: -12, to: Date.now)!),
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutStarted, date: Calendar.current.date(byAdding: .day, value: -12, to: Date.now)!),
             HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: optOutRequestedDate)
         ]
 
@@ -293,7 +293,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         let formSubmittedDate = Calendar.current.date(byAdding: .day, value: -12, to: Date.now)!
         let confirmationDate = Calendar.current.date(byAdding: .day, value: -8, to: Date.now)!
         let historyEvents = [
-            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .matchesFound(count: 1), date: Calendar.current.date(byAdding: .day, value: -14, to: Date.now)!),
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutStarted, date: Calendar.current.date(byAdding: .day, value: -14, to: Date.now)!),
             HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutSubmittedAndAwaitingEmailConfirmation, date: formSubmittedDate),
             HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: confirmationDate)
         ]
@@ -318,7 +318,6 @@ final class DBPUICommunicationModelTests: XCTestCase {
         // Given
         let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let historyEvents = [
-            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .matchesFound(count: 1), date: Calendar.current.date(byAdding: .day, value: -3, to: Date.now)!),
             HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutStarted, date: Calendar.current.date(byAdding: .day, value: -2, to: Date.now)!)
         ]
 
@@ -372,7 +371,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         )
         let parentOptOutMiddle = OptOutJobData.mock(
             with: ExtractedProfile.mockWithName("Adam Joseph Smith", age: "30", addresses: [AddressCityState(city: "New York", state: "NY")]),
-            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutSubmittedAndAwaitingEmailConfirmation, date: middleDate)]
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: middleDate)]
         )
         let parentOptOutNewest = OptOutJobData.mock(
             with: ExtractedProfile.mockWithName("Yet Another Person", age: "50", addresses: []),
@@ -388,30 +387,6 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(profileMatch.optOutFormSubmittedDate, mostRecentDate.timeIntervalSince1970)
-    }
-
-    func testProfileMatchInit_forChildBroker_whenChildHasOwnEventsButParentHasFormSubmission_thenOptOutFormSubmittedDateUsesParentNotChild() {
-
-        // Given
-        let childFormSubmittedDate = Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!
-        let parentFormSubmittedDate = Calendar.current.date(byAdding: .day, value: -5, to: Date.now)!
-
-        let childOptOut = OptOutJobData.mock(
-            with: ExtractedProfile.mockWithoutRemovedDate,
-            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: childFormSubmittedDate)]
-        )
-        let parentOptOut = OptOutJobData.mock(
-            with: ExtractedProfile.mockWithoutRemovedDate,
-            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: parentFormSubmittedDate)]
-        )
-
-        // When
-        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
-                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
-                                                       parentBrokerOptOutJobData: [parentOptOut])
-
-        // Then
-        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, parentFormSubmittedDate.timeIntervalSince1970)
     }
 
     func testProfileMatches_optOutUrlAndBrokerNameForParentBroker() {

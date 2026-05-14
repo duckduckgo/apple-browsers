@@ -124,6 +124,7 @@ final class UnifiedToggleInputToggleView: UIView {
     // MARK: - Setup
 
     private func setupUI() {
+        // Siblings, not children of backgroundView — its 0.5 alpha would cascade onto labels/indicator.
         addSubview(backgroundView)
         addSubview(indicator)
         addSubview(stackView)

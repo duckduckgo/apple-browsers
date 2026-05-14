@@ -875,7 +875,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onDuckAIVoiceModeRequested()
     }
 
-    func unifiedToggleInputCommittedSnapshot() -> UTIDismissSnapshot {
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
         let preferredMode = preferredTextEntryModeForCurrentTab() ?? .search
         let tab = tabManager.currentTabsModel.currentTab
         // AI tab reuses the same textView for the flanked input — text here bleeds past the

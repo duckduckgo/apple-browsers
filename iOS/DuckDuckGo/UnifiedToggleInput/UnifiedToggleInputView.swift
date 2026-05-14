@@ -491,6 +491,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func refreshGlassAITabAccessoryConfigurations() {
         guard #available(iOS 26, *) else { return }
+        // Rebuilds config from scratch — re-apply any per-button tweaks here if added later.
         for button in [aiTabCollapsedFireButton, aiTabCollapsedVoiceButton] {
             guard let currentImage = button.configuration?.image else { continue }
             var config = Self.glassAccessoryConfiguration(for: traitCollection)

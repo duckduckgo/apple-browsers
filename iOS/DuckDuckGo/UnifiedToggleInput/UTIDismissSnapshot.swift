@@ -19,14 +19,12 @@
 
 import Foundation
 
-/// Snapshot of the visual state the UTI should display at the start of a dismiss animation,
-/// matching what the omnibar will render once the UTI is gone. Applied directly to the view
-/// without touching the handler — purely a render override for the duration of the collapse.
+/// Render override the UTI applies during the dismiss collapse so it lands on the omnibar's
+/// destination state. Does not touch the handler.
 struct UTIDismissSnapshot: Equatable {
-    /// Text to place in the input — short host for sites, query for SERP, empty otherwise.
+    /// Short host for sites, query for SERP, empty otherwise.
     let text: String
-    /// Mode whose placeholder copy should appear. The toggle UI itself is left where the user
-    /// left it; only the placeholder string flips so it matches the post-dismiss omnibar.
+    /// Placeholder copy to display — toggle UI is left as-is.
     let placeholderMode: TextEntryMode
 
     static let empty = UTIDismissSnapshot(text: "", placeholderMode: .search)

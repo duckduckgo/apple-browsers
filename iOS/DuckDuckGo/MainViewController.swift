@@ -4479,6 +4479,16 @@ extension MainViewController: TabDelegate {
         navigateToFireMode(source: .menuPromotion)
     }
 
+    func tabDidRequestEnableYouTubeAdBlocking(tab: TabViewController) {
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        DailyPixel.fireDailyAndCount(
+            pixel: .webExtensionAdBlockingEnabled,
+            pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+        )
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+    }
+
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
         let controller = UIHostingController(rootView: YouTubeAdBlockPickerView())
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)

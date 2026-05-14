@@ -4600,6 +4600,24 @@ https://duckduckgo.com/windows";
 /* Explanation text for YouTube Ad Blocking feature */
 "youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
 
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Enable YouTube Ad Blocking";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Disable YouTube Ad Block";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Always Off";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Always On";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Disable Until Relaunch";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "YouTube Ad Blocking";
+
 /* Settings screen title for Ad Blocking */
 "youtube.ad.blocking.title" = "Ad Blocking";
 

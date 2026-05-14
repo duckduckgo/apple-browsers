@@ -159,6 +159,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestFireMode(tab: TabViewController)
 
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController)
+
+    func tabDidRequestEnableYouTubeAdBlocking(tab: TabViewController)
 }
 
 extension TabDelegate {

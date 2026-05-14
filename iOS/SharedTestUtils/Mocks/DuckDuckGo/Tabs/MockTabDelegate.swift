@@ -154,6 +154,10 @@ final class MockTabDelegate: TabDelegate {
     func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
 
     func tabDidRequestFireMode(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestEnableYouTubeAdBlocking(tab: DuckDuckGo.TabViewController) {}
 }
 
 extension TabViewController {

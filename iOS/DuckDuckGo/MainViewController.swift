@@ -3313,14 +3313,16 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
-        if fromDeepLink, currentTab.tabModel.link != nil {
+        if currentTab.tabModel.link != nil {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
-            // Collapse the input that was auto-expanded for the restored tab.
-            // This cancels any pending async activateInput because showCollapsed
-            // sets displayState to .collapsed, failing the guard in showExpanded's
-            // async block.
-            unifiedToggleInputCoordinator?.showCollapsed()
+            if fromDeepLink {
+                // Collapse the input that was auto-expanded for the restored tab.
+                // This cancels any pending async activateInput because showCollapsed
+                // sets displayState to .collapsed, failing the guard in showExpanded's
+                // async block.
+                unifiedToggleInputCoordinator?.showCollapsed()
+            }
             return
         }
 
@@ -5862,12 +5864,20 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
-        guard let tab = self.currentTab?.tabModel else { return }
-        self.closeTab(tab)
+        closeCurrentTab()
+    }
+
+    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {
+        closeCurrentTab()
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
+    }
+
+    private func closeCurrentTab() {
+        guard let tab = currentTab?.tabModel else { return }
+        closeTab(tab)
     }
 
 }

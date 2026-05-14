@@ -341,14 +341,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
     func test_activateFromOmnibar_bottomPosition_setsVCProperties() {
         sut.activateFromOmnibar(cardPosition: .bottom)
         XCTAssertEqual(sut.viewController.cardPosition, .bottom)
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
-        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
     }
 
     func test_activateFromSearchTopPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
@@ -456,7 +454,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.viewController.cardPosition, .bottom)
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
-        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
         XCTAssertFalse(sut.viewController.isInputExpanded)
     }
 

@@ -14,7 +14,18 @@
                     "failing_step": {
                         "type": "string",
                         "description": "Identifies which phase of the journey failed. Present only on FAILURE.",
-                        "enum": ["response_state_error", "response_state_blocked"]
+                        "enum": ["response_state_error", "response_state_blocked", "navigation_failed"]
+                    },
+                    "error": {
+                        "type": "object",
+                        "description": "Underlying `NSError` captured on FAILURE when navigation_failed.",
+                        "properties": {
+                            "domain": { "type": "string", "description": "NSError domain." },
+                            "code": { "type": "integer", "description": "NSError code." },
+                            "underlying_domain": { "type": "string", "description": "Domain of the wrapped NSError, when present." },
+                            "underlying_code": { "type": "integer", "description": "Code of the wrapped NSError, when present." },
+                            "error_description": { "type": "string", "description": "Optional human-readable description attached at capture time." }
+                        }
                     },
                     "model_id": {
                         "type": "string",
@@ -24,6 +35,14 @@
                         "type": "string",
                         "description": "The submitting user's Duck.ai subscription tier at the moment of submission.",
                         "enum": ["free", "plus", "pro", "internal"]
+                    },
+                    "user_script_bound": {
+                        "type": "boolean",
+                        "description": "Whether an `AIChatUserScript` was bound to the input coordinator at submit time. False means the prompt was forwarded via the delegate fallback rather than into a live chat session."
+                    },
+                    "has_page_context": {
+                        "type": "boolean",
+                        "description": "Whether a page-context attachment was present at submit time (i.e. the user attached the current page's content to the prompt)."
                     },
                     "latency": {
                         "type": "object",

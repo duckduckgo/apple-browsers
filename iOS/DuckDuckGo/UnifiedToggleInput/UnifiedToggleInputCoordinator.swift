@@ -1306,9 +1306,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            let userScript = boundUserScript
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
-                userTier: subscriptionState.userTier
+                userTier: subscriptionState.userTier,
+                userScriptBound: userScript != nil,
+                hasPageContext: userScript?.attachedPageContextProvider?() != nil
             )
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
@@ -1337,7 +1340,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 setText("")
                 showCollapsed()
             }
-            if let userScript = boundUserScript {
+            if let userScript {
                 userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)

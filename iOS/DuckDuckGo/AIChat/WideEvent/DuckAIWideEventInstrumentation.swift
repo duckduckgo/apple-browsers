@@ -30,7 +30,10 @@ import PixelKit
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
-    func submissionStarted(modelId: String?, userTier: AIChatUserTier)
+    func submissionStarted(modelId: String?,
+                           userTier: AIChatUserTier,
+                           userScriptBound: Bool,
+                           hasPageContext: Bool)
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
@@ -41,6 +44,13 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// User tapped the stop-generating button. Completes the active flow as
     /// CANCELLED. After this, any subsequent `.ready` status is ignored.
     func stopGeneratingTapped()
+
+    /// The Duck.ai webview's navigation failed (e.g. network error, DNS
+    /// failure). If a submission is in flight, completes the active flow as
+    /// FAILURE with `failing_step = navigation_failed` and attaches the
+    /// `NSError` domain/code to the event's error data. No-op if no flow is in
+    /// flight.
+    func pageLoadFailed(error: Error)
 }
 
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
@@ -57,20 +67,22 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
+        // Complete any orphaned flows left in storage from a previous app
+        // lifecycle (e.g., the app was killed mid-stream). Runs once, at
+        // instrumentation construction time, so `app_terminated` only labels
+        // truly cross-session orphans. Mid-session lost flows are handled
+        // in-memory below.
+        completeOrphanedFlowsFromPreviousAppSession()
     }
 
-    func submissionStarted(modelId: String?, userTier: AIChatUserTier) {
-        // Complete any orphaned flows left in storage from a previous app
-        // lifecycle (e.g., the app was killed mid-stream). Runs synchronously
-        // before the new flow is created, avoiding a race with
-        // WideEventService.resume() which would otherwise complete new flows
-        // as UNKNOWN.
-        completeOrphanedFlows()
-
+    func submissionStarted(modelId: String?,
+                           userTier: AIChatUserTier,
+                           userScriptBound: Bool,
+                           hasPageContext: Bool) {
         if let activeFlow {
-            // Defensive: a previous submission is still in flight (concurrent
-            // submit before the previous one finished). Discard it so the new
-            // submission is the only one tracked.
+            // A previous submission in this app session never completed (a
+            // completion-path gap, not app termination). Discard it silently
+            // rather than emit a misleading `app_terminated` UNKNOWN.
             wideEvent.discardFlow(activeFlow)
             self.activeFlow = nil
         }
@@ -78,6 +90,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         let data = DuckAIPromptSubmissionWideEventData(
             modelId: modelId,
             userTier: userTier.rawValue,
+            userScriptBound: userScriptBound,
+            hasPageContext: hasPageContext,
             startedAt: dateProvider()
         )
         activeFlow = data
@@ -127,9 +141,17 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         self.activeFlow = nil
     }
 
+    func pageLoadFailed(error: Error) {
+        guard let activeFlow else { return }
+        activeFlow.failingStep = .navigationFailed
+        activeFlow.errorData = WideEventErrorData(error: error)
+        wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
+        self.activeFlow = nil
+    }
+
     // MARK: - Helpers
 
-    private func completeOrphanedFlows() {
+    private func completeOrphanedFlowsFromPreviousAppSession() {
         for orphan in wideEvent.getAllFlowData(DuckAIPromptSubmissionWideEventData.self) {
             wideEvent.completeFlow(
                 orphan,

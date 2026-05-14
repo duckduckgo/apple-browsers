@@ -43,6 +43,12 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     /// Set on FAILURE to identify which phase of the journey broke. Mirrors
     /// the `failing_step` taxonomy in the journey design doc.
     var failingStep: FailingStep?
+    /// Whether an `AIChatUserScript` was bound to the input coordinator at
+    /// submit time. Unbound means the prompt was forwarded via the delegate
+    /// fallback rather than directly into a live chat session.
+    var userScriptBound: Bool
+    /// Whether a page-context attachment was present at submit time.
+    var hasPageContext: Bool
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -56,12 +62,16 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     init(modelId: String?,
          userTier: String,
+         userScriptBound: Bool,
+         hasPageContext: Bool,
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.modelId = modelId
         self.userTier = userTier
+        self.userScriptBound = userScriptBound
+        self.hasPageContext = hasPageContext
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
@@ -73,6 +83,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     enum FailingStep: String, Codable {
         case responseStateError = "response_state_error"
         case responseStateBlocked = "response_state_blocked"
+        case navigationFailed = "navigation_failed"
     }
 
     /// Orphaned flows are cleaned up by `submissionStarted()` which runs
@@ -89,7 +100,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 extension DuckAIPromptSubmissionWideEventData {
 
     func jsonParameters() -> [String: Encodable] {
-        Dictionary(compacting: [
+        var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
             (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
@@ -97,6 +108,9 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
         ])
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
+        return parameters
     }
 }
 
@@ -106,6 +120,8 @@ extension WideEventParameter {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
         static let failingStep = "feature.data.ext.failing_step"
+        static let userScriptBound = "feature.data.ext.user_script_bound"
+        static let hasPageContext = "feature.data.ext.has_page_context"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"

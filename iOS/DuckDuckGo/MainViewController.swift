@@ -185,6 +185,7 @@ class MainViewController: UIViewController {
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -482,6 +483,7 @@ class MainViewController: UIViewController {
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.favicons = favicons
@@ -4625,6 +4627,10 @@ extension MainViewController: TabDelegate {
 
     func tabDidEngageWithPage(_ tab: TabViewController) {
         postIdleSessionInstrumentation.pageEngaged()
+    }
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(error: error)
     }
 
     var isAIChatEnabled: Bool {

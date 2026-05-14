@@ -127,6 +127,6 @@ extension OnboardingDuckAIQueryContent {
         title: "Duck.ai Query Title",
         searchPlaceholder: "Search Placeholder",
         aiPlaceholder: "AI Placeholder",
-        shouldToggleBeVisible: true
+        isToggleVisible: true
     )
 }

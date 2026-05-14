@@ -299,13 +299,13 @@ struct OnboardingDuckAIQueryContent: Equatable {
     let searchPlaceholder: String
     let aiPlaceholder: String
 
-    let shouldToggleBeVisible: Bool
+    let isToggleVisible: Bool
 }
 
 extension OnboardingIntroContentProvider {
 
     var duckAIQueryContent: OnboardingDuckAIQueryContent {
-        let (title, shouldToggleBeVisible) = switch flowType {
+        let (title, isToggleVisible) = switch flowType {
         case .default:
             (UserText.Onboarding.DuckAIQueryExperiment.title, true)
         case .duckAI:
@@ -316,7 +316,7 @@ extension OnboardingIntroContentProvider {
             title: title,
             searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
             aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
-            shouldToggleBeVisible: shouldToggleBeVisible
+            isToggleVisible: isToggleVisible
         )
     }
 

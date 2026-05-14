@@ -128,7 +128,7 @@ extension OnboardingView {
                 title: UserText.Onboarding.DuckAIQueryExperiment.title,
                 searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
                 aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
-                shouldToggleBeVisible: true
+                isToggleVisible: true
             ),
             defaultMode: DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
@@ -184,7 +184,7 @@ extension OnboardingView {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Group {
-                    if content.shouldToggleBeVisible {
+                    if content.isToggleVisible {
                         // Search / Duck.ai segmented control.
                         ImageSegmentedPickerView(viewModel: pickerViewModel)
                             .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
@@ -214,7 +214,7 @@ extension OnboardingView {
                     }
 
                     // If toggle is not visible set a different padding to avoid text area to be too close to the title
-                    let queryFieldTopPadding = content.shouldToggleBeVisible ? Metrics.queryFieldTopPadding : nil
+                    let queryFieldTopPadding = content.isToggleVisible ? Metrics.queryFieldTopPadding : nil
 
                     // Query field + trailing action icon.
                     queryField

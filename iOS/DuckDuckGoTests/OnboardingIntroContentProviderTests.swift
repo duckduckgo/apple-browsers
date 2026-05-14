@@ -761,7 +761,7 @@ struct OnboardingIntroContentProviderTests {
                 [true, false]
             )
         )
-        func checkShouldToggleBeVisible(flow: OnboardingFlowType, expectedVisibility: Bool) {
+        func checkIsToggleVisible(flow: OnboardingFlowType, expectedVisibility: Bool) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -769,7 +769,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.duckAIQueryContent
 
             // THEN
-            #expect(result.shouldToggleBeVisible == expectedVisibility)
+            #expect(result.isToggleVisible == expectedVisibility)
         }
 
     }

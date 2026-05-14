@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 /// A protocol that defines a standard interface for handling consumable data.
 /// Types conforming to this protocol can set, consume, and reset data of a specified type.
 public protocol AIChatConsumableDataHandling {
@@ -133,24 +135,26 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-public struct AIChatPageContextData: Codable {
+public struct AIChatPageContextData: Codable, Equatable {
     public let title: String
     public let favicon: [PageContextFavicon]
     public let url: String
     public let content: String
     public let truncated: Bool
     public let fullContentLength: Int
+    public let attachable: Bool?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
         self.content = content
         self.truncated = truncated
         self.fullContentLength = fullContentLength
+        self.attachable = attachable
     }
 
-    public struct PageContextFavicon: Codable {
+    public struct PageContextFavicon: Codable, Equatable {
         public let href: String
         public let rel: String
 
@@ -158,5 +162,68 @@ public struct AIChatPageContextData: Codable {
             self.href = href
             self.rel = rel
         }
+    }
+
+    /// Returns `true` if this page context contains no usable data for AI Chat.
+    ///
+    /// A page context is considered empty when it has no title, no favicon, no content,
+    /// and the full content length is zero. Note that `url` is intentionally excluded
+    /// from this check.
+    public func isEmpty() -> Bool {
+        return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
+    }
+}
+
+// MARK: - Tab Picker Types
+
+/// Metadata for a single open browser tab, returned by `getAIChatOpenTabs`.
+public struct AIChatTabMetadata: Codable {
+    public let tabId: String
+    public let title: String
+    public let url: String
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
+    public let isCurrentTab: Bool
+
+    public init(tabId: String, title: String, url: String, favicon: [AIChatPageContextData.PageContextFavicon], isCurrentTab: Bool = false) {
+        self.tabId = tabId
+        self.title = title
+        self.url = url
+        self.favicon = favicon
+        self.isCurrentTab = isCurrentTab
+    }
+
+    /// Returns `true` if a tab with this URL should be hidden from any tab picker that lists
+    /// open tabs as Duck.ai chat attachments (sidebar today, omnibar in the future). Excludes
+    /// URLs that carry no useful page context for an AI chat:
+    /// - The DDG homepage (SERP URLs with a `q=` parameter remain attachable).
+    /// - `about:blank` (transient state, no content).
+    /// - Duck.ai itself (avoids meta-attaching one chat to another).
+    public static func shouldExcludeFromTabPicker(_ url: URL) -> Bool {
+        return url.isDuckDuckGoHomepage
+            || url.absoluteString == "about:blank"
+            || url.isDuckAIURL
+    }
+}
+
+/// Response to the `getAIChatOpenTabs` request.
+public struct AIChatOpenTabsResponse: Codable {
+    public let tabs: [AIChatTabMetadata]
+
+    public init(tabs: [AIChatTabMetadata]) {
+        self.tabs = tabs
+    }
+}
+
+/// Parameters for the `getAIChatTabContent` request.
+public struct AIChatTabContentParams: Codable {
+    public let tabId: String
+}
+
+/// Response to the `getAIChatTabContent` request.
+public struct AIChatTabContentResponse: Codable {
+    public let pageContext: AIChatPageContextData?
+
+    public init(pageContext: AIChatPageContextData?) {
+        self.pageContext = pageContext
     }
 }

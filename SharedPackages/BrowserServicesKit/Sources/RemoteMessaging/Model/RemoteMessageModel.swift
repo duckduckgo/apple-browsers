@@ -18,6 +18,20 @@
 
 import Foundation
 
+public enum MessageTrigger: String, Codable {
+    case afterIdle = "after_idle"
+}
+
+public struct DisplayConditions: Codable, Equatable {
+    public let trigger: MessageTrigger?
+    public let dismissAfterDaysShown: Int?
+
+    public init(trigger: MessageTrigger? = nil, dismissAfterDaysShown: Int? = nil) {
+        self.trigger = trigger
+        self.dismissAfterDaysShown = dismissAfterDaysShown
+    }
+}
+
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
@@ -27,14 +41,22 @@ public struct RemoteMessageModel: Equatable, Codable {
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
+    public let displayConditions: DisplayConditions?
 
-    public init(id: String, surfaces: RemoteMessageSurfaceType, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
+    public init(id: String,
+                surfaces: RemoteMessageSurfaceType,
+                content: RemoteMessageModelType?,
+                matchingRules: [Int],
+                exclusionRules: [Int],
+                isMetricsEnabled: Bool,
+                displayConditions: DisplayConditions? = nil) {
         self.id = id
         self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
         self.isMetricsEnabled = isMetricsEnabled
+        self.displayConditions = displayConditions
     }
 
     enum CodingKeys: CodingKey {
@@ -44,6 +66,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         case matchingRules
         case exclusionRules
         case isMetricsEnabled
+        case displayConditions
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,6 +77,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
         self.isMetricsEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMetricsEnabled) ?? true
+        self.displayConditions = try container.decodeIfPresent(DisplayConditions.self, forKey: .displayConditions)
     }
 
     mutating func localizeContent(translation: RemoteMessageResponse.JsonContentTranslation) {
@@ -65,34 +89,83 @@ public struct RemoteMessageModel: Equatable, Codable {
         case .small(let titleText, let descriptionText):
             self.content = .small(titleText: translation.titleText ?? titleText,
                                   descriptionText: translation.descriptionText ?? descriptionText)
-        case .medium(let titleText, let descriptionText, let placeholder):
+        case .medium(let titleText, let descriptionText, let placeholder, let imageUrl):
             self.content = .medium(titleText: translation.titleText ?? titleText,
                                    descriptionText: translation.descriptionText ?? descriptionText,
-                                   placeholder: placeholder)
-        case .bigSingleAction(let titleText, let descriptionText, let placeholder, let primaryActionText, let primaryAction):
+                                   placeholder: placeholder,
+                                   imageUrl: imageUrl)
+        case .bigSingleAction(let titleText, let descriptionText, let placeholder, let imageUrl, let primaryActionText, let primaryAction):
             self.content = .bigSingleAction(titleText: translation.titleText ?? titleText,
                                             descriptionText: translation.descriptionText ?? descriptionText,
                                             placeholder: placeholder,
+                                            imageUrl: imageUrl,
                                             primaryActionText: translation.primaryActionText ?? primaryActionText,
                                             primaryAction: primaryAction)
-        case .bigTwoAction(let titleText, let descriptionText, let placeholder, let primaryActionText, let primaryAction,
+        case .bigTwoAction(let titleText, let descriptionText, let placeholder, let imageUrl, let primaryActionText, let primaryAction,
                            let secondaryActionText, let secondaryAction):
             self.content = .bigTwoAction(titleText: translation.titleText ?? titleText,
                                          descriptionText: translation.descriptionText ?? descriptionText,
                                          placeholder: placeholder,
+                                         imageUrl: imageUrl,
                                          primaryActionText: translation.primaryActionText ?? primaryActionText,
                                          primaryAction: primaryAction,
                                          secondaryActionText: translation.secondaryActionText ?? secondaryActionText,
                                          secondaryAction: secondaryAction)
-        case .promoSingleAction(let titleText, let descriptionText, let placeholder, let actionText, let action):
+        case .promoSingleAction(let titleText, let descriptionText, let placeholder, let imageUrl, let actionText, let action):
             self.content = .promoSingleAction(titleText: translation.titleText ?? titleText,
                                             descriptionText: translation.descriptionText ?? descriptionText,
                                             placeholder: placeholder,
+                                              imageUrl: imageUrl,
                                             actionText: translation.primaryActionText ?? actionText,
                                             action: action)
 
-        case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
-            self.content = .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        case .cardsList(let titleText, let placeholder, let imageUrl, let items, let primaryActionText, let primaryAction):
+
+            let translatedItems: [RemoteMessageModelType.ListItem] = items.map { item in
+                guard let translatedItem = translation.listItems?[item.id] else {
+                    return item
+                }
+
+                let translatedItemType: RemoteMessageModelType.ListItem.ListItemType
+                switch item.type {
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                    translatedItemType = .featuredTwoLinesSingleActionItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        primaryActionText: translatedItem.primaryActionText ?? primaryActionText,
+                        primaryAction: primaryAction
+                    )
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                    translatedItemType = .twoLinesItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        action: action
+                    )
+                case let .titledSection(titleText, itemIDs):
+                    translatedItemType = .titledSection(
+                        titleText: translatedItem.titleText ?? titleText,
+                        itemIDs: itemIDs
+                    )
+                }
+
+                return RemoteMessageModelType.ListItem(
+                    id: item.id,
+                    type: translatedItemType,
+                    matchingRules: item.matchingRules,
+                    exclusionRules: item.exclusionRules
+                )
+            }
+
+            self.content = .cardsList(
+                titleText: translation.titleText ?? titleText,
+                placeholder: placeholder,
+                imageUrl: imageUrl,
+                items: translatedItems,
+                primaryActionText: translation.primaryActionText ?? primaryActionText,
+                primaryAction: primaryAction
+            )
         }
     }
 }
@@ -110,21 +183,43 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
     public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
     /// Used to show a remote message in a dedicated tab.
     public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
+    /// Used to show a remote message in the tab bar of the browser.
+    public static let tabBar = RemoteMessageSurfaceType(rawValue: 1 << 3)
 
-    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]
+    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab, .tabBar]
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {
-    case small(titleText: String, descriptionText: String)
-    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
-    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+    case small(titleText: String,
+               descriptionText: String)
+    case medium(titleText: String,
+                descriptionText: String,
+                placeholder: RemotePlaceholder,
+                imageUrl: URL?)
+    case bigSingleAction(titleText: String,
+                         descriptionText: String,
+                         placeholder: RemotePlaceholder, imageUrl: URL?,
                          primaryActionText: String, primaryAction: RemoteAction)
-    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+    case bigTwoAction(titleText: String,
+                      descriptionText: String,
+                      placeholder: RemotePlaceholder,
+                      imageUrl: URL?,
+                      primaryActionText: String,
+                      primaryAction: RemoteAction,
+                      secondaryActionText: String,
                       secondaryAction: RemoteAction)
-    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                           actionText: String, action: RemoteAction)
-    case cardsList(titleText: String, placeholder: RemotePlaceholder?, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
+    case promoSingleAction(titleText: String,
+                           descriptionText: String,
+                           placeholder: RemotePlaceholder,
+                           imageUrl: URL?,
+                           actionText: String,
+                           action: RemoteAction)
+    case cardsList(titleText: String,
+                   placeholder: RemotePlaceholder?,
+                   imageUrl: URL?,
+                   items: [ListItem],
+                   primaryActionText: String,
+                   primaryAction: RemoteAction)
 }
 
 extension RemoteMessageModelType {
@@ -133,8 +228,22 @@ extension RemoteMessageModelType {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return nil
-        case let .cardsList(_, _, items, _, _):
+        case let .cardsList(_, _, _, items, _, _):
             return items
+        }
+    }
+
+    /// Returns the remote image URL if present for this message type.
+    public var imageUrl: URL? {
+        switch self {
+        case .small:
+            return nil
+        case .medium(_, _, _, let imageUrl),
+             .bigSingleAction(_, _, _, let imageUrl, _, _),
+             .bigTwoAction(_, _, _, let imageUrl, _, _, _, _),
+             .promoSingleAction(_, _, _, let imageUrl, _, _),
+             .cardsList(_, _, let imageUrl, _, _, _):
+            return imageUrl
         }
     }
 }
@@ -144,20 +253,12 @@ public extension RemoteMessageModelType {
     struct ListItem: Codable, Equatable {
         public let id: String
         public let type: ListItemType
-        public let titleText: String
-        public let descriptionText: String
-        public let placeholderImage: RemotePlaceholder
-        public let action: RemoteAction?
         public let matchingRules: [Int]
         public let exclusionRules: [Int]
 
-        public init(id: String, type: ListItemType, titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?, matchingRules: [Int], exclusionRules: [Int]) {
+        public init(id: String, type: ListItemType, matchingRules: [Int], exclusionRules: [Int]) {
             self.id = id
             self.type = type
-            self.titleText = titleText
-            self.descriptionText = descriptionText
-            self.placeholderImage = placeholderImage
-            self.action = action
             self.matchingRules = matchingRules
             self.exclusionRules = exclusionRules
         }
@@ -167,7 +268,37 @@ public extension RemoteMessageModelType {
 public extension RemoteMessageModelType.ListItem {
 
     enum ListItemType: Codable, Equatable {
-        case twoLinesItem
+        /// Represents a featured two-line card with an icon, title, description, and optional action with title.
+        /// - Parameters:
+        ///   - titleText: The main title of the card (required, translatable)
+        ///   - descriptionText: Supporting description text (required, translatable)
+        ///   - placeholderImage: Image to display alongside the text
+        ///   - primaryActionText: Optional title for the action triggered when the card is tapped
+        ///   - primaryAction: Optional action triggered when the card is tapped
+        case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, primaryActionText: String?, primaryAction: RemoteAction?)
+
+        /// Represents a standard two-line card with an icon, title, description, and optional action.
+        /// - Parameters:
+        ///   - titleText: The main title of the card (required, translatable)
+        ///   - descriptionText: Supporting description text (required, translatable)
+        ///   - placeholderImage: Image to display alongside the text
+        ///   - action: Optional action triggered when the card is tapped
+        case twoLinesItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?)
+
+        /// Represents a section header with a title and an array of item IDs belonging to this section.
+        /// - Parameters:
+        ///   - titleText: The section header text (required, translatable)
+        ///   - itemIDs: Array of item IDs that belong to this section. Used to determine if the section should be displayed after filtering.
+        case titledSection(titleText: String, itemIDs: [String])
+
+        var isFeaturedItem: Bool {
+            switch self {
+            case .featuredTwoLinesSingleActionItem:
+                return true
+            case .titledSection, .twoLinesItem:
+                return false
+            }
+        }
     }
 
 }
@@ -175,10 +306,13 @@ public extension RemoteMessageModelType.ListItem {
 public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
+    case settingsGeneral = "settings.general"
     case feedback
     case sync
     case importPasswords = "import.passwords"
     case appearance
+    case personalInformationRemoval = "pir.main"
+    case softwareUpdate
 }
 
 public enum RemoteAction: Codable, Equatable {
@@ -200,10 +334,19 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case appUpdate = "RemoteMessageAppUpdate"
     case macComputer = "RemoteMessageMacComputer"
     case newForMacAndWindows = "RemoteMessageNewForMacAndWindows"
+    case macAndWindows = "RemoteMessageForMacAndWindows"
     case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
     case imageAI = "RemoteImageAI"
-    case radar = "RemoteRadar"
+    case radar = "RemoteMessageRadar"
+    case radarCheckGreen = "RemoteRadar"
+    case radarCheckPurple = "RemoteMessageRadarCheck"
     case keyImport = "RemoteKeyImport"
+    case mobileCustomization = "RemoteMobileCustomization"
+    case pir = "RemoteMessagePIR"
+    case subscription = "RemoteMessageSubscription"
+    case veryCriticalUpdate = "RemoteMessageVeryCriticalUpdate"
+    case newTabOptions = "RemoteMessageNewTabOptions"
+    case splitBarMobile = "RemoteMessageSplitBarMobile"
 }

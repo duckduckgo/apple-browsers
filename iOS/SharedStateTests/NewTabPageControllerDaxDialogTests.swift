@@ -27,6 +27,8 @@ import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
+
 @testable import Configuration
 
 private class MockURLBasedDebugCommands: URLBasedDebugCommands {
@@ -43,7 +45,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var hvc: NewTabPageViewController!
 
     override func setUpWithError() throws {
-        let db = CoreDataDatabase.bookmarksMock
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
         specProvider = MockNewTabDialogSpecProvider()
@@ -59,8 +60,12 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
             appSettings: AppSettingsMock(),
-            internalUserCommands: MockURLBasedDebugCommands()
+            faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true),
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
@@ -143,13 +148,17 @@ class CapturingVariantManager: VariantManager {
     }
 }
 
-class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
+class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         self.homeDialog = homeDialog
         self.onDismiss = onCompletion
         return EmptyView()
+    }
+
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(EmptyView())
     }
 }
 

@@ -58,7 +58,12 @@ extension NSView {
 
     func gradient(width: CGFloat, trailingPadding: CGFloat) {
         guard let layer = layer else {
-            Logger.general.error("NSTextField: Making of gradient failed - Text field has no layer.")
+            Logger.general.error("NSView: Making of gradient failed - Text field has no layer.")
+            return
+        }
+
+        guard layer.bounds.width > 0 else {
+            Logger.general.error("NSView: Making of gradient failed - Layer has no width.")
             return
         }
 
@@ -69,7 +74,7 @@ extension NSView {
         }
 
         guard let mask = layer.mask as? CAGradientLayer else {
-            Logger.general.error("NSTextField: Making of gradient failed - Mask has no gradient layer.")
+            Logger.general.error("NSView: Making of gradient failed - Mask has no gradient layer.")
             return
         }
 
@@ -78,7 +83,10 @@ extension NSView {
 
         mask.frame = layer.bounds
 
-        let startPointX = (mask.bounds.width - (trailingPadding + width)) / mask.bounds.width
+        let availableWidth = mask.bounds.width - trailingPadding
+        let safeWidth = min(width, availableWidth)
+
+        let startPointX = (mask.bounds.width - (trailingPadding + safeWidth)) / mask.bounds.width
         let endPointX = (mask.bounds.width - trailingPadding) / mask.bounds.width
 
         mask.startPoint = CGPoint(x: startPointX, y: 0.5)

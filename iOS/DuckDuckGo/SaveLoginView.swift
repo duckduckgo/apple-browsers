@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Common
 import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit
@@ -36,6 +37,7 @@ struct SaveLoginView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var orientation = UIDevice.current.orientation
+    @State private var bottomSafeArea: CGFloat = 0
 
     private var layoutType: LayoutType {
         viewModel.layoutType
@@ -45,28 +47,6 @@ struct SaveLoginView: View {
         AutofillInterfaceUsernameTruncator.truncateUsername(viewModel.username, maxLength: 50)
     }
 
-    private var title: String {
-        switch layoutType {
-        case .newUser, .saveLogin, .savePassword:
-            return UserText.autofillSaveLoginTitleNewUser
-        case .updateUsername:
-            return UserText.autofillUpdateUsernameTitle
-        case .updatePassword:
-            return UserText.autofillUpdatePassword(for: usernameDisplayString)
-        }
-    }
-    
-    private var confirmButton: String {
-        switch layoutType {
-        case .newUser, .saveLogin, .savePassword:
-            return UserText.autofillSavePasswordSaveCTA
-        case .updateUsername:
-            return UserText.autofillUpdateUsernameSaveCTA
-        case .updatePassword:
-            return UserText.autofillUpdatePasswordSaveCTA
-        }
-    }
-    
     var body: some View {
         GeometryReader { geometry in
             makeBodyView(geometry)
@@ -77,33 +57,25 @@ struct SaveLoginView: View {
     }
     
     private func makeBodyView(_ geometry: GeometryProxy) -> some View {
-        DispatchQueue.main.async { self.frame = geometry.size }
-        
+        DispatchQueue.main.async {
+            self.frame = geometry.size
+            self.bottomSafeArea = geometry.safeAreaInsets.bottom
+        }
+
         return ZStack {
             AutofillViews.CloseButtonHeader(action: viewModel.cancelButtonPressed)
-                .offset(x: horizontalPadding)
+                .padding(.top, closeButtonExtraPadding)
+                .offset(x: horizontalPadding - closeButtonExtraPadding)
                 .zIndex(1)
 
-            VStack {
-                Spacer(minLength: Const.Size.topPadding)
-                AutofillViews.AppIconHeader()
-                Spacer(minLength: Const.Size.contentSpacing)
-                AutofillViews.Headline(title: title)
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
-                contentView
-                Spacer(minLength: Const.Size.contentSpacing)
-                if case .newUser = layoutType {
-                    featuresView.padding([.bottom], Const.Size.featuresListPadding)
-                }
-                ctaView
-            }
-            .padding([.bottom], Const.Size.bodyBottomPadding)
-            .fixedSize(horizontal: false, vertical: shouldFixSize)
-            .background(GeometryReader { proxy -> Color in
-                DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }
-                return Color.clear
-            })
-            .useScrollView(shouldUseScrollView(), minHeight: frame.height)
+            innerContent
+                .padding(.bottom, max(Const.Size.bodyBottomPadding - bottomSafeArea, 0))
+                .fixedSize(horizontal: false, vertical: shouldFixSize)
+                .background(GeometryReader { proxy -> Color in
+                    DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }
+                    return Color.clear
+                })
+                .useScrollView(shouldUseScrollView(), minHeight: frame.height)
         }
         .padding(.horizontal, horizontalPadding)
     }
@@ -124,28 +96,69 @@ struct SaveLoginView: View {
         return useScrollView
     }
 
-    @ViewBuilder private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
-        HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
-            image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
-            VStack(alignment: .leading, spacing: Const.Size.featuresListItemVerticalSpacing) {
-                Text(title)
-                    .daxSubheadSemibold()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                Text(subtitle)
-                    .daxSubheadRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+    // MARK: - Per-Variant Layouts
+
+    @ViewBuilder
+    private var innerContent: some View {
+        switch layoutType {
+        case .newUser:
+            VStack {
+                Spacer(minLength: Const.Size.topPadding)
+                AutofillViews.AppIconHeader()
+                Spacer(minLength: Const.Size.contentSpacing)
+                AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
+                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
+                Spacer(minLength: Const.Size.contentSpacing)
+                featuresView().padding([.bottom], Const.Size.featuresListPadding)
+                onboardingCtaView()
             }
-            .padding(0)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+
+        case .saveLogin, .savePassword:
+            VStack {
+                Spacer(minLength: Const.Size.topPadding)
+                AutofillViews.AppIconHeader()
+                Spacer(minLength: Const.Size.contentSpacing)
+                AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
+                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
+                Spacer(minLength: Const.Size.contentSpacing)
+                standardCtaView(title: UserText.autofillSavePasswordSaveCTA)
+            }
+
+        case .updatePassword:
+            VStack {
+                Spacer(minLength: Const.Size.topPadding)
+                AutofillViews.AppIconHeader()
+                Spacer(minLength: Const.Size.contentSpacing)
+                AutofillViews.Headline(title: UserText.autofillUpdatePassword(for: usernameDisplayString))
+                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                AutofillViews.SecureDescription(text: UserText.autoUpdatePasswordMessage)
+                Spacer(minLength: Const.Size.contentSpacing)
+                standardCtaView(title: UserText.autofillUpdatePasswordSaveCTA)
+            }
+
+        case .updateUsername:
+            VStack {
+                Spacer(minLength: Const.Size.topPadding)
+                AutofillViews.AppIconHeader()
+                Spacer(minLength: Const.Size.contentSpacing)
+                AutofillViews.Headline(title: UserText.autofillUpdateUsernameTitle)
+                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                Text(verbatim: viewModel.usernameTruncated)
+                    .font(Const.Fonts.userInfo)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                Spacer(minLength: Const.Size.contentSpacing)
+                standardCtaView(title: UserText.autofillUpdateUsernameSaveCTA)
+            }
         }
-        .padding(0)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    @ViewBuilder private var featuresView: some View {
+    // MARK: - Features List
+
+    @ViewBuilder
+    private func featuresView() -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
                 Text(UserText.autofillOnboardingKeyFeaturesTitle)
@@ -180,7 +193,6 @@ struct SaveLoginView: View {
             .padding(.top, Const.Size.featuresListTopPadding)
             .padding(.bottom, Const.Size.featuresListPadding)
         }
-        .padding(0)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .cornerRadius(Const.Size.featuresListBorderCornerRadius)
         .overlay(
@@ -191,19 +203,74 @@ struct SaveLoginView: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    @ViewBuilder private var ctaView: some View {
-        VStack(spacing: Const.Size.ctaVerticalSpacing) {
-            AutofillViews.PrimaryButton(title: confirmButton,
-                                        action: viewModel.save)
-            switch layoutType {
-            case .newUser:
-                AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNoThanksCTA,
-                                             action: viewModel.cancelButtonPressed)
-            default:
-                AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
-                                             action: viewModel.neverPrompt)
-            }
+    @ViewBuilder
+    private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
+        let titleFont = Font(UIFont.daxSubheadSemibold())
+        let subtitleFont = Font(UIFont.daxSubheadRegular())
 
+        HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
+            image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
+            VStack(alignment: .leading, spacing: Const.Size.featuresListItemVerticalSpacing) {
+                Text(title)
+                    .font(titleFont)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                Text(subtitle)
+                    .font(subtitleFont)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .padding(0)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: - CTA Views
+
+    /// CTA buttons for onboarding flows
+    ///
+    private func onboardingCtaView() -> some View {
+        VStack(spacing: Const.Size.ctaVerticalSpacing) {
+            AutofillViews.PrimaryButton(title: UserText.autofillSavePasswordSaveCTA,
+                                        action: viewModel.save)
+            dismissButton
+        }
+    }
+
+    @ViewBuilder
+    private var dismissButton: some View {
+        switch viewModel.dismissExperimentCohort {
+        case .variant1:
+            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNotNowCTA,
+                                         action: viewModel.cancelButtonPressed)
+        case .variant2:
+            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
+                                         action: viewModel.neverPrompt)
+        case .control, nil:
+            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNoThanksCTA,
+                                         action: viewModel.cancelButtonPressed)
+        }
+    }
+
+    /// CTA buttons for non-onboarding flows
+    ///
+    private func standardCtaView(title: String) -> some View {
+        VStack(spacing: Const.Size.ctaVerticalSpacing) {
+            AutofillViews.PrimaryButton(title: title,
+                                        action: viewModel.save)
+            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
+                                         action: viewModel.neverPrompt)
+        }
+    }
+
+    // iOS 26 needs some extra padding due to its very large corner radii
+    private var closeButtonExtraPadding: CGFloat {
+        if #available(iOS 26, *) {
+            return 10
+        } else {
+            return 0
         }
     }
 
@@ -217,24 +284,6 @@ struct SaveLoginView: View {
         } else {
             return Const.Size.closeButtonOffset
         }
-    }
-
-    @ViewBuilder
-    private var contentView: some View {
-        switch layoutType {
-        case .newUser, .saveLogin, .savePassword, .updatePassword:
-            let text = layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginSecurityMessage
-            AutofillViews.SecureDescription(text: text)
-        case .updateUsername:
-            updateUsernameContentView
-        }
-    }
-
-    private var updateUsernameContentView: some View {
-        Text(verbatim: viewModel.usernameTruncated)
-            .font(Const.Fonts.userInfo)
-            .lineLimit(1)
-            .multilineTextAlignment(.center)
     }
 }
 
@@ -281,11 +330,14 @@ struct SaveLoginView_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
+            let featureFlagger = AppDependencyProvider.shared.featureFlagger
             let viewModelNewUser = SaveLoginViewModel(credentialManager: MockManager(),
                                                       appSettings: AppDependencyProvider.shared.appSettings,
+                                                      featureFlagger: featureFlagger,
                                                       layoutType: .newUser)
             let viewModelSaveLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                         appSettings: AppDependencyProvider.shared.appSettings,
+                                                        featureFlagger: featureFlagger,
                                                         layoutType: .saveLogin)
 
             VStack {
@@ -301,11 +353,13 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelUpdatePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
+                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updatePassword)
                 SaveLoginView(viewModel: viewModelUpdatePassword)
                 
                 let viewModelUpdateUsername = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
+                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updateUsername)
                 SaveLoginView(viewModel: viewModelUpdateUsername)
             }
@@ -313,11 +367,13 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelAdditionalLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                                   appSettings: AppDependencyProvider.shared.appSettings,
+                                                                  featureFlagger: featureFlagger,
                                                                   layoutType: .saveLogin)
                 SaveLoginView(viewModel: viewModelAdditionalLogin)
                 
                 let viewModelSavePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                appSettings: AppDependencyProvider.shared.appSettings,
+                                                               featureFlagger: featureFlagger,
                                                                layoutType: .savePassword)
                 SaveLoginView(viewModel: viewModelSavePassword)
             }

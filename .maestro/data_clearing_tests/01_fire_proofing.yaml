@@ -32,8 +32,10 @@ tags:
 - tapOn: "Submit"
 
 # Fireproof the site
-- tapOn: "Browsing Menu"
-- tapOn: "Fireproof This Site"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Fireproof This Site"
 - tapOn: "Fireproof"
 - assertVisible: "setcookie.net is now Fireproof"
 
@@ -55,8 +57,10 @@ tags:
 - assertVisible: "TestName = TestValue"
 
 # Remove fireproofing
-- tapOn: "Browsing Menu"
-- tapOn: "Remove Fireproofing"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Remove Fireproofing"
 
 # Fire Button
 - runFlow:

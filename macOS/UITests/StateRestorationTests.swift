@@ -38,6 +38,9 @@ class StateRestorationTests: UITestCase {
         addressBarTextField = app.addressBar
 
         app.enforceSingleWindow()
+
+        // Disable warn before quit to allow Cmd+Q to quit immediately in tests
+        app.disableWarnBeforeQuitting()
     }
 
     override func tearDownWithError() throws {

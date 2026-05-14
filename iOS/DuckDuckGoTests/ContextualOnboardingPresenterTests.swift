@@ -22,11 +22,11 @@ import SwiftUI
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterTests: XCTestCase {
-    private var contextualDaxDialogsFactory: ExperimentContextualDaxDialogsFactory!
+    private var contextualDaxDialogsFactory: ContextualDaxDialogsFactory!
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 
@@ -48,6 +48,19 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
         // THEN
         XCTAssertTrue(parent.didCallAddChild)
         XCTAssertNotNil(parent.capturedChild)
+    }
+
+    func testWhenPresentingSameSpecTwiceThenSecondPresentationIsIgnored() {
+        // GIVEN
+        let sut = ContextualOnboardingPresenter(variantManager: MockVariantManager(), daxDialogsFactory: contextualDaxDialogsFactory)
+        let parent = TabViewControllerMock()
+
+        // WHEN
+        sut.presentContextualOnboarding(for: .afterSearch, in: parent)
+        sut.presentContextualOnboarding(for: .afterSearch, in: parent)
+
+        // THEN
+        XCTAssertEqual(parent.addChildCallCount, 1)
     }
 
     func testWhenPresentContextualOnboardingForFireEducational_andBarAtTheTop_TheMessageHandPointsInTheRightDirection() throws {
@@ -102,6 +115,25 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
         XCTAssertFalse(parent.daxDialogsStackView.arrangedSubviews.contains(daxController.view))
     }
 
+    func testWhenDismissContextualOnboardingThenLastPresentedSpecIsCleared() {
+        // GIVEN
+        let expectation = self.expectation(description: #function)
+        let sut = ContextualOnboardingPresenter(variantManager: MockVariantManager(), daxDialogsFactory: contextualDaxDialogsFactory)
+        let parent = TabViewControllerMock()
+        parent.lastPresentedContextualOnboardingSpec = .afterSearch
+        let daxController = DaxContextualOnboardingControllerMock()
+        daxController.removeFromParentExpectation = expectation
+        parent.daxContextualOnboardingController = daxController
+        parent.daxDialogsStackView.addArrangedSubview(daxController.view)
+
+        // WHEN
+        sut.dismissContextualOnboardingIfNeeded(from: parent)
+
+        // THEN
+        waitForExpectations(timeout: 1.0)
+        XCTAssertNil(parent.lastPresentedContextualOnboardingSpec)
+    }
+
 }
 
 final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
@@ -109,12 +141,14 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
     var daxDialogsStackView: UIStackView = UIStackView()
     var webViewContainerView: UIView  = UIView()
     var daxContextualOnboardingController: UIViewController?
+    var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
 
     private(set) var didCallPerformSegue = false
     private(set) var capturedSegueIdentifier: String?
     private(set) var capturedSender: Any?
 
     private(set) var didCallAddChild = false
+    private(set) var addChildCallCount = 0
     private(set) var capturedChild: UIViewController?
 
     private(set) var didCalldidShowTrackersDialog = false
@@ -134,6 +168,7 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
 
     override func addChild(_ childController: UIViewController) {
         didCallAddChild = true
+        addChildCallCount += 1
         capturedChild = childController
     }
 
@@ -160,7 +195,11 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
     }
 
     func didAcknowledgeContextualOnboardingSearch() {
-        
+
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+
     }
 
 }

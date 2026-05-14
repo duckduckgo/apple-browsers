@@ -98,17 +98,10 @@ final class AddressBarTextEditor: NSTextView {
         set {}
     }
 
-#if swift(>=5.9)
     override var inlinePredictionType: NSTextInputTraitType {
         get { .no }
         set {}
     }
-#else
-    @objc var inlinePredictionType: NSTextInputTraitType {
-        get { .no }
-        set {}
-    }
-#endif
 
     override var usesFindPanel: Bool {
         get { false }
@@ -152,9 +145,6 @@ final class AddressBarTextEditor: NSTextView {
             super.copy(sender)
             return
         }
-
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(selectedText, forType: .string)
 
         if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) {
             NSPasteboard.general.copy(url, withString: selectedText)

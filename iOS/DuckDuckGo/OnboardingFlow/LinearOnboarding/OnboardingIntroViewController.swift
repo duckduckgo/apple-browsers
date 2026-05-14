@@ -1,0 +1,121 @@
+//
+//  OnboardingIntroViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import SystemSettingsPiPTutorial
+import AIChat
+
+final class OnboardingIntroViewController<Content: View>: UIHostingController<Content>, Onboarding {
+    weak var delegate: OnboardingDelegate?
+    private let viewModel: OnboardingIntroViewModel
+
+    init(
+        rootView: Content,
+        viewModel: OnboardingIntroViewModel
+    ) {
+        self.viewModel = viewModel
+        super.init(rootView: rootView)
+        
+        viewModel.onCompletingOnboardingIntro = { [weak self] in
+            guard let self else { return }
+            self.delegate?.onboardingCompleted(controller: self)
+        }
+        viewModel.onOpenAIChatFromOnboarding = { [weak self] query, autoSend in
+            guard let self, let delegate else { return }
+            delegate.openAIChatFromOnboarding(
+                query,
+                autoSend: autoSend,
+                flowType: .mobileAppOnboarding
+            )
+        }
+        viewModel.onSearchFromOnboarding = { [weak self] query in
+            guard let self, let delegate else { return }
+            delegate.searchFromOnboarding(for: query)
+        }
+    }
+
+    @available(*, unavailable)
+    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return [.portrait]
+    }
+
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+        return .portrait
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        viewModel.tapped()
+    }
+
+}
+
+extension OnboardingIntroViewController where Content == OnboardingView {
+
+    static func legacy(
+        onboardingPixelReporter: OnboardingPixelReporting,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: ContextualDaxDialogDisabling,
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        onboardingManager: OnboardingManaging
+    ) -> OnboardingIntroViewController {
+        let viewModel = OnboardingIntroViewModel(
+            pixelReporter: onboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager,
+            restorePromptHandler: OnboardingRestorePromptHandler(
+                configuration: .enabled,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
+            ),
+            onboardingManager: onboardingManager
+        )
+        let rootView = OnboardingView(model: viewModel)
+        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
+    }
+
+}
+
+extension OnboardingIntroViewController where Content == RebrandedOnboardingView {
+
+    static func rebranded(
+        onboardingPixelReporter: OnboardingPixelReporting,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: ContextualDaxDialogDisabling,
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        onboardingManager: OnboardingManaging
+    ) -> OnboardingIntroViewController {
+        let viewModel = OnboardingIntroViewModel(
+            pixelReporter: onboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager,
+            restorePromptHandler: OnboardingRestorePromptHandler(
+                configuration: .enabled,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
+            ),
+            onboardingManager: onboardingManager
+        )
+        let rootView = RebrandedOnboardingView(model: viewModel)
+        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
+    }
+
+}

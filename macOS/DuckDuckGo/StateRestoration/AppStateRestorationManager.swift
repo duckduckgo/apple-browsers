@@ -25,7 +25,13 @@ import Persistence
 import BrowserServicesKit
 
 @MainActor
-final class AppStateRestorationManager: NSObject {
+protocol AppStateRestorationManaging {
+    var isRelaunchingAutomatically: Bool { get }
+    func resetRelaunchFlag()
+}
+
+@MainActor
+final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private enum Constants {
         static let fileName = "persistentState"
         static let appDidTerminateAsExpectedKey = "appDidTerminateAsExpected"
@@ -43,7 +49,11 @@ final class AppStateRestorationManager: NSObject {
     private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
-    private var appIsRelaunchingAutomatically: Bool
+    internal private(set) var isRelaunchingAutomatically: Bool
+
+    func resetRelaunchFlag() {
+        isRelaunchingAutomatically = false
+    }
 
     private var appDidTerminateAsExpected: Bool {
         get {
@@ -106,7 +116,7 @@ final class AppStateRestorationManager: NSObject {
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
         appWillRelaunchCancellable = relaunchPublisher
             .map { true }
-            .assign(to: \.appIsRelaunchingAutomatically, onWeaklyHeld: self)
+            .assign(to: \.isRelaunchingAutomatically, onWeaklyHeld: self)
     }
 
     var canRestoreLastSessionState: Bool {
@@ -134,8 +144,8 @@ final class AppStateRestorationManager: NSObject {
         return state
     }
 
-    func clearLastSessionState() {
-        service.clearState(sync: true)
+    func clearLastSessionState() -> Result<Void, Error> {
+        return service.clearState(sync: true)
     }
 
     // Cleans all stored snapshots except snapshots listed in the state
@@ -143,19 +153,21 @@ final class AppStateRestorationManager: NSObject {
         let tabs = state?.windows.flatMap { $0.model.tabCollection.tabs } ?? []
         let perWindowPinnedTabs = state?.windows.flatMap { $0.pinnedTabs?.tabs ?? [] } ?? []
         let applicationPinnedTabs = state?.applicationPinnedTabs?.tabs ?? []
-        let stateSnapshotIds = (tabs + perWindowPinnedTabs + applicationPinnedTabs).compactMap { $0.tabSnapshotIdentifier }
+        let stateSnapshotIds = (tabs + perWindowPinnedTabs + applicationPinnedTabs).compactMap(\.tabSnapshotIdentifier)
         Task {
             await tabSnapshotCleanupService.cleanStoredSnapshots(except: Set(stateSnapshotIds))
         }
     }
 
     func applicationDidFinishLaunching() {
-        let isRelaunchingAutomatically = self.appIsRelaunchingAutomatically
-        self.appIsRelaunchingAutomatically = false
-        // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
-        readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
+        let isRelaunchingAutomatically = self.isRelaunchingAutomatically
+        self.isRelaunchingAutomatically = false
+        let restoreWindows = !service.isAppStateFileStale || isRelaunchingAutomatically
+        let restoreRegularTabs = shouldRestoreRegularTabs || isRelaunchingAutomatically
+        // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
+        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
-        detectUnexpectedAppTermination()
+        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs)
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -170,11 +182,12 @@ final class AppStateRestorationManager: NSObject {
     }
 
     func applicationWillTerminate() {
+        let isInInitialState = Application.appDelegate.windowControllersManager.isInInitialState
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
-        if Application.appDelegate.windowControllersManager.isInInitialState {
-            service.clearState(sync: true)
+        if isInInitialState {
+            _ = service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
         }
@@ -216,16 +229,11 @@ final class AppStateRestorationManager: NSObject {
         tabsPreferences.migratePinnedTabsSettingIfNecessary(nil)
     }
 
-    private func detectUnexpectedAppTermination() {
+    private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
 #if DEBUG
-        guard AppVersion.runType != .normal else {
-            return
-        }
-#endif
-#if REVIEW
-        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else {
-            return
-        }
+        guard AppVersion.runType != .normal else { return }
+#else
+        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else { return }
 #endif
 
         let didCloseUnexpectedly = !appDidTerminateAsExpected
@@ -235,12 +243,26 @@ final class AppStateRestorationManager: NSObject {
         pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected)
 
         // Display a prompt to restore the last session when the user has disabled "restore previous session".
+        // Don't show the prompt if tabs were already restored (e.g. during automatic relaunch).
         // Don't show the prompt if relaunched 2nd time with no recently updated app session state (crash loop).
-        if !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
+        if !didRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
             sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
                 guard let self, restoreSession else { return }
                 restoreLastSessionState(interactive: true, includeRegularTabs: true)
             }
         }
+    }
+}
+
+// MARK: - ApplicationTerminationDecider
+
+/// Wrapper for state restoration termination logic
+@MainActor
+struct StateRestorationAppTerminationDecider: ApplicationTerminationDecider {
+    let stateRestorationManager: AppStateRestorationManager
+
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        stateRestorationManager.applicationWillTerminate()
+        return .sync(.next)
     }
 }

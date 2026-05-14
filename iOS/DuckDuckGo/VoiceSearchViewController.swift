@@ -28,14 +28,16 @@ class VoiceSearchViewController: UIViewController {
     weak var delegate: VoiceSearchViewControllerDelegate?
     private let speechRecognizer = SpeechRecognizer()
     private let preferredTarget: VoiceSearchTarget?
-    
+    private let hideToggle: Bool
+
     private lazy var blurView: UIVisualEffectView = {
         let effectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
         return effectView
     }()
 
-    init(preferredTarget: VoiceSearchTarget? = nil) {
+    init(preferredTarget: VoiceSearchTarget? = nil, hideToggle: Bool = false) {
         self.preferredTarget = preferredTarget
+        self.hideToggle = hideToggle
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -63,7 +65,7 @@ class VoiceSearchViewController: UIViewController {
     }
     
     private func installSpeechView() {
-        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings(), preferredTarget: preferredTarget)
+        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings(), preferredTarget: preferredTarget, hideToggle: hideToggle)
         model.delegate = self
         let speechView = VoiceSearchFeedbackView(speechModel: model)
         let controller = UIHostingController(rootView: speechView)

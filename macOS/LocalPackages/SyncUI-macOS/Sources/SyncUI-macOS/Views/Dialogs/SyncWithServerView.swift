@@ -23,10 +23,11 @@ struct SyncWithServerView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
+        let syncWithServerSubtitle1 = model.isAIChatSyncEnabled ? UserText.syncWithServerSubtitle1Updated : UserText.syncWithServerSubtitle1
         SyncDialog(spacing: 20.0) {
             Image(.syncServer96)
             SyncUIViews.TextHeader(text: UserText.syncWithServerTitle)
-            SyncUIViews.TextDetailMultiline(text: UserText.syncWithServerSubtitle1)
+            SyncUIViews.TextDetailMultiline(text: syncWithServerSubtitle1)
             SyncUIViews.TextDetailMultiline(text: UserText.syncWithServerSubtitle2)
         } buttons: {
             Button(UserText.cancel) {

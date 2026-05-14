@@ -18,21 +18,11 @@
 
 import AppKit
 
-#if !APPSTORE
-import LetsMove
-#endif
-
 @main
 struct AppMain {
 
     static func main() {
         _=Application.shared
-
-#if !APPSTORE && !DEBUG
-        // this should be run after NSApplication.shared is set
-        PFMoveToApplicationsFolderIfNecessary(true)
-#endif
-
         Application.shared.run()
     }
 

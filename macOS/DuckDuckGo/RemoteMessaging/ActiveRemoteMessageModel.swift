@@ -59,14 +59,28 @@ final class ActiveRemoteMessageModel: ObservableObject {
      */
     let navigateToFeedbackHandler: () async -> Void
 
+    /**
+     * Handler for navigating to PIR (Personal Information Removal) with subscription check.
+     */
+    let navigateToPIRHandler: () async -> Void
+
+    /**
+     * Handler for opening the Software Update system settings.
+     */
+    let navigateToSoftwareUpdateHandler: () async -> Void
+
     convenience init(remoteMessagingClient: RemoteMessagingClient,
                      openURLHandler: @escaping (URL) async -> Void,
-                     navigateToFeedbackHandler: @escaping () async -> Void) {
+                     navigateToFeedbackHandler: @escaping () async -> Void,
+                     navigateToPIRHandler: @escaping () async -> Void,
+                     navigateToSoftwareUpdateHandler: @escaping () async -> Void) {
         self.init(
             remoteMessagingStore: remoteMessagingClient.store,
             remoteMessagingAvailabilityProvider: remoteMessagingClient.remoteMessagingAvailabilityProvider,
             openURLHandler: openURLHandler,
-            navigateToFeedbackHandler: navigateToFeedbackHandler
+            navigateToFeedbackHandler: navigateToFeedbackHandler,
+            navigateToPIRHandler: navigateToPIRHandler,
+            navigateToSoftwareUpdateHandler: navigateToSoftwareUpdateHandler
         )
     }
 
@@ -77,11 +91,15 @@ final class ActiveRemoteMessageModel: ObservableObject {
         remoteMessagingStore: @escaping @autoclosure () -> RemoteMessagingStoring?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding?,
         openURLHandler: @escaping (URL) async -> Void,
-        navigateToFeedbackHandler: @escaping () async -> Void
+        navigateToFeedbackHandler: @escaping () async -> Void,
+        navigateToPIRHandler: @escaping () async -> Void,
+        navigateToSoftwareUpdateHandler: @escaping () async -> Void
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
         self.navigateToFeedbackHandler = navigateToFeedbackHandler
+        self.navigateToPIRHandler = navigateToPIRHandler
+        self.navigateToSoftwareUpdateHandler = navigateToSoftwareUpdateHandler
 
         let messagesDidChangePublisher = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .asVoid()
@@ -109,10 +127,13 @@ final class ActiveRemoteMessageModel: ObservableObject {
         $remoteMessage
             .sink { [weak self] newMessage in
                 if let newMessage = newMessage {
-                    if newMessage.isForTabBar {
+                    if newMessage.isLegacyTabBarSurvey {
+                        // For the legacy permanent survey, always show it on the tab bar.
+                        self?.newTabPageRemoteMessage = nil
                         self?.tabBarRemoteMessage = newMessage
                     } else {
-                        self?.newTabPageRemoteMessage = newMessage
+                        self?.newTabPageRemoteMessage = newMessage.surfaces.contains(.newTabPage) ? newMessage : nil
+                        self?.tabBarRemoteMessage = newMessage.surfaces.contains(.tabBar) ? newMessage : nil
                     }
                 } else {
                     self?.newTabPageRemoteMessage = nil
@@ -195,9 +216,8 @@ final class ActiveRemoteMessageModel: ObservableObject {
     }
 
     private func updateRemoteMessage() {
-        // Once we support multiple surfaces this could become [.newTabPage, .tabBar]
-        // and modify isForTabBar: Bool { surfaces.contains(.tabBar) }
-        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+        // Only new tab page and tab bar are supported on macOS.
+        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -217,7 +237,8 @@ extension RemoteMessageModelType {
 
 private extension RemoteMessageModel {
 
-    var isForTabBar: Bool {
+    var isLegacyTabBarSurvey: Bool {
         return id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
     }
+
 }

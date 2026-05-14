@@ -151,6 +151,16 @@ class URLExtensionTests: XCTestCase {
         XCTAssertEqual("http://test.com", result?.absoluteString)
     }
 
+    func testWhenAddressBarInputHasWhitespaceThenIsValidAddressBarURLInputIsFalse() {
+        XCTAssertFalse(URL.isValidAddressBarURLInput("https://example .com"))
+        XCTAssertFalse(URL.isValidAddressBarURLInput("example com"))
+    }
+
+    func testWhenAddressBarInputIsValidURLThenIsValidAddressBarURLInputIsTrue() {
+        XCTAssertTrue(URL.isValidAddressBarURLInput("https://example.com/path"))
+        XCTAssertTrue(URL.isValidAddressBarURLInput("example.com"))
+    }
+
     func testWhenDecodingThenPercentageEncodedTextIsReversed() {
         let input = "test%20%22%25-.%3C%3E%5C%5E_%60%7B%7C~"
         let expected = "test \"%-.<>\\^_`{|~"

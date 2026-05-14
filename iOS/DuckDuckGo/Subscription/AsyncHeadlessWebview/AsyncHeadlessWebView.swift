@@ -23,21 +23,30 @@ import UserScript
 import SwiftUI
 import DesignResourcesKit
 import Core
+import PrivacyConfig
 
+///
+/// Setting for AsyncHeadlessWebView
+///
+/// Provide `userScriptsDependencies` if WebView is supposed to block trackers, otherwise pass nil
+///
 struct AsyncHeadlessWebViewSettings {
     let bounces: Bool
     let javascriptEnabled: Bool
     let allowedDomains: [String]?
-    let contentBlocking: Bool
-    
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?
+    let featureFlagger: FeatureFlagger
+
     init(bounces: Bool = true,
          javascriptEnabled: Bool = true,
          allowedDomains: [String]? = nil,
-         contentBlocking: Bool = true) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?,
+         featureFlagger: FeatureFlagger) {
         self.bounces = bounces
         self.javascriptEnabled = javascriptEnabled
         self.allowedDomains = allowedDomains
-        self.contentBlocking = contentBlocking
+        self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
     }
 
     internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
@@ -47,8 +56,9 @@ struct AsyncHeadlessWebViewSettings {
         // Allow navigation to baseURLs domain
         allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
 
-        // Always allow Stripe checkout domain
+        // Allow Stripe (checkout and billing)
         allowedDomains.insert("checkout.stripe.com")
+        allowedDomains.insert("billing.stripe.com")
 
         // For internal user allow these domains as required for DUO based authentication flow
         if isInternalUser {

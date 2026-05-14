@@ -97,9 +97,7 @@ extension String {
     static let localhost = "localhost"
 
     func dropSubdomain() -> String? {
-        let parts = components(separatedBy: ".")
-        guard parts.count > 1 else { return nil }
-        return parts.dropFirst().joined(separator: ".")
+        TLD().domain(self)
     }
 
     static func uniqueFilename(for fileType: UTType? = nil) -> String {

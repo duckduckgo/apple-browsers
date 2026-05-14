@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import ContentScopeScripts
@@ -25,6 +24,7 @@ import MaliciousSiteProtection
 import Navigation
 import os
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 
@@ -67,16 +67,26 @@ final class SpecialErrorPageTabExtension {
         webViewPublisher.sink { [weak self] webView in
             MainActor.assumeMainThread {
                 self?.webView = webView
+                self?.setupUserScriptWebView()
             }
         }.store(in: &cancellables)
         scriptsPublisher.sink { [weak self] scripts in
             MainActor.assumeMainThread {
                 self?.specialErrorPageUserScript = scripts.specialErrorPageUserScript
                 self?.specialErrorPageUserScript?.delegate = self
+                self?.setupUserScriptWebView()
             }
         }.store(in: &cancellables)
     }
 
+    @MainActor
+    private func setupUserScriptWebView() {
+        guard let webView = webView as? WKWebView else {
+            return
+        }
+
+        specialErrorPageUserScript?.webView = webView
+    }
 }
 
 extension SpecialErrorPageTabExtension: NavigationResponder {
@@ -167,12 +177,7 @@ extension SpecialErrorPageTabExtension: NavigationResponder {
             errorData = .maliciousSite(kind: error.threatKind, url: url)
 
         case is URLError where error.isServerCertificateUntrusted:
-            guard let errorType = error.sslErrorType else {
-                assertionFailure("Missing SSL error type")
-                errorData = nil
-                return
-            }
-
+            let errorType = error.sslErrorType ?? .invalid
             let domain: String = url.host ?? url.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
             errorData = .ssl(type: errorType, domain: domain, eTldPlus1: tld.eTLDplus1(domain) ?? domain)
 

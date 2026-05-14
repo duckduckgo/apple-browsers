@@ -24,11 +24,15 @@ struct OnboardingDebugView: View {
 
     @StateObject private var viewModel = OnboardingDebugViewModel()
     @State private var isShowingResetDaxDialogsAlert = false
+    @State private var isShowingResetOnboardingAlert = false
+    @State private var isShowingSubscriptionPromoCooldownAlert = false
 
-    private let newOnboardingIntroStartAction: () -> Void
+    private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
+    @State private var selectedFlow: OnboardingDebugFlow
 
-    init(onNewOnboardingIntroStartAction: @escaping () -> Void) {
+    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping (OnboardingDebugFlow) -> Void) {
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
+        _selectedFlow = State(initialValue: initialFlow)
     }
 
     var body: some View {
@@ -42,6 +46,30 @@ struct OnboardingDebugView: View {
                 })
                 .alert(isPresented: $isShowingResetDaxDialogsAlert, content: {
                     Alert(title: Text(verbatim: "Dax Dialogs reset"), dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+
+                Button(action: {
+                    viewModel.resetAllOnboarding()
+                    isShowingResetOnboardingAlert = true
+                }, label: {
+                    Text(verbatim: "Reset All Onboarding")
+                })
+                .alert(isPresented: $isShowingResetOnboardingAlert, content: {
+                    Alert(title: Text(verbatim: "All onboarding reset"),
+                          message: Text(verbatim: "Kill and relaunch the app to restart onboarding."),
+                          dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+            }
+
+            Section {
+                Button(action: {
+                    viewModel.markSubscriptionPromoCooldownPassed()
+                    isShowingSubscriptionPromoCooldownAlert = true
+                }, label: {
+                    Text(verbatim: "Set Subscription Promo Cooldown Passed")
+                })
+                .alert(isPresented: $isShowingSubscriptionPromoCooldownAlert, content: {
+                    Alert(title: Text(verbatim: "Subscription promo cooldown set"), dismissButton: .cancel(Text(verbatim: "Done")))
                 })
             }
 
@@ -62,8 +90,24 @@ struct OnboardingDebugView: View {
             }
 
             Section {
-                Button(action: newOnboardingIntroStartAction, label: {
-                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
+                Picker(
+                    selection: $selectedFlow,
+                    content: {
+                        ForEach(OnboardingDebugFlow.allCases) { flow in
+                            Text(verbatim: flow.description).tag(flow)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Flow:")
+                    }
+                )
+            } header: {
+                Text(verbatim: "Onboarding Flow")
+            }
+
+            Section {
+                Button(action: { newOnboardingIntroStartAction(selectedFlow) }, label: {
+                    Text(verbatim: "Preview Onboarding \(selectedFlow.description) Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -80,14 +124,25 @@ final class OnboardingDebugViewModel: ObservableObject {
 
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
+    private let tutorialSettings: TutorialSettings
+    private let statisticsStore: StatisticsUserDefaults
 
     init(
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
-        settings: DaxDialogsSettings = DefaultDaxDialogsSettings()
+        settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults()
     ) {
         self.manager = manager
         self.settings = settings
+        self.tutorialSettings = tutorialSettings
+        self.statisticsStore = statisticsStore
         onboardingUserType = manager.onboardingUserTypeDebugValue
+    }
+
+    func resetAllOnboarding() {
+        tutorialSettings.hasSeenOnboarding = false
+        resetDaxDialogs()
     }
 
     func resetDaxDialogs() {
@@ -107,15 +162,42 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
         settings.subscriptionPromotionDialogShown = false
+        tutorialSettings.hasSkippedOnboarding = false
     }
-}
 
-#Preview {
-    OnboardingDebugView(onNewOnboardingIntroStartAction: {})
+    func markSubscriptionPromoCooldownPassed() {
+        statisticsStore.installDate = Calendar.current.date(byAdding: .day,
+                                                            value: -SubscriptionPromoCoordinator.cooldownDays,
+                                                            to: Date())
+    }
 }
 
 extension OnboardingUserType: Identifiable {
     var id: OnboardingUserType {
         self
     }
+}
+
+enum OnboardingDebugFlow: String, CaseIterable, CustomStringConvertible, Identifiable {
+    case rebranding
+    case legacy
+
+    var id: OnboardingDebugFlow { self }
+
+    var description: String {
+        switch self {
+        case .rebranding:
+            return "Rebranding"
+        case .legacy:
+            return "Original (Legacy)"
+        }
+    }
+
+    var isRebranding: Bool {
+        self == .rebranding
+    }
+}
+
+#Preview {
+    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
 }

@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 import RemoteMessaging
 
 protocol AutofillSurveyManaging {

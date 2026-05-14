@@ -27,13 +27,17 @@ final class UIInteractionManager {
     private let authenticationService: AuthenticationServiceProtocol
     private let autoClearService: AutoClearServiceProtocol
     private let launchActionHandler: LaunchActionHandling
+    private let onboardingPresenter: OnboardingPresenting
 
     init(authenticationService: AuthenticationServiceProtocol,
          autoClearService: AutoClearServiceProtocol,
-         launchActionHandler: LaunchActionHandling) {
+         launchActionHandler: LaunchActionHandling,
+         onboardingPresenter: OnboardingPresenting
+    ) {
         self.authenticationService = authenticationService
         self.autoClearService = autoClearService
         self.launchActionHandler = launchActionHandler
+        self.onboardingPresenter = onboardingPresenter
     }
 
     /// This method orchestrates the following operations:
@@ -55,18 +59,22 @@ final class UIInteractionManager {
                 }
                 group.addTask {
                     await self.autoClearService.waitForDataCleared()
-                    // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
+
+                    // Present Onboarding Flow if needed
+                    await self.onboardingPresenter.startOnboardingFlowIfNotSeenBefore(url: launchAction.url)
+
+                    // Handle URL, shortcut item, and user activities after data clearing, so UI is ready when auth is dismissed.
                     switch launchAction {
-                    case .openURL, .handleShortcutItem:
+                    case .openURL, .handleShortcutItem, .handleUserActivity:
                         await self.launchActionHandler.handleLaunchAction(launchAction)
-                    case .showKeyboard:
-                        break // Do nothing here for showKeyboard
+                    case .standardLaunch:
+                        break // Do nothing here for standardLaunch
                     }
                     onWebViewReadyForInteractions()
                 }
                 await group.waitForAll()
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
-                if case .showKeyboard = launchAction {
+                if case .standardLaunch = launchAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
                 }
                 onAppReadyForInteractions()

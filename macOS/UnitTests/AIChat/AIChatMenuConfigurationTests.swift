@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import FeatureFlags
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -67,10 +68,12 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayApplicationMenuShortcut() {
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when enabled.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled.")
     }
 
     func testShouldDisplayAddressBarShortcut() {
@@ -175,12 +178,13 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayApplicationMenuShortcutWhenRemoteFlagAndStorageAreTrue() {
-        remoteSettings.isApplicationMenuShortcutEnabled = true
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
 
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when both remote flag and storage are true.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled remotely and locally.")
     }
 
     func testShouldDisplayNewTabPageShortcutWhenStorageIsTrue() {
@@ -226,22 +230,22 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is false and feature flag is enabled.")
     }
 
-    func testShouldDisplayTranslationMenuItemWhenFeatureFlagAndApplicationMenuShortcutAreEnabled() {
-        featureFlagger.featuresStub = [FeatureFlag.aiChatTextTranslation.rawValue: true]
-        mockStorage.showShortcutInApplicationMenu  = true
+    func testShouldDisplayTranslationMenuItemWhenApplicationMenuShortcutIsEnabled() {
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
 
         let result = configuration.shouldDisplayTranslationMenuItem
 
-        XCTAssertTrue(result, "Translation menu item should be displayed when both feature flag and application menu shortcut are enabled.")
+        XCTAssertTrue(result, "Translation menu item should be displayed when AI Chat is enabled.")
     }
 
     func testShouldNotDisplayTranslationMenuItemWhenApplicationMenuShortcutIsDisabled() {
-        featureFlagger.featuresStub = [FeatureFlag.aiChatTextTranslation.rawValue: true]
-        mockStorage.showShortcutInApplicationMenu  = false
+        remoteSettings.isAIChatEnabled = false
+        mockStorage.isAIFeaturesEnabled = false
 
         let result = configuration.shouldDisplayTranslationMenuItem
 
-        XCTAssertFalse(result, "Translation menu item should not be displayed when application menu shortcut is disabled.")
+        XCTAssertFalse(result, "Translation menu item should not be displayed when AI Chat is disabled.")
     }
 }
 
@@ -296,6 +300,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    var userDidSeeToggleOnboarding: Bool = false
+    var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
+
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
@@ -347,6 +355,9 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false
         showSearchAndDuckAIToggle = true
+        userDidSeeToggleOnboarding = false
+        lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {

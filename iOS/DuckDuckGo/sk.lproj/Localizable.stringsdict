@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d karta a jej údaje boli odstránené</string>
+			<key>few</key>
+			<string>%1$d karty a ich údaje boli odstránené</string>
+			<key>many</key>
+			<string>%1$d kariet a ich údaje boli odstránené</string>
+			<key>other</key>
+			<string>%1$d kariet a ich údaje boli odstránené</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>few</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+			<key>many</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>other</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu</string>
+			<key>few</key>
+			<string>Zatvoriť všetky %1$d karty</string>
+			<key>many</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+			<key>other</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -157,13 +217,73 @@ Boli zablokovaní!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokovalo sa %1$d sledovacie zariadenie</string>
+			<string>Bolo zablokované %1$d načítanie sledovača</string>
 			<key>few</key>
-			<string>Zablokovali sa %1$d sledovacie zariadenia</string>
+			<string>Boli zablokované %1$d načítania sledovačov</string>
 			<key>many</key>
-			<string>Zablokovalo sa %1$d sledovacieho zariadenia</string>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
 			<key>other</key>
-			<string>Zablokovalo sa %1$d sledovacích zariadení</string>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Sledovanie</string>
+			<key>few</key>
+			<string>%1$d Sledovania</string>
+			<key>many</key>
+			<string>%1$d Sledovaní</string>
+			<key>other</key>
+			<string>%1$d Sledovaní</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bola načítaná %1$d ďalšia doména</string>
+			<key>few</key>
+			<string>Boli načítané %1$d ďalšie domény</string>
+			<key>many</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+			<key>other</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d sledovač vlastnený touto stránkou (načítané)</string>
+			<key>few</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>many</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>other</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -694,6 +814,46 @@ Boli zablokovaní!
 			<string>%1$d vybraných kariet</string>
 			<key>other</key>
 			<string>%1$d vybraných kariet</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokalita bola vylúčená z vymazania</string>
+			<key>few</key>
+			<string>%1$d lokality boli vylúčené z vymazania</string>
+			<key>many</key>
+			<string>%1$d lokality bolo vylúčených z vymazania</string>
+			<key>other</key>
+			<string>%1$d lokalít bolo vylúčených z vymazania</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Sledovanie</string>
+			<key>few</key>
+			<string>%2$@ Sledovania</string>
+			<key>many</key>
+			<string>%2$@ Sledovaní</string>
+			<key>other</key>
+			<string>%2$@ Sledovaní</string>
 		</dict>
 	</dict>
 </dict>

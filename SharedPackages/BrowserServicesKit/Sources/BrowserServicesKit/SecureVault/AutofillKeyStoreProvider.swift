@@ -18,10 +18,11 @@
 
 import Common
 import Foundation
+import Persistence
 import SecureStorage
 import os.log
 
-protocol KeyStorePlatformProviding {
+public protocol KeyStorePlatformProviding {
     var keychainServiceName: String { get }
     func keychainIdentifier(for rawValue: String) -> String
     var keychainSecurityGroup: String { get }
@@ -63,7 +64,7 @@ struct macOSKeyStorePlatformProvider: KeyStorePlatformProviding {
 
 }
 
-final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
+public final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
 
     struct Constants {
         static let v1ServiceName = "DuckDuckGo Secure Vault"
@@ -115,13 +116,13 @@ final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
         }
     }
 
-    let keychainService: KeychainService
+    public let keychainService: KeychainService
     private var reporter: SecureVaultReporting?
     private let platformProvider: KeyStorePlatformProviding
 
-    init(keychainService: KeychainService = DefaultKeychainService(),
-         reporter: SecureVaultReporting? = nil,
-         platformProvider: KeyStorePlatformProviding? = nil) {
+    public init(keychainService: KeychainService = DefaultKeychainService(),
+                reporter: SecureVaultReporting? = nil,
+                platformProvider: KeyStorePlatformProviding? = nil) {
         self.keychainService = keychainService
         self.reporter = reporter
 
@@ -137,23 +138,31 @@ final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
         }
     }
 
-    var keychainServiceName: String {
+    public var keychainServiceName: String {
         return platformProvider.keychainServiceName
     }
 
-    var generatedPasswordEntryName: String {
+    public var keychainAccessibilityValue: String {
+        #if os(iOS)
+        return kSecAttrAccessibleAfterFirstUnlock as String
+        #else
+        return kSecAttrAccessibleWhenUnlocked as String
+        #endif
+    }
+
+    public var generatedPasswordEntryName: String {
         return EntryName.generatedPassword.keychainIdentifier(using: platformProvider)
     }
 
-    var l1KeyEntryName: String {
+    public var l1KeyEntryName: String {
         return EntryName.l1Key.keychainIdentifier(using: platformProvider)
     }
 
-    var l2KeyEntryName: String {
+    public var l2KeyEntryName: String {
         return EntryName.l2Key.keychainIdentifier(using: platformProvider)
     }
 
-    func readData(named name: String, serviceName: String) throws -> Data? {
+    public func readData(named name: String, serviceName: String) throws -> Data? {
         try readOrMigrate(named: name, serviceName: serviceName)
     }
 
@@ -250,7 +259,7 @@ final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
 
     // MARK: - Autofill Attributes
 
-    func attributesForEntry(named name: String, serviceName: String) -> [String: Any] {
+    public func attributesForEntry(named name: String, serviceName: String) -> [String: Any] {
         if isPostV1(serviceName) {
             return defaultAttributesForEntry(named: name)
         } else if isPostV3(serviceName) {
@@ -287,7 +296,78 @@ final class AutofillKeyStoreProvider: SecureStorageKeyStoreProvider {
                    kSecAttrAccessGroup: platformProvider.keychainSecurityGroup
                ] as [String: Any]
     }
+
+    // MARK: - iOS Accessibility Migration
+
+    #if os(iOS)
+    /// Migrates v4 vault items to kSecAttrAccessibleAfterFirstUnlock to be in-line with Sync keychain
+    /// - Returns: true if migration completed successfully, false if deferred or failed
+    @discardableResult
+    public func migrateKeychainAccessibility() -> Bool {
+        let migrator = KeychainAccessibilityMigrator(
+            keychainService: keychainService,
+            platformProvider: platformProvider
+        )
+
+        return migrator.migrateIfNeeded()
+    }
+    #endif
 }
+
+#if os(iOS)
+private final class KeychainAccessibilityMigrator {
+
+    private let keychainService: KeychainService
+    private let platformProvider: KeyStorePlatformProviding
+    private let lock = NSLock()
+
+    init(keychainService: KeychainService,
+         platformProvider: KeyStorePlatformProviding) {
+        self.keychainService = keychainService
+        self.platformProvider = platformProvider
+    }
+
+    /// Attempts to migrate all v4 vault entries to AfterFirstUnlock accessibility.
+    /// - Returns: true if migration completed (all entries succeeded or don't exist), false if deferred or failed
+    func migrateIfNeeded() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        Logger.autofill.debug("Starting Autofill Keystore accessibility migration for v4")
+
+        for entry in AutofillKeyStoreProvider.EntryName.allCases {
+            let query = [
+                kSecClass: kSecClassGenericPassword,
+                kSecUseDataProtectionKeychain: false,
+                kSecAttrSynchronizable: false,
+                kSecAttrAccount: entry.keychainIdentifier(using: platformProvider),
+                kSecAttrAccessGroup: platformProvider.keychainSecurityGroup,
+                kSecAttrService: AutofillKeyStoreProvider.Constants.v4ServiceName
+            ] as [String: Any]
+
+            let status = keychainService.update(query, [
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            ])
+
+            switch status {
+            case errSecSuccess:
+                Logger.autofill.debug("Autofill Keystore migrated accessibility for \(entry.rawValue, privacy: .private)")
+            case errSecItemNotFound:
+                Logger.autofill.debug("Autofill Keystore skipped \(entry.rawValue, privacy: .private) - item not found")
+            case errSecInteractionNotAllowed:
+                Logger.autofill.debug("Autofill Keystore migration deferred for \(entry.rawValue, privacy: .private) - device locked")
+                return false
+            default:
+                Logger.autofill.error("Autofill Keystore migration failed for \(entry.rawValue, privacy: .private) with status \(status)")
+                return false
+            }
+        }
+
+        Logger.autofill.debug("Autofill Keystore accessibility migration completed successfully")
+        return true
+    }
+}
+#endif
 
 fileprivate extension Bundle {
 

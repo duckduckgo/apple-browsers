@@ -39,6 +39,7 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistorTests: XCTes
     func testWhenNoValuesAreStoredThenDefaultValuesAreReturned() {
         XCTAssertTrue(persistor.isViewExpanded)
         XCTAssertEqual(persistor.activeFeed, .privacyStats)
+        XCTAssertNil(persistor.widgetNewLabelFirstShownDate)
     }
 
     // MARK: - View Expansion Tests
@@ -118,5 +119,35 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistorTests: XCTes
 
         XCTAssertTrue(persistor.isViewExpanded)
         XCTAssertEqual(persistor.activeFeed, .privacyStats)
+    }
+
+    // MARK: - Widget New Label First Shown Date Tests
+
+    func testWhenWidgetNewLabelFirstShownDateIsSetThenValueIsStored() throws {
+        let testDate = Date()
+        persistor.widgetNewLabelFirstShownDate = testDate
+        let storedDate = try keyValueStore.object(forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate) as? Date
+        XCTAssertNotNil(storedDate)
+        XCTAssertEqual(storedDate!.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testWhenWidgetNewLabelFirstShownDateIsRetrievedThenStoredValueIsReturned() throws {
+        let testDate = Date()
+        try keyValueStore.set(testDate, forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate)
+        XCTAssertNotNil(persistor.widgetNewLabelFirstShownDate)
+        XCTAssertEqual(persistor.widgetNewLabelFirstShownDate!.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testWhenWidgetNewLabelFirstShownDateIsSetToNilThenValueIsRemoved() throws {
+        let testDate = Date()
+        try keyValueStore.set(testDate, forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate)
+        persistor.widgetNewLabelFirstShownDate = nil
+        let storedValue = try? keyValueStore.object(forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate)
+        XCTAssertNil(storedValue)
+    }
+
+    func testWhenWidgetNewLabelFirstShownDateHasInvalidValueThenNilIsReturned() throws {
+        try keyValueStore.set("not a date", forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate)
+        XCTAssertNil(persistor.widgetNewLabelFirstShownDate)
     }
 }

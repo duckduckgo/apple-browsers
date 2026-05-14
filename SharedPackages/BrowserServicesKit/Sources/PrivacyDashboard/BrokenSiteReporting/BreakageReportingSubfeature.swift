@@ -28,7 +28,7 @@ public class BreakageReportingSubfeature: Subfeature {
 
     private weak var targetWebview: WKWebView?
     private var timer: Timer?
-    private var completionHandler: ((PerformanceMetrics?) -> Void)?
+    private var completionHandler: ((PerformanceMetrics?, [Double]?, String?) -> Void)?
     private var currentPerformanceMetrics: PerformanceMetrics?
 
     public init(targetWebview: WKWebView) {
@@ -38,26 +38,37 @@ public class BreakageReportingSubfeature: Subfeature {
     public func handler(forMethodNamed methodName: String) -> Handler? {
         guard methodName == "breakageReportResult" else { return nil }
 
-        return vitalsResult
+        return breakageReportResult
     }
 
-    public func vitalsResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    public func breakageReportResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         timer?.invalidate()
         guard let payload = params as? [String: Any],
               let expandedMetrics = payload["expandedPerformanceMetrics"] as? [String: Any] else {
-            completionHandler?(nil)
+            completionHandler?(nil, nil, nil)
             return nil
         }
 
         // Parse expanded performance metrics from payload
         let performanceMetrics = PerformanceMetrics(from: expandedMetrics)
         self.currentPerformanceMetrics = performanceMetrics
-        completionHandler?(performanceMetrics)
+
+        let jsPerformanceMetrics: [Double]?
+        if let jsPerformance = payload["jsPerformance"] as? [Double] {
+            jsPerformanceMetrics = jsPerformance
+        } else {
+            jsPerformanceMetrics = nil
+        }
+
+        // breakageData arrives percent-encoded from content-scope-scripts; decode it here at the source
+        let rawBreakageData = payload["breakageData"] as? String
+        let breakageData = rawBreakageData.flatMap { $0.removingPercentEncoding ?? $0 }
+        completionHandler?(performanceMetrics, jsPerformanceMetrics, breakageData)
         return nil
     }
 
-    public func notifyHandler(completion: @escaping (PerformanceMetrics?) -> Void) {
-        guard let broker, let targetWebview else { completion(nil); return }
+    public func notifyHandler(completion: @escaping (PerformanceMetrics?, [Double]?, String?) -> Void) {
+        guard let broker, let targetWebview else { completion(nil, nil, nil); return }
 
         completionHandler = completion
         broker.push(method: "getBreakageReportValues", params: nil, for: self, into: targetWebview)
@@ -72,7 +83,7 @@ public class BreakageReportingSubfeature: Subfeature {
     private func handleTimeout() {
         if let completionHandler {
             self.completionHandler = nil
-            completionHandler(nil)
+            completionHandler(nil, nil, nil)
         }
     }
 

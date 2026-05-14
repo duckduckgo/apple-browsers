@@ -1,0 +1,98 @@
+// Autofill Extension settings and activation flow pixels
+{
+    "autofill_extension_settings_turn_on_tapped": {
+        "description": "Fired when user taps to enable the Autofill Extension",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    },
+
+    "autofill_extension_settings_turn_off_tapped": {
+        "description": "Fired when user taps to disable the Autofill Extension",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    },
+
+    "autofill_extension_settings_turn_on_success": {
+        "description": "Fired when the Autofill Extension is successfully enabled",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    },
+
+    "autofill_extension_settings_turn_on_throttled": {
+        "description": "Fired when the Autofill Extension enable attempt is throttled (e.g., too many attempts in a short period)",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    },
+
+    "autofill_extension_settings_turn_on_cancelled": {
+        "description": "Fired when user cancels the Autofill Extension enable flow (e.g., dismisses system settings)",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    },
+
+    "autofill_extension_settings_turn_on_failed": {
+        "description": "Fired when enabling the Autofill Extension fails",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the action was initiated from",
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
+            }
+        ]
+    }
+}

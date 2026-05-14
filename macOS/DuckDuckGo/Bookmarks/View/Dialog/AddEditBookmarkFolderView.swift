@@ -48,7 +48,7 @@ struct AddEditBookmarkFolderView: View {
                         content: TextField("", text: $folderName)
                             .focusedOnAppear()
                             .accessibilityIdentifier("bookmark.add.name.textfield")
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.themed)
                             .font(.system(size: 14))
                     ),
                     .init(
@@ -78,6 +78,7 @@ struct AddEditBookmarkFolderView: View {
                 )
             }
         )
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

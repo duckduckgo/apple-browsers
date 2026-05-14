@@ -20,6 +20,8 @@ import Combine
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyStats
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,7 +33,6 @@ final class MockNewTabPageProtectionsReportVisibleFeedProvider: NewTabPageProtec
 final class NewTabPageShownPixelSenderTests: XCTestCase {
 
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManaging!
     var visibleFeedProvider: MockNewTabPageProtectionsReportVisibleFeedProvider!
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
@@ -48,10 +49,10 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
-        themeManager = MockThemeManager()
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
 
         customizationModel = NewTabPageCustomizationModel(
@@ -59,8 +60,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {},
-            themeManager: themeManager
+            showAddImageFailedAlert: {}
         )
 
         handler = NewTabPageShownPixelSender(
@@ -77,7 +77,6 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         firePixelCalls = []
         handler = nil
         visibleFeedProvider = nil
-        themeManager = nil
     }
 
     func testWhenFirePixelIsCalledThenPixelIsSent() {

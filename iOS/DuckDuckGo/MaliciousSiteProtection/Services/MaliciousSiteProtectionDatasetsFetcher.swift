@@ -22,7 +22,7 @@ import MaliciousSiteProtection
 import BackgroundTasks
 import Core
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import CombineSchedulers
 
 protocol MaliciousSiteProtectionDatasetsFetching {

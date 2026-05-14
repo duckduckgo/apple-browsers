@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol HistoryViewDeleteDialogSettingsPersisting: AnyObject {
     var shouldBurnHistoryWhenDeleting: Bool { get set }
@@ -51,7 +52,7 @@ final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDel
 
 final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
-        case noAction, delete(includeChats: Bool), burn(includeChats: Bool)
+        case noAction, delete, burn
     }
 
     enum DeleteMode: Equatable {
@@ -131,7 +132,8 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         aiChatHistoryCleaner: AIChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                                           aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
                                                                           featureDiscovery: DefaultFeatureDiscovery(),
-                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                          nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler)
     ) {
         self.message = {
             guard entriesCount > 1 else {
@@ -154,9 +156,9 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
 
     func delete() {
         if shouldBurn {
-            response = .burn(includeChats: shouldClearChatHistory)
+            response = .burn
         } else {
-            response = .delete(includeChats: shouldClearChatHistory)
+            response = .delete
         }
     }
 

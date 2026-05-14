@@ -68,7 +68,7 @@ jobs:
 
     name: Tag Release
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
@@ -84,7 +84,7 @@ jobs:
     steps:
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive

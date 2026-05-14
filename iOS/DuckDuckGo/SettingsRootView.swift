@@ -92,14 +92,16 @@ struct SettingsRootView: View {
         .accentColor(Color(designSystemColor: .textPrimary))
         .environmentObject(viewModel)
         .conditionalInsetGroupedListStyle()
-        .onAppear {
-            viewModel.onAppear()
+        .onFirstAppear {
+            viewModel.onFirstAppear()
+        } subsequently: {
+            viewModel.onSubsequentAppear()
         }
 
         // MARK: Deeplink Modifiers
 
         .sheet(isPresented: $shouldDisplayDeepLinkSheet, onDismiss: {
-            viewModel.onAppear()
+            viewModel.onSubsequentAppear()
             shouldDisplayDeepLinkSheet = false
         }, content: {
             if let target = deepLinkTarget {
@@ -147,47 +149,42 @@ struct SettingsRootView: View {
     }
 
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
-        if viewModel.isAuthV2Enabled {
-            SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
-                                                                 navigationCoordinator: subscriptionNavigationCoordinator,
-                                                                 subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                                 subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                                 subscriptionDataReporter: viewModel.subscriptionDataReporter,
-                                                                 tld: AppDependencyProvider.shared.storageCache.tld,
-                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                                 wideEvent: AppDependencyProvider.shared.wideEvent)
-        } else {
-            SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
-                                                               navigationCoordinator: subscriptionNavigationCoordinator,
-                                                               subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                               subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               subscriptionDataReporter: viewModel.subscriptionDataReporter,
-                                                               tld: AppDependencyProvider.shared.storageCache.tld,
-                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                               dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
-        }
+        SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                                             navigationCoordinator: subscriptionNavigationCoordinator,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                             subscriptionDataReporter: viewModel.subscriptionDataReporter,
+                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                             tld: AppDependencyProvider.shared.storageCache.tld,
+                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                             featureFlagger: viewModel.featureFlagger)
+    }
+
+    @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
+        SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                                                         navigationCoordinator: subscriptionNavigationCoordinator,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                         featureFlagger: viewModel.featureFlagger)
     }
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
-        if viewModel.isAuthV2Enabled {
-            SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                             emailFlow: .restoreFlow,
-                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             onDisappear: {})
-        } else {
-            SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                           subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                           emailFlow: .restoreFlow,
-                                                           dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                           onDisappear: {})
-        }
+        SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         emailFlow: .restoreFlow,
+                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                         featureFlagger: viewModel.featureFlagger,
+                                                         onDisappear: {})
     }
 
     /// Determines the subscription settings view configuration based on current subscription state
@@ -217,7 +214,7 @@ struct SettingsRootView: View {
 
     /// Checks if navigation to subscription settings is valid
     private func canNavigateToSubscriptionSettings() -> Bool {
-        return subscriptionSettingsConfiguration() != nil && viewModel.isAuthV2Enabled
+        return subscriptionSettingsConfiguration() != nil
     }
 
     /// Navigation Views for DeepLink and programmatic navigation
@@ -231,14 +228,25 @@ struct SettingsRootView: View {
                 SubscriptionPIRMoveToDesktopView()
             }
         case .itr:
-            SubscriptionITPView()
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                 userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 featureFlagger: viewModel.featureFlagger)
+            SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
+                .environmentObject(subscriptionNavigationCoordinator)
+        case let .subscriptionPlanChangeFlow(redirectURLComponents):
+            subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
         case .restoreFlow:
             emailFlowNavigationDestination()
         case .duckPlayer:
-            SettingsDuckPlayerView().environmentObject(viewModel)
+            if viewModel.state.youTubeAdBlockingAvailable {
+                SettingsYouTubeAdBlockingView().environmentObject(viewModel)
+            } else {
+                SettingsDuckPlayerView().environmentObject(viewModel)
+            }
         case .netP:
             NetworkProtectionRootView()
         case .aiChat:
@@ -247,9 +255,12 @@ struct SettingsRootView: View {
             PrivateSearchView().environmentObject(viewModel)
         case .appearance, .customizeAddressBarButton, .customizeToolbarButton:
             SettingsAppearanceView().environmentObject(viewModel)
+        case .general:
+            SettingsGeneralView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)
+                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
+                SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }
         }

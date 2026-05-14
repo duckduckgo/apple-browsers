@@ -415,7 +415,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         bookmarkManager.bookmarksReturnedForSearch = [bookmarkOne, bookmarkTwo, bookmarkThree]
         sut.update(selection: .empty, searchQuery: "some")
@@ -432,7 +432,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
 
@@ -452,7 +452,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let folder = createFolder(with: children)
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree, folder])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         bookmarkManager.bookmarksReturnedForSearch = [folder]
         sut.update(selection: .empty, searchQuery: "some")
@@ -474,7 +474,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let folder = createFolder(with: children)
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree, folder])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
         let pasteboard = NSPasteboard.test()
@@ -491,7 +491,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
         let pasteboard = NSPasteboard.test()

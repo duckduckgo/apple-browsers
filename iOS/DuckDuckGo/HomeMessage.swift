@@ -23,4 +23,5 @@ import RemoteMessaging
 enum HomeMessage: Equatable {
     case placeholder
     case remoteMessage(remoteMessage: RemoteMessageModel)
+    case firePromotion
 }

@@ -16,28 +16,49 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import ContentScopeScripts
 import Foundation
 import MaliciousSiteProtection
 import Navigation
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 
 enum ErrorPageHTMLFactory {
 
-    static func html(for error: WKError, featureFlagger: FeatureFlagger, header: String? = nil) -> String {
+    static func html(for error: WKError, header: String? = nil, themeName: ThemeName) -> String {
+        buildHTML(for: error, header: header)
+            .replaceThemePlaceholder(themeName: themeName)
+    }
+}
+
+private extension ErrorPageHTMLFactory {
+
+    static func buildHTML(for error: WKError, header: String? = nil) -> String {
         switch error as NSError {
         case is MaliciousSiteError:
             return SpecialErrorPageHTMLTemplate.htmlFromTemplate
 
-        case is URLError where error.isServerCertificateUntrusted && featureFlagger.isFeatureOn(.sslCertificatesBypass):
+        case is URLError where error.isServerCertificateUntrusted:
             return SpecialErrorPageHTMLTemplate.htmlFromTemplate
 
         default:
-            return ErrorPageHTMLTemplate(error: WKError(_nsError: error as NSError),
-                                         header: header ?? UserText.errorPageHeader).makeHTMLFromTemplate()
+            return ErrorPageHTMLTemplate(error: WKError(_nsError: error as NSError), header: header ?? UserText.errorPageHeader)
+                .makeHTMLFromTemplate()
         }
     }
+}
 
+private extension String {
+
+    func replaceThemePlaceholder(themeName: ThemeName) -> String {
+        replacingOccurrences(of: "$THEME_VARIANT$", with: "\(themeName.rawValue)")
+    }
+}
+
+extension WKError {
+
+    var requiresSpecialErrorHTMLPage: Bool {
+        _nsError is MaliciousSiteError || _nsError.isServerCertificateUntrusted
+    }
 }

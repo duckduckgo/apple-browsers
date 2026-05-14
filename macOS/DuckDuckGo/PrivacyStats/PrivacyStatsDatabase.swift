@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKitExtensions
+import Common
 import CoreData
+import Foundation
+import Persistence
 import PixelKit
 import PrivacyStats
-import Persistence
-import Common
 
 public final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 

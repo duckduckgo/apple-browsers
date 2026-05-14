@@ -36,7 +36,7 @@ final class DataBrokerProtectionUserNotificationServiceTests: XCTestCase {
                                                                  authenticationManager: mockAuthenticationManager)
     }
 
-    func test_sendFirstScanCompletedNotification_WhenUserNotAuthenticated_ShouldSendFirstFreemiumScanNotification() {
+    func test_sendFirstScanCompletedNotification_WhenUserNotAuthenticated_ShouldSendFirstFreemiumScanNotification() async {
         // Given
         mockAuthenticationManager.isUserAuthenticatedValue = false
 
@@ -44,10 +44,15 @@ final class DataBrokerProtectionUserNotificationServiceTests: XCTestCase {
         sut.sendFirstScanCompletedNotification()
 
         // Then
-        XCTAssertEqual(mockDBPUserNotificationCenter.addedRequest?.identifier, "dbp.freemium.scan.complete")
+
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate { [weak self] _, _ in
+            return self?.mockDBPUserNotificationCenter.addedRequest?.identifier == "dbp.freemium.scan.complete"
+        }, object: .none)
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
-    func test_sendFirstScanCompletedNotification_WhenUserAuthenticated_ShouldSendFirstScanCompleteNotification() {
+    func test_sendFirstScanCompletedNotification_WhenUserAuthenticated_ShouldSendFirstScanCompleteNotification() async {
         // Given
         mockAuthenticationManager.isUserAuthenticatedValue = true
 
@@ -55,7 +60,11 @@ final class DataBrokerProtectionUserNotificationServiceTests: XCTestCase {
         sut.sendFirstScanCompletedNotification()
 
         // Then
-        XCTAssertEqual(mockDBPUserNotificationCenter.addedRequest?.identifier, "dbp.scan.complete")
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate { [weak self] _, _ in
+            return self?.mockDBPUserNotificationCenter.addedRequest?.identifier == "dbp.scan.complete"
+        }, object: .none)
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 }
 

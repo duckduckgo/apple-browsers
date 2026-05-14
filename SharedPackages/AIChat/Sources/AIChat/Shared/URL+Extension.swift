@@ -30,6 +30,9 @@ extension URL {
         static let revokeAccessPath = "/revoke-duckai-access"
     }
 
+    static var duckDuckGoHost: String { DuckDuckGo.host }
+    static var duckAIHost: String { DuckDuckGo.aiHost }
+
     /**
      Returns a new URL with the given query item added or replaced.  If the query item's value
      is nil or empty after trimming whitespace, the original URL is returned.
@@ -37,7 +40,7 @@ extension URL {
      - Parameter queryItem: The query item to add or replace.
      - Returns: A new URL with the query item added or replaced, or the original URL if the query item's value is invalid.
      */
-    func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
+    public func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
         guard let queryValue = queryItem.value,
               !queryValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return self
@@ -58,20 +61,68 @@ extension URL {
 
      Rules:
      - Any URL with host `duck.ai` is considered Duck AI.
-     - Or a `duckduckgo.com` URL that either includes `ia=chat` or a supported AI bang in `q=`.
+     - Or a `duckduckgo.com` URL (including subdomains) that either includes `ia=chat` or a supported AI bang in `q=`.
      - Or any URL whose path is exactly `/revoke-duckai-access` (used for revocation flow)
      */
     public var isDuckAIURL: Bool {
         // Entry via duck.ai root
         if host == DuckDuckGo.aiHost { return true }
-        // Chat intent on duckduckgo.com via query or bang
-        if host == DuckDuckGo.host { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
+        // Chat intent on duckduckgo.com (or subdomains) via query or bang
+        if isDuckDuckGoHost { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
         return false
     }
 
     public var isStandaloneDuckAIURL: Bool {
         if host == DuckDuckGo.aiHost { return true }
         return false
+    }
+
+    /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
+    /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
+    /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
+    var isDuckDuckGoHomepage: Bool {
+        guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
+        return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
+    }
+
+    /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
+    public var isDuckAIVoiceMode: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.modeName && $0.value == AIChatURLParameters.voiceModeValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI sidebar to be open on load (`?sidebar=open`).
+    public var isDuckAISidebarOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.sidebarName && $0.value == AIChatURLParameters.sidebarOpenValue
+        } == true
+    }
+
+    /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.
+    public var duckAIChatID: String? {
+        guard isDuckAIURL,
+              let chatID = queryItems?.first(where: { $0.name == "chatID" })?.value,
+              !chatID.isEmpty else {
+            return nil
+        }
+        return chatID
+    }
+
+    /// Creates a URL with the specified chatID appended as a query parameter.
+    /// - Parameter chatID: The unique identifier of the chat to open.
+    /// - Returns: A new URL with the chatID appended, or self if URL components cannot be resolved.
+    public func withChatID(_ chatID: String) -> URL {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+            return self
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == "chatID" }
+        queryItems.append(URLQueryItem(name: "chatID", value: chatID))
+        components.queryItems = queryItems
+        return components.url ?? self
     }
 
     // MARK: - Private methods
@@ -85,8 +136,12 @@ extension URL {
     }
 
     var isDuckAIBang: Bool {
-        guard host == DuckDuckGo.host else { return false }
+        guard isDuckDuckGoHost else { return false }
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName && isSupportedBang(value: $0.value) } == true
+    }
+
+    private var isDuckDuckGoHost: Bool {
+        host == DuckDuckGo.host || host?.hasSuffix(".\(DuckDuckGo.host)") == true
     }
 
     private var queryItems: [URLQueryItem]? {
@@ -101,5 +156,12 @@ extension URL {
         }
 
         return bangValues.contains { value.hasPrefix($0) }
+    }
+}
+
+extension String {
+    /// Returns `true` if the string matches a Duck AI host (`duck.ai` or `duckduckgo.com` and its subdomains).
+    public var isDuckAIHost: Bool {
+        self == URL.duckAIHost || self == URL.duckDuckGoHost || hasSuffix(".\(URL.duckDuckGoHost)")
     }
 }

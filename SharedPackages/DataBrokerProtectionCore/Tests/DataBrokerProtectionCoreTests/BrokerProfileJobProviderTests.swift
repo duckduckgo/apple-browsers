@@ -28,13 +28,13 @@ final class BrokerProfileJobProviderTests: XCTestCase {
     // Dependencies
     private var mockDatabase: MockDatabase!
     private var mockSchedulerConfig = BrokerJobExecutionConfig()
-    private var mockPixelHandler: MockPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     private var mockEventsHandler: MockOperationEventsHandler!
     var mockDependencies: BrokerProfileJobDependencies!
 
     override func setUpWithError() throws {
         mockDatabase = MockDatabase()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
         mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,
@@ -47,7 +47,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
-                                                        featureFlagger: MockDBPFeatureFlagger())
+                                                        featureFlagger: MockDBPFeatureFlagger(),
+                                                        applicationNameForUserAgent: nil)
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {
@@ -78,7 +79,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try! sut.createJobs(with: .manualScan,
                                          withPriorityDate: Date(),
                                          showWebView: false,
-                                         errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                         statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                          jobDependencies: mockDependencies)
 
         // Then
@@ -107,7 +108,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -140,7 +141,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -199,7 +200,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -239,7 +240,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             let result = try sut.createJobs(with: jobType,
                                             withPriorityDate: nil,
                                             showWebView: false,
-                                            errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                            statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                             jobDependencies: mockDependencies)
 
             XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
@@ -249,4 +250,5 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
         }
     }
+
 }

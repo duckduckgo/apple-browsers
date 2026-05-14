@@ -17,10 +17,12 @@
 //
 
 import Combine
+import PersistenceTestingUtils
+import PixelKitTestingUtilities
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import XCTest
-import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import SubscriptionUI
@@ -28,7 +30,7 @@ import PixelKitTestingUtilities
 @MainActor
 final class RootViewV2Tests: XCTestCase {
     var sidebarModel: PreferencesSidebarModel!
-    var subscriptionManager: SubscriptionManagerMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
     var subscriptionUIHandler: SubscriptionUIHandlerMock!
     var showTabCalled: Bool = false
     var showTabContent: Tab.TabContent?
@@ -42,6 +44,12 @@ final class RootViewV2Tests: XCTestCase {
         let windowControllersManager = WindowControllersManagerMock()
         let featureFlagger = MockFeatureFlagger()
 
+        let sharedDuckPlayerPreferences = DuckPlayerPreferences(
+            persistor: DuckPlayerPreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            internalUserDecider: featureFlagger.internalUserDecider
+        )
+
         sidebarModel = PreferencesSidebarModel(
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
             featureFlagger: featureFlagger,
@@ -49,7 +57,7 @@ final class RootViewV2Tests: XCTestCase {
             vpnGatekeeper: vpnGatekeeper,
             includeDuckPlayer: false,
             includeAIChat: true,
-            subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
+            subscriptionManager: SubscriptionManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
             searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -62,20 +70,21 @@ final class RootViewV2Tests: XCTestCase {
                 windowControllersManager: WindowControllersManagerMock(),
                 featureFlagger: MockFeatureFlagger()
             ),
-            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
+                                                  dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
-            duckPlayerPreferences: DuckPlayerPreferences(
-                persistor: DuckPlayerPreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                internalUserDecider: featureFlagger.internalUserDecider
-            ),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+            duckPlayerPreferences: sharedDuckPlayerPreferences,
+            youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: sharedDuckPlayerPreferences),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            adBlockingAvailability: AdBlockingAvailability(featureFlagger: featureFlagger, isEnabledByUserProvider: { false })
         )
-        subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager = SubscriptionManagerMock()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false
         showTabContent = nil
-        subscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMockV2()
+        subscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
     }
 
     override func tearDownWithError() throws {
@@ -96,8 +105,9 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
-            showTab: { _ in },
+            showTab: { _ in }
             )
 
         // Then
@@ -116,7 +126,8 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            pinningManager: MockPinningManager(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -150,7 +161,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
-            wideEvent: WideEventMock()
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -187,6 +199,7 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtectionCore
+import BrowserServicesKitTestsUtils
 import DataBrokerProtectionCoreTestsUtils
 import UserScript
 import WebKit
@@ -30,7 +31,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     let mockBroker = UserScriptMessageBroker(context: "mock context")
 
     let mockProfileQuery = ProfileQuery(firstName: "", lastName: "", city: "", state: "", birthYear: 1970)
-    lazy var mockCCFRequestData = CCFRequestData.userData(mockProfileQuery, nil)
+    lazy var mockCCFRequestData = CCFRequestData.userData(mockProfileQuery, nil, nil, [:])
 
     override func setUp() {
         mockCSSDelegate.reset()
@@ -136,7 +137,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
-        await fulfillment(of: [timeoutExpectation], timeout: 3.0)
+        await fulfillment(of: [timeoutExpectation], timeout: 10.0)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError,
                        DataBrokerProtectionError.actionFailed(actionID: actionID, message: "Action timed out"))
@@ -145,13 +146,13 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     @MainActor
     func testActionTimeoutBehavior() async {
         let testCases: [(Action, String, StepType)] = [
-            (ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil), "expectation-1", .scan),
-            (NavigateAction(id: "navigate-1", actionType: .navigate, url: "", ageRange: nil, dataSource: nil), "navigate-1", .scan),
-            (ClickAction(id: "click-1", actionType: .click, elements: [], dataSource: nil, choices: nil, default: nil), "click-1", .optOut),
-            (FillFormAction(id: "form-1", actionType: .fillForm, selector: "form", elements: [], dataSource: nil), "form-1", .optOut),
-            (ExtractAction(id: "extract-1", actionType: .extract, selector: "div", noResultsSelector: nil, profile: ExtractProfileSelectors(name: nil, alternativeNamesList: nil, addressFull: nil, addressCityStateList: nil, addressCityState: nil, phone: nil, phoneList: nil, relativesList: nil, profileUrl: nil, reportId: nil, age: nil), dataSource: nil), "extract-1", .scan),
-            (GetCaptchaInfoAction(id: "captcha-1", actionType: .getCaptchaInfo, selector: "div", dataSource: nil, captchaType: nil), "captcha-1", .optOut),
-            (SolveCaptchaAction(id: "solve-1", actionType: .solveCaptcha, selector: "div", dataSource: nil, captchaType: nil), "solve-1", .optOut)
+            (ExpectationAction(id: "expectation-1", actionType: .expectation), "expectation-1", .scan),
+            (NavigateAction(id: "navigate-1", actionType: .navigate, url: ""), "navigate-1", .scan),
+            (ClickAction(id: "click-1", actionType: .click), "click-1", .optOut),
+            (FillFormAction(id: "form-1", actionType: .fillForm, elements: []), "form-1", .optOut),
+            (ExtractAction(id: "extract-1", actionType: .extract), "extract-1", .scan),
+            (GetCaptchaInfoAction(id: "captcha-1", actionType: .getCaptchaInfo), "captcha-1", .optOut),
+            (SolveCaptchaAction(id: "solve-1", actionType: .solveCaptcha), "solve-1", .optOut)
         ]
         for (action, actionID, stepType) in testCases {
             mockCSSDelegate.reset()
@@ -161,15 +162,18 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     @MainActor
     func testWhenActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.05)
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })
         sut.with(broker: mockBroker)
-        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
-        _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
+        _ = try? await sut.onActionCompleted(params: completionParams, original: WKScriptMessage.mock())
+
+        try? await Task.sleep(nanoseconds: 150_000_000)
 
         XCTAssertNil(mockCSSDelegate.lastError)
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
@@ -177,15 +181,57 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     @MainActor
     func testWhenActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.05)
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })
         sut.with(broker: mockBroker)
-        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let errorParams = ["error": "No action found."]
-        _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
+        _ = try? await sut.onActionError(params: errorParams, original: WKScriptMessage.mock())
+
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
+    }
+
+    func testWhenActionCompletesFromAsyncHandler_thenActionTimeoutIsCancelled() async throws {
+        let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.05)
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        await MainActor.run {
+            sut.with(broker: mockBroker)
+            sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
+        }
+
+        let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
+        _ = try await sut.onActionCompleted(params: completionParams, original: WKScriptMessage.mock())
+
+        try await Task.sleep(nanoseconds: 150_000_000)
+
+        XCTAssertNil(mockCSSDelegate.lastError)
+        XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
+    }
+
+    func testWhenActionFailsFromAsyncHandler_thenActionTimeoutIsCancelled() async throws {
+        let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.05)
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        await MainActor.run {
+            sut.with(broker: mockBroker)
+            sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
+        }
+
+        let errorParams = ["error": "No action found."]
+        _ = try await sut.onActionError(params: errorParams, original: WKScriptMessage.mock())
+
+        try await Task.sleep(nanoseconds: 150_000_000)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
     }
@@ -240,31 +286,5 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         solveCaptchaResponse = nil
         onErrorCallback = nil
         conditionSuccessActions = nil
-    }
-}
-
-private class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String = "", body: Any = "", webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
     }
 }

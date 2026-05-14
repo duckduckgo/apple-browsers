@@ -22,12 +22,10 @@ import XCTest
 
 class AppWidthObserverTests: XCTestCase {
 
-    func testWhenNotPadThenWillNotResizeOrReportAsLarge() {
+    func testWhenNotPadThenWillResizeButNotReportAsLarge() {
         AppWidthObserver.shared.isPad = false
         AppWidthObserver.shared.currentWidth = 0
-        XCTAssertFalse(AppWidthObserver.shared.willResize(toWidth: 10000))
-
-        AppWidthObserver.shared.currentWidth = 10000
+        XCTAssertTrue(AppWidthObserver.shared.willResize(toWidth: 10000))
         XCTAssertFalse(AppWidthObserver.shared.isLargeWidth)
     }
 

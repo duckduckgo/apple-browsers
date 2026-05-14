@@ -31,28 +31,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13-xlarge, macos-14-xlarge, macos-15-xlarge]
+        runner: [macos-14-xlarge, macos-15-xlarge, macos-26-xlarge]
         include:
-          - xcode-version: "15.2"
-            runner: macos-13-xlarge
-            os-version: 13
           - xcode-version: "15.4"
             runner: macos-14-xlarge
             os-version: 14
-          - xcode-version: "16.4"
+          - xcode-version: "26.2"
             runner: macos-15-xlarge
             os-version: 15
+          - xcode-version: "26.4"
+            runner: macos-26-xlarge
+            os-version: 26
 
     timeout-minutes: 60
 
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -63,11 +65,11 @@ jobs:
         mode: start
 
     - name: Install screenresolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -128,23 +130,65 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
     - name: Create test account for Sync and return the recovery code
       uses: duckduckgo/sync_crypto/action@main
       id: sync-recovery-code
       with:
         debug: true
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-sync-e2e
+        restore-keys: |
+          xcode-compilation-cache-sync-e2e-
+
     - name: Build Sync e2e tests
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "macOS Sync End-to-End UI Tests CI" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
         | tee xcodebuild.log \
         | xcbeautify
 
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-sync-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
+
     - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
@@ -162,6 +206,7 @@ jobs:
 
     - name: Run UI Tests
       id: run-ui-tests
+      working-directory: macOS
       env:
         CODE: ${{ steps.sync-recovery-code.outputs.recovery-code }}
       run: |
@@ -185,11 +230,33 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
+    - name: Stop log stream
+      if: always()
+      working-directory: macOS
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      working-directory: macOS
+      run: |
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Report job duration
       if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -198,8 +265,15 @@ jobs:
         pixel-params: |
           runner: ${{ matrix.runner }}
 
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
+
     - name: Prepare test report
       if: always()
+      working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
 
@@ -211,15 +285,52 @@ jobs:
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "xcresult-${{ matrix.runner }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+
+    - name: Upload app console log (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 1
+
+    - name: Organize logs for upload
+      if: failure() || cancelled()
+      working-directory: macOS
+      run: |
+        echo "Current working directory: $(pwd)"
+
+        # Create staging directory with timestamp and OS version
+        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
+        mkdir -p "$archive_name"
+
+        # locate and copy all files, flattening the structure with verbose output
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
+        cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
+
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
-        path: |
-          macOS/xcodebuild.log
-          macOS/DerivedData/Logs/Test/*.xcresult
-          ~/Library/Logs/DiagnosticReports/*
+        name: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
   notify-failure:
@@ -230,7 +341,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

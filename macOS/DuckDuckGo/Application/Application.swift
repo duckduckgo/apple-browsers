@@ -17,15 +17,25 @@
 //
 
 import AppKit
+import Combine
 import Common
 import Foundation
-import Combine
+import LetsMove
+import PrivacyConfig
 
 @objc(Application)
-final class Application: NSApplication {
+final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
     private var fireWindowPreferenceCancellable: AnyCancellable?
+
+    /// Event interceptor hook for WarnBeforeQuitManager
+    /// Returns nil to consume event, or the event to pass through
+    private var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
+
+    public var eventInterceptorToken: UUID? {
+        eventInterceptor?.token
+    }
 
     override init() {
         super.init()
@@ -37,9 +47,13 @@ final class Application: NSApplication {
         // See SecurityScopedFileURLController.swift
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
-        let delegate = AppDelegate()
+        let buildType = StandardApplicationBuildType()
+        let dockCustomization = DockCustomizer(applicationBuildType: buildType)
+        let delegate = AppDelegate(dockCustomization: dockCustomization)
         self.delegate = delegate
         Application.appDelegate = delegate
+
+        let menuProfilerToken = delegate.startupProfiler.startMeasuring(.mainMenuInit)
 
         let mainMenu = MainMenu(
             featureFlagger: delegate.featureFlagger,
@@ -47,16 +61,24 @@ final class Application: NSApplication {
             historyCoordinator: delegate.historyCoordinator,
             recentlyClosedCoordinator: delegate.recentlyClosedCoordinator,
             faviconManager: delegate.faviconManager,
+            dockCustomizer: dockCustomization,
             defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
+            aiChatSuggestionsReader: delegate.aiChatSuggestionsReader,
+            aiChatHistoryCleaner: delegate.aiChatHistoryCleaner,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
             configurationURLProvider: delegate.configurationURLProvider,
-            contentScopePreferences: delegate.contentScopePreferences
+            contentScopePreferences: delegate.contentScopePreferences,
+            quitSurveyPersistor: QuitSurveyUserDefaultsPersistor(keyValueStore: delegate.keyValueStore),
+            pinningManager: delegate.pinningManager,
+            subscriptionManager: delegate.subscriptionManager
         )
         self.mainMenu = mainMenu
+
+        menuProfilerToken.stop()
 
         // Subscribe to Fire Window preference changes to update menu dynamically
         fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowByDefault
@@ -70,10 +92,22 @@ final class Application: NSApplication {
         self.helpMenu = mainMenu.helpMenu
         self.windowsMenu = mainMenu.windowsMenu
         self.servicesMenu = mainMenu.servicesMenu
+
+        // This assertion is used to ensure that the sandboxed status is consistent across all targets.
+        assert(NSApp.isSandboxed == AppVersion.isAppStoreBuild, "NSApp.isSandboxed and AppVersion.isAppStoreBuild must match")
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
+    }
+
+    override func run() {
+        let buildType = StandardApplicationBuildType()
+        if !buildType.isAppStoreBuild && !buildType.isDebugBuild {
+            PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
+        }
+
+        super.run()
     }
 
     @objc(_crashOnException:)
@@ -99,14 +133,55 @@ final class Application: NSApplication {
         }
         return testIgnoredEvents
     }()
+#endif
+
+    /// This is used to reset the click count to 1 for the next incoming mouse event of the given type.
+    /// The hack is used to allow quickly closing tabs by clicking on the close button multiple times
+    /// or middle-clicking multiple times to close tabs.
+    /// https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+    @MainActor
+    var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
+
+    public func installEventInterceptor(token: UUID, interceptor: @escaping (NSEvent) -> NSEvent?) {
+        eventInterceptor = (token: token, interceptor: interceptor)
+    }
+
+    public func resetEventInterceptor(token: UUID?) {
+        guard token == nil || eventInterceptor?.token == token else { return }
+        eventInterceptor = nil
+    }
+
     override func sendEvent(_ event: NSEvent) {
+#if DEBUG
         // Ignore user events when running Tests
         if [.unitTests, .integrationTests].contains(AppVersion.runType),
            testIgnoredEvents.contains(event.type),
            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.value(forKey: "allowAppSendUserEvents") as? Bool != true {
             return
         }
+#endif
+
+        // Check event interceptor hook (for WarnBeforeQuitManager)
+        var event = event
+        if let interceptor = eventInterceptor?.interceptor {
+            guard let interceptedEvent = interceptor(event) else { return } // Event consumed
+            // Event passed through, continue processing
+            event = interceptedEvent
+        }
+
+        // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
+        if let expectedEventType = shouldResetClickCountForNextEventOfTypes, expectedEventType.contains(event.type) {
+            if event.clickCount > 1 {
+                event = {
+                    guard let cg = event.cgEvent?.copy() else { return event }
+                    cg.setIntegerValueField(.mouseEventClickState, value: 1) // Reset clickCount to 1 to consequently close tabs
+                    return NSEvent(cgEvent: cg) ?? event
+                }()
+            }
+            shouldResetClickCountForNextEventOfTypes = nil
+        }
         super.sendEvent(event)
     }
-#endif
+
 }

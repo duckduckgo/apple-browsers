@@ -21,28 +21,79 @@ import Foundation
 import Core
 import AIChat
 
+protocol AIChatDeepLinkPresenting: UIViewController {
+    func openAIVoiceChatFromDeepLink()
+    func openAIChat(
+        _ query: String?,
+        autoSend: Bool,
+        payload: Any?,
+        flowType: AIChatOnboardingFlowType,
+        tools: [AIChatRAGTool]?,
+        modelId: String?,
+        reasoningEffort: AIChatReasoningEffort?,
+        images: [AIChatNativePrompt.NativePromptImage]?,
+        files: [AIChatNativePrompt.NativePromptFile]?,
+        fromDeepLink: Bool
+    )
+}
+
+extension AIChatDeepLinkPresenting {
+
+    func openAIChat(fromDeepLink: Bool) {
+        openAIChat(
+            nil,
+            autoSend: false,
+            payload: nil,
+            flowType: .default,
+            tools: nil,
+            modelId: nil,
+            reasoningEffort: nil,
+            images: nil,
+            files: nil,
+            fromDeepLink: fromDeepLink
+        )
+    }
+    
+}
+
 struct AIChatDeepLinkHandler {
 
-    /// Utility function to handle AI Chat deeplink since it needs to be called from 2 different entry points
-    func handleDeepLink(_ url: URL, on mainViewController: MainViewController) {
-        firePixel(url)
+    /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
+    func handleDeepLink(_ url: URL, on mainViewController: AIChatDeepLinkPresenting, voiceMode: Bool = false) {
+        if voiceMode {
+            fireAIVoiceChatPixel(url)
+        } else {
+            firePixel(url)
+        }
 
-        guard !isAIChatAlreadyPresented(on: mainViewController) else {
-            return
+        if !voiceMode {
+            guard !isAIChatAlreadyPresented(on: mainViewController) else {
+                return
+            }
         }
 
         mainViewController.dismiss(animated: true) {
-            mainViewController.openAIChat()
+            if voiceMode {
+                mainViewController.openAIVoiceChatFromDeepLink()
+            } else {
+                mainViewController.openAIChat(fromDeepLink: true)
+            }
         }
     }
 
     /// Checks if the AIChatViewController is already presented
-    private func isAIChatAlreadyPresented(on mainViewController: MainViewController) -> Bool {
+    private func isAIChatAlreadyPresented(on mainViewController: AIChatDeepLinkPresenting) -> Bool {
         if let presentedVC = mainViewController.presentedViewController as? RoundedPageSheetContainerViewController,
            presentedVC.contentViewController is AIChatViewController {
             return true
         }
         return false
+    }
+
+    private func fireAIVoiceChatPixel(_ url: URL) {
+        if let source = url.getParameter(named: WidgetSourceType.sourceKey) {
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: source])
+        }
     }
 
     func firePixel(_ url: URL) {

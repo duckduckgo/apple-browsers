@@ -33,6 +33,14 @@ public struct BrokerProfileQueryData: Sendable {
         optOutJobData.map { $0.extractedProfile }
     }
 
+    public var scanJobDataHistoryEventsSortedEarliestFirst: [HistoryEvent] {
+        scanJobData.historyEvents.sorted { $0.date < $1.date }
+    }
+
+    public var optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst: [[HistoryEvent]] {
+        optOutJobData.compactMap { $0.historyEventsSortedEarliestFirst }
+    }
+
     public var events: [HistoryEvent] {
         jobsData.flatMap { $0.historyEvents }.sorted { $0.date < $1.date }
     }

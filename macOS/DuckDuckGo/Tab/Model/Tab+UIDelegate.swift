@@ -26,16 +26,11 @@ import WebKit
 import PDFKit
 import CommonObjCExtensions
 
-extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
+extension Tab: WKUIDelegate {
 
     // "protected" delegate property
     private var delegate: TabDelegate? {
         self.value(forKey: Tab.objcDelegateKeyPath) as? TabDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
-        self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
     }
 
     @MainActor private static var expectedSaveDataToFileCallback: (@MainActor (URL?) -> Void)?
@@ -62,126 +57,36 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     }
 
     @MainActor
+    @objc(_webView:createWebViewWithConfiguration:forNavigationAction:windowFeatures:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 createWebViewWithConfiguration configuration: WKWebViewConfiguration,
+                 for navigationAction: WKNavigationAction,
+                 windowFeatures: WKWindowFeatures,
+                 completionHandler: @escaping (WKWebView?) -> Void) {
+
+        guard isCreateWebViewGatingFailsafeEnabled else {
+            completionHandler(self.popupHandling?.createWebView(from: webView,
+                                                                with: configuration,
+                                                                for: navigationAction,
+                                                                windowFeatures: windowFeatures))
+            return
+        }
+
+        // Defer createWebView handling until any in-flight `decidePolicyForNavigationAction` responder-chain work completes.
+        // This prevents a race condition where the createWebView callback for a pop-up is called before a PopupHandlingTabExtension decision
+        // to open a pop-up is made.
+        // https://app.asana.com/1/137249556945/project/1202406491309510/task/1212353379833164?focus=true
+        dispatchCreateWebView { [weak self] in
+            completionHandler(self?.popupHandling?.createWebView(from: webView,
+                                                                 with: configuration,
+                                                                 for: navigationAction,
+                                                                 windowFeatures: windowFeatures))
+        }
+    }
+
+    @MainActor
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-
-        var isCalledSynchronously = true
-        var synchronousResultWebView: WKWebView?
-        handleCreateWebViewRequest(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures) { [weak self] webView in
-            guard self != nil else { return }
-            if isCalledSynchronously {
-                synchronousResultWebView = webView
-            } else {
-                // automatic loading won‘t start for asynchronous callback as we‘ve already returned nil at this point
-                webView?.load(navigationAction.request)
-            }
-        }
-        isCalledSynchronously = false
-
-        return synchronousResultWebView
-    }
-
-    @MainActor
-    private func handleCreateWebViewRequest(from webView: WKWebView,
-                                            with configuration: WKWebViewConfiguration,
-                                            for navigationAction: WKNavigationAction,
-                                            windowFeatures: WKWindowFeatures,
-                                            completionHandler: @escaping (WKWebView?) -> Void) {
-
-        switch newWindowPolicy(for: navigationAction) {
-        // popup kind is known, action doesn‘t require Popup Permission
-        case .allow(var targetKind):
-            // replace `.tab` with `.window` when user prefers windows over tabs
-            if case .tab(_, let isBurner, contextMenuInitiated: false) = targetKind,
-               !tabsPreferences.preferNewTabsToWindows  {
-                targetKind = .window(active: true, burner: isBurner)
-            }
-
-            // proceed to web view creation
-            completionHandler(self.createWebView(from: webView, with: configuration,
-                                                 for: navigationAction, of: targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)))
-            return
-        case .cancel:
-            // navigation action was handled before and cancelled
-            completionHandler(nil)
-            return
-        case .none:
-            break
-        }
-
-        // select new tab by default; ⌘-click modifies the selection state
-        let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent, switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened, canOpenLinkInCurrentTab: false, shouldSelectNewTab: true)
-
-        // determine popup kind from provided windowFeatures and current key modifiers
-        let targetKind = NewWindowPolicy(windowFeatures, linkOpenBehavior: linkOpenBehavior, isBurner: burnerMode.isBurner, preferTabsToWindows: tabsPreferences.preferNewTabsToWindows)
-
-        // action doesn‘t require Popup Permission as it‘s user-initiated
-        // TO BE FIXED: this also opens a new window when a popup ad is shown on click simultaneously with the main frame navigation:
-        // https://app.asana.com/0/1177771139624306/1203798645462846/f
-        if navigationAction.isUserInitiated == true {
-            // proceed to web view creation
-            completionHandler(self.createWebView(from: webView, with: configuration, for: navigationAction, of: targetKind))
-            return
-        }
-
-        let url = navigationAction.request.url
-        let sourceUrl = navigationAction.safeSourceFrame?.safeRequest?.url ?? self.url ?? .empty
-        guard let domain = sourceUrl.isFileURL ? .localhost : sourceUrl.host else {
-            completionHandler(nil)
-            return
-        }
-        // Popup Permission is needed: firing an async PermissionAuthorizationQuery
-        self.permissions.request([.popups], forDomain: domain, url: url).receive { [weak self] result in
-            guard let self, case .success(true) = result else {
-                completionHandler(nil)
-                return
-            }
-            let webView = self.createWebView(from: webView, with: configuration, for: navigationAction, of: targetKind)
-
-            completionHandler(webView)
-        }
-    }
-
-    @MainActor
-    private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
-        if let newWindowPolicy = self.decideNewWindowPolicy(for: navigationAction) {
-            return newWindowPolicy
-        }
-
-        // Are we handling custom Context Menu navigation action or link click with a hotkey?
-        for handler in self.newWindowPolicyDecisionMakers ?? [] {
-            guard let newWindowPolicy = handler.decideNewWindowPolicy(for: navigationAction) else { continue }
-            return newWindowPolicy
-        }
-
-        // allow popups opened from an empty window console
-        let sourceUrl = navigationAction.safeSourceFrame?.safeRequest?.url ?? self.url ?? .empty
-        if sourceUrl.isEmpty || sourceUrl.scheme == URL.NavigationalScheme.about.rawValue {
-            return .allow(.tab(selected: true, burner: burnerMode.isBurner))
-        }
-
-        return nil
-    }
-
-    /// create a new Tab returning its WebView to a createWebViewWithConfiguration callback
-    @MainActor
-    private func createWebView(from webView: WKWebView, with configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, of kind: NewWindowPolicy) -> WKWebView? {
-        guard let delegate else { return nil }
-        // disable opening 'javascript:' links in new tab
-        guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
-
-        let tab = Tab(content: .none,
-                      webViewConfiguration: configuration,
-                      parentTab: self,
-                      securityOrigin: navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) },
-                      burnerMode: burnerMode,
-                      canBeClosedWithBack: kind.isSelectedTab,
-                      webViewSize: webView.superview?.bounds.size ?? .zero)
-        delegate.tab(self, createdChild: tab, of: kind)
-
-        let webView = tab.webView
-
-        // WebKit automatically loads the request in the returned web view.
-        return webView
+        self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }
 
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
@@ -213,10 +118,11 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
-                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 requestUserMediaAuthorizationFor devices: UInt,
                  url: URL,
                  mainFrameURL: URL,
                  decisionHandler: @escaping (Bool) -> Void) {
+        let devices = _WKCaptureDevices(rawValue: devices)
         guard let permissions = [PermissionType](devices: devices),
               let host = url.isFileURL ? .localhost : url.host,
               !host.isEmpty else {
@@ -228,7 +134,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     }
 
     @objc(_webView:mediaCaptureStateDidChange:)
-    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: _WKMediaCaptureStateDeprecated) {
+    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/) {
         self.permissions.mediaCaptureStateDidChange()
     }
 
@@ -379,7 +285,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.runPrintOperation(for: frameHandle, in: webView) { _ in completionHandler() }
     }
 
-    @MainActor(unsafe)
+    @preconcurrency @MainActor
     func print(pdfHUD: WKPDFHUDViewWrapper? = nil) {
         if let pdfHUD {
             Self.expectedSaveDataToFileCallback = { [weak self] url in
@@ -405,6 +311,14 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.runPrintOperation(for: nil, in: self.webView)
     }
 
+    @objc(_webView:hasVideoInPictureInPictureDidChange:)
+    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
+        self.tabSuspension?.hasVideoInPictureInPicture = hasVideoInPictureInPicture
+        if hasVideoInPictureInPicture {
+            // Fire pixel when Picture-in-Picture is activated
+            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
+        }
+    }
 }
 
 extension Tab: WKInspectorDelegate {
@@ -422,13 +336,4 @@ extension Tab: WKInspectorDelegate {
         // Fire pixel when developer tools are opened
         PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
     }
-
-    @objc(_webView:hasVideoInPictureInPictureDidChange:)
-    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
-        if hasVideoInPictureInPicture {
-            // Fire pixel when Picture-in-Picture is activated
-            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
-        }
-    }
-
 }

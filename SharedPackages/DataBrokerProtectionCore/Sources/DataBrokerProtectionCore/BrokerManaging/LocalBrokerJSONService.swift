@@ -22,7 +22,7 @@ import SecureStorage
 import os.log
 
 public protocol ResourcesRepository {
-    func fetchBrokerFromResourceFiles() throws -> [DataBroker]?
+    func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]?
 }
 
 public final class FileResources: ResourcesRepository {
@@ -32,17 +32,20 @@ public final class FileResources: ResourcesRepository {
     }
 
     private let fileManager: FileManager
+    private let runTypeProvider: AppRunTypeProviding
 
-    public init(fileManager: FileManager = .default) {
+    public init(fileManager: FileManager = .default, runTypeProvider: AppRunTypeProviding) {
         self.fileManager = fileManager
+        self.runTypeProvider = runTypeProvider
     }
 
-    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
+    public func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]? {
         guard AppVersion.runType != .unitTests && AppVersion.runType != .uiTests else {
             /*
              There's a bug with the bundle resources in tests:
              https://forums.swift.org/t/swift-5-3-swiftpm-resources-in-tests-uses-wrong-bundle-path/37051/49
              */
+            Logger.dataBrokerProtection.fault("🧩 LocalBrokerJSONService: Unsupported runtime, returning empty brokers array")
             return []
         }
 
@@ -52,7 +55,11 @@ public final class FileResources: ResourcesRepository {
             throw FileResourcesError.bundleResourceURLNil
         }
 
-        let shouldUseFakeBrokers = (AppVersion.runType == .integrationTests)
+        let runType = runTypeProvider.runType
+        let shouldUseFakeBrokers = (runType == .integrationTests || runType == .uiTests)
+
+        Logger.dataBrokerProtection.fault("🧩 LocalBrokerJSONService: Using fake brokers = \(shouldUseFakeBrokers, privacy: .public)")
+
         let brokersURL = resourceURL.appendingPathComponent("BundleResources").appendingPathComponent("JSON")
         do {
             let fileURLs = try fileManager.contentsOfDirectory(
@@ -126,63 +133,79 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
     public let vault: any DataBrokerProtectionSecureVault
     private let appVersion: AppVersionNumberProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let runTypeProvider: AppRunTypeProviding
+    private let isAuthenticatedUser: () async -> Bool
 
     public init(repository: BrokerUpdaterRepository = BrokerUpdaterUserDefaults(),
-                resources: ResourcesRepository = FileResources(),
+                resources: ResourcesRepository,
                 vault: any DataBrokerProtectionSecureVault,
                 appVersion: AppVersionNumberProvider = AppVersionNumber(),
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                runTypeProvider: AppRunTypeProviding,
+                isAuthenticatedUser: @escaping () async -> Bool) {
         self.repository = repository
         self.resources = resources
         self.vault = vault
         self.appVersion = appVersion
         self.pixelHandler = pixelHandler
+        self.runTypeProvider = runTypeProvider
+        self.isAuthenticatedUser = isAuthenticatedUser
     }
 
-    public func updateBrokers() {
-        let brokers: [DataBroker]?
+    public func bundledBrokers() throws -> [BrokerResource]? {
+        try resources.fetchBrokerResourcesFromFiles()
+    }
+
+    public func checkForUpdates() async throws {
+        let isFreeScan = !(await isAuthenticatedUser())
+        if let lastCheckedVersion = repository.getLastCheckedVersion() {
+            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
+                updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
+            }
+        } else {
+            // There was not a last checked version. Probably new builds or ones without this new implementation
+            // or user deleted user defaults.
+            updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
+        }
+    }
+
+    private func updateBrokersAndSaveLatestVersion(isFreeScan: Bool) {
+        repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
+        updateBrokers(isFreeScan: isFreeScan)
+    }
+
+    private func updateBrokers(isFreeScan: Bool?) {
+        guard runTypeProvider.runType != .integrationTests else {
+            Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers skipping due to running integration tests")
+            return
+        }
+
+        Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers beginning")
+
+        let brokerResources: [BrokerResource]?
         do {
-            brokers = try resources.fetchBrokerFromResourceFiles()
+            brokerResources = try resources.fetchBrokerResourcesFromFiles()
         } catch {
             Logger.dataBrokerProtection.error("🧩 FallbackBrokerJSONService updateBrokers, error: \(error.localizedDescription, privacy: .public)")
             pixelHandler.fire(.cocoaError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
             return
         }
-        guard let brokers = brokers else { return }
+        guard let brokerResources = brokerResources else { return }
 
-        for broker in brokers {
+        for brokerResource in brokerResources {
             do {
-                try upsertBroker(broker)
-                let brokerFileName = "\(broker.url).json"
-                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp))
+                try upsertBroker(brokerResource)
+                let brokerFileName = "\(brokerResource.broker.url).json"
+                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
             } catch {
-                Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
+                let broker = brokerResource.broker
                 let brokerFileName = "\(broker.url).json"
-                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, error: error))
+                Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
+                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, isFreeScan: isFreeScan, error: error))
             }
         }
     }
 
-    public func bundledBrokers() throws -> [DataBroker]? {
-        try resources.fetchBrokerFromResourceFiles()
-    }
-
-    public func checkForUpdates() async throws {
-        if let lastCheckedVersion = repository.getLastCheckedVersion() {
-            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
-                updateBrokersAndSaveLatestVersion()
-            }
-        } else {
-            // There was not a last checked version. Probably new builds or ones without this new implementation
-            // or user deleted user defaults.
-            updateBrokersAndSaveLatestVersion()
-        }
-    }
-
-    private func updateBrokersAndSaveLatestVersion() {
-        repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
-        updateBrokers()
-    }
 }
 
 fileprivate extension URL {

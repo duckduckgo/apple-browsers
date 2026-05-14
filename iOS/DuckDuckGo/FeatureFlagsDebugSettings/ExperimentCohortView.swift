@@ -20,7 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 struct ExperimentCohortView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel

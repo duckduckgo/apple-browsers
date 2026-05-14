@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import DataBrokerProtection_iOS
 import RemoteMessagingTestsUtils
 @testable import Configuration
 import Combine
@@ -32,6 +33,7 @@ import Common
 @testable import DuckDuckGo
 @testable import Core
 import PersistenceTestingUtils
+import PrivacyConfig
 
 // swiftlint:disable force_try
 
@@ -51,11 +53,19 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: keyValueStore,
             settingHandlers: [],
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),
             faviconStoring: MockFaviconStore(),
             tld: TLD()
+        )
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingNavigationDelegateTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
         )
         
         let remoteMessagingClient = RemoteMessagingClient(
@@ -66,13 +76,25 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
             duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockConfigurationURLProvider()
+            configurationURLProvider: MockConfigurationURLProvider(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            winBackOfferService: .mocked,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: MockFeatureFlagger(),
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)
         onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = try TabsModelPersistence()
+        let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         mainVC = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -92,7 +114,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             contextualOnboardingPixelReporter: onboardingPixelReporter,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: MockFireproofing(),
             textZoomCoordinator: MockTextZoomCoordinator(),
@@ -100,7 +122,9 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider()

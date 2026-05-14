@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import CryptoKit
 import Foundation
 import PixelKit
@@ -47,11 +48,8 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
 final class EncryptionKeyStore: EncryptionKeyStoring {
 
     enum Constants {
-#if APPSTORE
-        static let encryptionKeyAccount = "com.duckduckgo.mobile.ios"
-#else
-        static let encryptionKeyAccount = "com.duckduckgo.macos.browser"
-#endif
+        static let encryptionKeyAccountAppStore = "com.duckduckgo.mobile.ios"
+        static let encryptionKeyAccountDMG = "com.duckduckgo.macos.browser"
         static let encryptionKeyService = "DuckDuckGo Privacy Browser Data Encryption Key"
 
         static let encryptionKeyServiceBase64 = "DuckDuckGo Privacy Browser Encryption Key v2"
@@ -67,9 +65,9 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
         ] as [String: Any]
     }
 
-    init(generator: EncryptionKeyGenerating, account: String = Constants.encryptionKeyAccount) {
+    init(generator: EncryptionKeyGenerating, account: String? = nil) {
         self.generator = generator
-        self.account = account
+        self.account = account ?? (AppVersion.isAppStoreBuild ? Constants.encryptionKeyAccountAppStore : Constants.encryptionKeyAccountDMG)
     }
 
     convenience init() {

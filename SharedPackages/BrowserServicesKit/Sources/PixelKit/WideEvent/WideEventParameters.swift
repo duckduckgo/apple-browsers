@@ -20,68 +20,38 @@ import Foundation
 
 public protocol WideEventParameterProviding {
     func pixelParameters() -> [String: String]
-    func jsonParameters() throws -> String
+    func jsonParameters() -> [String: Encodable]
 }
 
-extension WideEventParameterProviding {
-    // Wide events will eventually support being sent as JSON to a POST endpoint.
-    // This extension can be used for all wide event data objects to handle this.
-    public func jsonParameters() throws -> String {
-        let object = nestedDictionary(from: pixelParameters())
-        let data = try JSONSerialization.data(withJSONObject: object, options: [])
-
-        guard let json = String(data: data, encoding: .utf8) else {
-            assertionFailure("Failed to create JSON string")
-            return "{}"
-        }
-
-        return json
-    }
-
-    private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {
-        var root: [String: Any] = [:]
-
-        for key in parameters.keys.sorted() {
-            guard let value = parameters[key] else {
-                continue
+public extension WideEventParameterProviding {
+    func pixelParameters() -> [String: String] {
+        jsonParameters().mapValues { value in
+            if let string = value as? String {
+                return string
             }
-
-            let parts = key.split(separator: ".").map(String.init)
-            assign(value: value, path: parts, dict: &root)
+            return String(describing: value)
         }
-
-        return root
-    }
-
-    private func assign(value: String, path: [String], dict: inout [String: Any]) {
-        guard let first = path.first else {
-            return
-        }
-
-        if path.count == 1 {
-            dict[first] = value
-            return
-        }
-
-        var child = dict[first] as? [String: Any] ?? [:]
-        assign(value: value, path: Array(path.dropFirst()), dict: &child)
-        dict[first] = child
     }
 }
 
 public enum WideEventParameter {
 
+    public enum Meta {
+        static let type = "meta.type"
+        static let version = "meta.version"
+    }
+
     public enum Global {
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"
+        static let isFirstDailyOccurrence = "global.is_first_daily_occurrence"
     }
 
     public enum App {
         static let name = "app.name"
         static let version = "app.version"
         static let formFactor = "app.form_factor"
-        static let internalUser = "app.internal_user"
     }
 
     public enum Context {
@@ -91,12 +61,15 @@ public enum WideEventParameter {
     public enum Feature {
         public static let name = "feature.name"
         public static let status = "feature.status"
-        public static let statusReason = "feature.status_reason"
 
-        public static let errorDomain = "feature.data.error.domain"
-        public static let errorCode = "feature.data.error.code"
-        public static let errorDescription = "feature.data.error.description"
-        public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
-        public static let underlyingErrorCode = "feature.data.error.underlying_code"
+        public static let errorDomain = "feature.data.ext.error.domain"
+        public static let errorCode = "feature.data.ext.error.code"
+        public static let underlyingErrorDomain = "feature.data.ext.error.underlying_domain"
+        public static let underlyingErrorCode = "feature.data.ext.error.underlying_code"
+
+        // Shared error fields live under `ext.error` so all optional wide-event error detail uses one namespace.
+        // Status reasons remain a feature-level extension field.
+        public static let errorDescription = "feature.data.ext.error.error_description"
+        public static let statusReason = "feature.data.ext.status_reason"
     }
 }

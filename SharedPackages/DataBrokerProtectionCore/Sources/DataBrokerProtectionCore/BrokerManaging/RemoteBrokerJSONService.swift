@@ -148,7 +148,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - Local fallback
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         try localBrokerProvider?.bundledBrokers()
     }
 
@@ -159,6 +159,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {
+        if let runTypeProvider = self.settings as? AppRunTypeProviding, runTypeProvider.runType == .integrationTests {
+            Logger.dataBrokerProtection.log("Remote broker delivery not enabled due to run type")
+            return
+        }
+
         if !featureFlagger.isRemoteBrokerDeliveryFeatureOn {
             Logger.dataBrokerProtection.log("Remote broker delivery not enabled, skip to local fallback")
             try? await localBrokerProvider?.checkForUpdates()
@@ -226,12 +231,15 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
         Logger.dataBrokerProtection.log("🧩 Changes detected in \(diff.count, privacy: .public) brokers")
 
+        let isFreeScan = !(await authenticationManager.isUserAuthenticated)
+
         try await downloadAndExtractBrokerJSONsIfNeeded(eTag: eTag)
         try processBrokerJSONs(eTag: eTag,
                                fileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
-                               testBrokers: mainConfig.testDataBrokers)
+                               testBrokers: mainConfig.testDataBrokers,
+                               isFreeScan: isFreeScan)
         try cleanUp(eTag: eTag)
     }
 
@@ -309,7 +317,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                             fileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],
                             activeBrokers: [String],
-                            testBrokers: [String]) throws {
+                            testBrokers: [String],
+                            isFreeScan: Bool) throws {
         let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathComponent("json", isDirectory: true)
         let fileURLs = try fileManager.contentsOfDirectory(at: directoryURL,
                                                            includingPropertiesForKeys: nil,
@@ -319,21 +328,20 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             guard changedBrokerFileNames.contains(fileName) else { continue }
 
             do {
-                var dataBroker = try DataBroker.initFromResource(fileURL)
-                dataBroker.setETag(eTagMapping[fileName] ?? "")
+                let brokerResource = try DataBroker.initFromResource(fileURL).with(eTag: eTagMapping[fileName] ?? "")
                 if activeBrokers.contains(fileName) {
-                    try upsertBroker(dataBroker)
-                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: dataBroker.removedAtTimestamp))
+                    try upsertBroker(brokerResource)
+                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
                 }
             } catch let error as DecodingError {
                 Logger.dataBrokerProtection.log("🧩 Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, isFreeScan: isFreeScan, error: error))
             } catch let error as Step.DecodingError {
                 Logger.dataBrokerProtection.log("🧩 JSON file \(fileURL.lastPathComponent) contains unsupported data: \(error), skipping update")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, isFreeScan: isFreeScan, error: error))
             } catch {
                 Logger.dataBrokerProtection.log("🧩 Failed to upsert broker \(fileName): \(error)")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, isFreeScan: isFreeScan, error: error))
                 throw error
             }
         }

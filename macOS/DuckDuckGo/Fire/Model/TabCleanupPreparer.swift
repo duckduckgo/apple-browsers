@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 import WebKit
 
+protocol TabCleanupPreparing {
+    @MainActor func prepareTabsForCleanup(_ tabs: [any TabDataClearing]) async
+}
+
 protocol TabDataClearing {
     @MainActor func prepareForDataClearing(caller: TabCleanupPreparer)
 }
@@ -31,7 +35,7 @@ protocol TabDataClearing {
 
  Once done, remove Tab objects.
  */
-final class TabCleanupPreparer: NSObject, WKNavigationDelegate {
+final class TabCleanupPreparer: NSObject, WKNavigationDelegate, TabCleanupPreparing {
 
     private var numberOfTabs = 0
     private var processedTabs = 0
@@ -39,10 +43,11 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate {
     private var completion: (@MainActor () -> Void)?
 
     @MainActor
-    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {
+    func prepareTabsForCleanup(_ tabs: [any TabDataClearing]) async {
         guard !tabs.isEmpty else { return }
 
         assert(self.completion == nil)
+        processedTabs = 0
         await withCheckedContinuation { continuation in
             self.completion = {
                 continuation.resume()
@@ -58,6 +63,13 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate {
             completion?()
             completion = nil
         }
+    }
+
+    /// Signal that a tab has no WebView to clear (e.g. unloaded tabs).
+    @MainActor
+    func reportNoWebViewToClear() {
+        processedTabs += 1
+        notifyIfDone()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

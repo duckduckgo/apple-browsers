@@ -19,6 +19,7 @@
 
 import Foundation
 import SwiftUI
+import UIComponents
 
 struct NetworkProtectionUIElements {
 

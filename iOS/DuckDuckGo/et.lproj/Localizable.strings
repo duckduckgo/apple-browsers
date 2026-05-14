@@ -1,8 +1,32 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
+
+/* No comment provided by engineer. */
+"Account" = "account";
 
 /* Buton label for Edit action */
 "action.generic.edit" = "Redigeeri";
@@ -30,6 +54,15 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Lisa";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai vestlused";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Uus vestlus";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai seaded";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Paroolid";
@@ -61,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai hääl";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigeeri järjehoidjat";
 
@@ -73,14 +109,16 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Vahekaardid ja andmed kustutatud";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Kustuta vahekaardid, andmed ja Duck.ai vestlused";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uus Fire vahekaart";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Ava Fire vahekaardil";
 /* Create New Tab action */
-"action.title.newTabAction" = "Uus";
+"action.title.newTabAction" = "Uus vaheleht";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Ava uuel vahelehel";
@@ -168,6 +206,44 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI funktsioonid";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Tee foto";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laiendatud arutlus";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastab kiiresti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Kiire";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Keeruliste ülesannete jaoks";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Arutlus";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Muuda tekst piltideks";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Loo pilt";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Praeguse teabe leidmine";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Veebiotsing";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemasolevaid järjehoidjaid ei dubleerita.";
@@ -313,12 +389,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Otsi DuckDuckGo'st";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Otsingusoovitused hõlmavad nüüd sinu hiljuti külastatud saite. Saad selle välja lülitada seadetes või tühjendada igal ajal nupu 🔥 Fire Button abil.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama privaatsus.\nParemad otsingusoovitused!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaheta vahekaardile";
 
@@ -462,6 +532,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Luba Email Protection";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Valmis";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Paroolide automaatne täitmine on aktiveeritud!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Kasuta DuckDuckGo-sse salvestatud paroole kõigis oma seadme rakendustes.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automaatne täitmine teistes rakendustes";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automaatne täitmine teistes rakendustes lubatud";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Seadista hiljem sätetes";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Lülita automaatne täitmine teistes rakendustes sisse";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Kasuta DuckDuckGo'd, et kõigi oma rakenduste paroole turvaliselt automaatselt täita.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Logi oma rakendustesse kiiresti sisse ilma paroole sisestamata";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Paroolide automaatne sisestamine teistes rakendustes";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Lülita sisse";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Sees";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automaatne täitmine teistes rakendustes";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Lülita välja süsteemi seadetes...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Lülita sisse...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Peida CVV";
@@ -784,6 +899,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ei aitäh";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Mitte praegu";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Salvesta oma parool turvaliselt seadmesse DuckDuckGo paroolide ja automaatse täitmisega.";
 
@@ -799,8 +917,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Impordi paroolid";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Valikud";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Parooli valikud";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Teata automaatse täitmise probleemist";
@@ -849,6 +967,21 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Kas värskendada kasutajanime?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Luba heli ja video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokeeri heli ja video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokeeri heli";
+
+/* No comment provided by engineer. */
+"Available Products" = "Saadaolevad tooted";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Säästa %d%% esimesel aastal";
 
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Lisa järjehoidja";
@@ -973,17 +1106,35 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Tühistamine ei ole lubatud rohkem kui üks kord";
 
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Olemasoleva konto kontrollimine...";
+
 /* Close All Tabs */
 "close.all.tabs" = "Sule kõik vahelehed";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohort: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguratsioon";
 
 /* No comment provided by engineer. */
 "Confirm" = "Kinnita";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Kustuta vestlus";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Kustutada see vestlus?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Jäta vahele";
@@ -1066,6 +1217,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Üllata mind!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta suvandit **Duck.ai häälvestlus**, et see lisada";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta **VPN-i juhtimine**, et see lisada";
 
@@ -1100,7 +1254,16 @@
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* No comment provided by engineer. */
+"Current Subscriptions" = "Praegused tellimused";
+
+/* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "KOHANDATUD LAHTRI SISU";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Kohandatud URL: %@";
@@ -1117,6 +1280,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Järjehoidjate importimine DuckDuckGo'sse";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Ava Chrome, seejärel mine paroolihaldurisse ja järgi alltoodud samme.";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Seaded** > **Andmete eksport**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Vajuta **Jätka**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Impordi Chrome'ist";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Kas eksportimine on lõpetatud?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Sa pead minema Paroolirakendusse ja seejärel järgima importimiseks vajalikke samme.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Puuduta valikuid **···** > **Ekspordi andmed teise rakendusse**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Puuduta **Vali kõik** > **Jätka**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import paroolidest";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Esmalt ekspordi oma paroolid ja järjehoidjad Safarist ning seejärel tule siia tagasi faili üleslaadimiseks.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksport Safarist";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Impordi Safarist";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Laadi eksporditud fail üles…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip-failist ei leitud toetatud andmeid. Vaadake Safari ekspordijuhiseid ja proovige uuesti.";
 
@@ -1126,6 +1334,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Faili %@ lugemine ebaõnnestus. Failis olevate andmetega võib esineda probleeme.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Sain aru";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Faili %@ lugemine ebaõnnestus. Proovi üles laadida mõni teine fail või proovi mõnda muud importimismeetodit.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Fail võib olla vigane";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip-failist ei leitud toetatud andmeid. Vaadake ekspordijuhiseid ja proovige uuesti.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Andmeid ei leitud";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Valitud faili ei toetata. Valige muu fail ja proovige uuesti.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Toetamata fail";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1134,6 +1363,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Too DuckDuckGo-sse";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Valige **Eksport** ning järgmisel ekraanil valige **Järjehoidjad** ja **Salvesta allalaadimiskausta**.";
@@ -1145,7 +1377,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Avage Chrome'is **Google Password Manager** ja seejärel **Seaded**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valige **Ekspordi paroolid**, seejärel **Salvesta failidesse** ja salvestage fail kausta, mida mäletate.";
+"data.import.passwords.instructions.chrome.step2" = "Vali **Ekspordi andmed**, seejärel **···** ja seejärel **Laadi CSV-failina alla** ning salvesta fail kausta, mida mäletad.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kuidas eksportida paroole";
@@ -1173,6 +1405,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Impordi paroolid DuckDuckGosse";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Ava seaded eksportimiseks";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Pea meeles puudutada valikut\n„Ekspordi failidesse“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Paroolid Rakendus";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Impordi alates";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sünkrooni alates";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo teisel seadmel";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Järjehoidjad";
@@ -1210,6 +1466,18 @@
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Paroolid";
 
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Kas soovid oma järjehoidjad ka Safarist üle tuua?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Jätka";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Mitte praegu";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Kas tahad ka oma paroolid kaasa võtta?";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viimane kuu";
 
@@ -1221,6 +1489,18 @@
 
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eile";
+
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Sa leidsid peidetud logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo salvestatud";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Otsingu logo lähtestamine";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Vaheta ümber sellele logole";
 
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Ettevaatust! Ma ei saa takistada %1$@ nägemast sinu tegevust %2$@.\n\nKuid sirvi koos minuga ja ma saan vähendada seda, mida %1$@ sinust üldiselt teab, blokeerides tema jälitajad paljudel teistel lehtedel.";
@@ -1327,8 +1607,50 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Puuduta vidinat selle muutmiseks ja seejärel määra otseteedeks **Duck.ai** ja **Duck.ai häälvestlus**";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Leia ja vali **DuckDuckGo**, seejärel libista suvandini **Kohandatud otseteed** ja vali **Lisa vidin**";
+
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Lisa lehe sisu";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
+
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Hiljutised vestlused";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Hiljutised vestlused";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Vaata kõiki vestlusi";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lisa Duck.ai häälvestluse otsetee juhtimiskeskusesse";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Lisa lehe sisu";
+
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Küsi lehe kohta";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Kokkuvõte lehelt";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
@@ -1341,6 +1663,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Räägi Duck.ai-ga Siri abil";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
@@ -1359,6 +1684,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Otseteed";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri otseteed lasevad sul alustada Duck.ai häälvestlust kiire häälkäsklusega, näiteks „Siri, alusta DuckDuckGo häälvestlust“. See on kiire ja käed-vaba viis Duck.ai-ga vestlemiseks.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, käivita DuckDuckGo häälvestlus.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, vestle DuckDuckGo-ga.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, alusta häälvestlust DuckDuckGo-ga.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Kõik vestlused on %@ privaatsed";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privaatsed";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
@@ -1432,14 +1781,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Jätka Duck Playeris";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Ava YouTube'i videod alati Duck Playeris";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playeris avatud videote taasesitus algab automaatselt. Lülitage see välja, kui soovite Duck Playeris avatud videote taasesitust käsitsi alustada.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Videote automaatne esitamine";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaatne videote esitamine";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Avab videod kinorežiimis, mis takistab vaadataval sisul sinu YouTube'i voogu mõjutamast.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Luba Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentaalne";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player võimaldab vaadata YouTube'i ilma suunatud reklaamideta ja hoiab vaadatav sisu ei mõjuta sinu soovitusi.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo pakub kõik privaatsuseks vajaliku, mida vajad enda kaitsmiseks veebi sirvimisel.";
@@ -1586,7 +1947,10 @@
 "empty.search" = "Ühtegi vastet ei leitud";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Registreeritud: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1621,6 +1985,29 @@
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Tekkis tundmatu tõrge";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Lülitub sellele vahekaardile";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Tagasi…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Tagasi %1$@, %2$@ juurde";
+
+/* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "Väline ID: %@";
+
 /* No comment provided by engineer. */
 "favorite" = "Lemmik";
 
@@ -1643,7 +2030,7 @@
 "favorites.settings.mobile-only" = "Ainult mobiililemmikud";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Funktsioon: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklaami ja hüpikakende blokeerimine";
@@ -1858,6 +2245,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VALI KATEGOORIA";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Ei saa Plus või Pro taseme funktsioonidele ligi pääseda";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Teie anonüümne tagasiside on meile oluline.";
 
@@ -1891,8 +2281,70 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Otsi lehel";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Kustuta kõik vestlused";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai vestlused";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Võib sind kontodelt välja logida";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Küpsised ja saidi andmed";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Vahelehed";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Vali, mida kustutada";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logi saidile sisse teise kontoga";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Sirvi kohalikku ajalugu salvestamata";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tõrkeotsing veebilehtedel";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud. Nende andmed põletatakse, kui sa need kõik sulged. Need pakuvad sulle sama jälgimiskaitset kui teisedki vahekaardid.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uus Fire vahekaart";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire vahekaardid";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uus";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Uus! Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Mitte praegu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Proovi Fire vahekaarte";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Proovi Fire vahekaarte";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Proovi Fire vahekaarte, et sirvida ilma kohalikku ajalugu salvestamata.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Uus: Fire vahekaardid";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire vahekaart";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Klassikaline";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -1902,6 +2354,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Whirlpool";
+
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
 
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Ava oma arvutis:";
@@ -1949,7 +2404,16 @@
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Küsi privaatselt";
+"input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Küsi lisaküsimus...";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Paigalda laiendus";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Installitud laiendused (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Peate lubama VPN-i rakenduses DuckDuckGo.";
@@ -1999,6 +2463,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Otsi või sisesta aadress";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uus Fire vahekaart";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uus vaheleht";
 
@@ -2028,6 +2495,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Viimati töödeldud: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Saadaolevate toodete laadimine...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Laaditakse vahendajad...";
@@ -2068,6 +2538,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo rakendus Macile";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Hoiata mind pettuste, andmepüügi või pahavara tõttu märgistatud saitidel";
 
@@ -2094,6 +2573,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Sõnumid";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Aadressiriba nupp";
@@ -2148,6 +2630,18 @@
 
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN-ühendus katkestati aegunud tellimuse tõttu. DuckDuckGo VPN-i taasühendamiseks telli DuckDuckGo.";
+
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Autentimine ei ole võimalik. Kontrollige, kas teie tellimus on aktiivne, ja proovige uuesti.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Ei saa VPN-serveriga ühendust luua. Proovi hiljem uuesti.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Sinu tellimus on lõppenud. Tellige uuesti, et luua ühendus VPN-serveriga.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Ilmnes ootamatu viga. Proovi uuesti. Kui probleem püsib, kerige abi saamiseks jaotiseni **Teave** ja klõpsake suvandil **KKK-d ja tugi**.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN-i ühendamine ebaõnnestus. Proovige hiljem uuesti.";
@@ -2245,11 +2739,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Proovi hiljem uuesti.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Ühendus ebaõnnestus.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Ühendus ebaõnnestus";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP-aadress";
@@ -2362,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Mitte praegu";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Tehisintellekti funktsioonid on privaatsed ja valikulised.\nSaad muudatusi teha suvandis Seaded > Tehisintellekti funktsioonid.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Kas soovid aadressiribal hõlpsat juurdepääsu privaatsele tehisintellekti vestlusele?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Otsi ja Duck.ai";
 
@@ -2375,13 +2872,34 @@
 "new.address.bar.picker.title" = "Aadressiriba valik";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Aktiivseid tellimusi ei ole";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Olemasolevat tellimust ei leitud";
+
+/* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Laiendusi pole paigaldatud";
+
+/* No comment provided by engineer. */
 "No Logs" = "Logisid pole";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "„%@“ kohta ei leitud vasteid";
 
 /* No comment provided by engineer. */
 "No messages" = "Sõnumeid pole";
 
 /* No comment provided by engineer. */
 "No results found" = "Ühtegi tulemust ei leitud";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Tellimusi pole saadaval";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2394,6 +2912,12 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Hüpikaken on peidetud";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube’i reklaamiblokeerija on sees";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sain aru";
@@ -2449,8 +2973,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Jäta vahele";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Tere!\n\nKas oled valmis kasutama kiiremat brauserit, mis hoiab sind kaitstud?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Tere!\n\nKas oled valmis kiiremaks brauseriks, mis sind kaitseb ja laseb sul otsustada, millal ja kuidas tehisintellekti kasutada?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Järgmine";
@@ -2464,11 +2988,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Seaded > Tehisintellekti funktsioonid.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Kas soovid lihtsamat juurdepääsu privaatsele AI-vestlusele?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Lülita \n Otsingu ja Duck.ai vahel";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Teeme ära!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Ainult otsi";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Kas soovid aadressiribal hõlpsat juurdepääsu privaatsele tehisintellekti vestlusele?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Alustame!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Olen siin varem olnud";
@@ -2476,11 +3006,41 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Loe edasi";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Ei aitäh";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Jäta vahele";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ja enne kui ma unustan...";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Kas teadsid?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privaatne. Kiire. Vähem reklaame.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "See on DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Kas oled valmis kasutama kiiremat brauserit, mis annab sulle kontrolli?\n\nTehisintellekt on alati valikuline ja privaatsuskaitse on alati sisse lülitatud.";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Tere!";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Kas tahad taastada oma järjehoidjad, paroolid ja muu eelmisest DuckDuckGo sünkroonimisest?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Taasta minu andmed";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Jäta vahele";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Jätkame sealt, kus pooleli jäid";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Alusta sirvimist";
@@ -2493,6 +3053,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Sain aru! Jätan muud näpunäited vahele.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Proovi tasuta!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Proovi seda tasuta!";
@@ -2749,6 +3312,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avada teises rakenduses?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Mine tagasi";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Kas soovid selle lehe Safaris avada?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Kahjuks ei õnnestunud lehte laadida.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Avatud Safaris";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Jää DuckDuckGo juurde";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Mõned veebisaidi funktsioonid ei pruugi selle brauseriga ühilduda.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "See sait soovib avaneda Safaris.";
+
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Hiljutised töötlemislogid";
 
@@ -2765,7 +3349,48 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Tulemused";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Skaneerimine...";
+
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Kas kustutada Fire vahekaardid ja nende andmed?";
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Kas kustutada vahekaardid ja saidi andmed?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Kas kustutada vahekaardid, saidi andmed ja vestlused?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Kustuta kõik";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Kustuta see vestlus";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "„Kustuta kõik” ei kustuta su Duck.ai vestlusajalugu.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Kustuta see vahekaart";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "See tühistab pooleliolevad allalaadimised.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Uued loodud vahekaardid saab ka ükshaaval kustutada.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Saidi andmete kustutamine võib sind kontodelt välja logida.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Otsi või sisesta aadress";
@@ -2824,6 +3449,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lisa vidin avakuvale";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lisa Duck.ai otseteed oma avakuvale";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisa DuckDuckGo VPN vidin oma avakuvale";
 
@@ -2833,11 +3461,38 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Otsi ja Duck.ai";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Näita aadressiribal";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Ainult otsi";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Vali, mida näed, kui naased pärast %@ tegevusetuse perioodi möödumist.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 tund";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d tundi";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minut";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minutit";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekund";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekundit";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Pärast tegevusetust";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Viimati kasutatud vahekaart";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Uus vaheleht";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Proovi uut valikut lülituda otsingu ja Duck.ai vahel aadressiribal.";
@@ -2856,6 +3511,15 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
+
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Saada lehe sisu automaatselt Duck.ai-le";
+
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Saada sisu automaatselt";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Vestluse soovitused";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Peida AI loodud pildid";
@@ -2878,11 +3542,50 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Keela, et takistada linkide automaatset avanemist teistes installitud rakendustes.";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Kustuta vahekaardid ja andmed";
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Kustuta kõik saidi andmed, sealhulgas külastatud saidid. Võib sind kontodelt välja logida.";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Kustuta vahekaardid, andmed ja Duck.ai vestlused";
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Küpsised ja saidi andmed";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Kustuta kõik vestlused, sh kinnitatud vestlused";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai vestlused";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Tühjenda";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Sule kõik avatud vahekaardid";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Vahelehed";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Rakendusest väljumisel, 1-tunnise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Rakendusest väljumisel, 5-minutilise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Rakendusest väljumisel, 15-minutilise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Rakendusest väljumisel, 30-minutilise passiivsuse järel";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Ainult rakendusest väljumisel";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Rakendusest väljumise määratlemiseks pühi rakendust selle sulgemiseks tegevusetuse ajal, kui rakendus on taustal.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Soovitud ajastus";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Andmed kustutatakse rakenduse taaskäivitamisel.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Otsingusoovitused";
@@ -2896,11 +3599,32 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Kuva sisestamisel otsingusoovitusi, sealhulgas järjehoidjaid. Kõik otsingud on privaatsed.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Kuva otsinguribale tippimise ajal soovitusi oma ajaloost, järjehoidjatest ja (valikuliselt) Duck.ai vestlusajaloo põhjal. Kõik otsingud on privaatsed.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Rakenduse lukk";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Kui on lubatud Touch ID, Face ID või süsteemi pääsukood, palutakse selle avamisel rakendus avada.";
+
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Kustuta";
+
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automaatne andmete kustutamine";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Andmete automaatne kustutamine";
+
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automaatne esitamine";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Brauseri tagasiside";
@@ -2908,11 +3632,8 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button kustutab ka Duck.ai ajaloo, sealhulgas kinnitatud vestlused.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Tühjenda Duck.ai vestlused";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Kustuta andmed automaatselt";
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Kustuta sirvimisandmed";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Vii seadistamine lõpule";
@@ -2926,20 +3647,41 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Halda küpsiste hüpikaknaid";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Kustuta vahekaardid ja andmed";
+
 /* Settings title for the customize section */
 "settings.customize" = "Kohanda";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Kustutab kõik vahekaardid, Duck.ai vestlused ja andmed kõigi saitide kohta, mida sa pole tulekindlaks teinud.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Kustutab kõik vahekaardid ja andmed kõigi saitide kohta, mida sa pole tulekindlaks teinud.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Andmete kustutamine aitab kaitsta sinu privaatsust veebis. Andmete käsitsi kustutamiseks kasuta nuppu Fire Button või seadista automaatne kustutamine.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Lüliti vaikeasend uutel vahekaartidel.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Lüliti asend";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimati kasutatud";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Otsi";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Kustuta Duck.ai vestlused";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Kustuta vahekaardid ja andmed";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Keela Email Protection automaatne täitmine";
@@ -2980,8 +3722,11 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Tulenupu animatsioon";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Tulekindlad veebisaidid";
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Tulekindlad saidid";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Muuda veebisaitide jaoks tume režiim kohustuslikuks";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Üldine";
@@ -2998,7 +3743,7 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Impordi paroolid";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Uus";
 
 /* Settings screen cell for Keyboard */
@@ -3018,6 +3763,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Halda kontot";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Meedia";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Veel DuckDuckGo'lt";
@@ -3142,14 +3890,26 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sünkroonimine ja varundamine";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Näita vahelehtede halduris";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Vahelehed";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Vaikimisi teksti suumimine";
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Teema";
 
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Annab veebisaitidele tumeda välimuse, kui kasutad tumedat teemat.";
+
 /* Title for the Settings View */
 "settings.title" = "Seaded";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Blokeeritud jälgurite animatsioon";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Aitab blokeerida kolmanda poole jälgureid, mis üritavad end DNS-i abil veebisaidil maskeerida.";
@@ -3235,6 +3995,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo brauser pakub jälgimiskaitseid, mis on alati aktiivsed. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Mida on uut";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näitab viimase minuti logisid, et aidata diagnoosida probleeme kohe pärast värskendamist.";
 
@@ -3272,13 +4035,19 @@
 "siteFeedback.urlPlaceholder" = "Milline veebisait on katki?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
+"Status" = "Olek";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Olek: kehtetu";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Alamfunktsioon: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisa seadmele";
@@ -3325,8 +4094,14 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Püsitellimuse plaanid";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Tühista alandamine";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Sinu tellimus on sellest seadmest eemaldatud.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Teie pakett alandatakse kuupäeval %2$@ paketile %1$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Uuenda plaani või loobu";
@@ -3385,6 +4160,9 @@
 /* Help and support Section header */
 "subscription.help" = "Abi ja tugi";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Makse haldamine või tühistamine";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Halda plaani";
 
@@ -3415,17 +4193,23 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Püsitellimuse plaanid";
+
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Plaani muutmise lõpuleviimine...";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ostu sooritamine...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Plaani muutmine on pooleli...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Ostmine on käimas...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Tellimuse taastamine...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro kannab nüüd lihtsalt nime DuckDuckGo tellimus";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eemalda sellest seadmest";
@@ -3484,6 +4268,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Teie aastane tellimus aegub %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Teie pakett alandatakse kuutasule %1$@ alates %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Teie pakett alandatakse kuupäeval %2$@ paketile %1$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Teie pakett alandatakse aastasele paketile %1$@ alates %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Teie kuutellimus uueneb %@.";
 
@@ -3505,6 +4298,18 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Tasuta prooviperiood aktiveeritud";
 
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Uuenda versioonile %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Ava nutikam ja võimsam tehisintellekt";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Uuenda";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Vaata kõiki plaane";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI teade";
 
@@ -3515,7 +4320,7 @@
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kõigi seadmete ühendus katkestatakse ja sinu sünkroonitud andmed kustutatakse serverist.";
+"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
@@ -3528,6 +4333,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sünkroonimise seadistamine";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Oma krediitkaartide sünkroonimine ja varundamine";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Andmete sünkroonimine ja varundamine";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei aitäh";
@@ -3577,6 +4388,30 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kood kopeeritud";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Seade sünkrooniti edukalt!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup lubatud";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Taastamiskood kopeeritud";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backupi ei õnnestunud lubada";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Lülita välja";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "See ei mõjuta sinu seadmes olevaid järjehoidjaid ja paroole.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Kas lülitada Sync & Backup välja?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Eemaldage";
 
@@ -3595,15 +4430,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Vabandust, kuid sünkroonimine ja varundus pole selles rakenduse versioonis enam saadaval. Jätkamiseks värskenda DuckDuckGo uusimale versioonile.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Sulge vaheleht";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Vahekaart lugemata";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulge Fire vahekaart";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulge vaheleht";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulge \"%1$@\" aadressil %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire vahekaart";
+
+/* New tab title */
+"tab.new.title" = "Uus vaheleht";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ava avalehe vahekaart";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Ava uuel vahekaardil";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Ava Fire vahekaart";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 
@@ -3618,6 +4474,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Lisa kõigile vahekaartidele järjehoidja";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Peida";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Saad selle uuesti sisse lülitada suvandis Seaded > Välimus.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Kas peita jälgurite arv?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Jälgijate arvu valikud";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Topeltpuudutage, et kuvada selle bänneri peitmise suvandid";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Jäta alles";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "viimase 7 päeva jooksul";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurendage või vähendage teksti suurust kõigil saitidel.";
@@ -3657,6 +4537,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "%@ privaatsuse kaitse on lubatud";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -3901,6 +4784,9 @@
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Oled kutsutud!";
 
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Veebilaiendused pole saadaval";
+
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Lemmik on eemaldatud";
 
@@ -3924,6 +4810,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sõnum saatjalt %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Lisatakse olemasolevale kontole";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Luuakse uus konto";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "Säästke 25%";
@@ -3981,6 +4873,21 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hangi DuckDuckGo for Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo eemaldab YouTube'ist videoreklaamid, et saaksid videoid katkestusteta vaadata.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube'i reklaamide blokeerimine";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Reklaamide blokeerimine YouTube'is";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kui DuckDuckGo on sisse lülitatud, tuvastab see anonüümselt reklaamiblokeerimise häireid või YouTube'i vigu, et parandada kõigi kasutuskogemust. DuckDuckGo ei näe kunagi, milliseid videoid sa vaatad, ega mingeid isikuandmeid.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Loe edasi";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Järjehoidjad";

@@ -17,13 +17,21 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
-import Core
+import SwiftUI
+import UIComponents
 
 struct DataImportView: View {
+
+    static var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
 
     @ObservedObject var viewModel: DataImportViewModel
 
@@ -93,7 +101,7 @@ struct DataImportView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
                     .fill(Color(designSystemColor: .surface))
             )
             .padding(.horizontal, 8)
@@ -149,7 +157,7 @@ struct DataImportView: View {
 
                 ExportFromCell(viewModel: viewModel)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
                             .fill(Color(designSystemColor: .surface))
                     )
                     .padding(.top, 5)
@@ -189,6 +197,9 @@ struct DataImportView: View {
                 .accentColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
             }
+            .if(isiOS26, transform: { view in
+                view.frame(height: 52)
+            })
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
         }

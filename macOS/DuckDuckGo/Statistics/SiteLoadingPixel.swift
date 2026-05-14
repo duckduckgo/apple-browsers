@@ -100,4 +100,13 @@ enum SiteLoadingPixel: PixelKitEvent {
             return nil
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .siteLoadingSuccess,
+                .siteLoadingFailure,
+                .siteLoadingTiming:
+            return [.pixelSource]
+        }
+    }
 }

@@ -22,7 +22,7 @@ import SecureStorage
 import struct GRDB.DatabaseError
 import os.log
 
-public protocol DataBrokerProtectionRepository {
+public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func save(_ profile: DataBrokerProtectionProfile) async throws
     func fetchProfile() throws -> DataBrokerProtectionProfile?
     func deleteProfileData() throws
@@ -30,7 +30,7 @@ public protocol DataBrokerProtectionRepository {
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
     func fetchBroker(with brokerId: Int64) throws -> DataBroker?
 
-    func saveBroker(dataBroker: DataBroker) throws -> Int64
+    func saveBroker(brokerResource: BrokerResource) throws -> Int64
     func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
     func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery?
     func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
@@ -83,34 +83,13 @@ public protocol DataBrokerProtectionRepository {
 
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
 
-    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
-
     func fetchFirstEligibleJobDate() throws -> Date?
 
     func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
     func deleteBackgroundTaskEvents(olderThan date: Date) throws
 
-    func saveOptOutEmailConfirmation(profileQueryId: Int64,
-                                     brokerId: Int64,
-                                     extractedProfileId: Int64,
-                                     generatedEmail: String,
-                                     attemptID: String) throws
-    func deleteOptOutEmailConfirmation(profileQueryId: Int64,
-                                       brokerId: Int64,
-                                       extractedProfileId: Int64) throws
-    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
-    func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
-    func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
-    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
-    func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
-                                           emailConfirmationLinkObtainedOnBEDate: Date?,
-                                           profileQueryId: Int64,
-                                           brokerId: Int64,
-                                           extractedProfileId: Int64) throws
-    func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
-                                                      brokerId: Int64,
-                                                      extractedProfileId: Int64) throws
+    func haveAllScansRunAtLeastOnce() throws -> Bool
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -452,11 +431,11 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
-    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+    public func saveBroker(brokerResource: BrokerResource) throws -> Int64 {
         do {
-            return try vault.save(broker: dataBroker)
+            return try vault.save(brokerResource: brokerResource)
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker dataBroker")
+            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker brokerResource")
             throw error
         }
     }
@@ -648,9 +627,9 @@ extension DataBrokerProtectionDatabase {
         var brokerIDs = storedBrokers.compactMap(\.id)
 
         /// If none exists in the vault, populate them with bundled JSONs
-        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
-            for broker in brokers {
-                let brokerId = try vault.save(broker: broker)
+        if storedBrokers.isEmpty, let brokerResources = try localBrokerService.bundledBrokers() {
+            for brokerResource in brokerResources {
+                let brokerId = try vault.save(brokerResource: brokerResource)
                 brokerIDs.append(brokerId)
             }
         }
@@ -873,6 +852,18 @@ extension DataBrokerProtectionDatabase {
             )
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.incrementOptOutEmailConfirmationAttemptCount")
+            throw error
+        }
+    }
+
+    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+        do {
+            let data = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+            let scans = data.compactMap { $0.scanJobData }
+            let scansNotRun = scans.filter { $0.lastRunDate == nil }
+            return scansNotRun.count == 0
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllScansRunAtLeastOnce")
             throw error
         }
     }

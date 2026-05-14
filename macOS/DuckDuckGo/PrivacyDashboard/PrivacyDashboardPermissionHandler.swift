@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import PrivacyDashboard
+import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]
 
@@ -61,64 +62,15 @@ final class PrivacyDashboardPermissionHandler {
     }
 
     private func updatePermissions() {
-        guard let usedPermissions = tabViewModel?.usedPermissions else {
-            assertionFailure("PrivacyDashboardViewController: tabViewModel not set")
-            return
-        }
-        guard let domain = tabViewModel?.tab.content.urlForWebView?.host else {
-            onPermissionChange?([])
-            return
-        }
-
-        let authorizationState: PrivacyDashboardPermissionAuthorizationState
-        authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys).compactMap { permissionType in
-            guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
-                    || usedPermissions[permissionType] != nil
-            else {
-                return nil
-            }
-            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-            return (permissionType, PermissionAuthorizationState(decision: decision))
-        }
-
-        var allowedPermissions: [AllowedPermission] = []
-
-        allowedPermissions = authorizationState.map { item in
-            AllowedPermission(key: item.permission.rawValue,
-                              icon: item.permission.jsStyle,
-                              title: item.permission.jsTitle,
-                              permission: item.state.rawValue,
-                              used: usedPermissions[item.permission] != nil,
-                              paused: usedPermissions[item.permission] == .paused,
-                              options: makeOptions(for: item, domain: domain)
-            )
-        }
-
-        onPermissionChange?(allowedPermissions)
-    }
-
-    private func makeOptions(for item: (permission: PermissionType, state: PermissionAuthorizationState), domain: String) -> [[String: String]] {
-        return PermissionAuthorizationState.allCases.compactMap { decision -> [String: String]? in
-            // don't show Permanently Allow if can't persist Granted Decision
-            switch decision {
-            case .grant:
-                guard item.permission.canPersistGrantedDecision else { return nil }
-            case .deny:
-                guard item.permission.canPersistDeniedDecision else { return nil }
-            case .ask: break
-            }
-            return [
-                "id": decision.rawValue,
-                "title": String(format: decision.localizedFormat(for: item.permission), domain)
-            ]
-        }
+        // Permission management is handled by the Permission Center
+        onPermissionChange?([])
     }
 }
 
 extension PermissionType {
     var jsStyle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups:
+        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy:
             return self.rawValue
         case .externalScheme:
             return "externalScheme"
@@ -127,7 +79,7 @@ extension PermissionType {
 
     var jsTitle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups:
+        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy:
             return self.localizedDescription
         case .externalScheme:
             return String(format: UserText.permissionExternalSchemeOpenFormat, self.localizedDescription)

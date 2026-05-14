@@ -18,16 +18,35 @@
 //
 
 import UIKit
+import Core
 import BrowserServicesKit
+import DesignResourcesKitIcons
+
+enum TabSwitcherToolbarState: Equatable {
+    case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
+    case largeSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
+    case editingRegularSize(selectedCount: Int, totalCount: Int)
+    case editingLargeSize(selectedCount: Int, totalCount: Int)
+
+    var interfaceMode: TabSwitcherViewController.InterfaceMode {
+        switch self {
+        case .regularSize: return .regularSize
+        case .largeSize: return .largeSize
+        case .editingRegularSize: return .editingRegularSize
+        case .editingLargeSize: return .editingLargeSize
+        }
+    }
+}
 
 protocol TabSwitcherBarsStateHandling {
 
     var plusButton: UIBarButtonItem { get }
     var fireButton: UIBarButtonItem { get }
+    var doneIconButton: UIBarButtonItem { get }
+    var doneTextButton: UIBarButtonItem { get }
     var doneButton: UIBarButtonItem { get }
     var closeTabsButton: UIBarButtonItem { get }
     var menuButton: UIBarButtonItem { get }
-    var addAllBookmarksButton: UIBarButtonItem { get }
     var tabSwitcherStyleButton: UIBarButtonItem { get }
     var editButton: UIBarButtonItem { get }
     var selectAllButton: UIBarButtonItem { get }
@@ -35,99 +54,261 @@ protocol TabSwitcherBarsStateHandling {
     var duckChatButton: UIBarButtonItem { get }
 
     var bottomBarItems: [UIBarButtonItem] { get }
-    var topBarLeftButtonItems: [UIBarButtonItem] { get }
-    var topBarRightButtonItems: [UIBarButtonItem] { get }
+    var topBarLeftButtons: [UIView] { get }
+    var topBarRightButtons: [UIView] { get }
 
     var isBottomBarHidden: Bool { get }
 
-    func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
-                selectedTabsCount: Int,
-                totalTabsCount: Int,
-                containsWebPages: Bool,
-                showAIChatButton: Bool)
+    var onPlusButtonTapped: (() -> Void)? { get set }
+    var onNewFireTabTapped: (() -> Void)? { get set }
+    var onNewNormalTabTapped: (() -> Void)? { get set }
+    var onFireButtonTapped: (() -> Void)? { get set }
+    var onDoneButtonTapped: (() -> Void)? { get set }
+    var onEditButtonTapped: (() -> UIMenu?)? { get set }
+    var onTabStyleButtonTapped: (() -> Void)? { get set }
+    var onSelectAllTapped: (() -> Void)? { get set }
+    var onDeselectAllTapped: (() -> Void)? { get set }
+    var onMenuButtonTapped: (() -> UIMenu?)? { get set }
+    var onCloseTabsTapped: (() -> Void)? { get set }
+    var onDuckChatTapped: (() -> Void)? { get set }
+
+    func update(_ state: TabSwitcherToolbarState)
+
+    func configureButtonActions(tabsStyle: TabSwitcherViewController.TabsStyle,
+                                canShowSelectionMenu: Bool)
+
+    func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
 
 }
 
 /// This is what we hope will be the new version long term.
 class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
-    let plusButton = UIBarButtonItem()
-    let fireButton = UIBarButtonItem()
-    let doneButton = UIBarButtonItem()
-    let closeTabsButton = UIBarButtonItem()
-    let menuButton = UIBarButtonItem()
-    let addAllBookmarksButton = UIBarButtonItem()
-    let tabSwitcherStyleButton = UIBarButtonItem()
-    let editButton = UIBarButtonItem()
-    let selectAllButton = UIBarButtonItem()
-    let deselectAllButton = UIBarButtonItem()
-    let duckChatButton = UIBarButtonItem()
+    lazy var plusButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add) { [weak self] in
+            self?.onPlusButtonTapped?()
+        }
+        return item
+    }()
+
+    lazy var fireButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
+            self?.onFireButtonTapped?()
+        }
+        return item
+    }()
+
+    lazy var doneIconButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
+            self?.onDoneButtonTapped?()
+        }
+        return item
+    }()
+
+    lazy var doneTextButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil) { [weak self] in
+            self?.onDoneButtonTapped?()
+        }
+        (item.customView as? BrowserChromeButton)?.setTitle(UserText.navigationTitleDone, for: .normal)
+        Self.applyTextConstraints(to: item)
+        return item
+    }()
+
+    var doneButton: UIBarButtonItem {
+        params.interfaceMode.isLarge ? doneTextButton : doneIconButton
+    }
+
+    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: DesignSystemImages.Glyphs.Size24.trash) { [weak self] in
+        self?.onCloseTabsTapped?()
+    }
+
+    lazy var menuButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
+        return item
+    }()
+
+    lazy var tabSwitcherStyleButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) { [weak self] in
+            self?.onTabStyleButtonTapped?()
+        }
+        return item
+    }()
+
+    lazy var editButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
+        return item
+    }()
+
+    lazy var selectAllButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
+            self?.onSelectAllTapped?()
+        }
+        Self.applyTextConstraints(to: item)
+        return item
+    }()
+
+    lazy var deselectAllButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
+            self?.onDeselectAllTapped?()
+        }
+        Self.applyTextConstraints(to: item)
+        return item
+    }()
+
+    lazy var duckChatButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] in
+            self?.onDuckChatTapped?()
+        }
+        return item
+    }()
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
     private(set) var isBottomBarHidden = false
-    private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
-    private(set) var topBarRightButtonItems = [UIBarButtonItem]()
+    private(set) var topBarLeftButtons = [UIView]()
+    private(set) var topBarRightButtons = [UIView]()
 
-    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
-    private(set) var selectedTabsCount: Int = 0
-    private(set) var totalTabsCount: Int = 0
-    private(set) var containsWebPages = false
-    private(set) var showAIChatButton = false
+    private var params = StateParameters()
 
     private(set) var isFirstUpdate = true
 
-    init() {
+    var onPlusButtonTapped: (() -> Void)?
+    var onNewFireTabTapped: (() -> Void)?
+    var onNewNormalTabTapped: (() -> Void)?
+    var onFireButtonTapped: (() -> Void)?
+    var onDoneButtonTapped: (() -> Void)?
+    var onEditButtonTapped: (() -> UIMenu?)?
+    var onTabStyleButtonTapped: (() -> Void)?
+    var onSelectAllTapped: (() -> Void)?
+    var onDeselectAllTapped: (() -> Void)?
+    var onMenuButtonTapped: (() -> UIMenu?)?
+    var onCloseTabsTapped: (() -> Void)?
+    var onDuckChatTapped: (() -> Void)?
+
+    private static let buttonSize: CGFloat = 44
+
+    init() { }
+
+    private static func applyTextConstraints(to item: UIBarButtonItem) {
+        guard let view = item.customView else { return }
+        view.widthAnchor.constraint(greaterThanOrEqualToConstant: buttonSize).isActive = true
     }
 
-    func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
-                selectedTabsCount: Int,
-                totalTabsCount: Int,
-                containsWebPages: Bool,
-                showAIChatButton: Bool) {
+    private var currentState: TabSwitcherToolbarState?
 
-        guard isFirstUpdate
-                || interfaceMode != self.interfaceMode
-                || selectedTabsCount != self.selectedTabsCount
-                || totalTabsCount != self.totalTabsCount
-                || containsWebPages != self.containsWebPages
-                || showAIChatButton != self.showAIChatButton
-        else {
-            // If nothing has changed, don't update
-            return
-        }
+    func update(_ state: TabSwitcherToolbarState) {
+        guard currentState != state else { return }
+        currentState = state
 
-        self.isFirstUpdate = false
-        self.interfaceMode = interfaceMode
-        self.selectedTabsCount = selectedTabsCount
-        self.totalTabsCount = totalTabsCount
-        self.containsWebPages = containsWebPages
-        self.showAIChatButton = showAIChatButton
+        self.params = StateParameters(from: state)
 
-        self.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
-        self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
-        self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
-
-        self.editButton.isEnabled = self.totalTabsCount > 1 || containsWebPages
-
+        configureButtons()
         updateBottomBar()
         updateTopLeftButtons()
         updateTopRightButtons()
     }
 
+    func configureButtonActions(tabsStyle: TabSwitcherViewController.TabsStyle,
+                                canShowSelectionMenu: Bool) {
+        if let button = tabSwitcherStyleButton.customView as? BrowserChromeButton {
+            button.setImage(tabsStyle.image)
+            button.accessibilityLabel = tabsStyle.accessibilityLabel
+        }
+
+        // Configure edit button with menu
+        if let button = editButton.customView as? BrowserChromeButton {
+            button.menu = onEditButtonTapped?()
+            button.showsMenuAsPrimaryAction = true
+        }
+
+        // Configure menu button with menu
+        if let button = menuButton.customView as? BrowserChromeButton {
+            button.menu = onMenuButtonTapped?()
+            button.showsMenuAsPrimaryAction = true
+            button.isEnabled = canShowSelectionMenu
+        }
+
+    }
+
+    func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool) {
+        guard let button = plusButton.customView as? BrowserChromeButton else { return }
+        guard isFireModeEnabled else {
+            button.menu = nil
+            return
+        }
+
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "tab_switcher"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tab_switcher"
+                                 ])
+                                 self?.onNewFireTabTapped?()
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tab_switcher"
+                                 ])
+                                 self?.onNewNormalTabTapped?()
+                             }
+                ])
+            }
+        ])
+
+        button.menu = menu
+        button.showsMenuAsPrimaryAction = false
+    }
+
+    private func configureButtons() {
+        configureAccessibility(fireButton, label: "Close all tabs and clear data", identifier: "Browser.Toolbar.Button.Fire")
+        configureAccessibility(duckChatButton, label: UserText.duckAiFeatureName, identifier: "TabSwitcher.Button.DuckChat")
+        configureAccessibility(plusButton, label: UserText.keyCommandNewTab)
+        configureAccessibility(doneIconButton, label: UserText.navigationTitleDone)
+        configureAccessibility(doneTextButton, label: UserText.navigationTitleDone)
+        configureAccessibility(editButton, label: UserText.actionGenericEdit)
+        configureAccessibility(selectAllButton, label: UserText.selectAllTabs)
+        configureAccessibility(deselectAllButton, label: UserText.deselectAllTabs)
+        configureAccessibility(menuButton, label: "More Menu")
+
+        setEnabled(editButton, params.totalCount > 1 || params.containsWebPages)
+        setEnabled(closeTabsButton, params.selectedCount > 0)
+        let doneEnabled = params.canDismissOnEmpty || params.totalCount > 0
+        setEnabled(doneIconButton, doneEnabled)
+        setEnabled(doneTextButton, doneEnabled)
+    }
+
+    private func configureAccessibility(_ item: UIBarButtonItem, label: String, identifier: String? = nil) {
+        item.accessibilityLabel = label
+        item.customView?.accessibilityLabel = label
+        if let identifier {
+            item.accessibilityIdentifier = identifier
+            item.customView?.accessibilityIdentifier = identifier
+        }
+    }
+
+    private func setEnabled(_ item: UIBarButtonItem, _ enabled: Bool) {
+        item.isEnabled = enabled
+        (item.customView as? UIControl)?.isEnabled = enabled
+    }
+
     func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
-        let leadingSideWidthDifference: CGFloat = 6
-
-        switch interfaceMode {
+        switch params.interfaceMode {
         case .regularSize:
 
             newItems = [
                 tabSwitcherStyleButton,
 
                 .flexibleSpace(),
-                .fixedSpace(leadingSideWidthDifference),
+
+                invisibleBalancingButton(),
+
                 .flexibleSpace(),
 
                 fireButton,
@@ -138,7 +319,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
                 .flexibleSpace(),
 
-                editButton
+                editButton,
             ].compactMap { $0 }
 
             isBottomBarHidden = false
@@ -146,7 +327,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         case .editingRegularSize:
             newItems = [
                 closeTabsButton,
-                UIBarButtonItem.flexibleSpace(),
+                .flexibleSpace(),
                 menuButton,
             ]
             isBottomBarHidden = false
@@ -157,78 +338,124 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isBottomBarHidden = true
         }
 
-        if !newItems.isEmpty {
-            // This aligns items with the toolbar on main screen,
-            // which is supposed to be aligned with Omnibar buttons.
-            newItems = [.additionalFixedSpaceItem()] + newItems + [.additionalFixedSpaceItem()]
+        if #available(iOS 26, *) {
+            newItems.forEach {
+                $0.sharesBackground = false
+                $0.hidesSharedBackground = true
+            }
         }
 
         bottomBarItems = newItems
     }
 
+    private func invisibleBalancingButton() -> UIBarButtonItem {
+        // Creates an invisible button to balance the toolbar layout and center the fire button
+        let button = BrowserChromeButton(.primary)
+        button.setImage(DesignSystemImages.Glyphs.Size24.shield)
+        button.alpha = 0
+        button.isUserInteractionEnabled = false
+        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+        let barItem = UIBarButtonItem(customView: button)
+        if #available(iOS 26.0, *) {
+            barItem.sharesBackground = false
+            barItem.hidesSharedBackground = true
+        }
+
+        return barItem
+    }
+
     func updateTopLeftButtons() {
 
-        switch interfaceMode {
+        switch params.interfaceMode {
 
         case .regularSize:
-            topBarLeftButtonItems = [
-                doneButton,
-            ]
+            topBarLeftButtons = [
+                doneIconButton,
+            ].views()
 
         case .largeSize:
-            topBarLeftButtonItems = [
+            topBarLeftButtons = [
                 editButton,
                 tabSwitcherStyleButton,
-            ]
+            ].views()
 
         case .editingRegularSize:
-            topBarLeftButtonItems = [
-                doneButton
-            ]
+            topBarLeftButtons = [
+                doneIconButton,
+            ].views()
 
         case .editingLargeSize:
-            topBarLeftButtonItems = [
-                doneButton,
-            ]
+            topBarLeftButtons = [
+                doneTextButton,
+            ].views()
 
         }
     }
 
     func updateTopRightButtons() {
 
-        switch interfaceMode {
+        switch params.interfaceMode {
 
         case .largeSize:
-            topBarRightButtonItems = [
-                doneButton,
+            topBarRightButtons = ([
+                doneTextButton,
                 fireButton,
                 plusButton,
-                showAIChatButton ? duckChatButton : nil,
-            ].compactMap { $0 }
+                params.showAIChat ? duckChatButton : nil,
+            ] as [UIBarButtonItem?]).compactMap { $0 }.views()
 
         case .regularSize:
-            topBarRightButtonItems = [
-                showAIChatButton ? duckChatButton : nil,
-            ].compactMap { $0 }
+            topBarRightButtons = ([
+                params.showAIChat ? duckChatButton : nil,
+            ] as [UIBarButtonItem?]).compactMap { $0 }.views()
 
         case .editingRegularSize:
-            topBarRightButtonItems = [
-                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
-            ]
+            topBarRightButtons = [
+                params.selectedCount == params.totalCount ? deselectAllButton : selectAllButton,
+            ].views()
 
         case .editingLargeSize:
-            topBarRightButtonItems = [
+            topBarRightButtons = [
                 menuButton,
-            ]
+            ].views()
 
         }
     }
 }
 
-private extension UIBarButtonItem {
-    private static let additionalHorizontalSpace = 10.0
+extension DefaultTabSwitcherBarsStateHandler {
+    private struct StateParameters {
+        var selectedCount: Int = 0
+        var totalCount: Int = 0
+        var containsWebPages: Bool = false
+        var showAIChat: Bool = false
+        var canDismissOnEmpty: Bool = true
+        var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
 
-    static func additionalFixedSpaceItem() -> UIBarButtonItem {
-        .fixedSpace(additionalHorizontalSpace)
+        init() { }
+
+        init(from state: TabSwitcherToolbarState) {
+            switch state {
+            case .regularSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat, let canDismissOnEmpty),
+                 .largeSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat, let canDismissOnEmpty):
+                self.selectedCount = selectedCount
+                self.totalCount = totalCount
+                self.containsWebPages = containsWebPages
+                self.showAIChat = showAIChat
+                self.canDismissOnEmpty = canDismissOnEmpty
+            case .editingRegularSize(let selectedCount, let totalCount),
+                 .editingLargeSize(let selectedCount, let totalCount):
+                self.selectedCount = selectedCount
+                self.totalCount = totalCount
+            }
+            self.interfaceMode = state.interfaceMode
+        }
+    }
+}
+
+private extension Array where Element == UIBarButtonItem {
+    func views() -> [UIView] {
+        compactMap { $0.customView }
     }
 }

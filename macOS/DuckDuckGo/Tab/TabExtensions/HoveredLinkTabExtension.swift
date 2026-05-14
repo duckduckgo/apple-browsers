@@ -33,6 +33,7 @@ final class HoveredLinkTabExtension: TabExtension {
 }
 
 extension HoveredLinkTabExtension: HoverUserScriptDelegate {
+    @MainActor
     func hoverUserScript(_ script: HoverUserScript, didChange url: URL?) {
         hoveredLinkSubject.send(url)
     }

@@ -35,6 +35,34 @@ class MockDDGSyncing: DDGSyncing {
 
     }
 
+    var mainTokenRescopeResult: String?
+    var mainTokenRescopeError: Error?
+    private(set) var mainTokenRescopeScopes: [String] = []
+    func mainTokenRescope(to scope: String) async throws -> String? {
+        mainTokenRescopeScopes.append(scope)
+        if let mainTokenRescopeError {
+            throw mainTokenRescopeError
+        }
+        return mainTokenRescopeResult
+    }
+
+    func deleteAIChats(until: Date) async throws {
+    }
+
+    func deleteAIChats(chatIds: [String]) async throws {
+    }
+
+    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+        setAIChatHistoryEnabledCalls.append(enabled)
+        isAIChatHistoryEnabled = enabled
+    }
+
+    var isAIChatHistoryEnabled: Bool = false
+
+    func setCustomOperations(_ operations: [any SyncCustomOperation]) {
+    }
+
     var registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop"), RegisteredDevice(id: "2", name: "Device 2", type: "mobile"), RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
 
     var dataProvidersSource: DataProvidersSource?
@@ -72,6 +100,18 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     func initializeIfNeeded() {
+    }
+
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
     }
 
     var createAccountCallback: ((String, String) -> Void)?
@@ -140,6 +180,36 @@ class MockDDGSyncing: DDGSyncing {
             throw deleteAccountError
         }
         deleteAccountCallback?()
+    }
+
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    var encryptAndBase64URLEncodeResult: [String]?
+    var encryptAndBase64URLEncodeError: Error?
+    private(set) var encryptAndBase64URLEncodeInputs: [[String]] = []
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
+        encryptAndBase64URLEncodeInputs.append(values)
+        if let encryptAndBase64URLEncodeError {
+            throw encryptAndBase64URLEncodeError
+        }
+        return encryptAndBase64URLEncodeResult ?? values
+    }
+
+    var base64URLDecodeAndDecryptResult: [String]?
+    var base64URLDecodeAndDecryptError: Error?
+    private(set) var base64URLDecodeAndDecryptInputs: [[String]] = []
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        base64URLDecodeAndDecryptInputs.append(values)
+        if let base64URLDecodeAndDecryptError {
+            throw base64URLDecodeAndDecryptError
+        }
+        return base64URLDecodeAndDecryptResult ?? values
     }
 
     var serverEnvironment: ServerEnvironment = .production

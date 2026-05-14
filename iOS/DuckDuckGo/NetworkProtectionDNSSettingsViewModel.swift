@@ -21,7 +21,7 @@ import Foundation
 import Combine
 import VPN
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
     private let settings: VPNSettings

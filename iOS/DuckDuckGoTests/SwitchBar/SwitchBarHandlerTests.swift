@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import PrivacyConfig
 @testable import Core
 @testable import DuckDuckGo
 import Combine
@@ -29,15 +30,22 @@ final class SwitchBarHandlerTests: XCTestCase {
         static let toggleState = "SwitchBarHandler.toggleState"
     }
 
+    private final class MockDevicePlatform: DevicePlatformProviding {
+        static var isIphone: Bool = true
+    }
+
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
     private var mockStorage: MockKeyValueStore!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
+        MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -47,18 +55,24 @@ final class SwitchBarHandlerTests: XCTestCase {
         sut = nil
         mockVoiceSearchHelper = nil
         mockStorage = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
-    private func createSUT() {
+    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
-            sessionStateMetrics: SessionStateMetrics(storage: mockStorage)
+            aiChatSettings: MockAIChatSettingsProvider(),
+            sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
+            featureFlagger: featureFlagger ?? mockFeatureFlagger,
+            devicePlatform: devicePlatform,
+            isFireTab: false
         )
     }
 
-    func testVoiceButtonNotVisible_WhenNoTextAndTopBar() {
+    func testVoiceButtonNotVisible_WhenIPadAndNoTextAndTopBar() {
+        MockDevicePlatform.isIphone = false
+        createSUT()
         sut.updateBarPosition(isTop: true)
         mockVoiceSearchHelper.isVoiceSearchEnabled = true
         sut.clearText()
@@ -417,4 +431,36 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertEqual(submissions.last?.mode, .aiChat)
     }
      */
+
+    // MARK: - Voice Button Tests (iPhone uses fade-out animation)
+
+    func testVoiceButtonVisible_WhenIPhoneAndTopBarAndNoText() {
+        // Given: iPhone, top bar position, voice search enabled, no text
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+
+        // Then: Voice button should be visible
+        XCTAssertTrue(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonNotVisible_WhenIPhoneAndTopBarAndHasText() {
+        // Given: iPhone, top bar position, voice search enabled, has text
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.updateCurrentText("some text")
+
+        // Then: Voice button should be hidden (clear button shown instead)
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonVisible_WhenIPhoneAndBottomBarAndNoText() {
+        // Given: iPhone, bottom bar position, voice search enabled, no text
+        sut.updateBarPosition(isTop: false)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+
+        // Then: Voice button should be visible
+        XCTAssertTrue(sut.buttonState.showsVoiceButton)
+    }
 }

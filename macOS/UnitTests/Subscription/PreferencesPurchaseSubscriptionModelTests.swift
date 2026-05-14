@@ -16,17 +16,17 @@
 //  limitations under the License.
 //
 
-import XCTest
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
-import BrowserServicesKit
+import XCTest
 @testable import SubscriptionUI
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
 
     var sut: PreferencesPurchaseSubscriptionModel!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockWinBackOfferManager: MockWinBackOfferVisibilityManager!
     var mockBlackFridayCampaignProvider: MockBlackFridayCampaignProvider!
@@ -36,7 +36,7 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
         mockWinBackOfferManager = MockWinBackOfferVisibilityManager()
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()
@@ -164,7 +164,7 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
         mockBlackFridayCampaignProvider.isCampaignEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat, .privacyProFreeTrial]
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
 
         // Force update eligibility

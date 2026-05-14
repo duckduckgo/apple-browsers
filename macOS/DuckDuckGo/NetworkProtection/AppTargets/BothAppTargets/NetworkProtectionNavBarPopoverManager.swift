@@ -43,6 +43,7 @@ protocol NetworkProtectionIPCClient {
 
     func start(completion: @escaping (Error?) -> Void)
     func stop(completion: @escaping (Error?) -> Void)
+    func refreshSystemState() async throws
     func command(_ command: VPNCommand) async throws
 }
 
@@ -68,15 +69,19 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
     private let featureFlagger = NSApp.delegateTyped.featureFlagger
     private var cancellables = Set<AnyCancellable>()
 
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+
     init(ipcClient: VPNControllerXPCClient,
          vpnUninstaller: VPNUninstalling,
          vpnUIPresenting: VPNUIPresenting,
-         proxySettings: TransparentProxySettings = .init(defaults: .netP)) {
+         proxySettings: TransparentProxySettings = .init(defaults: .netP),
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = vpnUninstaller
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
+        self.freeTrialConversionService = freeTrialConversionService
 
         let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
@@ -157,10 +162,15 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         /// Since the favicon doesn't have a publisher we force refreshing here
         activeSitePublisher.refreshActiveSiteInfo()
 
+        Task { [ipcClient] in
+            try? await ipcClient.refreshSystemState()
+        }
+
         let popover: NSPopover = {
             let vpnAppState = VPNAppState(defaults: .netP)
             let vpnSettings = VPNSettings(defaults: .netP)
-            let controller = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
+            let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: Application.appDelegate.subscriptionManager)
+            let controller = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: ipcClient)
 
             let statusReporter = DefaultNetworkProtectionStatusReporter(
                 vpnEnabledObserver: ipcClient.ipcVPNEnabledObserver,
@@ -179,7 +189,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 vpnURLEventHandler: vpnURLEventHandler,
                 tunnelController: controller,
                 proxySettings: proxySettings,
-                vpnAppState: vpnAppState)
+                vpnAppState: vpnAppState,
+                freeTrialConversionService: freeTrialConversionService)
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: statusReporter.statusObserver.recentValue,
@@ -199,21 +210,18 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 return statusViewSubmenu()
             }
 
-#if APPSTORE
-            let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never> = {
-                let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
-                    && !vpnAppState.isUsingSystemExtension
-
-                let publisher = vpnAppState.isUsingSystemExtensionPublisher
-                    .map { [featureFlagger] value in
-                        featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
-                    }.eraseToAnyPublisher()
-
-                return CurrentValuePublisher(initialValue: initialValue, publisher: publisher)
-            }()
-#else
-            let isExtensionUpdateOfferedPublisher = CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
-#endif
+            let isExtensionUpdateOfferedPublisher = if NSApp.isSandboxed {
+                CurrentValuePublisher(initialValue:
+                    featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !vpnAppState.isUsingSystemExtension,
+                                      publisher: {
+                    vpnAppState.isUsingSystemExtensionPublisher
+                        .map { [featureFlagger] value in
+                            featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
+                        }.eraseToAnyPublisher()
+                }())
+            } else {
+                CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
+            }
 
             let statusViewModel = NetworkProtectionStatusView.Model(
                 controller: controller,

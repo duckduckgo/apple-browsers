@@ -19,14 +19,21 @@
 
 import UIKit
 import SwiftUI
+import PrivacyConfig
 
 final class EmbeddedWebViewController: UIViewController {
     private let webViewModel: AsyncHeadlessWebViewViewModel
     let url: URL
 
-    init(url: URL) {
+    init(url: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         featureFlagger: FeatureFlagger) {
         self.url = url
-        webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false))
+
+        let settings = AsyncHeadlessWebViewSettings(bounces: false,
+                                                    userScriptsDependencies: userScriptsDependencies,
+                                                    featureFlagger: featureFlagger)
+
+        webViewModel = AsyncHeadlessWebViewViewModel(settings: settings)
         super.init(nibName: nil, bundle: nil)
     }
 

@@ -96,16 +96,38 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testWhenValidTabBarMessageFollowedByMalformed_thenRemoteMessageIsCleared() {
+        let mock = MockTabBarRemoteMessageProvider()
+        let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
+
+        var receivedMessages: [TabBarRemoteMessage?] = []
+        viewModel.$remoteMessage
+            .dropFirst() // Drop value when subscribing
+            .prefix(2) // Get only the two emitted values
+            .collect() // Collect the messages in an array
+            .sink { remoteMessages in
+                receivedMessages = remoteMessages
+            }.store(in: &cancellables)
+
+        mock.emitRemoteMessage(createTabBarRemoteMessage())
+        mock.emitRemoteMessage(createMalformedTabBarRemoteMessage())
+
+        XCTAssertEqual(receivedMessages.count, 2)
+        XCTAssertNotNil(receivedMessages[0]) // First Item is a valid message
+        XCTAssertNil(receivedMessages[1]) // Last Item is a nil message
+    }
+
     // MARK: - Utilities
 
     private func createTabBarRemoteMessage() -> RemoteMessageModel {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -116,10 +138,11 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .appStore)
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -130,10 +153,11 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Some title!",
                                                                                   descriptionText: "Some description",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Primary!",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "other_id",
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+                                  surfaces: .newTabPage,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),

@@ -23,10 +23,6 @@ import SetDefaultBrowserCore
 public final class MockDefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
     public init() {}
 
-    public var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool = true
-
-    public var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool = true
-
     public var firstActiveModalDelayDays: Int = 1
 
     public var secondActiveModalDelayDays: Int = 2
@@ -36,14 +32,6 @@ public final class MockDefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeat
     public var inactiveModalNumberOfDaysSinceInstall: Int = 28
 
     public var inactiveModalNumberOfInactiveDays: Int = 7
-}
-
-package final class MockDefaultBrowserPromptFeatureFlagProvider: DefaultBrowserPromptFeatureFlagProvider {
-    package var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool = true
-
-    package var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool = true
-
-    package init() {}
 }
 
 package final class MockDefaultBrowserPromptFeatureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider {

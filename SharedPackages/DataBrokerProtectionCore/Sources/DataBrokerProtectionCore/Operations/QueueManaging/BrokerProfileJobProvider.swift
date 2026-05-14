@@ -23,7 +23,7 @@ public protocol BrokerProfileJobProviding {
     func createJobs(with jobType: JobType,
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
-                    errorDelegate: BrokerProfileJobErrorDelegate,
+                    statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
                     jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
@@ -34,7 +34,7 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
     public func createJobs(with jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
-                           errorDelegate: BrokerProfileJobErrorDelegate,
+                           statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
         let brokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
@@ -49,7 +49,7 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
                                            jobType: jobType,
                                            priorityDate: priorityDate,
                                            showWebView: showWebView,
-                                           errorDelegate: errorDelegate,
+                                           statusReportingDelegate: statusReportingDelegate,
                                            jobDependencies: jobDependencies)
                 jobs.append(job)
                 visitedDataBrokerIDs.insert(dataBrokerID)

@@ -26,16 +26,19 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Combine
 import DDGSync
+import AuthenticationServices
+import PrivacyConfig
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
     func navigateToCreditCards(viewModel: AutofillSettingsViewModel)
     func navigateToFileImport(viewModel: AutofillSettingsViewModel)
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel)
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel)
 }
 
 final class AutofillSettingsViewModel: ObservableObject {
-    
+
     weak var delegate: AutofillSettingsViewModelDelegate?
 
     var secureVault: (any AutofillSecureVault)?
@@ -45,6 +48,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
     private var syncCancellables = Set<AnyCancellable>()
+    private var extensionEnableCoordinator: Any?
+
+    private enum Constants {
+        static let enableRetryThrottleDuration: TimeInterval = 10
+    }
 
     enum AutofillType {
         case passwords
@@ -75,17 +83,20 @@ final class AutofillSettingsViewModel: ObservableObject {
             appSettings.autofillCredentialsEnabled = savePasswordsEnabled
             keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillFirstTimeUser.rawValue)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
-            
+
             if savePasswordsEnabled {
                 Pixel.fire(pixel: .autofillLoginsSettingsEnabled)
             } else {
                 Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
             }
+
+            experimentPixels.fireAutofillEnabled(savePasswordsEnabled)
         }
     }
     @Published var showingResetConfirmation = false
     @Published var showCreditCards = false
     @Published var creditCardsCount: Int?
+    @Published var isShowingActivationView: Bool = false
     var saveCreditCardsEnabled: Binding<Bool> {
         Binding(
             get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
@@ -104,6 +115,14 @@ final class AutofillSettingsViewModel: ObservableObject {
             }
         )
     }
+    @Published var showExtensionSettings = false
+    @Published var isExtensionEnabled: Bool = false
+    @Published var isEnableRequestThrottled: Bool = false
+
+    /// Temporary flag used to ensure we don't fire pixel on initial state discovery
+    private var hasCompletedInitialExtensionStatusLoad: Bool = false
+
+    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
@@ -112,7 +131,9 @@ final class AutofillSettingsViewModel: ObservableObject {
          source: AutofillSettingsSource,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          syncService: DDGSyncing,
-         syncDataProviders: SyncDataProviders) {
+         syncDataProviders: SyncDataProviders,
+         experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
+        self.experimentPixels = experimentPixels
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
@@ -139,7 +160,13 @@ final class AutofillSettingsViewModel: ObservableObject {
                 }
                 .store(in: &syncCancellables)
         }
-
+        if #available(iOS 18, *) {
+            showExtensionSettings = featureFlagger.isFeatureOn(.autofillExtensionSettings)
+            Task { @MainActor in
+                extensionEnableCoordinator = AutofillExtensionEnableCoordinator(source: "settings")
+                await updateExtensionStatus()
+            }
+        }
         syncService.scheduler.requestSyncImmediately()
     }
 
@@ -152,11 +179,16 @@ final class AutofillSettingsViewModel: ObservableObject {
             }
         }
     }
-    
-    func refreshCounts() {
+
+    func refreshData() {
         updatePasswordsCount()
         if showCreditCards {
             updateCreditCardsCount()
+        }
+        if showExtensionSettings {
+            Task {
+                await updateExtensionStatus()
+            }
         }
     }
 
@@ -179,7 +211,7 @@ final class AutofillSettingsViewModel: ObservableObject {
         initSecureVaultIfRequired()
 
         guard let vault = secureVault else {
-            passwordsCount = nil
+            creditCardsCount = nil
             return
         }
 
@@ -187,6 +219,23 @@ final class AutofillSettingsViewModel: ObservableObject {
             creditCardsCount = try vault.creditCardsCount()
         } catch {
             creditCardsCount = nil
+        }
+    }
+
+    @MainActor
+    func updateExtensionStatus() async {
+        guard showExtensionSettings else {
+            return
+        }
+
+        if #available(iOS 18, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
+            let wasEnabled = isExtensionEnabled
+            isExtensionEnabled = await coordinator.updateExtensionStatus()
+
+            if hasCompletedInitialExtensionStatusLoad && wasEnabled != isExtensionEnabled {
+                experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
+            }
+            hasCompletedInitialExtensionStatusLoad = true
         }
     }
 
@@ -224,7 +273,33 @@ final class AutofillSettingsViewModel: ObservableObject {
     func shouldShowNeverPromptReset() -> Bool {
         !autofillNeverPromptWebsitesManager.neverPromptWebsites.isEmpty
     }
-    
+
+    func navigateToExtensionManagement() {
+        Task { @MainActor in
+            if #available(iOS 18.0, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
+                let currentlyEnabled = await coordinator.updateExtensionStatus()
+
+                if !currentlyEnabled {
+                    let result = await coordinator.enableExtension()
+
+                    switch result {
+                    case .success:
+                        isExtensionEnabled = true
+                        isShowingActivationView = true
+                        experimentPixels.fireAutofillInOtherAppsEnabled(true)
+                    case .throttled:
+                        isEnableRequestThrottled = coordinator.isEnableRequestThrottled
+                        isShowingActivationView = false
+                    case .cancelled, .failed:
+                        isShowingActivationView = false
+                    }
+                } else {
+                    delegate?.navigateToExtensionManagement(viewModel: self)
+                }
+            }
+        }
+    }
+
     // MARK: - Reset Excluded Sites
     
     func resetExcludedSites() {
@@ -242,4 +317,5 @@ final class AutofillSettingsViewModel: ObservableObject {
         showingResetConfirmation = false
         Pixel.fire(pixel: .autofillLoginsSettingsResetExcludedDismissed)
     }
+
 }

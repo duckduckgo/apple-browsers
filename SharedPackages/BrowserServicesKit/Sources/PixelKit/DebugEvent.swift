@@ -28,15 +28,18 @@ public final class DebugEvent: PixelKitEvent {
 
     public let eventType: EventType
     public let error: Error?
+    public let standardParameters: [PixelKitStandardParameter]?
 
-    public init(eventType: EventType, error: Error? = nil) {
+    public init(eventType: EventType, error: Error? = nil, standardParameters: [PixelKitStandardParameter]?) {
         self.eventType = eventType
         self.error = error
+        self.standardParameters = standardParameters
     }
 
     public init(_ event: PixelKitEvent, error: Error? = nil) {
         self.eventType = .custom(event)
         self.error = error
+        self.standardParameters = event.standardParameters
     }
 
     public var name: String {

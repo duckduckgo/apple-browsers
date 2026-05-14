@@ -37,6 +37,12 @@ extension MainViewController {
         }, deepLinkTarget: .appearance)
     }
 
+    func segueToGeneralSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .general)
+        }, deepLinkTarget: .general)
+    }
+
     func segueToCustomizeAddressBarSettings() {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
@@ -49,17 +55,30 @@ extension MainViewController {
         }, deepLinkTarget: .customizeToolbarButton)
     }
 
-    func segueToDaxOnboarding() {
+    func segueToDaxOnboarding(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(
-            onboardingPixelReporter: contextualOnboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager)
+        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
+            OnboardingIntroViewController.rebranded(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
+            )
+        } else {
+            OnboardingIntroViewController.legacy(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
+            )
+        }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
-        present(controller, animated: false)
+        present(controller, animated: false, completion: completion)
     }
 
     func segueToHomeRow() {
@@ -108,10 +127,12 @@ extension MainViewController {
             BookmarksViewController(coder: coder,
                                     bookmarksDatabase: self.bookmarksDatabase,
                                     bookmarksSearch: self.bookmarksCachingSearch,
+                                    favicons: self.favicons,
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
                                     appSettings: self.appSettings,
-                                    keyValueStore: self.keyValueStore)
+                                    keyValueStore: self.keyValueStore,
+                                    productSurfaceTelemetry: self.productSurfaceTelemetry)
         }
         bookmarks.delegate = self
 
@@ -132,21 +153,12 @@ extension MainViewController {
             return
         }
 
-        let storyboard = UIStoryboard(name: "PrivacyDashboard", bundle: nil)
-        let controller = storyboard.instantiateInitialViewController { coder in
-            PrivacyDashboardViewController(coder: coder,
-                                           privacyInfo: privacyInfo,
-                                           entryPoint: entryPoint,
-                                           privacyConfigurationManager: self.privacyConfigurationManager,
-                                           contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
-        }
-        
-        guard let controller = controller else {
-            assertionFailure("PrivacyDashboardViewController not initialised")
-            return
-        }
-        
+        let controller = PrivacyDashboardViewController(privacyInfo: privacyInfo,
+                                                        entryPoint: entryPoint,
+                                                        privacyConfigurationManager: self.privacyConfigurationManager,
+                                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(webExtensionManager: webExtensionManager))
+
         currentTab?.privacyDashboard = controller
 
         controller.popoverPresentationController?.delegate = controller
@@ -180,17 +192,33 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let storyboard = UIStoryboard(name: "Downloads", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() else {
-            assertionFailure()
-            return
-        }
-        present(controller, animated: true)
+        present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher() {
+    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
         Logger.lifecycle.debug(#function)
+
+        // Guard against concurrent presentations
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress or active")
+            return
+        }
+
         hideAllHighlightsIfNeeded()
+
+        // Calculate the initial tracker count state before creating the view controller
+        // to ensure correct header sizing during the transition
+        let initialTrackerCountState = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: DefaultTabSwitcherSettings(),
+            privacyStats: privacyStats
+        )
+
+        // Check again after async work in case another presentation started
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress")
+            return
+        }
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
@@ -198,9 +226,17 @@ extension MainViewController {
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
+                                      favicons: self.favicons,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings)
+                                      appSettings: self.appSettings,
+                                      privacyStats: self.privacyStats,
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                      historyManager: self.historyManager,
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore,
+                                      daxDialogsManager: self.daxDialogsManager,
+                                      initialTrackerCountState: initialTrackerCountState)
         }) else {
             assertionFailure()
             return
@@ -209,6 +245,8 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
+        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -246,6 +284,34 @@ extension MainViewController {
         }, deepLinkTarget: .netP)
     }
 
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
+    }
+
+    func segueToPIRWithSubscriptionCheck() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+
+        Task { @MainActor in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
+
+            if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .dbp)
+                }, deepLinkTarget: .dbp)
+            } else {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
+                }, deepLinkTarget: .subscriptionFlow())
+            }
+        }
+    }
+
     func segueToDebugSettings() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
@@ -263,13 +329,14 @@ extension MainViewController {
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
                                      card: SecureVaultModels.CreditCard?,
                                      showCardManagement: Bool = false,
+                                     showSettingsScreen: AutofillSettingsDestination? = nil,
                                      source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        if showCardManagement {
+        if showCardManagement || showSettingsScreen != nil {
             launchSettings(configure: { viewModel, controller in
                 controller.decorateNavigationBar()
-                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: true, source: nil)
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: showCardManagement, showSettingsScreen: showSettingsScreen, source: source)
             })
         } else {
             launchSettings {
@@ -299,20 +366,53 @@ extension MainViewController {
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        let launchSync: () -> Void = { [weak self] in
-            self?.launchSettings {
-                if let source = source {
-                    $0.shouldPresentSyncViewWithSource(source)
-                } else {
-                    $0.presentLegacyView(.sync(pairingInfo))
-                }
+
+        let launchSync: (SettingsViewModel) -> Void = { settingsViewModel in
+            if let source {
+                settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false)
+            } else {
+                settingsViewModel.presentLegacyView(.sync(pairingInfo), animated: false)
             }
         }
-        if let presentedViewController {
-            presentedViewController.dismiss(animated: false, completion: launchSync)
-        } else {
-            launchSync()
+
+        if let navigationController = presentedViewController as? UINavigationController,
+           navigationController.viewControllers.first is SettingsHostingController {
+            launchSettings(completion: launchSync)
+            return
         }
+
+        let presentSyncViaSettings: () -> Void = { [weak self] in
+            self?.launchSettings(configure: { settingsViewModel, _ in
+                launchSync(settingsViewModel)
+            })
+        }
+
+        if let presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: presentSyncViaSettings)
+        } else {
+            presentSyncViaSettings()
+        }
+    }
+
+    func presentDataImportSummary(_ summary: DataImportSummary,
+                                  importScreen: DataImportViewModel.ImportScreen = .passwords) {
+        let presenter = topMostPresentedViewController(startingFrom: self)
+
+        guard !(presenter is DataImportSummaryViewController) else {
+            Logger.autofill.debug("Data import summary already presented")
+            return
+        }
+
+        let summaryViewController = DataImportSummaryViewController(summary: summary,
+                                                                    importScreen: importScreen,
+                                                                    syncService: syncService) { [weak self] source in
+            guard let self else { return }
+            dismissPresentedDataImportSummaryIfNeeded {
+                self.segueToSettingsSync(with: source)
+            }
+        } onCompletion: { }
+
+        presenter.present(summaryViewController, animated: true)
     }
 
     func segueToFeedback() {
@@ -333,29 +433,43 @@ extension MainViewController {
                                                             tabManager: tabManager,
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
+                                                            favicons: favicons,
                                                             websiteDataManager: websiteDataManager,
                                                             customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager,
-                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                                            subscriptionDataReporter: subscriptionDataReporter,
+                                                            remoteMessagingDebugHandler: remoteMessagingDebugHandler,
+                                                            productSurfaceTelemetry: productSurfaceTelemetry,
+                                                            webExtensionManager: webExtensionManager,
+                                                            syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
+        let whatsNewCoordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: whatsNewRepository,
+            remoteMessageActionHandler: remoteMessagingActionHandler,
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            pixelReporter: nil,
+            userScriptsDependencies: userScriptsDependencies,
+            imageLoader: remoteMessagingImageLoader,
+            featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  isAuthV2Enabled: isAuthV2Enabled,
-                                                  subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
-                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
-                                                  subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,
                                                   deepLink: deepLinkTarget,
                                                   historyManager: historyManager,
                                                   syncPausedStateManager: syncPausedStateManager,
                                                   subscriptionDataReporter: subscriptionDataReporter,
-                                                  textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   serpSettings: serpSettingsProvider,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
@@ -363,11 +477,17 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
+                                                  idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                                                  freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                  mobileCustomization: mobileCustomization)
+                                                  mobileCustomization: mobileCustomization,
+                                                  userScriptsDependencies: userScriptsDependencies,
+                                                  whatsNewCoordinator: whatsNewCoordinator,
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                                  adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
@@ -380,11 +500,20 @@ extension MainViewController {
             } else {
                 assert(self.presentedViewController == nil)
 
-                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel,
+                                                                   viewProvider: legacyViewProvider,
+                                                                   productSurfaceTelemetry: self.productSurfaceTelemetry)
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
+                navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
+                let surfaceColor = UIColor(designSystemColor: .surface)
+                navController.view.backgroundColor = surfaceColor
+                navController.navigationBar.isTranslucent = false
+                navController.navigationBar.barTintColor = surfaceColor
+                navController.navigationBar.backgroundColor = surfaceColor
 
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
                 configure?(settingsViewModel, settingsController)
@@ -409,6 +538,7 @@ extension MainViewController {
 
         let debug = DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
@@ -420,11 +550,23 @@ extension MainViewController {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
+            webExtensionManager: self.webExtensionManager,
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+
+        debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
-        present(controller, animated: true) {
+        var presenter: UIViewController = self
+        while let presented = presenter.presentedViewController {
+            presenter = presented
+        }
+        presenter.present(controller, animated: true) {
             completion?(debug)
         }
     }
@@ -435,7 +577,25 @@ extension MainViewController {
             ViewHighlighter.hideAll()
         }
     }
-    
+
+    private func dismissPresentedDataImportSummaryIfNeeded(completion: @escaping () -> Void) {
+        let topMostViewController = topMostPresentedViewController(startingFrom: self)
+        guard topMostViewController is DataImportSummaryViewController else {
+            completion()
+            return
+        }
+
+        topMostViewController.dismiss(animated: true, completion: completion)
+    }
+
+    private func topMostPresentedViewController(startingFrom rootViewController: UIViewController) -> UIViewController {
+        var currentViewController = rootViewController
+        while let presentedViewController = currentViewController.presentedViewController {
+            currentViewController = presentedViewController
+        }
+        return currentViewController
+    }
+
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear

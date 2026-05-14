@@ -43,4 +43,15 @@ enum SessionRestorePromptPixel: PixelKitEvent {
     var parameters: [String: String]? {
         nil
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .unexpectedAppTerminationDetected,
+                .promptShown,
+                .promptDismissedWithoutRestore,
+                .promptDismissedWithRestore,
+                .appTerminatedWhilePromptShowing:
+            return [.pixelSource]
+        }
+    }
 }

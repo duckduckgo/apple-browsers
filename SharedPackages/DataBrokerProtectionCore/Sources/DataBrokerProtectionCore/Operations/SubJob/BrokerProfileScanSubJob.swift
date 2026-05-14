@@ -70,8 +70,11 @@ struct BrokerProfileScanSubJob {
                                  identifiers: identifiers)
         }
 
+        let isAuthenticated = await dependencies.isAuthenticatedUser()
         let scanContext = createScanStageContext(brokerProfileQueryData: brokerProfileQueryData,
                                                  isManual: isManual,
+                                                 isAuthenticated: isAuthenticated,
+                                                 isFreeScan: !isAuthenticated,
                                                  database: dependencies.database,
                                                  pixelHandler: dependencies.pixelHandler,
                                                  parentURL: brokerProfileQueryData.dataBroker.parent,
@@ -81,8 +84,10 @@ struct BrokerProfileScanSubJob {
         let stageCalculator = scanContext.stageCalculator
 
         let metadata = ScanWideEventRecorder.Metadata(
-            from: brokerProfileQueryData.scanJobData,
-            referenceDate: stageCalculator.startTime
+            scanHistoryEvents: brokerProfileQueryData.scanJobDataHistoryEventsSortedEarliestFirst,
+            optOutsHistoryEvents: brokerProfileQueryData.optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst,
+            referenceDate: stageCalculator.startTime,
+            isFreeScan: !isAuthenticated
         )
         let scanWideEventRecorder = ScanWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,
@@ -187,6 +192,8 @@ struct BrokerProfileScanSubJob {
 
     internal func createScanStageContext(brokerProfileQueryData: BrokerProfileQueryData,
                                          isManual: Bool,
+                                         isAuthenticated: Bool,
+                                         isFreeScan: Bool,
                                          database: DataBrokerProtectionRepository,
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                          parentURL: String?,
@@ -201,6 +208,8 @@ struct BrokerProfileScanSubJob {
             handler: pixelHandler,
             isImmediateOperation: isManual,
             parentURL: parentURL,
+            isAuthenticated: isAuthenticated,
+            isFreeScan: isFreeScan,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
@@ -393,7 +402,7 @@ struct BrokerProfileScanSubJob {
                                                          brokerId: brokerId,
                                                          profileQueryId: profileQueryId,
                                                          type: .reAppearence)
-                    eventPixels.fireReappeareanceEventPixel()
+                    eventPixels.fireReappeareanceEventPixel(dataBrokerURL: brokerProfileQueryData.dataBroker.url)
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
@@ -418,8 +427,8 @@ struct BrokerProfileScanSubJob {
         // If it's a new found profile, we'd like to opt-out ASAP
         // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation
         // within the parent.
-        eventPixels.fireNewMatchEventPixel()
         let broker = brokerProfileQueryData.dataBroker
+        eventPixels.fireNewMatchEventPixel(dataBrokerURL: broker.url)
         let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
 
         // If profile does not exist we insert the new profile and we create the opt-out operation
@@ -454,7 +463,7 @@ struct BrokerProfileScanSubJob {
         try database.add(event)
     }
 
-    private func markSavedProfilesAsRemovedAndNotifyUser(
+    internal func markSavedProfilesAsRemovedAndNotifyUser(
         removedProfiles: [ExtractedProfile],
         brokerId: Int64,
         profileQueryId: Int64,
@@ -496,7 +505,9 @@ struct BrokerProfileScanSubJob {
 
                 Logger.dataBrokerProtection.log("Profile removed from optOutsData: \(String(describing: removedProfile))")
 
-                if let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
+                // Fire only on the transition to removed (pre-scan removedDate == nil).
+                if removedProfile.removedDate == nil,
+                   let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
                    let attemptUUID = UUID(uuidString: attempt.attemptId) {
                     let now = Date()
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000

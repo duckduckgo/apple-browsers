@@ -91,4 +91,20 @@ final class PopUpWindow: NSWindow {
         super.doCommand(by: selector)
     }
 
+    // Route context menu events to passive address bar text field in pop up window
+    override func sendEvent(_ event: NSEvent) {
+        if event.isContextClick,
+           let windowController = windowController as? MainWindowController,
+           let passiveAddressBarTextField = windowController.mainViewController.navigationBarViewController.addressBarViewController?.passiveTextField,
+           passiveAddressBarTextField.isMouseLocationInsideBounds(event.locationInWindow) {
+            if event.type == .rightMouseDown {
+                passiveAddressBarTextField.rightMouseDown(with: event)
+            } else /* ctrl+click */ {
+                passiveAddressBarTextField.mouseDown(with: event)
+            }
+            return
+        }
+        super.sendEvent(event)
+    }
+
 }

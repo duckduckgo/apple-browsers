@@ -34,7 +34,7 @@ extension RecentlyClosedTab: RecentlyClosedCacheItemBurning {
         return self
     }
 
-    private func contentContainsDomains(_ baseDomains: Set<String>, tld: TLD) -> Bool {
+    func contentContainsDomains(_ baseDomains: Set<String>, tld: TLD) -> Bool {
         if let host = tabContent.urlForWebView?.host, let baseDomain = tld.eTLDplus1(host), baseDomains.contains(baseDomain) {
             return true
         } else {

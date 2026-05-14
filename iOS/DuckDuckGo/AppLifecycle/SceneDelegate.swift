@@ -40,6 +40,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         } else if let urlContext = connectionOptions.urlContexts.first {
             // We should be supporting opening multiple URLs at once
             appStateMachine.handle(.openURL(urlContext.url))
+        } else if let userActivity = connectionOptions.userActivities.first {
+            appStateMachine.handle(.handleUserActivity(userActivity))
         }
     }
 
@@ -51,7 +53,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         /// - Services depending on the previous window are recreated.
         ///
         /// A tracking pixel is sent on consecutive reconnects to verify that this scenario occurs in practice.
-        /// If confirmed to never happen, these temporary transitions should be removed.
+        ///
+        /// Update: On iOS 17 and later, this behaves as expected.
+        /// However, on iOS 16 and below, we've confirmed that a connected scene *can* unexpectedly disconnect and later reconnect.
+        /// Because of this, the recovery path must remain in place for older OS versions.
     }
 
     /// See: `Foreground.swift` -> `onTransition()`
@@ -76,6 +81,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willContinueUserActivity userActivity: NSUserActivity) -> Bool {
         true
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        appStateMachine.handle(.handleUserActivity(userActivity))
     }
 
     /// See: `LaunchActionHandler.swift` -> `openURL(_:)`

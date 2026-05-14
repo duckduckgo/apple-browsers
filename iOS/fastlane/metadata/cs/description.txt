@@ -16,7 +16,7 @@ A spousta dalších ochranných funkcí, které většina prohlížečů nenabí
 Předplatné DuckDuckGo
 Výhody pro předplatitele: 
 • Naše VPN: Zabezpeč si připojení až na 5 zařízeních. 
-• Přístup k pokročilým modelům AI v Duck.ai: Chatuj soukromě s modely AI navrženými pro komplexní úkoly.
+• Přístup k pokročilým Modelům AI v Duck.ai: Chatuj soukromě s modely AI navrženými pro komplexní úkoly.
 • Funkce Personal Information Removal: Najdi a odstraň svoje osobní údaje z webů, které je ukládají a prodávají.
 • Funkce Identity Theft Restoration: Pokud dojde ke krádeži tvé identity, pomůžeme ti ji obnovit.
 

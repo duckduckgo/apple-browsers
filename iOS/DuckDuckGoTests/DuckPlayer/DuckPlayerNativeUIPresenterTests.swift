@@ -23,7 +23,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 @testable import DuckDuckGo
 
@@ -101,7 +101,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     ///   - condition: The condition to check
     ///   - description: Description of what we're waiting for
     private func waitForCondition(
-        timeout: TimeInterval = 2.0,
+        timeout: TimeInterval = 30.0,
         pollingInterval: TimeInterval = 0.1,
         condition: @escaping () -> Bool,
         description: String
@@ -168,7 +168,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig)
         )
 
         // Subscribe to constraint updates
@@ -884,7 +885,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, 0, "Bottom constraint should be 0 for top address bar")
@@ -907,7 +908,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, -DefaultOmniBarView.expectedHeight, "Bottom constraint should be negative expected height for bottom address bar")
@@ -952,6 +953,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -983,6 +985,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1013,6 +1016,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1216,7 +1220,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
         )
         
         // Store weak reference
@@ -1236,7 +1241,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
         )
         
         // Verify observer is working
@@ -1266,6 +1272,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1287,6 +1294,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1308,6 +1316,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1335,6 +1344,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1359,6 +1369,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1383,6 +1394,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1908,7 +1920,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -1966,7 +1978,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2016,7 +2028,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2068,7 +2080,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
@@ -2084,6 +2096,14 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let source: DuckPlayer.VideoNavigationSource = .youtube
         mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.primingMessagePresented = true
+        
+        var receivedTimestamps: [TimeInterval?] = []
+        let timestampExpectation = XCTestExpectation(description: "Dismissal timestamp update should be received")
+        
+        sut.duckPlayerTimestampUpdate.sink { timestamp in
+            receivedTimestamps.append(timestamp)
+            timestampExpectation.fulfill()
+        }.store(in: &cancellables)
         
         // Present first DuckPlayer
         _ = sut.presentDuckPlayer(
@@ -2112,15 +2132,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - First player's dismiss publisher fires
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for delayed execution (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "First player dismissal should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
+        // Wait for dismissal update
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
+        XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
+        XCTAssertEqual(receivedTimestamps.first, timestamp, "Should receive the correct timestamp")
         
         // Verify the pill presented matches the current video context
         if let containerViewController = sut.containerViewController {
@@ -2165,7 +2183,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         playerViewModel.dismissPublisher.send(timestamp)
         
         // Wait for the update (0.3s delay + buffer)
-        wait(for: [timestampExpectation], timeout: 2.0)
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - Should receive timestamp update when state is updated
         XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")

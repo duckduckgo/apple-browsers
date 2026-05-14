@@ -1,7 +1,7 @@
 {
   "name": "Verecor",
   "url": "verecor.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://verecor.com/ng/control/privacy",
   "steps": [
@@ -153,5 +153,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1763742029895
 }

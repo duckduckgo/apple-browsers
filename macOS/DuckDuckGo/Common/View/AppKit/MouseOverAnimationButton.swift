@@ -45,7 +45,8 @@ final class MouseOverAnimationButton: AddressBarButton {
 
                 if isMouseOver {
                     self.animate()
-                } else {
+                } else if self.isAnimationViewVisible {
+                    // Only stop if animation was actually started
                     self.stopAnimation()
                 }
             }
@@ -134,7 +135,16 @@ final class MouseOverAnimationButton: AddressBarButton {
         currentAnimationView = newAnimationView
 
         newAnimationView.isHidden = true
-        addAndLayout(newAnimationView)
+        newAnimationView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(newAnimationView)
+
+        // Inset and offset to align hover animation with static icon
+        NSLayoutConstraint.activate([
+            newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
+            newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
+            newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
+            newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
+        ])
     }
 
     // MARK: - Animating

@@ -107,6 +107,7 @@ public struct UserDefaultsWrapper<T> {
 
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
+        case syncPromoDataImportDismissed = "com.duckduckgo.app.sync.PromoDataImportDismissed"
 
         // .v2 suffix added to fix https://app.asana.com/0/547792610048271/1206524375402369/f
         case featureFlaggingDidVerifyInternalUser = "com.duckduckgo.app.featureFlaggingDidVerifyInternalUser.v2"
@@ -166,9 +167,6 @@ public struct UserDefaultsWrapper<T> {
         case pixelExperimentCohort = "com.duckduckgo.ios.pixel.experiment.cohort"
         case pixelExperimentEnrollmentDate = "com.duckduckgo.ios.pixel.experiment.enrollment.date"
 
-        case historyMessageDisplayCount = "com.duckduckgo.ios.historyMessage.displayCount"
-        case historyMessageDismissed = "com.duckduckgo.ios.historyMessage.dismissed"
-        
         // Legacy DuckPlayer
         case duckPlayerMode = "com.duckduckgo.ios.duckPlayerMode"
         case duckPlayerAskModeOverlayHidden = "com.duckduckgo.ios.duckPlayerAskModeOverlayHidden"
@@ -190,13 +188,12 @@ public struct UserDefaultsWrapper<T> {
         // AI Chat
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
 
+        // Dax Easter Egg Logo
+        case daxEasterEggLogoURL = "com.duckduckgo.ios.daxEasterEggLogoURL"
+
         // Debug keys
-        case debugOnboardingHighlightsEnabledKey = "com.duckduckgo.ios.debug.onboardingHighlightsEnabled"
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"
         case debugDefaultBrowserPromptCurrentDateKey = "com.duckduckgo.ios.debug.defaultBrowserPromptCurrentDate"
-
-        // Domain specific text zoom
-        case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"
 
         // TipKit
         case resetTipKitOnNextLaunch = "com.duckduckgo.ios.tipKit.resetOnNextLaunch"
@@ -210,6 +207,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"
+
+        // Trackers Blocked Animation
+        case showTrackersBlockedAnimation = "com.duckduckgo.ios.showTrackersBlockedAnimation"
     }
 
     private let key: Key

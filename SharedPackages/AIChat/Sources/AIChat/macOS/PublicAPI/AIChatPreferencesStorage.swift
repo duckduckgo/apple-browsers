@@ -45,6 +45,12 @@ public protocol AIChatPreferencesStorage {
     var showSearchAndDuckAIToggle: Bool { get set }
     var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> { get }
 
+    var userDidSeeToggleOnboarding: Bool { get set }
+
+    var lastUsedSidebarWidth: Double? { get set }
+
+    var hasAcceptedTermsAndConditions: Bool { get set }
+
     func reset()
 }
 
@@ -130,6 +136,21 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.showSearchAndDuckAIToggle = newValue }
     }
 
+    public var userDidSeeToggleOnboarding: Bool {
+        get { userDefaults.userDidSeeToggleOnboarding }
+        set { userDefaults.userDidSeeToggleOnboarding = newValue }
+    }
+
+    public var lastUsedSidebarWidth: Double? {
+        get { userDefaults.lastUsedSidebarWidth }
+        set { userDefaults.lastUsedSidebarWidth = newValue }
+    }
+
+    public var hasAcceptedTermsAndConditions: Bool {
+        get { userDefaults.hasAcceptedTermsAndConditions }
+        set { userDefaults.hasAcceptedTermsAndConditions = newValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
@@ -139,6 +160,9 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
         userDefaults.shouldAutomaticallySendPageContext = UserDefaults.shouldAutomaticallySendPageContextDefaultValue
         userDefaults.showSearchAndDuckAIToggle = UserDefaults.showSearchAndDuckAIToggleDefaultValue
+        userDefaults.userDidSeeToggleOnboarding = false
+        userDefaults.lastUsedSidebarWidth = nil
+        userDefaults.hasAcceptedTermsAndConditions = false
     }
 }
 
@@ -152,6 +176,9 @@ private extension UserDefaults {
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
         static let shouldAutomaticallySendPageContext = "aichat.sendPageContextAutomatically"
         static let showSearchAndDuckAIToggle = "aichat.showSearchAndDuckAIToggle"
+        static let userDidSeeToggleOnboarding = "aichat.userDidSeeToggleOnboarding"
+        static let lastUsedSidebarWidth = "aichat.sidebar.lastUsedWidth"
+        static let hasAcceptedTermsAndConditions = "aichat.hasAcceptedTermsAndConditions"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -160,7 +187,7 @@ private extension UserDefaults {
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let showAIChatShortcutInAddressBarWhenTypingDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
-    static let shouldAutomaticallySendPageContextDefaultValue = true
+    static let shouldAutomaticallySendPageContextDefaultValue = false
     static let showSearchAndDuckAIToggleDefaultValue = true
 
     @objc dynamic var isAIFeaturesEnabled: Bool {
@@ -270,17 +297,57 @@ private extension UserDefaults {
 
     @objc dynamic var showSearchAndDuckAIToggle: Bool {
         get {
-            value(forKey: Keys.showSearchAndDuckAIToggle) as? Bool ?? Self.showSearchAndDuckAIToggleDefaultValue
+            /// If not explicitly set by user, inherit from showAIChatShortcutInAddressBarWhenTyping
+            if value(forKey: Keys.showSearchAndDuckAIToggle) == nil {
+                return showAIChatShortcutInAddressBarWhenTyping
+            }
+            return value(forKey: Keys.showSearchAndDuckAIToggle) as? Bool ?? Self.showSearchAndDuckAIToggleDefaultValue
         }
 
         set {
-            guard newValue != showSearchAndDuckAIToggle else { return }
+            /// Note: Unlike other settings, we don't guard against same-value writes because
+            /// we need to persist the value even if it matches the inherited value
             set(newValue, forKey: Keys.showSearchAndDuckAIToggle)
         }
     }
 
     var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.showSearchAndDuckAIToggle).eraseToAnyPublisher()
+    }
+
+    var userDidSeeToggleOnboarding: Bool {
+        get {
+            value(forKey: Keys.userDidSeeToggleOnboarding) as? Bool ?? false
+        }
+
+        set {
+            guard newValue != userDidSeeToggleOnboarding else { return }
+            set(newValue, forKey: Keys.userDidSeeToggleOnboarding)
+        }
+    }
+
+    var lastUsedSidebarWidth: Double? {
+        get {
+            value(forKey: Keys.lastUsedSidebarWidth) as? Double
+        }
+
+        set {
+            if let newValue {
+                set(newValue, forKey: Keys.lastUsedSidebarWidth)
+            } else {
+                removeObject(forKey: Keys.lastUsedSidebarWidth)
+            }
+        }
+    }
+
+    var hasAcceptedTermsAndConditions: Bool {
+        get {
+            value(forKey: Keys.hasAcceptedTermsAndConditions) as? Bool ?? false
+        }
+
+        set {
+            set(newValue, forKey: Keys.hasAcceptedTermsAndConditions)
+        }
     }
 }
 #endif

@@ -22,18 +22,31 @@ import Core
 import BrowserServicesKit
 import PrivacyDashboard
 
+enum TabClosingBehavior {
+    case createEmptyTabAtSamePosition
+    case createOrReuseEmptyTab
+    case onlyClose
+    case createNewChat
+}
+
 protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
+    
+    func newTab(reuseExisting: Bool)
+
+    func tabDidRequestActivate(_ tab: TabViewController)
 
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView?
 
-    func tabDidRequestClose(_ tab: TabViewController, shouldCreateEmptyTabAtSamePosition: Bool)
+    func tabDidRequestClose(_ tab: Tab,
+                            behavior: TabClosingBehavior,
+                            clearTabHistory: Bool)
 
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
@@ -42,6 +55,10 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
+    func tab(_ tab: TabViewController,
+             didRequestNewFireTabForUrl url: URL,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
     func tabLoadingStateDidChange(tab: TabViewController)
@@ -71,7 +88,8 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
-             source: AutofillSettingsSource)
+             source: AutofillSettingsSource,
+             extensionPromotionManager: AutofillExtensionPromotionManaging?)
 
     func tab(_ tab: TabViewController,
              didRequestDataImport source: DataImportViewModel.ImportScreen,
@@ -93,12 +111,21 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController)
 
+    func tabDidRequestSettingsToAIChat(_ tab: TabViewController)
+
+    func tabDidRequestSettingsToSync(_ tab: TabViewController)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 
     func tabContentProcessDidTerminate(tab: TabViewController)
+
+    /// User activated an in-page link in this tab.
+    func tabDidEngageWithPage(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
+
+    func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 
@@ -107,7 +134,9 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController,
              didRequestPresentingTrackerAnimation privacyInfo: PrivacyInfo,
              isCollapsing: Bool)
-    
+
+    func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController)
+
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController)
     
     func tab(_ tab: TabViewController, didRequestPresentingAlert alert: UIAlertController)
@@ -123,12 +152,17 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
     
     var isAIChatEnabled: Bool { get }
+
+    var isEmailProtectionSignedIn: Bool { get }
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
+
+    func tabDidRequestFireMode(tab: TabViewController)
 }
 
 extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
-        tabDidRequestClose(tab, shouldCreateEmptyTabAtSamePosition: false)
+        tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
-    
+
 }

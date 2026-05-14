@@ -21,12 +21,21 @@
 import SwiftUI
 import Combine
 import AIChat
+import AIChatDebugServer
+import DebugServer
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+    }
 
     var body: some View {
         List {
+            AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
                     Text("Message policy hostname")
@@ -42,6 +51,41 @@ struct AIChatDebugView: View {
                 }
                 .foregroundColor(.red)
             }
+
+            Section(header: Text("Contextual Session Timer"),
+                    footer: Text(viewModel.sessionTimerDescription)) {
+                ForEach(viewModel.sessionTimerPresets, id: \.seconds) { preset in
+                    Button {
+                        viewModel.setSessionTimer(seconds: preset.seconds)
+                    } label: {
+                        HStack {
+                            Text(preset.label)
+                            Spacer()
+                            if viewModel.contextualSessionTimerSeconds == preset.seconds {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    .foregroundColor(.primary)
+                }
+
+                NavigationLink(destination: AIChatDebugSessionTimerEntryView(viewModel: viewModel)) {
+                    HStack {
+                        Text("Custom Duration")
+                        Spacer()
+                        if let seconds = viewModel.contextualSessionTimerSeconds,
+                           !viewModel.sessionTimerPresets.contains(where: { $0.seconds == seconds }) {
+                            Text("\(seconds)s")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                Button("Reset to Default") {
+                    viewModel.resetSessionTimer()
+                }
+                .foregroundColor(.red)
+            }
         }
         .navigationTitle("AI Chat")
     }
@@ -49,6 +93,18 @@ struct AIChatDebugView: View {
 
 private final class AIChatDebugViewModel: ObservableObject {
     private var debugSettings = AIChatDebugSettings()
+
+    struct SessionTimerPreset {
+        let label: String
+        let seconds: Int
+    }
+
+    let sessionTimerPresets = [
+        SessionTimerPreset(label: "30 seconds", seconds: 30),
+        SessionTimerPreset(label: "1 minute", seconds: 60),
+        SessionTimerPreset(label: "5 minutes", seconds: 300),
+        SessionTimerPreset(label: "10 minutes", seconds: 600)
+    ]
 
     @Published var enteredHostname: String {
         didSet {
@@ -59,7 +115,6 @@ private final class AIChatDebugViewModel: ObservableObject {
     @Published var customURL: String {
         didSet {
             debugSettings.customURL = customURL.isEmpty ? nil : customURL
-            // Update the hostname in the UI when URL changes
             if customURL.isEmpty {
                 enteredHostname = ""
             } else if let url = URL(string: customURL), let host = url.host {
@@ -68,9 +123,37 @@ private final class AIChatDebugViewModel: ObservableObject {
         }
     }
 
+    @Published var contextualSessionTimerSeconds: Int? {
+        didSet {
+            debugSettings.contextualSessionTimerSeconds = contextualSessionTimerSeconds
+        }
+    }
+
+    var sessionTimerDescription: String {
+        if let seconds = contextualSessionTimerSeconds {
+            return "Current: \(seconds) seconds (\(formatDuration(seconds)))"
+        } else {
+            return "Current: Default (from privacy config)"
+        }
+    }
+
     init() {
         self.enteredHostname = debugSettings.messagePolicyHostname ?? ""
         self.customURL = debugSettings.customURL ?? ""
+        self.contextualSessionTimerSeconds = debugSettings.contextualSessionTimerSeconds
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else if seconds < 3600 {
+            let minutes = seconds / 60
+            return "\(minutes)m"
+        } else {
+            let hours = seconds / 3600
+            let minutes = (seconds % 3600) / 60
+            return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
+        }
     }
 
     func resetHostname() {
@@ -85,6 +168,14 @@ private final class AIChatDebugViewModel: ObservableObject {
         debugSettings.reset()
         enteredHostname = ""
         customURL = ""
+    }
+
+    func setSessionTimer(seconds: Int) {
+        contextualSessionTimerSeconds = seconds
+    }
+
+    func resetSessionTimer() {
+        contextualSessionTimerSeconds = nil
     }
 }
 
@@ -135,7 +226,7 @@ private struct AIChatDebugURLEntryView: View {
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
             }
-            
+
             Section {
                 Button {
                     if isValidURL(customURLText) {
@@ -162,10 +253,168 @@ private struct AIChatDebugURLEntryView: View {
             customURLText = viewModel.customURL
         }
     }
-    
+
     private func isValidURL(_ string: String) -> Bool {
-        if string.isEmpty { return true } // Allow empty to reset
+        if string.isEmpty { return true }
         return URL(string: string) != nil && (string.hasPrefix("http://") || string.hasPrefix("https://"))
+    }
+}
+
+private struct AIChatDebugSessionTimerEntryView: View {
+    @ObservedObject var viewModel: AIChatDebugViewModel
+    @State private var secondsText: String = ""
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        Form {
+            Section(header: Text("Custom Session Timer Duration"),
+                    footer: Text("Enter duration in seconds. Examples: 30, 60, 300")) {
+                TextField("Seconds", text: $secondsText)
+                    .keyboardType(.numberPad)
+            }
+
+            Section {
+                Button {
+                    if let seconds = Int(secondsText), seconds > 0 {
+                        viewModel.setSessionTimer(seconds: seconds)
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                } label: {
+                    Text("Save")
+                }
+                .disabled(Int(secondsText) == nil || Int(secondsText)! <= 0)
+
+                Button {
+                    viewModel.resetSessionTimer()
+                    secondsText = ""
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Text("Reset to Default")
+                }
+                .foregroundColor(.red)
+            }
+        }
+        .navigationTitle("Custom Timer Duration")
+        .onAppear {
+            if let seconds = viewModel.contextualSessionTimerSeconds {
+                secondsText = "\(seconds)"
+            }
+        }
+    }
+}
+
+private struct AIChatStorageServerSection: View {
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    @StateObject private var serverState = StorageServerState()
+
+    var body: some View {
+        Section(header: Text(verbatim: "Native Storage Server")) {
+            if serverState.isRunning {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: "Server running")
+                        .foregroundColor(.green)
+                    if let ip = serverState.localIPAddress {
+                        Text(verbatim: "http://\(ip):8473")
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                }
+                Button {
+                    serverState.stop()
+                } label: {
+                    Text(verbatim: "Stop Server")
+                }
+                .foregroundColor(.red)
+            } else {
+                if let error = serverState.errorMessage {
+                    Text(error).foregroundColor(.red).font(.caption)
+                }
+                Button {
+                    serverState.start(handler: duckAiNativeStorageHandler)
+                } label: {
+                    Text(verbatim: "Start Server")
+                }
+            }
+        }
+    }
+}
+
+@MainActor
+private final class StorageServerState: ObservableObject {
+    @Published var errorMessage: String?
+    @Published var localIPAddress: String?
+
+    var isRunning: Bool { server != nil }
+
+    @Published private var server: DuckAiStorageDebugServer?
+    private nonisolated(unsafe) var serverForDeinit: DuckAiStorageDebugServer?
+
+    deinit {
+        serverForDeinit?.stop()
+    }
+
+    func start(handler: DuckAiNativeStorageHandling?) {
+        guard let handler else {
+            errorMessage = "Native storage is not available (feature flag may be disabled)"
+            return
+        }
+
+        do {
+            let server = DuckAiStorageDebugServer(storageHandler: handler)
+            server.stateDidChange = { [weak self] state in
+                DispatchQueue.main.async {
+                    self?.handleStateChange(state)
+                }
+            }
+            try server.start()
+            self.server = server
+            self.serverForDeinit = server
+            self.errorMessage = nil
+            self.localIPAddress = Self.getWiFiAddress()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func handleStateChange(_ state: ServerState) {
+        switch state {
+        case .failed(let message):
+            errorMessage = message
+            server = nil
+            serverForDeinit = nil
+            localIPAddress = nil
+        default:
+            break
+        }
+    }
+
+    func stop() {
+        server?.stop()
+        server = nil
+        serverForDeinit = nil
+        localIPAddress = nil
+    }
+
+    private static func getWiFiAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ptr.pointee
+            guard let addr = interface.ifa_addr else { continue }
+            guard addr.pointee.sa_family == UInt8(AF_INET) else { continue }
+
+            let name = String(cString: interface.ifa_name)
+            guard name == "en0" else { continue }
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            getnameinfo(addr, socklen_t(addr.pointee.sa_len),
+                        &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST)
+            address = String(cString: hostname)
+        }
+        return address
     }
 }
 

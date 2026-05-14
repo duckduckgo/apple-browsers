@@ -50,20 +50,6 @@ final class DefaultBrowserAndDockPromptTypeDeciderTests {
         )
     }
 
-    @Test("Return Nil Prompt when Features Are Disabled")
-    func checkPromptIsNilWhenFeatureFlagsAreDisabled() {
-        // GIVEN
-        featureFlaggerMock.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled = false
-        featureFlaggerMock.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled = false
-        makeSUT()
-
-        // WHEN
-        let result = sut.promptType()
-
-        // THEN
-        #expect(result == nil)
-    }
-
     @Test("Check Return Nil Prompt If Banner Prompt Is Permanently Dismissed")
     func checkPromptIsNilWhenBannerPromptPermanentlyDismissed() {
         // GIVEN

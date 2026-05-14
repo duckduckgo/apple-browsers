@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Combine
+import PrivacyConfig
 
 final class SubscriptionExternalLinkViewModel: ObservableObject {
                 
@@ -32,11 +33,15 @@ final class SubscriptionExternalLinkViewModel: ObservableObject {
     
     @Published var canNavigateBack: Bool = false
     
-    init(url: URL, allowedDomains: [String]? = nil) {
+    init(url: URL,
+         allowedDomains: [String]? = nil,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         featureFlagger: FeatureFlagger) {
         let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                            allowedDomains: allowedDomains,
-                                                           contentBlocking: true)
-                
+                                                           userScriptsDependencies: userScriptsDependencies,
+                                                           featureFlagger: featureFlagger)
+
         self.url = url
         self.webViewModel = AsyncHeadlessWebViewViewModel(settings: webViewSettings)
     }

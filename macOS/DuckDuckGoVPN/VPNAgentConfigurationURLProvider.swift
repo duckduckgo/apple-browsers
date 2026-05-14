@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import Configuration
 
 struct VPNAgentConfigurationURLProvider: ConfigurationURLProviding {

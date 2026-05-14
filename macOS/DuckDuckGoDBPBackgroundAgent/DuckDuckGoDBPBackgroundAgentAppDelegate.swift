@@ -24,10 +24,12 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Networking
 import Subscription
 import os.log
 import Configuration
+import FeatureFlags
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -35,21 +37,21 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
-
-        let dryRun: Bool
-#if DEBUG
-        dryRun = true
-#else
-        dryRun = false
-#endif
-
+        let channel: String? = {
+            guard let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration)) else {
+                return nil
+            }
+            let internalUserDecider = DefaultInternalUserDecider(store: appConfigDefaults)
+            return StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
+        }()
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
-        PixelKit.setUp(dryRun: dryRun,
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
+                       channel: channel,
                        defaultHeaders: [:],
-                       defaults: .standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
+                       defaults: UserDefaults.standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)
@@ -87,25 +89,21 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
 
     override init() {
 
         // Configure Subscription
-        if !settings.isAuthV2Enabled {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V1")
-            subscriptionManager = DefaultSubscriptionManager(pixelHandlingSource: .dbp)
-        } else {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V2")
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
-                                                               environment: subscriptionEnvironment,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               pixelHandlingSource: .dbp)
-        }
+        Logger.dbpBackgroundAgent.log("Configuring subscription")
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        subscriptionManager = DefaultSubscriptionManager(keychainType: .dataProtection(.named(subscriptionAppGroup)),
+                                                         environment: subscriptionEnvironment,
+                                                         userDefaults: subscriptionUserDefaults,
+                                                         pixelHandlingSource: .dbp,
+                                                         source: .pir)
     }
 
     @MainActor
@@ -121,14 +119,22 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
 
+        let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
+                                                  privacyConfigurationManager: privacyConfigurationManager)
+        let buildType = StandardApplicationBuildType()
+        let wideEvent = WideEvent(
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            featureFlagProvider: dbpFeatureFlagger
+        )
+
         manager = DataBrokerProtectionAgentManagerProvider.agentManager(
             authenticationManager: authenticationManager,
             configurationManager: configurationManager,
             privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: DBPFeatureFlagger(configurationManager: configurationManager,
-                                              privacyConfigurationManager: privacyConfigurationManager),
-            wideEvent: WideEvent(),
-            vpnBypassService: VPNBypassService()
+            featureFlagger: dbpFeatureFlagger,
+            wideEvent: wideEvent,
+            vpnBypassService: VPNBypassService(),
+            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
         )
         manager?.agentFinishedLaunching()
 

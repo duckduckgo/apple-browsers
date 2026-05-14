@@ -17,11 +17,14 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import BrowserServicesKit
 import Core
-import Persistence
-import Bookmarks
 import CoreData
+import os.log
+import Persistence
+import UserScript
+import WebKit
 
 protocol TabNotifying {
     func didUpdateFavicon()
@@ -36,13 +39,9 @@ protocol FaviconProviding {
 
 }
 
-extension Favicons: FaviconProviding {
-
-    func loadFavicon(forDomain domain: String, fromURL url: URL?, intoCache cacheType: FaviconsCacheType, completion: ((UIImage?) -> Void)?) {
-        self.loadFavicon(forDomain: domain, fromURL: url, intoCache: cacheType, fromCache: nil, completion: completion)
-    }
-
-}
+// Favicons conforms to FaviconProviding via FaviconManaging.
+// The loadFavicon(forDomain:fromURL:intoCache:completion:) requirement is satisfied
+// by the default implementation in the FaviconManaging protocol extension.
 
 class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
 
@@ -55,14 +54,18 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     let context: NSManagedObjectContext
     var secureVault: (any AutofillSecureVault)?
     let tab: TabNotifying
-    let favicons: FaviconProviding
+    let favicons: FaviconManaging
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
-    init(bookmarksDatabase: CoreDataDatabase, tab: TabNotifying, favicons: FaviconProviding) {
+    init(bookmarksDatabase: CoreDataDatabase,
+         tab: TabNotifying,
+         favicons: FaviconManaging,
+         sharedSecureVault: (any AutofillSecureVault)? = nil) {
         self.context = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
         self.tab = tab
         self.favicons = favicons
+        self.secureVault = sharedSecureVault
 
         super.init()
         registerForNotifications()
@@ -76,10 +79,22 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     }
 
     @MainActor
-    func faviconUserScript(_ script: FaviconUserScript, didRequestUpdateFaviconForHost host: String, withUrl url: URL?) {
-        assert(Thread.isMainThread)
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript,
+                           didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
+                           for documentUrl: URL,
+                           in webView: WKWebView?) {
+        guard let host = documentUrl.host else { return }
 
-        favicons.loadFavicon(forDomain: host, fromURL: url, intoCache: .tabs) { [weak self] image in
+        // Note: Unlike macOS, we don't validate documentUrl matches the tab's current URL.
+        // This is safe because favicons are cached by domain, not associated with the tab directly.
+
+        // SVG favicons are filtered in C-S-S before reaching native code (iOS only)
+        let faviconURL: URL? = faviconLinks
+            .first { $0.rel.contains("icon") && !$0.rel.contains("apple-touch") }
+            .map { $0.href }
+            ?? faviconLinks.first.map { $0.href }
+
+        favicons.loadFavicon(forDomain: host, fromURL: faviconURL, intoCache: .tabs) { [weak self] image in
             guard let self = self else { return }
             self.tab.didUpdateFavicon()
             guard featureFlagger.isFeatureOn(.createFireproofFaviconUpdaterSecureVaultInBackground) else {
@@ -89,6 +104,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
             replaceFireproofFaviconIfNecessary(image, forHost: host)
         }
     }
+
+    // MARK: - Favicon replacement logic
 
     private func replaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
         guard let image = image else { return }
@@ -132,6 +149,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func initSecureVault() async -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
+                // Fallback: Create new instance if shared one was not injected
+                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance")
                 // Move heavy PBKDF2 crypto operations to background thread to avoid blocking main thread
                 secureVault = await Task.detached(priority: .userInitiated) {
                     return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
@@ -161,7 +180,7 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         Task { @MainActor in
             let autofillLoginExists = await autofillLoginExists(for: domain)
             guard !autofillLoginExists else { return }
-            Favicons.shared.removeBookmarkFavicon(forDomain: domain)
+            favicons.removeBookmarkFavicon(forDomain: domain)
         }
     }
 
@@ -178,6 +197,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func legacyInitSecureVault() -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
+                // Fallback: Create new instance if shared one was not injected
+                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance (legacy)")
                 secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             }
             return secureVault

@@ -17,12 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
-import FeatureFlags
 import Foundation
 import History
 import os.log
+import PrivacyConfig
 
 /**
  * This protocol describes a data source (history provider) for `HistoryGroupingProvider`.
@@ -41,16 +40,13 @@ extension HistoryCoordinator: HistoryGroupingDataSource {}
 /**
  * This class is responsible for grouping history visits for History Menu.
  *
- * When `historyView` feature flag is enabled, visits are deduplicated
- * to only have the latest visit per URL per day.
+ * Visits are deduplicated to only have the latest visit per URL per day.
  */
 @MainActor
 final class HistoryGroupingProvider {
-    private let featureFlagger: FeatureFlagger
     private(set) weak var dataSource: HistoryGroupingDataSource?
 
-    init(dataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger? = nil) {
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+    init(dataSource: HistoryGroupingDataSource) {
         self.dataSource = dataSource
     }
 

@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Došlo ke smazání %1$d karty a jejích dat</string>
+			<key>few</key>
+			<string>Došlo ke smazání %1$d karet a jejich dat</string>
+			<key>many</key>
+			<string>Došlo ke smazání %1$d karet a jejich dat</string>
+			<key>other</key>
+			<string>Došlo ke smazání %1$d karet a jejich dat</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Smazat z 1 webu. Může tě to odhlásit z účtů.</string>
+			<key>few</key>
+			<string>Smazat z %1$d webů. Může tě to odhlásit z účtů.</string>
+			<key>many</key>
+			<string>Smazat z %1$d webů. Může tě to odhlásit z účtů.</string>
+			<key>other</key>
+			<string>Smazat z %1$d webů. Může tě to odhlásit z účtů.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zavřít kartu</string>
+			<key>few</key>
+			<string>Zavřít %1$d karty</string>
+			<key>many</key>
+			<string>Zavřít všech %1$d karet</string>
+			<key>other</key>
+			<string>Zavřít všech %1$d karet</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -157,13 +217,73 @@ Zablokovali jsme je.
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokován %1$d tracker</string>
+			<string>Zablokovali jsme načtení %1$d trackeru</string>
 			<key>few</key>
-			<string>Zablokovány %1$d trackery</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
 			<key>many</key>
-			<string>Zablokováno %1$d trackerů</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
 			<key>other</key>
-			<string>Zablokováno %1$d trackerů</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker</string>
+			<key>few</key>
+			<string>%1$d Trackery</string>
+			<key>many</key>
+			<string>%1$d Trackery</string>
+			<key>other</key>
+			<string>%1$d Trackery</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Načtena %1$d další doména</string>
+			<key>few</key>
+			<string>Načteny %1$d další domény</string>
+			<key>many</key>
+			<string>Načteno %1$d další domény</string>
+			<key>other</key>
+			<string>Načteno %1$d dalších domén</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d tracker vlastněný touhle stránkou (načtený)</string>
+			<key>few</key>
+			<string>%1$d trackery vlastněné touhle stránkou (načtené)</string>
+			<key>many</key>
+			<string>%1$d trackerů vlastněných touhle stránkou (načtených)</string>
+			<key>other</key>
+			<string>%1$d trackerů vlastněných touhle stránkou (načtených)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -694,6 +814,46 @@ Zablokovali jsme je.
 			<string>%1$d vybraných karet</string>
 			<key>other</key>
 			<string>%1$d vybraných karet</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d web, kterého se vymazání netýká</string>
+			<key>few</key>
+			<string>%1$d weby, kterých se vymazání netýká</string>
+			<key>many</key>
+			<string>%1$d webu, kterého se vymazání netýká</string>
+			<key>other</key>
+			<string>%1$d webů, kterých se vymazání netýká</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Tracker</string>
+			<key>few</key>
+			<string>%2$@ Trackery</string>
+			<key>many</key>
+			<string>%2$@ Trackery</string>
+			<key>other</key>
+			<string>%2$@ Trackery</string>
 		</dict>
 	</dict>
 </dict>

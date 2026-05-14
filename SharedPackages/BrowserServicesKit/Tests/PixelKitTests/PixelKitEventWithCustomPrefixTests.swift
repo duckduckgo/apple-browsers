@@ -36,6 +36,10 @@ final class PixelKitEventWithCustomPrefixTests: XCTestCase {
             nil
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            return [.pixelSource]
+        }
+
         var frequency: PixelKit.Frequency {
             .dailyAndCount
         }

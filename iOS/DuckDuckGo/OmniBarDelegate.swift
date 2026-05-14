@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
@@ -42,7 +43,9 @@ protocol OmniBarDelegate: AnyObject {
     func onMenuPressed()
 
     func onBookmarksPressed()
-    
+
+    func onPasswordsPressed()
+
     func onSettingsPressed()
 
     func onMenuLongPressed()
@@ -67,9 +70,6 @@ protocol OmniBarDelegate: AnyObject {
 
     /// Called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed()
-
-    /// Called when the AI Chat right button is tapped
-    func onAIChatRightButtonPressed()
 
     /// Called when the AI Chat full mode omnibar branding area is tapped.
     func onAIChatBrandingPressed()
@@ -99,10 +99,45 @@ protocol OmniBarDelegate: AnyObject {
 
     func isSuggestionTrayVisible() -> Bool
 
-    // MARK: - Experimental Address Bar (pixels only)
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect)
+
+    /// Called when user selects a chat from the AI Chat history list
+    func onChatHistorySelected(url: URL)
+
+    // MARK: - iPad Expanded Omnibar
+    func onOmniBarExpandedStateChanged(isExpanded: Bool)
+
+    /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
+    func onAIChatQueryUpdated(_ query: String)
+
+    /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
+    func shouldAutoSelectTextForSERPQuery() -> Bool
+
+    // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
     func onExperimentalAddressBarCancelPressed()
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
+
+    // MARK: - Escape Hatch
+    func escapeHatchForEditingState() -> EscapeHatchModel?
+    func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
+
+    // MARK: - Toggle
+    func onToggleModeSwitched()
+    func onTextEntryModeDidChange(_ mode: TextEntryMode)
+    func preferredTextEntryModeForCurrentTab() -> TextEntryMode?
+
+    /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
+    func useNewOmnibarTransitionBehaviour() -> Bool
+    
+    // MARK: - Voice Mode
+    func onDuckAIVoiceModeRequested()
+
+    // MARK: - Fire Mode
+    func onTryFireModeRequested()
+    func isCurrentTabFireTab() -> Bool
 }
 
 extension OmniBarDelegate {
@@ -124,9 +159,13 @@ extension OmniBarDelegate {
     }
 
     func onBookmarksPressed() {
-        
+
     }
-    
+
+    func onPasswordsPressed() {
+
+    }
+
     func onSettingsPressed() {
         
     }
@@ -149,9 +188,6 @@ extension OmniBarDelegate {
     func onAIChatLeftButtonPressed() {
     }
 
-    func onAIChatRightButtonPressed() {
-    }
-
     func onAIChatBrandingPressed() {
     }
 
@@ -165,8 +201,44 @@ extension OmniBarDelegate {
         onVoiceSearchPressed()
     }
 
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect) {
+    }
+
+    func onChatHistorySelected(url: URL) {
+    }
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
+
+    func onAIChatQueryUpdated(_ query: String) {}
+
+    func shouldAutoSelectTextForSERPQuery() -> Bool { false }
+
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
     func onExperimentalAddressBarCancelPressed() {}
+
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
+        completion()
+    }
+
+    func onSwitchToTab(_ tab: Tab) {}
+
+    func onTabSwitcherRequested() {}
+
+    func onToggleModeSwitched() {}
+
+    func onTextEntryModeDidChange(_ mode: TextEntryMode) {}
+
+    func preferredTextEntryModeForCurrentTab() -> TextEntryMode? { nil }
+
+    func escapeHatchForEditingState() -> EscapeHatchModel? {
+        nil
+    }
+
+    func useNewOmnibarTransitionBehaviour() -> Bool {
+        false
+    }
+
+    func onDuckAIVoiceModeRequested() {}
 }

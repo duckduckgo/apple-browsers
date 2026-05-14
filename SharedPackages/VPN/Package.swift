@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -23,6 +23,7 @@ let package = Package(
                 .target(name: "WireGuardC"),
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
             ],

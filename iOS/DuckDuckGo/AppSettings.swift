@@ -20,6 +20,23 @@
 import Bookmarks
 import Foundation
 
+enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
+    case allowAll
+    case blockAudio
+    case blockAll
+
+    var description: String {
+        switch self {
+        case .allowAll:
+            return UserText.autoplayModeAllowAll
+        case .blockAudio:
+            return UserText.autoplayModeBlockAudio
+        case .blockAll:
+            return UserText.autoplayModeBlockAll
+        }
+    }
+}
+
 enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
     case top
     case bottom
@@ -73,7 +90,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var recentlyVisitedSites: Bool { get set }
     var currentThemeStyle: ThemeStyle { get set }
     
-    var autoClearAction: AutoClearSettingsModel.Action { get set }
+    var autoClearAction: FireRequest.Options { get set }
     var autoClearTiming: AutoClearSettingsModel.Timing { get set }
 
     var longPressPreviews: Bool { get set }
@@ -86,6 +103,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var currentAddressBarPosition: AddressBarPosition { get set }
     var currentRefreshButtonPosition: RefreshButtonPosition { get set }
     var showFullSiteAddress: Bool { get set }
+    var showTrackersBlockedAnimation: Bool { get set }
 
     var defaultTextZoomLevel: TextZoomLevel { get set }
 

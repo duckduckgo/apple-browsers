@@ -34,15 +34,21 @@ public class DataStoreWarmup {
     public init() { }
 
     @MainActor
-    public func ensureReady(applicationState: ApplicationState) async {
+    public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async {
         Pixel.fire(pixel: .webkitWarmupStart(appState: applicationState.rawValue))
-        await BlockingNavigationDelegate().loadInBackgroundWebView(url: URL(string: "about:blank")!)
+        await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
         Pixel.fire(pixel: .webkitWarmupFinished(appState: applicationState.rawValue))
     }
 
 }
 
 public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
+    
+    private let fireMode: Bool
+    
+    public init(fireMode: Bool) {
+        self.fireMode = fireMode
+    }
 
     var finished: PassthroughSubject? = PassthroughSubject<Void, Never>()
 
@@ -81,7 +87,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
 
     @MainActor
     public func prepareWebView() -> WKWebView {
-        let config = WKWebViewConfiguration.persistent()
+        let config = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
         return webView

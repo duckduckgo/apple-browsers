@@ -18,8 +18,9 @@
 //
 
 import UIKit
-import Core
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import DesignResourcesKit
 import DesignResourcesKitIcons
 

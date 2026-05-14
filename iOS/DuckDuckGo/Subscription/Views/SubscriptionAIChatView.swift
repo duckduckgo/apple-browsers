@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SubscriptionAIChatView: View {
 
@@ -30,7 +31,7 @@ struct SubscriptionAIChatView: View {
         let hasSubscription = viewModel.isPaidAIChatAvailable
         let shouldShowAsOn = hasSubscription && isAIFeaturesEnabled
         
-        let currentDescription = SettingsDescription(imageName: "AIChat-Settings",
+        let currentDescription = SettingsDescription(image: DesignSystemImages.Color.Size128.duckAIPaid,
                                                     title: UserText.aiChatSubscriptionTitle,
                                                     status: shouldShowAsOn ? .on : .off,
                                                     explanation: UserText.aiChatSubscriptionCaption)

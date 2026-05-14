@@ -138,6 +138,34 @@ final class DuckPlayerURLExtensionTests: XCTestCase {
         XCTAssertEqual(URL.youtubeNoCookie("abcdef12345", timestamp: "10d").absoluteString, "https://www.youtube-nocookie.com/embed/abcdef12345")
     }
 
+    func testIsPlayableYoutubeVideoContent() {
+        // Standard watch pages
+        XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345".url!.isPlayableYoutubeVideoContent)
+        XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345&t=5m".url!.isPlayableYoutubeVideoContent)
+
+        // Shorts
+        XCTAssertTrue("\(baseUrl)/shorts/abcdef12345".url!.isPlayableYoutubeVideoContent)
+        XCTAssertTrue("\(baseUrl)/shorts/abcdef12345?feature=share".url!.isPlayableYoutubeVideoContent)
+
+        // Live streams
+        XCTAssertTrue("\(baseUrl)/live/abcdef12345".url!.isPlayableYoutubeVideoContent)
+        XCTAssertTrue("\(baseUrl)/live/abcdef12345?feature=share".url!.isPlayableYoutubeVideoContent)
+
+        // Clips
+        XCTAssertTrue("\(baseUrl)/clip/UgkxbWM_k12345678".url!.isPlayableYoutubeVideoContent)
+
+        // Non-video YouTube pages
+        XCTAssertFalse("\(baseUrl)/".url!.isPlayableYoutubeVideoContent)
+        XCTAssertFalse("\(baseUrl)/feed/subscriptions".url!.isPlayableYoutubeVideoContent)
+        XCTAssertFalse("\(baseUrl)/results?search_query=test".url!.isPlayableYoutubeVideoContent)
+        XCTAssertFalse("\(baseUrl)/channel/UC12345".url!.isPlayableYoutubeVideoContent)
+        XCTAssertFalse("\(baseUrl)/playlist?list=PL12345".url!.isPlayableYoutubeVideoContent)
+
+        // Non-YouTube URLs
+        XCTAssertFalse("https://duckduckgo.com/watch?v=abcdef12345".url!.isPlayableYoutubeVideoContent)
+        XCTAssertFalse("https://example.com/shorts/abcdef12345".url!.isPlayableYoutubeVideoContent)
+    }
+
     func testIsYoutubeWatchWithHashtag() {
         // Valid YouTube watch URL with a video ID and a hashtag
         XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345#t=2m30s".url!.isYoutubeWatchWithHashtag)

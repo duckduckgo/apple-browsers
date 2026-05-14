@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import FeatureFlags
 import Navigation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -51,7 +53,7 @@ final class TabTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 
@@ -150,7 +152,7 @@ final class TabTests: XCTestCase {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab.url = .duckDuckGo
         let webViewMock = WebViewMock()
-        let frameInfo = WKFrameInfoMock(webView: webViewMock, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo), isMainFrame: true)
+        let frameInfo = WKFrameInfo.mock(for: webViewMock, isMain: true, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo))
         tab.webView(webViewMock, runJavaScriptAlertPanelWithMessage: "Alert", initiatedByFrame: frameInfo) { }
         XCTAssertNotNil(tab.userInteractionDialog)
         tab.url = .duckDuckGoMorePrivacyInfo
@@ -427,6 +429,43 @@ final class TabTests: XCTestCase {
         tab = Tab(content: .url(.empty, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), burnerMode: BurnerMode(isBurner: true))
 
         XCTAssertFalse(tab.webView.configuration.preferences[.mediaSessionEnabled])
+    }
+
+    // MARK: - canReportBrokenSite
+
+    @MainActor func testCanReportBrokenSiteIsTrueForURLContent() {
+        tab = Tab(content: .url(.duckDuckGo, source: .ui))
+        XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForHistoryContent() {
+        tab = Tab(content: .history(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForSettingsContent() {
+        tab = Tab(content: .settings(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForBookmarksContent() {
+        tab = Tab(content: .bookmarks)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForNewtabContent() {
+        tab = Tab(content: .newtab)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForReleaseNotesContent() {
+        tab = Tab(content: .releaseNotes)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsTrueForAIChatContent() {
+        tab = Tab(content: .aiChat(.duckDuckGo))
+        XCTAssertTrue(tab.canReportBrokenSite)
     }
 
 }

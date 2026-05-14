@@ -26,11 +26,13 @@ import UIKit
 #endif
 
 public class AuthV2TokenRefreshWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "auth_v2_token_refresh_debug"
-    #else
-    public static let pixelName = "auth_v2_token_refresh"
-    #endif
+    public static let metadata = WideEventMetadata(
+        pixelName: "auth_v2_token_refresh",
+        featureName: "authv2-token-refresh",
+        mobileMetaType: "ios-authv2-token-refresh",
+        desktopMetaType: "macos-authv2-token-refresh",
+        version: "1.1.0"
+    )
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -70,27 +72,17 @@ extension AuthV2TokenRefreshWideEventData {
         case partialData = "partial_data"
     }
 
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+    public func jsonParameters() -> [String: Encodable] {
+        let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        parameters[WideEventParameter.Feature.name] = "authv2-token-refresh"
-
-        if let failingStep {
-            parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
-        }
-
-        if let duration = refreshTokenDuration?.durationMilliseconds {
-            parameters[WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency] = String(bucket(duration))
-        }
-
-        if let duration = fetchJWKSDuration?.durationMilliseconds {
-            parameters[WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency] = String(bucket(duration))
-        }
-
-        return parameters
+        return Dictionary(compacting: [
+            (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
+            (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
+        ])
     }
 
-    private func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

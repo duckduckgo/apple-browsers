@@ -15,12 +15,42 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+import Foundation
 
 public struct ExtractAction: Action {
     public let id: String
     public let actionType: ActionType
-    public let selector: String
-    public let noResultsSelector: String?
-    public let profile: ExtractProfileSelectors
-    public let dataSource: DataSource?
+    public let json: Data?
+
+    init(id: String,
+         actionType: ActionType,
+         json: Data? = nil) {
+        self.id = id
+        self.actionType = actionType
+        self.json = json
+    }
+
+    enum CodingKeys: CodingKey {
+        case id
+        case actionType
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        actionType = try container.decode(ActionType.self, forKey: .actionType)
+        json = nil
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(actionType, forKey: .actionType)
+    }
+
+    public func with(json: Data?) -> ExtractAction {
+        ExtractAction(id: id,
+                      actionType: actionType,
+                      json: json)
+    }
 }

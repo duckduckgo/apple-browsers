@@ -51,18 +51,18 @@ protocol AIChatTranslating {
 final class AIChatTranslator: AIChatTranslating {
 
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
 
     init(
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
     }
@@ -85,23 +85,17 @@ final class AIChatTranslator: AIChatTranslating {
                                                           targetLanguage: targetTranslationLanguage())
         pixelFiring?.fire(AIChatPixel.aiChatTranslateText, frequency: .dailyAndStandard)
 
-        // With settings improvements we use the sidebar flow regardless
-        if aiChatMenuConfig.shouldOpenAIChatInSidebar || aiChatMenuConfig.shouldShowSettingsImprovements {
-            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(
-                    AIChatPixel.aiChatSidebarOpened(
-                        source: .translation,
-                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                        minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
-                    ),
-                    frequency: .dailyAndStandard
-                )
-            }
-            aiChatSidebarPresenter.presentSidebar(for: prompt)
-        } else {
-            AIChatPromptHandler.shared.setData(prompt)
-            aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        if !aiChatCoordinator.isChatPresentedForCurrentTab() {
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .translation,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
         }
+        aiChatCoordinator.revealChat(for: prompt)
     }
 
     /// Return target translation language as BCP 47 code

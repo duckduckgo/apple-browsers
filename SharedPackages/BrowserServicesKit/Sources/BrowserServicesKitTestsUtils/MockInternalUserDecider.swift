@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
 import Combine
+import Foundation
+import PrivacyConfig
 
 public class MockInternalUserDecider: InternalUserDecider {
     public var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()

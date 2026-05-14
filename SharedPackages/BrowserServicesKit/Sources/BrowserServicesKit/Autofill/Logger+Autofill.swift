@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var autofill = { Logger(subsystem: "Autofill", category: "") }()
+    static let autofill = Logger(subsystem: "Autofill", category: "")
 }

@@ -25,6 +25,7 @@ struct TestModel {
     let items: [String]
     let optionalItems: [String]?
     let status: String
+    let optionalStatus: String? = nil
 }
 
 enum TestStatus: String {
@@ -341,8 +342,46 @@ extension MappingValidatorTests {
 
 extension MappingValidatorTests {
 
-    @Suite("Compact Map")
-    struct CompactMapTests {
+    @Suite("Map Enum If Present")
+    struct MapEnumIfPresentTests {
+
+        @Test("Check valid optional enum value maps successfully")
+        func checkValidOptionalEnumMaps() throws {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active", optionalStatus: "active")
+            let sut = MappingValidator(root: model)
+
+            let result = try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+
+            #expect(result == .active)
+        }
+
+        @Test("Check nil optional enum returns nil")
+        func checkNilOptionalEnumReturnsNil() throws {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active")
+            let sut = MappingValidator(root: model)
+
+            let result = try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+
+            #expect(result == nil)
+        }
+
+        @Test("Check invalid optional enum value throws invalidValue error")
+        func checkInvalidOptionalEnumThrows() {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active", optionalStatus: "unknown")
+            let sut = MappingValidator(root: model)
+
+            #expect(throws: MappingError.invalidValue(\TestModel.optionalStatus)) {
+                try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+            }
+        }
+    }
+
+}
+
+extension MappingValidatorTests {
+
+    @Suite("Map Required")
+    struct MapRequiredTests {
 
         @Test("Check Valid Transformation Returns Result")
         func checkValidTransformationReturns() throws {
@@ -351,7 +390,7 @@ extension MappingValidatorTests {
             let sut = MappingValidator(root: model)
 
             // WHEN
-            let result = try sut.compactMap(\.name) { name throws(MappingError) -> String in
+            let result = try sut.mapRequired(\.name) { name throws(MappingError) -> String in
                 // Simulate validation throwing function
                 let id = try sut.notEmpty(\.id)
                 return id + " " + name.uppercased()
@@ -370,7 +409,7 @@ extension MappingValidatorTests {
             // THEN
             #expect(throws: MappingError.nilValue(\TestModel.name)) {
                 // WHEN
-                try sut.compactMap(\.name) { name in
+                try sut.mapRequired(\.name) { name in
                     return name.uppercased()
                 }
             }
@@ -385,7 +424,7 @@ extension MappingValidatorTests {
             // THEN
             #expect(throws: MappingError.invalidValue(\TestModel.name)) {
                 // WHEN
-                try sut.compactMap(\.name) { _ throws(MappingError) -> String? in
+                try sut.mapRequired(\.name) { _ throws(MappingError) -> String? in
                     return nil
                 }
             }
@@ -400,7 +439,7 @@ extension MappingValidatorTests {
             // THEN
             #expect(throws: MappingError.emptyValue(\TestModel.id)) {
                 // WHEN
-                try sut.compactMap(\.name) { name throws(MappingError) -> String? in
+                try sut.mapRequired(\.name) { name throws(MappingError) -> String? in
                     // Simulate validation that throws
                     throw MappingError.emptyValue(\TestModel.id)
                 }
@@ -469,8 +508,8 @@ extension MappingValidatorTests {
             }
         }
 
-        @Test("Check Chained Compact Map Transformations Succeeds")
-        func checkChainedCompactMapTransformations() throws {
+        @Test("Check Chained Map Required Transformations Succeeds")
+        func checkChainedMapRequiredTransformations() throws {
             // GIVEN
             let model = Model(
                 id: "123",
@@ -481,7 +520,7 @@ extension MappingValidatorTests {
             let sut = MappingValidator(root: model)
 
             // WHEN
-            let transformedItems = try sut.compactMap(\.items) { items throws(MappingError) -> [String]? in
+            let transformedItems = try sut.mapRequired(\.items) { items throws(MappingError) -> [String]? in
                 let validated = try sut.notEmpty(items, keyPath: \Model.items)
                 return validated.map { $0.uppercased() }
             }

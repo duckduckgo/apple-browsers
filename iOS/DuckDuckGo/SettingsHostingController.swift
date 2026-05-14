@@ -26,17 +26,21 @@ class SettingsHostingController: UIHostingController<AnyView> {
     var viewModel: SettingsViewModel
     var viewProvider: SettingsLegacyViewProvider
 
+    // Is set to nil once used as it should only be fired once per access to any part of settings
+    var productSurfaceTelemetry: ProductSurfaceTelemetry?
+
     public var isDeepLinking: Bool {
         return viewModel.deepLinkTarget != nil
     }
 
-    init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider) {
+    init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider, productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.viewModel = viewModel
         self.viewProvider = viewProvider
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(rootView: AnyView(EmptyView()))
 
-        viewModel.onRequestPushLegacyView = { [weak self] vc in
-            self?.pushLegacyViewController(vc)
+        viewModel.onRequestPushLegacyView = { [weak self] vc, animated in
+            self?.pushLegacyViewController(vc, animated: animated)
         }
 
         viewModel.onRequestPresentLegacyView = { [weak self] vc, modal in
@@ -51,16 +55,23 @@ class SettingsHostingController: UIHostingController<AnyView> {
             self?.navigationController?.dismiss(animated: true)
         }
 
-        self.rootView = AnyView(SettingsRootView(viewModel: viewModel))
+        viewModel.onRequestPresentFireConfirmation = { [weak self] sourceRect, onConfirm, onCancel in
+            self?.presentFireConfirmation(sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        }
 
-        decorateNavigationBar()
+        self.rootView = AnyView(SettingsRootView(viewModel: viewModel))
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        // If this is not called, settings navigation bar (UIKIt) is going wild with colors after reopening settings (?!)
-        // Root cause will be investigated later as part of https://app.asana.com/0/414235014887631/1207098219526666/f
+        // We only want to call this once per instanciation
+        productSurfaceTelemetry?.settingsUsed()
+        productSurfaceTelemetry = nil
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
         decorateNavigationBar()
     }
 
@@ -68,8 +79,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func pushLegacyViewController(_ vc: UIViewController) {
-        navigationController?.pushViewController(vc, animated: true)
+    func pushLegacyViewController(_ vc: UIViewController, animated: Bool = true) {
+        navigationController?.pushViewController(vc, animated: animated)
     }
 
     func presentLegacyViewController(_ vc: UIViewController, modal: Bool = false) {
@@ -77,5 +88,20 @@ class SettingsHostingController: UIHostingController<AnyView> {
             vc.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(vc, animated: true)
+    }
+
+    @MainActor
+    func presentFireConfirmation(sourceRect: CGRect, onConfirm: @escaping (FireRequest) -> Void, onCancel: @escaping () -> Void) {
+        let presenter = FireConfirmationPresenter()
+        presenter.presentFireConfirmation(
+            on: self,
+            sourceRect: sourceRect,
+            tabViewModel: nil,
+            pixelSource: .settings,
+            fireContext: .default(daxDialogsManager: viewProvider.daxDialogsManager),
+            browsingMode: .normal, // Fire button in settings should always burn everything, so we pass .normal regardless of the current mode.
+            onConfirm: onConfirm,
+            onCancel: onCancel
+        )
     }
 }

@@ -17,22 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
-import FeatureFlags
-
-public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled for active users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled: Bool { get }
-}
-
-public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled for inactive users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool { get }
-}
-
-public typealias DefaultBrowserAndDockPromptFeatureFlagProvider = DefaultBrowserAndDockPromptActiveUserFeatureFlagProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider
+import PrivacyConfig
 
 public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider {
     /// The number of days to wait after app installation before showing the first popover
@@ -50,7 +35,7 @@ public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvi
     var inactiveModalNumberOfInactiveDays: Int { get }
 }
 
-public typealias DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider = DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider
+public typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider
 
 /// An enum representing the different settings for Set Default Browser (SAD) and Add to Dock (ATT) feature flag.
 public enum DefaultBrowserAndDockPromptFeatureSettings: String {
@@ -76,39 +61,21 @@ public enum DefaultBrowserAndDockPromptFeatureSettings: String {
     }
 }
 
-typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlagProvider & DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
-
 final class DefaultBrowserAndDockPromptFeatureFlag {
     private let privacyConfigManager: PrivacyConfigurationManaging
-    private let featureFlagger: FeatureFlagger
 
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
     }
 
-    public init(privacyConfigManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+    public init(privacyConfigManager: PrivacyConfigurationManaging) {
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger
     }
-}
-
-// MARK: - DefaultBrowserAndDockPromptFeatureFlagger
-
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
-
-    public var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts)
-    }
-
-    public var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledDefaultBrowserAndDockPromptsInactiveUser)
-    }
-
 }
 
 // MARK: - DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
 
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
+extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagger {
 
     public var firstPopoverDelayDays: Int {
         getSettings(.firstPopoverDelayDays)

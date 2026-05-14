@@ -22,7 +22,7 @@ import ContentScopeScripts
 import WebKit
 import Core
 import Common
-import BrowserServicesKit
+import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
@@ -118,7 +118,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - pixelFiring: The pixel firing utility for analytics.
     ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
-    init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
+    init(duckPlayer: DuckPlayerControlling,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
          pixelFiring: PixelFiring.Type = Pixel.self,
@@ -1034,10 +1034,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
-        guard let controller = hostViewController as? TabViewController else {
-            return
-        }
-        duckPlayer.setHostViewController(controller)
+        duckPlayer.setHostViewController(hostViewController)
 
         // Ensure the tab is not muted
         if let webview = hostViewController.webView {

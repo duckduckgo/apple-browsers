@@ -18,7 +18,7 @@
 
 import Foundation
 
-public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & EmailConfirmationDecouplingFeatureFlagging
+public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & EmailConfirmationDecouplingFeatureFlagging & ForegroundRunningFeatureFlagging & ContinuedProcessingFeatureFlagging & WebViewUserAgentFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
     var isRemoteBrokerDeliveryFeatureOn: Bool { get }
@@ -26,4 +26,21 @@ public protocol RemoteBrokerDeliveryFeatureFlagging {
 
 public protocol EmailConfirmationDecouplingFeatureFlagging {
     var isEmailConfirmationDecouplingFeatureOn: Bool { get }
+}
+
+public protocol ForegroundRunningFeatureFlagging {
+    var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool { get }
+}
+
+public protocol ContinuedProcessingFeatureFlagging {
+    var isContinuedProcessingFeatureOn: Bool { get }
+}
+
+public protocol WebViewUserAgentFeatureFlagging {
+    var isWebViewUserAgentOn: Bool { get }
+}
+
+public protocol FreemiumPIRFeatureFlagging {
+    var isFreemiumPIREnabled: Bool { get }
 }

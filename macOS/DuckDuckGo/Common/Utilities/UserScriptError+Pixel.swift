@@ -21,11 +21,17 @@ import enum UserScript.UserScriptError
 import PixelKit
 
 extension UserScriptError {
-    public func fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiring? = PixelKit.shared) {
+
+    public enum Source: String {
+        case browser
+        case dbp
+    }
+
+    public func fireLoadJSFailedPixelIfNeeded(source: Source = .browser, pixelFiring: PixelFiring? = PixelKit.shared) {
         guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
             return
         }
-        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: error), frequency: .dailyAndCount)
+        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: error, source: source), frequency: .dailyAndCount)
         Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }
 }

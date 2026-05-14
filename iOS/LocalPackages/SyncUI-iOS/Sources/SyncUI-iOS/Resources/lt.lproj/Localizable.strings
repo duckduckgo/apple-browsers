@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Norint naudoti „Sync & Backup“, reikalingas įrenginio slaptažodis.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Automatiškai atkuriami duomenys šiame įrenginyje iš naujo įdiegus programą.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Tęsk „Sync & Backup“ seansą, kad atkurtum savo žymes, slaptažodžius ir kt., arba tęsk ir atlik naują sąranką.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Tęsti „Sync & Backup“";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Tęsti sąranką";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Jūsų ankstesnis „Sync & Backup“ seansas paruoštas.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Jei iš naujo įdiegsi programą „DuckDuckGo“, paklausime, ar nori atkurti duomenis šiame įrenginyje.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Atkurti iš naujo įdiegus programą";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Atkurti iš naujo įdiegus programą";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Išjungti";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Įjungti";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Automatiškai atkurk savo duomenis, jei iš naujo įdiegsi programą. Po 18 mėnesių neaktyvumo „Sync & Backup“ duomenų atkurti negalima.";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Atkurti iš naujo įdiegus programą";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Atgal";
@@ -36,6 +69,9 @@
 
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Taip „DuckDuckGo“ saugiame serveryje sukuriama užšifruota atsarginė žymių ir automatinio pildymo duomenų kopija, kurią galima sinchronizuoti su kitais jūsų įrenginiais.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Tai sukuria užšifruotą išsaugotų žymių, slaptažodžių, kreditinių kortelių ir „Duck.ai“ pokalbių atsarginę kopiją saugiame „DuckDuckGo“ serveryje, kurį galima sinchronizuoti su kitais jūsų įrenginiais.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifravimo raktas saugomas tik jūsų įrenginyje, „DuckDuckGo“ negali jo pasiekti.";
@@ -98,9 +134,6 @@
 "fetch.favicons.option.title" = "Automatinio atsisiuntimo piktogramos";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Eikite į „Nustatymai“";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Laikytis kūrimo";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -142,6 +175,9 @@
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Jūsų žymės ir automatinio pildymo duomenys ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
 
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Jūsų žymos, slaptažodžiai ir „Duck.ai“ pokalbiai ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
+
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Jungiamasi...";
 
@@ -152,13 +188,22 @@
 "recover.synced.data.link" = "Atkurti sinchronizuotus duomenis";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Pradėti";
+"recover.synced.data.sheet.button" = "Atkurti sinchronizuotus duomenis";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Norėdami atkurti sinchronizuotus duomenis, turėsite naudoti atkūrimo kodą, kurį išsaugojote pirmą kartą nustatydami sinchronizavimą. Šis kodas galėjo būti išsaugotas kaip PDF failas įrenginyje, kurį iš pradžių naudojote sinchronizavimui nustatyti.";
+"recover.synced.data.sheet.description" = "Reikės atkūrimo kodo, kurį gavai, kai nustatei „Sync & Backup“. Galbūt išsaugojote jį kaip PDF failą naudojamame įrenginyje.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Atkurti sinchronizuotus duomenis";
+"recover.synced.data.sheet.title" = "Sinchronizuotų duomenų atkūrimas";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Pakartotinai prisijungiama, kad būtų sinchronizuotos žymės, išsaugoti prisijungimai ir kiti įrenginiai.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Jungiamasi...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Duomenų atkūrimas";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Pašalinti įrenginį";
@@ -169,6 +214,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Pašalinti įrenginį?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Atkūrimo kodas";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Atkūrimo kodas nukopijuotas į mainų sritį";
 
@@ -176,22 +224,22 @@
 "save.recovery.code.copy.code.button" = "Kopijuoti kodą";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Išsaugoti kaip PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Jei neteksite prieigos prie savo įrenginių, šio kodo reikės norint atkurti sinchronizuotus duomenis.";
+"save.recovery.code.save.as.pdf.button" = "Atsisiųsti kaip PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Kiekvienas, turintis prieigą prie šio kodo, gali pasiekti jūsų sinchronizuotus duomenis, todėl prašome laikyti juos saugioje vietoje.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Išsaugoti atkūrimo kodą";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Išsaugokite šį kodą, kad galėtumėte atkurti savo duomenis, jei prarasite prieigą prie šio įrenginio. Laikykite jį saugioje vietoje.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Lengvas duomenų atkūrimas";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Išsaugoti atkūrimo PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Jei prarasite įrenginį, šio atkūrimo kodo reikės sinchronizuotiems duomenims atkurti.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Naudok šį kodą duomenims atkurti, jei prarasi prieigą prie šio įrenginio. Po 18 mėnesių neaktyvumo negalėsi atkurti „Sync & Backup“ duomenų. [Sužinok daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Įveskite teksto kodą rankiniu būdu";
@@ -239,9 +287,6 @@
 "scan.or.see.code.title" = "Nuskaityti QR kodą";
 
 /* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Apsaugokite savo įrenginį, kad galėtumėte naudoti „Sync & Backup“";
-
-/* No comment provided by engineer. */
 "Switch to Production" = "Pereiti prie gamybos";
 
 /* Link label for syncing and backing up the device */
@@ -268,6 +313,120 @@
 /* Sync Menu Path */
 "sync.menu.path" = "Nustatymai > Sinchronizavimas ir atsarginė kopijos kūrimas > Sinchronizuoti su kitu įrenginiu";
 
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Eikite į „Nustatymai“";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Norint naudoti „Sync & Backup“, reikalingas įrenginio slaptažodis.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Apsaugokite savo įrenginį, kad galėtumėte naudoti „Sync & Backup“";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Atkūrimas";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Jau nustatyta kitame įrenginyje?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Tavo parankinių, automatinio pildymo duomenų ir „Duck.ai“ pokalbių atsarginės kopijos saugiai sukurtos. Dabar sinchronizuok juos su savo kompiuteriu ar planšete.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Sinchronizuok kitą įrenginį";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ne dabar";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Sinchronizuoti duomenis su kitu įrenginiu?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Įkelia piktogramas iš jūsų žymėse esančių svetainių. Piktogramų atsisiuntimai rodomi jūsų tinkle.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Žymės";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Tos pačios mėgstamiausių adresų žymės naudojamos mobiliajame telefone ir staliniame kompiuteryje.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Jungiamasi...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Nukopijuok atkūrimo kodą";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Išjunk sinchronizavimą ir ištrink serverio duomenis";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Atsisiųsk atkūrimo kodą";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "„DuckDuckGo“, skirta „Mac“ ir „Windows“";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Gaukite kompiuterio naršyklę";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Išsaugok parankines, automatinio pildymo duomenis bei „Duck.ai“ pokalbius ir sinchronizuok juos tarp savo įrenginių naudojant galutinį šifravimą.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Išsaugok parankines bei automatinio pildymo duomenis ir sinchronizuok juos tarp savo įrenginių naudojant galutinį šifravimą.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Naudok šį kodą duomenims atkurti, jei prarasi prieigą prie šio įrenginio. Po 18 mėnesių neaktyvumo negalėsi atkurti „Sync & Backup“ duomenų. [Sužinoti daugiau](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "„DuckDuckGo“ programėlė";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Nukreipk kamerą į QR kodą nuskaityti";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Jungiamasi...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Palik „DuckDuckGo“ atidarytą abiejuose įrenginiuose";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Įveskite kodą ranka";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Eik į „Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu“, kitame sinchronizuotame įrenginyje „DuckDuckGo“ programėlėje pasirink Rodyti tekstinį kodą ir įklijuok jį čia įrenginiui sinchronizuoti.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Tikrinamas kodas";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Atidaryk „DuckDuckGo“ programėlę kitame įrenginyje.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kodą rasi skiltyje „Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu“.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Bendrink kodą";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Nuskaityti QR kodą";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Peržiūrėk kodą";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Sinchronizuok įrenginius";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Nuskaityk arba įklijuok šį kodą kitame įrenginyje";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Sinchronizuoti ir kurti atsarginę kopiją";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Naudok atkūrimo kodą";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Sinchronizuoti su kitu įrenginiu";
+
 /* Sync & Backup Title */
 "sync.title" = "Sinchronizuoti ir kurti atsarginę kopiją";
 
@@ -287,7 +446,10 @@
 "sync.with.another.device.footer" = "Jūsų duomenys šifruojami ištisiniu būdu, o „DuckDuckGo“ neturi prieigos prie šifravimo rakto.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir automatinio pildymo duomenis tarp savo įrenginių.";
+"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir slaptažodžius tarp savo įrenginių.";
+
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Saugiai sinchronizuokite žymes, automatinio pildymo duomenis ir „Duck.ai“ pokalbius tarp savo įrenginių.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Pradėti sinchronizavimą";
@@ -303,6 +465,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Išjungti sinchronizavimą ir atsarginės kopijos kūrimą...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Žymės, automatinio pildymo duomenys ir „Duck.ai“ pokalbiai šiuo metu sinchronizuojami visuose jūsų įrenginiuose.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sinchronizavimas įjungtas";

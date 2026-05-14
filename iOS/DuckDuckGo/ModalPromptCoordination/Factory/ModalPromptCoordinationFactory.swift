@@ -20,7 +20,7 @@
 import Foundation
 import Persistence
 import SetDefaultBrowserUI
-import BrowserServicesKit
+import PrivacyConfig
 import enum Common.DevicePlatform
 import AIChat
 import RemoteMessaging
@@ -39,11 +39,16 @@ enum ModalPromptCoordinationFactory {
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
+        let subscriptionPromoModalPromptProvider = SubscriptionPromoModalPromptProvider(presenter: dependency.subscriptionPromoPresenter, coordinator: dependency.subscriptionPromoCoordinator)
         let whatsNewModalPromptProvider = WhatsNewCoordinator(
-            remoteMessageStore: dependency.remoteMessagingStore,
+            displayContext: .scheduled,
+            repository: dependency.whatsNewRepository,
             remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
             isIPad: isIPad,
-            pixelReporter: dependency.remoteMessagingPixelReporter
+            pixelReporter: dependency.remoteMessagingPixelReporter,
+            userScriptsDependencies: dependency.userScriptsDependencies,
+            imageLoader: dependency.remoteMessagingImageLoader,
+            featureFlagger: dependency.featureFlagger
         )
 
         return ModalPromptCoordinationService(
@@ -55,6 +60,7 @@ enum ModalPromptCoordinationFactory {
                 newAddressBarPicker: newAddressBarPickerModalPromptProvider,
                 defaultBrowser: defaultBrowserModalPromptProvider,
                 winBackOffer: winBackOfferModalPromptProvider,
+                subscriptionPromo: subscriptionPromoModalPromptProvider,
                 whatsNew: whatsNewModalPromptProvider
             )
         )
@@ -85,7 +91,8 @@ private extension ModalPromptCoordinationFactory {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: isIPad
+            isIPad: isIPad,
+            omniBarFocuser: dependency.omniBarFocuser
         )
     }
 
@@ -101,15 +108,20 @@ extension ModalPromptCoordinationFactory {
         let keyValueFileStoreService: ThrowingKeyValueStoring
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
-        let remoteMessagingStore: RemoteMessagingStoring
+        let whatsNewRepository: WhatsNewMessageRepository
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting
+        let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let appSettings: AppSettings
         let aiChatSettings: AIChatSettingsProvider
         let experimentalAIChatManager: ExperimentalAIChatManager
         let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
         let winBackOfferPresenter: WinBackOfferPresenting
         let winBackOfferCoordinator: WinBackOfferCoordinating
+        let subscriptionPromoPresenter: SubscriptionPromoPresenting
+        let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
+        let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+        let omniBarFocuser: OmniBarFocuserProvider
     }
 
 }

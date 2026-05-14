@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NewTabPage
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
@@ -114,11 +115,7 @@ final class DuckPlayerTests: XCTestCase {
 
         configuration.applyStandardConfiguration(contentBlocking: ContentBlockingMock(),
                                                  burnerMode: .regular)
-#if APPSTORE
-        XCTAssertFalse(configuration.allowsPictureInPictureMediaPlayback)
-#else
-        XCTAssertTrue(configuration.allowsPictureInPictureMediaPlayback)
-#endif
+        XCTAssertEqual(configuration.allowsPictureInPictureMediaPlayback, !NSApp.isSandboxed)
     }
 
     private func duckPlayerURL() -> URL {

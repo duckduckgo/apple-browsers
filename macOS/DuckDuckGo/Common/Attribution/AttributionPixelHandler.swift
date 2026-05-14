@@ -34,6 +34,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
     enum Parameters {
         static let origin = "origin"
         static let locale = "locale"
+        static let freeTrial = "free_trial"
     }
 
     private let fireRequest: FireRequest
@@ -65,7 +66,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             nil,
             nil,
             true,
-            true,
+            false,
             { _, _ in }
         )
     }
@@ -95,7 +96,7 @@ extension GenericAttributionPixelHandler {
         _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
-        _ includePixelSourceParameter: Bool,
+        _ doNotEnforcePrefix: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void
     ) -> Void
 }

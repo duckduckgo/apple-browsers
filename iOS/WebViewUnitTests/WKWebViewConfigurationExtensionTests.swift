@@ -28,10 +28,21 @@ class WKWebViewConfigurationExtensionTests: XCTestCase {
         XCTAssertFalse(webView.configuration.websiteDataStore.isPersistent)
     }
     
+    @available(iOS 17.0, *)
     @MainActor
-    func testWhenWebViewCreatedWithPersistenceThenDataStoreIsPersistent() {
-        let configuration = WKWebViewConfiguration.persistent()
+    func testWhenWebViewCreatedWithPersistenceThenDataStoreIsPersistentAndDefault() {
+        let configuration = WKWebViewConfiguration.persistent(fireMode: false)
         let webView = WKWebView(frame: CGRect(), configuration: configuration)
         XCTAssertTrue(webView.configuration.websiteDataStore.isPersistent)
+        XCTAssertEqual(webView.configuration.websiteDataStore.identifier, WKWebsiteDataStore.default().identifier)
+    }
+    
+    @available(iOS 17.0, *)
+    @MainActor
+    func testWhenWebViewCreatedForFireModeThenDataStoreIsPersistentAndNotDefault() {
+        let configuration = WKWebViewConfiguration.persistent(fireMode: true)
+        let webView = WKWebView(frame: CGRect(), configuration: configuration)
+        XCTAssertTrue(webView.configuration.websiteDataStore.isPersistent)
+        XCTAssertNotEqual(webView.configuration.websiteDataStore.identifier, WKWebsiteDataStore.default().identifier)
     }
 }

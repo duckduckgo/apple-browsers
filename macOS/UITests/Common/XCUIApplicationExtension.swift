@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 // Enum to represent bookmark modes
 enum BookmarkMode {
@@ -33,14 +34,24 @@ enum BookmarkMode {
 
 extension XCUIApplication {
 
-    private enum AccessibilityIdentifiers {
+    enum AccessibilityIdentifiers {
         static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
+        static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
+        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
+        static let searchModeToggleControl = "AddressBarButtonsViewController.searchModeToggleControl"
+        static let preferencesAIChatButton = "PreferencesSidebar.aichatButton"
+        static let aiFeaturesToggle = "Preferences.AIChat.aiFeaturesToggle"
+        static let showInAddressBarToggle = "Preferences.AIChat.showInAddressBarToggle"
+        static let showSearchAndDuckAIToggleToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
+        static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
+        static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
         static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let reloadButton = "NavigationBarViewController.RefreshOrStopButton"
         static let downloadsButton = "NavigationBarViewController.downloadsButton"
         static let optionsButton = "NavigationBarViewController.optionsButton"
         static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
@@ -66,6 +77,9 @@ extension XCUIApplication {
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
+        static let warnBeforeQuittingCheckbox = "PreferencesGeneralView.warnBeforeQuitting"
+        static let warnBeforeClosingPinnedTabsCheckbox = "PreferencesGeneralView.warnBeforeClosingPinnedTabs"
+        static let warnBeforeQuitDontShowAgainButton = "WarnBeforeQuitView.dontShowAgainButton"
         static let addBookmarkAddToFavoritesCheckbox = "bookmark.add.add.to.favorites.button"
         static let bookmarkDialogAddButton = "BookmarkDialogButtonsView.defaultButton"
 
@@ -94,16 +108,16 @@ extension XCUIApplication {
         static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
+        static let homeButton = "NavigationBarViewController.HomeButton"
     }
 
     static func setUp(environment: [String: String]? = nil,
-                      featureFlags: [String: Bool] = ["visualUpdates": true],
+                      featureFlags: [String: Bool] = [:],
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["UITEST_MODE"] = "1"
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
-        } else {
-            app.launchEnvironment["UITEST_MODE"] = "1"
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
@@ -116,23 +130,16 @@ extension XCUIApplication {
     }
 
     @nonobjc var path: String? {
-        self.value(forKey: "path") as? String
+        value(forKey: "path") as? String
     }
 
-    /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
-    /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
-    func dismissPopover(buttonIdentifier: String) {
-        let popover = popovers.firstMatch
-        guard popover.exists else {
-            return
-        }
+    var bundleID: String? {
+        value(forKey: "bundleID") as? String
+    }
 
-        let button = popover.buttons[buttonIdentifier]
-        guard button.exists else {
-            return
-        }
-
-        button.tap()
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
     }
 
     /// Enforces single a single window by:
@@ -161,6 +168,73 @@ extension XCUIApplication {
     func closeCurrentTab() {
         typeKey("w", modifierFlags: .command)
     }
+    override func closeTab() throws {
+        closeCurrentTab()
+    }
+
+    /// Pins current tab using the main menu
+    func pinCurrentTab() {
+        mainMenuPinTabMenuItem.tap()
+    }
+
+    /// Checks if the current tab can be pinned (i.e., is not already pinned)
+    /// - Returns: true if the "Pin Tab" menu item exists (tab is not pinned), false otherwise
+    func currentTabCanBePinned() -> Bool {
+        return mainMenuPinTabMenuItem.exists
+    }
+
+    // MARK: - Warn Before Quit Settings
+
+    /// Enables the "Warn Before Quitting" setting in General preferences
+    func enableWarnBeforeQuitting(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Quitting" setting in General preferences
+    func disableWarnBeforeQuitting(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func enableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Returns the "Warn Before Quitting" checkbox in General preferences
+    var warnBeforeQuittingCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeQuittingCheckbox]
+    }
+
+    /// Returns the "Warn Before Closing Pinned Tabs" checkbox in General preferences
+    var warnBeforeClosingPinnedTabsCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeClosingPinnedTabsCheckbox]
+    }
+
+    func openGeneralPreferences() {
+        openSettings()
+        preferencesGoToGeneralPane()
+    }
 
     /// Activate address bar for input
     /// On new tab pages, the address bar is already activated by default
@@ -175,8 +249,10 @@ extension XCUIApplication {
 
     /// Activates the address bar if needed and returns its current value
     /// - Returns: The current value of the address bar as a string
-    func addressBarValueActivatingIfNeeded() -> String? {
-        activateAddressBar()
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
+        if shouldActivate {
+            activateAddressBar()
+        }
         return addressBar.value as? String
     }
 
@@ -225,14 +301,6 @@ extension XCUIApplication {
         releaseNotesMenu.click()
     }
 
-    /// Opens settings
-    func openSettings() {
-        typeKey(",", modifierFlags: .command)
-        XCTAssertTrue(
-            preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView].waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        )
-    }
-
     func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
         let addressBar = addressBar
@@ -272,7 +340,7 @@ extension XCUIApplication {
             )
         }
         let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
-        let progressIndicator = windows.firstMatch.progressIndicators["LoadingProgressIndicator"]
+        let progressIndicator = tab.progressIndicators["TabFaviconView.spinner"]
 
         let naked = (url.nakedString ?? url.absoluteString).droppingWwwPrefix()
         let scheme = url.navigationalScheme?.separated() ?? ""
@@ -282,11 +350,13 @@ extension XCUIApplication {
                 scheme + naked + "/",
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
+                url.absoluteString,
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )
+        _=progressIndicator.waitForExistence(timeout: 1)
         XCTAssertTrue(
-            progressIndicator.wait(for: .keyPath(\.value, equalTo: 1.0), timeout: UITests.Timeouts.navigation),
+            progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
@@ -350,14 +420,18 @@ extension XCUIApplication {
         }
     }
 
-    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
-    func openBookmarksPanel() {
-        let bookmarksPanelShortcutButton = buttons[AccessibilityIdentifiers.bookmarksPanelShortcutButton]
-        if !bookmarksPanelShortcutButton.exists {
-            typeKey("k", modifierFlags: [.command, .shift])
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false, requirePopover: Bool = false) {
+        let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
+        let targetButton = buttons[targetIdentifier]
+        let timeout = requirePopover ? UITests.Timeouts.elementExistence : 0.5
+        guard targetButton.waitForExistence(timeout: timeout) else {
+            if requirePopover {
+                XCTFail("Bookmarks Bar Popover didn't show within a reasonable timeframe")
+            }
+            return
         }
 
-        bookmarksPanelShortcutButton.tap()
+        targetButton.tap()
     }
 
     func verifyBookmarkOrder(expectedOrder: [String], mode: BookmarkMode) {
@@ -431,6 +505,9 @@ extension XCUIApplication {
         typeKey(",", modifierFlags: [.command])
         let prefs = preferencesWindow
         _ = prefs.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+    }
+    func openSettings() {
+        openPreferencesWindow()
     }
 
     /// Closes the Preferences window if present
@@ -688,6 +765,10 @@ extension XCUIApplication {
         buttons[AccessibilityIdentifiers.forwardButton]
     }
 
+    var reloadButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.reloadButton]
+    }
+
     var downloadsButton: XCUIElement {
         buttons[AccessibilityIdentifiers.downloadsButton]
     }
@@ -814,6 +895,52 @@ extension XCUIApplication {
 
     var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
         popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
+    var debugMenu: XCUIElement {
+        menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
+    }
+
+    var homeButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.homeButton]
+    }
+
+    /// Shows the home button in the toolbar (right of reload button)
+    /// Opens the View menu and selects "Show Right of the Reload Button"
+    func showHomeButtonInToolbar() {
+        let viewMenu = menuBars.menuBarItems["View"]
+        XCTAssertTrue(
+            viewMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "View menu item didn't become available in a reasonable timeframe."
+        )
+        viewMenu.click()
+
+        let menuItem = menuItems["Show Right of the Reload Button"].firstMatch
+        XCTAssertTrue(
+            menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Show Right of the Reload Button menu item didn't become available in a reasonable timeframe."
+        )
+        menuItem.click()
+    }
+
+    /// Sends a key down event with the specified key code
+    func keyDown(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 0)) {
+            self.typeKey("_", modifierFlags: [])
+        }
+    }
+
+    /// Sends a key up event with the specified key code
+    func keyUp(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 1)) {
+            self.typeKey("_", modifierFlags: [])
+        }
+    }
+
+    // MARK: - Promos
+
+    var promoQueueMenu: XCUIElement {
+        debugMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu]
     }
 
 }

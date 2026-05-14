@@ -21,7 +21,7 @@ import Foundation
 import BrowserServicesKit
 
 /// This is only intended to be used during the install (first run after downloading from the app store).
-protocol ReturnUserMeasurement {
+public protocol ReturnUserMeasurement {
 
     /// Based on the value in the keychain, so if you use this after the install process it will return true.
     ///  If you really want to know if the user is "returning" then look at the variant in the `StatisticsStore`
@@ -32,7 +32,7 @@ protocol ReturnUserMeasurement {
 
 }
 
-class KeychainReturnUserMeasurement: ReturnUserMeasurement {
+public class KeychainReturnUserMeasurement: ReturnUserMeasurement {
 
     static let SecureATBKeychainName = "returning-user-atb"
 
@@ -43,17 +43,28 @@ class KeychainReturnUserMeasurement: ReturnUserMeasurement {
 
     }
 
-    /// Called from the `VariantManager` to determine which variant to use
-    var isReturningUser: Bool {
-        return hasAnyKeychainItems()
+    private var cachedIsReturningUser: Bool?
+
+    /// The result is cached on first access to avoid being affected by later Keychain writes.
+    public var isReturningUser: Bool {
+        if let cached = cachedIsReturningUser {
+            return cached
+        }
+
+        let result = hasAnyKeychainItems()
+        cachedIsReturningUser = result
+
+        return result
     }
 
-    func installCompletedWithATB(_ atb: Atb) {
+    public init() {}
+
+    public func installCompletedWithATB(_ atb: Atb) {
         writeSecureATB(atb.version)
     }
 
     /// Update the stored ATB with an even more generalised version of the ATB, if present.
-    func updateStoredATB(_ atb: Atb) {
+    public func updateStoredATB(_ atb: Atb) {
         guard let atb = atb.updateVersion else { return }
         writeSecureATB(atb)
     }

@@ -52,13 +52,20 @@ extension SubscriptionManagerTests {
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro?origin=test"))
 
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-
-        let stagingSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                    accountManager: accountManager,
-                                                                    subscriptionEndpointService: subscriptionService,
-                                                                    authEndpointService: authService,
-                                                                    subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                    subscriptionEnvironment: stagingEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let stagingSubscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: stagingEnvironment,
+            pixelHandler: MockPixelHandler(),
+            tokenRecoveryHandler: {
+                if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
+                    self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+                }
+            }
+        )
 
         // WHEN
         let result = stagingSubscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: Constants.tld)

@@ -19,12 +19,14 @@
 import Cocoa
 import WebKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import PrivacyDashboard
 import Common
 import PixelKit
 import PixelExperimentKit
 import os.log
+import FeatureFlags
+import WebExtensions
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
 
@@ -43,6 +45,9 @@ final class PrivacyDashboardViewController: NSViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
+
+    private let scriptStyleProvider: ScriptStyleProviding
+    private var cancellables = Set<AnyCancellable>()
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
 
@@ -74,9 +79,9 @@ final class PrivacyDashboardViewController: NSViewController {
         case .reportBrokenSiteSent: domainEvent = .brokenSiteReportSent
         }
         if let parameters {
-            PixelKit.fire(NonStandardEvent(domainEvent), withAdditionalParameters: parameters)
+            PixelKit.fire(domainEvent, withAdditionalParameters: parameters, doNotEnforcePrefix: true)
         } else {
-            PixelKit.fire(NonStandardEvent(domainEvent))
+            PixelKit.fire(domainEvent, doNotEnforcePrefix: true)
         }
     }
 
@@ -84,6 +89,7 @@ final class PrivacyDashboardViewController: NSViewController {
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          contentBlocking: ContentBlockingProtocol,
          permissionManager: PermissionManagerProtocol,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
@@ -95,15 +101,18 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+
+        self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
 
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
-                PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                PixelKit.fire(NonStandardPixel.brokenSiteReport,
                               withAdditionalParameters: parameters,
-                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters,
+                              doNotEnforcePrefix: true)
             }, keyValueStoring: UserDefaults.standard)
         }()
         super.init(nibName: nil, bundle: nil)
@@ -151,6 +160,9 @@ final class PrivacyDashboardViewController: NSViewController {
         privacyDashboardController.setup(for: webView)
         privacyDashboardController.delegate = self
         privacyDashboardController.preferredLocale = Bundle.main.preferredLocalizations.first
+
+        subscribeToThemeChanges()
+        refreshDashboardStyle()
     }
 
     override func viewWillDisappear() {
@@ -212,18 +224,38 @@ final class PrivacyDashboardViewController: NSViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         if state.isProtected && configuration.isUserUnprotected(domain: domain) {
             configuration.userEnabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
         } else {
             configuration.userDisabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
             let tdsEtag = contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...1, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...5, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...10, value: "true")
         }
 
         let completionToken = contentBlocking.contentBlockingManager.scheduleCompilation()
         rulesUpdateObserver.startCompilation(for: domain, token: completionToken)
+    }
+}
+
+private extension PrivacyDashboardViewController {
+
+    private func subscribeToThemeChanges() {
+        scriptStyleProvider.themeStylePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDashboardStyle()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshDashboardStyle() {
+        let style = PrivacyDashboardStyle(theme: scriptStyleProvider.themeAppearance, themeVariant: scriptStyleProvider.themeName)
+        privacyDashboardController.style = style
     }
 }
 
@@ -296,6 +328,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 
@@ -314,6 +347,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 
@@ -327,35 +361,18 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentURL
     }
 
-    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
-        var webVitalsResult: [Double]?
-        if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await withCheckedContinuation({ continuation in
-                guard let performanceMetrics else { continuation.resume(returning: nil); return }
-                performanceMetrics.notifyHandler { result in
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-
-        return webVitalsResult
-    }
-
-    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
-        var expandedWebVitalsResult: PerformanceMetrics?
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { result in
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-        return expandedWebVitalsResult
+    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?) async -> BreakageReportData? {
+        await withCheckedContinuation({ continuation in
+            guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+            breakageReportingSubfeature.notifyHandler { metrics, jsPerformanceMetrics, breakageData in
+                let result = BreakageReportData(performanceMetrics: metrics, jsPerformance: jsPerformanceMetrics, breakageData: breakageData)
+                continuation.resume(returning: result)
+            }
+        })
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
-        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isFeatureIncludedInSubscription(.dataBrokerProtection)
+        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)
         guard let isPIRFeatureEnabled,
               isPIRFeatureEnabled == true else {
             return false
@@ -382,10 +399,11 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
+        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
 
-        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
-        let privacyAwareWebVitals = expandedWebVitals?.privacyAwareMetrics()
+        let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
+        let jsPerformance = breakageReportData?.jsPerformance
+        let breakageData = breakageReportData?.breakageData
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -397,6 +415,13 @@ extension PrivacyDashboardViewController {
         }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
+
+        var loadedWebExtensions: String?
+        var adBlockingScriptletsVersion: String?
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
+            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+        }
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -417,14 +442,19 @@ extension PrivacyDashboardViewController {
                                                httpStatusCodes: statusCodes,
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
-                                               jsPerformance: webVitals,
+                                               jsPerformance: jsPerformance,
                                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
-                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
+                                               isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
+                                               lastTabSuspension: currentTab.tabSuspension?.lastSuspensionState.rawValue,
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
+                                               breakageData: breakageData,
+                                               loadedWebExtensions: loadedWebExtensions,
+                                               adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
         return websiteBreakage
     }
 }

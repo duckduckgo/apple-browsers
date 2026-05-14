@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Persistence
 import Subscription
@@ -28,17 +28,18 @@ enum WinBackOfferFactory {
                             featureFlagger: FeatureFlagger,
                             daxDialogs: DaxDialogs) -> WinBackOfferService {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
-#if DEBUG || ALPHA
+#if DEBUG || ALPHA || EXPERIMENTAL
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueFilesStore)
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
-            dateProvider: { winBackOfferDebugStore.simulatedTodayDate }
+            dateProvider: { winBackOfferDebugStore.simulatedTodayDate },
+            timeBeforeOfferAvailability: .seconds(5)
         )
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
         )

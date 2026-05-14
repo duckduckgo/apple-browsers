@@ -19,109 +19,123 @@
 import Foundation
 import StoreKit
 import os.log
+import Networking
+import Common
+import PixelKit
+
+public enum StripePurchaseFlowError: DDGError {
+    case noProductsFound
+    case accountCreationFailed(Error)
+    case tieredProductsApiCallFailed(Error)
+    case tieredProductsEmptyProductsFromAPI
+    case tieredProductsEmptyAfterFiltering
+    case tieredProductsTierCreationFailed
+
+    public var description: String {
+        switch self {
+        case .noProductsFound: "No products found."
+        case .accountCreationFailed(let error): "Account creation failed: \(error)"
+        case .tieredProductsApiCallFailed(let error): "API call failed: \(error)"
+        case .tieredProductsEmptyProductsFromAPI: "API returned empty products."
+        case .tieredProductsEmptyAfterFiltering: "No products after filtering."
+        case .tieredProductsTierCreationFailed: "Failed to create tiers."
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12700
+        case .accountCreationFailed: 12701
+        case .tieredProductsApiCallFailed: 12702
+        case .tieredProductsEmptyProductsFromAPI: 12703
+        case .tieredProductsEmptyAfterFiltering: 12704
+        case .tieredProductsTierCreationFailed: 12705
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        case .tieredProductsApiCallFailed(let error): error
+        default: nil
+        }
+    }
+
+    public static func == (lhs: StripePurchaseFlowError, rhs: StripePurchaseFlowError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noProductsFound, .noProductsFound):
+            return true
+        case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        case let (.tieredProductsApiCallFailed(lhsError), .tieredProductsApiCallFailed(rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        case (.tieredProductsEmptyProductsFromAPI, .tieredProductsEmptyProductsFromAPI):
+            return true
+        case (.tieredProductsEmptyAfterFiltering, .tieredProductsEmptyAfterFiltering):
+            return true
+        case (.tieredProductsTierCreationFailed, .tieredProductsTierCreationFailed):
+            return true
+        default:
+            return false
+        }
+    }
+}
 
 public protocol StripePurchaseFlow {
-    func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError>
-    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError>
+    typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WideEvent.MeasuredInterval?)
+
+    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
 }
 
 public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
-    private let subscriptionEndpointService: SubscriptionEndpointService
-    private let authEndpointService: AuthEndpointService
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionManager
 
-    public init(subscriptionEndpointService: any SubscriptionEndpointService,
-                authEndpointService: any AuthEndpointService,
-                accountManager: any AccountManager) {
-        self.subscriptionEndpointService = subscriptionEndpointService
-        self.authEndpointService = authEndpointService
-        self.accountManager = accountManager
+    public init(subscriptionManager: any SubscriptionManager) {
+        self.subscriptionManager = subscriptionManager
     }
 
-    public func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError> {
-        Logger.subscription.info("[StripePurchaseFlow] subscriptionOptions")
+    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {
+        Logger.subscription.log("Preparing subscription purchase")
 
-        guard case let .success(products) = await subscriptionEndpointService.getProducts(), !products.isEmpty else {
-            Logger.subscription.error("[StripePurchaseFlow] Error: noProductsFound")
-            return .failure(.noProductsFound)
-        }
+        await subscriptionManager.signOut(notifyUI: false)
 
-        let currency = products.first?.currency ?? "USD"
-
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "en_US@currency=\(currency)")
-
-        let options: [SubscriptionOption] = products.map {
-            var displayPrice = "\($0.price) \($0.currency)"
-
-            if let price = Float($0.price), let formattedPrice = formatter.string(from: price as NSNumber) {
-                displayPrice = formattedPrice
-            }
-
-            let cost = SubscriptionOptionCost(displayPrice: displayPrice, recurrence: $0.billingPeriod.lowercased())
-
-            return SubscriptionOption(id: $0.productId,
-                                      cost: cost)
-        }
-
-        let features = [SubscriptionFeature(name: .networkProtection),
-                        SubscriptionFeature(name: .dataBrokerProtection),
-                        SubscriptionFeature(name: .identityTheftRestoration)]
-
-        return .success(SubscriptionOptions(platform: SubscriptionPlatformName.stripe,
-                                            options: options,
-                                            features: features))
-    }
-
-    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
-        Logger.subscription.info("[StripePurchaseFlow] prepareSubscriptionPurchase")
-
-        // Clear subscription Cache
-        subscriptionEndpointService.signOut()
-        var token: String = ""
-
-        if let accessToken = accountManager.accessToken {
-            if await isSubscriptionExpired(accessToken: accessToken) {
-                token = accessToken
+        if subscriptionManager.isUserAuthenticated {
+            if let subscriptionExpired = await isSubscriptionExpired(),
+               subscriptionExpired == true,
+               let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid) {
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: nil))
+            } else {
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: ""), accountCreationDuration: nil))
             }
         } else {
-            switch await authEndpointService.createAccount(emailAccessToken: emailAccessToken) {
-            case .success(let response):
-                token = response.authToken
-                accountManager.storeAuthToken(token: token)
-            case .failure(let error):
-                Logger.subscription.error("[StripePurchaseFlow] Error: accountCreationFailed")
+            do {
+                // Create account
+                var accountCreation = WideEvent.MeasuredInterval.startingNow()
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
+                accountCreation.complete()
+
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: accountCreation))
+            } catch {
+                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(String(describing: error), privacy: .public)")
                 return .failure(.accountCreationFailed(error))
             }
         }
-
-        return .success(PurchaseUpdate.redirect(withToken: token))
     }
 
-    private func isSubscriptionExpired(accessToken: String) async -> Bool {
-        if case .success(let subscription) = await subscriptionEndpointService.getSubscription(accessToken: accessToken) {
-            return !subscription.isActive
+    private func isSubscriptionExpired() async -> Bool? {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst) else {
+            return nil
         }
-
-        return false
+        return !subscription.isActive
     }
 
     public func completeSubscriptionPurchase() async {
-        // Clear subscription Cache
-        subscriptionEndpointService.signOut()
-
-        Logger.subscription.info("[StripePurchaseFlow] completeSubscriptionPurchase")
-        if !accountManager.isUserAuthenticated,
-           let authToken = accountManager.authToken {
-            if case let .success(accessToken) = await accountManager.exchangeAuthTokenToAccessToken(authToken),
-               case let .success(accountDetails) = await accountManager.fetchAccountDetails(with: accessToken) {
-                accountManager.storeAuthToken(token: authToken)
-                accountManager.storeAccount(token: accessToken, email: accountDetails.email, externalID: accountDetails.externalID)
-            }
-        }
-
-        await accountManager.checkForEntitlements(wait: 2.0, retry: 5)
+        Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
+        subscriptionManager.clearSubscriptionCache()
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
     }
 }

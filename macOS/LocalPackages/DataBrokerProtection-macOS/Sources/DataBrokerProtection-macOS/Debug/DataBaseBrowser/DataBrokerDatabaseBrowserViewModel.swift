@@ -21,19 +21,36 @@ import SecureStorage
 import DataBrokerProtectionCore
 import PixelKit
 
+struct DataBrokerDatabaseSearchToken: Hashable {
+    let column: String?
+    let value: String
+
+    var normalizedValue: String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
+    enum SearchMatchMode: Int {
+        case and = 0
+        case or = 1
+    }
+
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
     @Published var sortColumn: String?
     @Published var sortAscending: Bool = true
     @Published var columnWidths: [String: CGFloat] = [:]
-    @Published var searchText: String = ""
+    @Published var searchTokens: [DataBrokerDatabaseSearchToken] = []
+    @Published var searchMatchMode: SearchMatchMode = .and
 
     // Table-specific state storage
     private var tableSortState: [String: (column: String?, ascending: Bool)] = [:]
     private var tableColumnWidths: [String: [String: CGFloat]] = [:]
-    private var tableSearchText: [String: String] = [:]
+    private var tableSearchTokens: [String: [DataBrokerDatabaseSearchToken]] = [:]
+    private var tableSearchMatchMode: [String: SearchMatchMode] = [:]
     private let dataManager: DataBrokerProtectionDataManager?
+    private var brokerIdToUrl: [Int64: String] = [:]
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
 
@@ -85,6 +102,10 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
 
             let profileBrokers = data.map { $0.dataBroker }
             let dataBrokers = Array(Set(profileBrokers)).sorted { $0.id ?? 0 < $1.id ?? 0 }
+            let brokerIdToUrl = dataBrokers.reduce(into: [Int64: String]()) { result, broker in
+                guard let id = broker.id else { return }
+                result[id] = broker.url
+            }
 
             let profileQuery = Array(Set(data.map { $0.profileQuery }))
             let scanJobs = data.map { $0.scanJobData }
@@ -102,10 +123,16 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             let emailConfirmationsTable = createTable(using: emailConfirmations, tableName: "EmailConfirmations")
 
             DispatchQueue.main.async {
-                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, emailConfirmationsTable]
+                let updatedTables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, emailConfirmationsTable]
+                self.tables = updatedTables
+                self.brokerIdToUrl = brokerIdToUrl
             }
         }
  }
+
+    func refresh() {
+        updateTables()
+    }
 
     func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
         let filteredRows = filteredRows(for: table)
@@ -123,16 +150,25 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     }
 
     func filteredRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
-        let searchText = tableSearchText[table.name] ?? ""
+        let tokens = tableSearchTokens[table.name] ?? []
+        let matchMode = tableSearchMatchMode[table.name] ?? .and
 
-        guard !searchText.isEmpty else {
+        guard !tokens.isEmpty else {
             return table.rows
         }
 
-        let lowercasedSearch = searchText.lowercased()
         return table.rows.filter { row in
-            return row.data.values.contains { value in
-                value.description.lowercased().contains(lowercasedSearch)
+            let matches = tokens.map { token in
+                if let column = token.column {
+                    return rowMatchesColumn(row, column: column, value: token.normalizedValue)
+                }
+                return rowMatchesAnyColumn(row, value: token.normalizedValue)
+            }
+            switch matchMode {
+            case .and:
+                return matches.allSatisfy { $0 }
+            case .or:
+                return matches.contains(true)
             }
         }
     }
@@ -211,14 +247,22 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             columnWidths = [:]
         }
 
-        // Update search text
-        searchText = tableSearchText[tableName] ?? ""
+        // Update search tokens
+        searchTokens = tableSearchTokens[tableName] ?? []
+        searchMatchMode = tableSearchMatchMode[tableName] ?? .and
     }
 
-    func setSearchText(_ searchText: String, for table: DataBrokerDatabaseBrowserData.Table) {
+    func setSearchTokens(_ searchTokens: [DataBrokerDatabaseSearchToken], for table: DataBrokerDatabaseBrowserData.Table) {
         let tableName = table.name
-        tableSearchText[tableName] = searchText
-        self.searchText = searchText
+        let normalizedTokens = searchTokens.filter { !$0.normalizedValue.isEmpty }
+        tableSearchTokens[tableName] = normalizedTokens
+        self.searchTokens = normalizedTokens
+    }
+
+    func setSearchMatchMode(_ matchMode: SearchMatchMode, for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        tableSearchMatchMode[tableName] = matchMode
+        self.searchMatchMode = matchMode
     }
 
     func sortedColumnKeys(for table: DataBrokerDatabaseBrowserData.Table) -> [String] {
@@ -276,6 +320,17 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         return field
     }
 
+    func displayValue(for column: String, value: CustomStringConvertible?) -> String {
+        guard let value else { return "" }
+        let stringValue = value.description
+        guard column == "brokerId",
+              let id = Int64(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let url = brokerIdToUrl[id] else {
+            return stringValue
+        }
+        return "\(id) (\(url))"
+    }
+
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {
         let mirror = Mirror(reflecting: item)
         var data: [String: CustomStringConvertible] = [:]
@@ -304,6 +359,24 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         }
 
         return unwrapChildValue(child.value)
+    }
+
+    private func rowMatchesColumn(_ row: DataBrokerDatabaseBrowserData.Row,
+                                  column: String,
+                                  value: String) -> Bool {
+        let matchingKey = row.data.keys.first { $0.caseInsensitiveCompare(column) == .orderedSame }
+        guard let key = matchingKey,
+              let fieldValue = row.data[key]?.description else { return false }
+
+        return fieldValue.lowercased().contains(value.lowercased())
+    }
+
+    private func rowMatchesAnyColumn(_ row: DataBrokerDatabaseBrowserData.Row,
+                                     value: String) -> Bool {
+        let lowercasedValue = value.lowercased()
+        return row.data.values.contains { fieldValue in
+            fieldValue.description.lowercased().contains(lowercasedValue)
+        }
     }
 }
 

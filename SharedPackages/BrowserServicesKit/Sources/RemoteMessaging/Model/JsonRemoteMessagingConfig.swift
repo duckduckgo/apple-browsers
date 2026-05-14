@@ -33,6 +33,7 @@ public enum RemoteMessageResponse {
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
         let metrics: JsonMetrics?
+        let displayConditions: JsonDisplayConditions?
 
         static func == (lhs: JsonRemoteMessage, rhs: JsonRemoteMessage) -> Bool {
             return lhs.id == rhs.id
@@ -41,6 +42,11 @@ public enum RemoteMessageResponse {
         var isMetricsEnabled: Bool {
             metrics?.state.flatMap(JsonMetrics.MetricsState.init) != .disabled
         }
+    }
+
+    struct JsonDisplayConditions: Decodable, Equatable {
+        let trigger: String?
+        let dismissAfterDaysShown: Int?
     }
 
     struct JsonMetrics: Decodable {
@@ -58,6 +64,7 @@ public enum RemoteMessageResponse {
         let descriptionText: String
         let listItems: [JsonListItem]?
         let placeholder: String?
+        let imageUrl: String?
         let actionText: String?
         let action: JsonMessageAction?
         let primaryActionText: String?
@@ -72,13 +79,21 @@ public enum RemoteMessageResponse {
         let titleText: String
         let descriptionText: String?
         let placeholder: String?
+        let primaryActionText: String?
         let primaryAction: JsonMessageAction?
         let matchingRules: [Int]?
         let exclusionRules: [Int]?
+        /// Array of item IDs that belong to this section. Only applicable for `section_title` type.
+        /// Used to determine which items belong under a section header. After filtering items
+        /// by their rules, sections are removed if none of their referenced itemIds exist.
+        /// Ignored for `two_line_list_item` type.
+        let itemIDs: [String]?
     }
 
     enum JsonListItemType: String, CaseIterable {
-       case twoLinesItem = "two_line_list_item"
+        case featuredTwoLinesSingleActionItem = "featured_two_line_single_action_list_item"
+        case twoLinesItem = "two_line_list_item"
+        case titledSection = "section_title"
     }
 
     enum JsonSurface: String, CaseIterable {
@@ -86,6 +101,7 @@ public enum RemoteMessageResponse {
         case modal
         // Used for 'What's New' (macOS)
         case dedicatedTab = "dedicated_tab"
+        case tabBar = "tab_bar"
     }
 
     struct JsonMessageAction: Decodable {
@@ -100,6 +116,13 @@ public enum RemoteMessageResponse {
         let descriptionText: String?
         let primaryActionText: String?
         let secondaryActionText: String?
+        let listItems: [String: JsonListItemTranslation]?
+    }
+
+    struct JsonListItemTranslation: Decodable {
+        let titleText: String?
+        let descriptionText: String?
+        let primaryActionText: String?
     }
 
     struct JsonTargetPercentile: Decodable {
@@ -138,12 +161,21 @@ public enum RemoteMessageResponse {
         case appUpdate = "AppUpdate"
         case macComputer = "MacComputer"
         case newForMacAndWindows = "NewForMacAndWindows"
+        case macAndWindows = "MacAndWindows"
         case privacyShield = "PrivacyShield"
         case aiChat = "Duck.ai"
         case visualDesignUpdate = "VisualDesignUpdate"
         case imageAI = "ImageAI"
         case radar = "Radar"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
         case keyImport = "KeyImport"
+        case mobileCustomization = "MobileCustomization"
+        case newTabOptions = "NewTabOptions"
+        case splitBarMobile = "SplitBarMobile"
+        case pir = "PIR"
+        case subscription = "Subscription"
+        case veryCriticalUpdate = "VeryCriticalUpdate"
     }
 
     public enum StatusError: Error {

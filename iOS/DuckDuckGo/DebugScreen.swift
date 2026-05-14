@@ -17,21 +17,29 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DDGSync
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 import SwiftUI
 import UIKit
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
+import WebExtensions
+
+protocol RemoteMessagingDebugHandling {
+    func refreshRemoteMessages()
+}
 
 enum DebugScreen: Identifiable {
 
     struct Dependencies {
 
         let syncService: DDGSyncing
+        let syncAutoRestoreHandler: SyncAutoRestoreHandling
         let bookmarksDatabase: CoreDataDatabase
         let internalUserDecider: InternalUserDecider
         let tabManager: TabManager
@@ -44,6 +52,12 @@ enum DebugScreen: Identifiable {
         let databaseDelegate: DBPIOSInterface.DatabaseDelegate?
         let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
         let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+        let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
+        let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+        let subscriptionDataReporter: SubscriptionDataReporting
+        let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
+        let webExtensionManager: WebExtensionManaging?
+        let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     }
 

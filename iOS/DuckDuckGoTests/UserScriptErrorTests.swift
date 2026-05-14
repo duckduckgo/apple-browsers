@@ -32,7 +32,7 @@ final class UserScriptErrorTests: XCTestCase {
         error.fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiringMock.self)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.userScriptLoadJSFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [PixelParameters.jsFile: jsFile])
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [PixelParameters.jsFile: jsFile, PixelParameters.source: "browser"])
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.error as? NSError, underlyingError)
     }
 

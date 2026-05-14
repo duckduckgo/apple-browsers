@@ -33,6 +33,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         case onConfigUpdate = "protections_onConfigUpdate"
         case onDataUpdate = "protections_onDataUpdate"
         case setConfig = "protections_setConfig"
+        case scroll = "protections_scroll"
     }
 
     public init(model: NewTabPageProtectionsReportModel) {
@@ -42,7 +43,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         Publishers.CombineLatest(model.$isViewExpanded.dropFirst(), model.$activeFeed.dropFirst())
             .map { isExpanded, activeFeed in
                 let expansion: NewTabPageUserScript.WidgetConfig.Expansion = isExpanded ? .expanded : .collapsed
-                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
+                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed, showBurnAnimation: model.shouldShowBurnAnimation, showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
             }
             .removeDuplicates()
             .sink { [weak self] config in
@@ -68,8 +69,31 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
                     let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
                     let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
                                                                        feed: model.activeFeed,
-                                                                       showBurnAnimation: shouldShowBurnAnimation)
+                                                                       showBurnAnimation: shouldShowBurnAnimation,
+                                                                       showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
                     self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
+
+        model.$shouldShowProtectionsReportNewLabel
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
+                    let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
+                                                                       feed: model.activeFeed,
+                                                                       showBurnAnimation: model.shouldShowBurnAnimation,
+                                                                       showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
+                    self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
+
+        model.scroller.scrollPublisher
+            .sink { [weak self] webView in
+                Task { @MainActor in
+                    self?.scrollProtectionsReport(in: webView)
                 }
             }
             .store(in: &cancellables)
@@ -86,7 +110,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
-        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
+        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation, showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
     }
 
     @MainActor
@@ -106,16 +130,27 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
 
     @MainActor
     private func notifyDataUpdated() async {
+        let params = NewTabPageDataModel.ProtectionsData(
+            totalCount: await model.calculateTotalCount(),
+            totalCookiePopUpsBlocked: model.isAutoconsentEnabled() ? await model.autoconsentStats.fetchTotalCookiePopUpsBlocked() : nil
+        )
+
         pushMessage(
             named: MessageName.onDataUpdate.rawValue,
-            params: NewTabPageDataModel.ProtectionsData(
-                totalCount: await model.calculateTotalCount()
-            )
+            params: params
         )
     }
 
     @MainActor
     private func getData(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        NewTabPageDataModel.ProtectionsData(totalCount: await model.calculateTotalCount())
+        NewTabPageDataModel.ProtectionsData(
+            totalCount: await model.calculateTotalCount(),
+            totalCookiePopUpsBlocked: model.isAutoconsentEnabled() ? await model.autoconsentStats.fetchTotalCookiePopUpsBlocked() : nil
+        )
+    }
+
+    @MainActor
+    private func scrollProtectionsReport(in webView: WKWebView) {
+        pushMessage(named: MessageName.scroll.rawValue, params: nil, to: webView)
     }
 }

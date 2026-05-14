@@ -22,6 +22,7 @@ struct SyncStatusView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
 
     var body: some View {
+        let syncFooterText = model.isAIChatSyncEnabled ? UserText.syncFooterUpdated : UserText.syncFooter
         VStack(alignment: .leading, spacing: 8) {
             SyncPreferencesRow {
                 Image(.solidCheckmark)
@@ -35,7 +36,7 @@ struct SyncStatusView<ViewModel>: View where ViewModel: ManagementViewModel {
             }
             .roundedBorder()
 
-            SyncUIViews.TextDetailSecondary(text: UserText.syncFooter)
+            SyncUIViews.TextDetailSecondary(text: syncFooterText)
                 .padding(.horizontal, 16)
                 .font(.system(size: 11))
         }

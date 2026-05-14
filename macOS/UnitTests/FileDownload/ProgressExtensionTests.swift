@@ -27,14 +27,16 @@ final class ProgressExtensionTests: XCTestCase {
         let expectation = self.expectation(description: #function)
         let testData = try XCTUnwrap("test".data(using: .utf8))
         let fileManager = FileManager.default
-        let url = fileManager.temporaryDirectory.appendingPathComponent("Document.txt")
+        let url = fileManager.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).txt")
+        defer { try? fileManager.removeItem(at: url) }
         var didReceiveProgressUpdates = false
 
-        Progress.addSubscriber(forFileURL: url) { progress in
+        let subscriber = Progress.addSubscriber(forFileURL: url) { progress in
             didReceiveProgressUpdates = true
             expectation.fulfill()
             return {}
         }
+        defer { Progress.removeSubscriber(subscriber) }
 
         XCTAssertFalse(didReceiveProgressUpdates)
 

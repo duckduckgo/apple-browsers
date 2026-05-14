@@ -31,11 +31,14 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
 
     let secureVault: (any AutofillSecureVault)?
     let bookmarkManager: BookmarkManager
+    let pinningManager: PinningManager
 
     init(secureVault: (any AutofillSecureVault)? = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared),
-         bookmarkManager: BookmarkManager) {
+         bookmarkManager: BookmarkManager,
+         pinningManager: PinningManager) {
         self.secureVault = secureVault
         self.bookmarkManager = bookmarkManager
+        self.pinningManager = pinningManager
     }
 
     @UserDefaultsWrapper(key: .homePageContinueSetUpImport, defaultValue: nil)
@@ -52,7 +55,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
 
     @MainActor
     func showImportWindow(customTitle: String?, completion: (() -> Void)?) {
-        DataImportFlowLauncher().launchDataImport(title: customTitle ?? UserText.importDataTitle, isDataTypePickerExpanded: false, completion: completion)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: customTitle ?? UserText.importDataTitle, isDataTypePickerExpanded: false, completion: completion)
     }
 
     // It only cover the case in which the user has imported bookmar AFTER already having some bookmarks

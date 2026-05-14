@@ -435,6 +435,64 @@ public extension String {
         return regex.firstMatch(in: self, options: options, range: nsRange)
     }
 
+    // MARK: Replacements
+
+    /// Replaces all occurrences of the given keys with their values in a single pass.
+    ///
+    /// Scans the string's UTF-8 bytes once, matching replacement keys at each position
+    /// and copying non-matching regions in bulk. Replacement values are never re-expanded.
+    /// Longer keys are matched first to avoid partial matches.
+    func applyingReplacements(_ replacements: [String: String]) -> String {
+        guard !replacements.isEmpty else { return self }
+
+        let templateUTF8 = Array(self.utf8)
+        let keys = replacements
+            .filter { !$0.key.isEmpty }
+            .map { (utf8: Array($0.key.utf8), value: Array($0.value.utf8)) }
+            .sorted { $0.utf8.count > $1.utf8.count }
+
+        guard !keys.isEmpty else { return self }
+
+        let firstBytes = Set(keys.map { $0.utf8[0] })
+
+        // Output size can exceed template size when replacement values are
+        // larger than their placeholders; size the reservation accordingly
+        // to avoid repeated capacity doublings during append.
+        let estimatedSize = templateUTF8.count + keys.reduce(0) { $0 + $1.value.count }
+        var result = [UInt8]()
+        result.reserveCapacity(estimatedSize)
+
+        var i = 0
+        while i < templateUTF8.count {
+            if firstBytes.contains(templateUTF8[i]) {
+                var matched = false
+                for entry in keys {
+                    let end = i + entry.utf8.count
+                    if end <= templateUTF8.count,
+                       templateUTF8[i..<end].elementsEqual(entry.utf8) {
+                        result.append(contentsOf: entry.value)
+                        i = end
+                        matched = true
+                        break
+                    }
+                }
+                if !matched {
+                    result.append(templateUTF8[i])
+                    i += 1
+                }
+            } else {
+                let start = i
+                while i < templateUTF8.count && !firstBytes.contains(templateUTF8[i]) {
+                    i += 1
+                }
+                result.append(contentsOf: templateUTF8[start..<i])
+            }
+        }
+
+        // swiftlint:disable:next optional_data_string_conversion
+        return String(decoding: result, as: UTF8.self)
+    }
+
 }
 
 public extension NSTextCheckingResult {
@@ -513,6 +571,22 @@ public extension StringProtocol {
     // MARK: Prefix/Suffix
     func trimmingWhitespace() -> String {
         return trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Checks if the string contains any of the provided strings, using case-insensitive comparison.
+    ///
+    /// This method performs a case-insensitive search to determine if the current string
+    /// contains at least one of the strings from the provided array.
+    ///
+    /// - Parameter strings: An array of strings to search for within the current string.
+    /// - Returns: `true` if the string contains at least one of the provided strings (case-insensitive),
+    ///           `false` if none are found or if the array is empty.
+    func containsAny(of strings: [String]) -> Bool {
+        guard !strings.isEmpty, !self.isEmpty else {
+            return false
+        }
+        let lowercasedSelf = self.lowercased()
+        return strings.contains { lowercasedSelf.contains($0.lowercased()) }
     }
 
 }

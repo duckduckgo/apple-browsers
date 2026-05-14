@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
 import Foundation
-import SwiftUI
 import Subscription
 import SubscriptionUI
-import BrowserServicesKit
+import SwiftUI
 
 struct PreferencesSection: Hashable, Identifiable {
     let id: PreferencesSectionIdentifier
@@ -30,6 +31,7 @@ struct PreferencesSection: Hashable, Identifiable {
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
                                 includingAIChat: Bool,
+                                includingYouTubeAdBlocking: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
@@ -42,7 +44,9 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.sync)
             }
 
-            if includingDuckPlayer {
+            if includingYouTubeAdBlocking {
+                panes.append(.youTubeAdBlocking)
+            } else if includingDuckPlayer {
                 panes.append(.duckPlayer)
             }
 
@@ -53,12 +57,11 @@ struct PreferencesSection: Hashable, Identifiable {
             return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
-#if APPSTORE
         // App Store guidelines don't allow references to other platforms, so the Mac App Store build omits the otherPlatforms section.
-        let otherPanes: [PreferencePaneIdentifier] = [.about]
-#else
-        let otherPanes: [PreferencePaneIdentifier] = [.about, .otherPlatforms]
-#endif
+        var otherPanes: [PreferencePaneIdentifier] = [.about]
+        if !NSApp.isSandboxed {
+            otherPanes.append(.otherPlatforms)
+        }
 
         var sections: [PreferencesSection] = [
             .init(id: .privacyProtections, panes: privacyPanes),
@@ -133,6 +136,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case threatProtection
     case cookiePopupProtection
     case emailProtection
+    case youTubeAdBlocking
 
     case general
     case sync
@@ -183,6 +187,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.cookiePopUpProtection
         case .emailProtection:
             return UserText.emailProtectionPreferences
+        case .youTubeAdBlocking:
+            return UserText.youTubeAdBlocking
         case .general:
             return UserText.general
         case .sync:
@@ -240,6 +246,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:
             return settingsIconProvider.emailProtectionIcon
+        case .youTubeAdBlocking:
+            return settingsIconProvider.youTubeAdBlockingIcon
         case .general:
             return settingsIconProvider.generalIcon
         case .sync:
@@ -255,7 +263,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .personalInformationRemoval:
             return settingsIconProvider.personalInformationRemovalIcon
         case .paidAIChat:
-            return settingsIconProvider.duckAIIcon
+            return settingsIconProvider.paidAIChatIcon
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:

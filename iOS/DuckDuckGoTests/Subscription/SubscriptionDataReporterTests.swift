@@ -20,9 +20,11 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
-@testable import BrowserServicesKit
+import BrowserServicesKit
 @testable import DDGSync
 @testable import SecureStorage
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class SubscriptionDataReporterTests: XCTestCase {
     let testConfig = """

@@ -21,6 +21,10 @@ import Foundation
 
 final class BookmarksBarCollectionView: NSCollectionView {
 
+    override var acceptsFirstResponder: Bool {
+        return false
+    }
+
     private struct CollectionViewItemCacheIdentifier: Hashable {
         let identifier: NSUserInterfaceItemIdentifier
         let indexPath: IndexPath

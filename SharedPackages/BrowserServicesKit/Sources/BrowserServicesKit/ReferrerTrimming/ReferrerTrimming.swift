@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
-import TrackerRadarKit
 import Common
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
+import WebKit
 
 public class ReferrerTrimming {
 
@@ -118,7 +119,7 @@ public class ReferrerTrimming {
     }
 
     public func trimReferrer(for request: URLRequest, originUrl: URL?) -> URLRequest? {
-        guard let originUrl = originUrl else {
+        guard let originUrl else {
             return nil
         }
         guard let destUrl = request.url else {

@@ -21,7 +21,7 @@ import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
 import FeatureFlags
-import BrowserServicesKit
+import PrivacyConfig
 import os.log
 
 public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
@@ -80,7 +80,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         }
     }
 
-    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
@@ -93,7 +93,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
              openWinBackOfferLandingPage
     }
 
-    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+    public init(subscriptionManager: SubscriptionManager,
                 featureFlagger: FeatureFlagger,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
@@ -141,41 +141,20 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
+        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManager
     }
 
-    /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
+    /// Updates the user's eligibility for a free trial based on subscription manager checks.
     ///
-    /// This method checks if the Subscription free trial feature flag is enabled. If the flag is active,
-    /// it queries the subscription manager to determine if the user is eligible for a free trial.
-    /// If the feature flag is disabled, the user is marked as ineligible for the free trial.
+    /// This method queries the subscription manager to determine if the user is eligible for a free trial.
     ///
     /// - Note: This method updates the `isUserEligibleForFreeTrial` published property, which will
     ///         trigger UI updates for any observers.
     private func updateFreeTrialEligibility() {
-        if featureFlagger.isFeatureOn(.privacyProFreeTrial) {
-            self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
-        } else {
-            self.isUserEligibleForFreeTrial = false
-        }
+        self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {
-        var region: SubscriptionRegion?
-
-        switch currentPurchasePlatform {
-        case .appStore:
-            if #available(macOS 12.0, *) {
-                if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
-                    region = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion
-                } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
-                    region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
-                }
-            }
-        case .stripe:
-            region = .usa
-        }
-
-        return region ?? .usa
+        return subscriptionManager.currentStorefrontRegion
     }
 }

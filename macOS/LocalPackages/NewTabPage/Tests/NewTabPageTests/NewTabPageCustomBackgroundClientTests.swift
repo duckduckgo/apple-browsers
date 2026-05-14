@@ -66,7 +66,7 @@ final class NewTabPageCustomBackgroundClientTests: XCTestCase {
     // MARK: - setTheme
 
     func testThatSetThemeCallsModel() async throws {
-        let themeData = NewTabPageDataModel.ThemeData(theme: .dark)
+        let themeData = NewTabPageDataModel.ThemeData(theme: .dark, themeVariant: .coolGray)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setTheme, parameters: themeData)
         XCTAssertEqual(model.theme, .dark)
     }

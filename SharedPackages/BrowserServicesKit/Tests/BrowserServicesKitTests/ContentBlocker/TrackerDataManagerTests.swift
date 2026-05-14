@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import CommonCrypto
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
-@testable import BrowserServicesKit
 import WebKit
+import XCTest
+@testable import BrowserServicesKit
 
 class TrackerDataManagerTests: XCTestCase {
 

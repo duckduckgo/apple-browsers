@@ -24,4 +24,5 @@ public protocol SubscriptionSurveyDataProviding {
     var subscriptionBilling: String? { get }
     var subscriptionStartDate: Date? { get }
     var subscriptionExpiryDate: Date? { get }
+    var subscriptionTrialActive: Bool? { get }
 }

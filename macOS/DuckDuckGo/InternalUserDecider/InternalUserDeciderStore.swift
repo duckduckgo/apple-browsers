@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 final class InternalUserDeciderStore: InternalUserStoring {
 

@@ -64,14 +64,6 @@ public protocol OAuthService {
     /// - Throws: An error if logout fails.
     func logout(accessToken: String) async throws
 
-    /// Exchanges an access token for a new one.
-    /// - Parameters:
-    ///   - accessTokenV1: The old access token.
-    ///   - authSessionID: The authentication session ID.
-    /// - Returns: An OAuthRedirectionURI.
-    /// - Throws: An error if the exchange fails.
-    func exchangeToken(accessTokenV1: String, authSessionID: String) async throws -> AuthorisationCode
-
     /// Retrieves JWT signers using JWKs from the endpoint.
     /// - Returns: A JWTSigners instance.
     /// - Throws: An error if retrieval fails.
@@ -110,7 +102,7 @@ public struct DefaultOAuthService: OAuthService {
     /// - Returns: and AuthServiceError.authAPIError containing the error code and description, nil if the body
     func extractError(from response: APIResponseV2) -> OAuthServiceError? {
         if let bodyError: OAuthRequest.BodyError = try? response.decodeBody() {
-            return OAuthServiceError.authAPIError(code: bodyError.error)
+            return OAuthServiceError.authAPIError(OAuthRequestError(from: bodyError))
         }
         return nil
     }
@@ -210,21 +202,6 @@ public struct DefaultOAuthService: OAuthService {
         guard response.status == "logged_out" else {
             throw OAuthServiceError.missingResponseValue("LogoutResponse.status")
         }
-    }
-
-    // MARK: Access token exchange
-
-    public func exchangeToken(accessTokenV1: String, authSessionID: String) async throws -> AuthorisationCode {
-        let request = OAuthRequest.exchangeToken(baseURL: baseURL, accessTokenV1: accessTokenV1, authSessionID: authSessionID)
-        let response = try await fetch(request: request)
-        let redirectURI = try extract(header: HTTPHeaderKey.location, from: response.httpResponse)
-        // Extract the code from the URL query params, example: com.duckduckgo:/authcb?code=NgNj...ozv
-        guard let authCode = URLComponents(string: redirectURI)?.queryItems?.first(where: { queryItem in
-            queryItem.name == "code"
-        })?.value else {
-            throw OAuthServiceError.missingResponseValue("Authorization Code in redirect URI")
-        }
-        return authCode
     }
 
     // MARK: JWKs

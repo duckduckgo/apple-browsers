@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import Configuration
+import ContentScopeScripts
+import PixelKit
+import PrivacyConfig
 import XCTest
 @testable import PixelExperimentKit
-import BrowserServicesKit
-import Configuration
-import PixelKit
-import ContentScopeScripts
 
 final class SiteBreakageExperimentMetricsTests: XCTestCase {
 

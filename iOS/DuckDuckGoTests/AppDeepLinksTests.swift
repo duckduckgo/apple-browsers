@@ -74,4 +74,25 @@ class AppDeepLinksTests: XCTestCase {
                        "foo.bar/baz/123#hello-world?A=b&c=D")
     }
 
+    // MARK: - Voice Chat Deep Link
+
+    func testWhenLinkIsVoiceChatThenDetected() {
+        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgOpenAIVoiceChat://")!),
+                       .openAIVoiceChat)
+    }
+
+    func testWhenLinkIsLowercaseVoiceChatThenDetected() {
+        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgopenaivoicechat://")!),
+                       .openAIVoiceChat)
+    }
+
+    func testVoiceChatDeepLinkURLIsCorrect() {
+        XCTAssertEqual(AppDeepLinkSchemes.openAIVoiceChat.url.absoluteString, "ddgOpenAIVoiceChat://")
+    }
+
+    func testVoiceChatDeepLinkPreservesSourceParameter() {
+        let url = AppDeepLinkSchemes.openAIVoiceChat.url.appendingParameter(name: "source", value: "control_center")
+        XCTAssertEqual(url.getParameter(named: "source"), "control_center")
+    }
+
 }

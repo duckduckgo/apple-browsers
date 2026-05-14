@@ -124,6 +124,16 @@ extension URL {
         isYoutubeWatch
     }
 
+    /// Returns true if the URL represents any YouTube page with playable video content,
+    /// including standard watch pages, Shorts, live streams, and clips.
+    public var isPlayableYoutubeVideoContent: Bool {
+        guard isYoutube else { return false }
+        return path == "/watch"
+            || path.hasPrefix("/shorts/")
+            || path.hasPrefix("/live/")
+            || path.hasPrefix("/clip/")
+    }
+
     /// Attempts extracting video ID and timestamp from the URL. Works with all types of YouTube URLs.
     public var youtubeVideoParams: (videoID: String, timestamp: String?)? {
         if isDuckURLScheme {

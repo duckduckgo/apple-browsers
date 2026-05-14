@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d kartica i njihovi podaci izbrisani</string>
+			<key>few</key>
+			<string>%1$d kartice i njihovi podaci izbrisani</string>
+			<key>many</key>
+			<string>%1$d kartica i njihovi podaci izbrisani</string>
+			<key>other</key>
+			<string>%1$d kartica i njihovi podaci izbrisani</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Izbriši s %1$d mrežne lokacije. Možda će te odjaviti s računa.</string>
+			<key>few</key>
+			<string>Izbriši s %1$d mrežne lokacije. Možda će te odjaviti s računa.</string>
+			<key>many</key>
+			<string>Izbriši s %1$d mrežnih lokacija. Možda će te odjaviti s računa.</string>
+			<key>other</key>
+			<string>Izbriši s %1$d mrežnih lokacija. Možda će te odjaviti s računa.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvori karticu</string>
+			<key>few</key>
+			<string>Zatvori sve %1$d kartice</string>
+			<key>many</key>
+			<string>Zatvori svih %1$d kartica</string>
+			<key>other</key>
+			<string>Zatvori svih %1$d kartica</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -157,13 +217,73 @@ Ja sam ih blokirao!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Blokiran je %1$d alat za praćenje</string>
+			<string>%1$d %%d alat za praćenje blokiran od učitavanja</string>
 			<key>few</key>
-			<string>Blokirana su %1$d alata za praćenje</string>
+			<string>%1$d %%d alata za praćenje blokirana od učitavanja</string>
 			<key>many</key>
-			<string>Blokirano je %1$d alata za praćenje</string>
+			<string>%1$d %%d alata za praćenje blokirana od učitavanja</string>
 			<key>other</key>
-			<string>Blokirano je %1$d alata za praćenje</string>
+			<string>%1$d %%d alata za praćenje blokirana od učitavanja</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Praćenje</string>
+			<key>few</key>
+			<string>%1$d Praćenje</string>
+			<key>many</key>
+			<string>%1$d Praćenje</string>
+			<key>other</key>
+			<string>%1$d Praćenje</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d druga domena učitana</string>
+			<key>few</key>
+			<string>%1$d %%d druge domene učitane</string>
+			<key>many</key>
+			<string>%1$d %%d drugih domena učitano</string>
+			<key>other</key>
+			<string>%1$d %%d drugih domena učitano</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d alat za praćenje u vlasništvu ovog web-mjesta (učitano)</string>
+			<key>few</key>
+			<string>%1$d alata za praćenje u vlasništvu ovog web-mjesta (učitano)</string>
+			<key>many</key>
+			<string>%1$d alata za praćenje u vlasništvu ovog web-mjesta (učitano)</string>
+			<key>other</key>
+			<string>%1$d alata za praćenje u vlasništvu ovog web-mjesta (učitano)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -694,6 +814,46 @@ Ja sam ih blokirao!
 			<string>Odabrano kartica: %1$d</string>
 			<key>other</key>
 			<string>Odabrano kartica: %1$d</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokacija isključena iz brisanja</string>
+			<key>few</key>
+			<string>%1$d lokacije isključene iz brisanja</string>
+			<key>many</key>
+			<string>%1$d lokacija isključenih iz brisanja</string>
+			<key>other</key>
+			<string>%1$d lokacija isključenih iz brisanja</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Praćenje</string>
+			<key>few</key>
+			<string>%2$@ Praćenje</string>
+			<key>many</key>
+			<string>%2$@ Praćenje</string>
+			<key>other</key>
+			<string>%2$@ Praćenje</string>
 		</dict>
 	</dict>
 </dict>

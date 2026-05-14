@@ -27,11 +27,16 @@ protocol PermissionManagerProtocol: AnyObject {
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType]
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void)
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+
+    /// Removes a specific permission for a domain (clears from storage)
+    func removePermission(forDomain domain: String, permissionType: PermissionType)
 
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
@@ -75,13 +80,26 @@ final class PermissionManager: PermissionManagerProtocol {
         return permissions[domain.droppingWwwPrefix()]?[permissionType] != nil
     }
 
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool {
+        guard let domainPermissions = permissions[domain.droppingWwwPrefix()] else { return false }
+        return !domainPermissions.isEmpty
+    }
+
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
+        guard let domainPermissions = permissions[domain.droppingWwwPrefix()] else { return [] }
+        return Array(domainPermissions.keys)
+    }
+
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        assert(permissionType.canPersistGrantedDecision || decision != .allow)
-        assert(permissionType.canPersistDeniedDecision || decision != .deny)
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
-        guard self.permission(forDomain: domain, permissionType: permissionType) != decision else { return }
+
+        // Check if permission is already stored with the same decision
+        // Also check hasPermissionPersisted to allow storing .ask explicitly for permission center visibility
+        let currentDecision = self.permission(forDomain: domain, permissionType: permissionType)
+        let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+        guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )
@@ -101,7 +119,7 @@ final class PermissionManager: PermissionManagerProtocol {
         self.set(storedPermission, forDomain: domain, permissionType: permissionType)
     }
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter {
@@ -109,12 +127,16 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
-        }), completionHandler: { _ in
-            completion()
+        }), completionHandler: { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
         })
     }
 
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter { permission in
@@ -123,9 +145,28 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
-        }), completionHandler: { _ in
-            completion()
+        }), completionHandler: { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
         })
+    }
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        let domain = domain.droppingWwwPrefix()
+
+        guard let storedPermission = permissions[domain]?[permissionType] else { return }
+
+        // Remove from in-memory cache
+        permissions[domain]?[permissionType] = nil
+
+        // Remove from persistent storage
+        store.remove(objectWithId: storedPermission.id)
+
+        // Notify subscribers
+        permissionSubject.send((domain, permissionType, .ask))
     }
 
 }

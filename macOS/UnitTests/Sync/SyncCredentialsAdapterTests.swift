@@ -85,6 +85,7 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
     var syncCreditCardsSuccededCalled = false
     var handleIdentitiesErrorCalled = false
     var syncIdentitiesSuccededCalled = false
+    var handleAiChatsErrorCalled = false
     var capturedError: Error?
 
     func handleBookmarkError(_ error: Error) {
@@ -109,6 +110,11 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
 
     func handleSettingsError(_ error: Error) {
         handleSettingsError = true
+        capturedError = error
+    }
+
+    func handleAiChatsError(_ error: Error) {
+        handleAiChatsErrorCalled = true
         capturedError = error
     }
 

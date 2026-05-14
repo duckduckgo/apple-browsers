@@ -16,26 +16,20 @@
 //  limitations under the License.
 //
 
+import WebExtensions
 import WebKit
 
 @available(macOS 15.4, *)
-protocol WebExtensionInternalSiteHandlerDataSource {
-
-    func webExtensionContextForUrl(_ url: URL) -> WKWebExtensionContext?
-
-}
-
-@available(macOS 15.4, *)
-final class WebExtensionInternalSiteHandler {
+final class WebExtensionInternalSiteHandler: WebExtensionInternalSiteHandling {
 
     let navigationDelegate = WebExtensionInternalSiteNavigationDelegate() // swiftlint:disable:this weak_delegate
-    var dataSource: WebExtensionInternalSiteHandlerDataSource?
+    var dataSource: (any WebExtensionInternalSiteHandlerDataSource)?
 
     private var webViewTabCache: Tab?
 
     @MainActor
     func webViewForExtensionUrl(_ url: URL) -> WebView? {
-        guard let configuration = dataSource?.webExtensionContextForUrl(url)?.webViewConfiguration else {
+        guard let configuration = dataSource?.webExtensionContext(for: url)?.webViewConfiguration else {
             return nil
         }
 
@@ -46,5 +40,4 @@ final class WebExtensionInternalSiteHandler {
         webViewTabCache?.webView.navigationDelegate = navigationDelegate
         return webViewTabCache?.webView
     }
-
 }

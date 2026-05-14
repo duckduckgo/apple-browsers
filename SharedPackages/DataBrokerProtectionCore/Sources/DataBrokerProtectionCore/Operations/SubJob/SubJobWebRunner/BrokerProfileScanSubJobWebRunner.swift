@@ -18,6 +18,7 @@
 
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import Common
@@ -47,11 +48,16 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     private let operationAwaitTime: TimeInterval
     public let shouldRunNextStep: () -> Bool
     public var retriesCountOnError: Int = 0
-    public let clickAwaitTime: TimeInterval
+    public lazy var clickAwaitTime: TimeInterval = {
+        executionConfig.clickAwaitTimeForScan
+    }()
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgent: String?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
@@ -59,9 +65,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgent: String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
-                clickAwaitTime: TimeInterval = 0,
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
@@ -75,11 +81,11 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
         self.shouldRunNextStep = shouldRunNextStep
-        self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
         self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgent = applicationNameForUserAgent
     }
 
     @MainActor
@@ -110,6 +116,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
                     } catch {
                         failed(with: error)
+                        return
                     }
 
                     do {
@@ -137,6 +144,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: .extract,
+                         details: DebugHelper.prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
         await executeNextStep()
     }
@@ -144,6 +154,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
+        recordDebugEvent(kind: .wait,
+                         actionType: actionsHandler?.currentAction()?.actionType,
+                         details: "Waiting \(operationAwaitTime)s (between actions)")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 

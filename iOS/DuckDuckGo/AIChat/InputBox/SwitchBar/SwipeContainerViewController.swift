@@ -29,6 +29,11 @@ protocol SwipeContainerViewControllerDelegate: AnyObject {
 final class SwipeContainerViewController: UIViewController {
 
     weak var delegate: SwipeContainerViewControllerDelegate?
+    var animateProgrammaticModeChanges = true
+
+    var isSwipeEnabled: Bool = true {
+        didSet { swipeScrollView?.isScrollEnabled = isSwipeEnabled }
+    }
 
     // MARK: - Scroll Progress
     @Published private(set) var scrollProgress: CGFloat = 0.0
@@ -65,7 +70,13 @@ final class SwipeContainerViewController: UIViewController {
         configureInitialPosition()
     }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)  {
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        guard swipeScrollView.contentSize.width == 0, view.bounds.width > 0 else { return }
+        updateLayout(viewBounds: view.bounds)
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate { _ in
@@ -73,10 +84,6 @@ final class SwipeContainerViewController: UIViewController {
         } completion: { _ in
             self.syncScrollProgress()
         }
-    }
-
-    func setMode(_ mode: TextEntryMode) {
-        updateScrollViewPosition(animated: true)
     }
 
     // MARK: - Private
@@ -91,10 +98,12 @@ final class SwipeContainerViewController: UIViewController {
 
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
-            .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                self?.updateScrollViewPosition(animated: true)
+                guard let self, self.swipeScrollView != nil else { return }
+                let shouldAnimate = self.animateProgrammaticModeChanges
+                self.animateProgrammaticModeChanges = true
+                self.updateScrollViewPosition(animated: shouldAnimate)
             }
             .store(in: &cancellables)
     }
@@ -115,6 +124,7 @@ final class SwipeContainerViewController: UIViewController {
         view.addSubview(swipeScrollView)
 
         searchPageContainer = UIView()
+        searchPageContainer.backgroundColor = UIColor(designSystemColor: .panel)
         searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
 
         chatPageContainer = UIView()
@@ -178,6 +188,12 @@ final class SwipeContainerViewController: UIViewController {
         guard pageWidth > 0 else { return }
         let progress = max(0, min(1, swipeScrollView.contentOffset.x / pageWidth))
         updateScrollProgress(progress)
+    }
+
+    func syncToCurrentMode(animated: Bool) {
+        guard swipeScrollView != nil else { return }
+        updateScrollViewPosition(animated: animated)
+        syncScrollProgress()
     }
 }
 

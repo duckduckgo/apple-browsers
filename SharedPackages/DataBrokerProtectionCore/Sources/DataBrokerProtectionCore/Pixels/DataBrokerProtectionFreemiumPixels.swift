@@ -95,4 +95,24 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
     }
 
     public var parameters: [String: String]? { nil }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .newTabScanImpression,
+                .newTabScanClick,
+                .newTabScanDismiss,
+                .newTabResultsImpression,
+                .newTabResultsClick,
+                .newTabResultsDismiss,
+                .newTabNoResultsImpression,
+                .newTabNoResultsClick,
+                .newTabNoResultsDismiss,
+                .overFlowScan,
+                .overFlowResults,
+                .firstScanCompleteNotificationSent,
+                .firstScanCompleteNotificationClicked,
+                .subscription:
+            return [.pixelSource]
+        }
+    }
 }

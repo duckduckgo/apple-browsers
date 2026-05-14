@@ -38,8 +38,6 @@ extension DefaultBrowserPromptTypeDecider {
         }
 
         func promptType() -> DefaultBrowserPromptType? {
-            guard featureFlagger.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled else { return nil }
-
             // Conditions to show prompt for inactive users:
             // 1. The user has not seen this modal ever.
             // 2. User has been inactive for at least seven days.

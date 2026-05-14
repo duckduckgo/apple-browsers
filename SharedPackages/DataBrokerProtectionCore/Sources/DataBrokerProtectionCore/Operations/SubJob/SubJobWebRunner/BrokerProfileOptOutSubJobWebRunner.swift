@@ -18,6 +18,7 @@
 
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import os.log
@@ -71,11 +72,16 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
     public let shouldRunNextStep: () -> Bool
-    public let clickAwaitTime: TimeInterval
+    public var clickAwaitTime: TimeInterval {
+        executionConfig.clickAwaitTimeForOptOut
+    }
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgent: String?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
 
     public var retriesCountOnError: Int = 0
@@ -86,9 +92,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgent: String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
-                clickAwaitTime: TimeInterval = 40,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
@@ -102,12 +108,12 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageCalculator
         self.shouldRunNextStep = shouldRunNextStep
-        self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
         self.actionsHandlerMode = actionsHandlerMode
         self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgent = applicationNameForUserAgent
     }
 
     public func optOut(profileQuery: BrokerProfileQueryData,
@@ -141,6 +147,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                                          showWebView: showWebView)
                     } catch {
                         failed(with: error)
+                        return
                     }
 
                     if let optOutStep = context.dataBroker.optOutStep() {
@@ -189,6 +196,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
+        recordDebugEvent(kind: .wait,
+                         actionType: actionsHandler?.currentAction()?.actionType,
+                         details: "Waiting \(operationAwaitTime)s (between actions)")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()

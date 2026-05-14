@@ -18,8 +18,9 @@
 //
 
 import DesignResourcesKit
-import SwiftUI
 import DesignResourcesKitIcons
+import SwiftUI
+import UIComponents
 
 struct FavoriteItemView: View {
     let favorite: Favorite

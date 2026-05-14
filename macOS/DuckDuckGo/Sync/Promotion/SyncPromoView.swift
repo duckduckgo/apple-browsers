@@ -55,7 +55,7 @@ struct SyncPromoView: View {
         .background(
             GeometryReader { geometry in
                 Color.clear.onAppear {
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue], doNotEnforcePrefix: true)
                     width = geometry.size.width
                 }
                 .onChange(of: geometry.size.width) { newWidth in
@@ -240,12 +240,12 @@ struct SyncPromoView: View {
 
     private func primaryAction() {
         viewModel.primaryButtonAction?()
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue], doNotEnforcePrefix: true)
     }
 
     private func dismissAction() {
         viewModel.dismissButtonAction?()
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue], doNotEnforcePrefix: true)
     }
 }
 

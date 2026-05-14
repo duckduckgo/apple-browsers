@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import protocol BrowserServicesKit.FeatureFlagger
+import protocol PrivacyConfig.FeatureFlagger
 import class UIKit.UIApplication
 import SystemSettingsPiPTutorial
 
@@ -39,9 +39,9 @@ final class SystemSettingsPiPTutorialService {
         return (playerView, videoPlayerCoordinator)
     }()
 
-    init(featureFlagger: FeatureFlagger) {
+    init() {
         // Register PiP Video URL providers
-        registerAllURLProviders(featureFlagger: featureFlagger)
+        registerAllURLProviders()
     }
 
 }
@@ -50,13 +50,9 @@ final class SystemSettingsPiPTutorialService {
 
 private extension SystemSettingsPiPTutorialService {
 
-    func registerAllURLProviders(featureFlagger: FeatureFlagger) {
-
+    func registerAllURLProviders() {
         // Register PiP URL Tutorial Provider for 'Set As Default' Browser destination.
-        if featureFlagger.isFeatureOn(.setAsDefaultBrowserPiPVideoTutorial) {
-            manager.register(DefaultBrowserPiPTutorialURLProvider(), for: .defaultBrowser)
-        }
-
+        manager.register(DefaultBrowserPiPTutorialURLProvider(), for: .defaultBrowser)
     }
 }
 

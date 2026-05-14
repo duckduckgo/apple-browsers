@@ -23,7 +23,16 @@ import BrowserServicesKit
 
 final class ATBAndVariantConfiguration {
 
-    lazy var variantManager = DefaultVariantManager()
+    private let returningUserMeasurement = KeychainReturnUserMeasurement()
+
+    lazy var variantManager: DefaultVariantManager = {
+        DefaultVariantManager(returningUserMeasurement: returningUserMeasurement)
+    }()
+
+    init() {
+        // Deliberately trigger this early so that `isReturningUser` can be cached.
+        _ = returningUserMeasurement.isReturningUser
+    }
 
     func cleanUpATBAndAssignVariant(onVariantAssigned: () -> Void) {
         AtbAndVariantCleanup.cleanup()

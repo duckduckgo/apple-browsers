@@ -28,9 +28,98 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public let platform: Platform
     public let status: Status
     public let activeOffers: [Offer]
+    public let tier: TierName?
+    public let availableChanges: AvailableChanges?
+    public let pendingPlans: [PendingPlan]?
 
     /// Not parsed from 
     public var features: [SubscriptionEntitlement]?
+
+    /// Represents available subscription tier changes
+    public struct AvailableChanges: Codable, Equatable {
+        public let upgrade: [TierChange]
+        public let downgrade: [TierChange]
+        /// Current product ID from the backend; use for cancel-downgrade instead of subscription.productId when present.
+        public let currentProductId: String?
+
+        public init(upgrade: [TierChange] = [], downgrade: [TierChange] = [], currentProductId: String? = nil) {
+            self.upgrade = upgrade
+            self.downgrade = downgrade
+            self.currentProductId = currentProductId
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.upgrade = (try? container.decode([TierChange].self, forKey: .upgrade)) ?? []
+            self.downgrade = (try? container.decode([TierChange].self, forKey: .downgrade)) ?? []
+            self.currentProductId = try? container.decode(String.self, forKey: .currentProductId)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(upgrade, forKey: .upgrade)
+            try container.encode(downgrade, forKey: .downgrade)
+            try container.encodeIfPresent(currentProductId, forKey: .currentProductId)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case upgrade, downgrade, currentProductId
+        }
+    }
+
+    /// Represents a single tier change option
+    public struct TierChange: Codable, Equatable {
+        public let tier: String
+        public let productIds: [String]
+        public let order: Int
+
+        public init(tier: String, productIds: [String], order: Int) {
+            self.tier = tier
+            self.productIds = productIds
+            self.order = order
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.tier = try container.decode(String.self, forKey: .tier)
+            self.productIds = (try? container.decode([String].self, forKey: .productIds)) ?? []
+            self.order = (try? container.decode(Int.self, forKey: .order)) ?? 0
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case tier, productIds, order
+        }
+    }
+
+    /// Represents a pending plan change that will take effect at a future date
+    public struct PendingPlan: Codable, Equatable {
+        public let productId: String
+        public let billingPeriod: BillingPeriod
+        public let effectiveAt: Date
+        public let status: String
+        public let tier: TierName
+
+        public init(productId: String, billingPeriod: BillingPeriod, effectiveAt: Date, status: String, tier: TierName) {
+            self.productId = productId
+            self.billingPeriod = billingPeriod
+            self.effectiveAt = effectiveAt
+            self.status = status
+            self.tier = tier
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.productId = try container.decode(String.self, forKey: .productId)
+            self.billingPeriod = (try? container.decode(BillingPeriod.self, forKey: .billingPeriod)) ?? .unknown
+            self.effectiveAt = (try? container.decode(Date.self, forKey: .effectiveAt)) ?? Date.distantFuture
+            self.status = (try? container.decode(String.self, forKey: .status)) ?? "pending"
+            self.tier = (try? container.decode(TierName.self, forKey: .tier)) ?? .plus
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case productId, billingPeriod, effectiveAt, status, tier
+        }
+    }
 
     public enum BillingPeriod: String, Codable {
         case monthly = "Monthly"
@@ -117,6 +206,11 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         activeOffers.contains(where: { $0.type == .trial })
     }
 
+    /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.
+    public var firstPendingPlan: PendingPlan? {
+        pendingPlans?.min(by: { $0.effectiveAt < $1.effectiveAt })
+    }
+
     public var debugDescription: String {
         return """
         Subscription:
@@ -127,7 +221,9 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         - Expires/Renews At: \(formatDate(expiresOrRenewsAt))
         - Platform: \(platform.rawValue)
         - Status: \(status.rawValue)
+        - Tier: \(tier?.rawValue ?? "unknown")
         - Features: \(features?.map { $0.debugDescription } ?? [])
+        - Pending Plans: \(pendingPlans?.count ?? 0)
         """
     }
 
@@ -149,6 +245,9 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.expiresOrRenewsAt == rhs.expiresOrRenewsAt &&
         lhs.platform == rhs.platform &&
         lhs.status == rhs.status &&
+        lhs.tier == rhs.tier &&
+        lhs.availableChanges == rhs.availableChanges &&
+        lhs.pendingPlans == rhs.pendingPlans &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
         Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }

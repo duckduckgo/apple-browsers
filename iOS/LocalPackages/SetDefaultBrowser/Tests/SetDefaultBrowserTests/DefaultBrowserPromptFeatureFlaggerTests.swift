@@ -25,33 +25,6 @@ import SetDefaultBrowserTestSupport
 @Suite("Set Default Browser - Prompt Feature Flag")
 struct DefaultBrowserPromptFeatureFlaggerTests {
     let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagSettingsProvider()
-    let mockFeatureFlagProvider = MockDefaultBrowserPromptFeatureFlagProvider()
-
-    @Test("Check Feature Flag For Active Users Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserPromptForActiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        mockFeatureFlagProvider.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = isEnabled
-        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
-
-        // WHEN
-        let result = sut.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
-
-    @Test("Check Feature Flag For Inactive Users Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserPromptForInactiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        mockFeatureFlagProvider.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled = isEnabled
-        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
-
-        // WHEN
-        let result = sut.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
 
     @Test("Check Remote Subfeature Settings Are Returned Correctly")
     func checkRemoteSettingsAreReturnedCorrectly() throws {
@@ -63,7 +36,7 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
             DefaultBrowserPromptFeatureSettings.inactiveModalNumberOfDaysSinceInstall.rawValue: 48,
             DefaultBrowserPromptFeatureSettings.inactiveModalNumberOfInactiveDays.rawValue: 23,
         ]
-        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
+        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider)
 
         // WHEN
         let firstModalDelayDays = sut.firstActiveModalDelayDays
@@ -84,7 +57,7 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     func checkDefaultSettingsAreReturnedWhenRemoteSettingsAreNotSet() throws {
         // GIVEN
         mockFeatureFlagSettingsProvider.defaultBrowserPromptFeatureSettings = [:]
-        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
+        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider)
 
         // WHEN
         let firstModalDelayDays = sut.firstActiveModalDelayDays

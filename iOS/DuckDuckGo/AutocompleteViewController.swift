@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import UIKit
 import Core
@@ -27,7 +28,7 @@ import CoreData
 import Persistence
 import History
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import SwiftUI
 import AIChat
 
@@ -49,13 +50,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var lastResults: SuggestionResult?
     private var loader: SuggestionLoader?
-    private var historyMessageManager: HistoryMessageManager
     private var featureFlagger: FeatureFlagger
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
-    private let tabsModel: TabsModel
+    private let tabsModel: TabsModelManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var task: URLSessionDataTask?
 
@@ -77,33 +78,35 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }()
 
     let showAskAIChat: Bool
+    var suggestionFilter: AutocompleteSuggestionFilter = .all
+
+    var isEmpty: Bool {
+        guard let results = lastResults else { return true }
+        return results.topHits.isEmpty && results.duckduckgoSuggestions.isEmpty && results.localSuggestions.isEmpty
+    }
 
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
-         historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
-         tabsModel: TabsModel,
+         tabsModel: TabsModelManaging,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
         self.bookmarksDatabase = bookmarksDatabase
         self.featureDiscovery = featureDiscovery
+        self.productSurfaceTelemetry = productSurfaceTelemetry
 
         self.appSettings = appSettings
-        self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        /// When the experimental address bar is enabled, the bar is always at the top.
-        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
-        let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-        let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
+        let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showMessage: historyMessageManager.shouldShow(),
                                            showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
@@ -127,9 +130,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.autocompleteUsed()
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        historyMessageManager.incrementDisplayCount()
         fireUsagePixels()
     }
 
@@ -143,10 +150,27 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     
     func updateQuery(_ query: String) {
         model.selection = nil
-        guard self.query != query else { return }
+        guard self.query != query else {
+            reapplyFilterIfNeeded()
+            return
+        }
         cancelInFlightRequests()
         self.query = query
         model.query = query
+    }
+
+    func setSectionTitle(_ title: String?) {
+        model.sectionTitle = title
+    }
+
+    func reapplyFilterIfNeeded() {
+        guard model.suggestionFilter != suggestionFilter, var results = lastResults else { return }
+        if suggestionFilter == .urlsOnly {
+            results = results.filteringToURLsOnly()
+        }
+        model.suggestionFilter = suggestionFilter
+        model.updateSuggestions(results)
+        updateHeight()
     }
 
     private func fireUsagePixels() {
@@ -223,10 +247,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }
-            let updatedResults = result ?? .empty
+            var updatedResults = result ?? .empty
+            if self.suggestionFilter == .urlsOnly {
+                updatedResults = updatedResults.filteringToURLsOnly()
+            }
             self.lastResults = updatedResults
+            self.model.suggestionFilter = self.suggestionFilter
             model.updateSuggestions(updatedResults)
             updateHeight()
+            self.presentationDelegate?.autocompleteDidReloadResults(self)
         }
 
     }
@@ -234,7 +263,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func updateHeight() {
         guard let lastResults else { return }
 
-        let messageHeight = model.isMessageVisible ? 196 : 0
         let sectionPadding = 12
         let controllerPadding = 20
 
@@ -246,7 +274,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             sectionHeight(lastResults.localSuggestions) +
             (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
             (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
-            messageHeight +
             controllerPadding
 
         self.presentationDelegate?
@@ -254,8 +281,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }
 
     func sectionHeight(_ suggestions: [Suggestion]) -> Int {
-        let standardCellHeight = 44
-        let subtitledCellHeight = 58
+        let standardCellHeight: Int
+        let subtitledCellHeight: Int
+        if #available(iOS 26, *) {
+            standardCellHeight = 52
+            subtitledCellHeight = 66
+        } else {
+            standardCellHeight = 44
+            subtitledCellHeight = 58
+        }
 
         var height = 0
         for suggestion in suggestions {
@@ -274,15 +308,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
 extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
-    func onMessageDismissed() {
-        historyMessageManager.dismissedByUser()
-        updateHeight()
-    }
-
-    func onMessageShown() {
-        historyMessageManager.shownToUser()
-    }
-
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
@@ -292,12 +317,10 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
-            Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .autocompleteClickPhrase)
 
         case .website:
-            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
-            Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .autocompleteClickWebsite)
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)
@@ -330,8 +353,8 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         case .historyEntry(_, let url, _):
             Task {
                 await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteSwipeToDelete)
-                DailyPixel.fireDaily(.autocompleteSwipeToDeleteDaily)
+                Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+                DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
                 requestSuggestions(query: self.query)
             }
         default:

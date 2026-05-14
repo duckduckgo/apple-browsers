@@ -53,13 +53,14 @@ struct SettingsCellView: View, Identifiable {
     var action: () -> Void = {}
     var enabled: Bool = true
     var accessory: Accessory
+    var accessoryAccessibilityIdentifier: String
     var statusIndicator: StatusIndicatorView?
     var disclosureIndicator: Bool
     var webLinkIndicator: Bool
     var id: UUID = UUID()
     var isButton: Bool
     var isGreyedOut: Bool
-    var isNew: Bool = false
+    var optionalBadgeText: String?
     var shouldShowWinBackOffer: Bool = false
 
     /// Initializes a `SettingsCellView` with the specified label and accessory.
@@ -75,20 +76,21 @@ struct SettingsCellView: View, Identifiable {
     ///   - disclosureIndicator: Forces Adds a disclosure indicator on the right (chevron)
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
-    ///   - isNew: Displays "New" badges next to the item for feature discovery
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false, shouldShowWinBackOffer: Bool = false) {
+    ///   - optionalBadgeText: If non nil displays badges next to the item for feature discovery with the specified text
+    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, accessoryAccessibilityIdentifier: String = "", enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
         self.label = label
         self.subtitle = subtitle
         self.image = image
         self.action = action
         self.enabled = enabled
         self.accessory = accessory
+        self.accessoryAccessibilityIdentifier = accessoryAccessibilityIdentifier
         self.statusIndicator = statusIndicator
         self.disclosureIndicator = disclosureIndicator
         self.webLinkIndicator = webLinkIndicator
         self.isButton = isButton
         self.isGreyedOut = isGreyedOut
-        self.isNew = isNew
+        self.optionalBadgeText = optionalBadgeText
         self.shouldShowWinBackOffer = shouldShowWinBackOffer
     }
 
@@ -110,6 +112,7 @@ struct SettingsCellView: View, Identifiable {
         self.isButton = isButton
         self.isGreyedOut = false
         self.shouldShowWinBackOffer = false
+        self.accessoryAccessibilityIdentifier = ""
     }
 
     var body: some View {
@@ -155,7 +158,7 @@ struct SettingsCellView: View, Identifiable {
                             }
                         }
                         VStack(alignment: .leading) {
-                            HStack {
+                            HStack(alignment: .top) {
                                 // Title
                                 Text(label)
                                     .daxBodyRegular()
@@ -194,8 +197,8 @@ struct SettingsCellView: View, Identifiable {
     private func badgeView() -> some View {
         if shouldShowWinBackOffer {
             BadgeView(text: UserText.winBackCampaignMenuBadgeText)
-        } else if isNew {
-            BadgeView(text: UserText.settingsItemNewBadge)
+        } else if let optionalBadgeText {
+            BadgeView(text: optionalBadgeText)
         } else {
             EmptyView()
         }
@@ -215,6 +218,7 @@ struct SettingsCellView: View, Identifiable {
             Toggle("", isOn: isOn)
                 .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
                 .fixedSize()
+                .accessibilityIdentifier(accessoryAccessibilityIdentifier)
         case .image(let image):
             if isGreyedOut {
                 image
@@ -228,13 +232,13 @@ struct SettingsCellView: View, Identifiable {
         }
     }
 }
+//
 
 /// Encapsulates a Picker with options derived from a generic type that conforms to CustomStringConvertible.
 struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
 
-    /// This should be gated behind a feature flag passed in from the view model unless your new UI is already behind a feature flag.
-    let useImprovedPicker: Bool
     let label: String
+    let subtitle: String?
     let options: [T?]
     @Binding var selectedOption: T
 
@@ -247,121 +251,31 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
     /// But with specific design
     /// - Parameters:
     ///   - label: The label to display above the Picker.
+    ///   - subtitle: Optional subtitle text displayed below the label.
     ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
     ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(useImprovedPicker: Bool, label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
-        self.useImprovedPicker = useImprovedPicker
+    init(label: String, subtitle: String? = nil, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
         self.label = label
+        self.subtitle = subtitle
         self.options = options
         self._selectedOption = selectedOption
         self.iconProvider = iconProvider
     }
 
     var body: some View {
-        if useImprovedPicker {
-            ImprovedSettingsPickerCellView(label: label, options: options, selectedOption: $selectedOption, iconProvider: iconProvider)
-        } else {
-            LegacySettingsPickerCellView(label: label, options: options.compactMap { $0 }, selectedOption: $selectedOption)
-        }
-    }
-
-}
-
-private struct LegacySettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
-
-    let label: String
-    let options: [T]
-    @Binding var selectedOption: T
-    @Environment(\.isEnabled) private var isEnabled: Bool
-
-    /// Initializes a SettingsPickerCellView.
-    /// Use a custom picker that mimics the MenuPickerStyle
-    /// But with specific design
-    /// - Parameters:
-    ///   - label: The label to display above the Picker.
-    ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
-    ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(label: String, options: [T], selectedOption: Binding<T>) {
-        self.label = label
-        self.options = options
-        self._selectedOption = selectedOption
-    }
-
-    var body: some View {
         HStack {
-            Text(label)
-                .daxBodyRegular()
-                .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
-            Spacer()
-            Menu {
-                ForEach(options, id: \.self) { option in
-                    Group {
-                        getButtonWithAction(action: { self.selectedOption = option },
-                                            option: option.description,
-                                            selected: option == selectedOption)
-                    }
-                }
-            } label: {
-                HStack {
-                    Text(selectedOption.description)
-                        .daxSubheadRegular()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label)
+                    .daxBodyRegular()
+                    .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
+                if let subtitle {
+                    Text(subtitle)
+                        .daxFootnoteRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(Font.system(.footnote).weight(.bold))
-                        .foregroundColor(Color(UIColor.tertiaryLabel))
-                        .padding(.trailing, -2)
                 }
             }
-        }
-        .listRowBackground(Color(designSystemColor: .surface))
-    }
-
-    private func getButtonWithAction(action: @escaping () -> Void,
-                                     option: String,
-                                     selected: Bool) -> some View {
-        return Group {
-            Button(action: action) {
-                HStack {
-                    if selected {
-                        Image(systemName: "checkmark")
-                    }
-                    Text(option)
-                }
-            }
-        }
-    }
-}
-
-private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
-
-    let label: String
-    let options: [T?]
-    @Binding var selectedOption: T
-
-    let iconProvider: ((T) -> Image?)?
-
-    @Environment(\.isEnabled) private var isEnabled: Bool
-
-    /// Initializes a SettingsPickerCellView.
-    /// Use a custom picker that mimics the MenuPickerStyle
-    /// But with specific design
-    /// - Parameters:
-    ///   - label: The label to display above the Picker.
-    ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
-    ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
-        self.label = label
-        self.options = options
-        self._selectedOption = selectedOption
-        self.iconProvider = iconProvider
-    }
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .daxBodyRegular()
-                .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
-            Spacer()
+            .layoutPriority(-1)
+            Spacer(minLength: 16)
             Menu {
                 ForEach(options, id: \.self) { option in
 
@@ -377,9 +291,7 @@ private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConverti
                 }
             } label: {
                 HStack {
-                    Text(selectedOption.description)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    pickerSelectionLabel
 
                     Image(systemName: "chevron.up.chevron.down")
                         .font(Font.system(.footnote).weight(.bold))
@@ -387,8 +299,25 @@ private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConverti
                         .padding(.trailing, -2)
                 }
             }
+            .fixedSize()
         }
         .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private var pickerSelectionLabel: some View {
+        ZStack(alignment: .trailing) {
+            ForEach(options.compactMap { $0 }, id: \.self) { option in
+                Text(option.description)
+                    .daxSubheadRegular()
+                    .lineLimit(1)
+                    .hidden()
+            }
+
+            Text(selectedOption.description)
+                .daxSubheadRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+        }
     }
 
     private func getButtonWithAction(action: @escaping () -> Void,

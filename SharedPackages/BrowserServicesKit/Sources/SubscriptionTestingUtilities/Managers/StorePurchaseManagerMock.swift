@@ -31,8 +31,9 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     }
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
-    public var subscriptionOptionsResult: SubscriptionOptions?
-    public var freeTrialSubscriptionOptionsResult: SubscriptionOptions?
+    public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StoreError>?
+    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
+
     public var syncAppleIDAccountResultError: Error?
 
     public var mostRecentTransactionResult: String?
@@ -44,17 +45,10 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var updateAvailableProductsCalled: Bool = false
     public var mostRecentTransactionCalled: Bool = false
     public var purchaseSubscriptionCalled: Bool = false
+    public var purchaseSubscriptionIncludeProTier: Bool?
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() { }
-
-    public func subscriptionOptions() async -> SubscriptionOptions? {
-        subscriptionOptionsResult
-    }
-
-    public func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        freeTrialSubscriptionOptionsResult
-    }
 
     public func syncAppleIDAccount() async throws {
         if let syncAppleIDAccountResultError {
@@ -78,12 +72,18 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
         return hasActiveSubscriptionResult
     }
 
-    public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<TransactionJWS, StorePurchaseManagerError> {
         purchaseSubscriptionCalled = true
+        purchaseSubscriptionIncludeProTier = includeProTier
         return purchaseSubscriptionResult!
     }
 
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
+    }
+
+    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
+        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+        return subscriptionTierOptionsResult ?? .failure(.tieredProductsEmptyFeatures)
     }
 }

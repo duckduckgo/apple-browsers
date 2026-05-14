@@ -35,7 +35,12 @@ protocol AutocompleteViewControllerDelegate: AnyObject {
 }
 
 protocol AutocompleteViewControllerPresentationDelegate: AnyObject {
-    
-    func autocompleteDidChangeContentHeight(height: CGFloat)
 
+    func autocompleteDidChangeContentHeight(height: CGFloat)
+    func autocompleteDidReloadResults(_ controller: AutocompleteViewController)
+
+}
+
+extension AutocompleteViewControllerPresentationDelegate {
+    func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {}
 }

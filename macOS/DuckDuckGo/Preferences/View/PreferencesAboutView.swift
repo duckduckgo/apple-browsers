@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -30,17 +31,21 @@ extension Preferences {
     struct AboutView: View {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
+        @State private var isCustomFeedWarningDismissed = false
 
         var autoUpdatesEnabled: Bool {
-#if SPARKLE
-#if DEBUG
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-#else
-            return true
-#endif
-#else
-            return false
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild {
+                if buildType.isDebugBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                } else if buildType.isReviewBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                } else {
+                    return true
+                }
+            } else {
+                return false
+            }
         }
 
         var body: some View {
@@ -55,12 +60,28 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-                    #if SPARKLE
-                    UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-                    #endif
+                    let buildType = StandardApplicationBuildType()
+                    if buildType.isSparkleBuild {
+                        if model.shouldHideManualUpdateOption {
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
+                        } else {
+                            UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                        }
+
+                        if buildType.isDebugBuild || buildType.isReviewBuild {
+                            if !isCustomFeedWarningDismissed {
+                                Spacer(minLength: 20)
+                                customFeedURLWarning(onDismiss: { isCustomFeedWarningDismissed = true })
+                            }
+                        }
+                    } else if buildType.isAppStoreBuild {
+                        UpdateInfoMessage()
+                            .padding(.top, 4)
+                    }
                 }
             }.task {
-                if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                if autoUpdatesEnabled {
                     model.checkForUpdate(userInitiated: false)
                 }
             }
@@ -69,6 +90,41 @@ extension Preferences {
                 // This will cause SwiftUI to re-evaluate the view body and
                 // redraw when one of the relevant feature flag ovverides
                 // is toggled.
+            }
+        }
+
+        /// Warning banner shown when a custom Sparkle feed URL is configured.
+        ///
+        /// This reminder helps developers avoid accidentally forgetting they have a custom
+        /// feed URL set, which could lead to confusion when testing updates or when the
+        /// app doesn't behave as expected with production updates.
+        @ViewBuilder
+        private func customFeedURLWarning(onDismiss: @escaping () -> Void) -> some View {
+            if let customURL = model.customFeedURL {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(verbatim: "Updates Are Using a Custom Feed URL")
+                            .fontWeight(.semibold)
+                        Text(verbatim: customURL)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(verbatim: "To disable, go to Debug → Updates → Reset feed URL to default")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(8)
             }
         }
     }
@@ -170,11 +226,11 @@ extension Preferences {
 
         @ViewBuilder
         private var logoImage: some View {
-#if ALPHA
-            Image(.aboutPageLogoAlpha)
-#else
-            Image(.aboutPageLogo)
-#endif
+            if StandardApplicationBuildType().isAlphaBuild {
+                Image(.aboutPageLogoAlpha)
+            } else {
+                Image(.aboutPageLogo)
+            }
         }
 
         private var hasPendingUpdate: Bool {
@@ -302,40 +358,11 @@ extension Preferences {
         @ViewBuilder
         private var updateButton: some View {
             if model.shouldShowUpdateStatus {
-                // Feature flag is ON - show full update functionality
-                if model.useLegacyAutoRestartLogic {
-                    switch model.updateState {
-                    case .upToDate:
-                        Button(UserText.checkForUpdate) {
-                            model.checkForUpdate(userInitiated: true)
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    case .updateCycle(let progress):
-                        if hasPendingUpdate {
-                            Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                                model.runUpdate()
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: true))
-                        } else if progress.isFailed {
-                            Button(UserText.retryUpdate) {
-                                model.checkForUpdate(userInitiated: true)
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: true))
-                        } else {
-                            Button(UserText.checkForUpdate) {
-                                model.checkForUpdate(userInitiated: true)
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: false))
-                            .disabled(true)
-                        }
-                    }
-                } else {
-                    let configuration = model.updateButtonConfiguration
+                let configuration = model.updateButtonConfiguration
 
-                    Button(configuration.title, action: configuration.action)
-                        .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
-                        .disabled(!configuration.enabled)
-                }
+                Button(configuration.title, action: configuration.action)
+                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                    .disabled(!configuration.enabled)
             } else {
                 // Feature flag is OFF - show simple App Store button
                 Button(UserText.checkForUpdate) {
@@ -346,7 +373,87 @@ extension Preferences {
         }
     }
 
-#if SPARKLE
+    struct UpdateInfoMessage: View {
+        private let buildType: ApplicationBuildType
+
+        init(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+            self.buildType = buildType
+        }
+
+        var body: some View {
+            if buildType.isSparkleBuild {
+                TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
+            } else if buildType.isAppStoreBuild {
+                let linkText = UserText.aboutUpdateInfoAppStoreLink
+                let menuText = UserText.aboutUpdateInfoAppStoreMenu
+                let settingsText = UserText.aboutUpdateInfoAppStoreSettings
+                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
+                HStack(spacing: 0) {
+                    if #available(macOS 12.0, *) {
+                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(Color(.greyText))
+            }
+        }
+
+        private static let boldWords = [
+            UserText.aboutUpdateInfoAppStoreLink,
+            UserText.aboutUpdateInfoAppStoreMenu,
+            UserText.aboutUpdateInfoAppStoreSettings
+        ]
+
+        @available(macOS 12, *)
+        private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
+            var attributed = AttributedString(fullText)
+            if let range = attributed.range(of: linkText) {
+                attributed[range].link = .appStore
+            }
+            for word in Self.boldWords {
+                if let range = attributed.range(of: word) {
+                    attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
+                }
+            }
+            return attributed
+        }
+
+        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
+            let attributedString = NSMutableAttributedString(string: fullText)
+
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 0
+            paragraphStyle.paragraphSpacing = 0
+
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                .foregroundColor: NSColor(Color(.greyText)),
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
+
+            if let range = fullText.range(of: linkText) {
+                let nsRange = NSRange(range, in: fullText)
+                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
+                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
+                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+            }
+
+            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            for word in Self.boldWords {
+                if let range = fullText.range(of: word) {
+                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
+                }
+            }
+
+            return attributedString
+        }
+    }
+
     struct UpdatesSection: View {
         @Binding var areAutomaticUpdatesEnabled: Bool
         @ObservedObject var model: AboutPreferences
@@ -373,7 +480,6 @@ extension Preferences {
             }
         }
     }
-#endif
 
     struct UnsupportedDeviceInfoBox: View {
 

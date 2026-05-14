@@ -18,8 +18,8 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
 import Combine
+import PrivacyConfig
 
 protocol AIChatMenuVisibilityConfigurable {
 
@@ -55,6 +55,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
 
+    /// This property validates user settings to determine if the Duck.ai submenu
+    /// should be presented in the more options (hamburger) menu.
+    ///
+    /// - Returns: `true` if the more options menu shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayMoreOptionsMenuShortcut: Bool { get }
+
     /// This property determines whether AI Chat should open in the sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
@@ -81,14 +87,6 @@ protocol AIChatMenuVisibilityConfigurable {
     ///
     /// - Returns: `true` if the text translation menu action should be displayed; otherwise, `false`.
     var shouldDisplayTranslationMenuItem: Bool { get }
-
-    /// Determines whether the updated AI Chat settings UI should be displayed.
-    ///
-    /// This property is temporary and used for gating the release of the setting updates.
-    /// It will be removed once the updated settings are fully rolled out.
-    ///
-    /// - Returns: `true` if the updated settings UI should be shown; otherwise, `false`.
-    var shouldShowSettingsImprovements: Bool { get }
 
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
@@ -125,21 +123,19 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldDisplaySummarizationMenuItem: Bool {
-        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature
     }
 
     var shouldDisplayTranslationMenuItem: Bool {
-        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextTranslation) && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {
-        // Improvements remove the setting toggle for menus.
-        // Note: To be removed after release with all related to showShortcutInApplicationMenu (logic, storage etc.)
-        if shouldShowSettingsImprovements {
-            return shouldDisplayAnyAIChatFeature
-        }
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMainMenuShortcut)
+    }
 
-        return shouldDisplayAnyAIChatFeature && storage.showShortcutInApplicationMenu
+    var shouldDisplayMoreOptionsMenuShortcut: Bool {
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut)
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
@@ -147,12 +143,6 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldDisplayAddressBarShortcutWhenTyping: Bool {
-        // Improvements introduce this as a separate setting.
-        // Note: To be removed after release with all related to showShortcutInApplicationMenu (logic, storage etc.)
-        guard shouldShowSettingsImprovements else {
-            return shouldDisplayAddressBarShortcut
-        }
-
         return shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBarWhenTyping
     }
 
@@ -171,10 +161,6 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         return shouldAutomaticallySendPageContext
     }
 
-    var shouldShowSettingsImprovements: Bool {
-        featureFlagger.isFeatureOn(.aiChatImprovements)
-    }
-
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
         self.storage = storage
         self.remoteSettings = remoteSettings
@@ -184,18 +170,35 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge8(
-            storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
-            storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
-            storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
-            storage.showShortcutInAddressBarPublisher.removeDuplicates(),
-            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates(),
-            storage.openAIChatInSidebarPublisher.removeDuplicates(),
-            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates(),
-            storage.showSearchAndDuckAITogglePublisher.removeDuplicates()
-        )
-        .sink { [weak self] _ in
-            self?.valuesChangedPublisher.send()
-        }.store(in: &cancellables)
+        let storagePublishers: [AnyPublisher<Bool, Never>] = [
+            storage.isAIFeaturesEnabledPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInApplicationMenuPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.openAIChatInSidebarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showSearchAndDuckAITogglePublisher.removeDuplicates().eraseToAnyPublisher(),
+        ]
+
+        let mainMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMainMenuShortcut) ?? false }
+            .removeDuplicates()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        let moreOptionsMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut) ?? false }
+            .removeDuplicates()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        Publishers.MergeMany(storagePublishers)
+            .map { _ in () }
+            .merge(with: mainMenuShortcutFlagPublisher)
+            .merge(with: moreOptionsMenuShortcutFlagPublisher)
+            .sink { [weak self] in
+                self?.valuesChangedPublisher.send()
+            }.store(in: &cancellables)
     }
 }

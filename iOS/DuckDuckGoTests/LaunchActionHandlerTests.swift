@@ -51,6 +51,21 @@ final class MockShortcutItemHandler: ShortcutItemHandling {
 
 }
 
+final class MockUserActivityHandler: UserActivityHandling {
+
+    var handleUserActivityCalled = false
+    var lastHandledUserActivity: NSUserActivity?
+    var handleUserActivityResult = true
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        handleUserActivityCalled = true
+        lastHandledUserActivity = userActivity
+        return handleUserActivityResult
+    }
+
+}
+
 final class MockKeyboardPresenter: KeyboardPresenting {
 
     var showKeyboardOnLaunchCalled = false
@@ -63,19 +78,54 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
+final class MockIdleReturnEvaluator: IdleReturnEvaluating {
+    var didReturnAfterIdleResult = false
+    var treatmentForIdleReturnResult: IdleReturnTreatment = .ntp
+    var lastLastBackgroundDate: Date?
+
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool {
+        lastLastBackgroundDate = lastBackgroundDate
+        return didReturnAfterIdleResult
+    }
+
+    func treatmentForIdleReturn() -> IdleReturnTreatment {
+        return treatmentForIdleReturnResult
+    }
+}
+
+@MainActor
+final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
+    var showNewTabPageAfterIdleReturnCalled = false
+    var markLastUsedTabAsResumedAfterIdleCalled = false
+
+    func showNewTabPageAfterIdleReturn() {
+        showNewTabPageAfterIdleReturnCalled = true
+    }
+
+    func markLastUsedTabAsResumedAfterIdle() {
+        markLastUsedTabAsResumedAfterIdleCalled = true
+    }
+}
+
 @MainActor
 final class LaunchActionHandlerTests {
 
     let urlHandler = MockURLHandler()
     let shortcutItemHandler = MockShortcutItemHandler()
+    let userActivityHandler = MockUserActivityHandler()
     let keyboardPresenter = MockKeyboardPresenter()
     let launchSourceManager = MockLaunchSourceManager()
+    let idleReturnEvaluator = MockIdleReturnEvaluator()
+    let idleReturnDelegate = MockIdleReturnLaunchDelegate()
     let pixelFiringMock = PixelFiringMock.self
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
+        userActivityHandler: userActivityHandler,
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
+        idleReturnEvaluator: idleReturnEvaluator,
+        idleReturnDelegate: idleReturnDelegate,
         pixelFiring: pixelFiringMock
     )
 
@@ -117,10 +167,22 @@ final class LaunchActionHandlerTests {
         #expect(shortcutItemHandler.lastHandledShortcutItem == shortcutItem)
     }
 
-    @Test("Show keyboard when LaunchAction is .showKeyboard")
+    @available(iOS 16, *)
+    @Test("Handle user activity when LaunchAction is .handleUserActivity", .timeLimit(.minutes(1)))
+    func handleUserActivity() {
+        let userActivity = NSUserActivity(activityType: "BEBrowserDataExchangeImportActivity")
+        let action = LaunchAction.handleUserActivity(userActivity)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(userActivityHandler.handleUserActivityCalled)
+        #expect(userActivityHandler.lastHandledUserActivity?.activityType == userActivity.activityType)
+    }
+
+    @Test("Show keyboard when LaunchAction is .standardLaunch")
     func showKeyboard() {
         let date = Date()
-        let action = LaunchAction.showKeyboard(date)
+        let action = LaunchAction.standardLaunch(lastBackgroundDate: date, isFirstForeground: false)
 
         launchActionHandler.handleLaunchAction(action)
 
@@ -202,11 +264,11 @@ final class LaunchActionHandlerTests {
         #expect(launchSourceManager.setSourceCallCount == 1)
     }
     
-    @Test("LaunchSourceManager is set to standard when showing keyboard")
+    @Test("LaunchSourceManager is set to standard when standard launch")
     func launchSourceManagerSetToStandardWhenShowingKeyboard() {
         let date = Date()
-        let action = LaunchAction.showKeyboard(date)
-        
+        let action = LaunchAction.standardLaunch(lastBackgroundDate: date, isFirstForeground: false)
+
         launchSourceManager.setSource(.URL)
         #expect(launchSourceManager.source == .URL)
         
@@ -247,7 +309,7 @@ final class LaunchActionHandlerTests {
         #expect(launchSourceManager.source == .shortcut)
         #expect(launchSourceManager.setSourceCallCount == 2)
         
-        let keyboardAction = LaunchAction.showKeyboard(Date())
+        let keyboardAction = LaunchAction.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false)
         launchActionHandler.handleLaunchAction(keyboardAction)
         #expect(launchSourceManager.source == .standard)
         #expect(launchSourceManager.setSourceCallCount == 3)
@@ -259,16 +321,82 @@ final class LaunchActionHandlerTests {
         let testCases: [(LaunchAction, LaunchSource)] = [
             (.openURL(URL(string: "https://example.com")!), .URL),
             (.handleShortcutItem(UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")), .shortcut),
-            (.showKeyboard(Date()), .standard)
+            (.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false), .standard)
         ]
         
         for (index, (action, expectedSource)) in testCases.enumerated() {
             launchActionHandler.handleLaunchAction(action)
-            
+
             #expect(launchSourceManager.source == expectedSource, "Failed at index \(index) for action \(action)")
             #expect(launchSourceManager.lastSetSource == expectedSource, "Failed at index \(index) for action \(action)")
             #expect(launchSourceManager.setSourceCallCount == index + 1, "Failed at index \(index) for action \(action)")
         }
+    }
+
+    // MARK: - Idle return
+
+    @available(iOS 16, *)
+    @Test("When idle return with NTP treatment then showNewTabPageAfterIdleReturn is called and keyboard is not", .timeLimit(.minutes(1)))
+    func whenIdleReturnNTPTreatmentThenIdleReturnHandlerIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+
+        #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+    }
+
+    @available(iOS 16, *)
+    @Test("When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows", .timeLimit(.minutes(1)))
+    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .lut
+        idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+
+        #expect(idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @available(iOS 16, *)
+    @Test("When no idle return then showKeyboardOnLaunch is called and neither delegate is called", .timeLimit(.minutes(1)))
+    func whenNoIdleReturnThenKeyboardIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.didReturnAfterIdleResult = false
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @available(iOS 16, *)
+    @Test("When isFirstForeground is true then keyboard presenter receives nil so keyboard shows on cold start", .timeLimit(.minutes(1)))
+    func whenFirstForegroundThenKeyboardReceivesNil() {
+        let date = Date()
+        idleReturnEvaluator.didReturnAfterIdleResult = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: true))
+
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == nil)
     }
 
 }

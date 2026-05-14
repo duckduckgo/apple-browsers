@@ -98,9 +98,7 @@ extension NSPopover {
         }
 
         /// Hook up the BG View in this spot, since we need the Popover to be attached to an actual Window
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes) {
-            ensureBackgroundViewFrameIsVisible()
-        }
+        ensureBackgroundViewFrameIsVisible()
     }
 
     /// Shows the popover below the specified view with the popover's pin positioned in the middle of the view
@@ -199,6 +197,8 @@ extension NSPopover {
         }
 
         let targetView = ColorView(frame: .zero, backgroundColor: .clear)
+        targetView.translatesAutoresizingMaskIntoConstraints = true
+        targetView.autoresizingMask = [.width, .height]
         storageBackgroundView = targetView
 
         return targetView
@@ -218,6 +218,15 @@ extension NSPopover {
         }
 
         backgroundView.frame = popoverFrameView.bounds
+
+        /// macOS 26 injects `NSGlassView` below the content. By inserting the `backgroundView` below the `contentView` we intend to place our own `ColorView`
+        /// above the Glass NSView (so that we can effectively theme the Popover).
+        ///
+        if let contentView = contentViewController?.view, popoverFrameView.subviews.contains(contentView) {
+            popoverFrameView.addSubview(backgroundView, positioned: .below, relativeTo: contentView)
+            return
+        }
+
         popoverFrameView.addSubview(backgroundView, positioned: .below, relativeTo: nil)
     }
 

@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Er is een apparaatwachtwoord vereist om 'Synchronisatie  en back-up' te kunnen gebruiken.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Herstel automatisch je gegevens op dit apparaat als je de app opnieuw installeert.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Hervat je Sync & Backup-sessie om je bladwijzers, wachtwoorden en meer te herstellen, of ga verder met een nieuwe configuratie.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Hervat synchronisatie en back-up";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Doorgaan met instellen";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Je vorige Sync & Backup-sessie is gereed.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Als je de DuckDuckGo-app opnieuw installeert, vragen we of je je gegevens op dit apparaat wilt herstellen.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Herstellen bij app-herinstallatie";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Herstellen bij app-herinstallatie";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Uit";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Aan";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Je gegevens worden automatisch hersteld als je de app opnieuw installeert. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit.";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Herstellen bij app-herinstallatie";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Terug";
@@ -36,6 +69,9 @@
 
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Hiermee maak je een versleutelde back-up van je bladwijzers en automatisch ingevulde gegevens op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Hiermee maak je een versleutelde back-up van je opgeslagen bladwijzers, wachtwoorden, creditcards en Duck.ai-chats op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "De versleutelingscode wordt alleen op je apparaat opgeslagen. DuckDuckGo heeft er geen toegang toe.";
@@ -98,9 +134,6 @@
 "fetch.favicons.option.title" = "Pictogrammen automatisch downloaden";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Ga naar Instellingen";
-
-/* No comment provided by engineer. */
 "Keep Development" = "In ontwikkelen houden";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -142,6 +175,9 @@
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Je bladwijzers en automatisch ingevulde gegevens worden voorbereid voor synchronisatie. Even geduld.";
 
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Je bladwijzers, wachtwoorden en Duck.ai-chats worden voorbereid voor synchronisatie. Even geduld.";
+
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Er wordt verbinding gemaakt ...";
 
@@ -152,13 +188,22 @@
 "recover.synced.data.link" = "Gesynchroniseerde gegevens herstellen";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Aan de slag";
+"recover.synced.data.sheet.button" = "Gesynchroniseerde gegevens herstellen";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Om je gesynchroniseerde gegevens te herstellen, heb je de herstelcode nodig die je hebt opgeslagen tijdens het instellen van 'Synchronisatie'. Deze code is mogelijk als PDF opgeslagen op het apparaat dat je gebruikte om 'Synchronisatie' in te stellen.";
+"recover.synced.data.sheet.description" = "Je hebt de herstelcode nodig die je kreeg toen je Sync & Backup instelde. Je hebt deze mogelijk als PDF opgeslagen op het apparaat dat je gebruikte.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Gesynchroniseerde gegevens herstellen";
+"recover.synced.data.sheet.title" = "Herstel je gesynchroniseerde gegevens";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Opnieuw verbinden om je bladwijzers, opgeslagen logins en andere apparaten te synchroniseren.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Er wordt verbinding gemaakt ...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Gegevens herstellen";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Apparaat verwijderen";
@@ -169,6 +214,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Apparaat verwijderen?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Herstelcode";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Herstelcode gekopieerd naar klembord";
 
@@ -176,22 +224,22 @@
 "save.recovery.code.copy.code.button" = "Code kopiëren";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Opslaan als PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Als je geen toegang meer hebt tot je apparaten, heb je deze code nodig om je gesynchroniseerde gegevens te herstellen.";
+"save.recovery.code.save.as.pdf.button" = "Downloaden als PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Iedereen met toegang tot deze code kan bij je gesynchroniseerde gegevens. Bewaar de code daarom op een veilige plek.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Herstelcode opslaan";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Bewaar deze code zodat je je gegevens kunt herstellen als je de toegang tot dit apparaat verliest – bewaar ze veilig.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Eenvoudig je gegevens herstellen";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "PDF voor herstel opslaan";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Als je je apparaat verliest, heb je deze code nodig om je gesynchroniseerde gegevens te herstellen.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Gebruik deze code om je gegevens te herstellen als je de toegang tot dit apparaat verliest. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Voer de tekstcode handmatig in";
@@ -239,9 +287,6 @@
 "scan.or.see.code.title" = "QR-code scannen";
 
 /* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Beveilig je apparaat om 'Synchronisatie en back-up' te gebruiken";
-
-/* No comment provided by engineer. */
 "Switch to Production" = "Overschakelen naar productie";
 
 /* Link label for syncing and backing up the device */
@@ -268,6 +313,120 @@
 /* Sync Menu Path */
 "sync.menu.path" = "'Instellingen' > 'Synchronisatie en back-up' > 'Synchroniseren met een ander apparaat'";
 
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Ga naar Instellingen";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Er is een apparaatwachtwoord vereist om 'Synchronisatie  en back-up' te kunnen gebruiken.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Beveilig je apparaat om 'Synchronisatie en back-up' te gebruiken";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Herstellen";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Al ingesteld op een ander apparaat?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Je bladwijzers, automatisch ingevulde gegevens en Duck.ai-chats worden veilig opgeslagen. Zorg er nu voor dat ze gesynchroniseerd blijven met je computer of tablet.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Synchroniseer een ander apparaat";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Niet nu";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Synchroniseer je je data met een ander apparaat?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Laadt pictogrammen van websites die je als bladwijzer hebt opgeslagen. Pictogramdownloads worden weergegeven in je netwerk.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Bladwijzers";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Gebruik dezelfde favoriete bladwijzers op mobiel en desktop.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Er wordt verbinding gemaakt ...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopieer herstelcode";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Synchronisatie uitschakelen en servergegevens verwijderen";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Herstelcode downloaden";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo voor Mac en Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Download de desktopbrowser";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Bewaar je bladwijzers, automatisch ingevulde gegevens en Duck.ai-chats en synchroniseer ze tussen je apparaten met end-to-end-versleuteling.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Sla je bladwijzers en autofillgegevens op en synchroniseer ze tussen je apparaten met end-to-end versleuteling.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Gebruik deze code om je gegevens te herstellen als je de toegang tot dit apparaat verliest. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-app";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Camera op QR richten om te scannen";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Er wordt verbinding gemaakt ...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Houd DuckDuckGo open op beide apparaten.";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Code handmatig invoeren";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Ga naar **Instellingen > Synchronisatie en back-up > Synchroniseren met een ander apparaat** en selecteer **Tekstcode bekijken** in de DuckDuckGo-app op een ander gesynchroniseerd apparaat en plak de code hier om dit apparaat te synchroniseren.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Code verifiëren";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Open de DuckDuckGo-app op je andere apparaat.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Zoek de QR-code in Instellingen > Synchronisatie en back-up > Synchroniseren met een ander apparaat.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Code delen";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "QR-code scannen";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Code weergeven";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Synchroniseer je apparaten";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Scan of plak deze code op je andere apparaat.";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Synchronisatie en back-up";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Herstelcode gebruiken";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synchroniseren met een ander apparaat";
+
 /* Sync & Backup Title */
 "sync.title" = "Synchronisatie en back-up";
 
@@ -287,7 +446,10 @@
 "sync.with.another.device.footer" = "Je gegevens zijn volledig versleuteld en DuckDuckGo heeft geen toegang tot de versleutelingscode.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synchroniseer bladwijzers en gegevens voor automatisch aanvullen veilig tussen je apparaten.";
+"sync.with.another.device.message" = "Synchroniseer bladwijzers en wachtwoorden veilig tussen je apparaten.";
+
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synchroniseer veilig bladwijzers, autofill gegevens en Duck.ai chats tussen je apparaten.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Synchroniseren starten";
@@ -303,6 +465,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "'Synchronisatie en back-up' uitschakelen ...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Bladwijzers, autofill-gegevens en Duck.ai chats worden momenteel gesynchroniseerd op al je apparaten.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronisatie ingeschakeld";

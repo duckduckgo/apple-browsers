@@ -24,6 +24,7 @@ public class ActionsHandler {
     var captchaTransactionId: CaptchaTransactionId?
 
     public let stepType: StepType
+
     private var actions: [Action]
 
     public init(stepType: StepType, actions: [Action]) {
@@ -110,10 +111,11 @@ public class ActionsHandler {
         }
 
         let afterIndex = step.actions.index(after: emailConfirmIndex)
-        var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString, ageRange: nil, dataSource: nil)]
+        var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString)]
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
-        return ActionsHandler(stepType: .optOut, actions: actions)
+        return ActionsHandler(stepType: .optOut,
+                              actions: actions)
     }
 
 }

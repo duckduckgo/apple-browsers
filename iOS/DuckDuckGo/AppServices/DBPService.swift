@@ -27,29 +27,55 @@ import Networking
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
+    init(appDependencies: DependencyProvider,
+         contentBlocking: ContentBlocking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            runTypeProvider: appDependencies.dbpSettings)
+        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
+        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
+            isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
+        )
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
             return
         }
 
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            runTypeProvider: appDependencies.dbpSettings,
-            isAuthV2Enabled: appDependencies.isUsingAuthV2)
-        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
-
         if let pixelKit = PixelKit.shared {
+            let notificationPixelHandler = DataBrokerProtectionNotificationPixelHandler(pixelKit: pixelKit)
+            let notificationService = DefaultDataBrokerProtectionUserNotificationService(
+                authenticationManager: authManager,
+                pixelHandler: notificationPixelHandler
+            )
+            let eventsHandler = BrokerProfileJobEventsHandler(
+                userNotificationService: notificationService,
+                freemiumUserStateManager: freemiumDBPUserStateManager
+            )
+
+            #if DEBUG
+            let isWebViewInspectable = true
+            #else
+            let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
+            #endif
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                userNotificationService: notificationService,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
@@ -59,15 +85,19 @@ final class DBPService: NSObject {
                 },
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(
-                        subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                        subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+                        isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
-                })
-
+                },
+                eventsHandler: eventsHandler,
+                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                isWebViewInspectable: isWebViewInspectable,
+                freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -80,12 +110,16 @@ final class DBPService: NSObject {
     }
 
     func resume() {
-        dbpIOSManager?.appDidBecomeActive()
+        Task { @MainActor in
+            await dbpIOSManager?.appDidBecomeActive()
+        }
     }
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
+    
     private let appDependencies: DependencyProvider
+    private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
@@ -95,7 +129,30 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
     }
 
-    init(appDependencies: DependencyProvider) {
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
+    }
+
+    var isContinuedProcessingFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
+    }
+
+    var isWebViewUserAgentOn: Bool {
+        false
+    }
+
+    var isFreemiumPIREnabled: Bool {
+        freemiumPIRDebugSettings.isEligibilityForced
+            || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+    }
+
+    init(appDependencies: DependencyProvider,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         self.appDependencies = appDependencies
+        self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 }

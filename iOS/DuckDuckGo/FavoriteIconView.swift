@@ -17,8 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DesignResourcesKitIcons
+import SwiftUI
+import UIComponents
 
 protocol FavoritesFaviconLoading {
     func loadFavicon(for favorite: Favorite, size: CGFloat) async -> Favicon?

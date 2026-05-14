@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 import PixelKit
+import PrivacyConfig
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -35,6 +36,8 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    private let featureFlagger: FeatureFlagger?
+
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
 
     var mainViewController: MainViewController {
@@ -48,7 +51,8 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         featureFlagger: FeatureFlagger? = nil) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -68,6 +72,7 @@ final class MainWindowController: NSWindowController {
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
 
         super.init(window: window)
 
@@ -105,35 +110,61 @@ final class MainWindowController: NSWindowController {
     }
 
     private var shouldShowOnboarding: Bool {
+
+        /// Check if we override onboarding flag and show/hide onboarding accordingly
+        /// If onboarding is not overridden, show onboarding only if users have not seen it.
+        func shouldShow() -> Bool {
+            switch LaunchOptionsHandler().onboardingStatus {
+            case .notOverridden:
+                let isOnboardingCompleted = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
+                return !isOnboardingCompleted
+            case let .overridden(.developer(isOnboardingCompleted)):
+                return !isOnboardingCompleted
+            case let .overridden(.uiTests(isOnboardingCompleted)):
+                // Set onboarding settings so state is persisted across app re-launches during UI Tests
+                if isOnboardingCompleted {
+                    OnboardingActionsManager.isOnboardingFinished = true
+                }
+                return !isOnboardingCompleted
+            }
+        }
+
  #if DEBUG
         if AppVersion.runType == .unitTests || AppVersion.runType == .integrationTests {
             return false
         }
-        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-        return !onboardingIsComplete
- #elseif REVIEW
-        if AppVersion.runType == .uiTests {
+
+        return shouldShow()
+ #else
+        if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
+            OnboardingActionsManager.isOnboardingFinished = true
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {
                 Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             }
-            let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-            return !onboardingIsComplete
+
+            return shouldShow()
         }
- #else
-        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-        return !onboardingIsComplete
- #endif
+#endif
     }
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+        startOnboardingIfNeeded()
+    }
 
-        if shouldShowOnboarding {
-            mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
+    private func startOnboardingIfNeeded() {
+        guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return
         }
+
+        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
+        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
+        //
+        selectedTab.startOnboarding()
+        userInteraction(prevented: true)
     }
 
     private func subscribeToResolutionChange() {
@@ -191,21 +222,27 @@ final class MainWindowController: NSWindowController {
         moveTabBarView(toTitlebarView: true)
     }
 
-    private var trafficLightsAlphaCancellable: AnyCancellable?
+    private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        let tabBarViewController = mainViewController.tabBarViewController
+        guard let window, let featureFlagger, featureFlagger.isFeatureOn(.semaphoreAlwaysVisible) else {
+            return
+        }
 
-        // slide tabs to the left in full screen
-        trafficLightsAlphaCancellable = window?.standardWindowButton(.closeButton)?
-            .publisher(for: \.alphaValue)
-            .map { alphaValue in
-                if #available(macOS 26, *) {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue * alphaValue
-                } else {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue
+        let semaphoreButtonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
+        let semaphoreButtons = semaphoreButtonTypes.compactMap { type in
+            window.standardWindowButton(type)
+        }
+
+        for button in semaphoreButtons {
+            button
+                .publisher(for: \.alphaValue)
+                .sink { [weak button] alphaValue in
+                    if let button, alphaValue != .activeViewAlpha {
+                        button.alphaValue = .activeViewAlpha
+                    }
                 }
-            }
-            .assign(to: \.constant, onWeaklyHeld: tabBarViewController.pinnedTabsViewLeadingConstraint)
+                .store(in: &trafficLightsAlphaCancellables)
+        }
     }
 
     private var burningDataCancellable: AnyCancellable?
@@ -221,25 +258,18 @@ final class MainWindowController: NSWindowController {
     }
 
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        mainViewController.tabCollectionViewModel.changesEnabled = !prevented
-        mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        mainViewController.userInteraction(prevented: prevented)
 
-        mainViewController.tabBarViewController.fireButton.isEnabled = !prevented
-        mainViewController.tabBarViewController.isInteractionPrevented = prevented
-        mainViewController.navigationBarViewController.controlsForUserPrevention.forEach { $0?.isEnabled = !prevented }
-        mainViewController.bookmarksBarViewController.userInteraction(prevented: prevented)
-
-        NSApplication.shared.mainMenuTyped.autoupdatingMenusForUserPrevention.forEach { $0.autoenablesItems = !prevented }
         NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
 
         guard forBurning else { return }
         if prevented {
-             window?.styleMask.remove(.closable)
-             mainViewController.view.makeMeFirstResponder()
-         } else {
-             window?.styleMask.update(with: .closable)
-             mainViewController.adjustFirstResponder()
-         }
+            window?.styleMask.remove(.closable)
+            mainViewController.view.makeMeFirstResponder()
+        } else {
+            window?.styleMask.update(with: .closable)
+            mainViewController.adjustFirstResponder()
+        }
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {
@@ -275,10 +305,12 @@ final class MainWindowController: NSWindowController {
 
         tabBarViewController.view.frame = newParentView.bounds
         tabBarViewController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let tabBarPaddingTop = theme.addressBarStyleProvider.tabBarBackgroundTopPadding
         let constraints = tabBarViewController.view.addConstraints(to: newParentView, [
             .leading: .leading(),
             .trailing: .trailing(),
-            .top: .top()
+            .top: .top(const: tabBarPaddingTop)
         ])
         NSLayoutConstraint.activate(constraints)
     }
@@ -368,10 +400,6 @@ extension MainWindowController: NSWindowDelegate {
         }
 
         fullscreenController.resetFullscreenExitFlag()
-    }
-
-    func windowDidEndLiveResize(_ notification: Notification) {
-        mainViewController.windowDidEndLiveResize()
     }
 
     private func hideTabBarAndBookmarksBar() {
@@ -479,7 +507,7 @@ extension MainWindowController: NSWindowDelegate {
         }
 #if DEBUG
         // Check that the window controller deallocates after close
-        self.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        self.ensureObjectDeallocated(after: 4.0, do: .interrupt)
 #endif
     }
 
@@ -558,14 +586,6 @@ fileprivate extension MainMenu {
             preferencesMenuItem
         ]
     }
-
-    var autoupdatingMenusForUserPrevention: [NSMenu] {
-        return [
-            preferencesMenuItem.menu,
-            manageBookmarksMenuItem.menu
-        ].compactMap { $0 }
-    }
-
 }
 
 extension NSWindow {

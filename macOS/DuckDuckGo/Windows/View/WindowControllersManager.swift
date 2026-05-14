@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import History
 import os.log
-import AIChat
+import PrivacyConfig
 
 @MainActor
 protocol WindowControllersManagerProtocol: AnyObject {
@@ -57,7 +58,7 @@ protocol WindowControllersManagerProtocol: AnyObject {
                        isMaximized: Bool,
                        isFullscreen: Bool) -> NSWindow?
 
-    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, with: NSEvent?)
     func showTab(with content: Tab.TabContent)
     func openTab(_ tab: Tab, afterParentTab parentTab: Tab, selected: Bool)
 }
@@ -106,11 +107,13 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         pinningManager: PinningManager) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
+        self.pinningManager = pinningManager
     }
 
     /**
@@ -122,10 +125,16 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
+    /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
+    /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
+    private(set) lazy var voiceSessionTracker: VoiceSessionTracker = VoiceSessionTracker(windowControllersManager: self)
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
+    private let pinningManager: PinningManager
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
@@ -215,20 +224,20 @@ extension WindowControllersManager {
     }
 
     /// Opens a bookmark in a tab, respecting the current modifier keys when deciding where to open the bookmark's URL.
-    func open(_ bookmark: Bookmark, with event: NSEvent?) {
+    func open(_ bookmark: Bookmark, target window: NSWindow? = nil, with event: NSEvent?) {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: window, with: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
-    func open(_ historyEntry: HistoryEntry, with event: NSEvent?) {
-        open(historyEntry.url, source: .historyEntry, target: nil, event: event)
+    func open(_ historyEntry: HistoryEntry, target window: NSWindow? = nil, with event: NSEvent?) {
+        open(historyEntry.url, source: .historyEntry, target: window, with: event)
     }
 
     /// Helper method for opening URL with an event respecting its Key Modifiers
-    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow? = nil, with event: NSEvent? = nil) {
         // get clicked window or last key window if menu item selected
         let eventWindowController = mainWindowController(for: window ?? event?.window)
         let targetWindowController = eventWindowController ?? lastKeyMainWindowController
@@ -236,16 +245,17 @@ extension WindowControllersManager {
 
         let isPinnedTab = tabCollectionViewModel?.selectedTab?.isPinned ?? false
         // mainWindowController(for: popupWindow) would return nil
-        let isPopUpWindow = eventWindowController == nil || (targetWindowController?.window?.isPopUpWindow ?? false)
+        let canOpenLinkInCurrentWindow = eventWindowController != nil && !(targetWindowController?.window?.isPopUpWindow ?? false)
 
         // For pinned tabs or popup windows, force new tab by disallowing current tab
-        let canOpenLinkInCurrentTab = !(isPinnedTab || isPopUpWindow)
+        let canOpenLinkInCurrentTab = canOpenLinkInCurrentWindow && !isPinnedTab
         let switchToNewTabWhenOpened = shouldSwitchToNewTabWhenOpened
 
         let behavior = LinkOpenBehavior(
             event: event,
             switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened,
-            canOpenLinkInCurrentTab: canOpenLinkInCurrentTab
+            canOpenLinkInCurrentTab: canOpenLinkInCurrentTab,
+            shouldSelectNewTab: !canOpenLinkInCurrentTab // when user intent was to open in current context (no key modifiers) – always select the new tab.
         )
 
         open(url, with: behavior, source: source, target: targetWindowController)
@@ -253,21 +263,35 @@ extension WindowControllersManager {
 
     func open(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, setBurner: Bool? = nil, source: Tab.TabContent.URLSource, target: MainWindowController?) {
         let windowController = target ?? lastKeyMainWindowController
-        switch linkOpenBehavior {
-        case .currentTab:
-            if let windowController, windowController.window?.isPopUpWindow == false {
-                show(url: url, in: windowController, source: source, newTab: false, selected: true)
-            } else {
-                show(url: url, source: source)
-            }
-        case .newTab(let selected):
-            guard windowController?.window?.isPopUpWindow == false,
-                  let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
+        switch (linkOpenBehavior, windowController) {
+        case (.currentTab, let .some(windowController)) where windowController.window?.isPopUpWindow == false:
+            // Open in current tab in regular window
+            show(url: url, in: windowController, source: source, newTab: false, selected: true)
+
+        case (.newTab(let selected), let .some(windowController)) where windowController.window?.isPopUpWindow == false:
+            // Open in new tab in regular window
+            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: source), selected: selected)
             if selected {
-                windowController?.window?.makeKeyAndOrderFront(nil)
+                windowController.window?.makeKeyAndOrderFront(nil)
             }
-        case .newWindow(let selected):
+
+        case (.newTab, _), (.currentTab, _): // windowController == nil || isPopUpWindow == true
+            // Open in new tab in last active regular window
+            // when called from popup window or there is no windows open
+            show(url: url, source: source, newTab: true, selected: linkOpenBehavior.shouldSelectNewTab)
+
+            // for `selected == false` order the window below the popup window without activating it.
+            if !linkOpenBehavior.shouldSelectNewTab,
+               target !== lastKeyMainWindowController,
+               let lastKeyWindow = lastKeyMainWindowController?.window,
+               let popupWindow = target?.window {
+                lastKeyWindow.order(.below, relativeTo: popupWindow.windowNumber)
+                popupWindow.makeKey()
+            }
+
+        case (.newWindow(let selected), _):
+            // Open in new window
             WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner, showWindow: selected)
         }
     }
@@ -371,16 +395,18 @@ extension WindowControllersManager {
 
     private func show(url: URL?, in windowController: MainWindowController, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool) {
         let viewController = windowController.mainViewController
-        windowController.window?.makeKeyAndOrderFront(self)
+        if selected || windowController !== lastKeyMainWindowController /* only activate `selected == false` when the target window is not last known key window */ {
+            windowController.window?.makeKeyAndOrderFront(self)
+        }
 
         let tabCollectionViewModel = viewController.tabCollectionViewModel
         let tabCollection = tabCollectionViewModel.tabCollection
 
         if tabCollection.tabs.count == 1,
-           let firstTab = tabCollection.tabs.first,
-           case .newtab = firstTab.content,
+           case .newtab = tabCollection.tabs.first?.content,
            !newTab {
-            firstTab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
+            let tab = tabCollectionViewModel.materialize(at: .unpinned(0))
+            tab?.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else if let tab = tabCollectionViewModel.selectedTabViewModel?.tab, !newTab {
             tab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else {
@@ -423,7 +449,7 @@ extension WindowControllersManager {
 
     /// Returns the window controller containing the given tab.
     private func windowController(containing tab: Tab) -> MainWindowController? {
-        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabs.contains(tab) })
+        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab) })
     }
 
     /// Returns the window controller for opening a tab from the given originating window controller and opener tab.
@@ -461,7 +487,7 @@ extension WindowControllersManager {
     /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
-            showTab(with: .url(.internalFeedbackForm, source: .ui))
+            Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
         } else {
             FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
         }
@@ -480,7 +506,7 @@ extension WindowControllersManager {
         if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
-            let tabCollection = TabCollection(tabs: [])
+            let tabCollection = TabCollection()
             let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
             let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
             window?.beginSheet(feedbackFormWindow)
@@ -489,7 +515,7 @@ extension WindowControllersManager {
 
     func showMainWindow() {
         guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
-        let tabCollection = TabCollection(tabs: [])
+        let tabCollection = TabCollection()
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
     }
@@ -556,7 +582,7 @@ extension WindowControllersManagerProtocol {
 
     var allTabViewModels: [TabViewModel] {
         return allTabCollectionViewModels.flatMap {
-            $0.tabViewModels.values
+            $0.tabViewModels.values.compactMap { $0 as? TabViewModel }
         }
     }
 
@@ -584,11 +610,46 @@ extension WindowControllersManagerProtocol {
 
     func windowController(for tab: Tab) -> MainWindowController? {
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.contains(tab)
+            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
         })
     }
 
+    // MARK: - Web Notifications Support
+
+    /// Finds a tab by its UUID across all windows.
+    /// - Parameter uuid: The tab's UUID.
+    /// - Returns: The tab if found, nil otherwise.
+    func findTab(byUUID uuid: String) -> Tab? {
+        for windowController in mainWindowControllers {
+            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+            if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
+                return tabCollectionViewModel.tabViewModel(at: index)?.tab
+            }
+        }
+        return nil
+    }
+
+    /// Focuses the window containing the given tab and selects the tab.
+    /// - Parameter tab: The tab to focus.
+    func focusTab(_ tab: Tab) {
+        for windowController in mainWindowControllers {
+            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+            if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
+                windowController.window?.makeKeyAndOrderFront(nil)
+                tabCollectionViewModel.select(at: index)
+                return
+            }
+        }
+    }
+
+    /// Focuses the most recently active browser window.
+    func focusBrowser() {
+        lastKeyMainWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
 }
+
+extension WindowControllersManager: WebNotificationTabFinding {}
 
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
@@ -598,7 +659,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportFlowLauncher().launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
     @MainActor
@@ -620,5 +681,17 @@ extension WindowControllersManager: OnboardingNavigating {
         guard let mainVC = lastKeyMainWindowController?.mainViewController else { return }
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue = ""
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
+    }
+}
+
+extension WindowControllersManager: TabAndWindowCountProviding {
+    var tabCount: Int {
+        mainWindowControllers.reduce(0) { total, controller in
+            total + controller.mainViewController.tabCollectionViewModel.allTabsCount
+        }
+    }
+
+    var windowCount: Int {
+        mainWindowControllers.count
     }
 }

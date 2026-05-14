@@ -1,0 +1,17 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    "m_mac_vpn_access_revoked": {
+        "description": "The VPN has learnt access to PPro has been revoked for the account",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_vpn_access_unmanaged_error": {
+        "description": "The subscription library has communicated to the VPN there has been a recoverable error when trying to retrieve the token.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    }
+}

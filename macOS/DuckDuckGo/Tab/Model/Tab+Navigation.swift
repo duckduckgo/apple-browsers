@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
@@ -25,27 +26,15 @@ import WebKit
 
 extension Tab: NavigationResponder {
 
-    // "protected" navigationDelegate
-    private var navigationDelegate: DistributedNavigationDelegate! {
-        self.value(forKey: Tab.objcNavigationDelegateKeyPath) as? DistributedNavigationDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
-        get {
-            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
-        }
-        set {
-            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath)
-        }
-    }
-
-    func setupNavigationDelegate() {
+    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate,
+                                 newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?,
+                                 args: TabExtensionsBuilderArguments) {
         navigationDelegate.setResponders(
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
-            .weak(nullable: self.navigationHotkeyHandler),
+            // Pop-ups and Navigation Key Modifiers handling
+            .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
@@ -80,6 +69,9 @@ extension Tab: NavigationResponder {
 
             .struct(redirectNavigationResponder),
 
+            // set autoplay policy based on user preferences
+            .weak(nullable: self.autoplayPolicy),
+
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
             // update click-to-load state
@@ -97,24 +89,23 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.tabSnapshots),
 
             // Release Notes
-            .weak(nullable: self.releaseNotes),
+            .strong(nullable: makeReleaseNotesNavigationResponder(args: args)),
 
             .weak(nullable: self.networkProtection),
 
             // Internal Feedback Form
             .weak(nullable: self.internalFeedbackForm),
 
-            // New Tab Page
-            .weak(nullable: self.newTabPage),
+            // Tab Suspension
+            .weak(nullable: self.tabSuspension),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
-            // !! don‘t add Tab Extensions here !!
+            // !! don't add Tab Extensions after this line !!
         )
 
-        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaker?](arrayLiteral:
+        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaking?](arrayLiteral:
             self.contextMenuManager,
-            self.navigationHotkeyHandler,
             self.duckPlayer
         ).compactMap { $0 }
 
@@ -125,10 +116,23 @@ extension Tab: NavigationResponder {
     }
 
     var redirectNavigationResponder: RedirectNavigationResponder {
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+        let subscriptionManager = Application.appDelegate.subscriptionManager
         let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)
+    }
+
+    private func makeReleaseNotesNavigationResponder(args: TabExtensionsBuilderArguments) -> (any NavigationResponder & AnyObject)? {
+        guard let updateController = args.updateController as? any SparkleUpdateControlling else { return nil }
+
+        let scriptsPublisher = args.userScriptsPublisher
+            .compactMap { $0 as (any ReleaseNotesUserScriptProvider)? }
+            .eraseToAnyPublisher()
+        return updateController.makeReleaseNotesNavigationResponder(
+            releaseNotesURL: .releaseNotes,
+            scriptsPublisher: scriptsPublisher,
+            webViewPublisher: args.webViewFuture
+        )
     }
 
 }

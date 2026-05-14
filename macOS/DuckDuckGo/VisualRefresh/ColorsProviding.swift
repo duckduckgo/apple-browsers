@@ -30,6 +30,9 @@ protocol ColorsProviding {
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
     var buttonMouseDownColor: NSColor { get }
+    var buttonMouseDownPressedColor: NSColor { get }
+    var separatorColor: NSColor { get }
+    var separatorActiveColor: NSColor { get }
     var fillButtonBackgroundColor: NSColor { get }
     var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
@@ -45,14 +48,10 @@ protocol ColorsProviding {
     var suggestionsBackgroundColor: NSColor { get }
     var bannerBackgroundColor: NSColor { get }
     var popoverBackgroundColor: NSColor { get }
-
-    /// New Tab Page
-    var ntpLightBackgroundColor: String { get }
-    var ntpDarkBackgroundColor: String { get }
 }
 
 final class NewColorsProviding: ColorsProviding {
-    private let palette: ColorPalette
+    private let palette: ThemeColors
 
     var navigationBackgroundColor: NSColor { palette.surfacePrimary }
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
@@ -67,6 +66,9 @@ final class NewColorsProviding: ColorsProviding {
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
     var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
+    var buttonMouseDownPressedColor: NSColor { palette.controlsFillTertiary }
+    var separatorColor: NSColor { palette.surfaceDecorationPrimary }
+    var separatorActiveColor: NSColor { palette.surfaceDecorationSecondary }
     var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
     var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
@@ -79,10 +81,8 @@ final class NewColorsProviding: ColorsProviding {
     var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
-    var ntpLightBackgroundColor: String { "#FAFAFA" }
-    var ntpDarkBackgroundColor: String { "#1C1C1C" }
 
-    init(palette: ColorPalette) {
+    init(palette: ThemeColors) {
         self.palette = palette
     }
 }

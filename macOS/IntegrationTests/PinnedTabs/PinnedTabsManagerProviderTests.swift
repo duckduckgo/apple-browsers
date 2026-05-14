@@ -29,12 +29,13 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
     @MainActor
     override func setUp() {
         tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
-        provider = PinnedTabsManagerProvider(sharedPinedTabsManager: Application.appDelegate.pinnedTabsManager)
+        provider = PinnedTabsManagerProvider(sharedPinnedTabsManager: Application.appDelegate.pinnedTabsManager)
         provider.tabsPreferences = tabsPreferences
         provider.windowControllersManager = Application.appDelegate.windowControllersManager
         clearSharedPinnedTabs()
     }
 
+    @MainActor
     private func clearSharedPinnedTabs() {
         while !Application.appDelegate.pinnedTabsManager.isEmpty {
             _=Application.appDelegate.pinnedTabsManager.unpinTab(at: 0, published: false, firePixel: false)

@@ -19,6 +19,7 @@
 
 import UIKit
 import PrivacyDashboard
+import AIChat
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -29,6 +30,9 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
+
+    /// Access to iPad-specific expandable search area features.
+    var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
 
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
@@ -56,17 +60,64 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
+    var isExpandedPhone: Bool = false
+
     internal var textFieldTapped = true
+    internal var textEntryMode: TextEntryMode?
+    var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
     var isUsingUnifiedPredictor: Bool {
         dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
     }
+
     var dismissButtonAnimator: UIViewPropertyAnimator?
-    private var privacyIconAndTrackersAnimator = PrivacyIconAndTrackersAnimator()
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
+
+    // Animation timing constants
+    private enum AnimationTiming {
+        static let pageLoadNotificationDelay: TimeInterval = 0    // Delay after page load before processing notifications
+        static let highPriorityDelay: TimeInterval = 0.0          // Delay for high-priority notifications (trackers)
+        static let lowPriorityDelay: TimeInterval = 1.2           // Delay for low-priority notifications (cookies)
+        static let betweenAnimationsDelay: TimeInterval = 0.5     // Delay between consecutive animations
+    }
+
+    // Animation queue state
+    private enum AnimationState {
+        case idle, animating
+    }
+
+    private enum AnimationPriority: Int {
+        case high = 0  // Higher priority (sorted first)
+        case low = 1   // Lower priority (sorted last)
+
+        var delay: TimeInterval {
+            switch self {
+            case .high: return AnimationTiming.highPriorityDelay
+            case .low: return AnimationTiming.lowPriorityDelay
+            }
+        }
+    }
+
+    private struct QueuedAnimation {
+        let priority: AnimationPriority
+        let block: () -> Void
+    }
+
+    // Thread-safe animation state (all access must be on main actor)
+    @MainActor
+    private var animationState: AnimationState = .idle
+    @MainActor
+    private var animationQueue: [QueuedAnimation] = []
+    @MainActor
+    private var isPageLoading: Bool = false
+    @MainActor
+    private var pendingNotifications: [(priority: AnimationPriority, block: () -> Void)] = []
+
+    // Work item for cancellable delayed notification processing
+    private var pendingNotificationWorkItem: DispatchWorkItem?
 
     // MARK: - Constraints
 
@@ -122,14 +173,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
+        expandableBarView?.externalRefreshButtonView.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
-        let theme = ThemeManager.shared.currentTheme
-
         textField.delegate = self
-        textField.attributedPlaceholder = NSAttributedString(string: UserText.searchDuckDuckGo,
-                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
+        updateTextFieldPlaceholderForSelectedMode()
 
         textField.textDragInteraction?.isEnabled = false
 
@@ -175,17 +224,20 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onMenuButtonPressed = { [weak self] in
             self?.onMenuButtonPressed()
         }
+        barView.onMenuButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
+        }
         barView.onTrackersViewPressed = { [weak self] in
             self?.onTrackersViewPressed()
         }
         barView.onSettingsButtonPressed = { [weak self] in
             self?.onSettingsButtonPressed()
         }
+        barView.onSettingsButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
+        }
         barView.onCancelPressed = { [weak self] in
             self?.onCancelPressed()
-        }
-        barView.onRefreshPressed = { [weak self] in
-            self?.onRefreshPressed()
         }
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
@@ -202,6 +254,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onBookmarksPressed = { [weak self] in
             self?.onBookmarksPressed()
         }
+        barView.onPasswordsPressed = { [weak self] in
+            self?.onPasswordsPressed()
+        }
         barView.onAIChatPressed = { [weak self] in
             self?.onAIChatPressed()
         }
@@ -211,11 +266,21 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatLeftButtonPressed = { [weak self] in
             self?.onAIChatLeftButtonPressed()
         }
-        barView.onAIChatRightButtonPressed = { [weak self] in
-            self?.onAIChatRightButtonPressed()
-        }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
+        }
+        expandableBarView?.onSearchModePressed = { [weak self] in
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.search)
+            self.omniDelegate?.onTextEntryModeDidChange(.search)
+        }
+        expandableBarView?.onAIChatModePressed = { [weak self] in
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.aiChat)
+            self.omniDelegate?.onTextEntryModeDidChange(.aiChat)
+        }
+        expandableBarView?.onAIChatSendPressed = { [weak self] in
+            self?.onAIChatSendPressed()
         }
     }
 
@@ -259,11 +324,32 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startLoading() {
+        cancelAllAnimations()
+
+        pendingNotificationWorkItem?.cancel()
+        pendingNotificationWorkItem = nil
+
+        isPageLoading = true
+        pendingNotifications.removeAll()
         refreshState(state.withLoading())
     }
 
     func stopLoading() {
         refreshState(state.withoutLoading())
+
+        // Cancel any existing pending work before scheduling new one
+        pendingNotificationWorkItem?.cancel()
+
+        // Wait briefly after page load completes before processing notifications
+        // This allows tracker and cookie notifications to arrive before animation starts
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.isPageLoading = false
+            self.processPendingNotifications()
+        }
+
+        pendingNotificationWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.pageLoadNotificationDelay, execute: workItem)
     }
 
     func cancel() {
@@ -274,11 +360,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         text = query
         textDidChange()
     }
-
-    func beginEditing(animated: Bool) {
+    
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         textFieldTapped = false
+        self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
+            self.textEntryMode = nil
         }
 
         textField.becomeFirstResponder()
@@ -301,6 +389,18 @@ class OmniBarViewController: UIViewController, OmniBar {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing || forceFullURL)
         }
     }
+    
+    func refreshFireMode(fireMode: Bool) {
+        barView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) {
+        self.isExpandedPhone = isExpandedPhone
+        barView.configureForSwipeTemplate(
+            mode: isExpandedPhone ? .expandedPhone : .compact,
+            tabCount: tabCount
+        )
+    }
 
     func enterPhoneState() {
         refreshState(state.onEnterPhoneState)
@@ -322,9 +422,20 @@ class OmniBarViewController: UIViewController, OmniBar {
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
         let type: OmniBarNotificationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
 
-        enqueueAnimationIfNeeded { [weak self] in
+        enqueueAnimationIfNeeded(priority: .low) { [weak self] in
             guard let self else { return }
-            self.notificationAnimator.showNotification(type, in: barView, viewController: self)
+            self.notificationAnimator.showNotification(type, in: barView, viewController: self) { [weak self] in
+                self?.completeCurrentAnimation()
+            }
+        }
+    }
+
+    func showYouTubeAdBlockNotification() {
+        enqueueAnimationIfNeeded(priority: .low) { [weak self] in
+            guard let self else { return }
+            self.notificationAnimator.showNotification(.youTubeAdBlockOn, in: barView, viewController: self) { [weak self] in
+                self?.completeCurrentAnimation()
+            }
         }
     }
 
@@ -332,6 +443,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         enqueueAnimationIfNeeded { [weak self] in
             guard let self else { return }
             self.privacyIconContextualOnboardingAnimator.showPrivacyIconAnimation(in: barView)
+            // Onboarding animation completes immediately
+            self.completeCurrentAnimation()
         }
     }
 
@@ -340,29 +453,73 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool) {
-        guard state.allowsTrackersAnimation, !barView.privacyInfoContainer.isAnimationPlaying else { return }
+        guard state.allowsTrackersAnimation else { return }
 
-        privacyIconAndTrackersAnimator.configure(barView.privacyInfoContainer, with: privacyInfo)
+        let trackerCount = privacyInfo.trackerInfo.trackersBlocked.count
+        let privacyIcon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
 
-        if TrackerAnimationLogic.shouldAnimateTrackers(for: privacyInfo.trackerInfo) {
-            if forDaxDialog {
-                privacyIconAndTrackersAnimator.startAnimationForDaxDialog(in: barView, with: privacyInfo)
-            } else {
-                privacyIconAndTrackersAnimator.startAnimating(in: barView, with: privacyInfo)
+        // If tracker animation is disabled, just show the shield without animation
+        guard dependencies.appSettings.showTrackersBlockedAnimation else {
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+            return
+        }
+
+        // Don't show notification on SERP pages (DuckDuckGo search)
+        guard !privacyInfo.url.isDuckDuckGoSearch else {
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+            return
+        }
+
+        // Show tracker count notification and animation if any trackers were blocked
+        if trackerCount > 0 {
+            enqueueAnimationIfNeeded(priority: .high) { [weak self] in
+                guard let self else { return }
+
+                // Show notification, then play privacy icon animation
+                self.notificationAnimator.showNotification(.trackersBlocked(count: trackerCount), in: barView, viewController: self) { [weak self] in
+                    guard let self else { return }
+
+                    // After notification completes, animate the privacy icon
+                    self.barView.privacyInfoContainer.privacyIcon.prepareForAnimation(for: privacyIcon)
+                    let shieldAnimation = self.barView.privacyInfoContainer.privacyIcon.shieldAnimationView(for: privacyIcon)
+
+                    // Play from start to just before the end to avoid any end-frame blink
+                    if let animation = shieldAnimation?.animation {
+                        let endFrame = animation.endFrame - 2  // Stop 2 frames before the end
+                        shieldAnimation?.play(fromFrame: animation.startFrame, toFrame: endFrame, loopMode: .playOnce) { [weak self] completed in
+                            guard let self, completed else { return }
+
+                            // Update to final icon state after animation completes
+                            self.barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+
+                            // Animation complete, process next in queue
+                            self.completeCurrentAnimation()
+                        }
+                    } else {
+                        // Fallback if animation not loaded
+                        self.barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+                        self.completeCurrentAnimation()
+                    }
+                }
             }
         } else {
-            privacyIconAndTrackersAnimator.completeForNoAnimation()
+            // No trackers blocked, just update icon without animation
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
         }
     }
 
     func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
         guard let privacyInfo = privacyInfo,
-              !barView.privacyInfoContainer.isAnimationPlaying,
-              !privacyIconAndTrackersAnimator.isAnimatingForDaxDialog
+              !barView.privacyInfoContainer.isAnimationPlaying
         else { return }
 
         if privacyInfo.url.isDuckPlayer {
             showCustomIcon(icon: .duckPlayer)
+            return
+        }
+
+        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+            showCustomIcon(icon: .duckAI)
             return
         }
 
@@ -379,13 +536,22 @@ class OmniBarViewController: UIViewController, OmniBar {
     
     func setDaxEasterEggLogoURL(_ logoURL: String?) {
         let url = logoURL.flatMap { URL(string: $0) }
-        
-        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url)
-        
+
+        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url) {
+            if url != nil {
+                DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
+            }
+        }
+
         // Set up delegate if not already done
         if barView.privacyInfoContainer.delegate == nil {
             barView.privacyInfoContainer.delegate = self
         }
+    }
+
+    func completeAnimationForDaxDialog() {
+        // When Dax Dialog appears, cancel any running animations and clear the queue
+        cancelAllAnimations()
     }
 
     func refreshCustomizableButton() {
@@ -406,22 +572,94 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func cancelAllAnimations() {
-        privacyIconAndTrackersAnimator.cancelAnimations(in: barView)
+        // Cancel pending notification work item to prevent delayed processing
+        pendingNotificationWorkItem?.cancel()
+        pendingNotificationWorkItem = nil
+
+        // Clear pending notifications
+        pendingNotifications.removeAll()
+
+        // Cancel running animations
         notificationAnimator.cancelAnimations(in: barView)
         privacyIconContextualOnboardingAnimator.dismissPrivacyIconAnimation(barView.privacyInfoContainer.privacyIcon)
-    }
 
-    func completeAnimationForDaxDialog() {
-        privacyIconAndTrackersAnimator.completeAnimationForDaxDialog(in: barView)
+        // Clear animation queue
+        animationState = .idle
+        animationQueue.removeAll()
     }
 
     // MARK: - Private/animation
 
-    private func enqueueAnimationIfNeeded(_ block: @escaping () -> Void) {
-        if privacyIconAndTrackersAnimator.state == .completed {
-            block()
-        } else {
-            privacyIconAndTrackersAnimator.onAnimationCompletion(block)
+    private func enqueueAnimationIfNeeded(priority: AnimationPriority = .high, _ block: @escaping () -> Void) {
+        // If page is still loading, store notification to be processed after page completes
+        if isPageLoading {
+            pendingNotifications.append((priority: priority, block: block))
+            return
+        }
+
+        // Apply delay BEFORE enqueueing based on priority
+        // This ensures high-priority items (0.3s) enter queue before low-priority items (1.2s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + priority.delay) { [weak self] in
+            guard let self else { return }
+
+            // CRITICAL: Check animation state after delay to prevent race condition
+            // Multiple delayed blocks can fire simultaneously, but only the first should
+            // trigger processNextAnimation() if we're idle
+            let shouldProcessImmediately = self.animationState == .idle && self.animationQueue.isEmpty
+
+            let queuedAnimation = QueuedAnimation(priority: priority, block: block)
+            self.animationQueue.append(queuedAnimation)
+
+            // Sort queue by priority (high priority first)
+            self.animationQueue.sort { $0.priority.rawValue < $1.priority.rawValue }
+
+            // Only process if we were idle before adding this item
+            if shouldProcessImmediately {
+                self.processNextAnimation()
+            }
+        }
+    }
+
+    private func processPendingNotifications() {
+        guard !pendingNotifications.isEmpty else { return }
+
+        // Sort by priority (high priority first)
+        let sortedNotifications = pendingNotifications.sorted { $0.priority.rawValue < $1.priority.rawValue }
+        pendingNotifications.removeAll()
+
+        // Add all notifications directly to queue without priority delays
+        // since we've already sorted them by priority
+        for notification in sortedNotifications {
+            let queuedAnimation = QueuedAnimation(priority: notification.priority, block: notification.block)
+            animationQueue.append(queuedAnimation)
+        }
+
+        // Re-sort entire queue to maintain priority guarantee
+        // This ensures newly added notifications are properly ordered with existing items
+        animationQueue.sort { $0.priority.rawValue < $1.priority.rawValue }
+
+        // Start processing if we're idle
+        if animationState == .idle {
+            processNextAnimation()
+        }
+    }
+
+    private func processNextAnimation() {
+        guard animationState == .idle, !animationQueue.isEmpty else { return }
+
+        animationState = .animating
+        let nextQueuedAnimation = animationQueue.removeFirst()
+
+        // Execute immediately - delay was already applied before adding to queue
+        nextQueuedAnimation.block()
+    }
+
+    private func completeCurrentAnimation() {
+        animationState = .idle
+
+        // Wait before processing next animation to ensure smooth transitions
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.betweenAnimationsDelay) { [weak self] in
+            self?.processNextAnimation()
         }
     }
 
@@ -439,7 +677,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         cancelAllAnimations()
     }
 
-    private func refreshState(_ newState: any OmniBarState) {
+    func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
         if state.requiresUpdate(transitioningInto: newState) {
             Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
@@ -449,6 +687,16 @@ class OmniBarViewController: UIViewController, OmniBar {
                     clear()
                 }
                 cancelAllAnimations()
+
+                let isExpanded = expandableBarView?.isSearchAreaExpanded == true
+                let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
+                if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
+                    // Note: selectedTextEntryMode is NOT reset here. It is owned by
+                    // refreshOmniBar (per-tab value) and must survive state transitions
+                    // like cancel/stopBrowsing — otherwise performCancel (0.3s after tab
+                    // switch) would overwrite the per-tab mode with the global default.
+                    updateTextFieldPlaceholderForSelectedMode()
+                }
             }
             state = newState
         }
@@ -465,22 +713,55 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         barView.isPrivacyInfoContainerHidden = !state.showPrivacyIcon
         barView.isClearButtonHidden = !state.showClear
-        barView.isMenuButtonHidden = !state.showMenu
+        barView.isMenuButtonHidden = isExpandedPhone ? false : !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isExpandedPhone)
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = !state.showBackButton
-        barView.isForwardButtonHidden = !state.showForwardButton
-        barView.isBookmarksButtonHidden = !state.showBookmarksButton
+        barView.isBackButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showForwardButton
+        let bookmarksHidden = isExpandedPhone ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isExpandedPhone, hidden: bookmarksHidden)
+        barView.isPasswordsButtonHidden = isExpandedPhone ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
+        barView.isFireButtonHidden = !isExpandedPhone
+        barView.isTabSwitcherButtonHidden = !isExpandedPhone
 
-        applyCustomization()
+        if let expandable = expandableBarView {
+            expandable.isExternalRefreshButtonHidden = isExpandedPhone || !state.showRefreshOutsideAddressBar
+            expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
+            expandable.selectedModeToggleState = selectedTextEntryMode
 
-        let shouldShowAIChat = state.showAIChatFullModeBranding
-        barView.isFullAIChatHidden = !shouldShowAIChat
+            // Use isFirstResponder, not isEditing — isEditing stays true during
+            // transitions and would keep the search area expanded after tab switches.
+            let isAddressBarSelected = textField.isFirstResponder || expandable.aiChatTextView.isFirstResponder
+            let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
+
+            // Ensure expanded state does not persist when nothing is focused (e.g. tab switches).
+            if !isAddressBarSelected && expandable.isSearchAreaExpanded {
+                expandable.setSearchAreaExpanded(false, animated: false)
+            }
+
+            expandable.isModeToggleHidden = !shouldShowModeToggle
+            if shouldShowModeToggle {
+                barView.isAIChatButtonHidden = true
+            }
+
+            let shouldExpand = isAddressBarSelected && selectedTextEntryMode == .aiChat
+            expandable.setSearchAreaExpanded(shouldExpand, animated: false)
+
+            expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
+            expandable.setLeftIconHiddenForModeToggle(shouldShowModeToggle && isAddressBarSelected)
+        }
+
+        if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
+            applyCustomization()
+
+            let shouldShowAIChat = state.showAIChatFullModeBranding
+            barView.isFullAIChatHidden = !shouldShowAIChat
+        }
     }
 
     private func applyCustomization() {
@@ -490,13 +771,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
-            barView.isCustomizableButtonHidden = false
+            barView.isCustomizableButtonHidden = !self.state.showCustomizableButton
             return
         }
 
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
-        barView.isCustomizableButtonHidden = largeIcon == nil
+
+        if self.state.showCustomizableButton {
+            barView.isCustomizableButtonHidden = largeIcon == nil
+        } else {
+            barView.isCustomizableButtonHidden = true
+        }
     }
 
     func onQuerySubmitted() {
@@ -509,7 +795,15 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
-            
+            if dependencies.aiChatAddressBarExperience.shouldShowModeToggle {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarQuerySubmittedIPadToggleEnabled)
+            }
+
+            if selectedTextEntryMode == .aiChat {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                return
+            }
+
             if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
@@ -519,7 +813,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     @objc private func textDidChange() {
-        let newQuery = textField.text ?? ""
+        let newQuery = (textField.text ?? "").strippingDictationPlaceholder
         omniDelegate?.onOmniQueryUpdated(newQuery)
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)
@@ -542,6 +836,9 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func clear() {
         textField.text = nil
+        expandableBarView?.aiChatTextView.text = nil
+        expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
+        expandableBarView?.updateAIChatSendButton(hasText: false)
         omniDelegate?.onOmniQueryUpdated("")
     }
 
@@ -619,6 +916,11 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onPrivacyIconPressed() {
         let isPrivacyIconHighlighted = privacyIconContextualOnboardingAnimator.isPrivacyIconHighlighted(barView.privacyInfoContainer.privacyIcon)
+        // Remove the contextual-onboarding pulse synchronously on tap so it disappears the
+        // instant the user engages with the icon, regardless of how `isPrivacyIconHighlighted`
+        // resolves (its gate looks for an outer-`PrivacyIconView` anchor only, while the show
+        // path actually anchors to the inner `shieldAnimationView` when available).
+        privacyIconContextualOnboardingAnimator.forceDismissPrivacyIconAnimation(barView.privacyInfoContainer.privacyIcon)
         omniDelegate?.onPrivacyIconPressed(isHighlighted: isPrivacyIconHighlighted)
     }
 
@@ -665,8 +967,43 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onBookmarksPressed()
     }
 
+    private func onPasswordsPressed() {
+        omniDelegate?.onPasswordsPressed()
+    }
+
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
+    }
+
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        guard selectedTextEntryMode != mode else { return }
+        selectedTextEntryMode = mode
+        expandableBarView?.selectedModeToggleState = mode
+        updateTextFieldPlaceholderForSelectedMode()
+
+        if state.showAIChatModeToggle {
+            // Only expand and show mode-specific icon when the address bar is actually
+            // focused. Without these guards, switching to a duck.ai tab would briefly
+            // flash the expanded search area and duck.ai icon before collapsing.
+            let isFocused = textField.isFirstResponder || (expandableBarView?.aiChatTextView.isFirstResponder == true)
+            let shouldExpand = isFocused && mode == .aiChat
+            expandableBarView?.setSearchAreaExpanded(shouldExpand, animated: true)
+            expandableBarView?.updateLeftIconForMode(isFocused ? mode : .search)
+        }
+    }
+
+    private func updateTextFieldPlaceholderForSelectedMode() {
+        let theme = ThemeManager.shared.currentTheme
+        let placeholder: String = {
+            if selectedTextEntryMode == .aiChat {
+                return UserText.searchInputFieldPlaceholderDuckAI
+            } else {
+                return UserText.searchDuckDuckGo
+            }
+        }()
+
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder,
+                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
     }
 
     private func onDismissPressed() {
@@ -679,12 +1016,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onAIChatLeftButtonPressed()
     }
 
-    private func onAIChatRightButtonPressed() {
-        omniDelegate?.onAIChatRightButtonPressed()
-    }
-
     private func onAIChatBrandingPressed() {
         omniDelegate?.onAIChatBrandingPressed()
+    }
+
+    func onAIChatSendPressed() {
+        // Overridden in DefaultOmniBarViewController
     }
 }
 
@@ -730,12 +1067,21 @@ extension OmniBarViewController: UITextFieldDelegate {
         self.omniDelegate?.onDidEndEditing()
     }
     
-    /// Get the current frame of the logo, accounting for device rotation and scale transforms
+    /// Returns the current frame of the logo in window coordinates.
     func getCurrentLogoFrame() -> CGRect? {
-        guard let imageView = barView.privacyInfoContainer.privacyIcon?.staticImageView,
-              !imageView.isHidden else { return nil }
-        
-        return imageView.convert(imageView.bounds, to: nil)
+        guard let privacyIcon = barView.privacyInfoContainer.privacyIcon,
+              !privacyIcon.staticImageView.isHidden else { return nil }
+        return privacyIcon.staticImageView.convert(privacyIcon.staticImageView.bounds, to: nil)
+    }
+
+    /// Hides the logo for full-screen transition to avoid duplicate logos.
+    func hideLogoForTransition() {
+        barView.privacyInfoContainer.privacyIcon.hideLogoForTransition()
+    }
+
+    /// Shows the logo after full-screen transition completes.
+    func showLogoAfterTransition() {
+        barView.privacyInfoContainer.privacyIcon.showLogoAfterTransition()
     }
 }
 
@@ -752,26 +1098,18 @@ extension OmniBarViewController {
 extension OmniBarViewController {
 
     private func decorate() {
-        privacyIconAndTrackersAnimator.resetImageProvider()
-
         if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) }) {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing)
-        }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            privacyIconAndTrackersAnimator.resetImageProvider()
         }
     }
 }
 
 // MARK: - PrivacyInfoContainerViewDelegate
+
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
-    
     func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
+        DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
+
         dependencies.daxEasterEggPresenter.presentFullScreen(
             from: self,
             logoURL: logoURL,

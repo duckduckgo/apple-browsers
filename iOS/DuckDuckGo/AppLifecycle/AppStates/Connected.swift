@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import Persistence
 
 /// Represents the state where the scene has been connected and is ready for initial setup.
 /// - Usage:
@@ -43,11 +44,14 @@ struct Connected: ConnectedHandling {
     let sceneDependencies: SceneDependencies
     let actionToHandle: AppAction?
     let didFinishLaunchingStartTime: CFAbsoluteTime
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
-    init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+    init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = stateContext.didFinishLaunchingStartTime
         self.actionToHandle = actionToHandle
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
         let mainCoordinator = appDependencies.mainCoordinator
         let overlayWindowManager = OverlayWindowManager(window: window,
@@ -55,8 +59,12 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
@@ -73,11 +81,13 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
-    init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
+    init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
         self.actionToHandle = actionToHandle
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
         let mainCoordinator = appDependencies.mainCoordinator
         let overlayWindowManager = OverlayWindowManager(window: window,
@@ -85,8 +95,12 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
@@ -97,11 +111,13 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
-    init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
+    init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
         self.actionToHandle = actionToHandle
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
         let mainCoordinator = appDependencies.mainCoordinator
         let overlayWindowManager = OverlayWindowManager(window: window,
@@ -109,8 +125,12 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
@@ -145,12 +165,14 @@ extension Connected {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: makeStateContext(sceneDependencies: sceneDependencies))
+        Background(stateContext: makeStateContext(sceneDependencies: sceneDependencies),
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: makeStateContext(sceneDependencies: sceneDependencies),
-                   actionToHandle: actionToHandle)
+                   actionToHandle: actionToHandle,
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

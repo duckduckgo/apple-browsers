@@ -139,7 +139,14 @@ extension TestRunHelper: XCTestObservation {
         }
 
         if #available(macOS 13.0, *) {
-            WKProcessPool._setWebProcessCountLimit(5)
+            let selector = NSSelectorFromString("_setWebProcessCountLimit:")
+            if WKProcessPool.responds(to: selector),
+               let method = class_getClassMethod(WKProcessPool.self, selector) {
+                let imp = method_getImplementation(method)
+                typealias SetWebProcessCountLimitType = @convention(c) (AnyClass, ObjectiveC.Selector, UInt32) -> Void
+                let setWebProcessCountLimit = unsafeBitCast(imp, to: SetWebProcessCountLimitType.self)
+                setWebProcessCountLimit(WKProcessPool.self, selector, 5)
+            }
         }
         processPool.perform(NSSelectorFromString("setWebViewsUsingProcessPool:"), with: Set([NSValue(point: .zero)])) // avoid deallocation checks on this process pool
     }
@@ -192,9 +199,9 @@ extension TestRunHelper: XCTestObservation {
         }
 
         // Check for non-nil variables that should be cleaned up
-#if !CI
-        checkTestCaseVariables(testCase)
-#endif
+        if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {
+            checkTestCaseVariables(testCase)
+        }
 
         if !testCase.disableDeallocationChecksForTests.map({ $0.dropping(suffix: "WithCompletionHandler:") }).contains(testCase.name.dropping(suffix: "]").components(separatedBy: " ").last!),
            !TestRunHelper.shared.loadedViews.isEmpty {

@@ -22,14 +22,16 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
+    private let pinningManager: PinningManager
     weak var delegate: BrowserTabSelectionDelegate?
 
     lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
-    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -159,7 +161,7 @@ private let previewSize = NSSize(width: 700, height: 660)
         return manager
     }()
 
-    let vc = BookmarkManagementSplitViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    let vc = BookmarkManagementSplitViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
     vc.preferredContentSize = previewSize
     return vc
 

@@ -21,45 +21,170 @@ import Foundation
 import UIKit
 import UIComponents
 import SwiftUI
+import DesignResourcesKit
+
+struct HomeDaxInputs {
+    let hasContent: Bool
+    let shouldDisplayFavoritesOverlay: Bool
+    let hasEscapeHatch: Bool
+    let hasFavorites: Bool
+    let hasRemoteMessages: Bool
+}
 
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
     // MARK: - Properties
 
+    private let isFireTab: Bool
+
     private var logoContainerView: UIView = UIView()
 
     private lazy var daxLogoView = AnimatedDaxLogoView()
+    private var fireTabHostingController: UIHostingController<FireModeEmptyStateView>?
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
+    private var forcedHidden: Bool = false
 
     private var progress: CGFloat = 0
+    private var escapeHatchBaseOffset: CGFloat = 0
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
 
+    private weak var centeringGuideOwner: UIView?
+    private var centeringGuide: UILayoutGuide?
+
+    // MARK: - Initialization
+
+    init(isFireTab: Bool = false) {
+        self.isFireTab = isFireTab
+    }
+
     // MARK: - Public Methods
     
-    func installInViewController(_ parentController: UIViewController, asSubviewOf parentView: UIView, barView: UIView, isTopBarPosition: Bool) {
+    /// `anchorView` is optional: pass `nil` to fill the parent's safe area (fire-tab-only use case —
+    /// UTI hosts its input outside the content container so there's no in-container anchor to align to).
+    func installInViewController(_ parentController: UIViewController,
+                                 asSubviewOf parentView: UIView,
+                                 anchorView: UIView? = nil,
+                                 isTopBarPosition: Bool,
+                                 escapeHatch: EscapeHatchModel? = nil,
+                                 onEscapeHatchTap: (() -> Void)? = nil) {
+
+        if !isFireTab && isTopBarPosition && anchorView == nil {
+            assertionFailure("Non-fire top-bar Dax logo install requires an anchor view.")
+            return
+        }
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
-        logoContainerView.isUserInteractionEnabled = false
+        logoContainerView.isUserInteractionEnabled = isFireTab
         parentView.addSubview(logoContainerView)
 
-        logoContainerView.addSubview(daxLogoView)
-        daxLogoView.frame = logoContainerView.bounds
-        daxLogoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        daxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        if isFireTab {
+            installFireTabContent(in: parentController, escapeHatch: escapeHatch, onEscapeHatchTap: onEscapeHatchTap)
+            installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
+        } else {
+            installDaxLogoContent()
+            installDaxLogoConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
+        }
 
+        parentView.bringSubviewToFront(logoContainerView)
+    }
+
+    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
+        self.isHomeDaxVisible = isHomeDaxVisible
+        self.isAIDaxVisible = isAIDaxVisible
+
+        updateState()
+    }
+
+    /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
+    /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
+    /// we still show Dax beneath the hatch.
+    func shouldShowHomeDax(_ inputs: HomeDaxInputs) -> Bool {
+        guard !inputs.hasContent else { return false }
+        let hasEscapeHatchOnly = inputs.hasEscapeHatch && !inputs.hasFavorites && !inputs.hasRemoteMessages
+        return !inputs.shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
+    }
+
+    func setForcedHidden(_ hidden: Bool) {
+        guard forcedHidden != hidden else { return }
+        forcedHidden = hidden
+        updateState()
+    }
+
+    func setEscapeHatchBaseOffset(_ offset: CGFloat) {
+        guard escapeHatchBaseOffset != offset else { return }
+        escapeHatchBaseOffset = offset
+        updateState()
+    }
+
+    func updateSwipeProgress(_ progress: CGFloat) {
+        self.progress = progress
+
+        updateState()
+    }
+
+    /// Matches sibling scrollable content insets so the fire-tab empty state isn't clipped by the nav bar.
+    func setFireTabContentInsets(_ insets: UIEdgeInsets) {
+        fireTabHostingController?.additionalSafeAreaInsets = insets
+    }
+
+    /// Removes the managed views from the hierarchy so the manager can be discarded.
+    func tearDown() {
+        fireTabHostingController?.willMove(toParent: nil)
+        fireTabHostingController?.view.removeFromSuperview()
+        fireTabHostingController?.removeFromParent()
+        fireTabHostingController = nil
+        logoContainerView.removeFromSuperview()
+        if let centeringGuide {
+            centeringGuideOwner?.removeLayoutGuide(centeringGuide)
+        }
+        centeringGuide = nil
+        centeringGuideOwner = nil
+    }
+
+    // MARK: - Private Methods
+
+    private func installFireTabConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
+        if let anchorView {
+            if isTopBarPosition {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+                ])
+            }
+        } else {
+            NSLayoutConstraint.activate([
+                logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                logoContainerView.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor)
+            ])
+        }
+
+        NSLayoutConstraint.activate([
+            logoContainerView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            logoContainerView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor)
+        ])
+    }
+
+    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
         parentView.addLayoutGuide(centeringGuide)
+        self.centeringGuide = centeringGuide
+        self.centeringGuideOwner = parentView
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
-        if isTopBarPosition {
+        if let anchorView, isTopBarPosition {
             NSLayoutConstraint.activate([
-                barView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+                anchorView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
                 parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
             ])
         } else {
@@ -83,26 +208,49 @@ final class DaxLogoManager {
             logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
             containerYCenterConstraint!
         ])
-
-        parentView.bringSubviewToFront(logoContainerView)
     }
 
-    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
-        self.isHomeDaxVisible = isHomeDaxVisible
-        self.isAIDaxVisible = isAIDaxVisible
+    private func installFireTabContent(in parentController: UIViewController,
+                                       escapeHatch: EscapeHatchModel?,
+                                       onEscapeHatchTap: (() -> Void)?) {
+        let hostingController = UIHostingController(
+            rootView: FireModeEmptyStateView(type: .tab,
+                                             escapeHatch: escapeHatch,
+                                             onEscapeHatchTap: onEscapeHatchTap))
+        // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        updateState()
+        parentController.addChild(hostingController)
+        logoContainerView.addSubview(hostingController.view)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor)
+        ])
+
+        hostingController.didMove(toParent: parentController)
+        fireTabHostingController = hostingController
     }
 
-    func updateSwipeProgress(_ progress: CGFloat) {
-        self.progress = progress
-
-        updateState()
+    private func installDaxLogoContent() {
+        logoContainerView.addSubview(daxLogoView)
+        daxLogoView.frame = logoContainerView.bounds
+        daxLogoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        daxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
     }
 
     private func updateState() {
-        if isHomeDaxVisible != isAIDaxVisible {
-            // Keep progress in one state, only update alpha
+        let resolvedAlpha: CGFloat
+
+        if forcedHidden {
+            resolvedAlpha = 0
+        } else if isFireTab {
+            // Fire-mode empty state is a single shared view (no home/AI variants to blend), so show it whenever either dax slot is active.
+            resolvedAlpha = (isHomeDaxVisible || isAIDaxVisible) ? 1 : 0
+        } else if isHomeDaxVisible != isAIDaxVisible {
             daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
 
             let homeLogoProgress = 1 - progress
@@ -114,16 +262,21 @@ final class DaxLogoManager {
             let daxAlpha = homeDaxAlphaCoefficient * homeLogoProgress
             let aiAlpha = aiDaxAlphaCoefficient * aiLogoProgress
 
-            daxLogoView.alpha = max(daxAlpha, aiAlpha)
+            resolvedAlpha = max(daxAlpha, aiAlpha)
         } else if isHomeDaxVisible && isAIDaxVisible {
-            // Modify progress, don't modify alpha
             daxLogoView.updateProgress(progress)
 
-            daxLogoView.alpha = 1
+            resolvedAlpha = 1
         } else {
-            daxLogoView.alpha = 0
+            resolvedAlpha = 0
         }
 
+        logoContainerView.alpha = resolvedAlpha
+        if isFireTab {
+            logoContainerView.isUserInteractionEnabled = resolvedAlpha > 0
+        }
+
+        containerYCenterConstraint?.constant = escapeHatchBaseOffset
     }
 }
 

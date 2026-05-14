@@ -54,6 +54,42 @@ final class SuggestionProcessingTests: XCTestCase {
         XCTAssertTrue(result?.topHits.contains(where: { $0.title == "DuckDuckGo" }) ?? false)
     }
 
+    func testWhenOnMobile_ThenDuckDuckGoAPISuggestionsAreLimitedWithoutLosingWebsites() {
+        var apiResult = APIResult()
+        apiResult.items = (0..<30).map {
+            .init(phrase: UUID().uuidString, isNav: $0 % 10 == 0)
+        }
+
+        let processing = SuggestionProcessing(platform: .mobile)
+        let result = processing.result(for: "Duck",
+                                       from: [],
+                                       bookmarks: [],
+                                       internalPages: [],
+                                       openTabs: [],
+                                       apiResult: apiResult)
+
+        XCTAssertEqual(result?.topHits.count, SuggestionProcessing.maximumNumberOfTopHits)
+        XCTAssertEqual(result?.duckduckgoSuggestions.count, SuggestionProcessing.maximumNumberOfDuckDuckGoSuggestionsOnMobile)
+    }
+
+    func testWhenOnDesktop_ThenDuckDuckGoAPISuggestionsAreLimitedByMaxSuggestions() {
+        var apiResult = APIResult()
+        apiResult.items = (0..<30).map { _ in
+            .init(phrase: UUID().uuidString, isNav: false)
+        }
+
+        let processing = SuggestionProcessing(platform: .desktop)
+        let result = processing.result(for: "Duck",
+                                       from: [],
+                                       bookmarks: [],
+                                       internalPages: [],
+                                       openTabs: [],
+                                       apiResult: apiResult)
+
+        XCTAssertEqual(result?.topHits.count, 0)
+        XCTAssertEqual(result?.duckduckgoSuggestions.count, SuggestionProcessing.maximumNumberOfSuggestions)
+    }
+
     // MARK: - Combined Source Tests
 
     func testWhenTabsAndMultipleMatchingHistoryAndBookmarksAvailable_ThenCorrectOrdering() {

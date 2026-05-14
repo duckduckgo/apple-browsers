@@ -1,0 +1,108 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a post-idle session: the NTP or LUT (List of Used Tabs) shown after the After Inactivity threshold elapses, capturing what the user did on that surface and how the session ended.",
+    "$comment": "{\"owners\":[\"samsymons\",\"SabrinaTardio\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-post-idle-session" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["post_idle_session"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "surface": {
+                                    "type": "string",
+                                    "description": "Which post-idle surface was shown when the session started",
+                                    "enum": ["ntp", "lut"]
+                                },
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination.",
+                                    "enum": [
+                                        "bar_used",
+                                        "return_to_page_tapped",
+                                        "tab_switcher_selected",
+                                        "app_backgrounded",
+                                        "favorite_selected",
+                                        "chat_selected",
+                                        "app_terminated"
+                                    ]
+                                },
+                                "session_duration_ms": {
+                                    "type": "integer",
+                                    "description": "Total time in milliseconds the post-idle surface was visible, from session start until the terminal action or background. Absent when the session was orphaned (UNKNOWN / app_terminated)."
+                                },
+                                "time_to_first_interaction_ms": {
+                                    "type": "integer",
+                                    "description": "Time in milliseconds from session start to the first user interaction with the post-idle surface (page engagement, toggle, back, or terminal action). Absent if the session ended without any interaction."
+                                },
+                                "page_engaged": {
+                                    "type": "boolean",
+                                    "description": "True if the user scrolled or activated an in-page link on the post-idle surface during the session"
+                                },
+                                "toggle_used": {
+                                    "type": "boolean",
+                                    "description": "True if the user toggled between Search and Duck.ai during the session"
+                                },
+                                "back_pressed": {
+                                    "type": "boolean",
+                                    "description": "True if the user pressed back / cancel from the post-idle surface during the session"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

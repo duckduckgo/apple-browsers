@@ -37,167 +37,174 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     }
 
     func testWhenNoPagesThenEditButtonVisibleButDisabled() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 1, containsWebPages: false, showAIChatButton: true)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 1, containsWebPages: false, showAIChat: true, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.bottomBarItems, [
-            UIBarButtonItem.fixedSpace(10),
-            stateHandler.tabSwitcherStyleButton,
-            UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(6),
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.fireButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.plusButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.editButton,
-            UIBarButtonItem.fixedSpace(10)
-        ])
+        let items = stateHandler.bottomBarItems
+        XCTAssertEqual(items.count, 9)
+        XCTAssertEqual(items[0], stateHandler.tabSwitcherStyleButton)
+        XCTAssertEqual(items[4], stateHandler.fireButton)
+        XCTAssertEqual(items[6], stateHandler.plusButton)
+        XCTAssertEqual(items[8], stateHandler.editButton)
+
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertFalse(stateHandler.editButton.isEnabled)
     }
 
     func testWhenDuckChatEnabledThenBottomBarItemsAreSetCorrectly() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: true)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: true, showAIChat: true, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.bottomBarItems, [
-            UIBarButtonItem.fixedSpace(10),
-            stateHandler.tabSwitcherStyleButton,
-            UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(6),
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.fireButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.plusButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.editButton,
-            UIBarButtonItem.fixedSpace(10),
-        ])
+        // Check that the expected items are present in the correct order
+        let items = stateHandler.bottomBarItems
+        XCTAssertEqual(items.count, 9)
+        XCTAssertEqual(items[0], stateHandler.tabSwitcherStyleButton)
+        XCTAssertEqual(items[4], stateHandler.fireButton)
+        XCTAssertEqual(items[6], stateHandler.plusButton)
+        XCTAssertEqual(items[8], stateHandler.editButton)
+
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertTrue(stateHandler.editButton.isEnabled)
     }
 
     func testWhenInterfaceModeIsEditingRegularSizeThenBottomBarItemsAreSetCorrectly() {
-        stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.editingRegularSize(selectedCount: 0, totalCount: 0))
 
-        XCTAssertEqual(stateHandler.bottomBarItems, [
-            UIBarButtonItem.fixedSpace(10),
-            stateHandler.closeTabsButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.menuButton,
-            UIBarButtonItem.fixedSpace(10)
-        ])
+        // Check that the expected items are present
+        let items = stateHandler.bottomBarItems
+        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(items[0], stateHandler.closeTabsButton)
+        XCTAssertEqual(items[2], stateHandler.menuButton)
+
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }
 
     func testWhenInterfaceModeIsEditingLargeThenBottomBarIsHidden() {
-        stateHandler.update(.editingLargeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.editingLargeSize(selectedCount: 0, totalCount: 0))
 
         XCTAssertTrue(stateHandler.bottomBarItems.isEmpty)
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsRegularSizeThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsRegularSizeThenTopRightButtonsAreSetCorrectly() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarRightButtonItems, [])
+        XCTAssertTrue(stateHandler.topBarRightButtons.isEmpty)
     }
 
-    func testWhenInterfaceModeIsEditingRegularSizeThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsEditingRegularSizeThenTopRightButtonsAreSetCorrectly() {
+        stateHandler.update(.editingRegularSize(selectedCount: 0, totalCount: 2))
 
-        XCTAssertEqual(stateHandler.topBarRightButtonItems, [
-            stateHandler.selectAllButton
-        ])
+        XCTAssertEqual(stateHandler.topBarRightButtons.count, 1)
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.selectAllButton.customView!))
     }
 
     func testWhenShowAIChatButtonIsTrueThenDuckChatButtonIsIncludedInTopRightButtons() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: true)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: true, showAIChat: true, canDismissOnEmpty: true))
 
-        XCTAssertTrue(stateHandler.topBarRightButtonItems.contains(stateHandler.duckChatButton))
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.duckChatButton.customView!))
     }
 
     func testWhenCanShowEditButtonThenEditButtonIsIncludedInBottomBarItems() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: false)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: true, showAIChat: false, canDismissOnEmpty: true))
 
         XCTAssertTrue(stateHandler.bottomBarItems.contains(stateHandler.editButton))
     }
 
-    func testWhenInterfaceModeIsRegularSizeWithAIChatThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: true)
+    func testWhenInterfaceModeIsRegularSizeWithAIChatThenTopRightButtonsAreSetCorrectly() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: true, showAIChat: true, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarRightButtonItems, [
-            stateHandler.duckChatButton
-        ])
+        XCTAssertEqual(stateHandler.topBarRightButtons.count, 1)
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.duckChatButton.customView!))
     }
 
     func testWhenTotalTabsCountIsGreaterThanOneThenCanShowEditButtonIsTrue() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
         XCTAssertTrue(stateHandler.editButton.isEnabled)
     }
 
     func testWhenContainsWebPagesIsTrueThenCanShowEditButtonIsTrue() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: true, showAIChatButton: false)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 0, containsWebPages: true, showAIChat: false, canDismissOnEmpty: true))
 
         XCTAssertTrue(stateHandler.editButton.isEnabled)
     }
 
     func testWhenNotEnoughTabsAndNowWebPagesEditButtonIsDisabled() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
         XCTAssertFalse(stateHandler.editButton.isEnabled)
     }
 
     func testWhenInterfaceModeIsLargeSizeThenBottomBarIsHidden() {
-        stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.largeSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
         XCTAssertTrue(stateHandler.bottomBarItems.isEmpty)
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsRegularSizeThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsRegularSizeThenTopLeftButtonsAreSetCorrectly() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.doneButton
-        ])
+        XCTAssertEqual(stateHandler.topBarLeftButtons.count, 1)
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.doneIconButton.customView!))
     }
 
-    func testWhenInterfaceModeIsEditingRegularSizeThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsEditingRegularSizeThenTopLeftButtonsAreSetCorrectly() {
+        stateHandler.update(.editingRegularSize(selectedCount: 0, totalCount: 2))
 
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.doneButton
-        ])
+        XCTAssertEqual(stateHandler.topBarLeftButtons.count, 1)
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.doneIconButton.customView!))
     }
 
-    func testWhenInterfaceModeIsLargeSizeThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsLargeSizeThenTopLeftButtonsAreSetCorrectly() {
+        stateHandler.update(.largeSize(selectedCount: 0, totalCount: 2, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.editButton,
-            stateHandler.tabSwitcherStyleButton
-        ])
+        XCTAssertEqual(stateHandler.topBarLeftButtons.count, 2)
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.editButton.customView!))
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.tabSwitcherStyleButton.customView!))
     }
 
-    func testWhenInterfaceModeIsLargeSizeAndCannotShowEditButtonThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+    func testWhenInterfaceModeIsLargeSizeAndCannotShowEditButtonThenTopLeftButtonsAreSetCorrectly() {
+        stateHandler.update(.largeSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.editButton,
-            stateHandler.tabSwitcherStyleButton,
-        ])
+        XCTAssertEqual(stateHandler.topBarLeftButtons.count, 2)
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.editButton.customView!))
+        XCTAssertTrue(stateHandler.topBarLeftButtons.contains(stateHandler.tabSwitcherStyleButton.customView!))
     }
 
-    func testWhenInterfaceModeIsLargeSizeThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
+    func testWhenInterfaceModeIsLargeSizeThenTopRightButtonsAreSetCorrectly() {
+        stateHandler.update(.largeSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: true, canDismissOnEmpty: true))
 
-        XCTAssertEqual(stateHandler.topBarRightButtonItems, [
-            stateHandler.doneButton,
-            stateHandler.fireButton,
-            stateHandler.plusButton,
-            stateHandler.duckChatButton,
-        ])
+        XCTAssertEqual(stateHandler.topBarRightButtons.count, 4)
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.doneTextButton.customView!))
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.fireButton.customView!))
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.plusButton.customView!))
+        XCTAssertTrue(stateHandler.topBarRightButtons.contains(stateHandler.duckChatButton.customView!))
+    }
+
+    // MARK: - Done Button (Fire Mode)
+
+    func testWhenCanDismissOnEmptyAndNoTabsThenDoneButtonIsEnabled() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true))
+
+        XCTAssertTrue(stateHandler.doneButton.isEnabled)
+    }
+
+    func testWhenCannotDismissOnEmptyAndNoTabsThenDoneButtonIsDisabled() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: false))
+
+        XCTAssertFalse(stateHandler.doneButton.isEnabled)
+    }
+
+    func testWhenCannotDismissOnEmptyButHasTabsThenDoneButtonIsEnabled() {
+        stateHandler.update(.regularSize(selectedCount: 0, totalCount: 2, containsWebPages: true, showAIChat: false, canDismissOnEmpty: false))
+
+        XCTAssertTrue(stateHandler.doneButton.isEnabled)
+    }
+
+    func testWhenCannotDismissOnEmptyAndNoTabsLargeSizeThenDoneButtonIsDisabled() {
+        stateHandler.update(.largeSize(selectedCount: 0, totalCount: 0, containsWebPages: false, showAIChat: false, canDismissOnEmpty: false))
+
+        XCTAssertFalse(stateHandler.doneButton.isEnabled)
     }
 
 }

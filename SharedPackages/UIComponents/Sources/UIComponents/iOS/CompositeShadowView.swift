@@ -63,6 +63,22 @@ public class CompositeShadowView: UIView {
         shadowView.layer.applyShadowProperties(shadow, in: self)
     }
 
+    /// Applies an opacity multiplier to all configured shadow layers.
+    /// Useful when gradually revealing/hiding shadows during animated transitions.
+    public func applyShadowOpacityMultiplier(_ multiplier: Float) {
+        let clampedMultiplier = min(max(multiplier, 0), 1)
+        for shadow in shadows {
+            let adjustedShadow = Shadow(
+                id: shadow.id,
+                color: shadow.color,
+                opacity: shadow.opacity * clampedMultiplier,
+                radius: shadow.radius,
+                offset: shadow.offset
+            )
+            updateShadow(adjustedShadow)
+        }
+    }
+
     private func setUpShadows() {
 
         shadowViews.forEach {

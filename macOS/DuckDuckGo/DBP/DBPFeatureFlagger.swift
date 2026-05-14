@@ -19,11 +19,12 @@
 import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
+import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
-    private let featureFlagger: FeatureFlagger
+    fileprivate let featureFlagger: FeatureFlagger
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
@@ -31,6 +32,25 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isEmailConfirmationDecouplingFeatureOn: Bool {
         featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+    }
+
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
+    var isContinuedProcessingFeatureOn: Bool {
+        // Continued processing is iOS-only.
+        false
+    }
+
+    var isWebViewUserAgentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
     init(featureFlagger: FeatureFlagger) {
@@ -50,5 +70,12 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
             for: FeatureFlag.self
         )
         self.featureFlagger = featureFlagger
+    }
+}
+
+extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

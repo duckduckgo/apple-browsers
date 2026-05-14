@@ -26,8 +26,12 @@ final class FocusRingView: NSView {
         case backgroundRadius = 8
     }
 
-    var strokedBackgroundColor = NSColor.addressBarFocusedBackground
-    var unstrokedBackgroundColor = NSColor.addressBarBackground
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+
+    var strokedBackgroundColor: NSColor?
+    var unstrokedBackgroundColor: NSColor?
+    var shadowColor: NSColor?
+    var strokeColor: NSColor?
 
     private let shadowLayer = CALayer()
     private let strokeLayer = CALayer()
@@ -42,6 +46,7 @@ final class FocusRingView: NSView {
 
         addSublayers()
         layoutSublayers()
+        applyThemeStyle(theme: themeManager.theme)
     }
 
     override func layout() {
@@ -52,7 +57,7 @@ final class FocusRingView: NSView {
 
     func updateView(stroke: Bool) {
         self.stroke = stroke
-        self.needsLayout = true
+        refreshLayerColors()
     }
 
     private func addSublayers() {
@@ -73,14 +78,7 @@ final class FocusRingView: NSView {
         CATransaction.begin()
         CATransaction.setAnimationDuration(0)
 
-        shadowLayer.opacity = stroke ? 0.4 : 0
-        strokeLayer.opacity = stroke ? 1.0 : 0
-
-        backgroundLayer.backgroundColor = stroke ?
-            strokedBackgroundColor.cgColor : unstrokedBackgroundColor.cgColor
-
-        shadowLayer.backgroundColor = NSColor.controlAccentColor.cgColor
-        strokeLayer.backgroundColor = NSColor.controlAccentColor.cgColor
+        refreshLayerColors()
 
         shadowLayer.frame = layer.bounds
         shadowLayer.cornerRadius = Size.backgroundRadius.rawValue + Size.shadow.rawValue + Size.stroke.rawValue
@@ -98,4 +96,27 @@ final class FocusRingView: NSView {
         CATransaction.commit()
     }
 
+    private func refreshLayerColors() {
+        shadowLayer.opacity = stroke ? 0.4 : 0
+        strokeLayer.opacity = stroke ? 1.0 : 0
+
+        NSAppearance.withAppAppearance {
+            backgroundLayer.backgroundColor = stroke ? strokedBackgroundColor?.cgColor : unstrokedBackgroundColor?.cgColor
+            shadowLayer.backgroundColor = shadowColor?.cgColor
+            strokeLayer.backgroundColor = strokeColor?.cgColor
+        }
+    }
+}
+
+extension FocusRingView {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let palette = theme.palette
+        strokedBackgroundColor = palette.surfaceTertiary
+        unstrokedBackgroundColor = palette.surfaceTertiary
+        strokeColor = palette.accentPrimary
+        shadowColor = palette.accentSecondary
+
+        refreshLayerColors()
+    }
 }

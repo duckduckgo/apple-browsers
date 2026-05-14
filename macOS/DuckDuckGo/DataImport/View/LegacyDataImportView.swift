@@ -17,10 +17,12 @@
 //
 
 import AppKit
-import SwiftUI
 import BrowserServicesKit
-import PixelKit
 import DesignResourcesKitIcons
+import PixelKit
+import PrivacyConfig
+import SwiftUI
+import UIComponents
 import UniformTypeIdentifiers
 
 @MainActor
@@ -37,13 +39,15 @@ struct LegacyDataImportView: ModalView {
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
     private let syncFeatureVisibility: SyncFeatureVisibility
+    private let pinningManager: PinningManager
 
-    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility, pinningManager: PinningManager) {
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
         self.title = title
         self.isDataTypePickerExpanded = isDataTypePickerExpanded
         self.syncFeatureVisibility = syncFeatureVisibility
+        self.pinningManager = pinningManager
     }
 
     struct ProgressState {
@@ -53,12 +57,12 @@ struct LegacyDataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
-#if DEBUG || REVIEW
+#if DEBUG
     @State private var debugViewDisabled: Bool = false
 #endif
 
     private var shouldShowDebugView: Bool {
-#if DEBUG || REVIEW
+#if DEBUG
         return !debugViewDisabled
 #else
         return (!model.errors.isEmpty && isInternalUser)
@@ -184,7 +188,7 @@ struct LegacyDataImportView: ModalView {
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):
-                DataImportShortcutsView(dataTypes: dataTypes)
+                DataImportShortcutsView(dataTypes: dataTypes, pinningManager: pinningManager)
             }
         }
     }
@@ -212,7 +216,7 @@ struct LegacyDataImportView: ModalView {
             Button {
                 dismiss.callAsFunction()
                 let source = SyncDeviceButtonTouchpoint.dataImportStart
-                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
                 syncLauncher.startDeviceSyncFlow(source: source) {
                     importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                 }
@@ -348,10 +352,10 @@ struct LegacyDataImportView: ModalView {
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
-                Button(UserText.importDataCompleteSyncButtonTitle) {
+                Button(UserText.legacyImportDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
                     let source = SyncDeviceButtonTouchpoint.dataImportFinish
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue], doNotEnforcePrefix: true)
                     syncLauncher.startDeviceSyncFlow(source: source, completion: nil)
                 }
             }
@@ -365,7 +369,7 @@ struct LegacyDataImportView: ModalView {
                     Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .keyboardShortcut(model.buttons[idx].shortcut)
+                .ifLet(model.buttons[idx].shortcut) { $0.keyboardShortcut($1) }
                 .disabled(model.buttons[idx].isDisabled)
             }
         }
@@ -412,8 +416,8 @@ struct LegacyDataImportView: ModalView {
     private func debugView() -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 10) {
-#if DEBUG || REVIEW
-                Text("REVIEW:" as String).bold()
+#if DEBUG
+                Text("DEBUG:" as String).bold()
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
@@ -450,7 +454,7 @@ struct LegacyDataImportView: ModalView {
             }
             Spacer()
             Button {
-#if DEBUG || REVIEW
+#if DEBUG
                 debugViewDisabled = true
 #endif
                 model.errors.removeAll()
@@ -463,7 +467,7 @@ struct LegacyDataImportView: ModalView {
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 
-#if DEBUG || REVIEW
+#if DEBUG
     private var noFailure: String { "No failure" }
     private var zeroSuccess: String { "Success (0 imported)" }
     private var allFailureReasons: [String?] {

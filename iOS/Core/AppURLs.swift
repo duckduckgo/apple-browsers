@@ -43,7 +43,8 @@ public extension URL {
 
     static let settingsPath = "/settings"
     static let embeddedGeneralSERPSettings = URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1#general")!
-    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&highlight=kbe#aifeatures")!
+    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
+    static let embeddedHideAIGeneratedImagesSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
 
     static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)"))!
     static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!
@@ -56,7 +57,7 @@ public extension URL {
 
     static let surrogates = URL(string: "\(staticBase)/surrogates.txt")!
 
-    // The following URLs shall match the ones in update_embedded.sh. 
+    // The following URLs shall match the ones in update_embedded.sh.
     // Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
     static let privacyConfig = URL(string: "\(staticBase)/trackerblocking/config/v4/ios-config.json")!
     static let trackerDataSet = URL(string: "\(staticBase)/trackerblocking/v5/current/ios-tds.json")!
@@ -74,7 +75,11 @@ public extension URL {
     static let mac = URL(string: "\(base)/mac")!
     static let windows = URL(string: "\(base)/windows")!
 
-    static func makeExtiURL(atb: String) -> URL { URL.exti.appendingParameter(name: Param.atb, value: atb) }
+    static func makeExtiURL(atb: String, isPad: Bool) -> URL {
+        URL.exti
+            .appendingParameter(name: Param.atb, value: atb)
+            .appendingParameter(name: Param.isTablet, value: isPad ? "1" : "0")
+    }
 
     static func isDuckDuckGo(domain: String?) -> Bool {
         guard let domain = domain, let url = URL(string: "https://\(domain)") else { return false }
@@ -142,13 +147,15 @@ public extension URL {
         static let verticalRewrite = "iar"
         static let verticalMaps = "iaxm"
         static let email = "email"
-
+        static let isTablet = "is_tablet"
     }
 
     fileprivate enum ParamValue {
 
-        static let source = "ddg_ios"
+        static let phoneSource = "ddg_ios"
+        static let iPadSource = "ddg_ios_tablet"
         static let appUsage = "app_use"
+        static let duckAI = "duckai"
         static let searchHeader = "-1"
         static let kbgDisabled = "-1"
         static let emailEnabled = "1"
@@ -193,6 +200,8 @@ public extension URL {
 
     static var appAtb: URL? { defaultStatisticsDependentURLFactory.makeAppAtbURL() }
 
+    static var duckAIAtb: URL? { defaultStatisticsDependentURLFactory.makeDuckAIAtbURL() }
+
     var hasCorrectMobileStatsParams: Bool { URL.defaultStatisticsDependentURLFactory.hasCorrectMobileStatsParams(url: self) }
 
     static func makePixelURL(pixelName: String, formFactor: String? = nil, includeATB: Bool = true) -> URL {
@@ -204,9 +213,15 @@ public extension URL {
 public final class StatisticsDependentURLFactory {
 
     private let statisticsStore: StatisticsStore
+    private let isPad: Bool
 
-    init(statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+    var source: String {
+        isPad ? URL.ParamValue.iPadSource : URL.ParamValue.phoneSource
+    }
+
+    init(statisticsStore: StatisticsStore = StatisticsUserDefaults(), isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
+        self.isPad = isPad
     }
 
     // MARK: Search
@@ -252,7 +267,7 @@ public final class StatisticsDependentURLFactory {
     func applyingStatsParams(to url: URL) -> URL {
         var searchURL = url.removingParameters(named: [URL.Param.source, URL.Param.atb])
             .appendingParameter(name: URL.Param.source,
-                                value: URL.ParamValue.source)
+                                value: source)
 
         if let atbWithVariant = statisticsStore.atbWithVariant {
             searchURL = searchURL.appendingParameter(name: URL.Param.atb, value: atbWithVariant)
@@ -269,7 +284,8 @@ public final class StatisticsDependentURLFactory {
         return URL.atb.appendingParameters([
             URL.Param.atb: atbWithVariant,
             URL.Param.setAtb: setAtb,
-            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled
+            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled,
+            URL.Param.isTablet: isPad ? "1" : "0",
         ])
     }
 
@@ -281,13 +297,33 @@ public final class StatisticsDependentURLFactory {
             URL.Param.activityType: URL.ParamValue.appUsage,
             URL.Param.atb: atbWithVariant,
             URL.Param.setAtb: setAtb,
-            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled
+            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled,
+            URL.Param.isTablet: isPad ? "1" : "0",
         ])
+    }
+
+    func makeDuckAIAtbURL() -> URL? {
+        guard let atbWithVariant = statisticsStore.atbWithVariant else {
+            return nil
+        }
+
+        var params: [String: String] = [
+            URL.Param.atb: atbWithVariant,
+            URL.Param.activityType: URL.ParamValue.duckAI,
+            URL.Param.isTablet: isPad ? "1" : "0",
+        ]
+
+        // set_atb is nil for first prompt (backend identifies this as first-ever prompt)
+        if let setAtb = statisticsStore.duckAIRetentionAtb {
+            params[URL.Param.setAtb] = setAtb
+        }
+
+        return URL.atb.appendingParameters(params)
     }
 
     func hasCorrectMobileStatsParams(url: URL) -> Bool {
         guard let source = url.getParameter(named: URL.Param.source),
-              source == URL.ParamValue.source
+              source == self.source
         else { return false }
         if let atbWithVariant = statisticsStore.atbWithVariant {
             return atbWithVariant == url.getParameter(named: URL.Param.atb)

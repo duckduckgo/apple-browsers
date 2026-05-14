@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
 import Foundation
+import PrivacyConfig
 import Subscription
 
 protocol SubscriptionRedirectManaging: AnyObject {
@@ -28,12 +28,12 @@ protocol SubscriptionRedirectManaging: AnyObject {
 
 final class SubscriptionRedirectManager: SubscriptionRedirectManaging {
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let baseURL: URL
     private let tld: TLD
     private let featureFlagger: FeatureFlagger
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
          baseURL: URL,
          tld: TLD = Application.appDelegate.tld,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
@@ -49,7 +49,7 @@ final class SubscriptionRedirectManager: SubscriptionRedirectManaging {
         else { return nil }
 
         if url.pathComponents == URL.subscription.pathComponents {
-            let shouldHideSubscriptionDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+            let shouldHideSubscriptionDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
             let isPurchasePageRedirectActive = !shouldHideSubscriptionDueToNoProducts
 
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.

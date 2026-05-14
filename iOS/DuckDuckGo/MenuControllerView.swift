@@ -58,9 +58,18 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
         hostingController.view.addGestureRecognizer(tap)
 
         if #available(iOS 16.0, *) {
-            let menu = UIEditMenuInteraction(delegate: coordinator)
+            let editMenuDelegate = MenuControllerEditMenuDelegate(
+                menuProvider: { [weak coordinator] in
+                    coordinator?.makeEditMenu()
+                },
+                onDismiss: { [weak coordinator] in
+                    coordinator?.handleEditMenuDismiss()
+                }
+            )
+            let menu = UIEditMenuInteraction(delegate: editMenuDelegate)
             hostingController.view.addInteraction(menu)
-            context.coordinator.menu = menu
+            coordinator.menu = menu
+            coordinator.editMenuDelegate = editMenuDelegate
         }
 
         return hostingController
@@ -75,7 +84,7 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
         context.coordinator.onClose = onClose
     }
 
-    class Coordinator<CoordinatorContent: View>: NSObject, UIEditMenuInteractionDelegate {
+    class Coordinator<CoordinatorContent: View>: NSObject {
         var responder: UIResponder?
         var observer: Any?
         var title: String
@@ -87,6 +96,7 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
 
         // Define me as UIEditMenuInteraction when iOS 15 is dropped
         var menu: NSObject?
+        var editMenuDelegate: NSObject?
 
         init(title: String, secondaryTitle: String?, action: @escaping () -> Void, secondaryAction: (() -> Void)?, onOpen: (() -> Void)?, onClose: (() -> Void)?) {
             self.title = title
@@ -100,16 +110,16 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
    
         @objc func tap(_ gestureRecognizer: UIGestureRecognizer) {
             if #available(iOS 16.0, *) {
-                handleiOS16Tap(gestureRecognizer)
+                handleEditMenuTap(gestureRecognizer)
             } else {
-                handleiOS15Tap(gestureRecognizer)
+                handleLegacyMenuTap(gestureRecognizer)
             }
             onOpen?()
         }
 
         // MARK: Private
 
-        private func handleiOS15Tap(_ gestureRecognizer: UIGestureRecognizer) {
+        private func handleLegacyMenuTap(_ gestureRecognizer: UIGestureRecognizer) {
             let menu = UIMenuController.shared
 
             guard gestureRecognizer.state == .ended, let view = gestureRecognizer.view, !menu.isMenuVisible else {
@@ -145,7 +155,7 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
         }
 
         @available(iOS 16.0, *)
-        private func handleiOS16Tap(_ gestureRecognizer: UIGestureRecognizer) {
+        private func handleEditMenuTap(_ gestureRecognizer: UIGestureRecognizer) {
             guard let menuInteraction = menu as? UIEditMenuInteraction else {
                 return
             }
@@ -159,10 +169,8 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
             menuInteraction.presentEditMenu(with: menuConfig)
         }
 
-        // MARK: UIEditMenuInteractionDelegate
-
         @available(iOS 16.0, *)
-        func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        func makeEditMenu() -> UIMenu? {
             var actions: [UIAction] = [.init(title: title) { [weak self] _ in
                 self?.action()
             }]
@@ -174,13 +182,13 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
             }
 
             let uiMenu: UIMenu = .init(title: "menu",
-                                        children: actions)
+                                       children: actions)
 
             return uiMenu
         }
 
         @available(iOS 16.0, *)
-        func editMenuInteraction(_ interaction: UIEditMenuInteraction, willDismissMenuFor configuration: UIEditMenuConfiguration, animator: any UIEditMenuInteractionAnimating) {
+        func handleEditMenuDismiss() {
             handleClose()
         }
 
@@ -223,4 +231,23 @@ struct MenuControllerView<Content: View>: UIViewControllerRepresentable {
         }
     }
 
+}
+
+@available(iOS 16.0, *)
+private final class MenuControllerEditMenuDelegate: NSObject, UIEditMenuInteractionDelegate {
+    private let menuProvider: () -> UIMenu?
+    private let onDismiss: () -> Void
+
+    init(menuProvider: @escaping () -> UIMenu?, onDismiss: @escaping () -> Void) {
+        self.menuProvider = menuProvider
+        self.onDismiss = onDismiss
+    }
+
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        menuProvider()
+    }
+
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, willDismissMenuFor configuration: UIEditMenuConfiguration, animator: any UIEditMenuInteractionAnimating) {
+        onDismiss()
+    }
 }

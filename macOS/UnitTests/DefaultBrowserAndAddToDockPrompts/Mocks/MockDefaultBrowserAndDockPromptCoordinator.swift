@@ -16,17 +16,29 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
     var getPromptTypeResult: DefaultBrowserAndDockPromptPresentationType?
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType?
+    var evaluateEligibilityType: DefaultBrowserAndDockPromptPresentationType?
+    var promptDismissed = PassthroughSubject<(DefaultBrowserAndDockPromptPresentationType, PromoResult), Never>()
+
+    private(set) var eligiblePrompt = CurrentValueSubject<DefaultBrowserAndDockPromptPresentationType?, Never>(nil)
+    var promptDismissedPublisher: AnyPublisher<(DefaultBrowserAndDockPromptPresentationType, PromoResult), Never> {
+        promptDismissed.eraseToAnyPublisher()
+    }
 
     private(set) var wasPromptConfirmationCalled = false
     private(set) var wasDismissPromptCalled = false
     private(set) var capturedConfirmationPrompt: DefaultBrowserAndDockPromptPresentationType?
     private(set) var capturedDismissAction: DefaultBrowserAndDockPromptDismissAction?
+
+    func evaluateEligibility() {
+        eligiblePrompt.send(evaluateEligibilityType)
+    }
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
         getPromptTypeResult

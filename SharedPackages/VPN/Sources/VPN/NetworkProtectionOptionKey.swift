@@ -25,9 +25,7 @@ public enum NetworkProtectionOptionKey {
     public static let selectedLocation = "selectedLocation"
     public static let dnsSettings = "dnsSettings"
     public static let excludeLocalNetworks = "excludeLocalNetworks"
-    public static let isAuthV2Enabled = "isAuthV2Enabled"
 #if os(macOS)
-    public static let authToken = "authToken"
     public static let tokenContainer = "tokenContainer"
 #endif
     public static let isOnDemand = "is-on-demand"
@@ -37,5 +35,4 @@ public enum NetworkProtectionOptionKey {
     public static let tunnelMemoryCrashSimulation = "tunnelMemoryCrashSimulation"
     public static let connectionTesterEnabled = "connectionTesterEnabled"
     public static let settings = "settings"
-    public static let isConnectionWideEventMeasurementEnabled = "isConnectionWideEventMeasurementEnabled"
 }

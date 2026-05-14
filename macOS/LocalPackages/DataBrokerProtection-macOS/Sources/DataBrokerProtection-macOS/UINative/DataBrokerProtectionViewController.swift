@@ -24,6 +24,7 @@ import PixelKit
 import WebKit
 import Combine
 import DataBrokerProtectionCore
+import PrivacyConfig
 
 final public class DataBrokerProtectionViewController: NSViewController {
     private let dataManager: DataBrokerProtectionDataManaging?

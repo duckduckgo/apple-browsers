@@ -22,16 +22,19 @@ import Foundation
 import os.log
 import Persistence
 import PrivacyStats
+import AutoconsentStats
 
 public protocol NewTabPageProtectionsReportSettingsPersisting: AnyObject {
     var activeFeed: NewTabPageDataModel.Feed { get set }
     var isViewExpanded: Bool { get set }
+    var widgetNewLabelFirstShownDate: Date? { get set }
 }
 
 final class UserDefaultsNewTabPageProtectionsReportSettingsPersistor: NewTabPageProtectionsReportSettingsPersisting {
     enum Keys {
         static let isViewExpanded = "new-tab-page.protection-report.is-view-expanded"
         static let activeFeed = "new-tab-page.protection-report.active-feed"
+        static let widgetNewLabelFirstShownDate = "new-tab-page.protection-report.widget.new-label.first-shown-date"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -56,6 +59,17 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistor: NewTabPage
         set { try? keyValueStore.set(newValue.rawValue, forKey: Keys.activeFeed)}
     }
 
+    var widgetNewLabelFirstShownDate: Date? {
+        get { return try? keyValueStore.object(forKey: Keys.widgetNewLabelFirstShownDate) as? Date }
+        set {
+            if let date = newValue {
+                try? keyValueStore.set(date, forKey: Keys.widgetNewLabelFirstShownDate)
+            } else {
+                try? keyValueStore.removeObject(forKey: Keys.widgetNewLabelFirstShownDate)
+            }
+        }
+    }
+
     private func migrateFromLegacyIsViewExpandedSetting(using getLegacyIsViewExpanded: () -> Bool?) {
         guard (try? keyValueStore.object(forKey: Keys.isViewExpanded)) == nil, let legacyIsViewExpanded = getLegacyIsViewExpanded() else {
             return
@@ -73,10 +87,20 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistor: NewTabPage
 
 public final class NewTabPageProtectionsReportModel {
 
+    private enum Constants {
+        static let newLabelForAutoconsentWidgetDuration: TimeInterval = .days(7)
+    }
+
     let privacyStats: PrivacyStatsCollecting
+    let autoconsentStats: AutoconsentStatsCollecting
     let statsUpdatePublisher: AnyPublisher<Void, Never>
+    let isAutoconsentEnabled: () -> Bool
+
+    public let scroller = NewTabPageProtectionsReportScroller()
 
     @Published var shouldShowBurnAnimation: Bool
+
+    @Published private(set) var shouldShowProtectionsReportNewLabel: Bool = false
 
     @Published var isViewExpanded: Bool {
         didSet {
@@ -99,12 +123,15 @@ public final class NewTabPageProtectionsReportModel {
 
     private let statsUpdateSubject = PassthroughSubject<Void, Never>()
     private var cancellables: Set<AnyCancellable> = []
+    private var newLabelTimer: Timer?
 
     public convenience init(
         privacyStats: PrivacyStatsCollecting,
+        autoconsentStats: AutoconsentStatsCollecting,
         keyValueStore: ThrowingKeyValueStoring,
         burnAnimationSettingChanges: AnyPublisher<Bool, Never>,
         showBurnAnimation: Bool,
+        isAutoconsentEnabled: @escaping () -> Bool,
         getLegacyIsViewExpandedSetting: @autoclosure () -> Bool?,
         getLegacyActiveFeedSetting: @autoclosure () -> NewTabPageDataModel.Feed?,
     ) {
@@ -114,24 +141,31 @@ public final class NewTabPageProtectionsReportModel {
             getLegacyActiveFeed: getLegacyActiveFeedSetting()
         )
         self.init(privacyStats: privacyStats,
+                  autoconsentStats: autoconsentStats,
                   settingsPersistor: settingsPersistor,
                   burnAnimationSettingChanges: burnAnimationSettingChanges,
-                  showBurnAnimation: showBurnAnimation)
+                  showBurnAnimation: showBurnAnimation,
+                  isAutoconsentEnabled: isAutoconsentEnabled)
     }
 
     init(privacyStats: PrivacyStatsCollecting,
+         autoconsentStats: AutoconsentStatsCollecting,
          settingsPersistor: NewTabPageProtectionsReportSettingsPersisting,
          burnAnimationSettingChanges: AnyPublisher<Bool, Never>,
-         showBurnAnimation: Bool
+         showBurnAnimation: Bool,
+         isAutoconsentEnabled: @escaping () -> Bool
     ) {
         self.privacyStats = privacyStats
+        self.autoconsentStats = autoconsentStats
         self.settingsPersistor = settingsPersistor
+        self.isAutoconsentEnabled = isAutoconsentEnabled
 
         isViewExpanded = settingsPersistor.isViewExpanded
         activeFeed = settingsPersistor.activeFeed
         statsUpdatePublisher = statsUpdateSubject.eraseToAnyPublisher()
         shouldShowBurnAnimation = showBurnAnimation
         visibleFeed = isViewExpanded ? activeFeed : nil
+        shouldShowProtectionsReportNewLabel = calculateShouldShowProtectionsReportNewLabel()
 
         Publishers.CombineLatest($isViewExpanded, $activeFeed)
             .sink { [weak self] isViewExpanded, activeFeed in
@@ -139,7 +173,7 @@ public final class NewTabPageProtectionsReportModel {
             }
             .store(in: &cancellables)
 
-        privacyStats.statsUpdatePublisher
+        Publishers.Merge(privacyStats.statsUpdatePublisher, autoconsentStats.statsUpdatePublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.statsUpdateSubject.send()
@@ -152,10 +186,44 @@ public final class NewTabPageProtectionsReportModel {
                 self?.shouldShowBurnAnimation = shouldShowBurnAnimation
             }
             .store(in: &cancellables)
+
+        setupNewLabelHideTimerIfNecessary()
     }
 
     func calculateTotalCount() async -> Int64 {
         await privacyStats.fetchPrivacyStatsTotalCount()
+    }
+
+    private func calculateShouldShowProtectionsReportNewLabel() -> Bool {
+        if let date = settingsPersistor.widgetNewLabelFirstShownDate {
+            return Date() <= date.advanced(by: Constants.newLabelForAutoconsentWidgetDuration)
+        } else {
+            let currentDate = Date()
+            settingsPersistor.widgetNewLabelFirstShownDate = currentDate
+            return true
+        }
+    }
+
+    private func setupNewLabelHideTimerIfNecessary() {
+        guard let firstShownDate = settingsPersistor.widgetNewLabelFirstShownDate else {
+            return
+        }
+
+        let expirationDate = firstShownDate.advanced(by: Constants.newLabelForAutoconsentWidgetDuration)
+        let timeUntilExpiration = expirationDate.timeIntervalSinceNow
+
+        guard timeUntilExpiration > 0 else {
+            shouldShowProtectionsReportNewLabel = false
+            return
+        }
+
+        newLabelTimer = Timer.scheduledTimer(withTimeInterval: timeUntilExpiration, repeats: false) { [weak self] _ in
+            self?.shouldShowProtectionsReportNewLabel = false
+        }
+    }
+
+    deinit {
+        newLabelTimer?.invalidate()
     }
 }
 

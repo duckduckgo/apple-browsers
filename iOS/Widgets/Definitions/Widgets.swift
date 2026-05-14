@@ -231,6 +231,7 @@ struct Widgets: WidgetBundle {
                  FireButtonLockScreenWidget(),
                  FavoritesLockScreenWidget(),
                  AIChatLockScreenWidget(),
+                 DuckAIVoiceLockScreenWidget(),
                  PasswordsLockScreenWidget()
              )
     }
@@ -276,6 +277,7 @@ struct VPNBundle: WidgetBundle {
             VoiceSearchControlWidget()
             EmailProtectionControlWidget()
             FireButtonControlWidget()
+            DuckAIVoiceChatControlWidget()
         }
     }
 }

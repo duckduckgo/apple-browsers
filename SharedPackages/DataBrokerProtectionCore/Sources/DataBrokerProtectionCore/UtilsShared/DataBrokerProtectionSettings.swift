@@ -30,11 +30,10 @@ public final class DataBrokerProtectionSettings {
 
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
-        static let isAuthV2Enabled = "dbp.environment.isAuthV2Enabled"
-
         static let mainConfigETagKey = "dbp.mainConfigETag"
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
+        static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -57,15 +56,6 @@ public final class DataBrokerProtectionSettings {
 
         set {
             defaults.dataBrokerProtectionSelectedEnvironment = newValue
-        }
-    }
-
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.value(forKey: Keys.isAuthV2Enabled) as? Bool ?? false
-        }
-        set {
-            defaults.setValue(newValue, forKey: Keys.isAuthV2Enabled)
         }
     }
 
@@ -98,6 +88,17 @@ public final class DataBrokerProtectionSettings {
         updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(Date.distantPast.timeIntervalSince1970)
     }
 
+    // MARK: - Preferred run date migration
+
+    public var hasPerformedPreferredRunDateMigration: Bool {
+        get {
+            defaults.bool(forKey: Keys.preferredRunDateMigrationKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.preferredRunDateMigrationKey)
+        }
+    }
+
     // MARK: - Service root
 
     public var serviceRoot: String {
@@ -110,6 +111,13 @@ public final class DataBrokerProtectionSettings {
     }
 
     public var endpointURL: URL {
+#if DEBUG
+        if serviceRoot.hasPrefix("http://") || serviceRoot.hasPrefix("https://"),
+           let override = URL(string: serviceRoot) {
+            return override
+        }
+#endif
+
         switch selectedEnvironment {
         case .production:
             return URL(string: "https://dbp.duckduckgo.com")!

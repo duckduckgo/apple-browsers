@@ -2,6 +2,60 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d filă și datele aferente au fost șterse</string>
+			<key>few</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+			<key>other</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Șterge de pe un site. S-ar putea să fii deconectat de la conturi.</string>
+			<key>few</key>
+			<string>Șterge de pe %1$d site-uri. S-ar putea să fii deconectat de la conturi.</string>
+			<key>other</key>
+			<string>Șterge de pe %1$d de site-uri. S-ar putea să fii deconectat de la conturi.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide fila</string>
+			<key>few</key>
+			<string>Închide toate cele %1$d file</string>
+			<key>other</key>
+			<string>Închide toate cele %1$d de file</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -139,11 +193,65 @@ I-am blocat!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d Urmăritor Blocat</string>
+			<string>%1$d instrument de urmărire a cărui încărcare este blocată</string>
 			<key>few</key>
-			<string>%1$d Urmăritori Blocați</string>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
 			<key>other</key>
-			<string>%1$d Urmăritori Blocați</string>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker</string>
+			<key>few</key>
+			<string>%1$d Trackere</string>
+			<key>other</key>
+			<string>%1$d Trackere</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d alt domeniu încărcat</string>
+			<key>few</key>
+			<string>%1$d alte domenii încărcate</string>
+			<key>other</key>
+			<string>%1$d de alte domenii încărcate</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire deținut de acest site (încărcat)</string>
+			<key>few</key>
+			<string>%1$d instrumente de urmărire deținute de acest site (încărcate)</string>
+			<key>other</key>
+			<string>%1$d de instrumente de urmărire deținute de acest site (încărcate)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -620,6 +728,42 @@ I-am blocat!
 			<string>%1$d file selectate</string>
 			<key>other</key>
 			<string>%1$d de file selectate</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d site exclus de la ștergere</string>
+			<key>few</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+			<key>other</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Tracker</string>
+			<key>few</key>
+			<string>%2$@ Trackere</string>
+			<key>other</key>
+			<string>%2$@ Trackere</string>
 		</dict>
 	</dict>
 </dict>

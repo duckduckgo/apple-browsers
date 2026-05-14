@@ -23,11 +23,10 @@ import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
-    static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
+    static func buildAuthenticationManager(subscriptionManager: any SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
         let settings = DataBrokerProtectionSettings(defaults: .dbp)
         let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager,
-                                                                          runTypeProvider: settings,
-                                                                          isAuthV2Enabled: settings.isAuthV2Enabled)
+                                                                          runTypeProvider: settings)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
     }
 }

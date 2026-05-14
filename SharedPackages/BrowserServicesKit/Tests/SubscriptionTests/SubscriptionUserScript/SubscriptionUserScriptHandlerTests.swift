@@ -21,57 +21,58 @@ import SubscriptionTestingUtilities
 import UserScript
 import WebKit
 import XCTest
+import NetworkingTestingUtils
 
 final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMock!
     var handler: SubscriptionUserScriptHandler!
     var mockNavigationDelegate: MockNavigationDelegate!
 
     override func setUp() async throws {
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager = SubscriptionManagerMock()
         mockNavigationDelegate = await MockNavigationDelegate()
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
     }
 
     func testWhenInitializedForIOSThenHandshakeReportsIOS() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(handshake.platform, .ios)
     }
 
     func testWhenInitializedForMacOSThenHandshakeReportsMacOS() async throws {
         handler = .init(platform: .macos,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(handshake.platform, .macos)
     }
 
     func testThatHandshakeReportsSupportForAllMessages() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
-        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate])
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
+        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate])
     }
 
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
-        subscriptionManager.returnSubscription = .failure(SampleError())
+        subscriptionManager.resultSubscription = .failure(SampleError())
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
     }
 
@@ -86,15 +87,18 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
         )
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(
             isSubscribed: true,
             billingPeriod: subscription.billingPeriod.rawValue,
@@ -108,73 +112,93 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsSubscriptionData() async throws {
         let subscription = DuckDuckGoSubscription(status: .expired)
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
 
     func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
         let subscription = DuckDuckGoSubscription(status: .inactive)
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
 
     func testWhenAccessTokenIsAvailableThenGetAuthAccessTokenReturnsToken() async throws {
-        let expectedToken = "test_access_token"
-        subscriptionManager.accessTokenResult = .success(expectedToken)
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        subscriptionManager.resultTokenContainer = tokenContainer
 
-        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
-        XCTAssertEqual(response.accessToken, expectedToken)
+        let response = try await handler.getAuthAccessToken(params: [], message: MockUserScriptMessage())
+        XCTAssertEqual(response.accessToken, tokenContainer.accessToken)
     }
 
     func testWhenAccessTokenIsNotAvailableThenGetAuthAccessTokenReturnsEmptyString() async throws {
         struct SampleError: Error {}
-        subscriptionManager.accessTokenResult = .failure(SampleError())
+        subscriptionManager.resultTokenContainer = nil
 
-        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
+        let response = try await handler.getAuthAccessToken(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(response.accessToken, "")
     }
 
     func testWhenPaidAIChatIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { true },
+                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: true),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(response.usePaidDuckAi)
     }
 
     func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                    featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertFalse(response.usePaidDuckAi)
+    }
+
+    func testWhenProTierIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       featureFlagProvider: MockFeatureFlagProvider(useProTier: true),
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
+        XCTAssertTrue(response.useProTier)
+    }
+
+    func testWhenProTierIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       featureFlagProvider: MockFeatureFlagProvider(useProTier: false),
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
+        XCTAssertFalse(response.useProTier)
     }
 
     @MainActor
     func testBackToSettingsCallsNavigationDelegate() async throws {
-        let response = try await handler.backToSettings(params: [], message: WKScriptMessage())
+        let response = try await handler.backToSettings(params: [], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSettingsCalled)
     }
 
     @MainActor
     func testOpenSubscriptionActivationCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionActivation(params: [], message: WKScriptMessage())
+        let response = try await handler.openSubscriptionActivation(params: [], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionActivationCalled)
     }
@@ -183,7 +207,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testOpenSubscriptionPurchaseCallsNavigationDelegate() async throws {
         let origin = "some_origin"
         let params = ["origin": origin]
-        let response = try await handler.openSubscriptionPurchase(params: params, message: WKScriptMessage())
+        let response = try await handler.openSubscriptionPurchase(params: params, message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
         XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
@@ -192,9 +216,29 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     @MainActor
     func testOpenSubscriptionPurchaseWithoutOriginCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionPurchase(params: [:], message: WKScriptMessage())
+        let response = try await handler.openSubscriptionPurchase(params: [:], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
+        XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
+    @MainActor
+    func testOpenSubscriptionUpgradeCallsNavigationDelegate() async throws {
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let response = try await handler.openSubscriptionUpgrade(params: params, message: MockUserScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
+        XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
+    @MainActor
+    func testOpenSubscriptionUpgradeWithoutOriginCallsNavigationDelegate() async throws {
+        let response = try await handler.openSubscriptionUpgrade(params: [:], message: MockUserScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
         XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
         XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
     }
@@ -253,7 +297,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
 private extension DuckDuckGoSubscription {
     init(status: Status) {
-        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [])
+        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil, availableChanges: nil, pendingPlans: nil)
     }
 }
 
@@ -262,6 +306,7 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
     var navigateToSettingsCalled = false
     var navigateToSubscriptionActivationCalled = false
     var navigateToSubscriptionPurchaseCalled = false
+    var navigateToSubscriptionUpgradeCalled = false
     var purchaseOrigin: String?
     var purchaseFeaturePage: String?
 
@@ -278,6 +323,17 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
         purchaseOrigin = origin
         purchaseFeaturePage = featurePage
     }
+
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
+        navigateToSubscriptionUpgradeCalled = true
+        purchaseOrigin = origin
+        purchaseFeaturePage = featurePage
+    }
+}
+
+struct MockFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
+    var usePaidDuckAi: Bool = false
+    var useProTier: Bool = false
 }
 
 class MockUserScriptMessagePusher: UserScriptMessagePushing {

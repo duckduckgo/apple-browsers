@@ -22,13 +22,34 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
+
+// Temporary, to enable the simplifiedSyncSetup experiment.
+// https://app.asana.com/1/137249556945/project/1203822806345703/task/1213248575226817?focus=true
+public struct SyncSettingsRootView: View {
+    @ObservedObject var model: SyncSettingsViewModel
+
+    private let useSimplifiedLayout: Bool
+
+    public init(model: SyncSettingsViewModel, useSimplifiedLayout: Bool) {
+        self.model = model
+        self.useSimplifiedLayout = useSimplifiedLayout
+    }
+
+    public var body: some View {
+        if useSimplifiedLayout {
+            SimplifiedSyncSettingsView(model: model)
+        } else {
+            SyncSettingsView(model: model)
+        }
+    }
+}
+
+
 public struct SyncSettingsView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
 
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    @State var isSyncWithSetUpSheetVisible = false
-    @State var isRecoverSyncedDataSheetVisible = false
     @State var isEnvironmentSwitcherInstructionsVisible = false
     @State var isDeviceAuthenticationSetupAlertVisible = false
 
@@ -122,9 +143,9 @@ public struct SyncSettingsView: View {
             .environmentObject(model)
             .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
                 Alert(
-                    title: Text("Secure Your Device to Use Sync & Backup"),
-                    message: Text("A device password is required to use Sync & Backup."),
-                    dismissButton: .default(Text("Go to Settings"), action: {
+                    title: Text(UserText.syncPasscodeRequiredAlertTitle),
+                    message: Text(UserText.syncPasscodeRequiredAlertMessage),
+                    dismissButton: .default(Text(UserText.syncPasscodeRequiredAlertGoToSettingsButton), action: {
                         UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                         model.shouldShowPasscodeRequiredAlert = false
                     })

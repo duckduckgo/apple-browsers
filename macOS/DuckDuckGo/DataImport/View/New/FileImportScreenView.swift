@@ -18,88 +18,83 @@
 
 import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 struct FileImportScreenView: View {
-    @Binding var model: DataImportViewModel
+    let importSource: DataImport.Source
     let kind: NewFileImportView.Kind
-    let summaryTypes: Set<DataImport.DataType>
-    let dismiss: () -> Void
+    let summary: DataImportSummary?
+    let isSelectFileButtonDisabled: Bool
+    let selectFile: () -> Void
+    let onFileDrop: (URL) -> Void
 
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             VStack(alignment: .center, spacing: 20) {
-                if let importSourceImage = model.importSource.importSourceImage {
+                if let importSourceImage = importSource.importSourceImage {
                     Image(nsImage: importSourceImage)
                         .resizable()
                         .frame(width: 48, height: 48)
                 }
 
-                Text(UserText.importFromFileTitle(from: model.importSource))
-                    .font(.title2.weight(.semibold))
-
-                VStack(alignment: .leading, spacing: 0) {
-                    if !summaryTypes.isEmpty {
-                        DataImportSummaryView(model, dataTypes: summaryTypes)
-                            .padding(.bottom, 24)
-                    }
-
-                    if case .individual(let dataType) = kind {
-                        // if no data to import
-                        if model.summary(for: dataType)?.isEmpty == true
-                            || model.error(for: dataType)?.errorType == .noData {
-                            DataImportNoDataView(source: model.importSource, dataType: dataType)
-                                .padding(.bottom, 24)
-                            // if browser importer failed - display error message
-                        } else if model.error(for: dataType) != nil {
-                            DataImportErrorView(source: model.importSource, dataType: dataType)
-                                .padding(.bottom, 24)
+                if case .individual(let dataType) = kind, hasError(in: summary, for: dataType) {
+                    let formatText: () -> String = {
+                        switch dataType {
+                        case .bookmarks:
+                            UserText.importBookmarksFromSourceAutomaticError(source: importSource)
+                        case .passwords:
+                            UserText.importPasswordsFromSourceAutomaticError(source: importSource)
+                        case .creditCards:
+                            UserText.importBookmarksFromSourceAutomaticError(source: importSource)
                         }
                     }
+                    NewImportErrorView(text: formatText())
+                }
 
-                    // manual file import instructions for CSV/HTML
-                    NewFileImportView(source: model.importSource,
-                                      allowedFileTypes: kind.supportedFileTypes(for: model.importSource),
-                                      isButtonDisabled: model.isSelectFileButtonDisabled,
-                                      kind: kind) {
-                        model.selectFile()
-                    } onFileDrop: { url in
-                        model.initiateImport(fileURL: url)
-                    }
+                Text(UserText.importFromFileTitle(from: importSource))
+                    .font(.title2.weight(.semibold))
+
+                NewFileImportView(source: importSource,
+                                  allowedFileTypes: kind.supportedFileTypes(for: importSource),
+                                  isButtonDisabled: isSelectFileButtonDisabled,
+                                  kind: kind) {
+                    selectFile()
+                } onFileDrop: { url in
+                    onFileDrop(url)
                 }
             }
             .padding(.leading, 20)
             .padding(.trailing, 20)
             .padding(.bottom, 20)
             .padding(.top, 20)
+
+            if case .archive = kind, hasError(in: summary) {
+                HStack {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+                    Text(UserText.importCouldNotImportFile)
+                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
+                }
+                .padding(.bottom, 20)
+            }
         }
     }
 
-    @ViewBuilder
-    private var importSourcePicker: some View {
-        DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-            model.update(with: importSource)
+    private func hasError(in summary: DataImportSummary?, for dataType: DataImport.DataType? = nil) -> Bool {
+        guard let summary else { return false }
+
+        if let dataType {
+            guard let result = summary[dataType] else { return false }
+            return !isSuccessful(result)
         }
-        .padding(.bottom, 8)
-        .disabled(model.isImportSourcePickerDisabled)
+
+        // Archive flow: show error only if no data type imported any items
+        return !summary.values.contains(where: isSuccessful)
     }
 
-    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            importSourceDataTitle
-            importSourcePicker
-            content()
+    private func isSuccessful(_ result: DataImportResult<DataImport.DataTypeSummary>) -> Bool {
+        if case .success(let typeSummary) = result, typeSummary.successful > 0 {
+            return true
         }
-        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(12)
-        .background(Color.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.decorationTertiary, lineWidth: 1)
-        )
-    }
-
-    private var importSourceDataTitle: some View {
-        Text(UserText.importDataSourceTitle)
+        return false
     }
 }

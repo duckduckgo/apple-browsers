@@ -19,7 +19,7 @@
 
 import Foundation
 
-final class SystemSettingsPiPTutorialURLProvider: SystemSettingsPiPTutorialURLManaging  {
+final class SystemSettingsPiPTutorialURLProvider: SystemSettingsPiPTutorialURLManaging {
     private(set) var providers: [SystemSettingsPiPTutorialDestination.ID: PiPTutorialURLProvider] = [:]
 
     public func register(_ provider: any PiPTutorialURLProvider, for destination: SystemSettingsPiPTutorialDestination) {

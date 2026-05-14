@@ -131,4 +131,16 @@ enum NavigationBarPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .homeButtonClicked,
+                .bookmarksButtonClicked,
+                .downloadsButtonClicked,
+                .passwordsButtonClicked,
+                .shareButtonClicked,
+                .privacyDashboardOpened:
+            return [.pixelSource]
+        }
+    }
+
 }

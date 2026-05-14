@@ -54,14 +54,14 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
         cleanCallsCount += 1
     }
 
-    @MainActor
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error> {
         burnCallsCount += 1
+        return .success(())
     }
 
-    @MainActor
-    func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: Common.TLD) async {
+    func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: Common.TLD) async -> Result<Void, Error> {
         burnDomainsCallsCount += 1
+        return .success(())
     }
 
     var loadCallsCount: Int = 0

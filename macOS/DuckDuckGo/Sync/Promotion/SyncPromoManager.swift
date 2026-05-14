@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import DDGSync
 import Foundation
+import PrivacyConfig
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) -> Bool

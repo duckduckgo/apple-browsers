@@ -17,75 +17,13 @@
 //
 
 import Bookmarks
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 
 extension Preferences {
-
-    // MARK: - Legacy: Superseded by `ThemeAppearanceViewV2`
-    //
-    struct ThemeAppearanceButton: View {
-        let title: String
-        let imageName: String
-        @Binding var isSelected: Bool
-
-        var body: some View {
-            VStack {
-                Button(action: { isSelected.toggle() }) {
-                    VStack(spacing: 2) {
-                        Image(imageName)
-                            .padding(2)
-                            .background(selectionBackground)
-                        Text(title)
-                    }
-                }
-                .padding(.horizontal, 2)
-                .buttonStyle(.plain)
-            }
-        }
-
-        @ViewBuilder
-        private var selectionBackground: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color(.linkBlue), lineWidth: 2)
-            }
-        }
-
-    }
-
-    // MARK: - Legacy: Superseded by `ThemeAppearancePickerV2`
-    //
-    struct ThemeAppearancePicker: View {
-        @EnvironmentObject var model: AppearancePreferences
-
-        var body: some View {
-            HStack(spacing: 24) {
-                ForEach(ThemeAppearance.allCases, id: \.self) { theme in
-                    ThemeAppearanceButton(
-                        title: theme.displayName,
-                        imageName: theme.imageName,
-                        isSelected: isThemeSelected(theme)
-                    )
-                }
-            }
-        }
-
-        private func isThemeSelected(_ theme: ThemeAppearance) -> Binding<Bool> {
-            .init(
-                get: {
-                    model.themeAppearance == theme
-                },
-                set: { isSelected in
-                    if isSelected {
-                        model.themeAppearance = theme
-                    }
-                }
-            )
-        }
-    }
 
     // MARK: - Appearance View (Light / Dark / System)
     //
@@ -94,7 +32,7 @@ extension Preferences {
 
         var body: some View {
             HStack(spacing: 6) {
-                Image(systemNamed: appearance.icon)
+                Image(named: appearance.icon)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.primary)
 
@@ -102,7 +40,8 @@ extension Preferences {
                     .font(.system(size: 13))
                     .foregroundColor(.primary)
             }
-            .frame(width: 139, height: 32)
+            .frame(height: 30)
+            .frame(minWidth: 100, maxWidth: 139)
         }
     }
 
@@ -119,6 +58,9 @@ extension Preferences {
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
         }
     }
 
@@ -126,13 +68,19 @@ extension Preferences {
     //
     struct ThemeView: View {
 
-        // MARK: - Constants
-        private let outerSize: CGFloat = 42
-        private let outerCornerRadius: CGFloat = 8
-        private let innerSize = CGSize(width: 40, height: 31)
-        private let innerCornerRadius: CGFloat = 7
-        private let knobSize = CGSize(width: 28, height: 8)
+        // MARK: - Constants / Radius
         private let knobRadius: CGFloat = 7
+        private let innerCornerRadius: CGFloat = 7
+        private let outerCornerRadius: CGFloat = 8
+
+        // MARK: - Constants / Size
+        private let outerMinWidth: CGFloat = 32
+        private let outerMaxWidth: CGFloat = 42
+        private let outerHeight: CGFloat = 42
+        private let innerHeight: CGFloat = 31
+        private let innerTopHeight: CGFloat = 10
+        private let innerBottomHeight: CGFloat = 21
+        private let knobHeight: CGFloat = 8
 
         // MARK: - Properties
         private let themeColors: ThemeColors
@@ -148,21 +96,20 @@ extension Preferences {
                 // Background
                 RoundedRectangle(cornerRadius: outerCornerRadius)
                     .fill(Color(themeColors.surfaceBackdrop))
-                    .frame(width: outerSize, height: outerSize)
                     .overlay(
                         RoundedRectangle(cornerRadius: outerCornerRadius)
                         .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
-                        .frame(width: outerSize, height: outerSize)
                     )
 
                 // Inner Top
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfacePrimary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .frame(height: innerHeight)
+                    .padding([.leading, .trailing], 1)
                     .mask(
                         VStack {
                             Rectangle()
-                                .frame(height: 10)
+                                .frame(height: innerTopHeight)
                             Color.clear
                         }
                     )
@@ -171,12 +118,13 @@ extension Preferences {
                 // Inner Bottom
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfaceTertiary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .padding([.leading, .trailing], 1)
+                    .frame(height: innerHeight)
                     .mask(
                         VStack {
                             Color.clear
                             Rectangle()
-                                .frame(height: 21)
+                                .frame(height: innerBottomHeight)
                         }
                     )
                     .padding(.bottom, 1)
@@ -184,9 +132,12 @@ extension Preferences {
                 // Knob
                 RoundedRectangle(cornerRadius: knobRadius)
                     .fill(Color(themeColors.accentPrimary))
-                    .frame(width: knobSize.width, height: knobSize.height)
+                    .frame(height: knobHeight)
+                    .padding([.leading, .trailing], 7)
                     .padding(.bottom, 6)
             }
+            .frame(height: outerHeight)
+            .frame(minWidth: outerMinWidth, maxWidth: outerMaxWidth)
         }
     }
 
@@ -198,13 +149,16 @@ extension Preferences {
 
         var body: some View {
             SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
-                              allValues: ThemeName.internalUserThemes,
+                              allValues: ThemeName.allCasesSorted,
                               selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeName) { newValue in
+                PixelKit.fire(SettingsPixel.themeNameChanged(name: newValue, source: .settings), frequency: .standard)
+            }
         }
     }
 
@@ -215,7 +169,7 @@ extension Preferences {
 
         var body: some View {
             Button {
-                model.themeName = .figma
+                model.themeName = .default
 
             } label: {
                 HStack(spacing: 8) {
@@ -236,32 +190,34 @@ extension Preferences {
         @ObservedObject var aiChatModel: AIChatPreferences
         @ObservedObject var themeManager: ThemeManager
 
-        var isThemeSwitcherEnabled: Bool = false
-
         var body: some View {
             PreferencePane(UserText.appearance) {
 
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
-                    if isThemeSwitcherEnabled {
-                        ThemeAppearancePickerV2(theme: themeManager.theme)
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemeAppearancePickerV2(theme: themeManager.theme)
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ThemesPickerView(theme: themeManager.theme)
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemesPickerView(theme: themeManager.theme)
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ThemesResetView()
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemesResetView()
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
+                    ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
 
-                    } else {
-                        ThemeAppearancePicker()
-                            .environmentObject(model)
+                    if model.isForceDarkModeVisible {
+                        ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
+                            get: { model.forceDarkModeEnabled },
+                            set: { model.forceDarkModeEnabled = $0 }
+                        ))
+                        Text(UserText.forceDarkModeOnWebsitesFooter)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
                     }
                 }
 
@@ -351,14 +307,14 @@ extension Preferences {
 //
 private extension ThemeAppearance {
 
-    var icon: Image.SystemImageName {
+    var icon: Image.ImageName {
         switch self {
         case .light:
-            .sunMax
+            .appearanceLight
         case .dark:
-            .moon
+            .appearanceDark
         case .systemDefault:
-            .circleLeftHalfFilled
+            .appearanceSystem
         }
     }
 }
@@ -381,8 +337,9 @@ private extension SlidingPickerSettings {
             backgroundColor: Color(theme.palette.surfacePrimary),
             borderColor: Color(theme.palette.surfaceDecorationPrimary),
             selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
-            selectionBorderColor: Color(theme.palette.accentPrimary),
+            selectionBorderColor: Color(theme.palette.shadowSecondary),
             animationsEnabled: false,
-            dividerSize: CGSize(width: 1, height: 16))
+            dividerSize: CGSize(width: 1, height: 16),
+            elementsMargin: 1)
     }
 }

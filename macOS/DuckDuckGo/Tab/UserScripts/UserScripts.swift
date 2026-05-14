@@ -17,31 +17,30 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
+import os.log
 import Foundation
+import PrivacyConfig
 import HistoryView
-import NewTabPage
+import Persistence
 import PixelKit
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
 import WebKit
-import SERPSettings
 
 @MainActor
-final class UserScripts: UserScriptsProvider {
+final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
-    let printingUserScript = PrintingUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -51,57 +50,97 @@ final class UserScripts: UserScriptsProvider {
     let youtubePlayerUserScript: YoutubePlayerUserScript?
     let specialErrorPageUserScript: SpecialErrorPageUserScript?
     let onboardingUserScript: OnboardingUserScript?
-#if SPARKLE
-    let releaseNotesUserScript: ReleaseNotesUserScript?
-#endif
+    let releaseNotesUserScript: Subfeature? /*ReleaseNotesUserScript*/
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
-    let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let webTelemetryScript = WebTelemetryUserScript()
+    let tabSuspensionScript = TabSuspensionUserScript()
+    let webEventsSubfeature: WebEventsSubfeature
 
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences) {
+    init(with sourceProvider: ScriptSourceProviding,
+         contentScopePreferences: ContentScopePreferences,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
-        let aiChatDebugURLSettings = AIChatDebugURLSettings()
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
+        let aiChatMessageHandler = AIChatMessageHandler(
+            featureFlagger: sourceProvider.featureFlagger,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+        )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
+            messageHandling: aiChatMessageHandler,
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
-            statisticsLoader: StatisticsLoader.shared
+            statisticsLoader: StatisticsLoader.shared,
+            syncServiceProvider: sourceProvider.syncServiceProvider,
+            syncErrorHandler: sourceProvider.syncErrorHandler,
+            featureFlagger: sourceProvider.featureFlagger
         )
+        let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { sourceProvider.featureFlagger.isFeatureOn(.paidAIChat) },
+            subscriptionManager: NSApp.delegateTyped.subscriptionManager,
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        if isNativeStorageBridgeAvailable,
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let customHostname = aiChatDebugURLSettings.customURLHostname {
+                originRules.append(.exact(hostname: customHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
         let currentCohorts = sourceProvider.currentCohorts ?? []
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
                                            isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
                                            debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
-                                           currentCohorts: currentCohorts)
+                                           currentCohorts: currentCohorts,
+                                           themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -109,36 +148,40 @@ final class UserScripts: UserScriptsProvider {
             fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }
 
+        let youTubeAdBlockingStorage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
+        webEventsSubfeature = WebEventsSubfeature(
+            isUserOptedIn: {
+                (youTubeAdBlockingStorage.youTubeAdBlockingEnabled ?? false)
+                    && (youTubeAdBlockingStorage.youTubeAnalyticsEnabled ?? false)
+            },
+            onEvent: { type, loginState in
+                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState.rawValue) else { return }
+                PixelKit.fire(pixel, frequency: .daily)
+            }
+        )
+
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
-            statsManager: NSApp.delegateTyped.autoconsentDailyStats,
             management: sourceProvider.autoconsentManagement,
-            preferences: sourceProvider.cookiePopupProtectionPreferences
+            preferences: sourceProvider.cookiePopupProtectionPreferences,
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
         let historyViewUserScript = HistoryViewUserScript()
         sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
         self.historyViewUserScript = historyViewUserScript
-
-        if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            assert(
-                sourceProvider.newTabPageActionsManager != nil,
-                "NewTabPageActionsManager must be available when newTabPagePerTab feature is enabled. Ensure it is properly initialized in UserScriptDependenciesProviding."
-            )
-            let newTabPageUserScript = NewTabPageUserScript()
-            sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
-            self.newTabPageUserScript = newTabPageUserScript
-        } else {
-            newTabPageUserScript = nil
-        }
 
         if sourceProvider.featureFlagger.isFeatureOn(.aiChatPageContext) {
             pageContextUserScript = PageContextUserScript()
@@ -156,13 +199,27 @@ final class UserScripts: UserScriptsProvider {
             youtubePlayerUserScript = nil
         }
 
-#if SPARKLE
-        releaseNotesUserScript = ReleaseNotesUserScript()
-#endif
+        // Release notes user script - only available for Sparkle builds
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateControlling {
+            releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
+                pixelFiring: PixelKit.shared,
+                releaseNotesURL: .releaseNotes
+            )
+        } else {
+            releaseNotesUserScript = nil
+        }
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -172,6 +229,8 @@ final class UserScripts: UserScriptsProvider {
         if let pageContextUserScript {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
+
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
 
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
@@ -185,6 +244,10 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         }
 
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+        }
+
         if let specialPages = specialPages {
 
             if let specialErrorPageUserScript {
@@ -193,66 +256,49 @@ final class UserScripts: UserScriptsProvider {
             if let youtubePlayerUserScript {
                 specialPages.registerSubfeature(delegate: youtubePlayerUserScript)
             }
-#if SPARKLE
             if let releaseNotesUserScript {
                 specialPages.registerSubfeature(delegate: releaseNotesUserScript)
             }
-#endif
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
 
             specialPages.registerSubfeature(delegate: historyViewUserScript)
 
-            if let newTabPageUserScript {
-                specialPages.registerSubfeature(delegate: newTabPageUserScript)
-            }
             userScripts.append(specialPages)
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isUsingAuthV2 {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
-                assertionFailure("SubscriptionManager is not available")
-                return
-            }
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
 
-            let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               authEndpointService: subscriptionManager.authEndpointService,
-                                                               accountManager: subscriptionManager.accountManager)
-            delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                               stripePurchaseFlow: stripePurchaseFlow,
-                                                               uiHandler: Application.appDelegate.subscriptionUIHandler)
-        } else {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-                assertionFailure("subscriptionManager is not available")
-                return
-            }
-            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-            delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                 stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                                 wideEvent: WideEvent())
-        }
+        delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                           stripePurchaseFlow: stripePurchaseFlow,
+                                                           uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                           aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                           wideEvent: Application.appDelegate.wideEvent,
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
-        contextMenuScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
-        pageObserverScript,
-        printingUserScript,
-        hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

@@ -22,7 +22,10 @@ import Combine
 import Common
 import History
 import HistoryView
+import Persistence
 import PixelKit
+import PrivacyConfig
+import AIChat
 
 // MARK: - Fire Dialog Presentation Abstractions (for testability)
 
@@ -65,7 +68,11 @@ final class FireCoordinator {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
+    private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
+    private let onboardingFireReporting: (() -> OnboardingFireReporting)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
+    let dataClearingWideEventService: DataClearingWideEventService?
 
     init(tld: TLD,
          featureFlagger: FeatureFlagger,
@@ -76,10 +83,13 @@ final class FireCoordinator {
          faviconManagement: FaviconManagement,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring?,
+         wideEventManaging: WideEventManaging? = nil,
+         aiChatSyncCleaner: (() -> AIChatSyncCleaning?)? = nil,
          historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
          fireViewModel: FireViewModel? = nil, // for testing: created if not provided
          tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
          fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+         onboardingFireReporting: (() -> OnboardingFireReporting)? = nil // for testing: created if not provided
     ) {
 
         self.tld = tld
@@ -93,6 +103,14 @@ final class FireCoordinator {
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
+        self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.onboardingFireReporting = onboardingFireReporting ?? { OnboardingPixelReporter() }
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelFiring)
+        if let wideEventManaging = wideEventManaging {
+            self.dataClearingWideEventService = .init(wideEvent: wideEventManaging)
+        } else {
+            self.dataClearingWideEventService = nil
+        }
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
@@ -104,8 +122,10 @@ final class FireCoordinator {
             return DefaultFireDialogPresenter(view: view)
         }
         var fireCoordinatorGetter: (() -> FireCoordinator)!
-        let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains, fire: { fireCoordinatorGetter().fireViewModel.fire })
-        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger, tld: tld)
+        let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains,
+                                              fire: { fireCoordinatorGetter().fireViewModel.fire },
+                                              recordAIChatHistoryClearForSync: { Task { await aiChatSyncCleaner?()?.recordLocalClear(date: Date()) } })
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, tld: tld)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
@@ -113,6 +133,11 @@ final class FireCoordinator {
     }
 
     func fireButtonAction() {
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return
+        }
+
         // There must be a window when the Fire button is clicked
         guard let lastKeyMainWindowController = windowControllersManager.lastKeyMainWindowController,
               let burningWindow = lastKeyMainWindowController.window else {
@@ -122,23 +147,30 @@ final class FireCoordinator {
         burningWindow.makeKeyAndOrderFront(nil)
         let mainViewController = lastKeyMainWindowController.mainViewController
 
-        // Present dialog gated by feature flag; fallback to legacy popover
-        // Special popover variant for Fire window
-        if !mainViewController.isBurner, featureFlagger.isFeatureOn(.fireDialog) {
+        // Use Fire dialog for regular windows, popover for Fire windows
+        if !mainViewController.isBurner {
             Task { @MainActor in
                 _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
             }
         } else {
+            // Fire windows continue to use the legacy popover
             showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                             tabCollectionViewModel: mainViewController.tabCollectionViewModel)
         }
     }
 
     func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
-        guard !(firePopover?.isShown ?? false) else {
+        // Don't open popover if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return
+        }
+
+        // Close any existing popover before creating a new one
+        if firePopover?.isShown ?? false {
             firePopover?.close()
             return
         }
+
         firePopover = FirePopover(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         firePopover?.show(positionedBelow: positioningView.bounds.insetBy(dx: 0, dy: 3), in: positioningView)
     }
@@ -149,7 +181,15 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode,
+                           in window: NSWindow? = nil,
+                           scopeVisits providedVisits: [Visit]? = nil,
+                           settings: (any KeyedStoring<FireDialogViewSettings>)? = nil) async -> FireDialogView.Response {
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return .noAction
+        }
+
         let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
@@ -184,7 +224,8 @@ extension FireCoordinator {
             aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                        aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
                                                        featureDiscovery: DefaultFeatureDiscovery(),
-                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                       nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
@@ -209,7 +250,7 @@ extension FireCoordinator {
             let presenter = self.fireDialogViewFactory(
                 FireDialogViewConfig(
                     viewModel: vm,
-                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode) && featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink),
+                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode),
                     onConfirm: { response in
                         resumeOnce(returning: response)
                     }
@@ -222,6 +263,7 @@ extension FireCoordinator {
 
         switch response {
         case .noAction:
+            onboardingFireReporting?().measureFireDialogDismissed()
             return .noAction
 
         case .burn(let options):
@@ -235,18 +277,27 @@ extension FireCoordinator {
             let isAllHistorySelected = (options.clearingOption == .allData /* not Current Tab or Window */)
             && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
 
+            if options.includeChatHistory, !tabCollectionViewModel.burnerMode.isBurner {
+                Task {
+                    await aiChatSyncCleaner?()?.recordLocalClear(date: Date())
+                }
+            }
+
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
 
             if [.fireButton, .mainMenuAll].contains(mode) {
                 // Record fire button usage for contextual onboarding flows
                 onboardingContextualDialogsManager?().fireButtonUsed()
             }
+            onboardingFireReporting?().measureFireDialogBurnAction()
             return .burn(options: options)
         }
     }
 
     @MainActor
-    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
+    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool, from startTime: Double = CACurrentMediaTime()) async {
+        dataClearingPixelsReporter.fireRetriggerPixelIfNeeded()
+
         if result.includeChatHistory {
             pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
         }
@@ -254,14 +305,16 @@ extension FireCoordinator {
         if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
            let visits = result.selectedVisits, !visits.isEmpty {
-
+            dataClearingWideEventService?.start(options: result, path: .burnVisits, isAutoClear: false)
             await fireViewModel.fire.burnVisits(visits,
                                                 except: fireViewModel.fire.fireproofDomains,
                                                 isToday: result.isToday,
                                                 closeWindows: result.includeTabsAndWindows,
                                                 clearSiteData: result.includeCookiesAndSiteData,
                                                 clearChatHistory: result.includeChatHistory,
-                                                urlToOpenIfWindowsAreClosed: nil)
+                                                urlToOpenIfWindowsAreClosed: nil,
+                                                dataClearingWideEventService: dataClearingWideEventService)
+            dataClearingWideEventService?.complete()
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
@@ -277,10 +330,12 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
+            dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
-                                                includeChatHistory: result.includeChatHistory)
+                                                includeChatHistory: result.includeChatHistory,
+                                                dataClearingWideEventService: dataClearingWideEventService)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -291,28 +346,34 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
+            dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
-                                                includeChatHistory: result.includeChatHistory)
+                                                includeChatHistory: result.includeChatHistory,
+                                                dataClearingWideEventService: dataClearingWideEventService)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
+                dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: false)
                 await fireViewModel.fire.burnAll(isBurnOnExit: false,
                                                  opening: .newtab,
                                                  includeCookiesAndSiteData: result.includeCookiesAndSiteData,
-                                                 includeChatHistory: result.includeChatHistory)
+                                                 includeChatHistory: result.includeChatHistory,
+                                                 dataClearingWideEventService: dataClearingWideEventService)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
+                dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
                 await fireViewModel.fire.burnEntity(entity,
                                                     includingHistory: result.includeHistory,
                                                     includeCookiesAndSiteData: result.includeCookiesAndSiteData,
-                                                    includeChatHistory: result.includeChatHistory)
+                                                    includeChatHistory: result.includeChatHistory,
+                                                    dataClearingWideEventService: dataClearingWideEventService)
             }
         }
         if result.includeHistory,
@@ -324,6 +385,9 @@ extension FireCoordinator {
                 .filter { $0.content.isHistory }
             historyTabs.forEach { $0.reload() }
         }
+
+        // Complete wide event tracking
+        dataClearingWideEventService?.complete()
     }
 }
 /// Allows locally disabling Fire animation depending on context

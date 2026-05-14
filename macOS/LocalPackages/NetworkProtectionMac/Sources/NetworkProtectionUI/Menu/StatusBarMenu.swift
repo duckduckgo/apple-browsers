@@ -50,6 +50,7 @@ public final class StatusBarMenu: NSObject {
     private let userDefaults: UserDefaults
     private let locationFormatter: VPNLocationFormatting
     private let uninstallHandler: UninstallHandler
+    private let onWillShowPopover: (() async -> Void)?
 
     // MARK: - NetP Icon publisher
 
@@ -77,6 +78,7 @@ public final class StatusBarMenu: NSObject {
                 isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>,
                 userDefaults: UserDefaults,
                 locationFormatter: VPNLocationFormatting,
+                onWillShowPopover: (() async -> Void)? = nil,
                 uninstallHandler: @escaping UninstallHandler) {
 
         self.model = model
@@ -95,6 +97,7 @@ public final class StatusBarMenu: NSObject {
         self.userDefaults = userDefaults
         self.locationFormatter = locationFormatter
         self.uninstallHandler = uninstallHandler
+        self.onWillShowPopover = onWillShowPopover
 
         super.init()
 
@@ -117,7 +120,7 @@ public final class StatusBarMenu: NSObject {
         }
 
         Task { @MainActor in
-            togglePopover(isOptionKeyPressed: isOptionKeyPressed)
+            await togglePopover(isOptionKeyPressed: isOptionKeyPressed)
         }
     }
 
@@ -133,11 +136,19 @@ public final class StatusBarMenu: NSObject {
     // MARK: - Popover
 
     @MainActor
-    private func togglePopover(isOptionKeyPressed: Bool) {
+    private func togglePopover(isOptionKeyPressed: Bool) async {
         if let popover, popover.isShown {
             popover.close()
             self.popover = nil
         } else {
+            await onWillShowPopover?()
+
+            // Re-check after the suspension: a concurrent invocation may have already shown the popover.
+            // Note: a non-nil but not-shown popover is expected after a `.transient` dismissal, so don't bail in that case.
+            guard popover?.isShown != true else {
+                return
+            }
+
             guard let button = statusItem.button else {
                 return
             }
@@ -205,7 +216,7 @@ public final class StatusBarMenu: NSObject {
         // across all systems.  I'm seeing an issue where the menu looks right for me but not for others testing
         // this, and this seems to fix it:
         // Ref: https://app.asana.com/0/0/1206318017787812/1206336583680668/f
-        let yPosition = statusItem.statusBar!.thickness + 8
+        let yPosition = (statusItem.statusBar?.thickness ?? NSStatusBar.system.thickness) + 8
 
         menu.popUp(positioning: nil,
                    at: NSPoint(x: 0, y: yPosition),

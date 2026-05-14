@@ -20,9 +20,9 @@ on:
 
 jobs:
   build-alpha:
-    runs-on: macos-15
+    runs-on: macos-26
     name: Build Alpha
-    timeout-minutes: 20
+    timeout-minutes: 30
     
     concurrency:
       group: ios-alpha-build-${{ github.ref }}
@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -49,10 +49,12 @@ jobs:
           exit 1
         fi
 
-    - name: Register SSH keys for access to certificates
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check for active upload job
       env:
@@ -167,7 +169,7 @@ jobs:
   upload:
     needs: build-alpha
     if: needs.build-alpha.outputs.should_skip != 'true'
-    runs-on: macos-15
+    runs-on: macos-26
     name: Upload to TestFlight
     timeout-minutes: 15
 
@@ -180,7 +182,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -228,7 +230,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 10
 

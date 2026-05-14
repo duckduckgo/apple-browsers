@@ -25,6 +25,7 @@ protocol NavigationActionBarManagerDelegate: AnyObject {
     func navigationActionBarManagerDidTapMicrophone(_ manager: NavigationActionBarManager)
     func navigationActionBarManagerDidTapNewLine(_ manager: NavigationActionBarManager)
     func navigationActionBarManagerDidTapSearch(_ manager: NavigationActionBarManager)
+    func navigationActionBarManagerDidTapVoiceMode(_ manager: NavigationActionBarManager)
 }
 
 /// Manages the navigation action bar displayed at the bottom of the screen
@@ -39,15 +40,17 @@ final class NavigationActionBarManager {
     }
 
     private let switchBarHandler: SwitchBarHandling
+    private let isVoiceModeFeatureEnabled: Bool
     private(set) var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
 
     var view: UIView? { navigationActionBarViewController?.viewIfLoaded }
 
     // MARK: - Initialization
-    
-    init(switchBarHandler: SwitchBarHandling) {
+
+    init(switchBarHandler: SwitchBarHandling, isVoiceModeFeatureEnabled: Bool = false) {
         self.switchBarHandler = switchBarHandler
+        self.isVoiceModeFeatureEnabled = isVoiceModeFeatureEnabled
     }
 
     // MARK: - Public Methods
@@ -57,6 +60,7 @@ final class NavigationActionBarManager {
     func installInViewController(_ viewController: UIViewController, inView containerView: UIView? = nil) {
         let viewModel = NavigationActionBarViewModel(
             switchBarHandler: switchBarHandler,
+            isVoiceModeFeatureEnabled: isVoiceModeFeatureEnabled,
             onMicrophoneTapped: { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.navigationActionBarManagerDidTapMicrophone(self)
@@ -68,6 +72,10 @@ final class NavigationActionBarManager {
             onSearchTapped: { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.navigationActionBarManagerDidTapSearch(self)
+            },
+            onVoiceModeTapped: { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.navigationActionBarManagerDidTapVoiceMode(self)
             }
         )
         navigationActionBarViewModel = viewModel

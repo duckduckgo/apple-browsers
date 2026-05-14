@@ -18,10 +18,17 @@
 //
 
 import Foundation
+import UIKit
 
 public enum CodeEntrySource: String {
     case qrCode
     case pastedCode
+}
+
+public enum CodeCollectionSource: String {
+    case connect
+    case exchange
+    case recovery
 }
 
 public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
@@ -33,11 +40,12 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     /// Returns true if we were able to use the code. Either way, stop validating.
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool
 
-    func codeCollectionCancelled()
+    func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
     func shareCode(_ code: String)
 
     func codeEntryScreenShown()
+    func codeCopied(_ code: String)
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -69,17 +77,32 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
+    private let source: CodeCollectionSource
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+    public init(codeForDisplayOrPasting: String, qrCodeString: String, source: CodeCollectionSource) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
+        self.source = source
     }
 
     func codeScanned(_ code: String) async -> Bool {
+        // Pre-emptively trigger haptic as soon as we detect a QR code.
+        // This feels better than deferring until we've determined whether the code is valid.
+        await MainActor.run {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         return await delegate?.syncCodeEntered(code: code, source: .qrCode) == true
     }
 
     func cameraUnavailable() {
         showCamera = false
+    }
+
+    @MainActor
+    func copyCode() {
+        guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
+        showQRCodeModel.copy()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        delegate?.codeCopied(showQRCodeModel.codeForDisplayOrPasting)
     }
 
     @MainActor
@@ -104,7 +127,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func cancel() {
-        delegate?.codeCollectionCancelled()
+        delegate?.codeCollectionCancelled(source: source)
     }
 
     func showShareCodeSheet() {

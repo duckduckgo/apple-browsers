@@ -20,8 +20,13 @@ import Foundation
 import PixelKit
 
 public final class ScanWideEventData: WideEventData {
-    public static let pixelName = "pir_scan_attempt"
-    private static let featureName = "pir-scan-attempt"
+    public static let metadata = WideEventMetadata(
+        pixelName: "pir_scan_attempt",
+        featureName: "pir-scan-attempt",
+        mobileMetaType: "ios-pir-scan-attempt",
+        desktopMetaType: "macos-pir-scan-attempt",
+        version: "1.2.0"
+    )
 
     public enum AttemptType: String, Codable {
         case newScan = "new-data"
@@ -37,6 +42,7 @@ public final class ScanWideEventData: WideEventData {
     public var dataBrokerVersion: String?
     public var attemptType: AttemptType
     public var attemptNumber: Int
+    public var isFreeScan: Bool
     public var scanInterval: WideEvent.MeasuredInterval?
 
     public var errorData: WideEventErrorData?
@@ -48,6 +54,7 @@ public final class ScanWideEventData: WideEventData {
                 dataBrokerVersion: String?,
                 attemptType: AttemptType,
                 attemptNumber: Int,
+                isFreeScan: Bool,
                 scanInterval: WideEvent.MeasuredInterval) {
         self.globalData = globalData
         self.contextData = contextData
@@ -56,31 +63,22 @@ public final class ScanWideEventData: WideEventData {
         self.dataBrokerVersion = dataBrokerVersion
         self.attemptType = attemptType
         self.attemptNumber = attemptNumber
+        self.isFreeScan = isFreeScan
         self.scanInterval = scanInterval
     }
 }
 
 extension ScanWideEventData {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[DBPWideEventParameter.ScanFeature.dataBrokerURL] = dataBrokerURL
-
-        if let dataBrokerVersion {
-            parameters[DBPWideEventParameter.ScanFeature.dataBrokerVersion] = dataBrokerVersion
-        }
-
-        parameters[DBPWideEventParameter.ScanFeature.attemptType] = attemptType.rawValue
-        parameters[DBPWideEventParameter.ScanFeature.attemptNumber] = String(attemptNumber)
-
-        if let duration = scanInterval?.durationMilliseconds {
-            parameters[DBPWideEventParameter.ScanFeature.scanLatency] = String(duration)
-        }
-
-        return parameters
+    public func jsonParameters() -> [String: Encodable] {
+        Dictionary(compacting: [
+            (DBPWideEventParameter.ScanFeature.dataBrokerURL, dataBrokerURL),
+            (DBPWideEventParameter.ScanFeature.dataBrokerVersion, dataBrokerVersion),
+            (DBPWideEventParameter.ScanFeature.attemptType, attemptType.rawValue),
+            (DBPWideEventParameter.ScanFeature.attemptNumber, attemptNumber),
+            (DBPWideEventParameter.ScanFeature.isFreeScan, isFreeScan),
+            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.intValue(.noBucketing)),
+        ])
     }
-
 }
 
 extension ScanWideEventData: WideEventDataMeasuringInterval {

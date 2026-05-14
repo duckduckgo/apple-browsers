@@ -43,11 +43,14 @@ protocol FireProtocol: AnyObject {
                             opening url: URL,
                             includeCookiesAndSiteData: Bool,
                             includeChatHistory: Bool,
+                            isAutoClear: Bool,
+                            dataClearingWideEventService: DataClearingWideEventService?,
                             completion: (@MainActor () -> Void)?)
     @MainActor func burnEntity(_ entity: Fire.BurningEntity,
                                includingHistory: Bool,
                                includeCookiesAndSiteData: Bool,
                                includeChatHistory: Bool,
+                               dataClearingWideEventService: DataClearingWideEventService?,
                                completion: (@MainActor () -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
@@ -56,8 +59,9 @@ protocol FireProtocol: AnyObject {
                                clearSiteData: Bool,
                                clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
+                               dataClearingWideEventService: DataClearingWideEventService?,
                                completion: (@MainActor () -> Void)?)
-    @MainActor func burnChatHistory() async
+    @MainActor func burnChatHistory() async -> Result<Void, Error>
 }
 
 extension FireProtocol {
@@ -66,11 +70,15 @@ extension FireProtocol {
     func burnAll(isBurnOnExit: Bool = false,
                  opening url: URL = .newtab,
                  includeChatHistory: Bool = true,
+                 isAutoClear: Bool = false,
+                 dataClearingWideEventService: DataClearingWideEventService? = nil,
                  completion: (@MainActor () -> Void)? = nil) {
         burnAll(isBurnOnExit: isBurnOnExit,
                 opening: url,
                 includeCookiesAndSiteData: true,
                 includeChatHistory: includeChatHistory,
+                isAutoClear: isAutoClear,
+                dataClearingWideEventService: dataClearingWideEventService,
                 completion: completion)
     }
 
@@ -78,23 +86,30 @@ extension FireProtocol {
     func burnAll(isBurnOnExit: Bool = false,
                  opening url: URL = .newtab,
                  includeCookiesAndSiteData: Bool = true,
-                 includeChatHistory: Bool) async {
+                 includeChatHistory: Bool,
+                 isAutoClear: Bool = false,
+                 dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnAll(isBurnOnExit: isBurnOnExit,
                          opening: url,
                          includeCookiesAndSiteData: includeCookiesAndSiteData,
-                         includeChatHistory: includeChatHistory) {
+                         includeChatHistory: includeChatHistory,
+                         isAutoClear: isAutoClear,
+                         dataClearingWideEventService: dataClearingWideEventService) {
                 continuation.resume()
             }
         }
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: Fire.BurningEntity,
+                    dataClearingWideEventService: DataClearingWideEventService? = nil,
+                    completion: (() -> Void)? = nil) {
         burnEntity(entity,
                    includingHistory: true,
                    includeCookiesAndSiteData: true,
                    includeChatHistory: false,
+                   dataClearingWideEventService: dataClearingWideEventService,
                    completion: completion)
     }
 
@@ -102,12 +117,14 @@ extension FireProtocol {
     func burnEntity(_ entity: Fire.BurningEntity,
                     includingHistory: Bool,
                     includeCookiesAndSiteData: Bool = true,
-                    includeChatHistory: Bool) async {
+                    includeChatHistory: Bool,
+                    dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnEntity(entity,
                             includingHistory: includingHistory,
                             includeCookiesAndSiteData: includeCookiesAndSiteData,
-                            includeChatHistory: includeChatHistory) {
+                            includeChatHistory: includeChatHistory,
+                            dataClearingWideEventService: dataClearingWideEventService) {
                 continuation.resume()
             }
         }
@@ -120,7 +137,8 @@ extension FireProtocol {
                     closeWindows: Bool,
                     clearSiteData: Bool,
                     clearChatHistory: Bool,
-                    urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
+                    urlToOpenIfWindowsAreClosed url: URL? = .newtab,
+                    dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnVisits(visits,
                             except: fireproofDomains,
@@ -128,7 +146,8 @@ extension FireProtocol {
                             closeWindows: closeWindows,
                             clearSiteData: clearSiteData,
                             clearChatHistory: clearChatHistory,
-                            urlToOpenIfWindowsAreClosed: url) {
+                            urlToOpenIfWindowsAreClosed: url,
+                            dataClearingWideEventService: dataClearingWideEventService) {
                 continuation.resume()
             }
         }
@@ -141,8 +160,9 @@ extension FireProtocol {
                     closeWindows: Bool,
                     clearSiteData: Bool,
                     clearChatHistory: Bool,
+                    dataClearingWideEventService: DataClearingWideEventService? = nil,
                     completion: (@MainActor () -> Void)?) {
-        burnVisits(visits, except: fireproofDomains, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, urlToOpenIfWindowsAreClosed: .newtab, completion: completion)
+        burnVisits(visits, except: fireproofDomains, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, urlToOpenIfWindowsAreClosed: .newtab, dataClearingWideEventService: dataClearingWideEventService, completion: completion)
     }
 
 }
@@ -165,7 +185,7 @@ final class Fire: FireProtocol {
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProvidersSource?
-    let tabCleanupPreparer = TabCleanupPreparer()
+    let tabCleanupPreparer: TabCleanupPreparing
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
@@ -173,6 +193,8 @@ final class Fire: FireProtocol {
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
     let aiChatHistoryCleaner: AIChatHistoryCleaning
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
+    var dataClearingWideEventService: DataClearingWideEventService?
 
     private var dispatchGroup: DispatchGroup?
 
@@ -226,6 +248,19 @@ final class Fire: FireProtocol {
             }
         }
 
+        var description: String {
+            switch self {
+            case .none:
+                return "none"
+            case .tab:
+                return "tab"
+            case .window:
+                return "window"
+            case .allWindows:
+                return "all_windows"
+            }
+        }
+
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
@@ -264,7 +299,10 @@ final class Fire: FireProtocol {
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
-         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil
+         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
+         dataClearingWideEventService: DataClearingWideEventService? = nil,
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -295,7 +333,11 @@ final class Fire: FireProtocol {
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
-                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler)
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
+        self.dataClearingWideEventService = dataClearingWideEventService
+        self.tabCleanupPreparer = tabCleanupPreparer
     }
 
     @MainActor
@@ -303,7 +345,18 @@ final class Fire: FireProtocol {
                     includingHistory: Bool,
                     includeCookiesAndSiteData: Bool,
                     includeChatHistory: Bool,
+                    dataClearingWideEventService: DataClearingWideEventService?,
                     completion: (@MainActor () -> Void)?) {
+        // Prevent re-entry if burn is already in progress
+        guard dispatchGroup == nil, burningData == nil else {
+            assertionFailure("burnEntity called while burn already in progress")
+            completion?()
+            return
+        }
+
+        // Set the wide event service if provided
+        self.dataClearingWideEventService = dataClearingWideEventService
+
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -314,26 +367,37 @@ final class Fire: FireProtocol {
 
         burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider))
 
-        burnLastSessionState()
-        burnDeletedBookmarks()
+        dataClearingWideEventService?.start(.clearLastSessionState)
+        let lastSessionStateResult = burnLastSessionState()
+        dataClearingWideEventService?.update(.clearLastSessionState, result: lastSessionStateResult)
 
-        let tabViewModels = tabViewModels(of: entity)
+        dataClearingWideEventService?.start(.clearBookmarkDatabase)
+        let bookmarkDatabaseResult = burnDeletedBookmarks()
+        dataClearingWideEventService?.update(.clearBookmarkDatabase, result: bookmarkDatabaseResult)
+
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
             if entity.shouldClose {
-                await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+                await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
             }
 
             group.enter()
-            self.burnTabs(burningEntity: entity)
+            dataClearingWideEventService?.start(.clearTabs)
+            let tabsResult = self.burnTabs(burningEntity: entity)
+            dataClearingWideEventService?.update(.clearTabs, result: tabsResult)
 
             if includeCookiesAndSiteData {
-                await self.burnWebCache(baseDomains: domains)
+                await self.burnWebCache(baseDomains: domains, dataClearingWideEventService: dataClearingWideEventService)
             }
 
             if includingHistory {
-                self.burnHistory(ofEntity: entity) {
-                    self.burnFavicons(for: domains) {
+                dataClearingWideEventService?.start(.clearAllHistory)
+                self.burnHistory(ofEntity: entity) { result in
+                    dataClearingWideEventService?.update(.clearAllHistory, result: result)
+                    dataClearingWideEventService?.start(.clearFaviconCache)
+                    self.burnFavicons(for: domains) { faviconResult in
+                        dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
                         group.leave()
                     }
                 }
@@ -343,35 +407,61 @@ final class Fire: FireProtocol {
 
             if includeCookiesAndSiteData {
                 group.enter()
-                self.burnPermissions(of: domains) {
-                    self.burnDownloads(of: domains)
+                dataClearingWideEventService?.start(.clearPermissions)
+                self.burnPermissions(of: domains) { result in
+                    dataClearingWideEventService?.update(.clearPermissions, result: result)
+                    dataClearingWideEventService?.start(.cancelAllDownloads)
+                    let downloadsResult = self.burnDownloads(of: domains)
+                    dataClearingWideEventService?.update(.cancelAllDownloads, result: downloadsResult)
                     group.leave()
                 }
 
-                self.burnAutoconsentCache()
-                await self.burnAutoconsentStats()
-                self.burnZoomLevels(of: domains)
+                dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
+                let autoconsentCacheResult = self.burnAutoconsentCache()
+                dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: autoconsentCacheResult)
+
+                dataClearingWideEventService?.start(.forgetTextZoom)
+                let zoomLevelsResult = self.burnZoomLevels(of: domains)
+                dataClearingWideEventService?.update(.forgetTextZoom, result: zoomLevelsResult)
+
+                // when removing cookies for the domain we also need to clear cookiePopupBlocked flag
+                // this is only necessary when not removing history for the domain - flag is part of HistoryEntry
+                if !includingHistory {
+                    dataClearingWideEventService?.start(.resetCookiePopupBlockedFlag)
+                    let cookiePopupResult = await self.resetCookiePopupBlockedFlag(for: domains)
+                    dataClearingWideEventService?.update(.resetCookiePopupBlockedFlag, result: cookiePopupResult)
+                }
             }
 
-            self.burnRecentlyClosed(baseDomains: domains)
+            dataClearingWideEventService?.start(.clearRecentlyClosed)
+            let recentlyClosedResult = self.burnRecentlyClosed(baseDomains: domains)
+            dataClearingWideEventService?.update(.clearRecentlyClosed, result: recentlyClosedResult)
 
             if includeChatHistory {
                 group.enter()
-                await burnChatHistory()
+                dataClearingWideEventService?.start(.clearAIChatHistory)
+                let chatHistoryResult = await burnChatHistory()
+                dataClearingWideEventService?.update(.clearAIChatHistory, result: chatHistoryResult)
                 group.leave()
             }
 
-            group.notify(queue: .main) {
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
-
                 self.burningData = nil
-
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -380,7 +470,26 @@ final class Fire: FireProtocol {
                  opening url: URL,
                  includeCookiesAndSiteData: Bool,
                  includeChatHistory: Bool,
+                 isAutoClear: Bool,
+                 dataClearingWideEventService: DataClearingWideEventService?,
                  completion: (@MainActor () -> Void)?) {
+        // Prevent re-entry if burn is already in progress
+        guard dispatchGroup == nil, burningData == nil else {
+            assertionFailure("burnAll called while burn already in progress")
+            completion?()
+            return
+        }
+
+        // Set the wide event service if provided
+        self.dataClearingWideEventService = dataClearingWideEventService
+
+        // Start wide event tracking for auto-clear flows
+        if isAutoClear {
+            let result = makeAutoClearResult(includeCookiesAndSiteData: includeCookiesAndSiteData,
+                                              includeChatHistory: includeChatHistory)
+            self.dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: true)
+        }
+
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -396,53 +505,98 @@ final class Fire: FireProtocol {
             closeWindows(opening: url)
         }
 
-        burnLastSessionState()
-        burnDeletedBookmarks()
+        dataClearingWideEventService?.start(.clearLastSessionState)
+        let lastSessionStateResult = burnLastSessionState()
+        dataClearingWideEventService?.update(.clearLastSessionState, result: lastSessionStateResult)
+
+        dataClearingWideEventService?.start(.clearBookmarkDatabase)
+        let bookmarkDatabaseResult = burnDeletedBookmarks()
+        dataClearingWideEventService?.update(.clearBookmarkDatabase, result: bookmarkDatabaseResult)
 
         let windowControllers = windowControllersManager.mainWindowControllers
 
-        let tabViewModels = tabViewModels(of: entity)
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
-            await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+            await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
 
             group.enter()
-            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true))
+            dataClearingWideEventService?.start(.clearTabs)
+            let tabsResult = self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true))
+            dataClearingWideEventService?.update(.clearTabs, result: tabsResult)
 
             if includeCookiesAndSiteData {
-                await self.burnWebCache()
+                await self.burnWebCache(dataClearingWideEventService: dataClearingWideEventService)
             }
-            await self.burnPrivacyStats()
+
+            dataClearingWideEventService?.start(.clearPrivacyStats)
+            let privacyStatsResult = await self.burnPrivacyStats()
+            dataClearingWideEventService?.update(.clearPrivacyStats, result: privacyStatsResult)
+
+            dataClearingWideEventService?.start(.clearAutoconsentStats)
+            let autoconsentStatsResult = await self.burnAutoconsentStats()
+            dataClearingWideEventService?.update(.clearAutoconsentStats, result: autoconsentStatsResult)
+
             if includeChatHistory {
-                await burnChatHistory()
+                dataClearingWideEventService?.start(.clearAIChatHistory)
+                let chatHistoryResult = await burnChatHistory()
+                dataClearingWideEventService?.update(.clearAIChatHistory, result: chatHistoryResult)
             }
-            self.burnHistory(ofEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: [], customURLToOpen: nil, close: false)) {
-                self.burnPermissions {
-                    self.burnFavicons {
-                        self.burnDownloads()
+            dataClearingWideEventService?.start(.clearAllHistory)
+            self.burnHistory(ofEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: [], customURLToOpen: nil, close: false)) { historyResult in
+                dataClearingWideEventService?.update(.clearAllHistory, result: historyResult)
+
+                dataClearingWideEventService?.start(.clearPermissions)
+                self.burnPermissions { result in
+                    dataClearingWideEventService?.update(.clearPermissions, result: result)
+                    dataClearingWideEventService?.start(.clearFaviconCache)
+                    self.burnFavicons { faviconResult in
+                        dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
+                        dataClearingWideEventService?.start(.cancelAllDownloads)
+                        let downloadsResult = self.burnDownloads()
+                        dataClearingWideEventService?.update(.cancelAllDownloads, result: downloadsResult)
                         group.leave()
                     }
                 }
             }
 
-            self.burnRecentlyClosed()
-            self.burnAutoconsentCache()
-            await self.burnAutoconsentStats()
-            self.burnZoomLevels()
+            dataClearingWideEventService?.start(.clearRecentlyClosed)
+            let recentlyClosedResult = self.burnRecentlyClosed()
+            dataClearingWideEventService?.update(.clearRecentlyClosed, result: recentlyClosedResult)
 
-            group.notify(queue: .main) {
+            dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
+            let autoconsentCacheResult = self.burnAutoconsentCache()
+            dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: autoconsentCacheResult)
+
+            dataClearingWideEventService?.start(.forgetTextZoom)
+            let zoomLevelsResult = self.burnZoomLevels()
+            dataClearingWideEventService?.update(.forgetTextZoom, result: zoomLevelsResult)
+
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // Only close windows at the end if we didn't close them at the beginning
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 if !isBurnOnExit {
                     self.reopenWindowIfNeeded(customURL: url)
                 }
-
                 self.burningData = nil
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            // Complete wide event tracking for auto-clear flows
+            if isAutoClear {
+                self.dataClearingWideEventService?.complete()
+            }
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -455,7 +609,11 @@ final class Fire: FireProtocol {
                     clearSiteData: Bool,
                     clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
+                    dataClearingWideEventService: DataClearingWideEventService?,
                     completion: (@MainActor () -> Void)?) {
+
+        // Set the wide event service if provided
+        self.dataClearingWideEventService = dataClearingWideEventService
 
         // Get domains to burn
         var domains = Set<String>()
@@ -473,8 +631,14 @@ final class Fire: FireProtocol {
         // Convert to eTLD+1 domains
         domains = domains.convertedToETLDPlus1(tld: tld)
 
-        burnVisitedLinks(visits)
-        historyCoordinating.burnVisits(visits) {
+        dataClearingWideEventService?.start(.clearVisitedLinks)
+        let visitedLinksResult = burnVisitedLinks(visits)
+        dataClearingWideEventService?.update(.clearVisitedLinks, result: visitedLinksResult)
+
+        dataClearingWideEventService?.start(.clearVisits)
+        historyCoordinating.burnVisits(visits) { result in
+            dataClearingWideEventService?.update(.clearVisits, result: result)
+
             // If cookie/site data should not be cleared, finish after history burn
             guard clearSiteData else {
                 completion?()
@@ -494,6 +658,7 @@ final class Fire: FireProtocol {
                             includingHistory: false,
                             includeCookiesAndSiteData: clearSiteData,
                             includeChatHistory: clearChatHistory,
+                            dataClearingWideEventService: dataClearingWideEventService,
                             completion: completion)
         }
     }
@@ -501,8 +666,12 @@ final class Fire: FireProtocol {
     // MARK: - Duck.ai Chat History
 
     @MainActor
-    func burnChatHistory() async {
-        await aiChatHistoryCleaner.cleanAIChatHistory()
+    func burnChatHistory() async -> Result<Void, Error> {
+        let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+        if syncService?.authState != .inactive {
+            syncService?.scheduler.requestSyncImmediately()
+        }
+        return result
     }
 
     // MARK: - Fire animation
@@ -517,6 +686,7 @@ final class Fire: FireProtocol {
         assert(dispatchGroup != nil)
 
         dispatchGroup?.leave()
+        dispatchGroup = nil
     }
 
     // MARK: - Closing windows
@@ -579,29 +749,54 @@ final class Fire: FireProtocol {
 
     // MARK: - Web cache
 
-    private func burnWebCache() async {
+    private func burnWebCache(dataClearingWideEventService: DataClearingWideEventService?) async {
+        await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
-        await webCacheManager.clear()
+        await webCacheManager.clear(dataClearingWideEventService: dataClearingWideEventService)
         Logger.fire.debug("WebsiteDataStore completed cookie deletion")
     }
 
-    private func burnWebCache(baseDomains: Set<String>? = nil) async {
+    private func burnWebCache(baseDomains: Set<String>? = nil, dataClearingWideEventService: DataClearingWideEventService?) async {
+        await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
-        await webCacheManager.clear(baseDomains: baseDomains)
+        await webCacheManager.clear(baseDomains: baseDomains, dataClearingWideEventService: dataClearingWideEventService)
         Logger.fire.debug("WebsiteDataStore completed cookie deletion")
+    }
+
+    // MARK: - Web Extensions
+
+    @MainActor
+    private func unloadWebExtensions() {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.unloadAllExtensions()
+        }
+    }
+
+    @MainActor
+    private func reloadWebExtensions() async {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            await webExtensionManager.loadInstalledExtensions()
+        }
     }
 
     // MARK: - History
 
     @MainActor
-    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
+    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         let visits: [Visit]
 
         switch entity {
         case .none(selectedDomains: let domains):
-            burnHistory(of: domains) { urls in
-                self.burnVisitedLinks(urls)
-                completion()
+            burnHistory(of: domains) { result in
+                switch result {
+                case .success(let urls):
+                    self.dataClearingWideEventService?.start(.clearVisitedLinks)
+                    let visitedLinksResult = self.burnVisitedLinks(urls)
+                    self.dataClearingWideEventService?.update(.clearVisitedLinks, result: visitedLinksResult)
+                    completion(.success(()))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
             }
             return
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
@@ -619,86 +814,120 @@ final class Fire: FireProtocol {
                 wc.mainViewController.tabCollectionViewModel.clearLocalHistory(keepingCurrent: true)
             }
 
-            burnAllVisitedLinks()
+            dataClearingWideEventService?.start(.clearVisitedLinks)
+            let visitedLinksResult = burnAllVisitedLinks()
+            dataClearingWideEventService?.update(.clearVisitedLinks, result: visitedLinksResult)
+
             burnAllHistory(completion: completion)
 
             return
         }
 
-        burnVisitedLinks(visits)
-        historyCoordinating.burnVisits(visits, completion: completion)
+        dataClearingWideEventService?.start(.clearVisitedLinks)
+        let visitedLinksResult = burnVisitedLinks(visits)
+        dataClearingWideEventService?.update(.clearVisitedLinks, result: visitedLinksResult)
+
+        dataClearingWideEventService?.start(.clearVisits)
+        historyCoordinating.burnVisits(visits) { result in
+            self.dataClearingWideEventService?.update(.clearVisits, result: result)
+            completion(result)
+        }
     }
 
     @MainActor
-    private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
+    private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
         historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
     @MainActor
-    private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
+    private func burnAllHistory(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         historyCoordinating.burnAll(completion: completion)
     }
 
     // MARK: - Privacy Stats
 
-    private func burnPrivacyStats() async {
-        await getPrivacyStats().clearPrivacyStats()
+    private func burnPrivacyStats() async -> Result<Void, Error> {
+        return await getPrivacyStats().clearPrivacyStats()
+    }
+
+    @MainActor
+    private func resetCookiePopupBlockedFlag(for domains: Set<String>) async -> Result<Void, Error> {
+        await withCheckedContinuation { continuation in
+            historyCoordinating.resetCookiePopupBlocked(for: domains, tld: tld) { result in
+                continuation.resume(returning: result)
+            }
+        }
     }
 
     // MARK: - Visited links
 
     @MainActor
-    private func burnAllVisitedLinks() {
-        getVisitedLinkStore()?.removeAll()
+    private func burnAllVisitedLinks() -> Result<Void, Error> {
+        guard let visitedLinkStore = getVisitedLinkStore() else {
+            return .failure(DataClearingWideEventError(description: "visitedLinkStore not available"))
+        }
+
+        visitedLinkStore.removeAll()
+        return .success(())
     }
 
     @MainActor
-    private func burnVisitedLinks(_ visits: [Visit]) {
-        guard let visitedLinkStore = getVisitedLinkStore() else { return }
+    private func burnVisitedLinks(_ visits: [Visit]) -> Result<Void, Error> {
+        guard let visitedLinkStore = getVisitedLinkStore() else {
+            return .failure(DataClearingWideEventError(description: "visitedLinkStore not available"))
+        }
+
         for visit in visits {
             guard let url = visit.historyEntry?.url else { continue }
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        return .success(())
     }
 
     @MainActor
-    private func burnVisitedLinks(_ urls: Set<URL>) {
-        guard let visitedLinkStore = getVisitedLinkStore() else { return }
+    private func burnVisitedLinks(_ urls: Set<URL>) -> Result<Void, Error> {
+        guard let visitedLinkStore = getVisitedLinkStore() else {
+            return .failure(DataClearingWideEventError(description: "visitedLinkStore not available"))
+        }
+
         for url in urls {
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        return .success(())
     }
 
     // MARK: - Zoom levels
 
-     private func burnZoomLevels() {
+     private func burnZoomLevels() -> Result<Void, Error> {
          savedZoomLevelsCoordinating.burnZoomLevels(except: fireproofDomains)
+         return .success(())
      }
 
-     private func burnZoomLevels(of baseDomains: Set<String>) {
+     private func burnZoomLevels(of baseDomains: Set<String>) -> Result<Void, Error> {
          savedZoomLevelsCoordinating.burnZoomLevel(of: baseDomains)
+         return .success(())
      }
 
     // MARK: - Permissions
 
-    private func burnPermissions(completion: @escaping @MainActor () -> Void) {
+    private func burnPermissions(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         self.permissionManager.burnPermissions(except: fireproofDomains, completion: completion)
     }
 
-    private func burnPermissions(of baseDomains: Set<String>, completion: @MainActor @escaping () -> Void) {
+    private func burnPermissions(of baseDomains: Set<String>, completion: @MainActor @escaping (Result<Void, Error>) -> Void) {
         self.permissionManager.burnPermissions(of: baseDomains, tld: tld, completion: completion)
     }
 
     // MARK: - Downloads
 
     @MainActor
-    private func burnDownloads() {
-        self.downloadListCoordinator.cleanupInactiveDownloads(for: nil)
+    private func burnDownloads() -> Result<Void, Error> {
+        return self.downloadListCoordinator.cleanupInactiveDownloads(for: nil)
     }
 
     @MainActor
-    private func burnDownloads(of baseDomains: Set<String>) {
-        self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
+    private func burnDownloads(of baseDomains: Set<String>) -> Result<Void, Error> {
+        return self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
     }
 
     // MARK: - Favicons
@@ -711,24 +940,24 @@ final class Fire: FireProtocol {
         return Set(accounts.compactMap { $0.domain })
     }
 
-    private func burnFavicons(completion: @escaping @MainActor () -> Void) {
+    private func burnFavicons(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         Task { @MainActor in
-            await self.faviconManagement.burn(except: fireproofDomains,
-                                              bookmarkManager: bookmarkManager,
-                                              savedLogins: autofillDomains())
-            completion()
+            let result = await self.faviconManagement.burn(except: fireproofDomains,
+                                                           bookmarkManager: bookmarkManager,
+                                                           savedLogins: autofillDomains())
+            completion(result)
         }
     }
 
     @MainActor
-    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping @MainActor () -> Void) {
+    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         Task { @MainActor in
-            await self.faviconManagement.burnDomains(baseDomains,
-                                                     exceptBookmarks: bookmarkManager,
-                                                     exceptSavedLogins: autofillDomains(),
-                                                     exceptExistingHistory: historyCoordinating.history ?? [],
-                                                     tld: tld)
-            completion()
+            let result = await self.faviconManagement.burnDomains(baseDomains,
+                                                                  exceptBookmarks: bookmarkManager,
+                                                                  exceptSavedLogins: autofillDomains(),
+                                                                  exceptExistingHistory: historyCoordinating.history ?? [],
+                                                                  tld: tld)
+            completion(result)
         }
     }
 
@@ -736,9 +965,10 @@ final class Fire: FireProtocol {
 
     @MainActor
     /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
-    private func burnTabs(burningEntity: BurningEntity) {
+    private func burnTabs(burningEntity: BurningEntity) -> Result<Void, Error> {
+        var firstError: Error?
 
-        func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
+        func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
@@ -748,15 +978,45 @@ final class Fire: FireProtocol {
             }
         }
 
-        func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) {
+        func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) -> Result<Void, Error> {
             guard let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager else {
                 assertionFailure("No pinned tabs manager")
-                return
+                return .failure(DataClearingWideEventError(description: "No pinned tabs manager"))
             }
 
             for (index, pinnedTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
                 let newTab = replacementPinnedTab(from: pinnedTab)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
+            }
+            return .success(())
+        }
+
+        func closeFloatingAIChatWindows(for tabIDs: [TabIdentifier]) {
+            let uniqueTabIDs = Set(tabIDs)
+            guard !uniqueTabIDs.isEmpty else {
+                return
+            }
+
+            func coordinatorForTabID(_ tabID: TabIdentifier) -> AIChatCoordinating? {
+                for windowController in windowControllersManager.mainWindowControllers {
+                    let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+                    let hasUnpinnedTab = tabCollectionViewModel.tabCollection.tabs.contains { $0.uuid == tabID }
+                    let hasPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains { $0.uuid == tabID } ?? false
+                    if hasUnpinnedTab || hasPinnedTab {
+                        return windowController.mainViewController.aiChatCoordinator
+                    }
+                }
+                return windowControllersManager.mainWindowControllers.first?.mainViewController.aiChatCoordinator
+            }
+
+            uniqueTabIDs.forEach { tabID in
+                coordinatorForTabID(tabID)?.closeFloatingWindow(for: tabID)
+            }
+        }
+
+        func measureError(_ result: Result<Void, Error>) {
+            if case .failure(let error) = result {
+                firstError = firstError ?? error
             }
         }
 
@@ -769,18 +1029,21 @@ final class Fire: FireProtocol {
                   close: let shouldClose):
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
+                closeFloatingAIChatWindows(for: [tabViewModel.tab.uuid])
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
-                    let tab = replacementPinnedTab(from: tabViewModel.tab)
+                    let tab = replacementPinnedTab(from: .loaded(tabViewModel.tab))
                     if let index = tabCollectionViewModel.selectionIndex {
-                        tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
+                        let result = tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
+                        measureError(result)
                     }
                 } else {
                     if tabCollectionViewModel.allTabsCount == 1,
                        windowControllersManager.mainWindowControllers.count == 1 {
-                        // If closing last Window‘s last Tab: Insert a new tab to prevent key window closing:
+                        // If closing last Window's last Tab: Insert a new tab to prevent key window closing:
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
-                    tabCollectionViewModel.removeSelected(forceChange: true)
+                    let result = tabCollectionViewModel.removeSelected(forceChange: true)
+                    measureError(result)
                 }
             }
 
@@ -788,13 +1051,17 @@ final class Fire: FireProtocol {
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
+                closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing last Window: Insert a new tab to prevent key window closing:
                 var insertedTabIndex: Int?
                 if windowControllersManager.mainWindowControllers.count == 1 {
                     insertedTabIndex = insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                 }
                 tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
-                burnPinnedTabs(in: tabCollectionViewModel)
+                let result = burnPinnedTabs(in: tabCollectionViewModel)
+                measureError(result)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
             }
 
@@ -804,13 +1071,23 @@ final class Fire: FireProtocol {
                          close: let shouldClose):
             guard shouldClose else { break }
             for windowController in mainWindowControllers {
+                let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
+                closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
                 let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
-                windowController.mainViewController.tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
-                burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
-                selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
+                tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
+                let result = burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
+                measureError(result)
+                selectPinnedTabIfNeeded(in: tabCollectionViewModel)
             }
         }
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     private func domainsToBurn(from entity: BurningEntity) -> Set<String> {
@@ -827,60 +1104,86 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    private func tabViewModels(of entity: BurningEntity) -> [TabViewModel] {
+    private func tabsForCleanup(of entity: BurningEntity) -> [any TabDataClearing] {
         switch entity {
         case .none:
             return []
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
-            return [tabViewModel]
+            return [AnyTab.loaded(tabViewModel.tab)]
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
-            let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
-            let tabViewModels = Array(tabCollectionViewModel.tabViewModels.values)
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs ?? []
+            return pinnedTabs + tabCollectionViewModel.tabCollection.tabs
         case .allWindows:
-            let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
-            let tabViewModels = windowControllersManager.allTabViewModels
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabCollection.tabs }
+            let windowTabs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
+            return pinnedTabs + windowTabs
         }
     }
 
     // MARK: - Autoconsent visit cache
 
-    private func burnAutoconsentCache() {
+    private func burnAutoconsentCache() -> Result<Void, Error> {
         self.autoconsentManagement?.clearCache()
+        return .success(())
     }
 
-    private func burnAutoconsentStats() async {
-        await self.autoconsentStats?.clearAutoconsentStats()
+    private func burnAutoconsentStats() async -> Result<Void, Error> {
+        guard let autoconsentStats = autoconsentStats else {
+            return .failure(DataClearingWideEventError(description: "autoconsentStats is nil"))
+        }
+        return await autoconsentStats.clearAutoconsentStats()
     }
 
     // MARK: - Last Session State
 
     @MainActor
-    private func burnLastSessionState() {
-        stateRestorationManager?.clearLastSessionState()
+    private func burnLastSessionState() -> Result<Void, Error> {
+        guard let stateRestorationManager = stateRestorationManager else {
+            return .failure(DataClearingWideEventError(description: "stateRestorationManager is nil"))
+        }
+
+        return stateRestorationManager.clearLastSessionState()
     }
 
     // MARK: - Burn Recently Closed
 
     @MainActor
-    private func burnRecentlyClosed(baseDomains: Set<String>? = nil) {
+    private func burnRecentlyClosed(baseDomains: Set<String>? = nil) -> Result<Void, Error> {
         recentlyClosedCoordinator?.burnCache(baseDomains: baseDomains, tld: tld)
+        return .success(())
     }
 
     // MARK: - Bookmarks cleanup
 
-    private func burnDeletedBookmarks() {
+    private func burnDeletedBookmarks() -> Result<Void, Error> {
         if syncService?.authState == .inactive {
             syncDataProviders?.bookmarksAdapter.databaseCleaner.cleanUpDatabaseNow()
         }
+        return .success(())
+    }
+
+    // MARK: - Wide Event Helpers
+
+    /// Creates a FireDialogResult representing an auto-clear operation.
+    /// Auto-clear always clears all data with all options enabled except chat history (which is configurable).
+    private func makeAutoClearResult(includeCookiesAndSiteData: Bool, includeChatHistory: Bool) -> FireDialogResult {
+        return FireDialogResult(
+            clearingOption: .allData,
+            includeHistory: true,
+            includeTabsAndWindows: true,
+            includeCookiesAndSiteData: includeCookiesAndSiteData,
+            includeChatHistory: includeChatHistory,
+            selectedCookieDomains: nil,
+            selectedVisits: nil,
+            isToday: false
+        )
     }
 }
 
 extension TabCollection {
 
     // Local history of TabCollection instance including history of already closed tabs
-    var localHistory: [Visit] {
+    @MainActor var localHistory: [Visit] {
         tabs.flatMap { $0.localHistory }
     }
 
@@ -894,7 +1197,7 @@ extension TabCollection {
     }
 
     var localHistoryDomainsOfRemovedTabs: Set<String> {
-        var domains = Set<String>()
+        var domains = removedTabDomains
         for visit in localHistoryOfRemovedTabs {
             if let host = visit.historyEntry?.url.host {
                 domains.insert(host)

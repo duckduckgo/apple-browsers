@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Ett enhetslösenord krävs för att använda Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Återställ automatiskt dina data på den här enheten om du installerar om appen.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Återuppta din Sync & Backup-session för att återställa dina bokmärken, lösenord med mera, eller fortsätt med en ny installation.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Återuppta Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Fortsätt inställningen";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Din tidigare Sync & Backup-session är klar.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Om du installerar om DuckDuckGo-appen frågar vi dig om du vill återställa dina data på den här enheten.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Återställ vid ominstallation av appen";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Återställ vid ominstallation av appen";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Av";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "På";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Återställ dina data automatiskt om du installerar om appen. Sync & Backup-data kan inte återställas efter 18 månaders inaktivitet.";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Återställ vid ominstallation av appen";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Tillbaka";
@@ -36,6 +69,9 @@
 
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Detta skapar en krypterad säkerhetskopia av dina bokmärken och data för automatisk ifyllning på DuckDuckGos säkra server, som kan synkroniseras med dina andra enheter.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Detta skapar en krypterad säkerhetskopia av dina sparade bokmärken, lösenord, kreditkort och Duck.ai-chattar på DuckDuckGos säkra server, som kan synkroniseras med dina andra enheter.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Krypteringsnyckeln lagras endast på din enhet. DuckDuckGo har inte åtkomst till den.";
@@ -98,9 +134,6 @@
 "fetch.favicons.option.title" = "Ladda ner ikoner automatiskt";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Gå till inställningarna";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Behåll utveckling";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -142,6 +175,9 @@
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Dina bokmärken och data för automatisk ifyllning förbereds för synkronisering. Detta bör bara ta ett ögonblick.";
 
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Dina bokmärken, lösenord och Duck.ai-chattar förbereds för synkronisering. Detta bör bara ta ett ögonblick.";
+
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Ansluter …";
 
@@ -152,13 +188,22 @@
 "recover.synced.data.link" = "Återställ synkroniserade data";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Kom igång";
+"recover.synced.data.sheet.button" = "Återställ synkroniserade data";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "För att återställa dina synkroniserade data behöver du den återställningskod som du sparade när du konfigurerade synkronisering första gången. Koden kan ha sparats som en PDF-fil på den enhet du använde för att konfigurera synkronisering första gången.";
+"recover.synced.data.sheet.description" = "Du behöver den återställningskod som du fick när du konfigurerade Sync & Backup. Du kan ha sparat koden som en PDF-fil på enheten du använde.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Återställ synkroniserade data";
+"recover.synced.data.sheet.title" = "Återställ dina synkroniserade data";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Återansluter för att synkronisera dina bokmärken, sparade inloggningar och andra enheter.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Ansluter …";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Återställer data";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Ta bort enhet";
@@ -169,6 +214,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Vill du ta bort enheten?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Återställningskod";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Återställningskoden har kopierats till urklipp";
 
@@ -176,22 +224,22 @@
 "save.recovery.code.copy.code.button" = "Kopiera kod";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Spara som PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Om du förlorar åtkomsten till dina enheter behöver du denna kod för att återställa dina synkroniserade data.";
+"save.recovery.code.save.as.pdf.button" = "Ladda ner som PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Alla som har tillgång till denna kod kan komma åt dina synkroniserade data. Förvara därför koden på ett säkert ställe.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Spara återställningskoden";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Spara den här koden på ett säkert ställe så att du kan återställa dina data om du förlorar åtkomsten till den här enheten.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Återställ enkelt dina data";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Spara återställnings-PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Om du förlorar din enhet behöver du denna återställningskod för att återställa dina synkroniserade data.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Använd den här koden för att återställa dina data om du förlorar åtkomst till den här enheten. Sync & Backup-data kan inte återställas efter 18 månaders inaktivitet. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ange textkod manuellt";
@@ -239,9 +287,6 @@
 "scan.or.see.code.title" = "Skanna QR-kod";
 
 /* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Säkra din enhet för att använda Sync & Backup";
-
-/* No comment provided by engineer. */
 "Switch to Production" = "Byt till produktion";
 
 /* Link label for syncing and backing up the device */
@@ -268,6 +313,120 @@
 /* Sync Menu Path */
 "sync.menu.path" = "Inställningar > Synkronisera och säkerhetskopiera > Synkronisera med en annan enhet";
 
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Gå till inställningarna";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Ett enhetslösenord krävs för att använda Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Säkra din enhet för att använda Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Återställning";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Redan konfigurerad på en annan enhet?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Dina bokmärken, data för automatisk ifyllning och Duck.ai-chattar säkerhetskopieras säkert. Håll dem nu synkroniserade med din dator eller surfplatta.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Synkronisera en annan enhet";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Inte nu";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Synkronisera dina data med en annan enhet?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Läser in ikoner från webbplatser som du har bokmärkt. Ikonnedladdningar exponeras för ditt nätverk.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Bokmärken";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Använd samma favoritbokmärken på mobilen och datorn.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Ansluter …";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopiera återställningskod";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Stäng av synkronisering och radera serverdata";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Ladda ner återställningskod";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo för Mac och Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Hämta webbläsare för dator";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Spara dina bokmärken, data för automatisk ifyllning och Duck.ai-chattar, och synkronisera dem mellan dina enheter med end-to-end-kryptering.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Spara dina bokmärken och data för automatisk ifyllning och synkronisera dem mellan dina enheter med end-to-end-kryptering.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Använd den här koden för att återställa dina data om du förlorar åtkomst till den här enheten. Sync & Backup-data kan inte återställas efter 18 månaders inaktivitet. [Läs mer](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-app";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Rikta kameran mot QR-koden för att skanna";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Ansluter …";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Håll DuckDuckGo öppet på båda enheterna";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Ange kod manuellt";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Gå till **Inställningar > Synkronisera och säkerhetskopiera > Synkronisera med en annan enhet** och välj **Visa textkod** i DuckDuckGo-appen på en annan synkroniserad enhet och klistra in koden här för att synkronisera den här enheten.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Verifierar kod";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Öppna DuckDuckGo-appen på din andra enhet.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Hitta QR-koden i Inställningar > Synkronisera och säkerhetskopiera > Synkronisera med en annan enhet.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Dela kod";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Skanna QR-kod";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Visa kod";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Synkronisera dina enheter";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Skanna eller klistra in den här koden på din andra enhet";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Synkronisering och säkerhetskopiering";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Använd återställningskod";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synkronisera med en annan enhet";
+
 /* Sync & Backup Title */
 "sync.title" = "Synkronisering och säkerhetskopiering";
 
@@ -287,7 +446,10 @@
 "sync.with.another.device.footer" = "Dina data krypteras under hela vägen och DuckDuckGo har inte tillgång till krypteringsnyckeln.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkronisera bokmärken och data för automatisk ifyllning mellan dina enheter på ett säkert sätt.";
+"sync.with.another.device.message" = "Synkronisera bokmärken och lösenord mellan dina enheter på ett säkert sätt.";
+
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synkronisera bokmärken, data för automatisk ifyllning och Duck.ai-chattar mellan dina enheter på ett säkert sätt.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Starta synkronisering";
@@ -303,6 +465,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Inaktivera synkronisering och säkerhetskopiering …";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Bokmärken, data för automatisk ifyllning och Duck.ai-chattar är för närvarande synkroniserade mellan dina enheter.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synkronisering aktiverad";

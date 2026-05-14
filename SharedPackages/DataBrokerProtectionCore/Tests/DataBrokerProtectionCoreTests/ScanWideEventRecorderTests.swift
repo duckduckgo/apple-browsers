@@ -43,11 +43,11 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
     func testMetadataForInitialScanUsesReferenceDateAndNewScan() {
         let referenceDate = Date(timeIntervalSince1970: 500)
-        let scanJob = ScanJobData(brokerId: 1,
-                                  profileQueryId: 1,
-                                  historyEvents: [])
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: [],
+                                                      optOutsHistoryEvents: [],
+                                                      referenceDate: referenceDate,
+                                                      isFreeScan: false)
 
         XCTAssertEqual(metadata.intervalStart, referenceDate)
         XCTAssertEqual(metadata.attemptNumber, 1)
@@ -56,40 +56,70 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
     func testMetadataCountsAttemptsSinceLastSuccess() {
         let referenceDate = Date(timeIntervalSince1970: 10_000)
-        let historyEvents: [HistoryEvent] = [
+        let scanHistoryEvents: [HistoryEvent] = [
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date(timeIntervalSince1970: 1_000)),
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2), date: Date(timeIntervalSince1970: 2_000)),
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date(timeIntervalSince1970: 3_000)),
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .error(error: .unknown("failed")), date: Date(timeIntervalSince1970: 3_500)),
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date(timeIntervalSince1970: 4_000))
         ]
-        let scanJob = ScanJobData(brokerId: 1,
-                                  profileQueryId: 1,
-                                  historyEvents: historyEvents)
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: scanHistoryEvents,
+                                                      optOutsHistoryEvents: [],
+                                                      referenceDate: referenceDate,
+                                                      isFreeScan: false)
 
         XCTAssertEqual(metadata.attemptNumber, 3, "Two attempts recorded after success plus the new one about to start.")
         XCTAssertEqual(metadata.intervalStart, Date(timeIntervalSince1970: 3_000))
         XCTAssertEqual(metadata.attemptType, .maintenanceScan)
     }
 
-    func testMetadataUsesConfirmationAttemptWhenLastEventIsOptOutRequested() {
+    func testMetadataUsesConfirmationAttemptWhenOptOutRequestedIsLatestOptOutEvent() {
         let referenceDate = Date(timeIntervalSince1970: 20_000)
-        let historyEvents: [HistoryEvent] = [
+        let scanHistoryEvents: [HistoryEvent] = [
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date(timeIntervalSince1970: 5_000)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date(timeIntervalSince1970: 5_500)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutRequested, date: Date(timeIntervalSince1970: 6_000))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date(timeIntervalSince1970: 5_500))
         ]
-        let scanJob = ScanJobData(brokerId: 1,
-                                  profileQueryId: 1,
-                                  historyEvents: historyEvents)
+        let optOutHistoryEvents: [HistoryEvent] = [
+            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date(timeIntervalSince1970: 5_800)),
+            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, type: .optOutRequested, date: Date(timeIntervalSince1970: 6_000))
+        ]
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: scanHistoryEvents,
+                                                      optOutsHistoryEvents: [optOutHistoryEvents],
+                                                      referenceDate: referenceDate,
+                                                      isFreeScan: false)
 
         XCTAssertEqual(metadata.attemptType, .confirmOptOutScan)
-        XCTAssertEqual(metadata.attemptNumber, 1)
-        XCTAssertEqual(metadata.intervalStart, referenceDate)
+    }
+
+    func testMetadataFallsBackToMaintenanceScanWhenLatestOptOutEventIsConfirmed() {
+        let referenceDate = Date(timeIntervalSince1970: 20_000)
+        let scanHistoryEvents: [HistoryEvent] = [
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date(timeIntervalSince1970: 5_500))
+        ]
+        let optOutHistoryEvents: [HistoryEvent] = [
+            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, type: .optOutRequested, date: Date(timeIntervalSince1970: 6_000)),
+            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, type: .optOutConfirmed, date: Date(timeIntervalSince1970: 7_000))
+        ]
+
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: scanHistoryEvents,
+                                                      optOutsHistoryEvents: [optOutHistoryEvents],
+                                                      referenceDate: referenceDate,
+                                                      isFreeScan: false)
+
+        XCTAssertEqual(metadata.attemptType, .maintenanceScan)
+    }
+
+    func testMetadataIncludesIsFreeScanWhenProvided() {
+        let referenceDate = Date(timeIntervalSince1970: 500)
+
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: [],
+                                                      optOutsHistoryEvents: [],
+                                                      referenceDate: referenceDate,
+                                                      isFreeScan: true)
+
+        XCTAssertTrue(metadata.isFreeScan)
     }
 
     // MARK: - Recorder
@@ -99,7 +129,8 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
         let initialMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 10),
                                                             attemptNumber: 1,
-                                                            attemptType: .newScan)
+                                                            attemptType: .newScan,
+                                                            isFreeScan: true)
 
         let recorder = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                              attemptID: attemptID,
@@ -113,13 +144,15 @@ final class ScanWideEventRecorderTests: XCTestCase {
         let startedData = wideEventMock.started.first as? ScanWideEventData
         XCTAssertEqual(startedData?.attemptNumber, 1)
         XCTAssertEqual(startedData?.attemptType, .newScan)
+        XCTAssertEqual(startedData?.isFreeScan, true)
         XCTAssertEqual(startedData?.scanInterval?.start, Date(timeIntervalSince1970: 10))
     }
 
     func testStartIfPossibleReusesExistingFlow() {
         let initialMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 10),
                                                             attemptNumber: 1,
-                                                            attemptType: .newScan)
+                                                            attemptType: .newScan,
+                                                            isFreeScan: false)
 
         _ = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                   attemptID: attemptID,
@@ -131,7 +164,8 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
         let updatedMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 5),
                                                              attemptNumber: 2,
-                                                             attemptType: .maintenanceScan)
+                                                             attemptType: .maintenanceScan,
+                                                             isFreeScan: false)
 
         _ = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                   attemptID: attemptID,

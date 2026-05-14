@@ -52,6 +52,7 @@ struct HeadlessWebView: UIViewRepresentable {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.navigationDelegate = context.coordinator
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.preventFlashOnLoad()
         navigationCoordinator.webView = webView
         
         
@@ -85,14 +86,12 @@ struct HeadlessWebView: UIViewRepresentable {
         let userContentController = WKUserContentController()
         
         // Enable content blocking rules
-        if settings.contentBlocking {
-            let sourceProvider = DefaultScriptSourceProvider(fireproofing: UserDefaultsFireproofing.xshared)
-            let contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
+        if let userScriptsDependencies = settings.userScriptsDependencies {
+            let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             do {
                 let contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                     properties: sourceProvider.contentScopeProperties,
                                                                     privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-                userContentController.addUserScript(contentBlockerUserScript.makeWKUserScriptSync())
                 userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
             } catch {
                 if let error = error as? UserScriptError {

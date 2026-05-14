@@ -105,11 +105,20 @@ public struct BrokenSiteReport {
     let privacyExperiments: String
     let isPirEnabled: Bool?
     let pageLoadTiming: WKPageLoadTiming?
+    let breakageData: String?
+    let isForceDarkModeEnabled: Bool?
+    let autoplayBlockingMode: String?
+    let loadedWebExtensions: String?
+    let adBlockingExtensionScriptletsVersion: String?
 #if os(iOS)
     let siteType: SiteType
-    let atb: String
     let model: String
     let variant: String
+    let isAfterSuppressedXSafariRedirect: Bool
+#endif
+
+#if os(macOS)
+    let lastTabSuspension: String?
 #endif
 
 #if os(macOS)
@@ -141,7 +150,13 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
-        pageLoadTiming: WKPageLoadTiming?
+        isForceDarkModeEnabled: Bool?,
+        lastTabSuspension: String?,
+        autoplayBlockingMode: String? = nil,
+        pageLoadTiming: WKPageLoadTiming?,
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -170,7 +185,13 @@ public struct BrokenSiteReport {
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.lastTabSuspension = lastTabSuspension
+        self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
+        self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -192,7 +213,6 @@ public struct BrokenSiteReport {
         protectionsState: Bool,
         reportFlow: Source,
         siteType: SiteType,
-        atb: String,
         model: String,
         errors: [Error]?,
         httpStatusCodes: [Int]?,
@@ -207,7 +227,13 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
-        pageLoadTiming: WKPageLoadTiming? = nil
+        isForceDarkModeEnabled: Bool?,
+        autoplayBlockingMode: String? = nil,
+        isAfterSuppressedXSafariRedirect: Bool = false,
+        pageLoadTiming: WKPageLoadTiming? = nil,
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -225,7 +251,6 @@ public struct BrokenSiteReport {
         self.urlParametersRemoved = urlParametersRemoved
         self.reportFlow = reportFlow
         self.siteType = siteType
-        self.atb = atb
         self.model = model
         self.errors = errors
         self.httpStatusCodes = httpStatusCodes
@@ -241,12 +266,19 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.pageLoadTiming = pageLoadTiming
+        self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.autoplayBlockingMode = autoplayBlockingMode
+        self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
+        self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
     /// A dictionary containing all the parameters needed from the Report Broken Site Pixel
     public var requestParameters: [String: String] { getRequestParameters(forReportMode: .regular) }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getRequestParameters(forReportMode mode: Mode) -> [String: String] {
         var result: [String: String] = [
             "siteUrl": siteUrl.trimmingQueryItemsAndFragment().absoluteString,
@@ -268,6 +300,9 @@ public struct BrokenSiteReport {
             "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
             "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
+            "consentReloadLoop": boolToStringValue(cookieConsentInfo?.consentReloadLoop),
+            "consentHeuristicEnabled": boolToStringValue(cookieConsentInfo?.consentHeuristicEnabled),
+            "consentRule": cookieConsentInfo?.consentRule ?? "",
             "debugFlags": debugFlags,
             "contentScopeExperiments": privacyExperiments
         ]
@@ -311,12 +346,37 @@ public struct BrokenSiteReport {
             addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
         }
 
+        if let isForceDarkModeEnabled {
+            result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
+        }
+
+        if let autoplayBlockingMode {
+            result["autoplayBlockingMode"] = autoplayBlockingMode
+        }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
-        result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
+        if isAfterSuppressedXSafariRedirect {
+            result["isAfterSuppressedXSafariRedirect"] = "true"
+        }
 #endif
+
+#if os(macOS)
+        if let lastTabSuspension {
+            result["lastTabSuspension"] = lastTabSuspension
+        }
+#endif
+
+        if let breakageData {
+            result["breakageData"] = breakageData
+        }
+
+        if let loadedWebExtensions {
+            result["loadedWebExtensions"] = loadedWebExtensions
+            result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
+        }
+
         return result
     }
 

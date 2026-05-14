@@ -44,7 +44,7 @@ public protocol RemoteBrokerJSONServiceProvider {
 public protocol LocalBrokerJSONServiceProvider {
 
     /// Returns list of broker JSONs included in the app bundle, which is used to populate initial scans
-    func bundledBrokers() throws -> [DataBroker]?
+    func bundledBrokers() throws -> [BrokerResource]?
 
     /// Check for potential bundled broker JSON updates
     func checkForUpdates() async throws
@@ -56,11 +56,11 @@ public protocol BrokerStoring {
     /// Secure storage for persisting broker data
     var vault: any DataBrokerProtectionSecureVault { get }
 
-    /// Inserts a new broker or updates an existing one with the same identifier (`id`)
+    /// Inserts a new broker or updates an existing one with the same URL
     ///
     /// - Parameters:
-    ///   - broker: The broker data to store or update
-    func upsertBroker(_ broker: DataBroker) throws
+    ///   - brokerResource: The broker payload including decoded model and original JSON blob
+    func upsertBroker(_ brokerResource: BrokerResource) throws
 
     /// Utility method to determine whether to proceed with an update based on version comparison
     /// Can be used for app versions and individual broker versions
@@ -73,9 +73,11 @@ public protocol BrokerStoring {
 }
 
 public extension BrokerStoring {
-    func upsertBroker(_ broker: DataBroker) throws {
+    func upsertBroker(_ brokerResource: BrokerResource) throws {
+        let broker = brokerResource.broker
+
         guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
-            try addBroker(broker)
+            try addBroker(brokerResource)
             return
         }
 
@@ -88,15 +90,15 @@ public extension BrokerStoring {
 
         Logger.dataBrokerProtection.log("🧩 Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
 
-        try vault.update(broker, with: savedBrokerId)
+        try vault.update(brokerResource, with: savedBrokerId)
         try updateAttemptCount(broker)
     }
 
-    private func addBroker(_ broker: DataBroker) throws {
-        Logger.dataBrokerProtection.log("🧩 New broker found: \(broker.url, privacy: .public)")
+    private func addBroker(_ brokerResource: BrokerResource) throws {
+        Logger.dataBrokerProtection.log("🧩 New broker found: \(brokerResource.broker.url, privacy: .public)")
 
         /// 1. We save the broker into the database
-        let brokerId = try vault.save(broker: broker)
+        let brokerId = try vault.save(brokerResource: brokerResource)
 
         /// 2. We fetch the user profile and obtain the profile queries
         let profileQueries = try vault.fetchAllProfileQueries(for: 1)

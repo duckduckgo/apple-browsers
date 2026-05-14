@@ -50,10 +50,12 @@ extension VPNSnoozeTip: Tip {
 
     var title: Text {
         Text(UserText.networkProtectionSnoozeTipTitle)
+        .foregroundStyle(Color(designSystemColor: .textPrimary))
     }
 
     var message: Text? {
         Text(UserText.networkProtectionSnoozeTipMessage)
+            .foregroundStyle(Color(designSystemColor: .textSecondary))
     }
 
     var image: Image? {
@@ -63,7 +65,7 @@ extension VPNSnoozeTip: Tip {
     var actions: [Action] {
         [Action(id: ActionIdentifiers.learnMore.rawValue) {
             Text(UserText.networkProtectionSnoozeTipAction)
-                .foregroundStyle(Color(designSystemColor: .accent))
+                .foregroundStyle(Color(designSystemColor: .buttonsPrimaryText))
         }]
     }
 

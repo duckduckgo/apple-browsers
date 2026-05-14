@@ -20,7 +20,7 @@
 import Foundation
 import ZIPFoundation
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 
 public protocol ImportArchiveReading {
     func readContents(from archiveURL: URL, featureFlagger: FeatureFlagger) throws -> ImportArchiveContents

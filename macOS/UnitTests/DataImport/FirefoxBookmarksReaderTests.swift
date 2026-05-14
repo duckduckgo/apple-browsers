@@ -27,37 +27,7 @@ class FirefoxBookmarksReaderTests: XCTestCase {
         let otherBookmarksFolderTitle = "Other bookmarks"
         let bookmarksMenuFolderTitle = "Bookmarks menu"
 
-        let featureFlagger = MockFeatureFlagger()
-        let bookmarksReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: resourceURL(), otherBookmarksFolderTitle: otherBookmarksFolderTitle, bookmarksMenuFolderTitle: bookmarksMenuFolderTitle, featureFlagger: featureFlagger)
-        let bookmarks = bookmarksReader.readBookmarks()
-
-        guard case let .success(bookmarks) = bookmarks else {
-            XCTFail("Failed to decode bookmarks")
-            return
-        }
-
-        XCTAssertEqual(bookmarks.topLevelFolders.bookmarkBar?.type, .folder)
-        XCTAssertEqual(bookmarks.topLevelFolders.otherBookmarks?.type, .folder)
-        XCTAssertEqual(bookmarks.topLevelFolders.otherBookmarks?.name == otherBookmarksFolderTitle, true)
-
-        XCTAssertEqual(bookmarks.topLevelFolders.bookmarkBar?.children?.contains(where: { bookmark in
-            bookmark.url?.absoluteString == "https://duckduckgo.com/"
-        }), true)
-        XCTAssertEqual(bookmarks.topLevelFolders.otherBookmarks?.children?.contains(where: { folder in
-            folder.type == .folder && folder.name == otherBookmarksFolderTitle
-        }), false)
-        XCTAssertEqual(bookmarks.topLevelFolders.otherBookmarks?.children?.contains(where: { folder in
-            folder.type == .folder && folder.name == bookmarksMenuFolderTitle
-        }), false)
-    }
-
-    func testImportingBookmarks_WithFeatureFlagEnabled() {
-        let otherBookmarksFolderTitle = "Other bookmarks"
-        let bookmarksMenuFolderTitle = "Bookmarks menu"
-
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.updateFirefoxBookmarksImport)
-        let bookmarksReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: resourceURL(), otherBookmarksFolderTitle: otherBookmarksFolderTitle, bookmarksMenuFolderTitle: bookmarksMenuFolderTitle, featureFlagger: featureFlagger)
+        let bookmarksReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: resourceURL(), otherBookmarksFolderTitle: otherBookmarksFolderTitle, bookmarksMenuFolderTitle: bookmarksMenuFolderTitle)
         let bookmarks = bookmarksReader.readBookmarks()
 
         guard case let .success(bookmarks) = bookmarks else {
@@ -82,8 +52,7 @@ class FirefoxBookmarksReaderTests: XCTestCase {
 
     func testFileNotFoundReturnsFailureWithDbOpenError() {
         // Given
-        let featureFlagger = MockFeatureFlagger()
-        let bookmarksReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: invalidResourceURL(), featureFlagger: featureFlagger)
+        let bookmarksReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: invalidResourceURL())
         let expected: DataImportResult<ImportedBookmarks> = .failure(FirefoxBookmarksReader.ImportError(type: .couldNotFindBookmarksFile, underlyingError: nil))
 
         // When

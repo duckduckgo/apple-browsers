@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Networking
 import os.log
@@ -28,7 +28,6 @@ public struct PixelParameters {
     public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
-    public static let osVersion = "osVersion"
 
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
@@ -40,7 +39,6 @@ public struct PixelParameters {
 
     static let errorCode = "e"
     static let errorDomain = "d"
-    static let errorDescription = "de"
     static let errorCount = "c"
     static let underlyingErrorCode = "ue"
     static let underlyingErrorDomain = "ud"
@@ -51,13 +49,14 @@ public struct PixelParameters {
     static let coreDataErrorAttribute = "coreDataAttribute"
 
     public static let tabCount = "tc"
+    public static let tabType = "tabType"
+    public static let domainsCount = "domainsCount"
 
     public static let widgetSmall = "ws"
     public static let widgetMedium = "wm"
     public static let widgetLarge = "wl"
     public static let widgetError = "we"
     public static let widgetErrorCode = "ec"
-    public static let widgetErrorDomain = "ed"
     public static let widgetUnavailable = "wx"
 
     static let removeCookiesTimedOut = "rc"
@@ -81,11 +80,14 @@ public struct PixelParameters {
     public static let storeAfterDeletionDiffCount = "store_after_deletion_diff_count"
     public static let storageAfterDeletionDiffCount = "storage_after_deletion_diff_count"
 
+    public static let tabsModelOperation = "operation"
     public static let tabsModelCount = "tabs_model_count"
     public static let tabControllerCacheCount = "tab_controller_cache_count"
 
     public static let count = "count"
     public static let source = "source"
+    public static let shortcut = "shortcut"
+    public static let browsingMode = "browsing_mode"
     public static let authVersion = "authVersion"
     public static let lastUsed = "last_used"
 
@@ -104,6 +106,12 @@ public struct PixelParameters {
     public static let isDataProtected = "is_data_protected"
 
     public static let isInternalUser = "is_internal_user"
+
+    public static let enabled = "enabled"
+
+    // Onboarding subscription promotion
+    public static let returningUser = "ru"
+    public static let freeTrial = "free_trial"
 
     // Email manager
     public static let emailKeychainAccessType = "access_type"
@@ -156,6 +164,7 @@ public struct PixelParameters {
     public static let isExtension = "is_extension"
 
     // Data Import
+    public static let entryPoint = "entry_point"
     public static let savedCredentials = "saved_credentials"
     public static let skippedCredentials = "skipped_credentials"
     public static let savedCreditCards = "saved_creditcards"
@@ -180,6 +189,7 @@ public struct PixelParameters {
 
     public static let appState = "state"
     public static let appEvent = "event"
+    public static let windowChanged = "windowChanged"
 
     public static let didCallWillEnterForeground = "didCallWillEnterForeground"
 
@@ -194,6 +204,12 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Autoplay
+    public static let autoplayBlockingMode = "autoplay_blocking_mode"
+
+    // Fire animation
+    public static let fireAnimation = "fireAnimationType"
 }
 
 public struct PixelValues {
@@ -212,7 +228,7 @@ public class Pixel {
         case vpn
     }
 
-    public static var isDryRun = false
+    public static var isDryRun = PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild)
 
     private static var isInternalUser: Bool {
         DefaultInternalUserDecider(store: InternalUserStore()).isInternalUser
@@ -286,6 +302,11 @@ public class Pixel {
 
         guard !isDryRun else {
             Logger.pixels.debug("Pixel fired \(pixelName.replacingOccurrences(of: "_", with: "."), privacy: .public) \(params.count > 0 ? "\(params)" : "", privacy: .public)")
+
+            #if DEBUG
+            Self.writeValidationPixel(pixelName: pixelName, deviceType: deviceType, parameters: newParams)
+            #endif
+
             // simulate server response time for Dry Run mode
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onComplete(nil)
@@ -346,8 +367,6 @@ private extension Pixel.Event {
         }
         return false
     }
-    
-    
 }
 
 extension Dictionary where Key == String, Value == String {
@@ -357,6 +376,7 @@ extension Dictionary where Key == String, Value == String {
 
         self[PixelParameters.errorCode] = "\(nsError.code)"
         self[PixelParameters.errorDomain] = nsError.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = underlyingErrorParameters(for: error as NSError)
         self.merge(underlyingErrorParameters) { first, _ in first }
@@ -364,12 +384,14 @@ extension Dictionary where Key == String, Value == String {
 
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelParameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelParameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelParameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelParameters.underlyingErrorDomain + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             let additionalParameters = underlyingErrorParameters(for: underlyingError, level: level + 1)
@@ -385,3 +407,70 @@ extension Dictionary where Key == String, Value == String {
     }
 
 }
+
+// MARK: - Local Pixel Validation
+
+#if DEBUG
+extension Pixel {
+
+    private static let validationLogQueue = DispatchQueue(label: "Debug Pixel Validation")
+    private static var validationLogCleared = false
+
+    private static var validationLogURL: URL {
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return cacheDir.appendingPathComponent("pixel-validation-log.txt")
+    }
+
+    private static func pixelURI(name: String, parameters: [String: String]) -> String {
+        guard !parameters.isEmpty else {
+            return name
+        }
+
+        let sortedParams = parameters.sorted { $0.key < $1.key }
+        let queryString = sortedParams
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(name)?\(queryString)"
+    }
+
+    /// Writes pixel calls to a file in the Caches directory, so that we can validate the pixels against the JSON definitions before they go to production.
+    /// To use this, trigger your pixel in the iOS Simulator, and then run `./iOS/scripts/validate_pixels.sh`.
+    static func writeValidationPixel(pixelName: String, deviceType: UIUserInterfaceIdiom?, parameters: [String: String]) {
+        let formFactor: String
+        if let deviceType = deviceType {
+            formFactor = deviceType == .pad ? Constants.tablet : Constants.phone
+        } else {
+            formFactor = Constants.phone
+        }
+        let fullPixelName = "\(pixelName)_ios_\(formFactor)"
+        let pixelURI = pixelURI(name: fullPixelName, parameters: parameters)
+
+        writeToValidationLog("Pixel fired: \(pixelURI)")
+    }
+
+    private static func writeToValidationLog(_ message: String) {
+        validationLogQueue.async {
+            let fileURL = validationLogURL
+
+            // Clear the log file on first write of each session
+            if !validationLogCleared {
+                try? FileManager.default.removeItem(at: fileURL)
+                validationLogCleared = true
+            }
+
+            let entry = message + "\n"
+            if let data = entry.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: fileURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(data)
+                        handle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: fileURL)
+                }
+            }
+        }
+    }
+}
+#endif

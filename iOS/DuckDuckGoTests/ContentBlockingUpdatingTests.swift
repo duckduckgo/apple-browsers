@@ -22,6 +22,7 @@ import WebKit
 import Core
 import TrackerRadarKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
 class FireproofingMock: Fireproofing {
@@ -36,8 +37,12 @@ class FireproofingMock: Fireproofing {
     func addToAllowed(domain: String) {}
     
     func remove(domain: String) {}
-    
+
     func clearAll() {}
+
+    func displayDomain(for domain: String) -> String { domain }
+
+    func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool { false }
 }
 
 final class ContentBlockingUpdatingTests: XCTestCase {
@@ -48,10 +53,16 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        updating = ContentBlockingUpdating(appSettings: appSettings,
-                                           contentBlockerRulesManager: rulesManager,
-                                           privacyConfigurationManager: configManager,
-                                           fireproofing: FireproofingMock())
+        updating = ContentBlockingUpdating(userScriptsDependencies: .init(appSettings: appSettings,
+                                                                          sync: MockDDGSyncing(),
+                                                                          privacyConfigurationManager: configManager,
+                                                                          contentBlockingManager: rulesManager,
+                                                                          fireproofing: FireproofingMock(),
+                                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                                          internalUserDecider: MockInternalUserDecider(),
+                                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                          webExtensionAvailability: nil),
+                                           keyValueStore: UserDefaults(suiteName: "ContentBlockingUpdatingTests")!)
     }
 
     override static func setUp() {

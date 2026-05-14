@@ -17,12 +17,14 @@
 //
 
 import AppLauncher
+import Common
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
+import Subscription
 import SwiftUI
+import VPN
 import VPNAppLauncher
 import VPNAppState
 
@@ -35,18 +37,21 @@ final class VPNUIActionHandler {
     private let tunnelController: TunnelController
     private let vpnAppState: VPNAppState
     private let vpnURLEventHandler: VPNURLEventHandler
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     init(vpnIPCClient: VPNControllerXPCClient = .shared,
          vpnURLEventHandler: VPNURLEventHandler,
          tunnelController: TunnelController,
          proxySettings: TransparentProxySettings,
-         vpnAppState: VPNAppState) {
+         vpnAppState: VPNAppState,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.vpnIPCClient = vpnIPCClient
         self.vpnURLEventHandler = vpnURLEventHandler
         self.tunnelController = tunnelController
         self.proxySettings = proxySettings
         self.vpnAppState = vpnAppState
+        self.freeTrialConversionService = freeTrialConversionService
     }
 
     func askUserToReportIssues(withDomain domain: String) async {
@@ -63,7 +68,8 @@ final class VPNUIActionHandler {
 extension VPNUIActionHandler: VPNUIActionHandling {
 
     func moveAppToApplications() async {
-#if !APPSTORE && !DEBUG
+#if !DEBUG
+        guard !AppVersion.isAppStoreBuild else { return }
         await vpnURLEventHandler.moveAppToApplicationsFolder()
 #endif
     }
@@ -130,5 +136,9 @@ extension VPNUIActionHandler: VPNUIActionHandling {
             windowControllersManager.showVPNDomainExclusions(domain: domain)
             return false
         }
+    }
+
+    func didStartVPN() {
+        freeTrialConversionService.markVPNActivated()
     }
 }

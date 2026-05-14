@@ -33,8 +33,6 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .useExisting)
-        XCTAssertEqual(options.isAuthV2Enabled, .useExisting)
         XCTAssertEqual(options.tokenContainer, .useExisting)
 #endif
         XCTAssertEqual(options.enableTester, .useExisting)
@@ -59,8 +57,6 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .reset)
-        XCTAssertEqual(options.isAuthV2Enabled, .reset)
         XCTAssertEqual(options.tokenContainer, .reset)
 #endif
         XCTAssertEqual(options.enableTester, .reset)
@@ -84,8 +80,6 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .useExisting)
-        XCTAssertEqual(options.isAuthV2Enabled, .useExisting)
         XCTAssertEqual(options.tokenContainer, .useExisting)
 #endif
         XCTAssertEqual(options.enableTester, .useExisting)

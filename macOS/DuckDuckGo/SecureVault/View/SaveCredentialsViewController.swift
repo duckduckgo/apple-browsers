@@ -65,18 +65,19 @@ extension SaveCredentialsViewController: MouseOverViewDelegate {
 
 final class SaveCredentialsViewController: NSViewController {
 
-    static func create(fireproofDomains: FireproofDomains) -> SaveCredentialsViewController {
+    static func create(fireproofDomains: FireproofDomains, pinningManager: PinningManager) -> SaveCredentialsViewController {
         let storyboard = NSStoryboard(name: "PasswordManager", bundle: nil)
         let controller: SaveCredentialsViewController = storyboard.instantiateController(identifier: "SaveCredentials") { coder in
-            self.init(coder: coder, fireproofDomains: fireproofDomains)
+            self.init(coder: coder, fireproofDomains: fireproofDomains, pinningManager: pinningManager)
         }
         controller.loadView()
 
         return controller
     }
 
-    init?(coder: NSCoder, fireproofDomains: FireproofDomains) {
+    init?(coder: NSCoder, fireproofDomains: FireproofDomains, pinningManager: PinningManager) {
         self.fireproofDomains = fireproofDomains
+        self.pinningManager = pinningManager
         super.init(coder: coder)
     }
 
@@ -84,9 +85,14 @@ final class SaveCredentialsViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private(set) var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+
     private let backfilledKey = GeneralPixel.AutofillParameterKeys.backfilled
     private let fireproofDomains: FireproofDomains
+    private let pinningManager: PinningManager
 
+    @IBOutlet var backgroundBox: NSBox!
     @IBOutlet var ddgPasswordManagerTitle: NSView!
     @IBOutlet var titleLabel: NSTextField!
     @IBOutlet var passwordManagerTitle: NSView!
@@ -134,7 +140,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
-    private var passwordManagerCoordinator = PasswordManagerCoordinator.shared
+    private var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
     private var autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()
 
@@ -159,6 +165,9 @@ final class SaveCredentialsViewController: NSViewController {
         updateSaveSegmentedControl()
         setUpStrings()
         setUpSecurityInfoViews()
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -314,7 +323,7 @@ final class SaveCredentialsViewController: NSViewController {
                 NSApp.delegateTyped.syncService?.scheduler.notifyDataChanged()
                 Logger.sync.debug("Requesting sync if enabled")
 
-                if existingCredentials?.account.id == nil, !LocalPinningManager.shared.isPinned(.autofill), let count = try? vault.accountsCount(), count == 1 {
+                if existingCredentials?.account.id == nil, !pinningManager.isPinned(.autofill), let count = try? vault.accountsCount(), count == 1 {
                     shouldFirePinPromptNotification = true
                 }
             }
@@ -458,7 +467,11 @@ final class SaveCredentialsViewController: NSViewController {
     }
 
     private func subscribeToPasswordManagerState() {
-        passwordManagerStateCancellable = passwordManagerCoordinator.bitwardenManagement.statusPublisher
+        guard let bitwardenManagement = passwordManagerCoordinator.bitwardenManagement else {
+            return
+        }
+
+        passwordManagerStateCancellable = bitwardenManagement.statusPublisher
             .dropFirst()
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -558,5 +571,11 @@ final class SaveCredentialsViewController: NSViewController {
         let pixel = action == .confirmed ? confirmedPixel : dismissedPixel
         PixelKit.fire(pixel, withAdditionalParameters: [backfilledKey: String(describing: backfilled)])
     }
+}
 
+extension SaveCredentialsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: any ThemeStyleProviding) {
+        backgroundBox.fillColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

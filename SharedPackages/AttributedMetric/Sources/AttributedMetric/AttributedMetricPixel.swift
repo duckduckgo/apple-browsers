@@ -33,21 +33,21 @@ enum AttributedMetricPixelName: String {
     case dataStoreError = "attributed_metric_data_store_error"
 }
 
-/// Note: These pixels will need to be sent with a custom PixelKit instance that is not sending ATB, app version as specified in https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 /// All pixels below will not
 /// - Send any default parameters such as app version and ATB
 /// - Appending app/OS version in the User-Agent header
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
+/// See https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 enum AttributedMetricPixel: PixelKitEvent {
 
     // Metrics
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int, daysSinceInstalled: Int?, bucketVersion: Int)
-    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
-    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
-    case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
-    case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
+    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
+    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
+    case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
+    case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
     case userSubscribed(origin: String?, installDate: String?, month: Int, bucketVersion: Int)
     case userSyncedDevice(origin: String?, installDate: String?, devices: Int, bucketVersion: Int)
 
@@ -89,6 +89,7 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let origin = "origin"
         static let installDate = "install_date"
         static let bucketVersion = "version"
+        static let dayAverage = "dayAverage"
     }
 
     var parameters: [String: String]? {
@@ -112,16 +113,18 @@ enum AttributedMetricPixel: PixelKitEvent {
             }
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion):
+        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion),
+                .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion):
             var result = [ConstantKeys.count: count.payloadString,
-                          ConstantKeys.bucketVersion: bucketVersion.payloadString]
+                          ConstantKeys.bucketVersion: bucketVersion.payloadString,
+                          ConstantKeys.dayAverage: dayAverage.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion),
-                .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion),
-                .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion):
+        case .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion),
+                .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion):
             var result = [ConstantKeys.count: count.payloadString,
-                          ConstantKeys.bucketVersion: bucketVersion.payloadString]
+                          ConstantKeys.bucketVersion: bucketVersion.payloadString,
+                          ConstantKeys.dayAverage: dayAverage.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
         case .userSubscribed(origin: let origin, installDate: let installDate, month: let month, bucketVersion: let bucketVersion):
@@ -134,8 +137,25 @@ enum AttributedMetricPixel: PixelKitEvent {
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .userRetentionWeek,
+                .userRetentionMonth,
+                .userActivePastWeek,
+                .userAverageSearchesPastWeekFirstMonth,
+                .userAverageSearchesPastWeek,
+                .userAverageAdClicksPastWeek,
+                .userAverageDuckAiUsagePastWeek,
+                .userSubscribed,
+                .userSyncedDevice:
+            return [] // pixelSource is not included for AttributedMetric pixels
         case .dataStoreError:
-            return [:]
+            return [.pixelSource]
         }
     }
 

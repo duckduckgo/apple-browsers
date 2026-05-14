@@ -26,24 +26,27 @@ import PixelKitTestingUtilities
 class WebsiteBreakageReportTests: XCTestCase {
 
     func testReportBrokenSitePixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+        fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
              line: #line)
     }
 
     func testReportBrokenSiteShownPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportShown),
+        fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
              line: #line)
     }
 
     func testReportBrokenSiteSentPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportSent),
+        fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,
              line: #line)
@@ -81,6 +84,8 @@ class WebsiteBreakageReportTests: XCTestCase {
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: nil,
+            isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil
         )
 
@@ -130,10 +135,12 @@ class WebsiteBreakageReportTests: XCTestCase {
             vpnOn: false,
             jsPerformance: nil,
             userRefreshCount: 0,
-            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
+            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: true, consentRule: "test-cmp", consentHeuristicEnabled: true),
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: true,
+            isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil
         )
 
@@ -159,7 +166,86 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "consentManaged"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentOptoutFailed"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentSelftestFailed"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentReloadLoop"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentHeuristicEnabled"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentRule"], "test-cmp")
         XCTAssertEqual(queryItems[valueFor: "isPirEnabled"], "true")
+    }
+
+    func testWebExtensionFieldsAreIncludedWhenProvided() throws {
+        let breakage = BrokenSiteReport(
+            siteUrl: URL(string: "https://example.test/")!,
+            category: "content",
+            description: nil,
+            osVersion: "15",
+            manufacturer: "Apple",
+            upgradedHttps: false,
+            tdsETag: "abc123",
+            configVersion: "123456789",
+            blockedTrackerDomains: [],
+            installedSurrogates: [],
+            isGPCEnabled: false,
+            ampURL: "",
+            urlParametersRemoved: false,
+            protectionsState: true,
+            reportFlow: .dashboard,
+            errors: nil,
+            httpStatusCodes: nil,
+            openerContext: nil,
+            vpnOn: false,
+            jsPerformance: nil,
+            userRefreshCount: 0,
+            cookieConsentInfo: nil,
+            debugFlags: "",
+            privacyExperiments: "",
+            isPirEnabled: nil,
+            isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
+            pageLoadTiming: nil,
+            loadedWebExtensions: "embedded,darkMode,adBlocking",
+            adBlockingExtensionScriptletsVersion: "1.2.3"
+        )
+
+        let params = breakage.requestParameters
+        XCTAssertEqual(params["loadedWebExtensions"], "embedded,darkMode,adBlocking")
+        XCTAssertEqual(params["adBlockingExtensionScriptletsVersion"], "1.2.3")
+    }
+
+    func testWebExtensionFieldsAreOmittedWhenNil() throws {
+        let breakage = BrokenSiteReport(
+            siteUrl: URL(string: "https://example.test/")!,
+            category: "content",
+            description: nil,
+            osVersion: "15",
+            manufacturer: "Apple",
+            upgradedHttps: false,
+            tdsETag: "abc123",
+            configVersion: "123456789",
+            blockedTrackerDomains: [],
+            installedSurrogates: [],
+            isGPCEnabled: false,
+            ampURL: "",
+            urlParametersRemoved: false,
+            protectionsState: true,
+            reportFlow: .dashboard,
+            errors: nil,
+            httpStatusCodes: nil,
+            openerContext: nil,
+            vpnOn: false,
+            jsPerformance: nil,
+            userRefreshCount: 0,
+            cookieConsentInfo: nil,
+            debugFlags: "",
+            privacyExperiments: "",
+            isPirEnabled: nil,
+            isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
+            pageLoadTiming: nil
+        )
+
+        let params = breakage.requestParameters
+        XCTAssertNil(params["loadedWebExtensions"])
+        XCTAssertNil(params["adBlockingExtensionScriptletsVersion"])
     }
 
     func makeURLRequest(with parameters: [String: String]) -> URLRequest {

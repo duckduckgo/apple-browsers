@@ -51,6 +51,7 @@ public extension RemoteMessageResponse.JsonRemoteMessagingConfig {
                     descriptionText: "Small Message Description",
                     listItems: nil,
                     placeholder: nil,
+                    imageUrl: nil,
                     actionText: nil,
                     action: nil,
                     primaryActionText: nil,
@@ -61,7 +62,8 @@ public extension RemoteMessageResponse.JsonRemoteMessagingConfig {
                 translations: nil,
                 matchingRules: nil,
                 exclusionRules: nil,
-                metrics: nil
+                metrics: nil,
+                displayConditions: nil
             )
         ],
         rules: []

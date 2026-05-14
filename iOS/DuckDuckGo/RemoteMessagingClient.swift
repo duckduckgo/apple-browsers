@@ -22,12 +22,13 @@ import Configuration
 import Foundation
 import Core
 import BackgroundTasks
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Bookmarks
 import RemoteMessaging
 import os.log
 import DDGSync
+import DataBrokerProtection_iOS
 
 final class RemoteMessagingClient: RemoteMessagingProcessing {
 
@@ -35,11 +36,11 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         static let backgroundRefreshTaskIdentifier = "com.duckduckgo.app.remoteMessageRefresh"
         static let minimumConfigurationRefreshInterval: TimeInterval = 60 * 60 * 4
         static let endpoint: URL = {
-#if DEBUG
-            URL(string: "https://raw.githubusercontent.com/duckduckgo/remote-messaging-config/main/samples/ios/sample1.json")!
-#else
-            URL(string: "https://staticcdn.duckduckgo.com/remotemessaging/config/v1/ios-config.json")!
-#endif
+            #if DEBUG
+                URL(string: "https://raw.githubusercontent.com/duckduckgo/remote-messaging-config/main/samples/ios/sample1.json")!
+            #else
+                URL(string: "https://staticcdn.duckduckgo.com/remotemessaging/config/v1/ios-config.json")!
+            #endif
         }()
     }
 
@@ -63,7 +64,10 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         duckPlayerStorage: DuckPlayerStorage,
         configurationURLProvider: ConfigurationURLProviding,
         syncService: DDGSyncing,
-        winBackOfferService: WinBackOfferService
+        winBackOfferService: WinBackOfferService,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
@@ -71,7 +75,10 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             internalUserDecider: internalUserDecider,
             duckPlayerStorage: duckPlayerStorage,
             syncService: syncService,
-            winBackOfferService: winBackOfferService
+            winBackOfferService: winBackOfferService,
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

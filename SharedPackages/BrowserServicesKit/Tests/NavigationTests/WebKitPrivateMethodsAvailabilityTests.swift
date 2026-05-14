@@ -44,6 +44,32 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.restoreSessionStateAndNavigate))
     }
 
+    func testWebContentProcessInfoAvailability() throws {
+        let selector = Selector(("_webContentProcessInfo"))
+        XCTAssertTrue(WKProcessPool.responds(to: selector))
+    }
+
+    func testWebContentProcessInfoReturnsPidProperty() throws {
+        let selector = Selector(("_webContentProcessInfo"))
+        guard let processInfoList = WKProcessPool.perform(selector)?
+            .takeUnretainedValue() as? [NSObject] else {
+            return
+        }
+
+        let pidSelector = Selector(("pid"))
+        for processInfo in processInfoList {
+            XCTAssertTrue(processInfo.responds(to: pidSelector),
+                          "WebContent process info object should respond to 'pid'")
+        }
+    }
+
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
+    }
+#endif
+
     // MARK: - Functional Tests
 
     func testSessionStateDataFunctionality() throws {

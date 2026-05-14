@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -58,6 +58,7 @@ let package = Package(
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
                 .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -70,9 +71,11 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 "BrowserServicesKit",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
             ]
         )

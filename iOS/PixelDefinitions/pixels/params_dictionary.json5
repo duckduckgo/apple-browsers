@@ -1,0 +1,375 @@
+// This file defines commonly used params - this does NOT mean they are added by default
+// In your pixel definitions, you can reference these params by their key
+// See TEMPLATE.json for an example
+{
+    "appVersion": {
+        "key": "appVersion",
+        "type": "string",
+        "description": "",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "examples": ["7.175.1"]
+    },
+    "atb": {
+        "key": "atb",
+        "type": "string",
+        "pattern": "v[0-9]{1,3}-[0-7]([a-z]{2})?",
+        "description": "Add to browser value, corresponding to the users install week and day"
+    },
+    "pixelSource": {
+        "key": "pixelSource",
+        "type": "string",
+        "description": "The channel the user is on",
+        "enum": ["phone", "tablet"]
+    },
+    "errorDomain": {
+        "key": "d",
+        "type": "string",
+        "description": "NSError code domain",
+        "examples": ["NSURLErrorDomain"]
+    },
+    "errorCode": {
+        "key": "e",
+        "type": "integer",
+        "description": "NSError code",
+        "examples": [-1009, 42]
+    },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "0 when the consent heuristic feature is disabled, 1 when it is enabled",
+        "type": "integer",
+        "enum": [0, 1]
+    },
+    "isInternalUser": {
+        "key": "is_internal_user",
+        "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",
+        "type": "boolean",
+        "enum": [true]
+    },
+    "underlyingErrorCode": {
+        "keyPattern": "^ue[0-9]?$",
+        "type": "integer",
+        "description": "Underlying NSError code",
+        "examples": [-1009, 42]
+    },
+    "underlyingErrorDomain": {
+        "keyPattern": "^ud[0-9]?$",
+        "type": "string",
+        "description": "Underlying NSError code domain",
+        "examples": ["NSURLErrorDomain"]
+    },
+    "wideEventAppName": {
+        "key": "app.name",
+        "type": "string",
+        "description": "The name of the app sending the pixel",
+        "enum": ["DuckDuckGo", "PacketTunnelProvider"]
+    },
+    "wideEventAppVersion": {
+        "key": "app.version",
+        "type": "string",
+        "description": "The version of the app sending the pixel"
+    },
+    "wideEventPlatform": {
+        "key": "global.platform",
+        "type": "string",
+        "description": "The name of the platform that the app is running on",
+        "enum": ["iOS"]
+    },
+    "wideEventType": {
+        "key": "global.type",
+        "type": "string",
+        "description": "The type of software sending the wide pixel",
+        "enum": ["app"]
+    },
+    "wideEventFormFactor": {
+        "key": "app.form_factor",
+        "type": "string",
+        "description": "The form factor of the current device",
+        "enum": ["phone", "tablet"]
+    },
+    "wideEventSampleRate": {
+        "key": "global.sample_rate",
+        "type": "number",
+        "description": "Sample rate for this pixel, between 0 and 1"
+    },
+    "wideEventMetaVersion": {
+        "key": "meta.version",
+        "type": "string",
+        "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
+        "pattern": "^[1-9]\\d*\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "wideEventIsFirstDailyOccurrence": {
+        "key": "global.is_first_daily_occurrence",
+        "type": "boolean",
+        "description": "Whether this is the first occurrence of this wide event today. Only included when true."
+    },
+    "wideEventFeatureStatus": {
+        "key": "feature.status",
+        "type": "string",
+        "description": "Final status of the wide event flow",
+        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+    },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.data.ext.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
+    },
+    "wideEventErrorDomain": {
+        "key": "feature.data.ext.error.domain",
+        "type": "string",
+        "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
+    },
+    "wideEventErrorCode": {
+        "key": "feature.data.ext.error.code",
+        "type": "integer",
+        "description": "Error code for the failure, when applicable"
+    },
+    "wideEventUnderlyingErrorDomain": {
+        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?",
+        "type": "string",
+        "description": "Underlying error domain (supports optional numeric index for nested errors)"
+    },
+    "duration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration in milliseconds",
+        "examples": [1500, 3200]
+    },
+    "navigation_type": {
+        "key": "navigation_type",
+        "type": "string",
+        "description": "Type of navigation that triggered the loading",
+        "enum": [
+            "linkActivated",
+            "formSubmitted",
+            "formResubmitted",
+            "backForward",
+            "reload",
+            "redirect",
+            "sessionRestoration",
+            "alternateHtmlLoad",
+            "sameDocumentNavigation",
+            "other",
+            "custom.userEnteredUrl",
+            "custom.loadedByStateRestoration",
+            "custom.appOpenUrl",
+            "custom.historyEntry",
+            "custom.bookmark",
+            "custom.ui",
+            "custom.link",
+            "custom.webViewUpdated",
+            "custom.userRequestedPageDownload",
+            "custom.unknown"
+        ]
+    },
+    "wideEventUnderlyingErrorCode": {
+        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_code[0-9]?",
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
+    },
+    "dbpDataBroker": {
+        "key": "data_broker",
+        "type": "string",
+        "description": "Name of the data broker involved in the opt-out attempt or action"
+    },
+    "dbpParentBroker": {
+        "key": "parent",
+        "type": "string",
+        "description": "Parent data broker of the entity targeted by the opt-out attempt"
+    },
+    "dbpAttemptId": {
+        "key": "attempt_id",
+        "type": "string",
+        "description": "Client-generated identifier of the opt-out attempt"
+    },
+    "dbpBrokerVersion": {
+        "key": "broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file used for the flow"
+    },
+    "dbpIsAuthenticated": {
+        "key": "isAuthenticated",
+        "type": "string",
+        "description": "Whether the user is authenticated",
+        "enum": ["true", "false"]
+    },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "string",
+        "description": "Whether this is a free (unauthenticated) scan",
+        "enum": ["true", "false"]
+    },
+    "dbpStageDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Stage duration in milliseconds"
+    },
+    "dbpStageTries": {
+        "key": "tries",
+        "type": "string",
+        "description": "Number of tries it took to complete the stage"
+    },
+    "dbpActionId": {
+        "key": "action_id",
+        "type": "string",
+        "description": "Identifier of the broker action executed during the broker flow"
+    },
+    "dbpActionType": {
+        "key": "action_type",
+        "type": "string",
+        "description": "Type of action executed during the broker flow",
+        "enum": [
+            "extract",
+            "navigate",
+            "fillForm",
+            "click",
+            "expectation",
+            "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
+            "getCaptchaInfo",
+            "solveCaptcha",
+            "condition",
+            "unknown"
+        ]
+    },
+    "dbpActionDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration of the broker action execution in milliseconds"
+    },
+    "dbpActionTries": {
+        "key": "tries",
+        "type": "integer",
+        "description": "Number of tries it took for the broker action to complete"
+    },
+    "dbpAttemptDuration": {
+        "key": "duration",
+        "type": "number",
+        "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpConfirmationAttemptNumber": {
+        "key": "attempt_number",
+        "type": "integer",
+        "description": "Confirmation attempt ordinal (1..3)"
+    },
+    "dbpFeatureDataBrokerVersion": {
+        "key": "feature.data.ext.data_broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file reported via wide pixels"
+    },
+    "vpnSubscriptionActive": {
+        "key": "vpnSubscriptionActive",
+        "type": "string",
+        "description": "Whether the VPN subscription is active",
+        "enum": ["true", "false", "no_subscription"]
+    },
+    "vpnNotificationObjectClass": {
+        "key": "notificationObjectClass",
+        "type": "string",
+        "description": "Class name of the object that originated the subscription notification"
+    },
+    "vpnLatencyLocation": {
+        "key": "location",
+        "type": "string",
+        "description": "Location selection for the VPN latency test",
+        "enum": ["nearest", "custom"]
+    },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
+    },
+    "burnSource": {
+        "key": "source",
+        "type": "string",
+        "description": "Source of the burn action",
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+    },
+    "tabType": {
+        "key": "tabType",
+        "type": "string",
+        "description": "Type of tab when burn was initiated",
+        "enum": ["web", "ai", "unknown"]
+    },
+    "is_enabled": {
+        "key": "is_enabled",
+        "type": "string",
+        "description": "Whether the feature or setting is enabled",
+        "enum": ["true", "false"]
+    },
+    "returningUser": {
+        "key": "ru",
+        "type": "boolean",
+        "description": "Whether the user is a returning user (reinstall)"
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "browsingMode": {
+        "key": "browsing_mode",
+        "type": "string",
+        "description": "The current browsing mode: fire (Fire Tabs) or normal",
+        "enum": ["fire", "normal"]
+    },
+    "durationSeconds": {
+        "key": "dur",
+        "type": "string",
+        "description": "Duration in seconds (as a floating-point string)"
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "onboardingSource": {
+        "key": "source",
+        "type": "string",
+        "description": "User's entry point into the onboarding flow",
+        "enum": ["default", "duckai_cpp"]
+    },
+    "onboardingFlow": {
+        "key": "flow",
+        "type": "string",
+        "description": "Version of the onboarding flow the user entered",
+        "enum": ["default", "duckai"]
+    },
+    "onboardingFlowVariant": {
+        "key": "variant",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+    }
+}

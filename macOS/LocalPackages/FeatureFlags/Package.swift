@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -40,7 +40,7 @@ let package = Package(
         .target(
             name: "FeatureFlags",
             dependencies: [
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit")
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

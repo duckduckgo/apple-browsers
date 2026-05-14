@@ -36,18 +36,23 @@ import SwiftUI
 public struct OnFirstAppearViewModifier: ViewModifier {
 
     private let onFirstAppearAction: () -> Void
+    private let onSubsequentAppearAction: (() -> Void)?
     @State private var hasAppeared = false
 
-    public init(_ onFirstAppearAction: @escaping () -> Void) {
+    public init(_ onFirstAppearAction: @escaping () -> Void, _ onSubsequentAppearAction: (() -> Void)?) {
         self.onFirstAppearAction = onFirstAppearAction
+        self.onSubsequentAppearAction = onSubsequentAppearAction
     }
 
     public func body(content: Content) -> some View {
         content
             .onAppear {
-                guard !hasAppeared else { return }
-                hasAppeared = true
-                onFirstAppearAction()
+                if hasAppeared {
+                    onSubsequentAppearAction?()
+                } else {
+                    hasAppeared = true
+                    onFirstAppearAction()
+                }
             }
     }
 }
@@ -58,8 +63,8 @@ extension View {
     ///
     /// - Parameter action: A closure to be executed the first time the view appears.
     /// - Returns: A view that will execute `action` only once when it appears.
-    func onFirstAppear(_ onFirstAppearAction: @escaping () -> Void ) -> some View {
-        return modifier(OnFirstAppearViewModifier(onFirstAppearAction))
+    func onFirstAppear(_ onFirstAppearAction: @escaping () -> Void, subsequently subsequentActions: (() -> Void)? = nil) -> some View {
+        return modifier(OnFirstAppearViewModifier(onFirstAppearAction, subsequentActions))
     }
 
 }

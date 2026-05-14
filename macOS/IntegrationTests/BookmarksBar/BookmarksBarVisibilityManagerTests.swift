@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -46,7 +47,8 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         appearance = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

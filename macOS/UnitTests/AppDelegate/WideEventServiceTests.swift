@@ -16,13 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
-import XCTest
+import PixelKit
 import PixelKitTestingUtilities
 import SubscriptionTestingUtilities
-import Common
-import BrowserServicesKit
-import PixelKit
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -31,71 +30,34 @@ final class WideEventServiceTests: XCTestCase {
 
     private var sut: WideEventService!
     private var mockWideEvent: WideEventMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionBridge: SubscriptionAuthV1toV2BridgeMock!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         mockWideEvent = WideEventMock()
-        mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         sut = WideEventService(
             wideEvent: mockWideEvent,
-            featureFlagger: mockFeatureFlagger,
-            subscriptionBridge: mockSubscriptionBridge
+            subscriptionManager: mockSubscriptionManager
         )
     }
 
     override func tearDown() {
         sut = nil
         mockWideEvent = nil
-        mockFeatureFlagger = nil
-        mockSubscriptionBridge = nil
+        mockSubscriptionManager = nil
         super.tearDown()
     }
 
-    // MARK: - sendPendingEvents - Feature Flag Gating
+    // MARK: - sendPendingEvents
 
-    func test_sendPendingEvents_bothFlagsDisabled_returnsEarlyWithoutProcessing() async {
-        mockFeatureFlagger.enabledFeatureFlags = []
-
+    func test_sendPendingEvents_noPendingEvents_completesNothing() async {
         await sut.sendPendingEvents()
 
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
-    func test_sendPendingEvents_onlyPurchasePixelFlagEnabled_processesPurchasePixelsOnly() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        let purchaseData = makeAbandonedPurchaseData()
-        mockWideEvent.started.append(purchaseData)
-        let restoreData = makeAbandonedRestoreData()
-        mockWideEvent.started.append(restoreData)
-
-        await sut.sendPendingEvents()
-
-        let completedPurchaseData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionPurchaseWideEventData }
-        let completedRestoreData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionRestoreWideEventData }
-        XCTAssertEqual(completedPurchaseData.count, 1)
-        XCTAssertEqual(completedRestoreData.count, 0)
-    }
-
-    func test_sendPendingEvents_onlyRestorePixelFlagEnabled_processesRestorePixelsOnly() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
-        let purchaseData = makeAbandonedPurchaseData()
-        mockWideEvent.started.append(purchaseData)
-        let restoreData = makeAbandonedRestoreData()
-        mockWideEvent.started.append(restoreData)
-
-        await sut.sendPendingEvents()
-
-        let completedPurchaseData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionPurchaseWideEventData }
-        let completedRestoreData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionRestoreWideEventData }
-        XCTAssertEqual(completedPurchaseData.count, 0)
-        XCTAssertEqual(completedRestoreData.count, 1)
-    }
-
-    func test_sendPendingEvents_bothFlagsEnabled_processesBothPixelTypes() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement, .subscriptionRestoreWidePixelMeasurement]
+    func test_sendPendingEvents_processesPendingPurchaseAndRestorePixels() async {
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
         let restoreData = makeAbandonedRestoreData()
@@ -112,18 +74,15 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - processSubscriptionPurchasePixels - Happy Path
 
     func test_processSubscriptionPurchasePixels_noPendingEvents_completesWithoutErrors() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-
         await sut.sendPendingEvents()
 
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     func test_processSubscriptionPurchasePixels_inProgressWithEntitlements_completesWithSuccessAndDelayedActivationReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = [.networkProtection]
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
 
         await sut.sendPendingEvents()
 
@@ -138,10 +97,9 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionPurchasePixels_inProgressWithoutEntitlementsWithinTimeout_leavesPending() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
 
         await sut.sendPendingEvents()
 
@@ -151,10 +109,9 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - processSubscriptionPurchasePixels - Error Cases
 
     func test_processSubscriptionPurchasePixels_inProgressWithoutEntitlementsPastTimeout_completesWithUnknownAndMissingEntitlementsReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let data = makeInProgressPurchaseDataWithoutEnd(startDate: Date().addingTimeInterval(-TimeInterval.hours(5)))
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
 
         await sut.sendPendingEvents()
 
@@ -168,7 +125,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionPurchasePixels_abandonedPixelNoActivationInterval_completesWithUnknownAndPartialDataReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let data = makeAbandonedPurchaseData()
         mockWideEvent.started.append(data)
 
@@ -184,7 +140,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionPurchasePixels_abandonedPixelHasStartButNoActivationDuration_completesWithUnknownAndPartialDataReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let data = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test.subscription",
@@ -208,37 +163,28 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - processSubscriptionRestorePixels - Happy Path
 
     func test_processSubscriptionRestorePixels_noPendingEvents_completesWithoutErrors() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
-
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     func test_processSubscriptionRestorePixels_appleRestoreInProgressWithinTimeout_leavesPending() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressAppleRestoreData()
         mockWideEvent.started.append(data)
-
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     func test_processSubscriptionRestorePixels_emailRestoreInProgressWithinTimeout_leavesPending() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressEmailRestoreData()
         mockWideEvent.started.append(data)
 
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     // MARK: - processSubscriptionRestorePixels - Timeout Cases
 
     func test_processSubscriptionRestorePixels_appleRestoreInProgressPastTimeout_completesWithUnknownAndTimeoutReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressAppleRestoreData(startDate: Date().addingTimeInterval(-TimeInterval.minutes(20)))
         mockWideEvent.started.append(data)
 
@@ -254,7 +200,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionRestorePixels_emailRestoreInProgressPastTimeout_completesWithUnknownAndTimeoutReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressEmailRestoreData(startDate: Date().addingTimeInterval(-TimeInterval.minutes(20)))
         mockWideEvent.started.append(data)
 
@@ -270,7 +215,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionRestorePixels_abandonedPixel_completesWithUnknownAndPartialDataReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeAbandonedRestoreData()
         mockWideEvent.started.append(data)
 
@@ -288,8 +232,7 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - checkForCurrentEntitlements - Helper Method
 
     func test_checkForCurrentEntitlements_subscriptionBridgeReturnsNonEmptyEntitlements_returnsTrue() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        mockSubscriptionBridge.subscriptionFeatures = [.networkProtection, .dataBrokerProtection]
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection]
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 
@@ -305,8 +248,7 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_checkForCurrentEntitlements_subscriptionBridgeReturnsEmptyArray_returnsFalse() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 
@@ -316,8 +258,7 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_checkForCurrentEntitlements_subscriptionBridgeThrowsError_returnsFalse() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        mockSubscriptionBridge.accessTokenResult = .failure(NSError(domain: "test", code: 1))
+        mockSubscriptionManager.resultTokenContainer = nil
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 

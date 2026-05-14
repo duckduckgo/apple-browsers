@@ -30,6 +30,65 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     // MARK: - Basic Responder Chain
 
+    @MainActor
+    func testWhenDispatchCreateWebViewIsCalledDuringDecidePolicyFor_thenCallbackIsDeferredUntilAfterDecisionHandler() {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        let decisionStarted = expectation(description: "decidePolicy started")
+        let createWebViewCallbackFired = expectation(description: "dispatchCreateWebView callback fired")
+        let navigationDidFail = expectation(description: "navigation did fail")
+
+        let lock = NSLock()
+        var didFireCallback = false
+        var allowContinuation: CheckedContinuation<Void, Never>?
+
+        func setAllowContinuation(_ continuation: CheckedContinuation<Void, Never>) {
+            lock.withLock { allowContinuation = continuation }
+        }
+
+        func resumeAllowContinuation() {
+            let continuation: CheckedContinuation<Void, Never>? = lock.withLock {
+                defer { allowContinuation = nil }
+                return allowContinuation
+            }
+            continuation?.resume()
+        }
+
+        responder(at: 0).onNavigationAction = { [weak self] _, _ in
+            decisionStarted.fulfill()
+            self?.navigationDelegate.dispatchCreateWebView {
+                lock.withLock { didFireCallback = true }
+                createWebViewCallbackFired.fulfill()
+            }
+            await withCheckedContinuation { continuation in
+                setAllowContinuation(continuation)
+            }
+            return .allow
+        }
+        responder(at: 0).onDidFail = { _, _ in
+            navigationDidFail.fulfill()
+        }
+
+        let schemeHandler = TestNavigationSchemeHandler(onRequest: { task in
+            task.didFailWithError(WKError(.unknown))
+        })
+
+        withWebView(testURLSchemeHandler: schemeHandler) { webView in
+            _ = webView.load(req(urls.testScheme))
+        }
+
+        wait(for: [decisionStarted], timeout: standardTimeout)
+
+        // The callback must not fire while the decision is still blocked.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertFalse(lock.withLock { didFireCallback })
+
+        resumeAllowContinuation()
+        wait(for: [createWebViewCallbackFired, navigationDidFail], timeout: standardTimeout)
+    }
+
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
     func testWhenCustomHeadersAreSet_headersAreSent() throws {
         var _shouldAddHeaders = true
@@ -412,9 +471,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         let uiDelegate = WKUIDelegateMock()
         var newWebView: WKWebView!
         let eDidRequestNewWindow = expectation(description: "eDidRequestNewWindow")
-        uiDelegate.createWebViewWithConfig = { [unowned navigationDelegateProxy] config, _, _ in
+        uiDelegate.createWebViewWithConfig = { config, _, _ in
             newWebView = WKWebView(frame: .zero, configuration: config)
-            newWebView.navigationDelegate = navigationDelegateProxy
             DispatchQueue.main.async {
                 eDidRequestNewWindow.fulfill()
             }
@@ -430,12 +488,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         try server.start(8084)
 
         let eDidFinish = expectation(description: "onDidFinish")
-        var counter = 0
         responder(at: 0).onDidFinish = { [weak self] _ in
-            counter += 1
-            if counter == 1 {
-                self!._webView!.evaluateJavaScript("window.open('')")
-            }
+            self!._webView!.evaluateJavaScript("window.open('')")
             eDidFinish.fulfill()
         }
         var newFrameIdentity: FrameHandle!
@@ -579,6 +633,11 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             _=webView.load(req(urls.local))
         }
         waitForExpectations()
+
+        let responsesReceived = expectation(for: NSPredicate(block: { [unowned self] _, _ in
+            responder(at: 0).navigationResponses.count >= 2
+        }), evaluatedWith: nil)
+        wait(for: [responsesReceived], timeout: 5)
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(NavAction(req(urls.local), .other, src: main())),
@@ -1148,6 +1207,21 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
         waitForExpectations()
 
+        // didFail for nav1 fires at a non-deterministic point depending on WKNavigationAction deallocation timing,
+        // and its isCurrent value varies based on whether nav2 has already started. Verify didFail occurred separately,
+        // then remove it from history to assert the deterministic events.
+        let didFailEvents = responder(at: 0).history.filter {
+            if case .didFail(_, let code, _) = $0, code == NSURLErrorCancelled { return true }
+            return false
+        }
+
+        XCTAssertEqual(didFailEvents.count, 1, "Expected exactly one didFail with NSURLErrorCancelled")
+
+        responder(at: 0).history.removeAll {
+            if case .didFail(_, let code, _) = $0, code == NSURLErrorCancelled { return true }
+            return false
+        }
+
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.testScheme), .other, src: main()),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
@@ -1155,7 +1229,6 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
             .navigationAction(req(urls.https), .other, src: main()),
             .willStart(Nav(action: navAct(2), .approved, isCurrent: false)),
-            .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), isCurrent: false), NSURLErrorCancelled),
 
             .didStart(Nav(action: navAct(2), .started)),
             .didCommit(Nav(action: navAct(2), .started, .committed)),
@@ -1365,6 +1438,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
+            // delay the response to avoid flakiness when the response is received before WebView stops loading
+            Thread.sleep(forTimeInterval: 0.1)
             return .ok(.data(data.html))
         }]
         try server.start(8084)

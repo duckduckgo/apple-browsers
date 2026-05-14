@@ -21,21 +21,10 @@ import Foundation
 import UIKit
 import Core
 
-protocol AutoClearWorker {
-
-    func clearNavigationStack()
-    func forgetData() async
-    func forgetData(applicationState: DataStoreWarmup.ApplicationState) async
-    func forgetTabs()
-
-    func willStartClearing(_: AutoClear)
-    func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool)
-    
-}
-
 protocol AutoClearing {
 
     var isClearingEnabled: Bool { get }
+    var isTabClearingEnabled: Bool { get }
     func clearDataIfEnabled(launching: Bool, applicationState: DataStoreWarmup.ApplicationState) async
 
     var isClearingDue: Bool { get }
@@ -46,35 +35,31 @@ protocol AutoClearing {
 
 final class AutoClear: AutoClearing {
 
-    private let worker: AutoClearWorker
+    private let worker: FireExecuting
     private var timestamp: TimeInterval?
-
     private let appSettings: AppSettings
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
     }
 
-    init(worker: AutoClearWorker, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    var isTabClearingEnabled: Bool {
+        guard let settings = AutoClearSettingsModel(settings: appSettings) else { return false }
+        return settings.action.contains(.tabs)
+    }
+
+    init(worker: FireExecuting,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.worker = worker
         self.appSettings = appSettings
     }
 
     @MainActor
     func clearDataIfEnabled(launching: Bool = false, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
-        guard let settings = AutoClearSettingsModel(settings: appSettings) else { return }
-
-        worker.willStartClearing(self)
-
-        if settings.action.contains(.clearTabs) {
-            worker.forgetTabs()
-        }
-
-        if settings.action.contains(.clearData) {
-            await worker.forgetData(applicationState: applicationState)
-        }
-
-        worker.autoClearDidFinishClearing(self, isLaunching: launching)
+        guard let options = AutoClearSettingsModel(settings: appSettings)?.action else { return }
+        let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
+        let request = FireRequest(options: options, trigger: trigger, scope: .all, source: .autoClear)
+        await worker.burn(request: request, applicationState: applicationState)
     }
 
     /// Note: function is parametrised because of tests.
@@ -111,10 +96,8 @@ final class AutoClear: AutoClearing {
     @MainActor
     func clearDataDueToTimeExpired(applicationState: DataStoreWarmup.ApplicationState) async {
         timestamp = nil
-        worker.clearNavigationStack()
         await clearDataIfEnabled(applicationState: applicationState)
     }
-
 }
 
 extension DataStoreWarmup.ApplicationState {

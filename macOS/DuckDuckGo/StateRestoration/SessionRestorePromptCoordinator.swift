@@ -18,31 +18,43 @@
 
 import Foundation
 import BrowserServicesKit
+import Combine
 import PixelKit
 
 protocol SessionRestorePromptCoordinating {
+    /// Current state of the Session Restore prompt
+    var state: SessionRestorePromptCoordinator.State { get }
+    /// Publisher for the Session Restore prompt state
+    var statePublisher: AnyPublisher<SessionRestorePromptCoordinator.State, Never> { get }
     func markUIReady()
     func showRestoreSessionPrompt(restoreAction: @escaping (Bool) -> Void)
     func applicationWillTerminate()
 }
 
 final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
-    private enum State {
+    enum State {
         case initial
         case restoreNeeded((Bool) -> Void)
         case uiReady
         case promptShown
         case promptDismissed
+
+        var isVisible: Bool {
+            switch self {
+            case .promptShown:
+                return true
+            default:
+                return false
+            }
+        }
     }
 
     private let pixelFiring: PixelFiring?
-    private let featureFlagger: FeatureFlagger
-    private var state: State = .initial
+    @Published private(set) var state: State = .initial
+    var statePublisher: AnyPublisher<SessionRestorePromptCoordinator.State, Never> { $state.eraseToAnyPublisher() }
 
-    init(pixelFiring: PixelFiring?,
-         featureFlagger: FeatureFlagger) {
+    init(pixelFiring: PixelFiring?) {
         self.pixelFiring = pixelFiring
-        self.featureFlagger = featureFlagger
     }
 
     func markUIReady() {
@@ -74,7 +86,6 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     }
 
     private func showPrompt(with restoreAction: @escaping (Bool) -> Void) {
-        guard featureFlagger.isFeatureOn(.restoreSessionPrompt) else { return }
         state = .promptShown
         let dismissPromptAction = { [weak self] restoreSession in
             self?.state = .promptDismissed

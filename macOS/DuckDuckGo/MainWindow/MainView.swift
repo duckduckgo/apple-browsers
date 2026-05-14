@@ -33,7 +33,9 @@ final class MainView: NSView {
         static let findInPageContainerTopOffset: CGFloat = -4
         static let fireContainerHeight: CGFloat = 32
         static let bannerHeight: CGFloat = 48
-        static let aiChatOmnibarContainerHeight: CGFloat = 100
+        static let aiChatOmnibarContainerMinHeight: CGFloat = 60
+        static let aiChatOmnibarContainerPadding: CGFloat = 50
+        static let aiChatOmnibarContainerTopOffset: CGFloat = -20
     }
 
     let tabBarContainerView = NSView()
@@ -44,9 +46,11 @@ final class MainView: NSView {
     let bannerContainerView = NSView()
     let fireContainerView = NSView()
     let aiChatOmnibarContainerView: NSView = .init()
-    let aiChatOmnibarTextContainerView: NSView = .init()
+    let aiChatOmnibarTextContainerView: PassthroughView = .init()
 
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
+
+    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
 
     private var navigationBarTopConstraint: NSLayoutConstraint!
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
@@ -56,6 +60,7 @@ final class MainView: NSView {
     private var bannerTopConstraint: NSLayoutConstraint!
     private var bannerHeightConstraint: NSLayoutConstraint!
     private var aiChatOmnibarContainerWidthConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarContainerHeightConstraint: NSLayoutConstraint!
     private var aiChatOmnibarTextContainerBottomConstraint: NSLayoutConstraint!
 
     @Published var isMouseAboveWebView: Bool = false
@@ -86,10 +91,14 @@ final class MainView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private var navigationBarTopPadding: CGFloat {
+        Constants.tabBarHeight + themeManager.theme.addressBarStyleProvider.tabBarBackgroundTopPadding
+    }
+
     private func addConstraints() {
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: navigationBarTopPadding)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 
@@ -147,10 +156,11 @@ final class MainView: NSView {
         ])
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
+        aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
         NSLayoutConstraint.activate([
-            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: Constants.aiChatOmnibarContainerTopOffset),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
-            aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerHeight),
+            aiChatOmnibarContainerHeightConstraint,
             aiChatOmnibarContainerWidthConstraint,
         ])
 
@@ -185,7 +195,7 @@ final class MainView: NSView {
 
         // Find the "Search with %@" item and replace %@ with DuckDuckGo
         for item in menu.items {
-            guard !item.isSeparatorItem else { break }
+            guard !item.isSeparatorItem else { continue }
             if item.title.contains(providerDisplayName) {
                 item.title = item.title.replacingOccurrences(of: providerDisplayName, with: "DuckDuckGo")
                 break
@@ -277,7 +287,7 @@ final class MainView: NSView {
             navigationBarTopConstraint = navigationBarTopConstraint?.animator()
         }
         tabBarHeightConstraint?.constant = newValue ? Constants.tabBarHeight : 0
-        navigationBarTopConstraint?.constant = newValue ? Constants.tabBarHeight : 0
+        navigationBarTopConstraint?.constant = newValue ? navigationBarTopPadding : 0
     }
 
     var isAIChatOmnibarContainerShown: Bool {
@@ -302,12 +312,49 @@ final class MainView: NSView {
         aiChatOmnibarTextContainerBottomConstraint.constant = -5
     }
 
+    /// Updates the text container view's passthrough region to allow clicks to reach suggestions and tool buttons.
+    func updateAIChatOmnibarTextContainerPassthrough(_ passthroughHeight: CGFloat) {
+        aiChatOmnibarTextContainerView.passthroughBottomHeight = passthroughHeight
+    }
+
+    /// Updates the text container's height based on text content.
+    /// Note: Currently using bottom constraint approach instead
+    func updateAIChatOmnibarTextContainerHeight(_ height: CGFloat) {
+        // Using bottom constraint, so this is a no-op for now
+    }
+
     func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {
         aiChatOmnibarContainerWidthConstraint.isActive = false
         NSLayoutConstraint.activate([
             aiChatOmnibarContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor),
             aiChatOmnibarContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor),
         ])
+    }
+
+    func updateAIChatOmnibarContainerHeight(_ height: CGFloat, animated: Bool) {
+        let clampedHeight = max(Constants.aiChatOmnibarContainerMinHeight, min(height, calculateMaxAIChatOmnibarHeight()))
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.2
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                aiChatOmnibarContainerHeightConstraint.animator().constant = clampedHeight
+            }
+        } else {
+            aiChatOmnibarContainerHeightConstraint.constant = clampedHeight
+        }
+    }
+
+    func calculateMaxAIChatOmnibarHeight() -> CGFloat {
+        guard let window = window else {
+            return Constants.aiChatOmnibarContainerMinHeight
+        }
+
+        // Calculate available height: window height - address bar height - padding
+        let addressBarHeight = navigationBarContainerView.frame.height
+        let availableHeight = window.frame.height - addressBarHeight - Constants.aiChatOmnibarContainerPadding
+
+        return max(Constants.aiChatOmnibarContainerMinHeight, availableHeight)
     }
 
     // MARK: - NSDraggingDestination

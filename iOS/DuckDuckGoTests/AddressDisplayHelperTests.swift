@@ -98,4 +98,41 @@ class AddressDisplayHelperTests: XCTestCase {
 
         XCTAssertEqual(addressForDisplay.string, "file:///some/path")
     }
+
+    // MARK: - Duck.ai Address Bar Display
+
+    func testWhenDuckAIURLAndFeatureAvailableThenShowsFeatureName() {
+        let url = URL(string: "https://duck.ai")!
+        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testWhenDuckAIURLWithChatIDAndFeatureAvailableThenShowsFeatureName() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testWhenDuckAIURLAndShowsFullURLThenShowsActualURL() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, aichatIPadTabFeature: mockFeature)
+        XCTAssertEqual(result.string, url.absoluteString)
+    }
+
+    func testWhenDuckAIURLAndFeatureNotAvailableThenShowsDomain() {
+        let url = URL(string: "https://duck.ai")!
+        let mockFeature = MockAIChatIPadTabFeature(isAvailable: false)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        XCTAssertEqual(result.string, "duck.ai")
+    }
+
+    func testWhenNonDuckAIURLAndFeatureAvailableThenShowsDomain() {
+        let url = URL(string: "https://example.com")!
+        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        XCTAssertEqual(result.string, "example.com")
+    }
 }

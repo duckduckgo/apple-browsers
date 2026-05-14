@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 import Core
@@ -52,6 +52,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     // MARK: - Manager, Session, & Connection
 
@@ -148,10 +149,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 }
         }
     }
-    
-    private var isConnectionWideEventMeasurementEnabled: Bool {
-        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-    }
 
     // MARK: - Initializers
 
@@ -159,7 +156,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          featureFlagger: FeatureFlagger,
          persistentPixel: PersistentPixelFiring,
          settings: VPNSettings,
-         wideEvent: WideEventManaging
+         wideEvent: WideEventManaging,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService
     ) {
 
         self.featureFlagger = featureFlagger
@@ -167,6 +165,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.tokenHandler = tokenHandler
         self.wideEvent = wideEvent
+        self.freeTrialConversionService = freeTrialConversionService
 
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
@@ -180,7 +179,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
             error: nil,
-            includedParameters: [.appVersion, .atb],
+            includedParameters: [.appVersion],
             withAdditionalParameters: [:],
             onComplete: { _ in })
 
@@ -191,7 +190,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
                 error: nil,
-                includedParameters: [.appVersion, .atb],
+                includedParameters: [.appVersion],
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
         } catch {
@@ -204,7 +203,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartFailure,
                 error: error,
-                includedParameters: [.appVersion, .atb],
+                includedParameters: [.appVersion],
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
 
@@ -300,8 +299,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             resetControllerStartWideEventMeasurement()
             try await startWithError()
         case .connected:
-            // Intentional no-op
-            break
+            Logger.networkProtection.error("Start requested while already connected - stopping VPN to allow recovery")
+            await stop()
         default:
             try await start(tunnelManager)
         }
@@ -320,7 +319,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
 
         
         do {
@@ -341,13 +339,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         do {
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
-            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion, .atb]) { error in
+            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
                 guard error != nil else { return }
                 UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
                     uniquePixelStorage: UniquePixel.storage
                 )
             }
             self.connectionWideEventData?.tunnelStartDuration?.complete()
+            freeTrialConversionService.markVPNActivated()
         } catch {
             completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
@@ -357,13 +356,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private func loadOrMakeTunnelManager() async throws -> NETunnelProviderManager {
         guard let tunnelManager = await tunnelManager else {
-            connectionWideEventData?.isSetup = true
+            connectionWideEventData?.isSetup = .yes
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager
             return tunnelManager
         }
-
+        
+        connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager
     }
@@ -409,18 +409,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // always-on
             protocolConfiguration.disconnectOnSleep = false
 
-            // Enforce routes
-            protocolConfiguration.enforceRoutes = true
+            protocolConfiguration.enforceRoutes = settings.enforceRoutes
+            protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
+            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
 
-            // We will control excluded networks through includedRoutes / excludedRoutes
-            protocolConfiguration.excludeLocalNetworks = false
-
-            #if DEBUG
-            if #available(iOS 17.4, *) {
-                // This is useful to ensure debugging is never blocked by the VPN
-                protocolConfiguration.excludeDeviceCommunication = true
+            if #available(iOS 16.4, *) {
+                protocolConfiguration.excludeAPNs = settings.excludeAPNs
+                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
             }
-            #endif
+
+            if #available(iOS 17.4, *) {
+                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
+            }
 
             return protocolConfiguration
         }()
@@ -520,7 +520,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 private extension NetworkProtectionTunnelController {
     
     func setupAndStartConnectionWideEvent() {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
@@ -546,7 +545,7 @@ private extension NetworkProtectionTunnelController {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        guard let data = self.connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)

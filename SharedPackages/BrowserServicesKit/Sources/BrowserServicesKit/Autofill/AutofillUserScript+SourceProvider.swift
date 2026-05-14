@@ -20,6 +20,7 @@ import Foundation
 import AutofillResources
 import Common
 import os.log
+import PrivacyConfig
 
 public protocol AutofillUserScriptSourceProvider {
     var source: String { get }

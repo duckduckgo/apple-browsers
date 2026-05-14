@@ -24,6 +24,8 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
 
     @Published var store = [MaliciousSiteProtection.DataManager.StoredDataType: Any]()
 
+    private(set) var bytesToReturn: Int = 1024
+
     private let storeDatasetSuccess: Bool
 
     init(storeDatasetSuccess: Bool = true) {
@@ -40,10 +42,12 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
         return store[key.dataType] as? DataKey.DataSet ?? .init(revision: 0, items: [])
     }
 
-    public func updateDataSet<DataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws where DataKey: MaliciousSiteDataKey {
+    public func updateDataSet<DataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws -> Int where DataKey: MaliciousSiteDataKey {
         var dataSet = self.dataSet(for: key)
         dataSet.apply(changeSet)
         try await store(dataSet, for: key)
+
+        return bytesToReturn
     }
 
     func store<DataKey>(_ dataSet: DataKey.DataSet, for key: DataKey) async throws where DataKey: MaliciousSiteProtection.MaliciousSiteDataKey {
@@ -55,5 +59,15 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
     }
 
     func preloadData(for threatKinds: [MaliciousSiteProtection.ThreatKind]) async {}
+
+}
+
+// MARK: - Helpers
+
+extension MockMaliciousSiteProtectionDataManager {
+
+    func updateBytesToReturn(_ bytesToReturn: Int) {
+        self.bytesToReturn = bytesToReturn
+    }
 
 }

@@ -18,7 +18,6 @@
 
 import XCTest
 @testable import AutoconsentStats
-@testable import BrowserServicesKit
 
 final class AutoconsentDailyUsagePackTests: XCTestCase {
 

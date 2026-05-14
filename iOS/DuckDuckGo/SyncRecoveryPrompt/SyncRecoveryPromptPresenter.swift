@@ -58,7 +58,7 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
                 onSyncWithAnotherDevice: { [weak viewController] in
                     Pixel.fire(pixel: .syncRecoveryPromptSyncWithAnotherDeviceTapped)
                     viewController?.dismiss(animated: true) {
-                        onSyncFlowSelected(SyncSettingsViewController.Constants.startSyncFlow)
+                        onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startSyncFlow)
                     }
                 },
                 onShowAlternatives: { [weak self, weak viewController] in
@@ -88,7 +88,7 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
             rootView: SyncRecoveryAlternativeView(
                 onSyncFlowSelected: { [weak viewController] flowType in
                     // Fire appropriate pixel based on which button was tapped
-                    if flowType == SyncSettingsViewController.Constants.startSyncFlow {
+                    if flowType == SyncSettingsViewController.SourceConstants.startSyncFlow {
                         Pixel.fire(pixel: .syncRecoveryAlternativeScanRecoveryCodeTapped)
                     } else {
                         Pixel.fire(pixel: .syncRecoveryAlternativeBackupThisDeviceTapped)

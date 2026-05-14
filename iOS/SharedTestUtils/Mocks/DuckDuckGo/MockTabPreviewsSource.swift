@@ -24,6 +24,7 @@ import UIKit
 class MockTabPreviewsSource: TabPreviewsSource {
 
     var removePreviewsWithIdNotInCalls = [Set<String>]()
+    private(set) var removeAllPreviewsCalled = false
     var totalStoredPreviewsReturnValue: Int?
 
     init(totalStoredPreviews: Int? = nil) {
@@ -39,11 +40,14 @@ class MockTabPreviewsSource: TabPreviewsSource {
     func removePreview(forTab tab: DuckDuckGo.Tab) {
     }
 
-    func removeAllPreviews() {
+    func removeAllPreviews() -> Result<Void, Error> {
+        removeAllPreviewsCalled = true
+        return .success(())
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) -> Result<Void, Error>  {
         removePreviewsWithIdNotInCalls.append(ids)
+        return .success(())
     }
 
     func totalStoredPreviews() -> Int? {
@@ -52,6 +56,13 @@ class MockTabPreviewsSource: TabPreviewsSource {
 
     func preview(for tab: DuckDuckGo.Tab) -> UIImage? {
         return nil
+    }
+
+    func fullScreenSnapshot(for tab: DuckDuckGo.Tab) -> UIImage? {
+        return nil
+    }
+
+    func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: DuckDuckGo.Tab) {
     }
 
 }

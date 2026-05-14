@@ -22,4 +22,5 @@ import NewTabPage
 final class MockNewTabPageProtectionsReportSettingsPersistor: NewTabPageProtectionsReportSettingsPersisting {
     var isViewExpanded: Bool = true
     var activeFeed: NewTabPageDataModel.Feed = .privacyStats
+    var widgetNewLabelFirstShownDate: Date?
 }

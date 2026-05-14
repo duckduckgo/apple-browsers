@@ -31,6 +31,7 @@ protocol DownloadListStoring {
     func save(_ item: DownloadListItem, completionHandler: ((Error?) -> Void)?)
     func remove(_ item: DownloadListItem, completionHandler: ((Error?) -> Void)?)
     func sync()
+    func sync() async
 
 }
 
@@ -171,6 +172,15 @@ final class DownloadListStore: DownloadListStoring {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
+    }
+
+    func sync() async {
+        guard let context else { return }
+        await withCheckedContinuation { continuation in
+            context.perform {
+                continuation.resume()
+            }
+        }
     }
 
 }

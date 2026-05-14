@@ -29,9 +29,6 @@ import DesignResourcesKitIcons
 /// * Host is used to represent unaltered host from a URL. Domain is a normalised host.
 protocol TextZoomCoordinating {
 
-    /// Based on .textZoom feature flag
-    var isEnabled: Bool { get }
-
     /// @return The zoom level for a host or the current default if there isn't one.  Uses eTLDplus1 to determine the domain.
     func textZoomLevel(forHost host: String?) -> TextZoomLevel
 
@@ -41,6 +38,9 @@ protocol TextZoomCoordinating {
 
     /// Reset, ie 'forget', the saved zoom levels for all domains except the ones specified.
     func resetTextZoomLevels(excludingDomains: [String])
+    
+    /// Reset, ie 'forget', the saved zoom levels for the visited domains only except the ones specified..
+    func resetTextZoomLevels(forVisitedDomains: [String], excludingDomains: [String])
 
     /// Applies appropriate text zoom to webview on creation,. Does nothing if feature is disabled.
     func onWebViewCreated(applyToWebView webView: WKWebView)
@@ -56,7 +56,11 @@ protocol TextZoomCoordinating {
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) async
 
     /// Creates a browsing menu entry for the given link.  Returns nil if the feature is disabled.
-    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView) -> BrowsingMenuEntry?
+    func makeBrowsingMenuEntry(forLink: Link,
+                               inController controller: UIViewController,
+                               forWebView webView: WKWebView,
+                               useSmallIcon: Bool,
+                               percentageInDetail: Bool) -> BrowsingMenuEntry?
 
 }
 
@@ -64,17 +68,11 @@ final class TextZoomCoordinator: TextZoomCoordinating {
 
     let appSettings: AppSettings
     let storage: TextZoomStoring
-    let featureFlagger: FeatureFlagger
     let tld: TLD
 
-    var isEnabled: Bool {
-        featureFlagger.isFeatureOn(.textZoom)
-    }
-
-    init(appSettings: AppSettings, storage: TextZoomStoring, featureFlagger: FeatureFlagger, tld: TLD = TLD()) {
+    init(appSettings: AppSettings, storage: TextZoomStoring, tld: TLD = TLD()) {
         self.appSettings = appSettings
         self.storage = storage
-        self.featureFlagger = featureFlagger
         self.tld = tld
     }
 
@@ -98,6 +96,10 @@ final class TextZoomCoordinator: TextZoomCoordinating {
     func resetTextZoomLevels(excludingDomains domains: [String]) {
         storage.resetTextZoomLevels(excludingDomains: domains)
     }
+    
+    func resetTextZoomLevels(forVisitedDomains domains: [String], excludingDomains: [String]) {
+        storage.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: excludingDomains)
+    }
 
     func onWebViewCreated(applyToWebView webView: WKWebView) {
         applyTextZoom(webView)
@@ -112,7 +114,6 @@ final class TextZoomCoordinator: TextZoomCoordinating {
     }
 
     private func applyTextZoom(_ webView: WKWebView) {
-        guard isEnabled else { return }
         let level = textZoomLevel(forHost: webView.url?.host)
         let viewScale = CGFloat(level.rawValue) / 100
         webView.applyViewScale(viewScale)
@@ -120,8 +121,6 @@ final class TextZoomCoordinator: TextZoomCoordinating {
 
     @MainActor
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) {
-        guard isEnabled else { return }
-
         guard let domain = tld.eTLDplus1(webView.url?.host) else { return }
         let zoomController = TextZoomController(
             domain: domain,
@@ -147,20 +146,32 @@ final class TextZoomCoordinator: TextZoomCoordinating {
 
     func makeBrowsingMenuEntry(forLink link: Link,
                                inController controller: UIViewController,
-                               forWebView webView: WKWebView) -> BrowsingMenuEntry? {
-        guard isEnabled else { return nil }
+                               forWebView webView: WKWebView,
+                               useSmallIcon: Bool,
+                               percentageInDetail: Bool) -> BrowsingMenuEntry? {
 
         let label: String
+        var detail: String?
+        var accessibilityLabel: String?
         if let domain = tld.eTLDplus1(link.url.host),
            let level = storage.textZoomLevelForDomain(domain) {
-            label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            if percentageInDetail {
+                label = UserText.textZoomMenuItem
+                detail = "\(level.rawValue)%"
+                accessibilityLabel = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            } else {
+                label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            }
         } else {
             label = UserText.textZoomMenuItem
         }
 
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.typeSize : DesignSystemImages.Glyphs.Size24.typeSize
         return BrowsingMenuEntry.regular(name: label,
-                                         image: DesignSystemImages.Glyphs.Size16.typeSize,
-                                         showNotificationDot: false) { [weak self, weak controller, weak webView] in
+                                         accessibilityLabel: accessibilityLabel,
+                                         image: image,
+                                         showNotificationDot: false,
+                                         detailText: detail) { [weak self, weak controller, weak webView] in
             guard let self = self, let controller = controller, let webView = webView else { return }
             Task { @MainActor in
                 self.showTextZoomEditor(inController: controller, forWebView: webView)

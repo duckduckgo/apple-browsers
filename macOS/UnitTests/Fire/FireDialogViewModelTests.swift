@@ -19,6 +19,9 @@
 import Common
 import History
 import HistoryView
+import Persistence
+import PersistenceTestingUtils
+import PrivacyConfig
 import SharedTestUtilities
 import WebKit
 import XCTest
@@ -384,7 +387,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Verify window still exists and old tab was removed, new tab was inserted
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning (old tab removed)")
-        XCTAssert(tabCollectionVM.tabs.first?.content.isUrl != true || tabCollectionVM.tabs.first?.content.urlForWebView != .duckDuckGo, "New tab should not be the old burned tab")
+        XCTAssert(tabCollectionVM.tabs.first?.content.isExternalUrl != true || tabCollectionVM.tabs.first?.content.urlForWebView != .duckDuckGo, "New tab should not be the old burned tab")
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryTrue_BurnVisitsCalled() {
@@ -1954,8 +1957,8 @@ final class FireDialogViewModelTests: XCTestCase {
     private func registerMainWindow(with tabCollectionViewModel: TabCollectionViewModel) {
         let mainViewController = MainViewController(
             tabCollectionViewModel: tabCollectionViewModel,
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
@@ -2019,20 +2022,22 @@ final class FireDialogViewModelTests: XCTestCase {
 
 }
 
-class MockFireDialogViewSettings: FireDialogViewSettings {
-    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
-    var lastIncludeTabsAndWindowsState: Bool?
-    var lastIncludeHistoryState: Bool?
-    var lastIncludeCookiesAndSiteDataState: Bool?
-    var lastIncludeChatHistoryState: Bool?
+func MockFireDialogViewSettings(
+    lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil,
+    lastIncludeTabsAndWindowsState: Bool? = nil,
+    lastIncludeHistoryState: Bool? = nil,
+    lastIncludeCookiesAndSiteDataState: Bool? = nil,
+    lastIncludeChatHistoryState: Bool? = nil
+) -> any KeyedStoring<FireDialogViewSettings> {
+    let storage: KeyedStoring<FireDialogViewSettings> = InMemoryKeyValueStore().keyedStoring()
 
-    init(lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil, lastIncludeTabsAndWindowsState: Bool? = nil, lastIncludeHistoryState: Bool? = nil, lastIncludeCookiesAndSiteDataState: Bool? = nil, lastIncludeChatHistoryState: Bool? = nil) {
-        self.lastSelectedClearingOption = lastSelectedClearingOption
-        self.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
-        self.lastIncludeHistoryState = lastIncludeHistoryState
-        self.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
-        self.lastIncludeChatHistoryState = lastIncludeChatHistoryState
-    }
+    storage.lastSelectedClearingOption = lastSelectedClearingOption
+    storage.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
+    storage.lastIncludeHistoryState = lastIncludeHistoryState
+    storage.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
+    storage.lastIncludeChatHistoryState = lastIncludeChatHistoryState
+
+    return storage
 }
 
 class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdater {
@@ -2069,7 +2074,7 @@ final class WebCacheManagerMock: WebCacheManager {
     }
 
     var clearCalled = false
-    override func clear(baseDomains: Set<String>? = nil) async {
+    override func clear(baseDomains: Set<String>? = nil, dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         clearCalled = true
     }
 }

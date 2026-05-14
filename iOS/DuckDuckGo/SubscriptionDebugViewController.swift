@@ -19,35 +19,39 @@
 
 import UIKit
 import SwiftUI
-
+import WebKit
+import BrowserServicesKit
 import Subscription
 import Core
 import VPN
 import StoreKit
-import BrowserServicesKit
+import PrivacyConfig
 import Networking
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+    private let reporter: SubscriptionDataReporting
 
-    private var subscriptionManagerV1: SubscriptionManager {
-        AppDependencyProvider.shared.subscriptionManager!
-    }
-    private var subscriptionManagerV2: SubscriptionManagerV2 {
-        AppDependencyProvider.shared.subscriptionManagerV2!
+    private var subscriptionManager: SubscriptionManager {
+        AppDependencyProvider.shared.subscriptionManager
     }
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
-    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.isUsingAuthV2
     var currentEnvironment: SubscriptionEnvironment {
-        AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
+        AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
-    // swiftlint:disable:next force_cast
-    private let reporter = (UIApplication.shared.delegate as! AppDelegate).debugSubscriptionDataReporter as! SubscriptionDataReporter
+    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
+        self.reporter = subscriptionDataReporter
+        super.init(coder: coder)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("Use init(coder:subscriptionDataReporter:) instead")
+    }
 
     private let titles = [
         Sections.authorization: "Authentication",
@@ -110,6 +114,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
     }
+    
 
     private var storefrontID = "Loading"
     private var storefrontCountryCode = "Loading"
@@ -129,11 +134,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
-        if !isAuthV2Enabled {
-            return subscriptionManagerV1.currentEnvironment.serviceEnvironment
-        } else {
-            return subscriptionManagerV2.currentEnvironment.serviceEnvironment
-        }
+        return subscriptionManager.currentEnvironment.serviceEnvironment
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -177,7 +178,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .syncAppStoreAccount:
                 cell.textLabel?.text = "Sync App Store Account"
             case .buyProductionSubscriptions:
-                cell.textLabel?.text = "Buy Production Subscriptions"
+                cell.textLabel?.text = "Change Tier"
                 cell.accessoryType = .disclosureIndicator
             case .none:
                 break
@@ -241,7 +242,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .currentRegionOverride:
                 cell.textLabel?.text = "Current override"
 
-                var buttonConfiguration = UIButton.Configuration.plain()
+                let buttonConfiguration = UIButton.Configuration.plain()
                 let button = UIButton(configuration: buttonConfiguration)
 
                 let adjustMenuButtonWidth = {
@@ -405,52 +406,19 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func clearAuthData() {
-        if !isAuthV2Enabled {
-            clearAuthDataV1()
-        } else {
-            clearAuthDataV2()
-        }
-    }
-
-    private func clearAuthDataV1() {
         Task {
-            await subscriptionManagerV1.signOut(notifyUI: true)
-            showAlert(title: "Data cleared!")
-        }
-    }
-
-    private func clearAuthDataV2() {
-        Task {
-            await subscriptionManagerV2.signOut(notifyUI: true)
+            await subscriptionManager.signOut(notifyUI: true)
             showAlert(title: "Data cleared!")
         }
     }
 
     private func showAccountDetails() {
-        if !isAuthV2Enabled {
-            showAccountDetailsV1()
-        } else {
-            showAccountDetailsV2()
-        }
-    }
-
-    private func showAccountDetailsV1() {
-        let title = subscriptionManagerV1.accountManager.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
-        let message = subscriptionManagerV1.accountManager.isUserAuthenticated ?
-        ["Service Environment: \(subscriptionManagerV1.currentEnvironment.serviceEnvironment.description)",
-         "AuthToken: \(subscriptionManagerV1.accountManager.authToken ?? "")",
-         "AccessToken: \(subscriptionManagerV1.accountManager.accessToken ?? "")",
-         "Email: \(subscriptionManagerV1.accountManager.email ?? "")"].joined(separator: "\n") : nil
-        showAlert(title: title, message: message)
-    }
-
-    private func showAccountDetailsV2() {
         Task {
-            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
+            let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .local)
             let authenticated = tokenContainer != nil
             let title = authenticated ? "Authenticated" : "Not Authenticated"
             let message = authenticated ?
-            ["Service Environment: \(subscriptionManagerV2.currentEnvironment.serviceEnvironment)",
+            ["Service Environment: \(subscriptionManager.currentEnvironment.serviceEnvironment)",
              "AuthToken: \(tokenContainer?.accessToken ?? "")",
              "Email: \(tokenContainer?.decodedAccessToken.email ?? "")"].joined(separator: "\n") : nil
             DispatchQueue.main.async {
@@ -464,6 +432,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .none
         let reportedParameters = reporter.randomizedParameters(for: .debug).map { "\($0.key)=\($0.value)" }
+        
+        // Cast to concrete type to access debug properties
+        guard let reporter = reporter as? SubscriptionDataReporter else { return }
+        
         let message = """
                 isReinstall=\(reporter.isReinstall().toString) (variant=\(reporter._variantName ?? "unknown"))
                 fireButtonUsed=\(reporter.isFireButtonUser().toString) (count=\(reporter._fireCount))
@@ -484,30 +456,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func syncAppleIDAccount() {
-        if !isAuthV2Enabled {
-            syncAppleIDAccountV1()
-        } else {
-            syncAppleIDAccountV2()
-        }
-    }
-
-    private func syncAppleIDAccountV1() {
         Task {
             do {
-                try await subscriptionManagerV1.storePurchaseManager().syncAppleIDAccount()
-            } catch {
-                showAlert(title: "Error syncing!", message: error.localizedDescription)
-                return
-            }
-
-            showAlert(title: "Account synced!", message: "")
-        }
-    }
-
-    private func syncAppleIDAccountV2() {
-        Task {
-            do {
-                try await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
+                try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
             } catch {
                 showAlert(title: "Error syncing!", message: error.localizedDescription)
                 return
@@ -518,32 +469,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func validateToken() {
-        if !isAuthV2Enabled {
-            validateTokenV1()
-        } else {
-            validateTokenV2()
-        }
-    }
-
-    private func validateTokenV1() {
-        Task {
-            guard let token = subscriptionManagerV1.accountManager.accessToken else {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
-                return
-            }
-            switch await subscriptionManagerV1.authEndpointService.validateToken(accessToken: token) {
-            case .success(let response):
-                showAlert(title: "Token details", message: "\(response)")
-            case .failure(let error):
-                showAlert(title: "Error Validating Token", message: "\(error)")
-            }
-        }
-    }
-
-    private func validateTokenV2() {
         Task {
             do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
             } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
@@ -554,33 +482,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func getSubscriptionDetails() {
-        if !isAuthV2Enabled {
-            getSubscriptionDetailsV1()
-        } else {
-            getSubscriptionDetailsV2()
-        }
-    }
-
-    private func getSubscriptionDetailsV1() {
-        Task {
-            guard let token = subscriptionManagerV1.accountManager.accessToken else {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Subscription not available")
-                return
-            }
-            switch await subscriptionManagerV1.subscriptionEndpointService.getSubscription(accessToken: token,
-                                                                                           cachePolicy: .reloadIgnoringLocalCacheData) {
-            case .success(let response):
-                showAlert(title: "Subscription info", message: "\(response)")
-            case .failure(let error):
-                showAlert(title: "Subscription Error", message: "\(error)")
-            }
-        }
-    }
-
-    private func getSubscriptionDetailsV2() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
+                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -589,46 +493,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func checkEntitlements() {
-        if !isAuthV2Enabled {
-            checkEntitlementsV1()
-        } else {
-            checkEntitlementsV2()
-        }
-    }
-
-    private func checkEntitlementsV1() {
         Task {
-            var results: [String] = []
-            guard subscriptionManagerV1.accountManager.accessToken != nil else {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Subscription not available")
-                return
-            }
-            let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
-            for entitlement in entitlements {
-                if case let .success(result) = await subscriptionManagerV1.accountManager.hasEntitlement(forProductName: entitlement,
-                                                                                                         cachePolicy: .reloadIgnoringLocalCacheData) {
-                    let resultSummary = "Entitlement check for \(entitlement.rawValue): \(result)"
-                    results.append(resultSummary)
-                    print(resultSummary)
-                }
-            }
-            showAlert(title: "Available Entitlements", message: results.joined(separator: "\n"))
-        }
-    }
-
-    private func checkEntitlementsV2() {
-        Task {
-            do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
-                let entitlementsDescription = tokenContainer.decodedAccessToken.subscriptionEntitlements.map { entitlement in
-                    return entitlement.rawValue
-                }.joined(separator: "\n")
-                showAlert(title: "Available Entitlements", message: entitlementsDescription)
-            } catch OAuthClientError.missingTokenContainer {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
-            } catch {
-                showAlert(title: "Error retrieving entitlements", message: "\(error)")
-            }
+            let entitlementsStatus = await subscriptionManager.getAllEntitlementStatus()
+            showAlert(title: "Available Entitlements", message: entitlementsStatus.debugDescription)
         }
     }
 
@@ -639,7 +506,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+            await AppDependencyProvider.shared.subscriptionManager.signOut(notifyUI: true)
 
             // Save Subscription environment
             DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
@@ -749,7 +616,68 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func showBuyProductionSubscriptions() {
-        let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView())
+        // Create the subscription selection handler that routes to the appropriate feature method
+        let handler: SubscriptionSelectionHandler = { productId, changeType in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: nil))
+            // Create the flows and feature
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
+                subscriptionManager: subscriptionManager,
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(
+                subscriptionManager: subscriptionManager,
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                appStoreRestoreFlow: appStoreRestoreFlow,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
+            let subscriptionFeatureAvailability = BrowserServicesKit.DefaultSubscriptionFeatureAvailability(
+                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform.appStore,
+                featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+            )
+
+            let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+                subscriptionManager: subscriptionManager,
+                appStorePurchaseFlow: appStorePurchaseFlow,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
+            let feature = DefaultSubscriptionPagesUseSubscriptionFeature(
+                subscriptionManager: subscriptionManager,
+                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                subscriptionAttributionOrigin: nil,
+                appStorePurchaseFlow: appStorePurchaseFlow,
+                appStoreRestoreFlow: appStoreRestoreFlow,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler,
+                subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+            )
+
+            // Create params matching what the web would send
+            var params: [String: Any] = ["id": productId]
+            if let changeType = changeType {
+                params["change"] = changeType
+            }
+
+            // Call the appropriate handler based on whether it's a tier change or new purchase
+            if changeType != nil {
+                _ = await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+            } else {
+                _ = await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+            }
+        }
+
+        let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
 }

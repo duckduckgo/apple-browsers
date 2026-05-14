@@ -99,6 +99,8 @@ final class BrokenSiteReportingReferenceTests: XCTestCase {
                                             debugFlags: "",
                                             privacyExperiments: "",
                                             isPirEnabled: nil,
+                                            isForceDarkModeEnabled: nil,
+                                            lastTabSuspension: nil,
                                             pageLoadTiming: nil)
 
             let request = makeURLRequest(with: breakage.requestParameters)

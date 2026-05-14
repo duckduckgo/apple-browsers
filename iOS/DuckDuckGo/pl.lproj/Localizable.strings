@@ -1,8 +1,32 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
+
+/* No comment provided by engineer. */
+"Account" = "konto";
 
 /* Buton label for Edit action */
 "action.generic.edit" = "Edytuj";
@@ -30,6 +54,15 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Czaty Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Nowy czat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Ustawienia Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Hasła";
@@ -61,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Tryb głosowy Duck.ai";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Edytuj zakładkę";
 
@@ -73,14 +109,16 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Wyczyszczono karty i dane";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Wyczyść karty, dane i czaty Duck.ai";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otwórz w tle";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nowa karta Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Otwórz w karcie Fire";
 /* Create New Tab action */
-"action.title.newTabAction" = "Nowa";
+"action.title.newTabAction" = "Nowa karta";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otwórz w nowej karcie";
@@ -168,6 +206,44 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkcje AI";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Zrób zdjęcie";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Do zadań analitycznych";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Rozszerzone rozumowanie";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Szybkie odpowiedzi";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Szybko";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Dla złożonych zadań";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Rozumowanie";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Dostosuj odpowiedzi";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Przekształć tekst w obrazy";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Utwórz obraz";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Znajdź aktualne informacje";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Wyszukiwanie w sieci";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Istniejące zakładki nie zostaną zduplikowane.";
@@ -313,12 +389,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Przeszukaj DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Obecnie sugestie wyszukiwania obejmują ostatnio odwiedzone witryny. Możesz je wyłączyć w ustawieniach lub w każdej chwili wyczyścić za pomocą przycisku 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ta sama prywatność.\nLepsze sugestie podczas wyszukiwania!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Przełącz na kartę";
 
@@ -462,6 +532,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Włącz ochronę poczty Email Protection";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotowe";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatyczne uzupełnianie haseł zostało aktywowane!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Używaj haseł zapisanych w DuckDuckGo we wszystkich aplikacjach na swoim urządzeniu.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Autouzupełnianie w innych aplikacjach";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autouzupełnianie w innych aplikacjach włączone";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ustaw później w obszarze Ustawienia";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Włącz autouzupełnianie w innych aplikacjach";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Używaj DuckDuckGo, aby w bezpieczny sposób automatycznie uzupełniać hasła we wszystkich swoich aplikacjach.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Szybko zaloguj się do swoich aplikacji bez wpisywania haseł";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatycznie uzupełniaj hasła w innych aplikacjach";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Włącz";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Włączone";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autouzupełnianie w innych aplikacjach";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Wyłącz w ustawieniach systemowych...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Włącz...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Ukryj CVV";
@@ -784,6 +899,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nie, dziękuję";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Nie teraz";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Bezpiecznie przechowuj swoje hasło na urządzeniu dzięki funkcji Hasła i autouzupełnianie DuckDuckGo.";
 
@@ -799,8 +917,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importuj hasła";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcje";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcje hasła";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Zgłoś problem z autouzupełnianiem";
@@ -849,6 +967,21 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Zaktualizować nazwę użytkownika?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Zezwalaj na dźwięk i wideo";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokuj dźwięk i wideo";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokuj dźwięk";
+
+/* No comment provided by engineer. */
+"Available Products" = "Dostępne produkty";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Zaoszczędź %d%% w pierwszym roku";
 
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj zakładkę";
@@ -973,17 +1106,35 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anulowanie nie jest dozwolone więcej niż jeden raz";
 
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Sprawdzanie istniejącego konta...";
+
 /* Close All Tabs */
 "close.all.tabs" = "Zamknij wszystkie karty";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguracja";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potwierdź";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Usuń czat";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Usunąć ten czat?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Pomiń";
@@ -1066,6 +1217,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Zaskocz mnie!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Znajdź **DuckDuckGo** na liście, a następnie dotknij **Tryb głosowy Duck.ai**, aby go dodać";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Znajdź **DuckDuckGo** na liście, a następnie dotknij opcji **kontrola VPN**, aby ją dodać";
 
@@ -1097,10 +1251,19 @@
 "crash.report.dialog.title" = "Automatycznie wysyłać raporty o awariach?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Aktualna liczba odrzuceń: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Obecne subskrypcje";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "NIESTANDARDOWA ZAWARTOŚĆ KOMÓRKI";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Niestandardowy adres URL: %@";
@@ -1117,6 +1280,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importuj zakładki do DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Otwórz Chrome, a następnie przejdź do Menedżera haseł i wykonaj poniższe czynności:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Ustawienia** > **Eksportuj dane**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Kliknij **Kontynuuj**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Wybierz **DuckDuckGo** jako miejsce docelowe";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Import z Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Eksport zakończony?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Musisz przejść do aplikacji Hasła, a następnie wykonać podane kroki, aby zaimportować.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Kliknij **···** > **Eksportuj dane do innej aplikacji**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Naciśnij **Wybierz wszystko** > **Kontynuuj**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Wybierz **DuckDuckGo** jako miejsce docelowe";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import z aplikacji Hasła";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Najpierw wyeksportuj hasła i zakładki z Safari, a potem wróć tutaj, aby przesłać plik.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksport z Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Import z Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Prześlij wyeksportowany plik...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "W pliku zip nie znaleziono obsługiwanych danych. Zapoznaj się z instrukcjami eksportu Safari i spróbuj ponownie.";
 
@@ -1126,6 +1334,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Nie można odczytać pliku %@. Może występować problem z danymi w pliku.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Rozumiem";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Nie można odczytać pliku %@. Spróbuj przesłać inny plik lub wypróbuj inną metodę importu.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Plik może być uszkodzony";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "W pliku zip nie znaleziono obsługiwanych danych. Zapoznaj się z instrukcjami eksportu i spróbuj ponownie.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nie znaleziono danych";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Wybrany plik nie jest obsługiwany. Wybierz inny plik i spróbuj ponownie.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nieobsługiwany plik";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1134,6 +1363,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Przenieś do DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Wybierz opcję **Eksportuj**, a na następnym ekranie opcje **Zakładki** i **Zapisz w pobranych**.";
@@ -1145,7 +1377,7 @@
 "data.import.passwords.instructions.chrome.step1" = "W Chrome wybierz kolejno **Menedżer haseł Google**, a potem **Ustawienia**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Wybierz opcję **Eksportuj hasła**, a następnie **Zapisz w plikach** i zapisz plik w folderze, który zapamiętasz.";
+"data.import.passwords.instructions.chrome.step2" = "Wybierz opcję **Eksportuj dane**, następnie **···**, a następnie **Pobierz do CSV** i zapisz plik w folderze, który łatwo zapamiętać.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Jak eksportować hasła";
@@ -1173,6 +1405,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importuj hasła do DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Otwórz ustawienia, aby eksportować";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Pamiętaj, aby nacisnąć opcję\n„Eksportuj do plików”";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikacja Hasła";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importuj z";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchronizuj z";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo na innym urządzeniu";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Zakładki";
@@ -1210,6 +1466,18 @@
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Hasła";
 
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Chcesz też przenieść swoje zakładki z Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Kontynuuj";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Nie teraz";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Chcesz też przenieść swoje hasła?";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Ostatni miesiąc";
 
@@ -1221,6 +1489,18 @@
 
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Wczoraj";
+
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Znajdujesz ukryte logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo zapisane";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Zresetuj logo wyszukiwania";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Przełącz na to logo";
 
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Uwaga! Nie możemy powstrzymać %1$@ przed zobaczeniem Twojej aktywności na %2$@.\n\nPrzeglądaj jednak ze mną. Mogę ograniczyć to, co %1$@ wie o Tobie, blokując ich skrypty śledzące w wielu innych witrynach.";
@@ -1327,8 +1607,50 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Ostatnie zmiany w serwisie YouTube miały wpływ na działanie Duck Player. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Stuknij widżet, aby go edytować, a następnie ustaw skróty **Duck.ai** i **Duck.ai Voice**";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Znajdź i zaznacz **DuckDuckGo**, a następnie przesuń palcem do **Niestandardowe skróty** i wybierz **Dodaj widżet**";
+
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Dołącz zawartość strony";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Wysyłane z Twoją wiadomością do Duck.ai";
+
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Ostatnie czaty";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Ostatnie czaty";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Zobacz wszystkie czaty";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Dodaj Duck.ai skrót głosowy do swojego Centrum Sterowania";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Dołącz zawartość strony";
+
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Zapytaj o stronę";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Podsumuj tę stronę";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Podsumuj stronę";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai do Centrum Sterowania";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodaj widżet Duck.ai do ekranu głównego";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Pokaż przyciski i linki Duck.ai w wynikach wyszukiwania DuckDuckGo.";
@@ -1341,6 +1663,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Skróty przeglądarki";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Porozmawiaj z Duck.ai za pomocą Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Pasek adresu";
@@ -1359,6 +1684,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Skróty";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Skróty Siri umożliwiają rozpoczęcie czatu głosowego Duck.ai za pomocą szybkiego polecenia głosowego, takiego jak \"Siri, uruchom czat głosowy DuckDuckGo\". To szybki sposób rozmawiania z Duck.ai bez użycia rąk.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, uruchom DuckDuckGo Voice Chat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, porozmawiaj z DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, czat głosowy z DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Porozmawiaj z Duck.ai używając Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Wszystkie czaty są %@ prywatne";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "prywatne";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
@@ -1432,14 +1781,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Wznów w Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Zawsze otwieraj filmy z YouTube w odtwarzaczu Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Player będzie automatycznie rozpoczynał odtwarzanie otwieranych w nim filmów. Wyłącz tę opcję, jeśli chcesz ręcznie rozpoczynać odtwarzanie filmów otwieranych w odtwarzaczu Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatyczne odtwarzanie filmów";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Otwiera filmy w trybie kinowym, dzięki czemu oglądane treści nie wpływają na Twój kanał na YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Włącz Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperymentalne";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player umożliwia oglądanie YouTube bez ukierunkowanych reklam i zapobiega wpływowi aktywności oglądania na Twoje rekomendacje.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo zapewnia wszystkie niezbędne funkcje ochrony prywatności użytkownika podczas przeglądania Internetu.";
@@ -1586,7 +1947,10 @@
 "empty.search" = "Brak pasujących wyników";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Rejestracja: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1621,6 +1985,29 @@
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Wystąpił nieznany błąd";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Przełącza na tę kartę";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Ostatnio używana karta Fire";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Wróć do karty %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Wróć do…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
+
+/* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "Zewnętrzny ID: %@";
+
 /* No comment provided by engineer. */
 "favorite" = "Ulubione";
 
@@ -1643,7 +2030,7 @@
 "favorites.settings.mobile-only" = "Tylko ulubione z urządzeń mobilnych";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Funkcja: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokowanie reklam i wyskakujących okienek";
@@ -1858,6 +2245,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "WYBIERZ KATEGORIĘ";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Brak dostępu do funkcji poziomu Plus lub Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Twoja anonimowa opinia ma dla nas ogromne znaczenie.";
 
@@ -1891,8 +2281,70 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Znajdź na stronie";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Usuń wszystkie czaty";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Czaty Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Może nastąpić wylogowanie z kont";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Pliki cookie i dane witryny";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Karty";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Wybierz, co chcesz usunąć";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Zaloguj się do witryny przy użyciu innego konta";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Przeglądaj bez zapisywania historii lokalnej";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Rozwiązuj problemy z witrynami";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Karty Fire są izolowane od innych danych przeglądarki. Ich dane zostaną zniszczone, gdy zamkniesz je wszystkie. Zapewniają one taką samą ochronę przed śledzeniem jak inne karty.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nowa karta Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Karty Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nowa";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Nowość! Przeglądaj bez lokalnego zapisywania historii lub loguj w witrynach z użyciem innego konta.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Nie teraz";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Wypróbuj karty Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Wypróbuj karty Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Wypróbuj karty Fire, aby przeglądać bez lokalnego zapisywania historii.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nowe: Karty Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Karta Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Strumień powietrza";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Ogień klasyczny";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Ogień";
@@ -1902,6 +2354,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Wir wodny";
+
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
 
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Na komputerze przejdź do:";
@@ -1949,7 +2404,16 @@
 "import.passwords.promo.title" = "Importuj hasła do DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Zapytaj prywatnie";
+"input.field.placeholder.duckai" = "Zapytaj o cokolwiek prywatnie";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Zadaj pytanie uzupełniające...";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Zainstaluj rozszerzenie";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Zainstalowane rozszerzenia (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musisz włączyć VPN w aplikacji DuckDuckGo.";
@@ -1999,6 +2463,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Wyszukaj lub wprowadź adres";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nowa karta Fire";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nowa karta";
 
@@ -2028,6 +2495,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ostatnio przetworzono: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Wczytywanie dostępnych produktów...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Ładowanie brokerów…";
@@ -2068,6 +2538,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "Aplikacja DuckDuckGo dla komputerów Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Ostrzegaj mnie przed witrynami oznaczonymi jako oszustwa, wyłudzanie informacji lub złośliwe oprogramowanie";
 
@@ -2094,6 +2573,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Wiadomości";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Przycisk paska adresu";
@@ -2148,6 +2630,18 @@
 
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "Sieć VPN została rozłączona z powodu wygasłej subskrypcji. Subskrybuj DuckDuckGo, aby ponownie połączyć się z siecią VPN.";
+
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nie można uwierzytelnić. Sprawdź, czy Twoja subskrypcja jest aktywna, i spróbuj ponownie.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nie można połączyć się z serwerem VPN. Spróbuj ponownie później.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Twoja subskrypcja wygasła. Subskrybuj ponownie, aby połączyć się z serwerem VPN.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Wystąpił nieoczekiwany błąd. Spróbuj ponownie. Jeśli ten problem będzie się powtarzał, przewiń do pozycji **Informacje** i dotknij opcji **Często zadawane pytania i pomoc techniczna**, aby uzyskać pomoc.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Nie udało się nawiązać połączenia DuckDuckGo VPN. Spróbuj ponownie później.";
@@ -2245,11 +2739,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "Serwer DNS";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Spróbuj ponownie później.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Nie udało się połączyć.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Nie udało się połączyć";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "Adres IP";
@@ -2362,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Nie teraz";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkcje sztucznej inteligencji są prywatne i opcjonalne.\nMożesz dokonać zmian w obszarze Ustawienia > Funkcje AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chcesz mieć łatwy dostęp do prywatnego czatu AI na pasku adresu?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Wyszukiwanie i Duck.ai";
 
@@ -2375,13 +2872,34 @@
 "new.address.bar.picker.title" = "Opcja paska adresu";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Brak aktywnych subskrypcji";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";
+
+/* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Brak zainstalowanych rozszerzeń";
+
+/* No comment provided by engineer. */
 "No Logs" = "Brak logów";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Brak dopasowań dla \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Brak wiadomości";
 
 /* No comment provided by engineer. */
 "No results found" = "Nie znaleziono wyników";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Brak dostępnych subskrypcji";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2394,6 +2912,12 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Ukryte wyskakujące okienka";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokowanie reklam YouTube włączone";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -2449,8 +2973,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Pomiń";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Cześć!\n\nChcesz skorzystać z szybszej przeglądarki, która zapewni Ci ochronę?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Cześć!\n\nChcesz korzystać z szybszej przeglądarki, która chroni Cię i pozwala zdecydować, kiedy i jak korzystać z AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Dalej";
@@ -2464,11 +2988,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ustawienia > Funkcje AI.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Chcesz łatwiejszego dostępu do prywatnego czatu AI?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Przełączanie między\nwyszukiwaniem a Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Zróbmy to!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Tylko wyszukiwanie";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chcesz mieć łatwy dostęp do prywatnego czatu AI na pasku adresu?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Zaczynajmy!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Już o tym wiem";
@@ -2476,11 +3006,41 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Dowiedz się więcej";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Nie, dziękuję";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Pomiń";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Jeszcze jedno.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Czy wiesz, że?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Prywatna. Szybka. Z mniejszą liczbą reklam.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Chcesz skorzystać z szybszej przeglądarki, która daje Ci kontrolę?\n\nFunkcje AI są zawsze opcjonalne, a ochrona prywatności jest zawsze aktywna.";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Cześć!";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Chcesz przywrócić zakładki, hasła i nie tylko z poprzedniej synchronizacji DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Przywróć moje dane";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Pomiń";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Kontynuuj od miejsca zakończenia";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Rozpocznij przeglądanie";
@@ -2493,6 +3053,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Rozumiem! Pominę pozostałe wskazówki.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Wypróbuj za darmo!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Wypróbuj bezpłatnie!";
@@ -2749,6 +3312,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otworzyć w innej aplikacji?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Wróć";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Czy chcesz otworzyć tę stronę w Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Niestety nie udało się załadować strony.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Otwórz w Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Zostań w DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Niektóre funkcje strony mogą nie działać w tej przeglądarce.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Ta strona chce otworzyć się w przeglądarce Safari.";
+
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Ostatnie dzienniki przetwarzania";
 
@@ -2765,7 +3349,48 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Wyniki";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Skanowanie...";
+
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Usunąć karty Fire i ich dane?";
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Usunąć karty i dane witryny?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Usunąć karty, dane witryny i czaty?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Usuń ten czat";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Opcja „Usuń wszystkie” nie usunie Twojej historii czatów Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Usuń tę kartę";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Spowoduje to anulowanie trwającego pobierania.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nowe karty, które tworzysz, można też usuwać pojedynczo.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Usunięcie danych witryny może spowodować wylogowanie z kont.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Wyszukaj lub wprowadź adres";
@@ -2824,6 +3449,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Dodaj widżet do ekranu głównego";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Dodaj skrót Duck.ai na ekran główny";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Dodaj widżet DuckDuckGo VPN do ekranu głównego";
 
@@ -2833,11 +3461,38 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Pokaż pełny adres witryny internetowej";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Wyszukiwanie i Duck.ai";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Pokaż na pasku adresu";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Tylko wyszukiwanie";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz, gdy wrócisz po %@ braku aktywności.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 godzina";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d h";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuta";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d min";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 s";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d s";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po braku aktywności";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nowa karta";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Wypróbuj nową opcję przełączania się między wyszukiwaniem a Duck.ai na pasku adresu.";
@@ -2856,6 +3511,15 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ustawienia wyszukiwania Assist";
+
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Automatycznie wysyłaj zawartość strony do Duck.ai";
+
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Automatyczne wysyłanie zawartości";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
@@ -2878,11 +3542,50 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Wyłącz, aby uniemożliwić automatyczne otwieranie łączy w innych zainstalowanych aplikacjach.";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Wyczyść karty i dane";
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Usuń wszystkie dane witryn, w tym odwiedzone strony. Może nastąpić wylogowanie z kont.";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Wyczyść karty, dane i czaty Duck.ai";
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Pliki cookie i dane witryny";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Usuń wszystkie czaty, w tym przypięte";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Czaty Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Wyczyść";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Zamknij wszystkie otwarte karty";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Karty";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Zamknięcie aplikacji, nieaktywna przez 1 godzinę";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Zamknięcie aplikacji, brak aktywności przez 5 minut";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Zamknięcie aplikacji, brak aktywności przez 15 minut";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Zamknięcie aplikacji, brak aktywności przez 30 minut";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Wyłącznie zamknięcie aplikacji";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Aplikacja jest zamknięta, gdy zostanie przesunięta poza ekran w celu jej zamknięcia, natomiast bezczynność aplikacji występuje, gdy aplikacja działa w tle.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Wymagany czas";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Dane zostaną usunięte po ponownym uruchomieniu aplikacji.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestie wyszukiwania";
@@ -2896,11 +3599,32 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Wyświetlaj sugestie wyszukiwania podczas wpisywania, łącznie z zakładkami. Wszystkie wyszukiwania są prywatne.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Wyświetlaj sugestie z Twojej historii, zakładek i (opcjonalnie) historii czatu Duck.ai podczas wpisywania w pasku wyszukiwania. Wszystkie wyszukiwania są prywatne.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Blokada aplikacji";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Jeśli włączono Touch ID, Face ID lub hasło systemowe, pojawi się prośba o odblokowanie aplikacji podczas jej otwierania.";
+
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Usuń";
+
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatyczne czyszczenie danych";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatyczne usuwanie danych";
+
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatyczne odtwarzanie";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Ustawienia odtwarzacza Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Ustawienia automatycznego odtwarzania będą miały zastosowanie tylko do nowo otwartych kart. Zmiany nie mogą zostać zastosowane do istniejących kart, chyba że aplikacja zostanie ponownie uruchomiona. Aby zarządzać autoodtwarzaniem w Duck Player, przejdź do ";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Opinia o przeglądarce";
@@ -2908,11 +3632,8 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Przycisk Fire Button usunie także historię Duck.ai, w tym przypięte czaty.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Wyczyść czaty Duck.ai";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automatyczne czyszczenie danych";
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Wyczyść dane przeglądania";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokończ swoją konfigurację";
@@ -2926,20 +3647,41 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Zarządzaj okienkami z prośbą o zgodę";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Usuń karty i dane";
+
 /* Settings title for the customize section */
 "settings.customize" = "Spersonalizuj";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Czyści wszystkie karty, czaty Duck.ai i dane dla wszystkich witryn, które nie zostały oznaczone jako Fireproof.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Czyści wszystkie karty i dane dla witryn, które nie zostały oznaczone jako Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Czyszczenie danych";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Usunięcie danych może pomóc chronić Twoją prywatność w sieci. Użyj przycisku Fire Button, aby ręcznie wyczyścić dane, lub skonfiguruj automatyczne czyszczenie.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Domyślna przeglądarka";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Domyślna pozycja przełącznika na nowych kartach.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Pozycja przełącznika";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Ostatnie użycie";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Szukaj";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Usuń czaty Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Usuń karty i dane";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Wyłącz autouzupełnianie w funkcji Email Protection";
@@ -2980,8 +3722,11 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacja przycisku ognia";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Bezpieczne witryny internetowe";
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Zabezpieczone witryny internetowe";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Wymuszaj tryb ciemny witryn internetowych";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Ogólne";
@@ -2998,7 +3743,7 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importuj hasła";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nowa";
 
 /* Settings screen cell for Keyboard */
@@ -3018,6 +3763,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Zarządzaj kontem";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Multimedia";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Więcej możliwości DuckDuckGo";
@@ -3142,14 +3890,26 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronizacja i kopia zapasowa";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Pokaż w Menedżerze kart";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Karty";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Domyślne powiększenie tekstu";
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Motyw";
 
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Nadaje witrynom ciemny wygląd, jeśli używasz ciemnego motywu.";
+
 /* Title for the Settings View */
 "settings.title" = "Ustawienia";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animacja blokowania mechanizmów śledzących";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomaga blokować mechanizmy śledzące innych firm, które próbują ukryć się w witrynie internetowej za pomocą DNS.";
@@ -3235,6 +3995,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Przeglądarka DuckDuckGo zapewnia ochronę przed śledzeniem, która jest zawsze aktywna. [Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Co nowego";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Wyświetla dzienniki z ostatniej minuty, co pozwala zdiagnozować problemy bezpośrednio po odświeżeniu.";
 
@@ -3272,13 +4035,19 @@
 "siteFeedback.urlPlaceholder" = "Która witryna nie działa poprawnie?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Unieważniony";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Zapisana nazwa hosta: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podfunkcja: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj do urządzenia";
@@ -3325,8 +4094,14 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Plany subskrypcji";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Anuluj obniżenie poziomu";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Twoja subskrypcja została usunięta z tego urządzenia.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Aktualizuj lub anuluj plan";
@@ -3385,6 +4160,9 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoc i wsparcie";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Zarządzaj płatnością lub anuluj";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Zarządzaj planem";
 
@@ -3415,17 +4193,23 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Plany subskrypcji";
+
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Kończenie zmiany planu…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Finalizowanie zakupu...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Zmiana planu w toku…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Trwa zakup...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Przywracanie subskrypcji...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro jest teraz po prostu nazywane subskrypcją DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Usuń z tego urządzenia";
@@ -3484,6 +4268,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Twoja roczna subskrypcja wygasa w dniu %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@ z rozliczeniem miesięcznym.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@ z rozliczeniem rocznym.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Twoja miesięczna subskrypcja odnawia się w dniu %@.";
 
@@ -3505,6 +4298,18 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Aktywny bezpłatny okres próbny";
 
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Przejdź na poziom %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Odblokuj mądrzejszą i bardziej wydajną sztuczną inteligencję";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Zmień subskrypcję";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Zobacz wszystkie plany";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alert SwiftUI";
 
@@ -3515,7 +4320,7 @@
 "sync.delete.all.confirm.action" = "Usuń dane serwera";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Wszystkie urządzenia zostaną odłączone, a zsynchronizowane dane usunięte z serwera.";
+"sync.delete.all.confirm.message" = "Twoja kopia zapasowa zostanie usunięta z serwera. Wszystkie urządzenia zostaną odłączone od synchronizacji, ale nic nie zostanie usunięte z żadnego urządzenia.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Usunąć dane serwera?";
@@ -3528,6 +4333,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Skonfiguruj synchronizację";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizuj i twórz kopie zapasowe kart kredytowych";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizuj dane i twórz ich kopie zapasowe";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, dziękuję";
@@ -3577,6 +4388,30 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Usunąć urządzenie?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod skopiowany";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Urządzenie zostało pomyślnie zsynchronizowane.";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synchronizacja i kopia zapasowa włączone";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Skopiowano kod odzyskiwania";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nie udało się włączyć Synchronizacji i kopii zapasowej";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Wyłącz";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Wyłączenie synchronizacji nie wpłynie na zakładki i hasła na tym urządzeniu.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Wyłączyć Synchronizację i kopię zapasową?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Usuń";
 
@@ -3595,15 +4430,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Niestety synchronizacja i kopia zapasowa nie są już dostępne w tej wersji aplikacji. Aby kontynuować, zaktualizuj DuckDuckGo do najnowszej wersji.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Zamknij kartę";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Karta nieprzeczytana";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Zamknij kartę Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Zamknij kartę";
 /* Accessibility label on remove button */
 "tab.close.home" = "Zamknij kartę główną";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Zamknij „%1$@” w %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Karta Fire";
+
+/* New tab title */
+"tab.new.title" = "Nowa karta";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otwórz kartę główną";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Otwórz nową kartę";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Otwórz kartę Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otwórz „%1$@” w %2$@";
 
@@ -3618,6 +4474,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Dodaj wszystkie karty do zakładek";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Ukryj";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Możesz to włączyć ponownie, wybierając kolejno Ustawienia > Wygląd.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Ukryć liczbę mechanizmów śledzących?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opcje liczenia mechanizmów śledzących";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dotknij dwukrotnie, aby wyświetlić opcje ukrywania tego baneru";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Zachowaj";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "w ciągu ostatnich 7 dni";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zwiększ lub zmniejsz rozmiar tekstu na wszystkich stronach.";
@@ -3657,6 +4537,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Ochrona prywatności włączona dla %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -3901,6 +4784,9 @@
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Masz zaproszenie!";
 
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Rozszerzenia przeglądarkowe są niedostępne";
+
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Usunięto ulubione";
 
@@ -3924,6 +4810,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Wiadomość od %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Zostanie dołączone do ISTNIEJĄCEGO konta";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Utworzy NOWE konto";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ZAOSZCZĘDŹ 25%";
@@ -3981,6 +4873,21 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pobierz DuckDuckGo dla systemu Windows.";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo usuwa reklamy wideo z YouTube, dzięki czemu możesz oglądać filmy bez przerw.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokowanie reklam w serwisie YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokuj reklamy na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Po włączeniu DuckDuckGo anonimowo wykrywa zakłócenia blokowania reklam lub błędy YouTube, aby poprawić wrażenia dla wszystkich. DuckDuckGo nigdy nie widzi filmów, jakie oglądasz, ani żadnych danych osobowych.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Dowiedz się więcej";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zakładki";

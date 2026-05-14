@@ -35,11 +35,34 @@ final class MockDDGSyncing: DDGSyncing {
         
     }
 
+    func mainTokenRescope(to scope: String) async throws -> String? {
+        nil
+    }
+
+    func deleteAIChats(until: Date) async throws {
+    }
+    
+    func deleteAIChats(chatIds: [String]) async throws {
+    }
+
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+    }
+
+    var isAIChatHistoryEnabled: Bool {
+        false
+    }
+
+    func setCustomOperations(_ operations: [any SyncCustomOperation]) {
+    }
+
     var registeredDevices = [
         RegisteredDevice(id: "1", name: "Device 1", type: "desktop"),
         RegisteredDevice(id: "2", name: "Device 2", type: "mobile"),
         RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
     var disconnectCalled = false
+    var disconnectedDeviceIDs: [String] = []
+    var disconnectDeviceError: Error?
+    var onDisconnectDevice: ((String) -> Void)?
 
     var dataProvidersSource: DataProvidersSource?
 
@@ -83,6 +106,20 @@ final class MockDDGSyncing: DDGSyncing {
     func initializeIfNeeded() {
     }
 
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    var onRemovePreservedSyncAccount: (() -> Void)?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        onRemovePreservedSyncAccount?()
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
+    }
+
     func createAccount(deviceName: String, deviceType: String) async throws {
     }
 
@@ -107,6 +144,11 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     func disconnect(deviceId: String) async throws {
+        disconnectedDeviceIDs.append(deviceId)
+        onDisconnectDevice?(deviceId)
+        if let disconnectDeviceError {
+            throw disconnectDeviceError
+        }
     }
 
     func fetchDevices() async throws -> [RegisteredDevice] {
@@ -118,6 +160,22 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     func deleteAccount() async throws {
+    }
+
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
     }
 
     var serverEnvironment: ServerEnvironment = .production

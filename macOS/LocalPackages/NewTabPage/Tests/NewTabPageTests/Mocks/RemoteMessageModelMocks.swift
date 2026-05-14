@@ -34,7 +34,7 @@ extension RemoteMessageModel {
         .init(
             id: "sample_message",
             surfaces: .newTabPage,
-            content: .medium(titleText: "title", descriptionText: "description", placeholder: .criticalUpdate),
+            content: .medium(titleText: "title", descriptionText: "description", placeholder: .criticalUpdate, imageUrl: nil),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true
@@ -49,6 +49,7 @@ extension RemoteMessageModel {
                 titleText: "title",
                 descriptionText: "description",
                 placeholder: .ddgAnnounce,
+                imageUrl: nil,
                 primaryActionText: "primary_action",
                 primaryAction: action
             ),
@@ -66,6 +67,7 @@ extension RemoteMessageModel {
                 titleText: "title",
                 descriptionText: "description",
                 placeholder: .ddgAnnounce,
+                imageUrl: nil,
                 primaryActionText: "primary_action",
                 primaryAction: primaryAction,
                 secondaryActionText: "secondary_action",

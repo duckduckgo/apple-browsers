@@ -18,13 +18,22 @@
 
 import Foundation
 
+public enum ConnectionTestingResult {
+    case connected
+    case reconnected(failureCount: Int)
+    case disconnected(failureCount: Int)
+}
+
 /// Protocol abstraction for VPN connection testing functionality.
 ///
 /// This protocol defines the interface for testing whether the Network Protection
 /// connection is working properly by performing connectivity checks.
 ///
 @MainActor
-protocol ConnectionTesting: AnyObject {
+public protocol ConnectionTesting: AnyObject {
+
+    /// Handler called with connection test results.
+    var resultHandler: (@MainActor (ConnectionTestingResult) -> Void)? { get set }
 
     /// Starts the connection tester.
     ///

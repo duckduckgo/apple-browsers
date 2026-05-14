@@ -24,26 +24,73 @@ enum SwitchBarButtonState {
     case noButtons
     case clearOnly
     case voiceOnly
+    case searchGoToOnly
+    case voiceAndSearchGoTo
+    case stopGeneratingOnly
+    case stopGeneratingAndSearchGoTo
+    case aiChatShortcutOnly
+    case voiceAndAIChatShortcut
+    case clearAndAIChatShortcut
 
     var showsClearButton: Bool {
         switch self {
-        case .noButtons:
-            return false
-        case .clearOnly:
+        case .clearOnly, .clearAndAIChatShortcut:
             return true
-        case .voiceOnly:
+        case .noButtons, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut:
             return false
         }
     }
 
     var showsVoiceButton: Bool {
         switch self {
-        case .noButtons:
-            return false
-        case .clearOnly:
-            return false
-        case .voiceOnly:
+        case .voiceOnly, .voiceAndSearchGoTo, .voiceAndAIChatShortcut:
             return true
+        case .noButtons, .clearOnly, .searchGoToOnly,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+             .aiChatShortcutOnly, .clearAndAIChatShortcut:
+            return false
+        }
+    }
+
+    var showsSearchGoToButton: Bool {
+        switch self {
+        case .searchGoToOnly, .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
+            return true
+        case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly,
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
+            return false
+        }
+    }
+
+    var showsSeparator: Bool {
+        switch self {
+        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
+            return true
+        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .stopGeneratingOnly,
+             .aiChatShortcutOnly:
+            return false
+        }
+    }
+
+    var showsStopGeneratingButton: Bool {
+        switch self {
+        case .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
+            return true
+        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
+            return false
+        }
+    }
+
+    var showsAIChatShortcutButton: Bool {
+        switch self {
+        case .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
+            return true
+        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
+            return false
         }
     }
 
@@ -51,31 +98,71 @@ enum SwitchBarButtonState {
         switch self {
         case .noButtons:
             return false
-        case .clearOnly, .voiceOnly:
+        case .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
         }
     }
 }
 
 class SwitchBarButtonsView: UIView {
+    enum VoiceButtonStyle {
+        case microphone
+        case aiVoiceAccent
+        case aiVoicePlain
+    }
+
+    private enum Constants {
+        static let buttonSize: CGFloat = 44
+        static let separatorWidth: CGFloat = 1
+        static let separatorHeight: CGFloat = 20
+
+        static let stopButtonBackdropInset: CGFloat = 2
+        static let stopButtonBackdropCornerRadius: CGFloat = (buttonSize - (stopButtonBackdropInset * 2)) / 2
+        static let accessibilityPrefix = "Browser.OmniBar"
+    }
+
     var buttonState: SwitchBarButtonState = .noButtons {
         didSet {
             updateButtonsVisibility()
         }
     }
 
+    var voiceButtonStyle: VoiceButtonStyle = .microphone {
+        didSet {
+            updateVoiceButtonAppearance()
+        }
+    }
+
     var onClearTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
+    var onSearchGoToTapped: (() -> Void)?
+    var onStopGeneratingTapped: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
+    private lazy var stopGeneratingButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.image = DesignSystemImages.Glyphs.Size24.stopSquare
+        config.contentInsets = .zero
+        return UIButton(configuration: config)
+    }()
+    private let stopGeneratingBackdrop: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+        view.layer.cornerRadius = Constants.stopButtonBackdropCornerRadius
+        view.clipsToBounds = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
     private let voiceButton = BrowserChromeButton(.primary)
-
-    private enum Constants {
-        static let buttonSize: CGFloat = 44
-
-        static let accessibilityPrefix = "Browser.OmniBar"
-    }
+    private let aiChatShortcutButton = BrowserChromeButton(.primary)
+    private let separatorView = UIView()
+    private let searchGoToButton = BrowserChromeButton(.primary)
 
     init() {
         super.init(frame: CGRect(origin: .zero,
@@ -95,14 +182,20 @@ class SwitchBarButtonsView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private func setUpSubviews() {
         stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.alignment = .center
 
         addSubview(stack)
 
         stack.addArrangedSubview(clearButton)
+        stopGeneratingButton.insertSubview(stopGeneratingBackdrop, at: 0)
+        stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
+        stack.addArrangedSubview(separatorView)
+        stack.addArrangedSubview(aiChatShortcutButton)
+        stack.addArrangedSubview(searchGoToButton)
     }
 
     private func setUpConstraints() {
@@ -115,8 +208,25 @@ class SwitchBarButtonsView: UIView {
             clearButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
+            stopGeneratingButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            stopGeneratingButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            stopGeneratingBackdrop.topAnchor.constraint(equalTo: stopGeneratingButton.topAnchor, constant: Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.leadingAnchor.constraint(equalTo: stopGeneratingButton.leadingAnchor, constant: Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.trailingAnchor.constraint(equalTo: stopGeneratingButton.trailingAnchor, constant: -Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.bottomAnchor.constraint(equalTo: stopGeneratingButton.bottomAnchor, constant: -Constants.stopButtonBackdropInset),
+
             voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            separatorView.widthAnchor.constraint(equalToConstant: Constants.separatorWidth),
+            separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
+
+            searchGoToButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            searchGoToButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
         ])
     }
 
@@ -124,8 +234,18 @@ class SwitchBarButtonsView: UIView {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         clearButton.addAction(UIAction { [weak self] _ in self?.onClearTapped?() }, for: .touchUpInside)
 
+        stopGeneratingButton.addAction(UIAction { [weak self] _ in self?.onStopGeneratingTapped?() }, for: .touchUpInside)
+
         voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
         voiceButton.addAction(UIAction { [weak self] _ in self?.onVoiceTapped?() }, for: .touchUpInside)
+
+        aiChatShortcutButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
+        aiChatShortcutButton.addAction(UIAction { [weak self] _ in self?.onAIChatShortcutTapped?() }, for: .touchUpInside)
+
+        separatorView.backgroundColor = UIColor(designSystemColor: .decorationPrimary)
+
+        searchGoToButton.setImage(DesignSystemImages.Glyphs.Size24.searchFind)
+        searchGoToButton.addAction(UIAction { [weak self] _ in self?.onSearchGoToTapped?() }, for: .touchUpInside)
     }
 
     private func setUpAccessibility() {
@@ -133,13 +253,52 @@ class SwitchBarButtonsView: UIView {
         clearButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.ClearText"
         clearButton.accessibilityTraits = .button
 
+        stopGeneratingButton.accessibilityLabel = "Stop generating"
+        stopGeneratingButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.StopGenerating"
+        stopGeneratingButton.accessibilityTraits = .button
+
         voiceButton.accessibilityLabel = "Voice search"
         voiceButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.VoiceSearch"
         voiceButton.accessibilityTraits = .button
+
+        aiChatShortcutButton.accessibilityLabel = UserText.duckAiFeatureName
+        aiChatShortcutButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.AIChat"
+        aiChatShortcutButton.accessibilityTraits = .button
+
+        searchGoToButton.accessibilityLabel = "Search"
+        searchGoToButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.SearchGoTo"
+        searchGoToButton.accessibilityTraits = .button
     }
 
     private func updateButtonsVisibility() {
         clearButton.isHidden = !buttonState.showsClearButton
+        stopGeneratingButton.isHidden = !buttonState.showsStopGeneratingButton
         voiceButton.isHidden = !buttonState.showsVoiceButton
+        aiChatShortcutButton.isHidden = !buttonState.showsAIChatShortcutButton
+        separatorView.isHidden = !buttonState.showsSeparator
+        searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
+    }
+
+    private func updateVoiceButtonAppearance() {
+        switch voiceButtonStyle {
+        case .microphone:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+            voiceButton.backgroundColor = .clear
+            voiceButton.tintColor = nil
+            voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
+        case .aiVoiceAccent:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
+            voiceButton.backgroundColor = UIColor(designSystemColor: .accent)
+            voiceButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            voiceButton.layer.cornerRadius = Constants.buttonSize / 2
+            voiceButton.clipsToBounds = true
+        case .aiVoicePlain:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
+            voiceButton.backgroundColor = .clear
+            voiceButton.tintColor = UIColor(designSystemColor: .textPrimary)
+            voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
+        }
     }
 }

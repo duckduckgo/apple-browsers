@@ -64,9 +64,9 @@ public extension NSEvent {
     }
 
     /// is NSEvent representing right mouse down event or cntrl+mouse down event
-    static func isContextClick(_ event: NSEvent) -> Bool {
-        let isControlClick = event.type == .leftMouseDown && (event.modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
-        let isRightClick = event.type == .rightMouseDown
+    var isContextClick: Bool {
+        let isControlClick = type == .leftMouseDown && (modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
+        let isRightClick = type == .rightMouseDown
         return isControlClick || isRightClick
     }
 
@@ -202,11 +202,9 @@ extension NSEvent.KeyEquivalent: ExpressibleByStringLiteral, ExpressibleByUnicod
     }
 
     init?(event: NSEvent) {
-        guard [.keyDown, .keyUp].contains(event.type) else {
-            assertionFailure("wrong type of event \(event)")
-            return nil
-        }
-        guard let characters = event.characters else { return nil }
+        // Ignore events that are not key down or key up
+        guard [.keyDown, .keyUp].contains(event.type),
+              let characters = event.charactersIgnoringModifiers, !characters.isEmpty else { return nil }
         self.init(characters: characters, modifierFlags: event.modifierFlags)
     }
 

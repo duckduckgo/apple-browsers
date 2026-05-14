@@ -23,31 +23,30 @@ import Common
 import Configuration
 import Core
 import Foundation
+import UIKit
 import NetworkExtension
 import Networking
 import os.log
+import Persistence
 import PixelKit
 import Subscription
 import VPN
 import WidgetKit
 import WireGuard
+import PrivacyConfig
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
-    private static var vpnLogger = VPNLogger()
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-    
-    private var accountManager: AccountManager?
-    private let subscriptionManager: (any SubscriptionManagerV2)?
-
+    private let subscriptionManager: (any SubscriptionManager)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
-    private let wideEvent: WideEventManaging = WideEvent()
+    private let wideEvent: WideEventManaging
 
     // MARK: - PacketTunnelProvider.Event reporting
 
-    private static var packetTunnelProviderEvents: EventMapping<PacketTunnelProvider.Event> = .init { event, _, _, _ in
+    private static func packetTunnelProviderEvents(loopDetector: ConnectionFailureLoopDetector) -> EventMapping<PacketTunnelProvider.Event> { .init { event, _, _, _ in
         let defaults = UserDefaults.networkProtectionGroupDefaults
 
         switch event {
@@ -60,7 +59,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 Logger.networkProtection.error("Failed to send queued pixels, with error: \(error)")
             }
         case .connectionTesterStatusChange(let status, let server):
-            vpnLogger.log(status, server: server)
+            switch status {
+            case .failed(let duration):
+                Logger.networkProtectionConnectionTester.error("🔴 Connection tester (\(duration.rawValue, privacy: .public) - \(server, privacy: .public)) failure")
+            case .recovered(let duration, let failureCount):
+                Logger.networkProtectionConnectionTester.log("🟢 Connection tester (\(duration.rawValue, privacy: .public) - \(server, privacy: .public)) recovery (after \(String(failureCount), privacy: .public) failures)")
+            }
 
             switch status {
             case .failed(let duration):
@@ -95,13 +99,24 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              ],
                                              includedParameters: [.appVersion])
             }
-        case .reportConnectionAttempt(attempt: let attempt):
-            vpnLogger.log(attempt)
+        case .reportConnectionAttempt(attempt: let attempt, source: let source):
+            switch attempt {
+            case .connecting:
+                Logger.networkProtection.log("🔵 Connection attempt detected")
+            case .failure:
+                Logger.networkProtection.error("🔴 Connection attempt failed")
+            case .success:
+                Logger.networkProtection.log("🟢 Connection attempt successful")
+            }
+
+            let sourceParameters = ["source": source.rawValue]
 
             switch attempt {
             case .connecting:
+                if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptConnecting,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .success:
                 let versionStore = NetworkProtectionLastVersionRunStore(userDefaults: .networkProtectionGroupDefaults)
@@ -109,14 +124,24 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .failure:
+                if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             }
         case .reportTunnelFailure(result: let result):
-            vpnLogger.log(result)
+            switch result {
+            case .failureDetected:
+                Logger.networkProtectionTunnelFailureMonitor.error("🔴 Tunnel failure detected")
+            case .failureRecovered:
+                Logger.networkProtectionTunnelFailureMonitor.log("🟢 Tunnel failure recovered")
+            case .networkPathChanged:
+                Logger.networkProtectionTunnelFailureMonitor.log("🔵 Tunnel recovery detected path change")
+            }
 
             switch result {
             case .failureDetected:
@@ -131,7 +156,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 defaults.updateNetworkPath(with: newPath)
             }
         case .reportLatency(result: let result, location: let location):
-            vpnLogger.log(result)
+            switch result {
+            case .error:
+                Logger.networkProtectionLatencyMonitor.error("🔴 There was an error logging the latency")
+            case .quality(let quality):
+                Logger.networkProtectionLatencyMonitor.log("Connection quality is: \(quality.rawValue, privacy: .public)")
+            }
 
             switch result {
             case .error:
@@ -146,7 +176,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 )
             }
         case .rekeyAttempt(let step):
-            vpnLogger.log(step, named: "Rekey")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Rekey attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Rekey attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Rekey attempt succeeded")
+            }
 
             switch step {
             case .begin:
@@ -172,10 +209,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     includedParameters: [.appVersion]) { _ in }
             }
         case .tunnelStartAttempt(let step):
-            vpnLogger.log(step, named: "Tunnel Start")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Tunnel Start attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Tunnel Start attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Tunnel Start attempt succeeded")
+            }
 
             switch step {
             case .begin:
+                if loopDetector.connectionLoopDetected { return }
                 persistentPixel.fireDailyAndCount(
                     pixel: .networkProtectionTunnelStartAttempt,
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
@@ -183,6 +228,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     withAdditionalParameters: [:],
                     includedParameters: [.appVersion]) { _ in }
             case .failure(let error):
+                if loopDetector.connectionLoopDetected { return }
                 persistentPixel.fireDailyAndCount(
                     pixel: .networkProtectionTunnelStartFailure,
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
@@ -198,7 +244,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     includedParameters: [.appVersion]) { _ in }
             }
         case .tunnelStopAttempt(let step):
-            vpnLogger.log(step, named: "Tunnel Stop")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Tunnel Stop attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Tunnel Stop attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Tunnel Stop attempt succeeded")
+            }
 
             switch step {
             case .begin:
@@ -212,7 +265,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             }
         case .tunnelUpdateAttempt(let step):
-            vpnLogger.log(step, named: "Tunnel Update")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Tunnel Update attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Tunnel Update attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Tunnel Update attempt succeeded")
+            }
 
             switch step {
             case .begin:
@@ -238,7 +298,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     includedParameters: [.appVersion]) { _ in }
             }
         case .tunnelWakeAttempt(let step):
-            vpnLogger.log(step, named: "Tunnel Wake")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Tunnel Wake attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Tunnel Wake attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Tunnel Wake attempt succeeded")
+            }
 
             switch step {
             case .begin, .success: break
@@ -248,7 +315,19 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              error: error)
             }
         case .failureRecoveryAttempt(let step):
-            vpnLogger.log(step)
+            switch step {
+            case .started:
+                Logger.networkProtectionTunnelFailureMonitor.log("🔵 Failure Recovery attempt started")
+            case .failed(let error):
+                Logger.networkProtectionTunnelFailureMonitor.error("🔴 Failure Recovery attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .completed(let health):
+                switch health {
+                case .healthy:
+                    Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure Recovery attempt completed")
+                case .unhealthy:
+                    Logger.networkProtectionTunnelFailureMonitor.error("🔴 Failure Recovery attempt ended as unhealthy")
+                }
+            }
 
             switch step {
             case .started:
@@ -266,7 +345,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              error: error)
             }
         case .serverMigrationAttempt(let step):
-            vpnLogger.log(step, named: "Server Migration")
+            switch step {
+            case .begin:
+                Logger.networkProtection.log("🔵 Server Migration attempt begins")
+            case .failure(let error):
+                Logger.networkProtection.error("🔴 Server Migration attempt failed with error: \(error.localizedDescription, privacy: .public)")
+            case .success:
+                Logger.networkProtection.log("🟢 Server Migration attempt succeeded")
+            }
 
             switch step {
             case .begin:
@@ -292,7 +378,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     includedParameters: [.appVersion]) { _ in }
             }
         case .tunnelStartOnDemandWithoutAccessToken:
-            vpnLogger.logStartingWithoutAuthToken()
+            Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
+            if loopDetector.connectionLoopDetected { return }
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
@@ -301,8 +388,15 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
         case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
+        case .connectionFailureLoopDetected(let error):
+            persistentPixel.fireDailyAndCount(
+                pixel: .networkProtectionConnectionFailureLoopDetected,
+                pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                error: error,
+                withAdditionalParameters: [:],
+                includedParameters: [.appVersion]) { _ in }
         }
-    }
+    } }
 
     // MARK: - Error Reporting
 
@@ -424,20 +518,45 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         super.stopTunnel(with: reason, completionHandler: completionHandler)
     }
 
+    @MainActor
     @objc init() {
-#if DEBUG
-        Pixel.isDryRun = true
-#endif
-
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+        Self.configurePixelStorage()
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         configurationManager.start()
         let privacyConfigurationManager = VPNPrivacyConfigurationManager.shared
-        // Load cached config (if any)
-        privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))
+        // Privacy configuration is loaded in loadProtectedResources() after the device is confirmed unlocked.
+        // Until then, embedded config is used as fallback.
+
+        let featureFlagger = DefaultFeatureFlagger(
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            privacyConfigManager: privacyConfigurationManager,
+            experimentManager: nil
+        )
+
+        let netPGroupID = "\(Global.groupIdPrefix).netp"
+        let vpnContainerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: netPGroupID)
+
+        let loopDetectorStore = vpnContainerURL.map {
+            Self.makeUnprotectedFileStore(containerURL: $0, name: "vpn-loop-detector", fallback: UserDefaults.networkProtectionGroupDefaults)
+        } ?? UserDefaults.networkProtectionGroupDefaults
+
+        let loopDetector = ConnectionFailureLoopDetector(
+            store: loopDetectorStore,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.vpnConnectionFailureLoopDetection)
+        )
+
+        self.wideEvent = WideEvent(useMockRequests: {
+#if DEBUG || REVIEW || ALPHA
+            true
+#else
+            false
+#endif
+        }(),
+                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -452,103 +571,69 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
-        Self.isUsingAuthV2 = settings.isAuthV2Enabled
-        if Self.isUsingAuthV2 {
-            Logger.networkProtection.log("Configure Subscription V2")
-            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
-                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
+        Logger.networkProtection.log("Configure Subscription")
+        let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
+        let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
 
-            let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
-            // keychain storage
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
-            let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
-                                                                  userDefaults: UserDefaults.standard) { accessType, error in
-                let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
-                                  PixelParameters.subscriptionKeychainError: error.localizedDescription,
-                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
-                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: parameters)
-            }
-
-            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                                legacyTokenStorage: nil, // Only the main app can migrate
-                                                authService: authService,
-                                                refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
-#if DEBUG
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && authEnvironment == .production
-#endif
-            }))
-
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
-                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
-            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
-                                                                   oAuthClient: authClient,
-                                                                   userDefaults: UserDefaults.standard,
-                                                                   subscriptionEndpointService: subscriptionEndpointService,
-                                                                   subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
-                                                                   initForPurchase: false,
-                                                                   wideEvent: self.wideEvent,
-                                                                   isAuthV2WideEventEnabled: {
-#if DEBUG
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && subscriptionEnvironment.serviceEnvironment == .production
-#endif
-            })
-
-            self.subscriptionManager = subscriptionManager
-
-            entitlementsCheck = {
-                Logger.networkProtection.log("Subscription Entitlements check...")
-                do {
-                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
-                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
-                    return .success(isNetworkProtectionEnabled)
-                } catch {
-                    Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
-                    return .failure(error)
-                }
-            }
-            tokenHandler = subscriptionManager
-            self.accountManager = nil
-        } else {
-            Logger.networkProtection.log("Configure Subscription V1")
-            let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,
-                                                                     key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                                     settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
-            let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
-                                                       entitlementsCache: entitlementsCache,
-                                                       subscriptionEndpointService: subscriptionEndpointService,
-                                                       authEndpointService: authService)
-            self.accountManager = accountManager
-            let featureVisibility = NetworkProtectionVisibilityForTunnelProvider(accountManager: accountManager)
-            let accessTokenProvider: () -> String? = {
-                if featureVisibility.shouldMonitorEntitlement() {
-                    return { accountManager.accessToken }
-                }
-                return { nil }
-            }()
-            tokenHandler = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
-            entitlementsCheck = { return await Self.entitlementCheck(accountManager: accountManager) }
-            self.subscriptionManager = nil
+        let pixelHandler = SubscriptionPixelHandler(source: .systemExtension, pixelKit: PixelKit.shared)
+        // keychain storage
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                            userDefaults: UserDefaults.standard) { accessType, error in
+            let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                              PixelParameters.subscriptionKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         withAdditionalParameters: parameters)
         }
+
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            authService: authService,
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+#if DEBUG
+            return true // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return authEnvironment == .production
+#endif
+        }))
+
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
+                                                                             baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService)
+        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                             oAuthClient: authClient,
+                                                             userDefaults: UserDefaults.standard,
+                                                             subscriptionEndpointService: subscriptionEndpointService,
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             pixelHandler: pixelHandler,
+                                                             initForPurchase: false,
+                                                             wideEvent: wideEvent,
+                                                             isAuthV2WideEventEnabled: {
+#if DEBUG
+            return true // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return subscriptionEnvironment.serviceEnvironment == .production
+#endif
+        })
+        entitlementsCheck = {
+            Logger.networkProtection.log("Subscription Entitlements check...")
+            do {
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                return .success(isNetworkProtectionEnabled)
+            } catch {
+                Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
+                return .failure(error)
+            }
+        }
+        tokenHandler = subscriptionManager
+        self.subscriptionManager = subscriptionManager
 
         // MARK: -
 
@@ -567,13 +652,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    snoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults),
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
-                   tokenHandlerProvider: { tokenHandler },
+                   tokenHandlerProvider: tokenHandler,
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
-                   providerEvents: Self.packetTunnelProviderEvents,
+                   providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
-                   entitlementCheck: entitlementsCheck)
-        accountManager?.delegate = self
+                   wideEvent: wideEvent,
+                   entitlementCheck: entitlementsCheck,
+                   loopDetector: loopDetector)
         startMonitoringMemoryPressureEvents()
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
@@ -616,6 +702,133 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         .store(in: &cancellables)
     }
 
+    private static func makeUnprotectedFileStore(containerURL: URL, name: String, fallback: ThrowingKeyValueStoring) -> ThrowingKeyValueStoring {
+        guard let fileStore = try? KeyValueFileStore(
+            location: containerURL,
+            name: name,
+            writeOptions: [.atomic, .noFileProtection]
+        ) else {
+            return fallback
+        }
+        return fileStore
+    }
+
+    private static func setupPixelKit(vpnFileStoreDirectory: URL?) {
+        let pixelKitDefaults: ThrowingKeyValueStoring
+        if let vpnFileStoreDirectory,
+           let fileStore = try? KeyValueFileStore(
+               location: vpnFileStoreDirectory,
+               name: "pixelkit",
+               writeOptions: [.atomic, .noFileProtection]
+           ) {
+            pixelKitDefaults = fileStore
+        } else {
+            pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
+        }
+
+        PixelKit.setUp(
+            dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+            appVersion: AppVersion.shared.versionNumber,
+            source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            defaultHeaders: [:],
+            defaults: pixelKitDefaults
+        ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+            let url = URL.pixelUrl(forPixelNamed: pixelName)
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
+                onComplete(false, nil)
+                return
+            }
+
+            Task {
+                do {
+                    _ = try await DefaultAPIService().fetch(request: request)
+                    onComplete(true, nil)
+                } catch {
+                    onComplete(false, error)
+                }
+            }
+        }
+    }
+
+    private static func configurePixelStorage() {
+        do {
+            let vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
+            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        } catch {
+            Self.setupPixelKit(vpnFileStoreDirectory: nil)
+            Pixel.fire(pixel: .networkProtectionPixelStorageSetupFailure, error: error)
+        }
+    }
+
+    enum VPNFileStoreError: DDGError {
+        case containerURLNotFound
+        case directoryCreationFailed(underlying: Error?)
+
+        static var errorDomain: String { "com.duckduckgo.vpnFileStore" }
+
+        var errorCode: Int {
+            switch self {
+            case .containerURLNotFound: return 1
+            case .directoryCreationFailed: return 2
+            }
+        }
+
+        var underlyingError: Error? {
+            switch self {
+            case .containerURLNotFound: return nil
+            case .directoryCreationFailed(let underlying): return underlying
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .containerURLNotFound: return "App group container URL not found"
+            case .directoryCreationFailed: return "Failed to create VPN file store directory"
+            }
+        }
+
+        static func == (lhs: VPNFileStoreError, rhs: VPNFileStoreError) -> Bool {
+            lhs.errorCode == rhs.errorCode
+        }
+    }
+
+    private static func vpnFileStoreDirectory() throws -> URL {
+        let vpnGroupName = "\(Global.groupIdPrefix).netp"
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: vpnGroupName) else {
+            throw VPNFileStoreError.containerURLNotFound
+        }
+
+        let directory = containerURL.appendingPathComponent("vpn", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            throw VPNFileStoreError.directoryCreationFailed(underlying: error)
+        }
+        return directory
+    }
+
+    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) {
+        guard let vpnFileStoreDirectory else { return }
+
+        if let dailyPixelFileStore = try? KeyValueFileStore(
+            location: vpnFileStoreDirectory,
+            name: "daily-pixel",
+            writeOptions: [.atomic, .noFileProtection]
+        ) {
+            DailyPixel.storage = dailyPixelFileStore
+        }
+
+        if let uniquePixelFileStore = try? KeyValueFileStore(
+            location: vpnFileStoreDirectory,
+            name: "unique-pixel",
+            writeOptions: [.atomic, .noFileProtection]
+        ) {
+            UniquePixel.storage = uniquePixelFileStore
+        }
+    }
+
     private let activationDateStore = DefaultVPNActivationDateStore()
 
     public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
@@ -627,19 +840,23 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         VPNReloadStatusWidgets()
     }
 
-    private static func entitlementCheck(accountManager: AccountManager) async -> Result<Bool, Error> {
-        
-        guard NetworkProtectionVisibilityForTunnelProvider(accountManager: accountManager).shouldMonitorEntitlement() else {
-            return .success(true)
-        }
+    public override func loadProtectedResources() async {
+        // Load cached privacy configuration now that the device is confirmed unlocked.
+        // This is deferred from init() because the config file may be protected by iOS data protection
+        // and inaccessible when Connect on Demand starts the VPN before the user unlocks after reboot.
+        VPNPrivacyConfigurationManager.shared.reload(
+            etag: configurationStore.loadEtag(for: .privacyConfiguration),
+            data: configurationStore.loadData(for: .privacyConfiguration)
+        )
+    }
+}
 
-        let result = await accountManager.hasEntitlement(forProductName: .networkProtection)
-        switch result {
-        case .success(let hasEntitlement):
-            return .success(hasEntitlement)
-        case .failure(let error):
-            return .failure(error)
-        }
+private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let featureFlagger: FeatureFlagger
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 
@@ -670,25 +887,5 @@ final class DefaultWireGuardInterface: WireGuardGoInterface {
     
     func setLogger(context: UnsafeMutableRawPointer?, logFunction: (@convention(c) (UnsafeMutableRawPointer?, Int32, UnsafePointer<CChar>?) -> Void)?) {
         wgSetLogger(context, logFunction)
-    }
-}
-
-extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
-
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-
-        guard let expectedError = error as? AccountKeychainAccessError else {
-            assertionFailure("Unexpected error type: \(error)")
-            Logger.networkProtection.fault("Unexpected error type: \(error)")
-            return
-        }
-
-        let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
-                          PixelParameters.subscriptionKeychainError: expectedError.errorDescription ?? "Unknown",
-                          PixelParameters.source: KeychainErrorSource.vpn.rawValue,
-                          PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                     withAdditionalParameters: parameters)
     }
 }

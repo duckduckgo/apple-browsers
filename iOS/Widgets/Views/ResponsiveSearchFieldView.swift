@@ -73,7 +73,7 @@ struct ResponsiveSearchFieldView: View {
                                         .frame(width: 24, height: 24, alignment: .leading)
                                         .foregroundStyle(Color(designSystemColor: .icons))
                                 }
-                            } else  {
+                            } else {
                                 Image(.widgetSearchLoupe)
                                     .resizable()
                                     .makeAccentable()

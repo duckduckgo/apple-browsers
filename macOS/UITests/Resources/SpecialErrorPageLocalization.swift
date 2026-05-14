@@ -36,7 +36,7 @@ struct SpecialErrorPageLocalization: Decodable {
     static func load(for app: XCUIApplication) throws -> SpecialErrorPageLocalization {
         let appPath = try XCTUnwrap(app.path)
         let appBundle = try XCTUnwrap(Bundle(path: appPath))
-        let cssBundlePath = try XCTUnwrap(appBundle.path(forResource: "BrowserServicesKit_ContentScopeScripts", ofType: "bundle"))
+        let cssBundlePath = try XCTUnwrap(appBundle.path(forResource: "ContentScopeScripts_ContentScopeScripts", ofType: "bundle"))
         let cssBundle = try XCTUnwrap(Bundle(path: cssBundlePath))
         let specialErrorPageLocalizationPath = try XCTUnwrap(cssBundle.path(forResource: "pages/special-error/locales/en/special-error", ofType: "json"))
         let data = try Data(contentsOf: URL(fileURLWithPath: specialErrorPageLocalizationPath))

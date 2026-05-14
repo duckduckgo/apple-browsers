@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+@testable import DuckDuckGo
 
 class CapturingAdapterErrorHandler: SyncErrorHandling {
     var handleBookmarkErrorCalled = false
@@ -28,6 +29,7 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
     var handleSettingsErrorCalled = false
     var handleCreditCardErrorCalled = false
     var syncCreditCardsSuccededCalled = false
+    var handleAiChatsErrorCalled = false
     var capturedError: Error?
 
     func handleSettingsError(_ error: Error) {
@@ -47,6 +49,11 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
 
     func handleCreditCardsError(_ error: Error) {
         handleCreditCardErrorCalled = true
+        capturedError = error
+    }
+
+    func handleAiChatsError(_ error: Error) {
+        handleAiChatsErrorCalled = true
         capturedError = error
     }
 

@@ -41,6 +41,14 @@ final class PixelKitTests: XCTestCase {
             return nil
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .testEventPrefixed,
+                    .testEvent:
+                return [.pixelSource]
+            }
+        }
+
     }
 
     private enum TestEventV2: String, PixelKitEvent {
@@ -82,6 +90,20 @@ final class PixelKitTests: XCTestCase {
                 return .legacyDailyAndCount
             }
         }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .testEvent,
+                    .testEventWithoutParameters,
+                    .dailyEvent,
+                    .dailyEventWithoutParameters,
+                    .dailyAndContinuousEvent,
+                    .dailyAndContinuousEventWithoutParameters,
+                    .uniqueEvent,
+                    .nameWithDot:
+                return [.pixelSource]
+            }
+        }
     }
 
     /// Test that a dry run won't execute the fire request callback.
@@ -90,22 +112,15 @@ final class PixelKitTests: XCTestCase {
         let appVersion = "1.0.5"
         let headers: [String: String] = [:]
 
-        let pixelKit = PixelKit(dryRun: true, appVersion: appVersion, defaultHeaders: headers, dailyPixelCalendar: nil, defaults: userDefaults()) { _, _, _, _, _, _ in
-
+        let pixelKit = PixelKit(dryRun: true,
+                                appVersion: appVersion,
+                                defaultHeaders: headers,
+                                dailyPixelCalendar: nil,
+                                defaults: userDefaults()) { _, _, _, _, _, _ in
             XCTFail("This callback should not be executed when doing a dry run")
         }
 
         pixelKit.fire(TestEventV2.testEvent)
-    }
-
-    func testNonStandardEvent() {
-        func testReportBrokenSitePixel() {
-            fire(NonStandardEvent(TestEventV2.testEvent),
-                 frequency: .standard,
-                 and: .expect(pixelName: TestEventV2.testEvent.name),
-                 file: #filePath,
-                 line: #line)
-        }
     }
 
     func testDebugEventPrefixed() {
@@ -475,7 +490,8 @@ final class PixelKitTests: XCTestCase {
         let cohort = calendar.date(from: cohort)
         let timeMachine = TimeMachine(calendar: calendar, date: cohort)
 
-        PixelKit.setUp(appVersion: "test",
+        PixelKit.setUp(dryRun: true,
+                       appVersion: "test",
                        defaultHeaders: [:],
                        dailyPixelCalendar: calendar,
                        dateGenerator: timeMachine.now,
@@ -511,6 +527,59 @@ final class PixelKitTests: XCTestCase {
         // 8th week
         timeMachine.travel(by: .weekOfYear, value: 1)
         XCTAssertEqual(PixelKit.cohort(from: cohort, dateGenerator: timeMachine.now), "")
+    }
+
+    func testWhenChannelIsSetThenPixelIncludesChannelParameter() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                channel: "canary",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "canary")
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    func testWhenChannelIsNilThenPixelOmitsChannelParameter() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertNil(parameters[PixelKit.Parameters.channel])
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    func testWhenChannelIsSetThenItCoexistsWithOtherStandardParameters() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "2.0.0",
+                                source: "browser-dmg",
+                                channel: "canary",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "canary")
+            XCTAssertEqual(parameters[PixelKit.Parameters.appVersion], "2.0.0")
+            XCTAssertEqual(parameters[PixelKit.Parameters.pixelSource], "browser-dmg")
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
     }
 }
 

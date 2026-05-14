@@ -42,6 +42,13 @@ public struct DebugDatabaseBrowserView: View {
                 Text("No selection")
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Refresh") {
+                    viewModel.refresh()
+                }
+            }
+        }
         .frame(minWidth: 100, minHeight: 800)
     }
 }

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import Lottie
 import os.log
+import PixelKit
+import PrivacyConfig
 import RemoteMessaging
 import SwiftUI
 import WebKit
@@ -31,6 +32,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     enum HorizontalSpace: CGFloat {
         case pinnedTabsScrollViewPadding = 76
         case pinnedTabsScrollViewPaddingMacOS26 = 84
+    }
+
+    private enum AIChatPresentationMode {
+        case hidden, sidebar, floating
+    }
+
+    private enum Constants {
+        static let duckAISidebarOpenImageName = NSImage.Name("Sidebar-Open-16")
+        static let duckAISidebarCloseImageName = NSImage.Name("Sidebar-Close-16")
+        static let duckAISidebarDetachedImageName = NSImage.Name("Sidebar-Detached-16")
+        static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
     }
 
     private let standardTabHeight: CGFloat
@@ -51,7 +63,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var fireButton: MouseOverAnimationButton!
     @IBOutlet weak var draggingSpace: NSView!
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
+
+    private var fireWindowBackgroundView: NSImageView?
 
     private var pinnedTabsCollectionView: PinnedTabsCollectionView?
 
@@ -69,6 +82,24 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var pinnedTabsCollectionCancellable: AnyCancellable?
     private var fireButtonMouseOverCancellable: AnyCancellable?
+    private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var aiChatSidebarPresenceCancellable: AnyCancellable?
+    private var aiChatFloatingStateCancellable: AnyCancellable?
+    private var aiChatMenuConfigCancellable: AnyCancellable?
+    private var aiChatButtonHoverCancellable: AnyCancellable?
+    private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
+    private var didPerformInitialChromeSidebarApply = false
+    private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
+    private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
+    private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
+    private var selectedTabViewModelCancellable: AnyCancellable?
+    private var tabContentCancellable: AnyCancellable?
+    private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private lazy var duckAIChromeContextMenu: NSMenu = {
+        let menu = NSMenu()
+        menu.delegate = self
+        return menu
+    }()
 
     private var addNewTabButtonFooter: TabBarFooter? {
         guard let indexPath = collectionView.indexPathsForVisibleSupplementaryElements(ofKind: NSCollectionView.elementKindSectionFooter).first,
@@ -88,12 +119,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let bookmarkManager: BookmarkManager
     private let fireproofDomains: FireproofDomains
     private let featureFlagger: FeatureFlagger
-    private var pinnedTabsViewModel: PinnedTabsViewModel?
-    private var pinnedTabsView: PinnedTabsView?
-    private var pinnedTabsHostingView: PinnedTabsHostingView?
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
+    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -111,6 +141,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         return isMouseOverTab
     }
+
+    private var selectionNeedsLayoutInvalidation = false
 
     /// Returns mouse location in window if window is key
     private func mouseLocationInKeyWindow() -> NSPoint? {
@@ -130,6 +162,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
     private var previousScrollViewWidth: CGFloat = .zero
+    var aiChatCoordinator: AIChatCoordinating? {
+        didSet {
+            subscribeToAIChatSidebarChanges()
+            updateDuckAIChromeSegmentedControlState()
+        }
+    }
+    private var aiChatCloseWarningPresenter: WarnBeforeQuitOverlayPresenter?
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -142,6 +181,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
+    private var duckAIChromeControlContainer: ColorView?
+    var duckAISplitButtonContainer: NSView? { duckAIChromeControlContainer }
+    private var duckAIChromeBlurView: NSVisualEffectView?
+    private var duckAIChromeTitleButton: MouseOverButton?
+    private var duckAIChromeSidebarButton: MouseOverButton?
+    private var duckAIChromeDivider: ColorView?
+
+    private var isFireWindow: Bool {
+        tabCollectionViewModel.isBurner
+    }
+
+    private var isChromeSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+    }
 
     var footerCurrentWidthDimension: CGFloat {
         if tabMode == .overflow {
@@ -159,7 +212,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireproofDomains: FireproofDomains,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
-        tabDragAndDropManager: TabDragAndDropManager
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
+        duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
+        tabDragAndDropManager: TabDragAndDropManager,
+        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -169,7 +225,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 fireproofDomains: fireproofDomains,
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 featureFlagger: featureFlagger,
-                tabDragAndDropManager: tabDragAndDropManager
+                aiChatMenuConfig: aiChatMenuConfig,
+                duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
+                tabDragAndDropManager: tabDragAndDropManager,
+                autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
             )
         }!
     }
@@ -184,12 +243,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
+          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
-          tabDragAndDropManager: TabDragAndDropManager) {
+          tabDragAndDropManager: TabDragAndDropManager,
+          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
         self.featureFlagger = featureFlagger
+        self.aiChatMenuConfig = aiChatMenuConfig
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(
             activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
@@ -197,6 +261,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         self.themeManager = themeManager
         self.tabDragAndDropManager = tabDragAndDropManager
+        self.autoconsentStatsPopoverCoordinator = autoconsentStatsPopoverCoordinator
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -204,30 +269,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         super.init(coder: coder)
 
-        initializePinnedTabs(themeManager: themeManager)
+        initializePinnedTabs()
     }
 
-    private func initializePinnedTabs(themeManager: ThemeManager) {
-        guard !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection else {
-            return
-        }
-
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) || [.unitTests, .integrationTests].contains(AppVersion.runType) else {
-            initializePinnedTabsLegacyView(pinnedTabCollection: pinnedTabCollection, themeManager: themeManager)
+    private func initializePinnedTabs() {
+        guard !tabCollectionViewModel.isBurner else {
             return
         }
 
         initializePinnedTabsAppKitView()
-    }
-
-    private func initializePinnedTabsLegacyView(pinnedTabCollection: TabCollection, themeManager: ThemeManager) {
-        let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
-        let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
-        let pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
-
-        self.pinnedTabsViewModel = pinnedTabsViewModel
-        self.pinnedTabsView = pinnedTabsView
-        self.pinnedTabsHostingView = pinnedTabsHostingView
     }
 
     private func initializePinnedTabsAppKitView() {
@@ -260,11 +310,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
+        setupConstraints()
         setupFireButton()
+        subscribeToChromeSidebarFeatureFlag()
+        subscribeToDuckAIChromeButtonsVisibilityChanges()
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
-        setupAsBurnerWindowIfNeeded()
+        setupAsBurnerWindowIfNeeded(theme: theme)
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
         setupTabsContainersHeight()
@@ -291,11 +344,44 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
+
+        performInitialChromeSidebarApplyIfNeeded()
+    }
+
+    private func performInitialChromeSidebarApplyIfNeeded() {
+        guard !didPerformInitialChromeSidebarApply else { return }
+        didPerformInitialChromeSidebarApply = true
+        applyChromeSidebarFeatureFlagState(isEnabled: isChromeSidebarFeatureEnabled)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if showDuckAIChromeContextMenuIfNeeded(for: event) { return }
+        super.mouseDown(with: event)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        if showDuckAIChromeContextMenuIfNeeded(for: event) { return }
+        super.rightMouseDown(with: event)
+    }
+
+    private func showDuckAIChromeContextMenuIfNeeded(for event: NSEvent) -> Bool {
+        guard isChromeSidebarFeatureEnabled,
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature,
+              let container = duckAIChromeControlContainer,
+              !container.isHidden else { return false }
+        let clickInContainer = container.bounds.contains(container.convert(event.locationInWindow, from: nil))
+        let isContextEvent = event.isContextClick || event.type == .rightMouseDown
+
+        guard clickInContainer, isContextEvent else { return false }
+        NSMenu.popUpContextMenu(duckAIChromeContextMenu, with: event, for: container)
+        return true
     }
 
     override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
+        disableChromeSidebarObservers()
+        dismissAIChatCloseWarningPresenter()
     }
 
     deinit {
@@ -309,6 +395,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabButton?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         collectionView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
+        dismissAIChatCloseWarningPresenter()
     }
 
     override func viewDidLayout() {
@@ -325,7 +412,25 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         selectionIndexCancellable = tabCollectionViewModel.$selectionIndex.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.reloadSelection()
             self?.adjustStandardTabPosition()
+            self?.updateDuckAIChromeSegmentedControlState()
         }
+    }
+
+    private func subscribeToSelectedTabViewModel() {
+        selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedTabViewModel in
+                self?.subscribeToTabContent(selectedTabViewModel: selectedTabViewModel)
+                self?.updateDuckAIChromeSegmentedControlState()
+            }
+    }
+
+    private func subscribeToTabContent(selectedTabViewModel: TabViewModel?) {
+        tabContentCancellable = selectedTabViewModel?.tab.$content
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAIChromeSegmentedControlState()
+            }
     }
 
     private func subscribeToPinnedTabsSettingChanged() {
@@ -339,19 +444,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     return
                 }
 
-                if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-                    subscribeToPinnedTabsCollection()
-                }
-
+                subscribeToPinnedTabsCollection()
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
 
     private func updatePinnedTabsViewModel() {
-        guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else { return }
-
-        // Replace collection
-        pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
+        guard tabCollectionViewModel.pinnedTabsCollection != nil else { return }
 
         // Refresh tab selection
         if let selectionIndex = tabCollectionViewModel.selectionIndex {
@@ -364,6 +463,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 tabCollectionViewModel.select(at: .pinned(0))
             }
         }
+    }
+
+    private func setupConstraints() {
+        var pinnedTabsLeadingSpace: TabBarViewController.HorizontalSpace = .pinnedTabsScrollViewPadding
+        if #available(macOS 26, *) {
+            pinnedTabsLeadingSpace = .pinnedTabsScrollViewPaddingMacOS26
+        }
+
+        pinnedTabsViewLeadingConstraint.constant = pinnedTabsLeadingSpace.rawValue
     }
 
     private func setupFireButton() {
@@ -390,6 +498,491 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireButtonHeightConstraint.constant = theme.tabBarButtonSize
     }
 
+    private func setupDuckAIChromeSegmentedControl() {
+        guard duckAIChromeControlContainer == nil else { return }
+
+        enableDuckAIChromeContextMenuOnTabBar()
+
+        let container = ColorView(frame: .zero)
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.setAccessibilityIdentifier("TabBarViewController.duckAIChromeControlContainer")
+
+        let titleButton = MouseOverButton(frame: .zero)
+        titleButton.translatesAutoresizingMaskIntoConstraints = false
+        titleButton.title = UserText.aiChatTitle
+        titleButton.isBordered = false
+        titleButton.setButtonType(.momentaryPushIn)
+        titleButton.lineBreakMode = .byTruncatingTail
+        titleButton.target = self
+        titleButton.action = #selector(duckAITitlebarButtonAction(_:))
+        titleButton.sendAction(on: .leftMouseDown)
+        titleButton.setAccessibilityIdentifier("TabBarViewController.duckAIChromeTitleButton")
+        titleButton.setAccessibilityTitle(UserText.aiChatOpenNewTabButton)
+        titleButton.toolTip = UserText.aiChatOpenNewTabButton
+
+        let divider = ColorView(frame: .zero)
+        divider.translatesAutoresizingMaskIntoConstraints = false
+
+        let sidebarButton = MouseOverButton(frame: .zero)
+        sidebarButton.translatesAutoresizingMaskIntoConstraints = false
+        sidebarButton.isBordered = false
+        sidebarButton.target = self
+        sidebarButton.action = #selector(duckAIChromeSidebarButtonAction(_:))
+        sidebarButton.sendAction(on: .leftMouseDown)
+        sidebarButton.image = duckAISidebarIcon(for: .hidden)
+        sidebarButton.setAccessibilityIdentifier("TabBarViewController.duckAIChromeSidebarButton")
+        sidebarButton.setAccessibilityTitle(UserText.aiChatOpenSidebarButton)
+        sidebarButton.toolTip = UserText.aiChatOpenSidebarButton
+
+        let contentStack = NSStackView(views: [titleButton, divider, sidebarButton])
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.orientation = .horizontal
+        contentStack.alignment = .centerY
+        contentStack.distribution = .fill
+        contentStack.spacing = 0
+        container.addSubview(contentStack)
+
+        let dividerInset = divider.heightAnchor.constraint(equalToConstant: max(12, theme.tabBarButtonSize - 12))
+        let dividerFull = divider.heightAnchor.constraint(equalTo: container.heightAnchor)
+        dividerInset.isActive = true
+
+        NSLayoutConstraint.activate([
+            contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            contentStack.topAnchor.constraint(equalTo: container.topAnchor),
+            contentStack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            container.heightAnchor.constraint(equalToConstant: theme.tabBarButtonSize),
+            titleButton.heightAnchor.constraint(equalTo: container.heightAnchor),
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            sidebarButton.heightAnchor.constraint(equalTo: container.heightAnchor),
+            sidebarButton.widthAnchor.constraint(equalToConstant: theme.tabBarButtonSize + 4)
+        ])
+
+        duckAIChromeDividerInsetConstraint = dividerInset
+        duckAIChromeDividerFullConstraint = dividerFull
+
+        if let fireButtonIndex = rightSideStackView.arrangedSubviews.firstIndex(of: fireButton) {
+            rightSideStackView.insertArrangedSubview(container, at: fireButtonIndex)
+        } else {
+            rightSideStackView.addArrangedSubview(container)
+        }
+        rightSideStackView.setCustomSpacing(rightSideStackView.spacing + Constants.duckAIControlSpacingBeforeFireButton, after: container)
+
+        duckAIChromeControlContainer = container
+        duckAIChromeTitleButton = titleButton
+        duckAIChromeSidebarButton = sidebarButton
+        duckAIChromeDivider = divider
+
+        aiChatButtonHoverCancellable = Publishers.Merge4(
+            titleButton.publisher(for: \.isMouseOver),
+            titleButton.publisher(for: \.isMouseDown),
+            sidebarButton.publisher(for: \.isMouseOver),
+            sidebarButton.publisher(for: \.isMouseDown)
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.updateDuckAIChromeDividerState() }
+
+        container.menu = duckAIChromeContextMenu
+
+        updateDuckAIChromeSegmentedControlAppearance()
+        applyDuckAIChromeButtonVisibility()
+        updateDuckAIChromeSegmentedControlState()
+    }
+
+    private func applyDuckAIChromeButtonVisibility() {
+        guard let container = duckAIChromeControlContainer,
+              let titleButton = duckAIChromeTitleButton,
+              let sidebarButton = duckAIChromeSidebarButton,
+              let divider = duckAIChromeDivider else { return }
+
+        guard aiChatMenuConfig.shouldDisplayAnyAIChatFeature else {
+            disableDuckAIChromeContextMenuOnTabBar()
+            container.menu = nil
+            titleButton.isHidden = true
+            sidebarButton.isHidden = true
+            divider.isHidden = true
+            container.isHidden = true
+            updateDuckAIChromeVibrancyBackground()
+            return
+        }
+
+        enableDuckAIChromeContextMenuOnTabBar()
+        container.menu = duckAIChromeContextMenu
+
+        let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let sidebarHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+        titleButton.isHidden = duckAIHidden
+        sidebarButton.isHidden = sidebarHidden
+        divider.isHidden = duckAIHidden || sidebarHidden
+        container.isHidden = duckAIHidden && sidebarHidden
+
+        if !duckAIHidden && !sidebarHidden {
+            titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+            sidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
+        } else if !duckAIHidden {
+            titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
+        } else if !sidebarHidden {
+            sidebarButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = .clear
+        }
+
+        updateDuckAIChromeVibrancyBackground()
+    }
+
+    func refreshDuckAIChromeButtonsVisibility() {
+        applyDuckAIChromeButtonVisibility()
+        updateDuckAIChromeSegmentedControlState()
+    }
+
+    private func subscribeToDuckAIChromeButtonsVisibilityChanges() {
+        duckAIChromeButtonsVisibilityCancellable = NotificationCenter.default.publisher(for: .duckAIChromeButtonsVisibilityChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDuckAIChromeButtonsVisibility()
+            }
+    }
+
+    private func updateDuckAIChromeSegmentedControlAppearance() {
+        guard let duckAIChromeControlContainer, let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
+
+        let colorsProvider = theme.colorsProvider
+        duckAIChromeControlContainer.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
+        duckAIChromeControlContainer.cornerRadius = theme.toolbarButtonsCornerRadius
+        duckAIChromeControlContainer.borderColor = nil
+        duckAIChromeControlContainer.borderWidth = 0
+
+        updateDuckAIChromeVibrancyBackground()
+
+        let titleFont = NSFont.systemFont(ofSize: 13)
+        duckAIChromeTitleButton.attributedTitle = NSAttributedString(string: UserText.aiChatTitle, attributes: [
+            .foregroundColor: colorsProvider.textPrimaryColor,
+            .font: titleFont
+        ])
+        duckAIChromeTitleButton.backgroundColor = .clear
+        duckAIChromeTitleButton.mouseOverColor = colorsProvider.buttonMouseDownColor
+        duckAIChromeTitleButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
+        duckAIChromeTitleButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
+        duckAIChromeTitleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+        duckAIChromeTitleButton.horizontalPadding = 16
+
+        duckAIChromeSidebarButton.backgroundColor = .clear
+        duckAIChromeSidebarButton.mouseOverColor = colorsProvider.buttonMouseDownColor
+        duckAIChromeSidebarButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
+        duckAIChromeSidebarButton.normalTintColor = colorsProvider.iconsColor
+        duckAIChromeSidebarButton.mouseOverTintColor = colorsProvider.iconsColor
+        duckAIChromeSidebarButton.mouseDownTintColor = colorsProvider.iconsColor
+        duckAIChromeSidebarButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
+        duckAIChromeSidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+        applyDuckAIChromeButtonVisibility()
+        updateDuckAIChromeDividerState()
+    }
+
+    private func updateDuckAIChromeDividerState() {
+        let isInteractionEnabled = duckAIChromeTitleButton?.isEnabled == true &&
+            duckAIChromeSidebarButton?.isEnabled == true
+        let isInteracting = isInteractionEnabled && (
+            duckAIChromeTitleButton?.isMouseOver == true ||
+                            duckAIChromeTitleButton?.isMouseDown == true ||
+                            duckAIChromeSidebarButton?.isMouseOver == true ||
+                            duckAIChromeSidebarButton?.isMouseDown == true
+        )
+        let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
+
+        // Always deactivate the outgoing constraint before activating the incoming one so that
+        // both height constraints on the divider are never simultaneously active.
+        if showFullHeight {
+            duckAIChromeDividerInsetConstraint?.setActive(false)
+            duckAIChromeDividerFullConstraint?.setActive(true)
+        } else {
+            duckAIChromeDividerFullConstraint?.setActive(false)
+            duckAIChromeDividerInsetConstraint?.setActive(true)
+        }
+
+        let colorsProvider = theme.colorsProvider
+        duckAIChromeDivider?.backgroundColor = showFullHeight ?
+            colorsProvider.separatorActiveColor : colorsProvider.separatorColor
+    }
+
+    private func updateDuckAIChromeVibrancyBackground() {
+        guard let duckAIChromeControlContainer else { return }
+
+        if isFireWindow {
+            if duckAIChromeBlurView == nil {
+                let vibrancyView = NSVisualEffectView()
+                vibrancyView.translatesAutoresizingMaskIntoConstraints = false
+                vibrancyView.material = .hudWindow
+                vibrancyView.blendingMode = .withinWindow
+                vibrancyView.state = .active
+                vibrancyView.wantsLayer = true
+                vibrancyView.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+                vibrancyView.layer?.masksToBounds = true
+
+                duckAIChromeControlContainer.addSubview(vibrancyView, positioned: .below, relativeTo: duckAIChromeControlContainer.subviews.first)
+
+                NSLayoutConstraint.activate([
+                    vibrancyView.leadingAnchor.constraint(equalTo: duckAIChromeControlContainer.leadingAnchor),
+                    vibrancyView.trailingAnchor.constraint(equalTo: duckAIChromeControlContainer.trailingAnchor),
+                    vibrancyView.topAnchor.constraint(equalTo: duckAIChromeControlContainer.topAnchor),
+                    vibrancyView.bottomAnchor.constraint(equalTo: duckAIChromeControlContainer.bottomAnchor)
+                ])
+                duckAIChromeBlurView = vibrancyView
+            }
+
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor.black.withAlphaComponent(0.12)
+            shadow.shadowOffset = CGSize(width: 0, height: -0.5)
+            shadow.shadowBlurRadius = 1.5
+            duckAIChromeControlContainer.shadow = shadow
+            duckAIChromeControlContainer.wantsLayer = true
+            duckAIChromeControlContainer.layer?.masksToBounds = false
+        } else {
+            duckAIChromeBlurView?.removeFromSuperview()
+            duckAIChromeBlurView = nil
+            duckAIChromeControlContainer.shadow = nil
+        }
+    }
+
+    private func removeDuckAIChromeSegmentedControl() {
+        duckAIChromeBlurView?.removeFromSuperview()
+        duckAIChromeBlurView = nil
+
+        guard let duckAIChromeControlContainer else { return }
+        rightSideStackView.removeArrangedSubview(duckAIChromeControlContainer)
+        duckAIChromeControlContainer.removeFromSuperview()
+        disableDuckAIChromeContextMenuOnTabBar()
+        self.duckAIChromeControlContainer = nil
+        self.duckAIChromeTitleButton = nil
+        self.duckAIChromeSidebarButton = nil
+        self.duckAIChromeDivider = nil
+        self.aiChatButtonHoverCancellable = nil
+        self.duckAIChromeDividerInsetConstraint = nil
+        self.duckAIChromeDividerFullConstraint = nil
+    }
+
+    private func enableDuckAIChromeContextMenuOnTabBar() {
+        view.menu = duckAIChromeContextMenu
+        visualEffectBackgroundView.menu = duckAIChromeContextMenu
+        backgroundColorView.menu = duckAIChromeContextMenu
+        scrollView.menu = duckAIChromeContextMenu
+        collectionView.menu = duckAIChromeContextMenu
+        pinnedTabsContainerView.menu = duckAIChromeContextMenu
+        pinnedTabsCollectionView?.menu = duckAIChromeContextMenu
+        rightSideStackView.menu = duckAIChromeContextMenu
+    }
+
+    private func disableDuckAIChromeContextMenuOnTabBar() {
+        view.menu = nil
+        visualEffectBackgroundView.menu = nil
+        backgroundColorView.menu = nil
+        scrollView.menu = nil
+        collectionView.menu = nil
+        pinnedTabsContainerView.menu = nil
+        pinnedTabsCollectionView?.menu = nil
+        rightSideStackView.menu = nil
+    }
+
+    private func subscribeToChromeSidebarFeatureFlag() {
+        aiChatChromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .map { [weak self] in
+                self?.isChromeSidebarFeatureEnabled ?? false
+            }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.applyChromeSidebarFeatureFlagState(isEnabled: isEnabled)
+            }
+    }
+
+    private func applyChromeSidebarFeatureFlagState(isEnabled: Bool) {
+        if isEnabled {
+            setupDuckAIChromeSegmentedControl()
+            enableChromeSidebarObservers()
+            subscribeToAIChatSidebarChanges()
+            subscribeToAIChatMenuConfigChanges()
+            updateDuckAIChromeSegmentedControlState()
+            return
+        }
+
+        disableChromeSidebarObservers()
+        aiChatSidebarPresenceCancellable = nil
+        aiChatFloatingStateCancellable = nil
+        aiChatMenuConfigCancellable = nil
+        removeDuckAIChromeSegmentedControl()
+    }
+
+    private func subscribeToAIChatSidebarChanges() {
+        aiChatSidebarPresenceCancellable = aiChatCoordinator?.sidebarPresenceDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAIChromeSegmentedControlState()
+            }
+        aiChatFloatingStateCancellable = aiChatCoordinator?.chatFloatingStateDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAIChromeSegmentedControlState()
+            }
+    }
+
+    private func subscribeToAIChatMenuConfigChanges() {
+        aiChatMenuConfigCancellable = aiChatMenuConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDuckAIChromeButtonsVisibility()
+            }
+    }
+
+    private func enableChromeSidebarObservers() {
+        guard selectedTabViewModelCancellable == nil else { return }
+        subscribeToSelectedTabViewModel()
+    }
+
+    private func disableChromeSidebarObservers() {
+        selectedTabViewModelCancellable = nil
+        tabContentCancellable = nil
+    }
+
+    private func canToggleDuckAISidebar(for tab: Tab) -> Bool {
+        if isChromeSidebarFeatureEnabled {
+            return true
+        }
+
+        let tabID = tab.uuid
+        let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tabID) ?? false
+        let isChatFloating = aiChatCoordinator?.isChatFloating(for: tabID) ?? false
+
+        var canToggleSidebar = false
+        if isSidebarOpen || isChatFloating {
+            canToggleSidebar = true
+        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
+            canToggleSidebar = true
+        }
+
+        return canToggleSidebar
+    }
+
+    private func duckAISidebarIcon(for mode: AIChatPresentationMode) -> NSImage? {
+        switch mode {
+        case .floating: return NSImage(named: Constants.duckAISidebarDetachedImageName)
+        case .sidebar:  return NSImage(named: Constants.duckAISidebarCloseImageName)
+        case .hidden:   return NSImage(named: Constants.duckAISidebarOpenImageName)
+        }
+    }
+
+    private var isDuckAIChromeButtonsEnabled: Bool {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
+        return tab.content != .onboarding
+    }
+
+    private func updateDuckAIChromeSegmentedControlState() {
+        guard let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab,
+              isDuckAIChromeButtonsEnabled else {
+            currentAIChatPresentationMode = .hidden
+            duckAIChromeTitleButton.isEnabled = false
+            duckAIChromeSidebarButton.isEnabled = false
+            duckAIChromeSidebarButton.state = .off
+            duckAIChromeSidebarButton.image = duckAISidebarIcon(for: .hidden)
+            duckAIChromeSidebarButton.backgroundColor = .clear
+            duckAIChromeSidebarButton.toolTip = UserText.aiChatOpenSidebarButton
+            duckAIChromeSidebarButton.setAccessibilityTitle(UserText.aiChatOpenSidebarButton)
+            updateDuckAIChromeDividerState()
+            return
+        }
+
+        let presentationMode: AIChatPresentationMode
+        if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
+            presentationMode = .floating
+        } else if aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true {
+            presentationMode = .sidebar
+        } else {
+            presentationMode = .hidden
+        }
+        currentAIChatPresentationMode = presentationMode
+
+        let canToggleSidebar = canToggleDuckAISidebar(for: tab)
+        let tooltip: String
+        switch presentationMode {
+        case .floating: tooltip = UserText.aiChatShowButton
+        case .sidebar:  tooltip = UserText.aiChatCloseSidebarButton
+        case .hidden:   tooltip = UserText.aiChatOpenSidebarButton
+        }
+        duckAIChromeTitleButton.isEnabled = true
+        duckAIChromeSidebarButton.image = duckAISidebarIcon(for: presentationMode)
+        duckAIChromeSidebarButton.backgroundColor = presentationMode != .hidden ? theme.colorsProvider.buttonMouseDownColor : .clear
+        duckAIChromeSidebarButton.isEnabled = canToggleSidebar
+        duckAIChromeSidebarButton.toolTip = tooltip
+        duckAIChromeSidebarButton.setAccessibilityTitle(tooltip)
+        duckAIChromeSidebarButton.state = presentationMode != .hidden ? .on : .off
+        updateDuckAIChromeDividerState()
+    }
+
+    @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
+        if let mainViewController = parent as? MainViewController {
+            PixelKit.fire(AIChatPixel.aiChatTabbarButtonClicked, frequency: .dailyAndStandard)
+            mainViewController.openNewDuckAIChatTab()
+            return
+        }
+
+        Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
+    }
+
+    @objc private func duckAIChromeSidebarButtonAction(_ sender: NSButton) {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return
+        }
+
+        let tabID = tab.uuid
+        let isChatFloating = aiChatCoordinator?.isChatFloating(for: tabID) ?? false
+        let canToggleSidebar = canToggleDuckAISidebar(for: tab)
+
+        if isChatFloating {
+            aiChatCoordinator?.focusFloatingWindow(for: tabID)
+        } else if canToggleSidebar {
+            let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tabID) ?? false
+            if isSidebarOpen {
+                PixelKit.fire(AIChatPixel.aiChatSidebarClosed(source: .tabbarButton), frequency: .dailyAndStandard)
+            } else {
+                PixelKit.fire(
+                    AIChatPixel.aiChatSidebarOpened(
+                        source: .tabbarButton,
+                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                        minutesSinceSidebarHidden: aiChatCoordinator?.sidebarHiddenAt(for: tabID)?.minutesSinceNow()
+                    ),
+                    frequency: .dailyAndStandard
+                )
+            }
+            aiChatCoordinator?.toggleSidebar()
+        } else {
+            updateDuckAIChromeSegmentedControlState()
+            return
+        }
+
+        updateDuckAIChromeSegmentedControlState()
+    }
+
+    @objc private func hideDuckAITitleButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(true, for: .duckAI)
+    }
+
+    @objc private func showDuckAITitleButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(false, for: .duckAI)
+    }
+
+    @objc private func hideDuckAISidebarButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(true, for: .sidebar)
+    }
+
+    @objc private func showDuckAISidebarButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(false, for: .sidebar)
+    }
+
+    @objc private func openAISettingsAction() {
+        NSApp.delegateTyped.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
+    }
+
     private func setupScrollButtons() {
         leftScrollButton.setCornerRadius(theme.addressBarStyleProvider.addressBarButtonsCornerRadius)
         leftScrollButtonWidth.constant = theme.tabBarButtonSize
@@ -406,18 +999,48 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
     }
 
-    private func setupAsBurnerWindowIfNeeded() {
-        if tabCollectionViewModel.isBurner {
-            burnerWindowBackgroundView.image = theme.fireWindowGraphic
-            burnerWindowBackgroundView.isHidden = false
-            fireButton.isAnimationEnabled = false
-            fireButton.backgroundColor = NSColor.fireButtonRedBackground
-            fireButton.mouseOverColor = NSColor.fireButtonRedHover
-            fireButton.mouseDownColor = NSColor.fireButtonRedPressed
-            fireButton.normalTintColor = NSColor.white
-            fireButton.mouseDownTintColor = NSColor.white
-            fireButton.mouseOverTintColor = NSColor.white
+    private func addFireWindowBackgroundViewIfNeeded() {
+        guard !tabCollectionViewModel.isPopup else { return }
+
+        if fireWindowBackgroundView == nil {
+            let imageView = NSImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.imageScaling = .scaleAxesIndependently
+            imageView.imageAlignment = .alignBottom
+            imageView.isHidden = true
+            fireWindowBackgroundView = imageView
         }
+
+        guard let fireWindowBackgroundView, fireWindowBackgroundView.superview == nil else { return }
+
+        view.addSubview(fireWindowBackgroundView, positioned: .above, relativeTo: visualEffectBackgroundView)
+
+        NSLayoutConstraint.activate([
+            fireWindowBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -2),
+            fireWindowBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            fireWindowBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            fireWindowBackgroundView.widthAnchor.constraint(equalToConstant: 96)
+        ])
+    }
+
+    private func setupAsBurnerWindowIfNeeded(theme: (any ThemeStyleProviding)? = nil) {
+        guard tabCollectionViewModel.isBurner,
+              !tabCollectionViewModel.isPopup else { return }
+
+        fireButton.isAnimationEnabled = false
+        fireButton.backgroundColor = NSColor.fireButtonRedBackground
+        fireButton.mouseOverColor = NSColor.fireButtonRedHover
+        fireButton.mouseDownColor = NSColor.fireButtonRedPressed
+        fireButton.normalTintColor = NSColor.white
+        fireButton.mouseDownTintColor = NSColor.white
+        fireButton.mouseOverTintColor = NSColor.white
+
+        addFireWindowBackgroundViewIfNeeded()
+
+        let currentTheme = theme ?? self.theme
+        guard let fireWindowBackgroundView else { return }
+        fireWindowBackgroundView.image = currentTheme.fireWindowGraphic
+        fireWindowBackgroundView.isHidden = false
     }
 
     private func setupAccessibility() {
@@ -447,6 +1070,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         pinnedTabsCollectionView?.setAccessibilityIdentifier("PinnedTabsView")
         pinnedTabsCollectionView?.setAccessibilityRole(.tabGroup)
+        pinnedTabsCollectionView?.setAccessibilitySubrole(nil)
         pinnedTabsCollectionView?.setAccessibilityTitle("Pinned Tabs")
 
         addTabButton.cell?.setAccessibilityParent(collectionView)
@@ -461,37 +1085,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Pinned Tabs
 
     private func setupPinnedTabsView() {
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            layoutPinnedTabsCollectionView()
-            subscribeToPinnedTabsCollection()
+        layoutPinnedTabsCollectionView()
+        subscribeToPinnedTabsCollection()
 
-            pinnedTabsWindowDraggingView.isHidden = true
+        pinnedTabsWindowDraggingView.isHidden = true
 
-            pinnedTabsCollectionView?.dataSource = self
-            pinnedTabsCollectionView?.delegate = self
-
-        } else {
-            layoutPinnedTabsView()
-            subscribeToPinnedTabsHostingView()
-            subscribeToPinnedTabsViewModelOutputs()
-            subscribeToPinnedTabsViewModelInputs()
-        }
-    }
-
-    private func layoutPinnedTabsView() {
-        guard let pinnedTabsHostingView = pinnedTabsHostingView else { return }
-
-        pinnedTabsHostingView.translatesAutoresizingMaskIntoConstraints = false
-        pinnedTabsContainerView.addSubview(pinnedTabsHostingView)
-
-        let trailingConstant: CGFloat = theme.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
-
-        NSLayoutConstraint.activate([
-            pinnedTabsHostingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
-            pinnedTabsHostingView.topAnchor.constraint(lessThanOrEqualTo: pinnedTabsContainerView.topAnchor),
-            pinnedTabsHostingView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
-            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: trailingConstant)
-        ])
+        pinnedTabsCollectionView?.dataSource = self
+        pinnedTabsCollectionView?.delegate = self
     }
 
     private func layoutPinnedTabsCollectionView() {
@@ -518,101 +1118,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             }
     }
 
-    private func subscribeToPinnedTabsViewModelInputs() {
-        guard let pinnedTabsViewModel = pinnedTabsViewModel else { return }
-
-        tabCollectionViewModel.$selectionIndex
-            .map { [weak self] selectedTabIndex -> Tab? in
-                switch selectedTabIndex {
-                case .pinned(let index):
-                    return self?.pinnedTabsViewModel?.items[safe: index]
-                default:
-                    return nil
-                }
-            }
-            .assign(to: \.selectedItem, onWeaklyHeld: pinnedTabsViewModel)
-            .store(in: &cancellables)
-
-        Publishers.CombineLatest(tabCollectionViewModel.$selectionIndex, $tabMode)
-            .map { selectedTabIndex, tabMode -> Bool in
-                if case .unpinned(0) = selectedTabIndex, tabMode == .divided {
-                    return false
-                }
-                return true
-            }
-            .assign(to: \.shouldDrawLastItemSeparator, onWeaklyHeld: pinnedTabsViewModel)
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToPinnedTabsViewModelOutputs() {
-        guard let pinnedTabsViewModel = pinnedTabsViewModel else { return }
-
-        pinnedTabsViewModel.tabsDidReorderPublisher
-            .sink { [weak self] tabs in
-                self?.tabCollectionViewModel.pinnedTabsManager?.tabCollection.reorderTabs(tabs)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$selectedItemIndex.dropFirst().removeDuplicates()
-            .compactMap { $0 }
-            .sink { [weak self] index in
-                self?.deselectTabAndSelectPinnedTab(at: index)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$hoveredItemIndex.dropFirst().removeDuplicates()
-            .debounce(for: 0.05, scheduler: DispatchQueue.main)
-            .sink { [weak self] index in
-                self?.pinnedTabsViewDidUpdateHoveredItem(to: index)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.contextMenuActionPublisher
-            .sink { [weak self] action in
-                self?.handlePinnedTabContextMenuAction(action)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$dragMovesWindow.map(!)
-            .assign(to: \.pinnedTabsWindowDraggingView.isHidden, onWeaklyHeld: self)
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToPinnedTabsHostingView() {
-        pinnedTabsHostingView?.middleClickPublisher
-            .compactMap { [weak self] in self?.pinnedTabsView?.index(forItemAt: $0) }
-            .sink { [weak self] index in
-                self?.tabCollectionViewModel.remove(at: .pinned(index))
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsWindowDraggingView.mouseDownPublisher
-            .sink { [weak self] _ in
-                self?.pinnedTabsViewModel?.selectedItem = self?.pinnedTabsViewModel?.items.first
-            }
-            .store(in: &cancellables)
-    }
-
-    private func pinnedTabsViewDidUpdateHoveredItem(to index: Int?) {
-        if let index {
-            showPinnedTabPreview(at: index)
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(allowQuickRedisplay: true)
-        }
-    }
-
-    private func deselectTabAndSelectPinnedTab(at index: Int) {
-        hideTabPreview()
-        if tabCollectionViewModel.selectionIndex != .pinned(index), tabCollectionViewModel.select(at: .pinned(index)) {
-            let previousSelection = collectionView.selectionIndexPaths
-            clearSelection(animated: true)
-            collectionView.reloadItems(at: previousSelection)
-        }
-    }
-
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
+        autoconsentStatsPopoverCoordinator?.dismissDialogDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
@@ -624,51 +1133,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         collectionView.scrollToBeginning()
     }
 
-    private func handlePinnedTabContextMenuAction(_ action: PinnedTabsViewModel.ContextMenuAction) {
-        switch action {
-        case let .unpin(index):
-            tabCollectionViewModel.unpinTab(at: index)
-        case let .duplicate(index):
-            duplicateTab(at: .pinned(index))
-        case let .bookmark(tab):
-            guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
-                Logger.general.debug("TabBarViewController: Failed to get tabViewModel for pinned tab")
-                return
-            }
-            addBookmark(for: tabViewModel)
-        case let .removeBookmark(tab):
-            guard let url = tab.url else {
-                Logger.general.debug("TabBarViewController: Failed to get url from tab")
-                return
-            }
-            deleteBookmark(with: url)
-        case let .fireproof(tab):
-            fireproof(tab)
-        case let .removeFireproofing(tab):
-            removeFireproofing(from: tab)
-        case let .close(index):
-            tabCollectionViewModel.remove(at: .pinned(index))
-        case let .muteOrUnmute(tab):
-            tab.muteUnmuteTab()
-        }
-    }
-
     private func reloadSelection() {
         let isPinnedTab = tabCollectionViewModel.selectionIndex?.isPinnedTab == true
 
-        let collectionView: TabBarCollectionView?
-        let shouldContinue: Bool
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            shouldContinue = true
-            collectionView = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
-        } else {
-            shouldContinue = !isPinnedTab
-            collectionView = self.collectionView
-        }
+        let collectionView: TabBarCollectionView? = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
 
         bringSelectedTabCollectionToFront()
 
-        guard shouldContinue, let collectionView else {
+        guard let collectionView else {
             return
         }
 
@@ -690,6 +1162,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
+            invalidateLayoutIfNeeded(for: collectionView)
             collectionView.animator().selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
         } else {
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
@@ -697,8 +1170,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
+    private func invalidateLayoutIfNeeded(for collectionView: TabBarCollectionView) {
+        guard selectionNeedsLayoutInvalidation else {
+            return
+        }
+
+        collectionView.invalidateLayout()
+        selectionNeedsLayoutInvalidation = false
+    }
+
     private func refreshPinnedTabsLastSeparator() {
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite), let pinnedTabsCollectionView else {
+        guard let pinnedTabsCollectionView else {
             return
         }
 
@@ -728,14 +1210,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func selectTab(with event: NSEvent) {
         let locationInWindow = event.locationInWindow
 
-        if let point = pinnedTabsHostingView?.mouseLocationInsideBounds(locationInWindow),
-           let index = pinnedTabsView?.index(forItemAt: point) {
-
-            tabCollectionViewModel.select(at: .pinned(index))
-
-        } else if let point = collectionView.mouseLocationInsideBounds(locationInWindow),
-                  let indexPath = collectionView.indexPathForItem(at: point) {
+        if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
+            // When clicking a tab in an inactive window, the selection change bypasses
+            // the normal layout update path, so we flag for an explicit layout invalidation.
+            selectionNeedsLayoutInvalidation = true
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
+            return
+        }
+
+        if let indexPath = pinnedTabsCollectionView?.indexPathForItemAtMouseLocation(locationInWindow) {
+            tabCollectionViewModel.select(at: .pinned(indexPath.item))
         }
     }
 
@@ -899,14 +1383,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         // show Tab Preview when mouse was moved over a tab when the Tab Preview was hidden before
-        guard !tabPreviewWindowController.isPresented else { return }
-
-        if let indexPath = collectionView.withMouseLocationInViewCoordinates(convert: { self.collectionView.indexPathForItem(at: $0) }),
-           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem {
-            showTabPreview(for: tabBarViewItem)
-        } else if let pinnedTabIndex = pinnedTabsViewModel?.hoveredItemIndex {
-            showPinnedTabPreview(at: pinnedTabIndex)
+        guard !tabPreviewWindowController.isPresented else {
+            return
         }
+
+        let locationInWindow = event.locationInWindow
+        guard let tabBarViewItem = collectionView.tabBarItemAtMouseLocation(locationInWindow) ?? pinnedTabsCollectionView?.tabBarItemAtMouseLocation(locationInWindow) else {
+            return
+        }
+
+        showTabPreview(for: tabBarViewItem)
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -975,12 +1461,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         /// we need to do the same with the left side scroll view (when on overflow), if not the pinned tabs container
         /// will overlap the arrow button.
         let shouldShowSShapedTabs = theme.tabStyleProvider.shouldShowSShapedTab
-        let noPinnedTabs = pinnedTabsViewModel?.items.isEmpty ?? true
         let isLeftScrollButtonVisible = !leftScrollButton.isHidden
 
-        if !noPinnedTabs && shouldShowSShapedTabs && isLeftScrollButtonVisible {
-            leftSideStackLeadingConstraint.constant = 12
-        } else if noPinnedTabs && shouldShowSShapedTabs && !isLeftScrollButtonVisible {
+        if shouldShowSShapedTabs && !isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = -12
         } else {
             leftSideStackLeadingConstraint.constant = 0
@@ -1091,44 +1574,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
-            Logger.general.error("TabBarViewController: Showing tab preview window failed - tabViewModel not found for index \(String(reflecting: tabIndex))")
+        guard let previewable = tabCollectionViewModel.tabBarViewModel(at: tabIndex) as? Previewable else {
+            Logger.general.error("TabBarViewController: Showing tab preview window failed - previewable not found for index \(String(reflecting: tabIndex))")
             return
+        }
+
+        let isSelected: Bool
+        if let loadedVM = previewable as? TabViewModel {
+            isSelected = tabCollectionViewModel.selectedTabViewModel === loadedVM
+        } else {
+            isSelected = false
         }
 
         if isPinned {
             let position = pinnedTabsContainerView.frame.minX + tabBarViewItem.view.frame.minX
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         } else {
             guard let clipView = collectionView.clipView else {
                 Logger.general.error("TabBarViewController: Showing tab preview window failed - clip view not found")
                 return
             }
             let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         }
     }
 
-    private func showPinnedTabPreview(at index: Int) {
-        guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModel(at: index) else {
-            Logger.general.error("TabBarViewController: Showing pinned tab preview window failed")
-            return
-        }
-
-        let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
-        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
-        showTabPreview(for: tabViewModel, from: position)
-    }
-
-    private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
+    private func showTabPreview(for previewable: Previewable, isSelected: Bool, from xPosition: CGFloat) {
         guard shouldDisplayTabPreviews else {
             Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")
             hideTabPreview(allowQuickRedisplay: true)
             return
         }
 
-        let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
-        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,
+        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: previewable,
                                                                     isSelected: isSelected)
 
         guard let window = view.window else {
@@ -1178,6 +1656,8 @@ extension TabBarViewController: MouseOverButtonDelegate {
 extension TabBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: any ThemeStyleProviding) {
+        setupAsBurnerWindowIfNeeded(theme: theme)
+
         let colorsProvider = theme.colorsProvider
         let isFireWindow = tabCollectionViewModel.isBurner
 
@@ -1194,6 +1674,7 @@ extension TabBarViewController: ThemeUpdateListening {
 
         addTabButton.normalTintColor = colorsProvider.iconsColor
         addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+        updateDuckAIChromeSegmentedControlAppearance()
     }
 }
 
@@ -1202,6 +1683,16 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
 
     func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool) {
         appendToCollectionView(selected: selected)
+    }
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            Logger.general.error("collection view is nil")
+            return
+        }
+        let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
+        collectionView.reloadItems(at: indexPathSet)
     }
 
     func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
@@ -1390,18 +1881,18 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
     }
 
-    private func fireproof(_ tab: Tab) {
-        guard let url = tab.url, let host = url.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func fireproof(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
         fireproofDomains.add(domain: host)
     }
 
-    private func removeFireproofing(from tab: Tab) {
-        guard let host = tab.url?.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func removeFireproofing(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
@@ -1430,7 +1921,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         if theme.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !isPinnedTabs && !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !isPinnedTabs && !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
+            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 10 : 12, bottom: 0, right: isRightScrollButtonVisible ? 10 : -12)
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {
@@ -1463,7 +1954,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
+        guard let viewModel = tabCollectionViewModel.tabBarViewModel(at: tabIndex) else {
             tabBarViewItem.clear()
             return tabBarViewItem
         }
@@ -1471,7 +1962,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
         tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
-        tabBarViewItem.subscribe(to: tabViewModel)
+        tabBarViewItem.subscribe(to: viewModel)
 
         if let pinnedTabsCollectionView, pinnedTabsCollectionView == collectionView {
             tabBarViewItem.isLeftToSelected = pinnedTabsCollectionView.isLastItemInSection(indexPath: indexPath) && shouldHideLastPinnedSeparator
@@ -1563,10 +2054,9 @@ extension TabBarViewController: NSCollectionViewDelegate {
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
         // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
-        let isPinnedTabsRewriteEnabled = featureFlagger.isFeatureOn(.pinnedTabsViewRewrite)
         let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
 
-        guard collectionView.frame.contains(locationInView) || !isPinnedTabsRewriteEnabled else {
+        guard collectionView.frame.contains(locationInView) else {
             return .none
         }
 
@@ -1711,13 +2201,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
             let viewController = PopoverMessageViewController(
                 title: UserText.tabCrashPopoverTitle,
                 message: UserText.tabCrashPopoverMessage,
-                presentMultiline: true,
-                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
                 autoDismissDuration: nil,
-                onDismiss: {
+                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
+                presentMultiline: true,
+                clickAction: {
                     tabBarViewItem.hideCrashIndicatorButton()
                 },
-                onClick: {
+                onDismiss: {
                     tabBarViewItem.hideCrashIndicatorButton()
                 }
             )
@@ -1729,11 +2219,14 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
         if isMouseOver {
             // Show tab preview for visible tab bar items
-            if collectionView.visibleRect.intersects(tabBarViewItem.view.frame) {
+            let sourceCollectionView = tabBarViewItem.isPinned ? pinnedTabsCollectionView : collectionView
+            if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+        } else {
+            if !shouldDisplayTabPreviews {
+                hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+            }
         }
     }
 
@@ -1770,7 +2263,16 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeDuplicated ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeDuplicated ?? false
+    }
+
+    func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        insertNewTab(nextTo: tabIndex)
     }
 
     func tabBarViewItemDuplicateAction(_ tabBarViewItem: TabBarViewItem) {
@@ -1795,7 +2297,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return false
         }
 
-        return tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.content.canBePinned ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: .unpinned(indexPath.item))?.tabContent.canBePinned ?? false
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
@@ -1818,6 +2320,21 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     }
 
+    func cell(forPinnedTabAt index: Int) -> NSView? {
+        guard let pinnedTabsCollectionView,
+              let item = pinnedTabsCollectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
+            return nil
+        }
+        return item.view
+    }
+
+    func cell(forTabAt index: Int) -> NSView? {
+        guard let item = collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
+            return nil
+        }
+        return item.view
+    }
+
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
         guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
         PinnedTabsDiscoveryPopover.popoverPresented = true
@@ -1835,7 +2352,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
             self.pinnedTabsDiscoveryPopover = popover
 
-            guard let view = self.pinnedTabsHostingView else { return }
+            guard let view = self.pinnedTabsCollectionView else { return }
             let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
             popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
@@ -1856,7 +2373,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeBookmarked ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeBookmarked ?? false
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
@@ -1883,7 +2400,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.tabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(
             websitesInfo: websitesInfo,
             bookmarkManager: bookmarkManager
@@ -1904,6 +2421,71 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: tabIndex) {
+            return
+        }
+
+        if let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid {
+            aiChatCoordinator?.closeFloatingWindow(for: tabID)
+        }
+        tabCollectionViewModel.remove(at: tabIndex)
+    }
+
+    private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
+        aiChatCoordinator?.isChatFloating(for: tabID) == true
+    }
+
+    @discardableResult
+    func tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for tabIndex: TabIndex) -> Bool {
+        guard let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid,
+              shouldWarnBeforeClosingFloatingAIChat(tabID: tabID),
+              let tabBarViewItem = tabBarViewItem(for: tabIndex) else {
+            return false
+        }
+
+        dismissAIChatCloseWarningPresenter()
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            action: .closeTabWithFloatingAIChat,
+            buttonHandlers: [.closeTab: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+                self?.closeTab(for: tabID)
+            },
+            .dismiss: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+            }],
+            anchorViewProvider: {
+                tabBarViewItem.view
+            }
+        )
+
+        let manager = WarnBeforeQuitManager(
+            action: .closeTabWithFloatingAIChat,
+            isWarningEnabled: { true }
+        )
+
+        aiChatCloseWarningPresenter = presenter
+        presenter.bindForManualPresentation(to: manager) { }
+        return true
+    }
+
+    private func dismissAIChatCloseWarningPresenter() {
+        aiChatCloseWarningPresenter?.dismiss()
+        aiChatCloseWarningPresenter = nil
+    }
+
+    private func tabBarViewItem(for tabIndex: TabIndex) -> TabBarViewItem? {
+        switch tabIndex {
+        case .pinned(let index):
+            return pinnedTabsCollectionView?.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem
+        case .unpinned(let index):
+            return collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem
+        }
+    }
+
+    private func closeTab(for tabID: String) {
+        aiChatCoordinator?.closeFloatingWindow(for: tabID)
+        guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
         tabCollectionViewModel.remove(at: tabIndex)
     }
 
@@ -1975,13 +2557,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        fireproof(tab)
+        fireproof(url: url)
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
@@ -2005,22 +2587,40 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        removeFireproofing(from: tab)
+        removeFireproofing(url: url)
+    }
+
+    func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
+        guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
+
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tabBarViewItem.tabViewModel is UnloadedTabViewModel {
+            tabCollectionViewModel.resumeTab(at: tabIndex)
+        } else {
+            tabCollectionViewModel.suspendTab(at: tabIndex)
+        }
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item] else { return }
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else { return }
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        guard let tab = tabCollectionViewModel.materialize(at: tabIndex) else { return }
 
         if let url = URL.makeURL(from: stringValue) {
             tab.setContent(.url(url, credential: nil, source: .userEntered(stringValue, downloadRequested: false)))
@@ -2042,6 +2642,29 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
 }
 
+private extension TabBarViewController {
+
+    func insertNewTab(nextTo tabIndex: TabIndex) {
+        /// `New Tab Next to Pinned`:  We'll create a new Tab at the location `0`
+        let targetIndex: TabIndex = tabIndex.isPinnedTab
+            ? .unpinned(.zero)
+            : tabIndex.makeNext()
+
+        let tab = Tab(content: .newtab, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.insert(tab, at: targetIndex, selected: true)
+    }
+
+    func tabIndex(forTabBarViewItem item: TabBarViewItem) -> TabIndex? {
+        let isPinned = item.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : collectionView
+        guard let indexPath = collectionView?.indexPath(for: item) else {
+            return nil
+        }
+
+        return isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+    }
+}
+
 extension TabBarViewController {
 
     func startFireButtonPulseAnimation() {
@@ -2050,6 +2673,50 @@ extension TabBarViewController {
 
     func stopFireButtonPulseAnimation() {
         ViewHighlighter.stopHighlighting(view: fireButton)
+    }
+
+}
+
+// MARK: - Duck.ai Chrome Context Menu
+
+extension TabBarViewController: NSMenuDelegate {
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === duckAIChromeContextMenu else { return }
+        menu.removeAllItems()
+
+        guard isChromeSidebarFeatureEnabled, aiChatMenuConfig.shouldDisplayAnyAIChatFeature else {
+            return
+        }
+
+        let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let sidebarHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+        let duckAIItem = NSMenuItem(
+            title: duckAIHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton,
+            action: duckAIHidden ? #selector(showDuckAITitleButtonAction) : #selector(hideDuckAITitleButtonAction),
+            keyEquivalent: "Y"
+        )
+        duckAIItem.target = self
+        menu.addItem(duckAIItem)
+
+        let sidebarItem = NSMenuItem(
+            title: sidebarHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton,
+            action: sidebarHidden ? #selector(showDuckAISidebarButtonAction) : #selector(hideDuckAISidebarButtonAction),
+            keyEquivalent: "U"
+        )
+        sidebarItem.target = self
+        menu.addItem(sidebarItem)
+
+        menu.addItem(.separator())
+
+        let settingsItem = NSMenuItem(
+            title: UserText.aiChatChromeOpenAISettings,
+            action: #selector(openAISettingsAction),
+            keyEquivalent: ""
+        )
+        settingsItem.target = self
+        menu.addItem(settingsItem)
     }
 
 }

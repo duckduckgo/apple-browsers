@@ -134,7 +134,7 @@ final class PrivacyStatsTests: XCTestCase {
         var stats = await privacyStats.fetchPrivacyStats()
         XCTAssertEqual(stats, [:])
 
-        try await Task.sleep(nanoseconds: 1_500_000_000)
+        await waitForStatsUpdateEvent()
 
         stats = await privacyStats.fetchPrivacyStats()
         XCTAssertEqual(stats, ["A": 1])

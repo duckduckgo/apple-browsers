@@ -23,7 +23,8 @@ import Testing
 
 final class SwiftObjectRetainCycleBreakerTests {
 
-    @Test("Break retain cycle between two strongly linked objects")
+    @available(iOS 16, macOS 13, *)
+    @Test("Break retain cycle between two strongly linked objects", .timeLimit(.minutes(1)))
     func simpleRetainCycleBreak() {
         class A: NSObject {
             var b: B?
@@ -55,7 +56,8 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(bDeallocated)
     }
 
-    @Test("Break retain cycle between two strongly linked objects with one holding a lazy var")
+    @available(iOS 16, macOS 13, *)
+    @Test("Break retain cycle between two strongly linked objects with one holding a lazy var", .timeLimit(.minutes(1)))
     func lazyVarRetainCycleBreak() {
         class A: NSObject {
             lazy var b: B = B()
@@ -86,7 +88,8 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(bDeallocated)
     }
 
-    @Test("Validate the lazy var can be reinitialized after the retain cycle break")
+    @available(iOS 16, macOS 13, *)
+    @Test("Validate the lazy var can be reinitialized after the retain cycle break", .timeLimit(.minutes(1)))
     func lazyVarReinitializationAfterRetainCycleBreak() {
         class A: NSObject {
             lazy var b: B = B()
@@ -119,7 +122,8 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(!aDeallocated)
     }
 
-    @Test("Field not found should not crash or affect unrelated state")
+    @available(iOS 16, macOS 13, *)
+    @Test("Field not found should not crash or affect unrelated state", .timeLimit(.minutes(1)))
     func missingFieldName() {
         class A: NSObject {
             var something: NSObject? = NSObject()
@@ -132,7 +136,8 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(a.something != nil)
     }
 
-    @Test("Nullify field in object with multiple fields")
+    @available(iOS 16, macOS 13, *)
+    @Test("Nullify field in object with multiple fields", .timeLimit(.minutes(1)))
     func multipleFieldsObject() {
         class A: NSObject {
             var flag: Bool = false
@@ -151,7 +156,8 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(a.x !== expected)
     }
 
-    @Test("Gracefully handle empty class")
+    @available(iOS 16, macOS 13, *)
+    @Test("Gracefully handle empty class", .timeLimit(.minutes(1)))
     func emptyObject() {
         class A: NSObject {}
 

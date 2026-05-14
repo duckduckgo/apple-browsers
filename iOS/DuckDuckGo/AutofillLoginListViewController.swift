@@ -46,7 +46,9 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var emptyView: UIView = {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            }
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
@@ -136,7 +138,6 @@ final class AutofillLoginListViewController: UIViewController {
         return searchController
     }()
 
-
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.delegate = self
@@ -153,6 +154,8 @@ final class AutofillLoginListViewController: UIViewController {
     // This is used to prevent the next Promo from being displayed immediately after one has been dismissed
     private var surveyPromptPresented: Bool = false
     private var importPromoPresented: Bool = false
+    private var syncPromoPresented: Bool = false
+    private var extensionPromoPresented: Bool = false
 
     private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: tableView,
@@ -180,6 +183,7 @@ final class AutofillLoginListViewController: UIViewController {
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
     private let keyValueStore: ThrowingKeyValueStoring
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(appSettings: AppSettings,
          currentTabUrl: URL? = nil,
@@ -191,13 +195,15 @@ final class AutofillLoginListViewController: UIViewController {
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
         }
-        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore)
+        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore, extensionPromotionManager: extensionPromotionManager)
         self.syncService = syncService
         self.selectedAccount = selectedAccount
         self.openSearch = openSearch
@@ -205,6 +211,8 @@ final class AutofillLoginListViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(nibName: nil, bundle: nil)
 
         authenticate()
@@ -249,6 +257,11 @@ final class AutofillLoginListViewController: UIViewController {
         updateViewState()
         configureNotification()
         registerForKeyboardNotifications()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.passwordsPageUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -348,9 +361,13 @@ final class AutofillLoginListViewController: UIViewController {
 
     private func configureNotification() {
         addObserver(for: UIApplication.didBecomeActiveNotification, selector: #selector(appDidBecomeActiveCallback))
+        addObserversForResignActive()
+        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
+    }
+
+    private func addObserversForResignActive() {
         addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
         addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
-        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
     }
 
     private func addObserver(for notification: Notification.Name, selector: Selector) {
@@ -362,6 +379,10 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appDidBecomeActiveCallback() {
+        // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
+        // Avoid intrusive re-auth while user remains in that flow.
+        guard !isInNewImportFlow else { return }
+
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
             authenticate()
@@ -370,7 +391,17 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appWillResignActiveCallback() {
+        // Keep the import flow uninterrupted when users background to export data.
+        guard !isInNewImportFlow else { return }
         viewModel.lockUI()
+    }
+
+    private var isInNewImportFlow: Bool {
+        guard let navigationController else { return false }
+
+        return navigationController.viewControllers.contains { viewController in
+            viewController is DataImportHubViewController || viewController is ImportSourceDetailViewController
+        }
     }
 
     @objc private func authenticatorInvalidateContext() {
@@ -403,7 +434,9 @@ final class AutofillLoginListViewController: UIViewController {
     private func importFileAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            }
         }
     }
 
@@ -414,17 +447,36 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: source,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        return dataImportViewController
+    }
+
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = .passwords) {
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: source,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     private func segueToImportViaSync() {
@@ -445,6 +497,20 @@ final class AutofillLoginListViewController: UIViewController {
             dismiss(animated: true) {
                 mainVC.segueToSettingsSync(with: source)
             }
+        }
+    }
+
+    private func handleDataImportCompletion() {
+        clearTableHeaderView()
+        importPromoPresented = false
+        viewModel.updateData()
+    }
+
+    private func segueToExtensionManagement() {
+        if #available(iOS 18, *) {
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: .passwordsPromotion)
+            autofillExtensionSettingsViewController.delegate = self
+            navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
         }
     }
 
@@ -687,6 +753,7 @@ final class AutofillLoginListViewController: UIViewController {
         accountsCountLabel.sizeToFit()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func updateTableHeaderView() {
         guard tableView.frame != .zero else {
             return
@@ -711,12 +778,30 @@ final class AutofillLoginListViewController: UIViewController {
         if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
             if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
                 configureTableHeaderView(for: .syncPromo(.passwords))
+                syncPromoPresented = true
             }
             return
         }
 
-        // No header view is needed, clear the table header
-        clearTableHeaderView()
+        // Extension promo is lowest priority - only check if no other promos shown this session
+        if importPromoPresented || surveyPromptPresented || syncPromoPresented {
+            clearTableHeaderView()
+            return
+        }
+
+        viewModel.shouldShowExtensionPromo { [weak self] shouldShowExtensionPromo in
+            guard let self else { return }
+
+            if shouldShowExtensionPromo {
+                if self.shouldUpdateHeaderView(for: .extensionPromo) {
+                    self.configureTableHeaderView(for: .extensionPromo)
+                    self.extensionPromoPresented = true
+                }
+            } else {
+                // No extension promo needed, clear the table header if no other promos were shown
+                self.clearTableHeaderView()
+            }
+        }
     }
 
     private func shouldUpdateHeaderView(for type: AutofillHeaderViewFactory.ViewType) -> Bool {
@@ -743,6 +828,11 @@ final class AutofillLoginListViewController: UIViewController {
         case .importPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .importPromo)
             if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionHeaderView> {
+                setupTableHeaderView(with: hostingController)
+            }
+        case .extensionPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .extensionPromo)
+            if let hostingController = currentHeaderHostingController as? UIHostingController<AutofillExtensionPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }
@@ -1119,10 +1209,13 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             }
             viewModel.dismissSurvey(id: survey.id)
         case .syncPromo(let touchpoint):
-            segueToSync(source: "promotion_passwords")
+            segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
+        case .extensionPromo:
+            segueToExtensionManagement()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoConfirmed)
         }
     }
 
@@ -1138,6 +1231,23 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSyncPromo()
         case .importPromo:
             viewModel.dismissImportPromo()
+        case .extensionPromo:
+            viewModel.dismissExtensionPromo()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoDismissed)
+        }
+    }
+}
+
+@available(iOS 18, *)
+extension AutofillLoginListViewController: AutofillExtensionSettingsViewControllerDelegate {
+
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, shouldDisableAuth: Bool) {
+        if shouldDisableAuth {
+            removeObserver(for: UIApplication.willResignActiveNotification)
+            removeObserver(for: UIApplication.didEnterBackgroundNotification)
+        } else {
+            addObserversForResignActive()
+            updateTableHeaderView()
         }
     }
 }
@@ -1147,9 +1257,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
 extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
-        clearTableHeaderView()
-        importPromoPresented = false
-        viewModel.updateData()
+        handleDataImportCompletion()
     }
 }
 

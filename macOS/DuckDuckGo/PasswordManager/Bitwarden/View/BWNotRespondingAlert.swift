@@ -21,15 +21,6 @@ import Foundation
 
 final class BWNotRespondingAlert: NSAlert {
 
-    static func show() {
-        alert = BWNotRespondingAlert()
-        if alert?.runModal() == .alertFirstButtonReturn {
-            alert?.restartBitwarden()
-        }
-    }
-
-    private static var alert: BWNotRespondingAlert?
-
     override init() {
         super.init()
 
@@ -39,23 +30,10 @@ final class BWNotRespondingAlert: NSAlert {
         addButton(withTitle: UserText.cancel)
     }
 
-    private func restartBitwarden() {
-#if !APPSTORE
-        let runningApplications = NSWorkspace.shared.runningApplications
-        let bitwarden = runningApplications.first { runningApplication in
-            runningApplication.bundleIdentifier == BWManager.bundleId
+    func present(restartBitwarden: @escaping () -> Void) {
+        if runModal() == .alertFirstButtonReturn {
+            restartBitwarden()
         }
-
-        bitwarden?.terminate()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: BWManager.bundleId) {
-                let configuration = NSWorkspace.OpenConfiguration()
-                configuration.activates = true
-                NSWorkspace.shared.openApplication(at: url, configuration: configuration)
-            }
-        }
-#endif
     }
 
 }

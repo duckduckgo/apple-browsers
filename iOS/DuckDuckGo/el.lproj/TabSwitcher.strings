@@ -1,26 +1,5 @@
-/* Class = "UILabel"; text = "Title"; ObjectID = "1GE-Nf-lKM"; */
-"1GE-Nf-lKM.text" = "Τίτλος";
-
-/* Class = "UILabel"; text = "Title"; ObjectID = "2GU-MM-UwX"; */
-"2GU-MM-UwX.text" = "Τίτλος";
-
-/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "ExX-zP-FAE"; */
-"ExX-zP-FAE.accessibilityLabel" = "Κλείσιμο καρτέλα";
-
-/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "G2C-qh-g3T"; */
-"G2C-qh-g3T.accessibilityLabel" = "Κλείσιμο καρτέλα";
-
-/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
-"Gyy-py-IOg.accessibilityLabel" = "Μη αναγνωσμένη καρτέλα";
-
-/* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
-"LbT-NO-T0G.text" = "Link";
-
 /* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
 "P3h-DO-2nT.title" = "Τίτλος";
-
-/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
-"qrJ-aX-XrW.accessibilityLabel" = "Μη αναγνωσμένη καρτέλα";
 
 /* Class = "UILabel"; text = "Website -- Long Title"; ObjectID = "Uu4-yR-9tN"; */
 "Uu4-yR-9tN.text" = "Ιστότοπος - Μεγάλος τίτλος";

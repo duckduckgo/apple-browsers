@@ -38,7 +38,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             displayPrice: "$9.99",
             isMonthly: true,
             introductoryOffer: mockIntroOffer,
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
 
@@ -51,7 +51,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         XCTAssertEqual(subscriptionProduct.displayPrice, "$9.99")
         XCTAssertTrue(subscriptionProduct.isMonthly)
         XCTAssertFalse(subscriptionProduct.isYearly)
-        XCTAssertTrue(subscriptionProduct.isFreeTrialProduct)
+        XCTAssertTrue(subscriptionProduct.hasIntroductoryFreeTrialOffer)
         XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
         XCTAssertNotNil(subscriptionProduct.introductoryOffer)
     }
@@ -71,7 +71,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             displayPrice: "$99.99",
             isYearly: true,
             introductoryOffer: mockIntroOffer,
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: false
         )
 
@@ -81,7 +81,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Then
         XCTAssertEqual(subscriptionProduct.id, "com.test.yearly.trial")
         XCTAssertTrue(subscriptionProduct.isYearly)
-        XCTAssertTrue(subscriptionProduct.isFreeTrialProduct)
+        XCTAssertTrue(subscriptionProduct.hasIntroductoryFreeTrialOffer)
         XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
     }
 
@@ -92,7 +92,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             displayName: "Monthly Regular",
             displayPrice: "$9.99",
             isMonthly: true,
-            isFreeTrialProduct: false,
+            hasIntroductoryFreeTrialOffer: false,
             isEligibleForFreeTrial: false
         )
 
@@ -102,7 +102,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Then
         XCTAssertEqual(subscriptionProduct.id, "com.test.monthly.regular")
         XCTAssertTrue(subscriptionProduct.isMonthly)
-        XCTAssertFalse(subscriptionProduct.isFreeTrialProduct)
+        XCTAssertFalse(subscriptionProduct.hasIntroductoryFreeTrialOffer)
         XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
         XCTAssertNil(subscriptionProduct.introductoryOffer)
     }
@@ -111,7 +111,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.trial",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
 
@@ -131,7 +131,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.regular",
-            isFreeTrialProduct: false,
+            hasIntroductoryFreeTrialOffer: false,
             isEligibleForFreeTrial: false
         )
 
@@ -163,7 +163,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             isMonthly: false,
             isYearly: true,
             introductoryOffer: mockIntroOffer,
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
 
@@ -176,7 +176,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         XCTAssertEqual(subscriptionProduct.description, "Test Description")
         XCTAssertFalse(subscriptionProduct.isMonthly)
         XCTAssertTrue(subscriptionProduct.isYearly)
-        XCTAssertTrue(subscriptionProduct.isFreeTrialProduct)
+        XCTAssertTrue(subscriptionProduct.hasIntroductoryFreeTrialOffer)
         XCTAssertNotNil(subscriptionProduct.introductoryOffer)
         XCTAssertEqual(subscriptionProduct.introductoryOffer?.id, "offer_id")
     }
@@ -185,7 +185,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.trial",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
 
@@ -204,7 +204,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.trial",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: false
         )
 
@@ -223,7 +223,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.regular",
-            isFreeTrialProduct: false,
+            hasIntroductoryFreeTrialOffer: false,
             isEligibleForFreeTrial: false
         )
 
@@ -242,7 +242,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.trial",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
 
@@ -268,7 +268,7 @@ private class MockStoreProduct: StoreProduct {
     let isMonthly: Bool
     let isYearly: Bool
     let introductoryOffer: (any SubscriptionProductIntroductoryOffer)?
-    let isFreeTrialProduct: Bool
+    let hasIntroductoryFreeTrialOffer: Bool
     private var mockIsEligibleForFreeTrial: Bool
 
     init(
@@ -279,7 +279,7 @@ private class MockStoreProduct: StoreProduct {
         isMonthly: Bool = false,
         isYearly: Bool = false,
         introductoryOffer: (any SubscriptionProductIntroductoryOffer)? = nil,
-        isFreeTrialProduct: Bool = false,
+        hasIntroductoryFreeTrialOffer: Bool = false,
         isEligibleForFreeTrial: Bool = false
     ) {
         self.id = id
@@ -289,7 +289,7 @@ private class MockStoreProduct: StoreProduct {
         self.isMonthly = isMonthly
         self.isYearly = isYearly
         self.introductoryOffer = introductoryOffer
-        self.isFreeTrialProduct = isFreeTrialProduct
+        self.hasIntroductoryFreeTrialOffer = hasIntroductoryFreeTrialOffer
         self.mockIsEligibleForFreeTrial = isEligibleForFreeTrial
     }
 

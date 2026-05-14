@@ -37,7 +37,11 @@ final class RampView: NSView {
     }
 
     var isFlippedHorizontally: Bool = false
-    var rampColor: NSColor = .surfacePrimary
+    var rampColor: NSColor = .surfacePrimary {
+        didSet {
+            needsDisplay = true
+        }
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)

@@ -65,9 +65,20 @@ default.profraw
 # Claude
 .claude/settings.local.json
 
+# Cursor
+.cursor/*
+!.cursor/BUGBOT.md
+!.cursor/rules/
+
+# AI assistants
+.github/copilot-instructions.md
+
 /build-ui-tests
 
 # xcode-build-server files
 buildServer.json
 .compile
 /macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/SafariTestRunner/src/constants/metricsScript.js
+content-scope-scripts/
+privacy-configuration/
+.xcodebuildmcp/config.yaml

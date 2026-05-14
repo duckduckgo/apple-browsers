@@ -27,7 +27,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindNextTabWithSameParent() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let childTab1 = Tab(parentTab: parentTab)
             tabCollectionViewModel.append(tab: childTab1, selected: false)
             let childTab2 = Tab(parentTab: parentTab)
@@ -47,7 +47,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindPreviousTabWithSameParent() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let childTab1 = Tab(parentTab: parentTab)
             tabCollectionViewModel.append(tab: childTab1, selected: false)
             let childTab2 = Tab(parentTab: parentTab)
@@ -67,7 +67,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindParentTab_whenNoChildParentIsClose() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let normalTab = Tab()
             tabCollectionViewModel.append(tab: normalTab, selected: false)
             let childTab1 = Tab(parentTab: parentTab)
@@ -85,7 +85,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindNextTabWithRemovedTabAsParent() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let normalTab = Tab()
             tabCollectionViewModel.append(tab: normalTab, selected: false)
             let childTab1 = Tab(parentTab: parentTab)
@@ -103,7 +103,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindPreviousTabWithRemovedTabAsParent() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let childTab1 = Tab(parentTab: parentTab)
             tabCollectionViewModel.append(tab: childTab1, selected: true)
             let normalTab = Tab()
@@ -159,7 +159,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyActiveTab() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let firstTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
 
             for _ in 1..<100 {
                 tabCollectionViewModel.append(tab: Tab(), selected: false)
@@ -180,7 +180,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testWhenRecentlyOpenedTabIsClosedAfterMoving_thenItReturnsToPreviouslyActiveTab() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let firstTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
 
             for _ in 1..<100 {
                 tabCollectionViewModel.append(tab: Tab(), selected: false)
@@ -226,7 +226,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     func testWhenWeCloseATabThatIsNotActive_thenTheSelectedTabShouldNotChange() {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-            let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+            guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
             let childTab1 = Tab(parentTab: parentTab)
             tabCollectionViewModel.append(tab: childTab1, selected: false)
             let childTab2 = Tab(parentTab: parentTab)

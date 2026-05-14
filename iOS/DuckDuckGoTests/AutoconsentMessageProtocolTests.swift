@@ -20,8 +20,10 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+import BrowserServicesKitTestsUtils
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
@@ -61,7 +63,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: MockInternalUserDecider())
+                                                  internalUserDecider: PrivacyConfig.MockInternalUserDecider())
         return AutoconsentUserScript(config: manager.privacyConfig, preferences: MockAutoconsentPreferences())
     }()
 
@@ -73,7 +75,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "file://helicopter"
         ])
@@ -92,7 +94,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "https://example.com"
         ])
@@ -119,7 +121,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     // Flaky test that fails often, to re-evaluate. See 15s timeout, something wrong here
     @MainActor
     func testEval() {
-        let message = MockWKScriptMessage(name: "eval", body: [
+        let message = WKScriptMessage.mock(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
@@ -140,7 +142,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "popupFound", body: [
+        let message = WKScriptMessage.mock(name: "popupFound", body: [
             "type": "popupFound",
             "cmp": "some cmp",
             "url": "some url"
@@ -156,31 +158,106 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
     }
-}
 
-class MockWKScriptMessage: WKScriptMessage {
+    // MARK: - Reload Loop Detection
 
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
+    @MainActor
+    func testWhenSamePopupFoundAfterAutoconsentDoneThenReloadLoopDisablesAutoAction() {
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
 
-    override var name: String {
-        return mockedName
+        let config = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertNotNil(config)
+        XCTAssertNil(config?["autoAction"] as? String, "autoAction should be cleared after reload loop is detected")
     }
 
-    override var body: Any {
-        return mockedBody
+    @MainActor
+    func testWhenCosmeticAutoconsentDoneThenReloadLoopStateIsClearedAndAutoActionRemains() {
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: true)
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+
+        let config = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(config?["autoAction"] as? String, "optOut", "Cosmetic rules should not trigger reload loop detection")
     }
 
-    override var webView: WKWebView? {
-        return mockedWebView
+    @MainActor
+    func testWhenDifferentCMPDetectedThenNoReloadLoop() {
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "CMP_A", url: "https://example.com")
+        sendAutoconsentDone(cmp: "CMP_A", url: "https://example.com", isCosmetic: false)
+        sendPopupFound(cmp: "CMP_B", url: "https://example.com")
+
+        let config = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(config?["autoAction"] as? String, "optOut", "A different CMP should not trigger reload loop detection")
     }
 
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
+    @MainActor
+    func testWhenMainFrameURLChangesThenReloadLoopStateClears() {
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+
+        let loopedConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertNil(loopedConfig?["autoAction"] as? String, "Reload loop should be detected on the same URL")
+
+        let navigatedConfig = sendInit(url: "https://other.com")?["config"] as? [String: Any]
+        XCTAssertEqual(navigatedConfig?["autoAction"] as? String, "optOut", "Navigating to a different URL should clear the reload loop state")
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    @discardableResult
+    private func sendInit(url: String) -> [String: Any]? {
+        sendMessage(name: "init", body: [
+            "type": "init",
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendPopupFound(cmp: String, url: String) {
+        _ = sendMessage(name: "popupFound", body: [
+            "type": "popupFound",
+            "cmp": cmp,
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendAutoconsentDone(cmp: String, url: String, isCosmetic: Bool) {
+        _ = sendMessage(name: "autoconsentDone", body: [
+            "type": "autoconsentDone",
+            "cmp": cmp,
+            "url": url,
+            "isCosmetic": isCosmetic
+        ])
+    }
+
+    @MainActor
+    private func sendMessage(name: String, body: [String: Any]) -> [String: Any]? {
+        let expect = expectation(description: "reply for \(name)")
+        var receivedReply: [String: Any]?
+        let message = WKScriptMessage.mock(name: name, body: body)
+        userScript.handleMessage(
+            replyHandler: { (msg: Any?, _: String?) in
+                if let msg,
+                   let data = try? JSONSerialization.data(withJSONObject: msg, options: .sortedKeys),
+                   let json = try? JSONSerialization.jsonObject(with: data, options: []),
+                   let dict = json as? [String: Any] {
+                    receivedReply = dict
+                }
+                expect.fulfill()
+            },
+            message: message
+        )
+        waitForExpectations(timeout: 1.0)
+        return receivedReply
     }
 }
 

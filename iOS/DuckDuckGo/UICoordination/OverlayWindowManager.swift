@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol OverlayWindowManaging {
 
@@ -49,6 +49,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
     private let aiChatSettings: AIChatSettings
+    private let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     private let mobileCustomization: MobileCustomization
 
     init(window: UIWindow,
@@ -56,12 +57,14 @@ final class OverlayWindowManager: OverlayWindowManaging {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettings,
+         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          mobileCustomization: MobileCustomization) {
         self.window = window
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.mobileCustomization = mobileCustomization
     }
 
@@ -69,10 +72,15 @@ final class OverlayWindowManager: OverlayWindowManaging {
         activeReasons.insert(reason)
         let blankSnapshotViewController = BlankSnapshotViewController(addressBarPosition: appSettings.currentAddressBarPosition,
                                                                       aiChatSettings: aiChatSettings,
+                                                                      aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                                       voiceSearchHelper: voiceSearchHelper,
                                                                       featureFlagger: featureFlagger,
                                                                       appSettings: appSettings,
                                                                       mobileCustomization: mobileCustomization)
+        let isMinimalChrome = !AppWidthObserver.shared.isPad
+            && featureFlagger.isFeatureOn(.minimalChromeInLandscape)
+            && window.bounds.width > window.bounds.height
+        blankSnapshotViewController.useMinimalChromeLayout = AppWidthObserver.shared.isLargeWidth || isMinimalChrome
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
     }

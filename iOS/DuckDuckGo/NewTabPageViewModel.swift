@@ -26,11 +26,20 @@ final class NewTabPageViewModel: ObservableObject {
 
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
+    @Published var escapeHatch: EscapeHatchModel?
+    @Published var sectionTitle: String?
+    @Published var openTabCount: Int = 0
+    var onEscapeHatchTap: (() -> Void)?
+    var onTabSwitcherTap: (() -> Void)?
+    private(set) var fireTab: Bool
+
     private(set) var isDragging: Bool = false
 
     private let pixelFiring: PixelFiring.Type
 
-    init(pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(fireTab: Bool,
+         pixelFiring: PixelFiring.Type = Pixel.self) {
+        self.fireTab = fireTab
         self.pixelFiring = pixelFiring
 
         isOnboarding = false

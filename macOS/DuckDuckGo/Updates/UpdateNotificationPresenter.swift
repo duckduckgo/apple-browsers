@@ -16,56 +16,124 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Cocoa
-import SwiftUI
 import Common
 import os.log
 import PixelKit
+import SwiftUI
 
-final class UpdateNotificationPresenter {
+final class UpdateNotificationPresenter: UpdateNotificationPresenting {
 
     static let presentationTimeInterval: TimeInterval = 10
 
-    func showUpdateNotification(icon: NSImage, text: String, buttonText: String? = nil, presentMultiline: Bool = false) {
-        Logger.updates.log("Notification presented: \(text, privacy: .public)")
+    private let pixelFiring: PixelFiring?
+    private let shouldSuppressPostUpdateNotification: () -> Bool
+    private let showNotificationPopover: @MainActor (PopoverMessageViewController) -> Bool
+    private var currentPopover: PopoverMessageViewController?
 
-        DispatchQueue.main.async {
-            guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController ?? Application.appDelegate.windowControllersManager.mainWindowControllers.last,
-                  let button = windowController.mainViewController.navigationBarViewController.optionsButton else {
-                return
+    init(pixelFiring: PixelFiring?,
+         shouldSuppressPostUpdateNotification: @escaping () -> Bool = { false },
+         showNotificationPopover: @escaping @MainActor (PopoverMessageViewController) -> Bool) {
+        self.pixelFiring = pixelFiring
+        self.shouldSuppressPostUpdateNotification = shouldSuppressPostUpdateNotification
+        self.showNotificationPopover = showNotificationPopover
+    }
+
+    func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {
+        let manualActionText: String
+        if StandardApplicationBuildType().isAppStoreBuild {
+            manualActionText = UserText.manualUpdateAppStoreAction
+        } else {
+            manualActionText = UserText.manualUpdateAction
+        }
+
+        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : manualActionText
+
+        switch updateType {
+        case .critical:
+            showUpdateNotification(
+                icon: NSImage.criticalUpdateNotificationInfo,
+                text: "\(UserText.criticalUpdateNotification) \(action)",
+                presentMultiline: true
+            )
+        case .regular:
+            showUpdateNotification(
+                icon: NSImage.updateNotificationInfo,
+                text: "\(UserText.updateAvailableNotification) \(action)",
+                presentMultiline: true
+            )
+        }
+
+        // Track update notification shown
+        pixelFiring?.fire(UpdateFlowPixels.updateNotificationShown)
+    }
+
+    func showUpdateNotification(for updateStatus: AppUpdateStatus) {
+        Task { @MainActor [weak self] in
+            guard let self, !self.shouldSuppressPostUpdateNotification() else { return }
+
+            switch updateStatus {
+            case .noChange: break
+            case .updated:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserUpdatedNotification, buttonText: UserText.viewDetails)
+            case .downgraded:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserDowngradedNotification, buttonText: UserText.viewDetails)
             }
-
-            let parentViewController = windowController.mainViewController
-
-            guard parentViewController.view.window?.isKeyWindow == true, (parentViewController.presentedViewControllers ?? []).isEmpty else {
-                return
-            }
-
-            let buttonAction: (() -> Void)? = { [weak self] in
-                self?.openUpdatesPage()
-            }
-
-            let viewController = PopoverMessageViewController(message: text,
-                                                              image: icon,
-                                                              buttonText: buttonText,
-                                                              buttonAction: buttonAction,
-                                                              shouldShowCloseButton: true,
-                                                              presentMultiline: presentMultiline,
-                                                              autoDismissDuration: Self.presentationTimeInterval,
-                                                              onClick: { [weak self] in
-                self?.openUpdatesPage()
-            })
-
-            viewController.show(onParent: parentViewController, relativeTo: button)
         }
     }
 
-    func openUpdatesPage() {
-        // Track update notification tapped
-         PixelKit.fire(UpdateFlowPixels.updateNotificationTapped)
+    private func showUpdateNotification(icon: NSImage, text: String, buttonText: String? = nil, presentMultiline: Bool = false) {
+        Logger.updates.log("Notification presented: \(text, privacy: .public)")
 
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            let viewController = PopoverMessageViewController(message: text,
+                                                              image: icon,
+                                                              autoDismissDuration: Self.presentationTimeInterval,
+                                                              shouldShowCloseButton: true,
+                                                              presentMultiline: presentMultiline,
+                                                              buttonText: buttonText,
+                                                              buttonAction: { [weak self] in
+                self?.openUpdatesPage()
+            },
+                                                              clickAction: { [weak self] in
+                self?.openUpdatesPage()
+            },
+                                                              onDismiss: { [weak self] in
+                self?.currentPopover = nil
+            })
+
+            if self.showNotificationPopover(viewController) {
+                self.currentPopover = viewController
+            }
+        }
+    }
+
+    /// Dismisses the update popover if currently presented. Safe no-op otherwise.
+    public func dismissIfPresented() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let popover = self.currentPopover,
+                  let presenter = popover.presentingViewController else { return }
+            presenter.dismiss(popover)
+            self.currentPopover = nil
+        }
+    }
+
+    /// Opens the appropriate page for viewing update information.
+    ///
+    /// **App Store vs Sparkle Behavior:**
+    /// - **App Store**: Opens Mac App Store app to DuckDuckGo's store page
+    /// - **Sparkle**: Opens internal Release Notes tab in browser with update details
+    ///
+    /// **Usage**: Called when user wants to see update details, release notes, or manually update.
+    /// Provides access to detailed update information and manual update path.
+    func openUpdatesPage() {
+        pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
         DispatchQueue.main.async {
-            Application.appDelegate.updateController.openUpdatesPage()
+            Application.appDelegate.updateController?.openUpdatesPage()
         }
     }
 }

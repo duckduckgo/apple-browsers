@@ -18,6 +18,7 @@
 
 import Combine
 import PrivacyStats
+import AutoconsentStats
 import PersistenceTestingUtils
 import TrackerRadarKit
 import XCTest
@@ -45,8 +46,9 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
         return privacyStatsTotalCount
     }
 
-    func clearPrivacyStats() async {
+    func clearPrivacyStats() async -> Result<Void, Error> {
         clearPrivacyStatsCallCount += 1
+        return .success(())
     }
 
     func handleAppTermination() async {
@@ -60,6 +62,46 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
     var handleAppTerminationCallCount: Int = 0
     var privacyStats: [String: Int64] = [:]
     var privacyStatsTotalCount: Int64 = 0
+}
+
+final class CapturingAutoconsentStats: AutoconsentStatsCollecting {
+
+    var statsUpdatePublisher: AnyPublisher<Void, Never> {
+        statsUpdateSubject.eraseToAnyPublisher()
+    }
+
+    let statsUpdateSubject = PassthroughSubject<Void, Never>()
+
+    func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {
+        recordAutoconsentActionCalls.append((clicksMade, timeSpent))
+    }
+
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 {
+        fetchTotalCookiePopUpsBlockedCallCount += 1
+        return totalCookiePopUpsBlocked
+    }
+
+    func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
+        fetchAutoconsentDailyUsagePackCallCount += 1
+        return AutoconsentDailyUsagePack(
+            totalCookiePopUpsBlocked: totalCookiePopUpsBlocked,
+            totalClicksMadeBlockingCookiePopUps: totalClicksMade,
+            totalTotalTimeSpentBlockingCookiePopUps: totalTimeSpent
+        )
+    }
+
+    func clearAutoconsentStats() async -> Result<Void, Error> {
+        clearAutoconsentStatsCallCount += 1
+        return .success(())
+    }
+
+    var recordAutoconsentActionCalls: [(clicksMade: Int64, timeSpent: TimeInterval)] = []
+    var clearAutoconsentStatsCallCount: Int = 0
+    var fetchTotalCookiePopUpsBlockedCallCount: Int = 0
+    var fetchAutoconsentDailyUsagePackCallCount: Int = 0
+    var totalCookiePopUpsBlocked: Int64 = 0
+    var totalClicksMade: Int64 = 0
+    var totalTimeSpent: TimeInterval = 0
 }
 
 final class MockPrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProviding {

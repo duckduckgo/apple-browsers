@@ -45,6 +45,11 @@ extension ScreenshotService: UIScreenshotServiceDelegate {
 
         let zoomScale = webView.scrollView.zoomScale
 
+        guard zoomScale > 0 else {
+            completionHandler(nil, 0, .zero)
+            return
+        }
+
         // The PDF's coordinate space has its origin at the bottom left, so the view's origin.y needs to be converted
         let visibleBounds = CGRect(
             x: webView.scrollView.contentOffset.x / zoomScale,

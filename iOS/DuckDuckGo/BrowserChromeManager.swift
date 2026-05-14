@@ -24,6 +24,7 @@ protocol BrowserChromeDelegate: AnyObject {
     func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?)
     func setNavigationBarHidden(_ hidden: Bool)
     func setRefreshControlEnabled(_ isEnabled: Bool)
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool)
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?)
     
@@ -49,13 +50,17 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
             animator.delegate = delegate
         }
     }
-    
+
+    var onUserScrolled: (() -> Void)?
+
     private let animator = BarsAnimator()
     
     private var observation: NSKeyValueObservation?
 
     private var startZoomScale: CGFloat = 0
-    
+
+    private var scrollToTop = true
+
     func attach(to scrollView: UIScrollView) {
         detach()
         
@@ -80,8 +85,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard !scrollView.isZooming else { return }
-        
+
         guard scrollView.isDragging else { return }
+        onUserScrolled?()
         guard canHideBars(for: scrollView) else {
             if animator.barsState != .revealed {
                 animator.revealBars(animated: true)
@@ -130,15 +136,25 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        defer {
+            scrollToTop = true
+        }
+
         switch animator.barsState {
         case .hidden:
             animator.revealBars(animated: true)
             return false
+        case .transitioning:
+            return false
         default:
-            return true
+            return scrollToTop
         }
     }
-    
+
+    func preventNextScrollToTop() {
+        scrollToTop = false
+    }
+
     /// Bars should not be hidden in case ScrollView content is smaller than full (with bars hidden) viewport.
     private func canHideBars(for scrollView: UIScrollView) -> Bool {
         let heightAllowsHide = scrollView.bounds.height + (delegate?.barsMaxHeight ?? 0) < scrollView.contentSize.height

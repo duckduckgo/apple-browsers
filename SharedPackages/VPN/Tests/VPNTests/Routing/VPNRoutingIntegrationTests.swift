@@ -258,13 +258,16 @@ final class VPNRoutingIntegrationTests: XCTestCase {
             let includedRoutes = resolver.includedRoutes
             let excludedRoutes = resolver.excludedRoutes
 
-            let broadIncludedRanges = includedRoutes.filter { $0.networkPrefixLength < 32 }
-            let broadExcludedRanges = excludedRoutes.filter { $0.networkPrefixLength < 32 }
+            // Partition into IPv4 and IPv6 for separate overlap analysis.
+            // IPv6 excluded ranges (fe80::/10, ff00::/8, etc.) are expected carve-outs
+            // from the included ::/0, so we only check IPv4 broad ranges for conflicts.
+            let ipv4BroadIncluded = includedRoutes.filter { $0.address is IPv4Address && $0.networkPrefixLength < 32 }
+            let ipv4BroadExcluded = excludedRoutes.filter { $0.address is IPv4Address && $0.networkPrefixLength < 32 }
 
-            let broadOverlaps = VPNRoutingMathematicsHelpers.findActualRangeConflicts(included: broadIncludedRanges, excluded: broadExcludedRanges)
+            let ipv4Overlaps = VPNRoutingMathematicsHelpers.findActualRangeConflicts(included: ipv4BroadIncluded, excluded: ipv4BroadExcluded)
 
-            XCTAssertTrue(broadOverlaps.isEmpty,
-                         "Should have no broad range overlaps \(config.description): \(broadOverlaps)")
+            XCTAssertTrue(ipv4Overlaps.isEmpty,
+                         "Should have no IPv4 broad range overlaps \(config.description): \(ipv4Overlaps)")
         }
     }
 
@@ -296,6 +299,59 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
         // DNS routes should override exclusions, so conflicts are expected but handled
     }
+    // MARK: - IPv6 Address Classification Tests
+
+    /// Verifies that well-known IPv6 addresses are correctly routed or excluded based on VPN configuration
+    func testIPv6AddressClassification() {
+        let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
+
+        // Test with excludeLocalNetworks = true
+        let resolverExcluding = VPNRoutingTableResolver(
+            dnsServers: dnsServers,
+            excludeLocalNetworks: true
+        )
+
+        let includedExcluding = resolverExcluding.includedRoutes
+        let excludedExcluding = resolverExcluding.excludedRoutes
+
+        // Google IPv6 DNS (2001:4860:4860::8888) — should be tunneled via ::/0
+        let googleIPv6 = IPv6Address("2001:4860:4860::8888")!
+        let googleTunneled = includedExcluding.contains { $0.contains(googleIPv6) }
+        let googleExcluded = excludedExcluding.contains { $0.contains(googleIPv6) }
+        XCTAssertTrue(googleTunneled, "Google IPv6 DNS should be tunneled (covered by ::/0)")
+        XCTAssertFalse(googleExcluded, "Google IPv6 DNS should not be excluded")
+
+        // Loopback (::1) — should be excluded
+        let loopback = IPv6Address("::1")!
+        let loopbackExcluded = excludedExcluding.contains { $0.contains(loopback) }
+        XCTAssertTrue(loopbackExcluded, "IPv6 loopback should be excluded")
+
+        // Link-local (fe80::1) — should be excluded
+        let linkLocal = IPv6Address("fe80::1")!
+        let linkLocalExcluded = excludedExcluding.contains { $0.contains(linkLocal) }
+        XCTAssertTrue(linkLocalExcluded, "IPv6 link-local should be excluded")
+
+        // ULA (fd12::1) — should be excluded when excludeLocalNetworks=true
+        let ula = IPv6Address("fd12::1")!
+        let ulaExcludedWhenExcluding = excludedExcluding.contains { $0.contains(ula) }
+        XCTAssertTrue(ulaExcludedWhenExcluding, "IPv6 ULA should be excluded when excludeLocalNetworks=true")
+
+        // Test with excludeLocalNetworks = false
+        let resolverIncluding = VPNRoutingTableResolver(
+            dnsServers: dnsServers,
+            excludeLocalNetworks: false
+        )
+
+        let includedIncluding = resolverIncluding.includedRoutes
+        let excludedIncluding = resolverIncluding.excludedRoutes
+
+        // ULA (fd12::1) — should be tunneled when excludeLocalNetworks=false (covered by ::/0)
+        let ulaTunneledWhenIncluding = includedIncluding.contains { $0.contains(ula) }
+        let ulaExcludedWhenIncluding = excludedIncluding.contains { $0.contains(ula) }
+        XCTAssertTrue(ulaTunneledWhenIncluding, "IPv6 ULA should be tunneled when excludeLocalNetworks=false")
+        XCTAssertFalse(ulaExcludedWhenIncluding, "IPv6 ULA should not be excluded when excludeLocalNetworks=false")
+    }
+
     // MARK: - Configuration Change Tests
 
     /// Verifies that users can switch between security mode and local access mode by toggling network settings
@@ -375,13 +431,21 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("::/0"),
                      "\(testName): Should include IPv6 default route")
 
-        // Verify system exclusions (always apply regardless of local network setting)
+        // Verify IPv4 system exclusions (always apply regardless of local network setting)
         XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"),
                      "\(testName): Should exclude loopback")
         XCTAssertTrue(excludedStrings.contains("224.0.0.0/4"),
                      "\(testName): Should exclude multicast")
         XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"),
                      "\(testName): Should exclude link-local")
+
+        // Verify IPv6 system exclusions (always apply)
+        XCTAssertTrue(excludedStrings.contains("::1/128"),
+                     "\(testName): Should exclude IPv6 loopback")
+        XCTAssertTrue(excludedStrings.contains("fe80::/10"),
+                     "\(testName): Should exclude IPv6 link-local")
+        XCTAssertTrue(excludedStrings.contains("ff00::/8"),
+                     "\(testName): Should exclude IPv6 multicast")
 
         // Verify local network handling based on VPN implementation specifics
         if includeLocalNetworks {
@@ -393,6 +457,10 @@ final class VPNRoutingIntegrationTests: XCTestCase {
                 XCTAssertFalse(excludedStrings.contains(localNetwork),
                               "\(testName): Should NOT exclude local network \(localNetwork) when includeLocalNetworks=true")
             }
+
+            // IPv6 ULA should NOT be excluded when including local networks
+            XCTAssertFalse(excludedStrings.contains("fc00::/7"),
+                          "\(testName): Should NOT exclude IPv6 ULA fc00::/7 when includeLocalNetworks=true")
         } else {
             // When excluding local networks: only localNetworkRangeWithoutDNS is excluded
             // 10.0.0.0/8 is intentionally NOT excluded (VPN tunnels commonly use 10.x.x.x)
@@ -407,6 +475,10 @@ final class VPNRoutingIntegrationTests: XCTestCase {
             // 10.0.0.0/8 should NOT be excluded (special case for VPN compatibility)
             XCTAssertFalse(excludedStrings.contains("10.0.0.0/8"),
                           "\(testName): Should NOT exclude 10.0.0.0/8 (VPN tunnel compatibility)")
+
+            // IPv6 ULA should be excluded when local networks are excluded
+            XCTAssertTrue(excludedStrings.contains("fc00::/7"),
+                         "\(testName): Should exclude IPv6 ULA fc00::/7 when includeLocalNetworks=false")
         }
 
         // Verify reasonable route counts
@@ -431,9 +503,10 @@ final class VPNRoutingIntegrationTests: XCTestCase {
                          "Should include major public range \(range)")
         }
 
-        // Should exclude critical system ranges
+        // Should exclude critical system ranges (IPv4 + IPv6)
         let criticalExclusions = [
-            "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "240.0.0.0/4"
+            "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "240.0.0.0/4",
+            "::1/128", "fe80::/10", "ff00::/8"
         ]
 
         for exclusion in criticalExclusions {

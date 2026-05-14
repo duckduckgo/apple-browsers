@@ -19,9 +19,10 @@
 
 import XCTest
 import WebKit
+import BrowserServicesKit
 import ContentScopeScripts
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import BrowserServicesKitTestsUtils
 import SwiftUI
 
@@ -144,7 +145,7 @@ class MockNavigationAction: WKNavigationAction {
         self._request = request
         self._navigationType = navigationType
         self._targetFrame = targetFrame
-        self._sourceFrame = MockFrameInfo(isMainFrame: true, request: request)
+        self._sourceFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", request: request)
     }
 
     override var request: URLRequest {
@@ -162,31 +163,6 @@ class MockNavigationAction: WKNavigationAction {
     override var targetFrame: WKFrameInfo? {
         return _targetFrame
     }
-}
-
-class MockFrameInfo: WKFrameInfo {
-    private let _isMainFrame: Bool
-    private let _request: URLRequest?
-
-    init(isMainFrame: Bool, request: URLRequest? = nil) {
-        self._isMainFrame = isMainFrame
-        self._request = request
-    }
-
-    override var isMainFrame: Bool {
-        return _isMainFrame
-    }
-
-    // swiftlint:disable identifier_name
-    override var request: URLRequest {
-        if let _request {
-            return _request
-        } else {
-            return super.request
-        }
-    }
-    // swiftlint:enable identifier_name
-
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
@@ -214,7 +190,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUIWasUsed: Bool = false
     var nativeUISettingsMapped: Bool = false
     
-    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, featureFlagger: any BrowserServicesKit.FeatureFlagger, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {
+    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any PrivacyConfigurationManaging, featureFlagger: any FeatureFlagger, internalUserDecider: any InternalUserDecider) {
       // NOOP
     }
 
@@ -629,6 +605,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        // no-op
+    }
+
     var canHideBars: Bool = false
 
     var isToolbarHidden: Bool = false
@@ -647,29 +627,4 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     )
 
     var tabBarContainer: UIView = UIView()
-}
-
-// MARK: - Mock Classes
-
-class MockScriptMessage: WKScriptMessage {
-    var mockFrame: WKFrameInfo?
-    var mockName: String = ""
-    var mockBody: Any = ""
-    var mockWebView: WKWebView?
-    
-    override var frameInfo: WKFrameInfo {
-        return mockFrame ?? MockFrameInfo(isMainFrame: true)
-    }
-    
-    override var name: String {
-        return mockName
-    }
-    
-    override var body: Any {
-        return mockBody
-    }
-    
-    override var webView: WKWebView? {
-        return mockWebView
-    }
 }

@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Удалена %1$d вкладка и ее данные</string>
+			<key>few</key>
+			<string>Удалены %1$d вкладки и их данные</string>
+			<key>many</key>
+			<string>Удалено %1$d вкладок и их данные</string>
+			<key>other</key>
+			<string>Удалены вкладки (%1$d) и их данные</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Данные будут удалены с 1 сайта. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>few</key>
+			<string>Данные будут удалены с %1$d сайтов. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>many</key>
+			<string>Данные будут удалены с %1$d сайтов. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>other</key>
+			<string>Данные будут удалены с сайтов (%1$d). Операция может сопровождаться выходом из учетных записей.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку</string>
+			<key>few</key>
+			<string>Закрыть все %1$d вкладки</string>
+			<key>many</key>
+			<string>Закрыть все %1$d вкладок</string>
+			<key>other</key>
+			<string>Закрыть все вкладки (%1$d)</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -157,13 +217,73 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Заблокирован %1$d трекер</string>
+			<string>Пресечена загрузка %1$d трекера</string>
 			<key>few</key>
-			<string>Заблокировано %1$d трекера</string>
+			<string>Пресечена загрузка %1$d трекеров</string>
 			<key>many</key>
-			<string>Заблокировано %1$d трекеров</string>
+			<string>Пресечена загрузка %1$d трекеров</string>
 			<key>other</key>
-			<string>Заблокированы %1$d трекеры</string>
+			<string>Пресечена загрузка трекеров (%1$d)</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d трекер</string>
+			<key>few</key>
+			<string>%1$d трекера</string>
+			<key>many</key>
+			<string>%1$d трекеров</string>
+			<key>other</key>
+			<string>%1$d трекера</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Загружен еще %1$d домен</string>
+			<key>few</key>
+			<string>Загружено еще %1$d домена</string>
+			<key>many</key>
+			<string>Загружено еще %1$d доменов</string>
+			<key>other</key>
+			<string>Загружены еще домены (%1$d)</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d собственный трекер сайта (загружен)</string>
+			<key>few</key>
+			<string>%1$d собственных трекера сайта (загружены)</string>
+			<key>many</key>
+			<string>%1$d собственных трекеров сайта (загружены)</string>
+			<key>other</key>
+			<string>Загружено собственных трекеров сайта: %1$d</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -694,6 +814,46 @@
 			<string>%1$d выбранных вкладок</string>
 			<key>other</key>
 			<string>Выбранные вкладки (%1$d)</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d сайт исключен из очистки</string>
+			<key>few</key>
+			<string>%1$d сайта исключено из очистки</string>
+			<key>many</key>
+			<string>%1$d сайтов исключено из очистки</string>
+			<key>other</key>
+			<string>Исключено из очистки: %1$d</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ трекер</string>
+			<key>few</key>
+			<string>%2$@ трекера</string>
+			<key>many</key>
+			<string>%2$@ трекеров</string>
+			<key>other</key>
+			<string>%2$@ трекера</string>
 		</dict>
 	</dict>
 </dict>

@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import PrivacyConfig
 import XCTest
 
 final class MockAttributing: AdClickAttributing {

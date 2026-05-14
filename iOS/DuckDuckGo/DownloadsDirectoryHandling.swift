@@ -21,7 +21,7 @@ import Foundation
 
 protocol DownloadsDirectoryHandling {
     var downloadsDirectory: URL { get }
-    var downloadsDirectoryFiles: [URL] { get }
+    var downloadsDirectoryFiles: [URL] { get throws }
     func createDownloadsDirectoryIfNeeded()
     func downloadsDirectoryExists() -> Bool
     func createDownloadsDirectory()
@@ -45,10 +45,20 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
     }
 
     var downloadsDirectoryFiles: [URL] {
-        let contents = (try? FileManager.default.contentsOfDirectory(at: downloadsDirectory,
-                                                                     includingPropertiesForKeys: nil,
-                                                                     options: .skipsHiddenFiles)) ?? []
-        return contents.filter { !$0.hasDirectoryPath }
+        get throws {
+            do {
+                guard downloadsDirectoryExists() else {
+                    return []
+                }
+                let contents = try FileManager.default.contentsOfDirectory(at: downloadsDirectory,
+                                                                           includingPropertiesForKeys: nil,
+                                                                           options: .skipsHiddenFiles)
+                return contents.filter { !$0.hasDirectoryPath }
+            } catch {
+                Logger.general.error("Could not read downloadsDirectoryFiles: \(error.localizedDescription)")
+                throw error
+            }
+        }
     }
 
     func createDownloadsDirectoryIfNeeded() {
@@ -63,5 +73,6 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
 
     func createDownloadsDirectory() {
         try? FileManager.default.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
+        Logger.general.debug("Downloads directory location \(downloadsDirectory.absoluteString)")
     }
 }

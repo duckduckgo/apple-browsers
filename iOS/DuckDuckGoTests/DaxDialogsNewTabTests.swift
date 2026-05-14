@@ -120,6 +120,47 @@ final class DaxDialogsNewTabTests: XCTestCase {
         // THEN
         XCTAssertEqual(homeScreenMessage, .final)
     }
+
+    // MARK: - Zombie State Recovery
+
+    func testWhenNTPStepsCompleteAndTrackerDialogSeenButFireSkipped_ThenNextHomeScreenMessageReturnsFinal() {
+        // GIVEN
+        settings.tryAnonymousSearchShown = true
+        settings.tryVisitASiteShown = true
+        settings.browsingWithTrackersShown = true
+        settings.fireMessageExperimentShown = false
+
+        // WHEN
+        let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertEqual(homeScreenMessage, .final)
+    }
+
+    func testWhenFinalDialogSeenButNotDismissed_ThenNextHomeScreenMessageDismissesOnboarding() {
+        // GIVEN
+        settings.browsingFinalDialogShown = true
+        settings.isDismissed = false
+
+        // WHEN
+        let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertNil(homeScreenMessage)
+        XCTAssertTrue(settings.isDismissed)
+    }
+
+    func testWhenFireButtonPulseStarted_ThenFireEducationMarkedAsSeen() {
+        // GIVEN
+        settings.fireMessageExperimentShown = false
+
+        // WHEN
+        daxDialogs.fireButtonPulseStarted()
+
+        // THEN
+        XCTAssertTrue(settings.fireMessageExperimentShown)
+        XCTAssertTrue(settings.privacyButtonPulseShown)
+    }
 }
 
 class MockDaxDialogsSettings: DaxDialogsSettings {

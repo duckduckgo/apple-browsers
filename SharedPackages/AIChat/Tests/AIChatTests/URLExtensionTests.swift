@@ -225,6 +225,157 @@ final class URLExtensionTests: XCTestCase {
         }
     }
 
+    // MARK: - Subdomain Tests
+
+    func testIsDuckAIURLWithSubdomain() {
+        let urlString = "https://euw-serp-dev-testing7.duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        if let url = URL(string: urlString) {
+            XCTAssertTrue(url.isDuckAIURL, "The URL should be identified as a DuckDuckGo AI URL with subdomain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIBangWithSubdomain() {
+        let urlString = "https://euw-serp-dev-testing7.duckduckgo.com/?q=!ai+some+query"
+        if let url = URL(string: urlString) {
+            XCTAssertTrue(url.isDuckAIBang, "The URL should be identified as a DuckDuckGo AI Bang URL with subdomain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIURLRejectsMaliciousDomain() {
+        let urlString = "https://evilduckduckgo.com/?ia=chat"
+        if let url = URL(string: urlString) {
+            XCTAssertFalse(url.isDuckAIURL, "The URL should not be identified as a DuckDuckGo AI URL due to malicious domain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIBangRejectsMaliciousDomain() {
+        let urlString = "https://evilduckduckgo.com/?q=!ai+some+query"
+        if let url = URL(string: urlString) {
+            XCTAssertFalse(url.isDuckAIBang, "The URL should not be identified as a DuckDuckGo AI Bang URL due to malicious domain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    // MARK: - Voice Mode Tests
+
+    func testIsDuckAIVoiceModeWithVoiceURL() {
+        let url = URL(string: "https://duck.ai?mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithVoiceURLAndOtherParams() {
+        let url = URL(string: "https://duck.ai?q=hello&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDuckDuckGoDomain() {
+        let url = URL(string: "https://duckduckgo.com/?ia=chat&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonVoiceURL() {
+        let url = URL(string: "https://duck.ai")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDifferentModeValue() {
+        let url = URL(string: "https://duck.ai?mode=chat")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonDuckAIURL() {
+        let url = URL(string: "https://example.com?mode=voice")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    // MARK: - Chat ID Tests
+
+    func testDuckAIChatIDWithValidChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "e0328fe7-be35-43e1-9142-92c28e7e9a3b")
+    }
+
+    func testDuckAIChatIDWithMissingChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithEmptyChatID() {
+        let urlString = "https://duckduckgo.com/?ia=chat&chatID="
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithNonDuckAIURL() {
+        let urlString = "https://example.com/?chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithDuckAIHost() {
+        let urlString = "https://duck.ai/?chatID=abc123"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "abc123")
+    }
+
+    // MARK: - DuckDuckGo Homepage Tests
+
+    func testIsDuckDuckGoHomepageBareRoot() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageWithNonSearchQueryParams() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?atb=v1-1")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=web")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSERP() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=test")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=web&q=test&origin=funnel_home_website__tagline")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSubPages() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/settings")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/about")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsNonDDGAndSubdomains() {
+        XCTAssertFalse(URL(string: "https://example.com/")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://help.duckduckgo.com/")!.isDuckDuckGoHomepage) // Different subdomain
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
+    }
+
+    // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
+
+    func testShouldExcludeFromTabPickerCoversAllThreeRules() {
+        // Homepage — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=web")!))
+        // about:blank — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "about:blank")!))
+        // Duck.ai — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duck.ai/")!))
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=chat")!))
+    }
+
+    func testShouldExcludeFromTabPickerKeepsAttachableURLs() {
+        // SERP — must remain attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?q=test")!))
+        // Regular site — attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://example.com/article")!))
+        // DDG sub-page — attachable (not the bare homepage)
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/settings")!))
+    }
+
 }
 
 extension URL {

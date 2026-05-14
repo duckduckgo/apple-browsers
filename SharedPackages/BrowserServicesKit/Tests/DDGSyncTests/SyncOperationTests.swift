@@ -309,6 +309,36 @@ class SyncOperationTests: XCTestCase {
             return
         }
     }
+
+    func testPatchRequestMakerCrashesWhenUsedFromMultipleThreads() {
+        let maker = requestMaker!
+        let syncRequest = SyncRequest(
+            feature: .init(name: "bookmarks"),
+            previousSyncTimestamp: "1234",
+            sent: [Syncable(jsonObject: ["id": "1"])]
+        )
+
+        let start = DispatchSemaphore(value: 0)
+        let done = DispatchGroup()
+        let iterations = 1000
+
+        for _ in 0..<iterations {
+            done.enter()
+            DispatchQueue.global(qos: .userInitiated).async {
+                start.wait()
+                _ = try? maker.makePatchRequest(with: syncRequest,
+                                                clientTimestamp: Date(),
+                                                isCompressed: false)
+                done.leave()
+            }
+        }
+
+        for _ in 0..<iterations {
+            start.signal()
+        }
+
+        done.wait()
+    }
 }
 
 private extension Array where Element == Syncable {

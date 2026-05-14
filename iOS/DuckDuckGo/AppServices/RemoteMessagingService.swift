@@ -23,13 +23,16 @@ import Configuration
 import RemoteMessaging
 import Core
 import Persistence
+import PrivacyConfig
 import BackgroundTasks
 import DDGSync
+import DataBrokerProtection_iOS
 
-final class RemoteMessagingService {
+final class RemoteMessagingService: RemoteMessagingDebugHandling {
 
     let remoteMessagingClient: RemoteMessagingClient
     let remoteMessagingActionHandler: RemoteMessagingActionHandler
+    let remoteMessagingImageLoader: RemoteMessagingImageLoading
     let pixelReporter: RemoteMessagingPixelReporting
 
     var messageNavigator: MessageNavigator? {
@@ -47,11 +50,17 @@ final class RemoteMessagingService {
          configurationURLProvider: ConfigurationURLProviding,
          syncService: DDGSyncing,
          winBackOfferService: WinBackOfferService,
-         subscriptionDataReporter: SubscriptionDataReporting
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         subscriptionDataReporter: SubscriptionDataReporting,
+         remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
             lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
         )
+
+        self.remoteMessagingImageLoader = remoteMessagingImageLoader
 
         pixelReporter = RemoteMessagePixelReporter(
             parameterRandomiser: subscriptionDataReporter.mergeRandomizedParameters(for:with:)
@@ -71,7 +80,10 @@ final class RemoteMessagingService {
             duckPlayerStorage: DefaultDuckPlayerStorage(),
             configurationURLProvider: configurationURLProvider,
             syncService: syncService,
-            winBackOfferService: winBackOfferService
+            winBackOfferService: winBackOfferService,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 
@@ -119,7 +131,16 @@ final class RemoteMessagingService {
     func refreshRemoteMessages() {
         Task {
             try? await remoteMessagingClient.fetchAndProcess(using: remoteMessagingClient.store)
+            prefetchRemoteMessageImages()
         }
+    }
+
+    private func prefetchRemoteMessageImages() {
+        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases),
+              let imageUrl = message.content?.imageUrl else {
+            return
+        }
+        remoteMessagingImageLoader.prefetch([imageUrl])
     }
 
 }

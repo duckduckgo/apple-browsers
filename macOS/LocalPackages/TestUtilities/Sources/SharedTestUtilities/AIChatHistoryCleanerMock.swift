@@ -28,8 +28,10 @@ public final class MockAIChatHistoryCleaner {
         $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
     }
 
-    public func cleanAIChatHistory() {
+    @MainActor
+    public func cleanAIChatHistory() async -> Result<Void, Error> {
         didCleanAIChatHistory = true
+        return .success(())
     }
 
     public init(showCleanOption: Bool = false) {

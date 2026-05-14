@@ -25,6 +25,7 @@ import Core
 import Persistence
 import Bookmarks
 import DDGSync
+import PrivacyConfig
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)
@@ -136,15 +137,23 @@ final class DataImportViewController: UIViewController {
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
+        AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-
-            let summaryViewController = DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService) { [weak self] in
+            
+            let summaryViewController = DataImportSummaryViewController(
+                summary: summary,
+                importScreen: importScreen,
+                syncService: syncService,
+                isSafariImportFlow: viewModel.state.browser == .safari
+            ) { [weak self] source in
                 guard let self = self else { return }
-                if let mainViewController = self.presentingViewController as? MainViewController {
+                let mainVC = self.presentingViewController as? MainViewController ?? self.navigationController?.presentingViewController as? MainViewController
+                
+                if let mainViewController = mainVC {
                     mainViewController.dismiss(animated: true) {
-                        mainViewController.segueToSettingsSync()
+                        mainViewController.segueToSettingsSync(with: source)
                     }
                 }
             } onCompletion: { [weak self] in
@@ -239,5 +248,6 @@ extension DataImportViewController: UIDocumentPickerDelegate {
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         viewModel.isLoading = false
+        viewModel.documentPickerCancelled()
     }
 }

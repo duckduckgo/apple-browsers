@@ -1,0 +1,142 @@
+{
+    "m_debug_malicious-site-protection_single-dataset-update-performance": {
+        "description": "Fires after a single malicious site protection dataset update completes to measure the update performance. Parameters listed are needed to understand which threat/type/revision impacts performance.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "category",
+                "description": "Threat category being updated.",
+                "type": "string",
+                "enum": ["phishing", "malware", "scam"]
+            },
+            {
+                "key": "type",
+                "description": "Dataset type being updated.",
+                "type": "string",
+                "enum": ["hashPrefixSet", "filterSet"]
+            },
+            {
+                "key": "fromRevision",
+                "description": "Revision number before the update.",
+                "type": "integer"
+            },
+            {
+                "key": "toRevision",
+                "description": "Revision number after the update.",
+                "type": "integer"
+            },
+            {
+                "key": "isFullReplacement",
+                "description": "Whether the update was a full replacement (true) or incremental (false).",
+                "type": "boolean"
+            },
+            {
+                "key": "updateFrequencyMinutes",
+                "description": "Configured update frequency for this dataset type, in minutes.",
+                "type": "number"
+            },
+            {
+                "key": "performanceBucket",
+                "description": "Performance bucket classification for the update.",
+                "type": "string",
+                "enum": ["fast", "normal", "slow", "outlier"]
+            }
+        ]
+    },
+    "m_debug_malicious-site-protection_single-dataset-update-disk-usage": {
+        "description": "Fires after a single malicious site protection dataset update completes to measure local disk usage. Parameters listed are needed to understand which threat/type/revision impacts disk writes.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "category",
+                "description": "Threat category being updated.",
+                "type": "string",
+                "enum": ["phishing", "malware", "scam"]
+            },
+            {
+                "key": "type",
+                "description": "Dataset type being updated.",
+                "type": "string",
+                "enum": ["hashPrefixSet", "filterSet"]
+            },
+            {
+                "key": "toRevision",
+                "description": "Revision number after the update.",
+                "type": "integer"
+            },
+            {
+                "key": "updateFrequencyMinutes",
+                "description": "Configured update frequency for this dataset type, in minutes.",
+                "type": "number"
+            },
+            {
+                "key": "diskUsageBucket",
+                "description": "Disk usage bucket classification for the update.",
+                "type": "string",
+                "enum": ["small", "medium", "large", "xlarge"]
+            }
+        ]
+    },
+    "m_debug_malicious-site-protection_aggregate-dataset-update-performance": {
+        "description": "Fires after aggregate malicious site protection dataset updates complete to measure overall datasets performance.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "type",
+                "description": "Dataset type being updated.",
+                "type": "string",
+                "enum": ["hashPrefixSet", "filterSet"]
+            },
+            {
+                "key": "updateFrequencyMinutes",
+                "description": "Configured update frequency for this dataset type, in minutes.",
+                "type": "number"
+            },
+            {
+                "key": "performanceBucket",
+                "description": "Performance bucket classification for the aggregate update.",
+                "type": "string",
+                "enum": ["fast", "normal", "slow", "outlier"]
+            }
+        ]
+    },
+    "m_debug_malicious-site-protection_aggregate-dataset-update-disk-usage": {
+        "description": "Fires after aggregate malicious site protection dataset updates complete to measure overall local disk usage.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "type",
+                "description": "Dataset type being updated.",
+                "type": "string",
+                "enum": ["hashPrefixSet", "filterSet"]
+            },
+            {
+                "key": "updateFrequencyMinutes",
+                "description": "Configured update frequency for this dataset type, in minutes.",
+                "type": "number"
+            },
+            {
+                "key": "diskUsageBucket",
+                "description": "Disk usage bucket classification for the aggregate update.",
+                "type": "string",
+                "enum": ["small", "medium", "large", "xlarge"]
+            }
+        ]
+    }
+}

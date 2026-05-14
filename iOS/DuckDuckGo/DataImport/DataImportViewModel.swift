@@ -24,6 +24,46 @@ import Core
 import BrowserServicesKit
 import Common
 import DesignResourcesKit
+import PixelKit
+
+enum DataImportFileError {
+    case unsupportedFile
+    case noDataInZip
+    case fileUnreadable(fileType: String)
+
+    var title: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.fileImportErrorUnsupportedTitle
+        case .noDataInZip:
+            return UserText.fileImportErrorNoDataTitle
+        case .fileUnreadable:
+            return UserText.fileImportErrorCorruptTitle
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.fileImportErrorUnsupportedMessage
+        case .noDataInZip:
+            return UserText.fileImportErrorNoDataMessage
+        case .fileUnreadable(let fileType):
+            return String(format: UserText.fileImportErrorCorruptMessage, fileType)
+        }
+    }
+
+    var legacyMessage: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.dataImportFailedUnsupportedFileErrorMessage
+        case .noDataInZip:
+            return UserText.dataImportFailedNoDataInZipErrorMessage
+        case .fileUnreadable(let fileType):
+            return String(format: UserText.dataImportFailedReadErrorMessage, fileType)
+        }
+    }
+}
 
 protocol DataImportViewModelDelegate: AnyObject {
     func dataImportViewModelDidRequestImportFile(_ viewModel: DataImportViewModel)
@@ -37,13 +77,14 @@ final class DataImportViewModel: ObservableObject {
         case passwords
         case bookmarks
         case settings
+        case completeSetup = "complete_setup"
         case promo
         case inBrowserPromo = "in_browser_promo"
-        case whatsNew
+        case whatsNew = "whats_new"
 
         var documentTypes: [UTType] {
             switch self {
-            case .passwords, .settings, .promo, .inBrowserPromo, .whatsNew: return [.zip, .commaSeparatedText]
+            case .passwords, .settings, .completeSetup, .promo, .inBrowserPromo, .whatsNew: return [.zip, .commaSeparatedText]
             case .bookmarks: return [.zip, .html]
             }
         }
@@ -196,19 +237,49 @@ final class DataImportViewModel: ObservableObject {
     }
 
     weak var delegate: DataImportViewModelDelegate?
+    var onFileError: ((DataImportFileError) -> Void)?
 
     private let importManager: DataImportManaging
+    private let shouldFireLegacyPixels: Bool
 
     @Published var state: BrowserImportState
     @Published var isLoading = false
+    
 
-    init(importScreen: ImportScreen, importManager: DataImportManaging) {
+    // Wide Event
+    private let wideEvent: WideEventManaging
+    private var dataImportWideEventData: DataImportWideEventData?
+    enum dataImportWideEventError: Error {
+        case failedToImportData([DataImport.DataType])
+        case noSupportedDataInZip
+        
+        var description: String {
+            switch self {
+            case .failedToImportData(let dataTypes):
+                return "Failed to import data: \(dataTypes.map(\.description).joined(separator: ", "))"
+            case .noSupportedDataInZip:
+                return "No supported data in zip"
+            }
+        }
+    }
+
+    init(importScreen: ImportScreen,
+         importManager: DataImportManaging,
+         shouldFireLegacyPixels: Bool = true,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
         self.importManager = importManager
+        self.shouldFireLegacyPixels = shouldFireLegacyPixels
         self.state = BrowserImportState(browser: .safari, importScreen: importScreen)
+        self.wideEvent = wideEvent
     }
 
     func selectFile() {
+        setupAndStartWideEvent()
         delegate?.dataImportViewModelDidRequestImportFile(self)
+    }
+    
+    func documentPickerCancelled() {
+        completeAndCleanupWideEvent(with: .unknown(reason: DataImportWideEventData.StatusReason.documentPickerCancelled.rawValue))
     }
 
     func importDataTypes(for contents: ImportArchiveContents) -> [DataImportManager.ImportPreview] {
@@ -231,18 +302,21 @@ final class DataImportViewModel: ObservableObject {
                 case .none:
                     DispatchQueue.main.async { [weak self] in
                         self?.isLoading = false
-                        ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
+                        self?.presentFileError(.noDataInZip)
                     }
-                    Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                    let error = dataImportWideEventError.noSupportedDataInZip
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
+                    fireLegacyResultPixel(.importResultUnzipping)
                 default:
                     delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
                     self?.isLoading = false
-                    ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
+                    self?.presentFileError(.fileUnreadable(fileType: UserText.dataImportFileTypeZip))
                 }
-                Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                completeAndCleanupWideEvent(with: .failure, error: error, description: "The zip file could not be read.")
+                fireLegacyResultPixel(.importResultUnzipping)
             }
         default:
             importFile(at: url, for: type)
@@ -253,8 +327,11 @@ final class DataImportViewModel: ObservableObject {
                           for dataTypes: [DataImport.DataType]) {
         isLoading = true
         Task {
+            startDurationMeasurement(for: dataTypes)
             let summary = await importManager.importZipArchive(from: contents, for: dataTypes)
+            completeDurationMeasurement(for: dataTypes)
             Logger.autofill.debug("Imported \(summary.description)")
+            completeAndCleanupWideEvent(with: summary)
             delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
         }
     }
@@ -272,22 +349,37 @@ final class DataImportViewModel: ObservableObject {
             }
 
             do {
+                startDurationMeasurement(for: fileType)
                 guard let summary = try await importManager.importFile(at: url, for: fileType) else {
                     Logger.autofill.debug("Failed to import data")
                     presentErrorMessage(for: fileType)
+                    let error = dataImportWideEventError.failedToImportData(Array(fileType.matchingDataTypes))
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                     return
                 }
+                completeDurationMeasurement(for: fileType)
 
                 var hadAnySuccess = false
+                var isAllSuccessful = true
                 var failedImports: [(BrowserServicesKit.DataImport.DataType, Error)] = []
+                let checkedDataTypes = [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks]
 
-                for dataType in [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks] {
+                for dataType in checkedDataTypes {
                     if let result = summary[dataType] {
                         switch result {
-                        case .success:
+                        case .success(let typeSummary):
                             hadAnySuccess = true
+                            if typeSummary.isAllSuccessful {
+                                dataImportWideEventData?[keyPath: dataType.statusPath] = .success
+                            } else {
+                                isAllSuccessful = false
+                                dataImportWideEventData?[keyPath: dataType.statusPath] = .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue)
+                            }
                         case .failure(let error):
                             failedImports.append((dataType, error))
+                            isAllSuccessful = false
+                            dataImportWideEventData?[keyPath: dataType.statusPath] = .failure
+                            dataImportWideEventData?[keyPath: dataType.errorPath] = WideEventErrorData(error: error, description: error.errorType.description)
                         }
                     }
                 }
@@ -299,10 +391,19 @@ final class DataImportViewModel: ObservableObject {
                 // Only proceed to success screen if at least one type succeeded
                 if hadAnySuccess {
                     Logger.autofill.debug("Imported \(summary.description)")
+                    if isAllSuccessful {
+                        completeAndCleanupWideEvent(with: .success)
+                    } else {
+                        completeAndCleanupWideEvent(with: .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+                    }
                     delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
+                } else {
+                    let error = dataImportWideEventError.failedToImportData(checkedDataTypes)
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                 }
             } catch {
                 Logger.autofill.debug("Failed to import data: \(error)")
+                completeAndCleanupWideEvent(with: .failure, error: error, description: "Failed to import data")
                 presentErrorMessage(for: fileType)
             }
         }
@@ -313,21 +414,128 @@ final class DataImportViewModel: ObservableObject {
         switch fileType {
         case .csv:
             fileName = UserText.dataImportFileTypeCsv
-            Pixel.fire(pixel: .importResultPasswordsParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultPasswordsParsing)
         case .html:
             fileName = UserText.dataImportFileTypeHtml
-            Pixel.fire(pixel: .importResultBookmarksParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultBookmarksParsing)
         case .zip:
             fileName = UserText.dataImportFileTypeZip
-            Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultUnzipping)
         case .json:
-            // JSON files aren't supported for standalone import (only as part of a zip archive)
             return
         }
 
-        DispatchQueue.main.async {
-            ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, fileName))
+        DispatchQueue.main.async { [weak self] in
+            self?.presentFileError(.fileUnreadable(fileType: fileName))
         }
      }
 
+    private func presentFileError(_ error: DataImportFileError) {
+        if let onFileError {
+            onFileError(error)
+        } else {
+            ActionMessageView.present(message: error.legacyMessage)
+        }
+    }
+
+    private func fireLegacyResultPixel(_ pixel: Pixel.Event) {
+        guard shouldFireLegacyPixels else {
+            return
+        }
+
+        Pixel.fire(pixel: pixel, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+    }
+
+}
+
+
+// MARK: - Wide Event
+
+private extension DataImportViewModel {
+    func setupAndStartWideEvent() {
+        let data = DataImportWideEventData(
+            source: .init(browserInstructions: state.browser),
+            contextData: WideEventContextData(name: funnel(for: state.importScreen))
+        )
+        self.dataImportWideEventData = data
+        self.dataImportWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
+    }
+
+    func startDurationMeasurement(for types: [DataImport.DataType]) {
+        for type in types {
+            dataImportWideEventData?[keyPath: type.importerDurationPath] = WideEvent.MeasuredInterval.startingNow()
+        }
+    }
+
+    func startDurationMeasurement(for fileType: DataImportFileType) {
+        startDurationMeasurement(for: Array(fileType.matchingDataTypes))
+    }
+
+    func completeDurationMeasurement(for types: [DataImport.DataType]) {
+        for type in types {
+            dataImportWideEventData?[keyPath: type.importerDurationPath]?.complete()
+        }
+    }
+    
+    func completeDurationMeasurement(for fileType: DataImportFileType) {
+        completeDurationMeasurement(for: Array(fileType.matchingDataTypes))
+    }
+    
+    func completeAndCleanupWideEvent(with importSummery: DataImportSummary) {
+        for type in DataImport.DataType.allCases {
+            guard let result = importSummery[type] else { continue }
+
+            switch result {
+            case .success(let typeSummary):
+                if typeSummary.isAllSuccessful {
+                    dataImportWideEventData?[keyPath: type.statusPath] = .success
+                } else {
+                    dataImportWideEventData?[keyPath: type.statusPath] = .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue)
+                }
+            case .failure(let error):
+                dataImportWideEventData?[keyPath: type.statusPath] = .failure
+                dataImportWideEventData?[keyPath: type.errorPath] = WideEventErrorData(error: error, description: error.errorType.description)
+            }
+        }
+        // Complete Failure
+        if importSummery.allSatisfy({ !$1.isSuccess }) {
+            let error = dataImportWideEventError.failedToImportData(Array(importSummery.keys))
+            completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
+            return
+        }
+        // Complete Success
+        if importSummery.allSatisfy({ ((try? $1.get().isAllSuccessful) ?? false ) == true }) {
+            completeAndCleanupWideEvent(with: .success)
+            return
+        }
+        completeAndCleanupWideEvent(with: .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+    }
+
+    func completeAndCleanupWideEvent(with status: WideEventStatus, error: Error? = nil, description: String? = nil) {
+        guard let data = self.dataImportWideEventData else { return }
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error, description: description)
+        }
+        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        self.dataImportWideEventData = nil
+    }
+    
+    func funnel(for importScreen: DataImportViewModel.ImportScreen) -> String? {
+        return "funnel_\(importScreen.rawValue)_ios"
+    }
+}
+
+// MARK: - DataImport
+
+private extension DataImport.Source {
+    init(browserInstructions: DataImportViewModel.BrowserInstructions) {
+        switch browserInstructions {
+        case .safari:
+            self = .safari
+        case .chrome:
+            self = .chrome
+        }
+    }
 }

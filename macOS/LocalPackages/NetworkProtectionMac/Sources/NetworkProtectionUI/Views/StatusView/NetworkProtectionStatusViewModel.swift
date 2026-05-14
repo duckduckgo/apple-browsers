@@ -19,7 +19,6 @@
 import Combine
 import Common
 import LoginItems
-import NetworkExtension
 import VPN
 import ServiceManagement
 import SwiftUI
@@ -344,8 +343,8 @@ extension NetworkProtectionStatusView {
         var shouldShowSubscriptionExpired: Bool = false
 
         var promptActionViewModel: PromptActionView.Model? {
-#if !APPSTORE && !DEBUG
-            guard Bundle.main.isInApplicationDirectory else {
+#if !DEBUG
+            if !AppVersion.isAppStoreBuild, !Bundle.main.isInApplicationDirectory {
                 return moveToApplicationsActionPromptModel
             }
 #endif
@@ -369,13 +368,11 @@ extension NetworkProtectionStatusView {
             }
         }
 
-#if !APPSTORE && !DEBUG
         private var moveToApplicationsActionPromptModel: PromptActionView.Model {
             PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
                 self?.tunnelControllerViewModel.moveToApplications()
             }
         }
-#endif
 
         private var loginItemsActionPromptModel: PromptActionView.Model {
             PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in

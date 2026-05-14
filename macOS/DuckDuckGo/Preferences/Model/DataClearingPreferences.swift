@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags
 import Foundation
 import PixelKit
-import BrowserServicesKit
-import FeatureFlags
-import AIChat
+import PrivacyConfig
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -73,14 +73,6 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
             persistor.autoClearAIChatHistoryEnabled = isAutoClearAIChatHistoryEnabled
             pixelFiring?.fire(AIChatPixel.aiChatAutoClearHistorySettingToggled(enabled: isAutoClearAIChatHistoryEnabled), frequency: .dailyAndCount)
         }
-    }
-
-    var shouldShowDisableFireAnimationSection: Bool {
-        featureFlagger.isFeatureOn(.disableFireAnimation)
-    }
-
-    var shouldShowOpenFirewindowByDefaultSection: Bool {
-        featureFlagger.isFeatureOn(.openFireWindowByDefault)
     }
 
     @objc func toggleWarnBeforeClearing() {

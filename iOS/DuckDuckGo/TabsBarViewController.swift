@@ -22,6 +22,8 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
+import AIChat
+import Persistence
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -29,9 +31,12 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController)
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
 
@@ -44,6 +49,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         static let minItemWidth: CGFloat = 68
         static let buttonSize: CGFloat = 40
         static let stackSpacing: CGFloat = 12
+    }
+    
+    enum NewTabType {
+        case normal
+        case fire
+        case currentMode
     }
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -59,9 +70,21 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }()
 
     weak var delegate: TabsBarDelegate?
-    private weak var tabsModel: TabsModel?
+    var tabManager: TabManaging?
+    var historyManager: HistoryManaging?
+    var fireproofing: Fireproofing?
+    var aiChatSettings: AIChatSettingsProvider?
+    var keyValueStore: ThrowingKeyValueStoring?
+    var daxDialogsManager: DaxDialogsManaging?
+    var fireModeCapability: FireModeCapable? {
+        didSet {
+            configureTabSwitcherLongPressMenu()
+            configureAddTabButtonLongPressMenu()
+        }
+    }
+    private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     
@@ -71,8 +94,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.count ?? 0
     }
     
-    var currentIndex: Int {
-        return tabsModel?.currentIndex ?? 0
+    var hasUnread: Bool {
+        return tabsModel?.hasUnread ?? false
+    }
+    
+    var currentIndex: Int? {
+        return tabsModel?.currentIndex
     }
 
     var maxItems: Int {
@@ -98,7 +125,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private func setUpSubviews() {
 
-        collectionView.clipsToBounds = false
+        collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
 
@@ -131,22 +158,37 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.tabsBarDidRequestForgetAll(self)
-            })
-            self.present(controller: alert, fromView: fireButton)
+            guard let tabManager, let daxDialogsManager else {
+                assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
+                return
+            }
+            let presenter = FireConfirmationPresenter()
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: fireButton,
+                tabViewModel: tabManager.viewModelForCurrentTab(),
+                pixelSource: .browsing,
+                fireContext: .default(daxDialogsManager: daxDialogsManager),
+                browsingMode: tabManager.currentBrowsingMode,
+                onConfirm: { [weak self] fireRequest in
+                    guard let self = self else { return }
+                    self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
+                },
+                onCancel: { }
+            )
         }
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)
-        showClearDataAlert()
+        delegate?.tabsBarDidRequestDismissContextualSheet(self) {
+            showClearDataAlert()
+        }
     }
 
     @IBAction func onNewTabPressed() {
-        requestNewTab()
+        requestNewTab(type: .currentMode)
     }
 
-    func refresh(tabsModel: TabsModel?, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         
         tabSwitcherButton.isAccessibilityElement = true
@@ -168,7 +210,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if scrollToSelected {
             DispatchQueue.main.async {
-                self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+                if let currentIndex = self.currentIndex {
+                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+                }
             }
         }
 
@@ -177,6 +221,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func reloadData() {
         collectionView.reloadData()
         tabSwitcherButton.tabCount = tabsCount
+        tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
+        tabSwitcherButton.hasUnread = hasUnread
     }
 
     func backgroundTabAdded() {
@@ -246,11 +292,58 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         tabSwitcherButton.pointer?.frame.size.width = 34
     }
     
-    private func requestNewTab() {
-        delegate?.tabsBarDidRequestNewTab(self)
-        DispatchQueue.main.async {
-            self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+    private func requestNewTab(type: NewTabType) {
+        switch type {
+        case .normal:
+            delegate?.tabsBarDidRequestNewNormalTab(self)
+        case .fire:
+            delegate?.tabsBarDidRequestNewFireTab(self)
+        case .currentMode:
+            delegate?.tabsBarDidRequestNewTab(self)
         }
+        DispatchQueue.main.async {
+            if let currentIndex = self.currentIndex {
+                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+            }
+        }
+    }
+
+    private func configureTabSwitcherLongPressMenu() {
+        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
+    }
+
+    private func configureAddTabButtonLongPressMenu() {
+        guard fireModeCapability?.isFireModeEnabled ?? false else {
+            addTabButton.menu = nil
+            return
+        }
+
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "tabs_bar"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .fire)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .normal)
+                             }
+                ])
+            }
+        ])
+
+        addTabButton.menu = menu
+        addTabButton.showsMenuAsPrimaryAction = false
     }
 
     private func createButton(image: UIImage) -> UIButton {
@@ -271,10 +364,17 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
         delegate?.tabsBarDidRequestTabSwitcher(self)
     }
     
-    func launchNewTab(_ button: TabSwitcherButton) {
-        requestNewTab()
+    func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
+        requestNewTab(type: .currentMode)
     }
-        
+    
+    func launchNewNormalTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .normal)
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .fire)
+    }
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {
@@ -318,7 +418,8 @@ extension TabsBarViewController: UICollectionViewDataSource {
         }
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex
-        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, withTheme: ThemeManager.shared.currentTheme)
+        let isFireModeEnabled = fireModeCapability?.isFireModeEnabled ?? false
+        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, isFireModeEnabled: isFireModeEnabled, withTheme: ThemeManager.shared.currentTheme)
         cell.onRemove = { [weak self, weak model] in
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
@@ -347,26 +448,42 @@ extension TabsBarViewController {
 extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
+        guard let tab = tabManager.currentTabsModel.get(tabAt: index) else {
+            return
+        }
+
+        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
-        select(tabAt: index)
+
+        // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
+        if tab !== self.tabManager.currentTabsModel.currentTab {
+            chromeManager.preventNextScrollToTop()
+        }
+        
+        selectTab(tab)
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
-        let tab = tabManager.model.get(tabAt: index)
-        closeTab(tab)
+        if let tab = tabManager.currentTabsModel.get(tabAt: index) {
+            closeTab(tab)
+        }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int) {
-        tabManager.model.moveTab(from: fromIndex, to: toIndex)
-        select(tabAt: toIndex)
+        let tabsModel = tabManager.currentTabsModel
+        guard let tab = tabsModel.get(tabAt: fromIndex) else {
+            return
+        }
+        tabsModel.move(tab: tab, to: toIndex)
+        selectTab(tab)
     }
     
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {
         newTab()
     }
     
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController) {
-        forgetAllWithAnimation()
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest) {
+        forgetAllWithAnimation(request: fireRequest)
     }
     
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {
@@ -375,7 +492,23 @@ extension MainViewController: TabsBarDelegate {
     }
     
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
-        showTabSwitcher()
+        dismissContextualSheetIfNeeded {
+            self.showTabSwitcher()
+        }
     }
-    
+
+    func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
+        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
+        newTab()
+    }
+
+    func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
+        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
+        newTab()
+    }
+
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {
+        dismissContextualSheetIfNeeded(completion: completion)
+    }
+
 }

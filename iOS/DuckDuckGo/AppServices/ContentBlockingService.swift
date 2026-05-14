@@ -17,23 +17,51 @@
 //  limitations under the License.
 //
 
+import AIChat
 import ContentBlocking
-import BrowserServicesKit
+import Persistence
+import PrivacyConfig
 import Core
+import DDGSync
+import WebExtensions
 
 final class ContentBlockingService {
 
     public let common: ContentBlocking
     public let updating: ContentBlockingUpdating
+    public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    public let fireModeStorageController: FireModeNativeStorageController?
+    public var duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? { fireModeStorageController }
 
     init(appSettings: AppSettings,
-         fireproofing: Fireproofing) {
+         contentBlocking: ContentBlocking,
+         sync: DDGSyncing,
+         fireproofing: Fireproofing,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         internalUserDecider: InternalUserDecider,
+         syncErrorHandler: SyncErrorHandler,
+         keyValueStore: ThrowingKeyValueStoring,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         fireModeStorageController: FireModeNativeStorageController? = nil) {
 
-        common = ContentBlocking.shared
-        updating = ContentBlockingUpdating(appSettings: appSettings,
-                                           contentBlockerRulesManager: common.contentBlockingManager,
-                                           privacyConfigurationManager: common.privacyConfigurationManager,
-                                           fireproofing: fireproofing
-        )
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.fireModeStorageController = fireModeStorageController
+        common = contentBlocking
+
+        userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,
+                                                                           sync: sync,
+                                                                           privacyConfigurationManager: common.privacyConfigurationManager,
+                                                                           contentBlockingManager: common.contentBlockingManager,
+                                                                           fireproofing: fireproofing,
+                                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                                           internalUserDecider: internalUserDecider,
+                                                                           syncErrorHandler: syncErrorHandler,
+                                                                           webExtensionAvailability: webExtensionAvailability)
+
+        updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                           keyValueStore: keyValueStore)
     }
 }

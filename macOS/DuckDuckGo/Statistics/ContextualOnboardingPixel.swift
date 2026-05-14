@@ -159,4 +159,23 @@ enum ContextualOnboardingPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .onboardingSearchCustom,
+                .onboardingVisitSiteCustom,
+                .onboardingFireButtonTryItPressed,
+                .onboardingFinished,
+                .onboardingFireButtonPressed,
+                .onboardingPrivacyDashboardOpened,
+                .secondSiteVisited,
+                .trySearchDismissed,
+                .searchResultDismissed,
+                .tryVisitSiteDismissed,
+                .trackersBlockedDismissed,
+                .tryFireButtonDismissed,
+                .finalDialogDismissed:
+            return [.pixelSource]
+        }
+    }
+
 }

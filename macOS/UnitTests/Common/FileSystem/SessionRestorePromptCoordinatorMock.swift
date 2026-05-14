@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
+import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinating {
+    @Published var state: SessionRestorePromptCoordinator.State = .initial
+    var statePublisher: AnyPublisher<SessionRestorePromptCoordinator.State, Never> { $state.eraseToAnyPublisher() }
     var uiReady: Bool = false
     var sessionPromptShown: Bool = false
     var applicationWillTerminateCalled: Bool = false

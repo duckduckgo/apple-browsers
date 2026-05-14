@@ -20,18 +20,40 @@
 import Foundation
 import Core
 import Common
+import Persistence
 
 protocol TextZoomStoring {
     func textZoomLevelForDomain(_ domain: String) -> TextZoomLevel?
     func set(textZoomLevel: TextZoomLevel, forDomain domain: String)
     func removeTextZoomLevel(forDomain domain: String)
     func resetTextZoomLevels(excludingDomains: [String])
+    func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String])
+    func clearAll()
 }
 
 class TextZoomStorage: TextZoomStoring {
+    
+    enum TextZoomStorageKey: String {
+        case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"
+        case fireModeTextZoomStorage = "com.duckduckgo.ios.fireModeTextZoom"
+    }
 
-    @UserDefaultsWrapper(key: .domainTextZoomStorage, defaultValue: [:])
-    var textZoomLevels: [String: Int]
+    private let store: KeyValueStoring
+    private let key: String
+
+    init(store: KeyValueStoring = UserDefaults.app, storageKey: String) {
+        self.store = store
+        self.key = storageKey
+    }
+
+    private var textZoomLevels: [String: Int] {
+        get {
+            store.object(forKey: key) as? [String: Int] ?? [:]
+        }
+        set {
+            store.set(newValue, forKey: key)
+        }
+    }
 
     func textZoomLevelForDomain(_ domain: String) -> TextZoomLevel? {
         guard let zoomLevel = textZoomLevels[domain] else {
@@ -55,6 +77,24 @@ class TextZoomStorage: TextZoomStoring {
                 tld.eTLDplus1($0) == level.key
             })
         }
+    }
+
+    /// Iterates through stored text zoom levels, only removes if NOT fireproofed AND was visited.
+    func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String]) {
+        let tld = TLD()
+        let visitedETLDplus1 = Set(visitedDomains.compactMap { tld.eTLDplus1($0) ?? $0 })
+
+        // Keep if fireproofed OR not visited
+        textZoomLevels = textZoomLevels.filter { level in
+            excludingDomains.contains(where: {
+                tld.eTLDplus1($0) == level.key
+            })
+            || !visitedETLDplus1.contains(level.key)
+        }
+    }
+
+    func clearAll() {
+        store.removeObject(forKey: key)
     }
 
 }

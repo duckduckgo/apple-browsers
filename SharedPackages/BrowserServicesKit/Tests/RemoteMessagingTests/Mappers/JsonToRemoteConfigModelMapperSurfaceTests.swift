@@ -40,22 +40,45 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
         #expect(message.surfaces == .newTabPage)
     }
 
+    @Test("Default surface prefers newTabPage when tabBar is also supported")
+    func checkDefaultSurfacePrefersNewTabPageWhenTabBarSupported() throws {
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(
+            fileName: "remote-messaging-config-surfaces-default-values.json",
+            bundle: .module,
+            supportedSurfacesForMessage: { _ in [.newTabPage, .tabBar] }
+        )
+
+        config.messages.forEach { message in
+            #expect(message.surfaces == .newTabPage)
+        }
+    }
+
     @Test(
         "Check Surface Is Mapped Correctly When Message Type Supports It",
-        arguments: [0, 1, 2, 3, 4]
     )
-    func checkSurfaceIsMappedCorrectlyWhenSupported(index: Int) throws {
+    func checkSurfaceIsMappedCorrectlyWhenSupported() throws {
         // GIVEN
-        // All messages in remote-messaging-config-surfaces-supported-values.json have newTabPage as surface
-        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-supported-values.json", bundle: .module, supportedSurfacesForMessage: { _ in .newTabPage })
-        #expect(config.messages.count == 5)
+        let expectedSurfaces: [String: RemoteMessageSurfaceType] = [
+            "1": .newTabPage,
+            "2": .newTabPage,
+            "3": .newTabPage,
+            "4": .newTabPage,
+            "5": .newTabPage,
+            "6": .tabBar
+        ]
 
-        // WHEN
-        let message = config.messages[index]
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(
+            fileName: "remote-messaging-config-surfaces-supported-values.json",
+            bundle: .module,
+            supportedSurfacesForMessage: { _ in [.newTabPage, .tabBar] }
+        )
+        #expect(config.messages.count == expectedSurfaces.count)
 
-        // THEN
-        #expect(message.id == String(index+1))
-        #expect(message.surfaces == .newTabPage)
+        // WHEN/THEN
+        for message in config.messages {
+            let expectedSurface = try #require(expectedSurfaces[message.id])
+            #expect(message.surfaces == expectedSurface)
+        }
     }
 
     @Test("Check Messages With Unsupported Surfaces are Dropped")

@@ -61,6 +61,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let isParent = "is_parent"
         public static let parentKey = "parent"
         public static let actionIDKey = "action_id"
+        public static let stepTypeKey = "stepType"
         public static let environmentKey = "environment"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
@@ -89,14 +90,19 @@ public enum DataBrokerProtectionSharedPixels {
         public static let numStalled = "num_stalled"
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
+        public static let needBackgroundAppRefresh = "need_background_app_refresh"
         public static let jsFile = "jsFile"
+        public static let source = "source"
+        public static let sourceDBP = "dbp"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
+        public static let isAuthenticated = "isAuthenticated"
+        public static let isFreeScan = "free_scan"
     }
 
-    case httpError(error: Error, code: Int, dataBroker: String, version: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?)
-    case otherError(error: Error, dataBroker: String, version: String)
+    case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
@@ -114,16 +120,16 @@ public enum DataBrokerProtectionSharedPixels {
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
     case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
-    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String)
+    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, errorCategory: String, errorDetails: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
 #if os(iOS)
     case scanStarted(dataBroker: String)
 #endif
-    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String)
-    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String)
-    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String)
-    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String)
+    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String, isFreeScan: Bool?)
 
     // Stage Pixels
     case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -133,6 +139,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
+    case optOutEmailGetData(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFillForm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutConditionFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -140,16 +147,16 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser
-    case weeklyActiveUser
-    case monthlyActiveUser
+    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
+    case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
     // KPIs - events
-    case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
-    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
-    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
-    case scanningEventNewMatch
-    case scanningEventReAppearance
+    case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
+    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
+    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
+    case scanningEventNewMatch(dataBrokerURL: String)
+    case scanningEventReAppearance(dataBrokerURL: String)
 
     // Additional opt out metrics
     case optOutJobAt7DaysConfirmed(dataBroker: String)
@@ -167,15 +174,15 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
-    case initialScanTotalDuration(duration: Double, profileQueries: Int)
-    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String)
-    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
+    case initialScanTotalDuration(duration: Double, profileQueries: Int, isFreeScan: Bool?)
+    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
+    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
     case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
     case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
-    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
+    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int, isAuthenticated: Bool)
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
@@ -191,8 +198,8 @@ public enum DataBrokerProtectionSharedPixels {
     case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
 
     // Broker update pixels
-    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?)
-    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, error: Error)
+    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?)
+    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -209,6 +216,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutSubmit: return "dbp_optout_stage_submit"
         case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
         case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
+        case .optOutEmailGetData: return "dbp_optout_stage_email-get-data"
         case .optOutValidate: return "dbp_optout_stage_validate"
         case .optOutFillForm: return "dbp_optout_stage_fill-form"
         case .optOutConditionFound: return "dbp_optout_stage_condition-found"
@@ -304,21 +312,24 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-        case .httpError(_, let code, let dataBroker, let version):
-            return ["code": String(code),
-                    "dataBroker": dataBroker,
-                    "version": version]
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
-            return ["actionID": actionId,
-                    "message": message,
-                    "dataBroker": dataBroker,
-                    "version": version,
-                    "stepType": stepType?.rawValue ?? "unknown",
-                    Consts.parentKey: dataBrokerParent ?? ""]
-        case .otherError(let error, let dataBroker, let version):
-            return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    "dataBroker": dataBroker,
-                    "version": version]
+        case .httpError(_, let code, let dataBroker, let version, let isFreeScan):
+            let params = ["code": String(code),
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
+            let params = ["actionID": actionId,
+                          "message": message,
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version,
+                          Consts.stepTypeKey: stepType?.rawValue ?? "unknown",
+                          Consts.parentKey: dataBrokerParent ?? ""]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .otherError(let error, let dataBroker, let version, let isFreeScan):
+            let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -333,13 +344,21 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
              .optOutCaptchaParse(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaSend(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaSolve(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
-             .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailReceive(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailConfirm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
+             .optOutEmailGetData(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutValidate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutFillForm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutConditionFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutConditionNotFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.durationParamKey: String(duration),
+                    Consts.dataBrokerVersionKey: dataBrokerVersion,
+                    Consts.triesKey: String(tries),
+                    Consts.parentKey: parent,
+                    Consts.actionIDKey: actionId]
+        case .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.durationParamKey: String(duration),
@@ -366,12 +385,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.isParent: String(type.rawValue),
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
                     Consts.vpnBypassStatusParamKey: vpnBypassStatus]
-        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus):
+        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let errorCategory, let errorDetails, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
                           Consts.attemptIdParamKey: attemptId.uuidString,
                           Consts.durationParamKey: String(duration),
                           Consts.parentKey: parent,
+                          Consts.errorCategoryKey: errorCategory,
+                          Consts.errorDetailsKey: errorDetails,
                           Consts.actionIDKey: actionId,
                           Consts.actionTypeKey: actionType,
                           Consts.stageKey: stage,
@@ -386,63 +407,73 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .scanStarted(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
 #endif
-        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.matchesFoundKey: String(matchesFound),
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent]
-        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionID,
-                    Consts.actionTypeKey: actionType]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.errorCategoryKey: category,
-                    Consts.errorDetailsKey: details,
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType]
-        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.triesKey: String(tries),
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType]
-        case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):
+        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.matchesFoundKey: String(matchesFound),
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionID,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.errorCategoryKey: category,
+                          Consts.errorDetailsKey: details,
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.triesKey: String(tries),
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs, let isAuthenticated):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
                     Consts.completed: String(completed),
                     Consts.terminated: String(terminated),
                     Consts.durationMinMs: String(durationMinMs),
                     Consts.durationMaxMs: String(durationMaxMs),
-                    Consts.durationMedianMs: String(durationMedianMs)]
-        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+                    Consts.durationMedianMs: String(durationMedianMs),
+                    Consts.isAuthenticated: isAuthenticated.description]
+        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
-                    Consts.stalledByBroker: stalledByBroker]
-        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+                    Consts.stalledByBroker: stalledByBroker,
+                    Consts.isAuthenticated: isAuthenticated.description]
+        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
-                    Consts.stalledByBroker: stalledByBroker]
+                    Consts.stalledByBroker: stalledByBroker,
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -452,12 +483,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser,
-                .weeklyActiveUser,
-                .monthlyActiveUser,
-                .scanningEventNewMatch,
-                .scanningEventReAppearance,
-                .secureVaultInitError,
+        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh, let isFreeScan):
+            var params = [Consts.isAuthenticated: isAuthenticated.description]
+            if let needBackgroundAppRefresh {
+                params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
+            }
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
+            return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
+        case .scanningEventNewMatch(let dataBrokerURL),
+                .scanningEventReAppearance(let dataBrokerURL):
+            return [Consts.dataBrokerParamKey: dataBrokerURL]
+        case .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError,
                 .secureVaultDatabaseRecreated,
@@ -473,12 +511,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.backendServiceCallSite: backendServiceCallSite.rawValue,
                     Consts.dataBrokerParamKey: dataBroker ?? "unknown",
                     Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
-        case .initialScanTotalDuration(let duration, let profileQueries):
-            return [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
-        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
-        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+        case .initialScanTotalDuration(let duration, let profileQueries, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
@@ -486,12 +527,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
         case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
             return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords):
+        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords, let isAuthenticated):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
-                    Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
+                    Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords),
+                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
         case .userScriptLoadJSFailed(let jsFile, _):
-            return [Consts.jsFile: jsFile]
+            return [Consts.jsFile: jsFile, Consts.source: Consts.sourceDBP]
         case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
@@ -536,19 +578,109 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
-        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, let isFreeScan):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
-            return params
-        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, let isFreeScan, _):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
-            return params
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         }
+    }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .httpError,
+                .actionFailedError,
+                .otherError,
+                .databaseError,
+                .cocoaError,
+                .miscError,
+                .secureVaultInitError,
+                .secureVaultKeyStoreReadError,
+                .secureVaultKeyStoreUpdateError,
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase,
+                .parentChildMatches,
+                .optOutStart,
+                .optOutSubmitSuccess,
+                .optOutSuccess,
+                .optOutFailure,
+                .scanSuccess,
+                .scanNoResults,
+                .scanError,
+                .scanStage,
+                .optOutEmailGenerate,
+                .optOutCaptchaParse,
+                .optOutCaptchaSend,
+                .optOutCaptchaSolve,
+                .optOutSubmit,
+                .optOutEmailReceive,
+                .optOutEmailConfirm,
+                .optOutEmailGetData,
+                .optOutValidate,
+                .optOutFillForm,
+                .optOutConditionFound,
+                .optOutConditionNotFound,
+                .optOutFinish,
+                .dailyActiveUser,
+                .weeklyActiveUser,
+                .monthlyActiveUser,
+                .weeklyReportBackgroundTaskSession,
+                .weeklyReportStalledScans,
+                .weeklyReportStalledOptOuts,
+                .scanningEventNewMatch,
+                .scanningEventReAppearance,
+                .optOutJobAt7DaysConfirmed,
+                .optOutJobAt7DaysUnconfirmed,
+                .optOutJobAt14DaysConfirmed,
+                .optOutJobAt14DaysUnconfirmed,
+                .optOutJobAt21DaysConfirmed,
+                .optOutJobAt21DaysUnconfirmed,
+                .optOutJobAt42DaysConfirmed,
+                .optOutJobAt42DaysUnconfirmed,
+                .generateEmailHTTPErrorDaily,
+                .emptyAccessTokenDaily,
+                .initialScanTotalDuration,
+                .initialScanSiteLoadDuration,
+                .initialScanPostLoadingDuration,
+                .initialScanPreStartDuration,
+                .customDataBrokerStatsOptoutSubmit,
+                .customGlobalStatsOptoutSubmit,
+                .weeklyChildBrokerOrphanedOptOuts,
+                .userScriptLoadJSFailed,
+                .serviceEmailConfirmationLinkClientReceived,
+                .serviceEmailConfirmationLinkBackendStatusError,
+                .optOutStageSubmitAwaitingEmailConfirmation,
+                .serviceEmailConfirmationAttemptStart,
+                .serviceEmailConfirmationAttemptSuccess,
+                .serviceEmailConfirmationAttemptFailure,
+                .serviceEmailConfirmationMaxRetriesExceeded,
+                .serviceEmailConfirmationJobSuccess,
+                .updateDataBrokersSuccess,
+                .updateDataBrokersFailure:
+            return [.pixelSource]
+
+#if os(iOS)
+        case .scanStarted:
+            return [.pixelSource]
+#endif
+        }
+    }
+}
+
+extension DataBrokerProtectionSharedPixels {
+    private func addingFreeScanParamIfNeeded(to params: [String: String], isFreeScan: Bool?) -> [String: String] {
+        guard let isFreeScan else { return params }
+        var newParams = params
+        newParams[Consts.isFreeScan] = isFreeScan.description
+        return newParams
     }
 }
 
@@ -583,9 +715,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
-            case .httpError(let error, _, _, _),
-                    .actionFailedError(let error, _, _, _, _, _, _),
-                    .otherError(let error, _, _):
+            case .httpError(let error, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _, _),
+                    .otherError(let error, _, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
@@ -607,6 +739,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutSubmit,
                     .optOutEmailReceive,
                     .optOutEmailConfirm,
+                    .optOutEmailGetData,
                     .optOutValidate,
                     .optOutFinish,
                     .optOutSubmitSuccess,
@@ -653,7 +786,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
-            case .updateDataBrokersFailure(_, _, let error):
+            case .updateDataBrokersFailure(_, _, _, let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:

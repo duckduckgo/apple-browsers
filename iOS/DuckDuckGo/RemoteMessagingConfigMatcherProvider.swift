@@ -21,12 +21,14 @@ import Common
 import Core
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Bookmarks
 import RemoteMessaging
 import VPN
 import Subscription
 import DDGSync
+import DataBrokerProtection_iOS
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
 
@@ -40,7 +42,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
         syncService: DDGSyncing,
-        winBackOfferService: WinBackOfferService
+        winBackOfferService: WinBackOfferService,
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -50,6 +55,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.themeManager = themeManager
         self.syncService = syncService
         self.winBackOfferService = winBackOfferService
+        self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -60,6 +68,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let themeManager: ThemeManaging
     let syncService: DDGSyncing
     let winBackOfferService: WinBackOfferService
+    let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+    let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -73,9 +84,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let statisticsStore = StatisticsUserDefaults()
         let featureDiscovery = DefaultFeatureDiscovery()
         let variantManager = DefaultVariantManager()
-        let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
-        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
+        let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
@@ -100,6 +111,17 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
+        let isCurrentPIRUser: Bool
+
+        if featureFlagger.isFeatureOn(.personalInformationRemoval) {
+            isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
+        } else {
+            isCurrentPIRUser = false
+        }
+
+        let isFreemiumPIREligible = freemiumPIREligibilityChecker.canShowEntryPoint()
+        let didActivateFreemiumPIR = freemiumDBPUserStateManager.didActivate
+        let freemiumPIRFirstScanResult = freemiumDBPUserStateManager.firstScanResult?.rawValue
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
@@ -165,7 +187,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        shownMessageIds: shownMessageIds,
                                                        enabledFeatureFlags: enabledFeatureFlags,
                                                        isSyncEnabled: isSyncEnabled,
-                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage),
+                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage,
+                                                       isFreemiumPIREligible: isFreemiumPIREligible,
+                                                       isFreemiumPIRActivated: didActivateFreemiumPIR,
+                                                       freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
+                                                       isCurrentPIRUser: isCurrentPIRUser),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
@@ -192,5 +218,9 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionExpiryDate: Date? {
         return expiresOrRenewsAt
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return hasActiveTrialOffer
     }
 }

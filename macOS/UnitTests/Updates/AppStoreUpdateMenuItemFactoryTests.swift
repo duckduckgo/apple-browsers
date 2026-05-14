@@ -15,10 +15,11 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-#if APPSTORE
 
-import XCTest
+import AppUpdaterShared
 import Cocoa
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
@@ -36,7 +37,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
                 date: Date(),
                 releaseNotes: ["Bug fixes"],
                 releaseNotesSubscription: [],
-                needsLatestReleaseNote: false
+
             )
         }
     }
@@ -69,7 +70,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
         let menuItem = AppStoreUpdateMenuItemFactory.menuItem(for: mockUpdate)
 
         // Then
-        XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
+        XCTAssertEqual(menuItem.action, #selector(UpdateController.openUpdatesPage))
     }
 
     func testMenuItem_IsEnabled() {
@@ -91,8 +92,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Critical security fix"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // When
@@ -100,7 +100,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
 
         // Then
         XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItemAppStore)
-        XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
+        XCTAssertEqual(menuItem.action, #selector(UpdateController.openUpdatesPage))
     }
 
     func testMenuItem_WithInstalledUpdate() {
@@ -112,8 +112,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Bug fixes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // When
@@ -121,8 +120,6 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
 
         // Then
         XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItemAppStore)
-        XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
+        XCTAssertEqual(menuItem.action, #selector(UpdateController.openUpdatesPage))
     }
 }
-
-#endif

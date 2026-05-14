@@ -17,8 +17,11 @@
 //
 
 import Bookmarks
+import Combine
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -37,10 +40,12 @@ final class AppearancePreferencesTests: XCTestCase {
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient01).description,
                 centerAlignedBookmarksBar: true,
-                showTabsAndBookmarksBarOnFullScreen: false
+                showTabsAndBookmarksBarOnFullScreen: false,
+                didChangeAnyNewTabPageCustomizationSetting: false
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertEqual(model.showFullURL, false)
@@ -55,6 +60,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(model.centerAlignedBookmarksBarBool)
         XCTAssertFalse(model.showTabsAndBookmarksBarOnFullScreen)
         XCTAssertFalse(model.syncAppIconWithTheme)
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
@@ -70,10 +76,12 @@ final class AppearancePreferencesTests: XCTestCase {
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
                 centerAlignedBookmarksBar: false,
                 showTabsAndBookmarksBarOnFullScreen: true,
-                syncAppIconWithTheme: true
+                syncAppIconWithTheme: true,
+                didChangeAnyNewTabPageCustomizationSetting: true
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         XCTAssertEqual(model.showFullURL, true)
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.light)
@@ -87,6 +95,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertFalse(model.centerAlignedBookmarksBarBool)
         XCTAssertTrue(model.showTabsAndBookmarksBarOnFullScreen)
         XCTAssertTrue(model.syncAppIconWithTheme)
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
 
     func testWhenInitializedWithGarbageThenThemeAppearanceIsSetToSystemDefault() throws {
@@ -96,7 +105,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
@@ -109,7 +119,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertEqual(model.themeName, ThemeName.default)
@@ -122,7 +133,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenThemeAppearanceIsUpdatedThenApplicationAppearanceIsUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger(), aiChatMenuConfig: MockAIChatConfig())
 
         model.themeAppearance = ThemeAppearance.systemDefault
         XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
@@ -138,7 +149,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger(), aiChatMenuConfig: MockAIChatConfig())
 
         model.isFavoriteVisible = true
         XCTAssertEqual(model.isFavoriteVisible, true)
@@ -180,6 +191,35 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
+    func testMaxNextStepsCardsDemonstrationDaysUpdatesWhenFeatureFlagIsUpdated() {
+        let featureFlagger = MockFeatureFlagger()
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
+
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget, .nextStepsListAdvancedCardOrdering]
+
+        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
+    }
+
+    func testWhenNextStepsCardsDemonstrationDaysIsAccessedThenReturnsPersistorValue() {
+        let persistor = AppearancePreferencesPersistorMock()
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 5
+        let model = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertEqual(model.nextStepsCardsDemonstrationDays, 5)
+    }
+
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {
         // 1. app installed and launched
         var now = Date()
@@ -189,7 +229,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let c = model.objectWillChange.sink {
             XCTFail("Unexpected model.objectWillChange")
@@ -200,7 +241,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // check during N hours
         // eObjectWillChange shouldn‘t be called until N days
-        for i in 0..<max(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays, 48) {
+        for i in 0..<max(model.maxNextStepsCardsDemonstrationDays, 48) {
             XCTAssertTrue(model.isContinueSetUpVisible, "\(i)")
             XCTAssertFalse(model.isContinueSetUpCardsViewOutdated, "\(i)")
             incrementDate()
@@ -218,7 +259,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         var eObjectWillChange: XCTestExpectation!
         let c = model.objectWillChange.sink {
@@ -230,7 +272,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // check during N days
         // eObjectWillChange shouldn‘t be called until N days
-        for i in 0..<AppearancePreferences.Constants.dismissNextStepsCardsAfterDays {
+        for i in 0..<model.maxNextStepsCardsDemonstrationDays {
             XCTAssertTrue(model.isContinueSetUpVisible, "\(i)")
             XCTAssertFalse(model.isContinueSetUpCardsViewOutdated, "\(i)")
             model.continueSetUpCardsViewDidAppear()
@@ -242,10 +284,10 @@ final class AppearancePreferencesTests: XCTestCase {
         incrementDate()
         model.continueSetUpCardsViewDidAppear()
         XCTAssertFalse(model.isContinueSetUpVisible, "dismissNextStepsCardsAfterDays")
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         // shouldn‘t change after being set once
-        for i in (AppearancePreferences.Constants.dismissNextStepsCardsAfterDays + 1)..<(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays + 20) {
+        for i in (model.maxNextStepsCardsDemonstrationDays + 1)..<(model.maxNextStepsCardsDemonstrationDays + 20) {
             XCTAssertFalse(model.isContinueSetUpVisible, "\(i)")
             XCTAssertTrue(model.isContinueSetUpCardsViewOutdated, "\(i)")
             incrementDate()
@@ -255,15 +297,202 @@ final class AppearancePreferencesTests: XCTestCase {
         withExtendedLifetime(c) {}
     }
 
+    func testWhenCurrentThemeIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.themeName = ThemeName.green
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenThemeAppearanceIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.light.rawValue,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.themeAppearance = .dark
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenCustomBackgroundIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(homePageCustomBackground: nil,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.homePageCustomBackground = CustomBackground.gradient(.gradient01)
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenOmnibarVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isOmnibarVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isOmnibarVisible = false
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenFavoritesVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isFavoriteVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isFavoriteVisible = false
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenProtectionsReportVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isProtectionsReportVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isProtectionsReportVisible = false
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenAIChatShortcutEnabledIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let mockAIChatConfig = MockAIChatConfig()
+        mockAIChatConfig.shouldDisplayNewTabPageShortcut = true
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: mockAIChatConfig
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        mockAIChatConfig.shouldDisplayNewTabPageShortcut = false
+        mockAIChatConfig.valuesChangedPublisher.send()
+
+        wait(for: [expectation], timeout: 5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
     // MARK: - Pixel firing tests
 
-    func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
+    func testWhenCurrentThemeIsUpdatedThenNoPixelIsFiredFromModel() {
+        // Pixel firing has been moved to the call sites (Settings view and NTP customizer)
+        // to track the source of the change. The model itself no longer fires pixels.
         let pixelFiringMock = PixelKitMock()
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         model.themeAppearance = ThemeAppearance.systemDefault
@@ -271,12 +500,11 @@ final class AppearancePreferencesTests: XCTestCase {
         model.themeAppearance = ThemeAppearance.dark
         model.themeAppearance = ThemeAppearance.systemDefault
 
-        pixelFiringMock.expectedFireCalls = [
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
-        ]
+        model.themeName = ThemeName.default
+        model.themeName = ThemeName.green
+
+        // No pixel should be fired from the model - pixels are fired at call sites
+        pixelFiringMock.expectedFireCalls = []
 
         pixelFiringMock.verifyExpectations()
     }
@@ -287,7 +515,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         model.showFullURL = true
@@ -307,7 +536,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         model.syncAppIconWithTheme = true
@@ -327,7 +557,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         model.isFavoriteVisible = false
@@ -357,7 +588,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         model.isProtectionsReportVisible = false
@@ -388,7 +620,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertTrue(model.isOmnibarAvailable, "Omnibar should be available when feature flag is ON")
@@ -401,7 +634,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertFalse(model.isOmnibarAvailable, "Omnibar should NOT be available when feature flag is OFF")
@@ -412,7 +646,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         XCTAssertTrue(model.isOmnibarVisible, "Initial value should be true")
@@ -420,4 +655,157 @@ final class AppearancePreferencesTests: XCTestCase {
         model.isOmnibarVisible = false
         XCTAssertFalse(model.isOmnibarVisible, "Value should change to false")
     }
+
+    // MARK: - Force Dark Mode
+
+    func testWhenDarkReaderFeatureSettingsIsNilThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsDisabledThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = false
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsLightThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.light.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsDarkThenForceDarkModeIsVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.dark.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsSystemDefaultThenForceDarkModeIsVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.systemDefault.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderSettingsIsNilThenForceDarkModeEnabledReturnsFalse() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertFalse(model.forceDarkModeEnabled)
+    }
+
+    func testForceDarkModeEnabledReturnsValueFromDarkReaderSettings() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isForceDarkModeEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.forceDarkModeEnabled)
+    }
+
+    func testSettingForceDarkModeEnabledCallsDarkReaderSettings() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        model.darkReaderFeatureSettings = mockSettings
+
+        model.forceDarkModeEnabled = true
+
+        XCTAssertTrue(mockSettings.setForceDarkModeEnabledCalledWith ?? false)
+    }
+
+    func testWhenThemeChangesFromDarkToLightThenForceDarkModeBecomesNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.dark.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+
+        model.themeAppearance = .light
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+}
+
+// MARK: - MockDarkReaderFeatureSettings
+
+private final class MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
+        forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
+
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> {
+        excludedDomainsChangedSubject.eraseToAnyPublisher()
+    }
+
+    private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+    private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
+
+    var setForceDarkModeEnabledCalledWith: Bool?
+
+    func setForceDarkModeEnabled(_ enabled: Bool) {
+        setForceDarkModeEnabledCalledWith = enabled
+    }
+
+    func themeDidChange() {}
 }

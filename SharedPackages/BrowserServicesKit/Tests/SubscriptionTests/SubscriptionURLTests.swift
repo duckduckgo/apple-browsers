@@ -53,7 +53,11 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowLinkViaEmailStep,
                                               .activationFlowSuccess,
                                               .manageEmail,
-                                              .identityTheftRestoration]
+                                              .identityTheftRestoration,
+                                              .plans,
+                                              .addEmail,
+                                              .addEmailSuccess,
+                                              .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
             // When
@@ -74,7 +78,11 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowLinkViaEmailStep,
                                               .activationFlowSuccess,
                                               .manageEmail,
-                                              .identityTheftRestoration]
+                                              .identityTheftRestoration,
+                                              .plans,
+                                              .addEmail,
+                                              .addEmailSuccess,
+                                              .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
             // When
@@ -92,6 +100,87 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let url = SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testPlansURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testPlansURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForPlansURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    // MARK: - Upgrade To Tier URL Tests (Dynamic Tier)
+
+    func testUpgradeToTierURLWithProTier() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro")!
+
+        // When
+        let url = SubscriptionURL.upgradeToTier("pro").subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testUpgradeToTierURLWithPlusTier() throws {
+        // Given - dynamic tier from backend
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=plus")!
+
+        // When
+        let url = SubscriptionURL.upgradeToTier("plus").subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testUpgradeToTierURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=plus&environment=staging")!
+
+        // When
+        let url = SubscriptionURL.upgradeToTier("plus").subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForUpgradeToTierURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans?tier=plus")!
+
+        // When
+        let url = SubscriptionURL.upgradeToTier("plus").subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
 
         // Then
         XCTAssertEqual(url, expectedURL)
@@ -287,6 +376,87 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: featurePage, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    // MARK: - plansURLComponents Tests
+
+    func testPlansURLComponentsForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithTierForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios&tier=pro")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, tier: "pro", environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithTierForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging&origin=funnel_appsettings_ios&tier=pro")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, tier: "pro", environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithDynamicTier() throws {
+        // Given - tier comes from backend's available upgrade tiers
+        let origin = "funnel_appsettings_ios"
+        let dynamicTier = "plus"  // Example: backend returns "plus" as available upgrade tier
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios&tier=plus")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, tier: dynamicTier, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithEmptyOrigin() throws {
+        // Given
+        let origin = ""
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)

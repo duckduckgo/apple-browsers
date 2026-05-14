@@ -521,4 +521,136 @@ class SecureVaultCreditCardImporterTests: XCTestCase {
 
         XCTAssertEqual(progressCalls, [1, 2, 3])
     }
+
+    // MARK: - Completion Callback Error Tests
+
+    func testWhenCompletionCallbackThrowsAfterSuccessfulImport_ThenCardIsNotDoubleCounted() throws {
+        let cardNumber = "4111111111111111"
+        mockCryptoProvider._decryptedData = cardNumber.data(using: .utf8)
+
+        let cardToImport = ImportedCreditCard(
+            title: "My Visa",
+            cardNumber: cardNumber,
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+
+        struct TestError: Error {
+            let message = "Completion callback error"
+        }
+
+        do {
+            _ = try importer.importCreditCards([cardToImport], vault: mockVault) { _ in
+                throw TestError()
+            }
+            XCTFail("Expected TestError to be thrown")
+        } catch is TestError {
+            // Expected - completion callback error should propagate
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        // Verify card was actually stored (import succeeded before callback error)
+        let storedCards = try mockVault.creditCards()
+        XCTAssertEqual(storedCards.count, 1, "Card should be stored in vault even though callback threw")
+    }
+
+    func testWhenCompletionCallbackThrowsAfterDuplicate_ThenCardIsNotDoubleCounted() throws {
+        let cardNumber = "4111111111111111"
+        mockCryptoProvider._decryptedData = cardNumber.data(using: .utf8)
+
+        let existingCard = SecureVaultModels.CreditCard(
+            id: 1,
+            title: "Existing Card",
+            cardNumber: cardNumber,
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+        _ = try mockVault.storeCreditCard(existingCard)
+
+        let cardToImport = ImportedCreditCard(
+            title: "Updated Title",
+            cardNumber: cardNumber,
+            cardholderName: "JOHN DOE",
+            cardSecurityCode: "456",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+
+        struct TestError: Error {
+            let message = "Completion callback error"
+        }
+
+        do {
+            _ = try importer.importCreditCards([cardToImport], vault: mockVault) { _ in
+                throw TestError()
+            }
+            XCTFail("Expected TestError to be thrown")
+        } catch is TestError {
+            // Expected - completion callback error should propagate
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        // Verify original card is still there (not updated, duplicate was detected before callback error)
+        let storedCards = try mockVault.creditCards()
+        XCTAssertEqual(storedCards.count, 1)
+        XCTAssertEqual(storedCards.first?.title, "Existing Card")
+    }
+
+    func testWhenCompletionCallbackThrowsAfterUpdate_ThenCardIsNotDoubleCounted() throws {
+        let cardNumber = "4111111111111111"
+        mockCryptoProvider._decryptedData = cardNumber.data(using: .utf8)
+
+        // Store existing card with older expiry
+        let existingCard = SecureVaultModels.CreditCard(
+            id: 123,
+            title: "Old Title",
+            cardNumber: cardNumber,
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2024
+        )
+        _ = try mockVault.storeCreditCard(existingCard)
+
+        let cardToImport = ImportedCreditCard(
+            title: "New Title",
+            cardNumber: cardNumber,
+            cardholderName: "JOHN DOE",
+            cardSecurityCode: "456",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+
+        struct TestError: Error {
+            let message = "Completion callback error"
+        }
+
+        do {
+            _ = try importer.importCreditCards([cardToImport], vault: mockVault) { _ in
+                throw TestError()
+            }
+            XCTFail("Expected TestError to be thrown")
+        } catch is TestError {
+            // Expected - completion callback error should propagate
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        // Verify card was actually updated (update succeeded before callback error)
+        let storedCards = try mockVault.creditCards()
+        XCTAssertEqual(storedCards.count, 1)
+        guard let updatedCard = storedCards.first else {
+            XCTFail("Expected updated card not found")
+            return
+        }
+        XCTAssertEqual(updatedCard.id, 123)
+        XCTAssertEqual(updatedCard.title, "New Title")
+        XCTAssertEqual(updatedCard.expirationYear, 2025)
+    }
 }

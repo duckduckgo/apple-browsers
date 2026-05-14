@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import UserScript
 import WebKit
 import XCTest

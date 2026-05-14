@@ -8,17 +8,24 @@ on:
   workflow_dispatch:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+      build-type:
+        description: "Build type: 'dmg' for Developer ID DMG app, 'appstore' for sandboxed App Store app"
+        type: choice
+        default: dmg
+        options:
+        - dmg
+        - appstore
   workflow_call:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       branch:
@@ -29,12 +36,17 @@ on:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+      build-type:
+        description: "Build type: 'dmg' for Developer ID DMG app, 'appstore' for sandboxed App Store app"
+        type: string
+        required: false
+        default: dmg
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
       - 'macOS/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -43,13 +55,14 @@ on:
     paths:
       - '.github/**'
       - '.xcode-version'
+      - 'SharedPackages/BrowserServicesKit/Package.swift'
 
 concurrency:
   # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
   # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
   # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
   # side by side in the code freeze workflow.
-  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests
+  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests-${{ inputs.build-type }}
   cancel-in-progress: true
 
 jobs:
@@ -58,14 +71,14 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
 
   create-notarized-app:
-    name: Build Notarized Review app
+    name: Build Notarized Review app (${{ inputs.build-type }})
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
-      release-type: review
+      release-type: "${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}" # Use sandbox-review release-type for App Store UI Tests
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
@@ -74,7 +87,7 @@ jobs:
   # This job sets up the matrix strategy arguments for the ui-tests job
   setup-tests:
     name: Set up tests list
-    runs-on: macos-15
+    runs-on: macos-26
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -87,7 +100,7 @@ jobs:
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.branch || github.sha }}
 
@@ -104,15 +117,15 @@ jobs:
           all_os_versions="${{ inputs.all_os_versions || 'true' }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
-            runner='["macos-15-xlarge"]'
-            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}]'
+            runner='["macos-26-xlarge"]'
+            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.4"}]'
           else
             all_os_versions='true'
-            runner='["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]'
+            runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
             include=$(jq -c <<< '[
-              {"runner": "macos-13-xlarge", "os-version": "13", "xcode-version": "15.2"},
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
-              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}
+              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
+              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.4"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -171,29 +184,55 @@ jobs:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120
 
+    env:
+      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
+      app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
+      app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
+      release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
+      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
+
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
-        submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
 
+    - name: Initialize submodules with retry
+      run: |
+        max_attempts=3
+        retry_delay=15
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Submodule init attempt $attempt of $max_attempts"
+          if git submodule update --init --recursive; then
+            echo "Submodules initialized successfully"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All submodule init attempts failed"
+        exit 1
+
     - name: Install screenresolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -230,9 +269,30 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: macOS
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          rm -rf build-download-temp
+          mkdir build-download-temp
+          if gh run download "${{ github.run_id }}" --dir build-download-temp; then
+            echo "Download successful"
+            mv build-download-temp/* .
+            rm -rf build-download-temp
+            exit 0
+          fi
+          rm -rf build-download-temp
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Download failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All download attempts failed"
+        exit 1
 
     - name: Set cache key hash
       run: |
@@ -257,49 +317,141 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
+    - name: Resolve package dependencies
+      working-directory: macOS
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          if xcodebuild -resolvePackageDependencies \
+            -scheme "${{ env.scheme }}" \
+            -derivedDataPath DerivedData \
+            2>&1 | tee resolve.log; then
+            echo "Package resolution succeeded"
+            exit 0
+          fi
+
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "Package resolution failed after $max_attempts attempts"
+        exit 1
+
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ui-tests-
+
     - name: Build for testing
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
-          -scheme "macOS UI Tests CI" \
+          -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          ${{ env.extra-xcargs }} \
         | tee xcodebuild.log \
         | xcbeautify
 
-    - name: Extract and Copy app to /DerivedData
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
       run: |
-        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
+      run: |
+        cd DuckDuckGo-${{ env.release-type }}-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
           extracted_app_name=$(basename "${extracted_app}")
-          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
-            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
-            mv "${extracted_app}" "DuckDuckGo Review.app"
+          if [[ "${extracted_app_name}" != "${{ env.app-name }}.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to '${{ env.app-name }}.app'"
+            mv "${extracted_app}" "${{ env.app-name }}.app"
           fi
         fi
 
-        mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
+        mv -f "${{ env.app-name }}.app" "../DerivedData/Build/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
+      id: run-ui-tests
+      working-directory: macOS
       run: |
-        defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
+        defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
-          -scheme "macOS UI Tests CI" \
+          -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
           '-only-testing:UI Tests/${{ matrix.test }}' \
+          ${{ env.extra-xcargs }} \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
+
+    - name: Stop log stream
+      if: always()
+      working-directory: macOS
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      working-directory: macOS
+      run: |
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Prepare test report
       id: prepare-test-report
       if: always()
+      working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
         file="${test_id}.xml"
@@ -318,8 +470,26 @@ jobs:
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+
+    - name: Upload app console log (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 1
+
     - name: Organize logs for upload
       if: failure() || cancelled()
+      working-directory: macOS
       run: |
         echo "Current working directory: $(pwd)"
 
@@ -331,8 +501,9 @@ jobs:
 
         # locate and copy all files, flattening the structure with verbose output
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
         find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
-        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
 
         # Store archive name for upload step
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
@@ -353,7 +524,7 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.sha }}
 
@@ -378,6 +549,7 @@ jobs:
         skip_annotations: true
 
     - name: Report workflow duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -392,7 +564,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.sha }}
 

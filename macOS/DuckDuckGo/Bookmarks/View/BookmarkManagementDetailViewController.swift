@@ -52,7 +52,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
 
-    lazy var searchBar = NSSearchField()
+    lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.searchBar")
     private lazy var separator = NSBox()
     private lazy var scrollView = NSScrollView()
@@ -64,7 +64,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -78,6 +78,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
+    private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -127,9 +128,11 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
+         pinningManager: PinningManager,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         let metrics = BookmarksSearchAndSortMetrics()
         let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
@@ -297,6 +300,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
         reloadData()
         subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewDidAppear() {
@@ -404,7 +408,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         })
         emptyStateHostingView.isHidden = false
@@ -417,7 +421,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func onImport() {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {
@@ -540,7 +544,11 @@ extension BookmarkManagementDetailViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceCanvas
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 
@@ -937,7 +945,7 @@ extension BookmarkManagementDetailViewController {
         return manager
     }()
 
-    return BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
 
 }
 #endif

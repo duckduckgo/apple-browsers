@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import Bookmarks
 import Persistence
 import History
@@ -38,7 +38,13 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onEditFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+    func onChatHistorySelected(url: URL)
     func onDismissRequested()
+    func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
+    func onTryFireModeRequested()
+    func onToggleModeSwitched(to mode: TextEntryMode)
+    func onVoiceModeRequested()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -52,6 +58,31 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
+    var useNewTransitionBehaviour = false
+
+    /// Container used for swipe/fade-out content stack (search/chat/history/Dax content).
+    var contentStackContainerView: UIView {
+        contentContainerView
+    }
+
+    /// Anchor below the switch bar, used when mounting additional content without covering omnibar controls.
+    var contentStackTopAnchor: NSLayoutYAxisAnchor {
+        switchBarVC.view.bottomAnchor
+    }
+
+    /// Anchor above the switch bar, used when mounting content for bottom address bar mode.
+    var contentStackBottomAnchor: NSLayoutYAxisAnchor {
+        switchBarVC.view.topAnchor
+    }
+
+    /// Distance between the segmented Search/Duck.ai toggle and the address bar input.
+    var addressBarToToggleSpacing: CGFloat {
+        switchBarVC.addressBarToToggleSpacing
+    }
+
+    var isUsingTopBarPositionForLayout: Bool {
+        isUsingTopBarPosition
+    }
 
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
@@ -83,15 +114,36 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
     let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let aiChatSettings: AIChatSettingsProvider
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Manager Components
 
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
+    private var aiChatHistoryManager: AIChatHistoryManager?
+    /// Held in a dedicated property (not `cancellables`) so each new chat-history install
+    /// auto-cancels the previous subscription on assignment — avoids stale viewModels firing.
+    private var chatHistoryHasSuggestionsCancellable: AnyCancellable?
+    private var isShowingURLFallback = false
+
+    private var chatHasResults: Bool {
+        aiChatHistoryManager?.hasSuggestions ?? false
+    }
+
+    private var shouldShowURLFallback: Bool {
+        !chatHasResults && !switchBarHandler.currentText.isBlank
+    }
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+
+    // MARK: - Escape Hatch
+    private var escapeHatchModel: EscapeHatchModel?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
 
@@ -99,11 +151,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
-                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                  privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+                  aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+                  voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                  escapeHatch: EscapeHatchModel? = nil) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
-        self.daxLogoManager = DaxLogoManager()
+        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.aiChatSettings = aiChatSettings
+        self.voiceShortcutFeature = voiceShortcutFeature
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.escapeHatchModel = escapeHatch
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -119,6 +183,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        if switchBarHandler.isUsingFadeOutAnimation {
+            switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
+        }
         setupView()
         installComponents()
         setupSubscriptions()
@@ -132,6 +199,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        if aiChatHistoryManager == nil {
+            installChatHistoryList()
+        }
 
         switchBarVC.focusTextField()
         if automaticallySelectsTextOnAppear {
@@ -148,6 +219,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
     }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
+    }
+
     // MARK: - Public Methods
 
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
@@ -156,8 +233,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
     }
 
+    var isEscapeHatchCardVisible: Bool {
+        escapeHatchModel != nil
+    }
+
     func setLogoYOffset(_ offset: CGFloat) {
         daxLogoManager.containerYCenterConstraint?.constant = offset
+    }
+
+    func setLogoHidden(_ hidden: Bool) {
+        daxLogoManager.setForcedHidden(hidden)
     }
 
     override func viewWillLayoutSubviews() {
@@ -221,6 +306,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
+        installChatHistoryList()
         installDaxLogoView()
         installNavigationActionBar()
 
@@ -268,28 +354,108 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
+        manager.fadeOutDelegate = self
         swipeContainerManager = manager
     }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies,
-              let swipeContainerViewController = swipeContainerManager?.swipeContainerViewController,
-              let searchContainer = swipeContainerViewController.searchPageContainer else { return }
+              let containerViewController = swipeContainerManager?.containerViewController,
+              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: swipeContainerViewController)
+        let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
+        let openTabCount = dependencies.tabsModelProvider().count
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch, openTabCount: openTabCount)
         suggestionTrayManager = manager
     }
 
+    private func installChatHistoryList() {
+        guard featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled,
+              let swipeContainerManager else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
+        let manager = makeAIChatHistoryManager()
+        
+        manager.delegate = self
+        swipeContainerManager.installChatHistory(using: manager)
+        manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
+        chatHistoryHasSuggestionsCancellable = manager.hasSuggestionsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hasSuggestions in
+                guard let self else { return }
+                self.updateURLFallbackSuggestions(chatHasSuggestions: hasSuggestions)
+                self.scheduleAnimation {
+                    self.updateDaxVisibility()
+                    self.view.layoutIfNeeded()
+                }
+            }
+        aiChatHistoryManager = manager
+
+        if let escapeHatchModel {
+            let count = suggestionTrayDependencies?.tabsModelProvider().count ?? 0
+            manager.setEscapeHatch(
+                escapeHatchModel,
+                openTabCount: count,
+                onTapped: { [weak self] in
+                    self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
+                },
+                onTabSwitcherTapped: { [weak self] in
+                    self?.delegate?.onTabSwitcherRequested()
+                }
+            )
+        }
+    }
+    
+    /// Creates ad configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeAIChatHistoryManager() -> AIChatHistoryManager {
+        let suggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            )
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+
+        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                    aiChatSettings: aiChatSettings,
+                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+    }
+
     private func installDaxLogoView() {
-        if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: view, isTopBarPosition: isUsingTopBarPosition)
+        if switchBarHandler.isFireTab {
+            let escapeHatchTap: (() -> Void)? = escapeHatchModel.map { model in
+                { [weak self] in self?.delegate?.onSwitchToTab(model.targetTab) }
+            }
+            daxLogoManager.installInViewController(self,
+                                                   asSubviewOf: contentContainerView,
+                                                   anchorView: switchBarVC.view,
+                                                   isTopBarPosition: isUsingTopBarPosition,
+                                                   escapeHatch: escapeHatchModel,
+                                                   onEscapeHatchTap: escapeHatchTap)
+        } else if let view = switchBarVC.segmentedPickerView {
+            daxLogoManager.installInViewController(self,
+                                                   asSubviewOf: contentContainerView,
+                                                   anchorView: view,
+                                                   isTopBarPosition: isUsingTopBarPosition)
         }
     }
 
     private func installNavigationActionBar() {
-        let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
+        let manager = NavigationActionBarManager(
+            switchBarHandler: switchBarHandler,
+            isVoiceModeFeatureEnabled: voiceShortcutFeature.isAvailable
+        )
         if isUsingTopBarPosition {
             // Note this is not installed in contentContainerView - this is floating over content.
             manager.installInViewController(self)
@@ -301,7 +467,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         navigationActionBarManager = manager
     }
 
+    private var lastKnownToggleState: TextEntryMode?
+
     private func setupSubscriptions() {
+        lastKnownToggleState = switchBarHandler.currentToggleState
+
+        switchBarHandler.toggleStatePublisher
+            .dropFirst()
+            .sink { [weak self] newState in
+                guard let self, newState != self.lastKnownToggleState else { return }
+                self.lastKnownToggleState = newState
+                self.delegate?.onToggleModeSwitched(to: newState)
+                self.prepareURLFallbackForModeTransition(to: newState)
+            }
+            .store(in: &cancellables)
+
         switchBarVC.textEntryViewController.textHeightChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -322,13 +502,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 self.delegate?.onQueryUpdated(currentText)
 
+                self.updateURLFallbackForCurrentText()
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
                     self.view.layoutIfNeeded()
                 }
 
-                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
             }
             .store(in: &cancellables)
 
@@ -368,11 +550,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func updateSwipeContainerSafeArea() {
         if isUsingTopBarPosition {
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = 0
         } else {
             switchBarVC.view.layoutIfNeeded()
             let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
         }
     }
 
@@ -413,6 +595,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
+
+        // Skip animation when off-window to prevent spring from capturing unsettled bounds.
+        guard view.window != nil else {
+            UIView.performWithoutAnimation { animation() }
+            completion?(.end)
+            return
+        }
 
         if contentAnimator?.state == .stopped {
             contentAnimator = nil
@@ -467,17 +656,84 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         present(alertController, animated: true)
     }
 
+    // MARK: - URL Fallback Suggestions
+
+    /// Applies the URL filter immediately when switching to duck.ai so the suggestion
+    /// list transitions naturally from full results to URL-only during the fade animation.
+    private func prepareURLFallbackForModeTransition(to mode: TextEntryMode) {
+        guard mode == .aiChat, shouldShowURLFallback else { return }
+        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false)
+        suggestionTrayManager?.showURLOnlySuggestions(for: switchBarHandler.currentText, animated: false)
+    }
+
+    /// Called after the fade animation completes to finalize URL fallback state.
+    private func finalizeURLFallbackAfterModeTransition() {
+        updateURLFallbackSuggestions(chatHasSuggestions: chatHasResults)
+        updateDaxVisibility()
+    }
+
+    /// Updates URL fallback on every keystroke in duck.ai mode — the chat history
+    /// publisher only fires on state changes, not per-character.
+    private func updateURLFallbackForCurrentText() {
+        guard switchBarHandler.currentToggleState == .aiChat else { return }
+        updateURLFallbackSuggestions(chatHasSuggestions: chatHasResults)
+    }
+
+    /// When in duck.ai mode and chat history has no matches, show URL-only
+    /// autocomplete as a fallback so users can still navigate to websites.
+    private func updateURLFallbackSuggestions(chatHasSuggestions: Bool) {
+        guard switchBarHandler.currentToggleState == .aiChat else {
+            if isShowingURLFallback {
+                // Just reset the filter — don't hide the tray. The normal search flow
+                // (handleQueryUpdate) will immediately show full results, avoiding a flash.
+                suggestionTrayManager?.resetSuggestionFilter()
+                isShowingURLFallback = false
+            }
+            return
+        }
+        let query = switchBarHandler.currentText
+        let shouldShow = !chatHasSuggestions && !query.isBlank
+        if shouldShow {
+            // Apply filter first, then reveal the container — prevents flash of old unfiltered content.
+            suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
+            if !isShowingURLFallback {
+                swipeContainerManager?.setSearchPageVisible(true, animated: false)
+            }
+            isShowingURLFallback = true
+        } else if isShowingURLFallback {
+            suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
+            swipeContainerManager?.setSearchPageVisible(false, animated: true)
+            // Restore the chat container — keepSearchVisible prevented it from fading in.
+            swipeContainerManager?.restoreChatPageVisibility()
+            isShowingURLFallback = false
+        }
+    }
+
     private func updateDaxVisibility() {
 
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
+        let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
-        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+        let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
+        let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavoritesOrMessages) && !isHorizontallyCompactLayoutEnabled
+
+        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
+
+        let isAIDaxVisible: Bool
+        if switchBarHandler.isUsingFadeOutAnimation {
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
+        } else {
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
+        }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Constants.escapeHatchLogoZoneHeight : 0
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
     }
+
 }
 
 // MARK: - NavigationActionBarViewAnimationDelegate
@@ -509,6 +765,34 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
     }
 }
 
+// MARK: - FadeOutContainerViewControllerDelegate
+
+extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDelegate {
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        switchBarHandler.setToggleState(mode)
+        finalizeURLFallbackAfterModeTransition()
+    }
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+        // Forward the transition progress to the switch bar to animate the toggle
+        switchBarVC.updateScrollProgress(progress)
+
+        daxLogoManager.updateSwipeProgress(progress)
+    }
+
+    func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
+        return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
+    }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        // When switching to duck.ai with text and no chat results, URL fallback will
+        // show in the search container — skip the crossfade so the filtered list
+        // stays visible without a blank gap or snap.
+        switchBarHandler.currentToggleState == .aiChat && shouldShowURLFallback
+    }
+}
+
 // MARK: - SuggestionTrayManagerDelegate
 
 extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
@@ -522,11 +806,27 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
     }
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
-        switchBarHandler.updateCurrentText(text)
+        switchBarVC.textEntryViewController.setQueryText(text)
     }
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity) {
         delegate?.onEditFavorite(favorite)
+    }
+
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
+        delegate?.onSwitchToTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager) {
+        delegate?.onTabSwitcherRequested()
+    }
+
+    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {
+        delegate?.onTryFireModeRequested()
+    }
+
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
+        updateDaxVisibility()
     }
 
 }
@@ -552,6 +852,10 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
         }
+    }
+
+    func navigationActionBarManagerDidTapVoiceMode(_ manager: NavigationActionBarManager) {
+        delegate?.onVoiceModeRequested()
     }
 }
 
@@ -581,11 +885,21 @@ extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
     }
 }
 
+// MARK: - AIChatHistoryManagerDelegate
+
+extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
+
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
+        delegate?.onChatHistorySelected(url: url)
+    }
+}
+
 private extension OmniBarEditingStateViewController {
     struct Constants {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .background)
         static let animationDuration: TimeInterval = 0.15
+        static let escapeHatchLogoZoneHeight: CGFloat = 70
     }
 }

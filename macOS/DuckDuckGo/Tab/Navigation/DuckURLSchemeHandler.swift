@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import ContentScopeScripts
 import FeatureFlags
 import Foundation
 import MaliciousSiteProtection
+import PrivacyConfig
 import WebKit
 
 final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
@@ -324,6 +324,8 @@ private extension DuckURLSchemeHandler {
         case "ico": return "image/x-icon"
         case "riv": return "application/octet-stream"
         case "json", "map": return "application/json"
+        case "mp4": return "video/mp4"
+        case "otf": return "font/otf"
         default:
             assertionFailure("Unknown MIME type for \"\(fileExtension)\" file extension")
             return "application/octet-stream"

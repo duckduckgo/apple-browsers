@@ -47,6 +47,17 @@ enum SERPSettingsPixel: PixelKitEvent {
     var parameters: [String: String]? {
         return nil
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .serpSettingsSerializationFailed,
+                .serpSettingsKeyValueStoreReadError,
+                .serpSettingsKeyValueStoreWriteError,
+                .hideAIGeneratedImagesButtonClicked,
+                .openDuckAIButtonClick:
+            return [.pixelSource]
+        }
+    }
 }
 
 final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {

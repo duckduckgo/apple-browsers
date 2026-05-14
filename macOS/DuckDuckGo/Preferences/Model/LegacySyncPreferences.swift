@@ -27,7 +27,7 @@ import PDFKit
 import Navigation
 import PixelKit
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 
 final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
 
@@ -181,6 +181,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     @Published var isAccountCreationAvailable: Bool = true
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
+    @Published var isAIChatSyncEnabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -275,6 +276,12 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         }
     }
 
+    private func updateSingleDeviceSyncPromoVisibility() {
+        let isFlagEnabled = featureFlagger.isFeatureOn(.allowSingleDeviceOnConnectScreen)
+        let isSyncInactive = syncService.account == nil
+        managementDialogModel.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen = isFlagEnabled && isSyncInactive
+    }
+
     private func setUpObservables() {
         syncService.featureFlagsPublisher
             .dropFirst()
@@ -283,12 +290,26 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             .assign(to: \.syncFeatureFlags, onWeaklyHeld: self)
             .store(in: &cancellables)
 
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                let isEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.isAIChatSyncEnabled = isEnabled
+                self.managementDialogModel.isAIChatSyncEnabled = isEnabled
+                self.updateSingleDeviceSyncPromoVisibility()
+            }
+            .store(in: &cancellables)
+
         syncService.authStatePublisher
             .removeDuplicates()
             .asVoid()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.refreshDevices()
+                guard let self else { return }
+                self.refreshDevices()
+                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
 
@@ -511,7 +532,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             .sink { [weak self] _ in
                 guard let self else { return }
                 Task {
-                    await self.presentDialog(for: .nowSyncing)
+                    self.presentDialog(for: .nowSyncing)
                 }
             }.store(in: &cancellables)
     }
@@ -645,7 +666,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
                 } else {
                     self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 }
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect), doNotEnforcePrefix: true)
             } catch {
                 if syncService.account == nil {
                     if isRecovery {
@@ -816,13 +837,13 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
     }
 
     func userConfirmedSwitchAccounts(recoveryCode: String) {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount, doNotEnforcePrefix: true)
         guard let recoveryKey = try? SyncCode.decodeBase64String(recoveryCode).recovery else {
             return
         }
         Task {
             await switchAccounts(recoveryKey: recoveryKey)
-            await managementDialogModel.endFlow()
+            managementDialogModel.endFlow()
         }
     }
 
@@ -830,17 +851,17 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         do {
             try await syncService.disconnect()
         } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLogoutError.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLogoutError, doNotEnforcePrefix: true)
         }
 
         do {
             let device = Self.deviceInfo()
             let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
-            await mapDevices(registeredDevices)
+            mapDevices(registeredDevices)
         } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError, doNotEnforcePrefix: true)
         }
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount, doNotEnforcePrefix: true)
     }
 
     func userPressedCancel(from dialog: ManagementDialogKind) {
@@ -852,9 +873,9 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
                 return
             }
             if syncCode.connect != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect), doNotEnforcePrefix: true)
             } else if syncCode.exchangeKey != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange), doNotEnforcePrefix: true)
             }
         default:
             break
@@ -862,11 +883,11 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
     }
 
     func switchAccountsCancelled() {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount, doNotEnforcePrefix: true)
     }
 
     func enterCodeViewDidAppear() {
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown.withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown, doNotEnforcePrefix: true)
     }
 
     private func startExchangeOrRecovery() {
@@ -895,7 +916,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange), doNotEnforcePrefix: true)
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
@@ -907,7 +928,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
     private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) async {
         if devices.count > 1 {
             managementDialogModel.showSwitchAccountsMessage()
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount, doNotEnforcePrefix: true)
         } else {
             await switchAccounts(recoveryKey: recoveryKey)
             managementDialogModel.endFlow()
@@ -925,9 +946,9 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
     private func fireCodeCopiedPixel(code: String) {
         guard let syncCode = try? SyncCode.decodeBase64String(code) else { return }
         if syncCode.exchangeKey != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange).withoutMacPrefix)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange), doNotEnforcePrefix: true)
         } else if syncCode.connect != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect).withoutMacPrefix)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect), doNotEnforcePrefix: true)
         }
     }
 }
@@ -1013,14 +1034,14 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource).withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource), doNotEnforcePrefix: true)
     }
 
     private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
         guard case .receiver(_, let codeSource) = setupRole, case .pastedCode = codeSource else {
             return
         }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed.withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed, doNotEnforcePrefix: true)
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
@@ -1029,6 +1050,6 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource).withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource), doNotEnforcePrefix: true)
     }
 }

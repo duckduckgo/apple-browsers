@@ -17,11 +17,15 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 final class AddBookmarkPopover: NSPopover {
 
     private let bookmarkManager: BookmarkManager
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     var isNew: Bool = false
     var bookmark: Bookmark? {
@@ -49,6 +53,9 @@ final class AddBookmarkPopover: NSPopover {
 
         animates = false
         behavior = .transient
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -66,7 +73,12 @@ final class AddBookmarkPopover: NSPopover {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
         let syncButtonViewModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
-        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
+        let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
+        // It's important to set the frame at least once here. If we don't, the popover
+        // can miscalculate position, especially in macOS 26 (Sequoia)
+        contentViewController.view.frame = CGRect(origin: .zero, size: contentViewController.view.intrinsicContentSize)
+        self.contentViewController = contentViewController
+
         viewModel.buttonClicked = { [weak self] in
             self?.performClose(nil)
         }
@@ -82,7 +94,14 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     func popoverWillClose() {
+        contentViewController = nil
         bookmark = nil
     }
+}
 
+extension AddBookmarkPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

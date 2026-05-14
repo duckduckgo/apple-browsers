@@ -21,6 +21,8 @@ import UserScript
 import AIChat
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
+import Subscription
 import WebKit
 import Core
 import SwiftUI
@@ -30,6 +32,7 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
+    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
 }
 
@@ -38,6 +41,7 @@ final class AIChatViewControllerManager {
     // MARK: - Public Properties
 
     weak var delegate: AIChatViewControllerManagerDelegate?
+    var isFireModeProvider: (() -> Bool)?
 
     // MARK: - Private Properties
 
@@ -59,6 +63,10 @@ final class AIChatViewControllerManager {
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private var productSurfaceTelemetry: ProductSurfaceTelemetry
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    private let statisticsLoader: StatisticsLoader
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Initialization
 
@@ -70,7 +78,11 @@ final class AIChatViewControllerManager {
          featureFlagger: FeatureFlagger,
          featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
-         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         statisticsLoader: StatisticsLoader = .shared,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -81,9 +93,19 @@ final class AIChatViewControllerManager {
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.freeTrialConversionService = freeTrialConversionService
+        self.statisticsLoader = statisticsLoader
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
 
     // MARK: - Public Methods
+
+    @MainActor
+    func killSessionAndResetTimer() async {
+        stopSessionTimer()
+        await cleanUpSession()
+    }
 
     /// Opens AI Chat in a modal presentation (sheet).
     ///
@@ -91,21 +113,22 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - viewController: View controller to present the modal on
-    @MainActor
-    func killSessionAndResetTimer() async {
-        stopSessionTimer()
-        await cleanUpSession()
-    }
-
     @MainActor
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,
+                    flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
+                    modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
+                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     on viewController: UIViewController) {
-        open(query, payload: payload, autoSend: autoSend, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -115,6 +138,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - containerView: View to embed AI Chat into
     ///   - parentViewController: Parent view controller for managing the child
@@ -123,13 +147,25 @@ final class AIChatViewControllerManager {
     func openAIChatInContainer(_ query: String? = nil,
                                payload: Any? = nil,
                                autoSend: Bool = false,
+                               flowType: AIChatOnboardingFlowType = .default,
                                tools: [AIChatRAGTool]? = nil,
+                               modelId: String? = nil,
+                               reasoningEffort: AIChatReasoningEffort? = nil,
+                               images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                               files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
-        open(query, payload: payload, autoSend: autoSend, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
+    }
+
+    /// Opens AI Chat in voice mode.
+    @MainActor
+    func openAIChatVoiceMode(on viewController: UIViewController) {
+        open(presentationMode: .modal, viewController: viewController, voiceMode: true)
     }
 
     // MARK: - Private Setup Methods
@@ -140,6 +176,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query
     ///   - payload: Optional payload data
     ///   - autoSend: Whether to auto-send query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools
     ///   - presentationMode: `.modal` (fires pixels) or `.container` (no pixels)
     ///   - containerView: Required for `.container` mode
@@ -149,12 +186,19 @@ final class AIChatViewControllerManager {
     private func open(_ query: String? = nil,
                       payload: Any? = nil,
                       autoSend: Bool = false,
+                      flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
+                      modelId: String? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
+                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
-                      completion: (() -> Void)? = nil) {
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+                      completion: (() -> Void)? = nil,
+                      voiceMode: Bool = false) {
+
+        productSurfaceTelemetry.duckAIUsed()
 
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
@@ -173,14 +217,40 @@ final class AIChatViewControllerManager {
             subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
-                self.performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                                  presentationMode: presentationMode, containerView: containerView,
-                                  viewController: viewController, completion: completion)
+                self.performSetup(
+                    query,
+                    payload: payload,
+                    autoSend: autoSend,
+                    flowType: flowType,
+                    tools: tools,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort,
+                    images: images,
+                    files: files,
+                    presentationMode: presentationMode,
+                    containerView: containerView,
+                    viewController: viewController,
+                    completion: completion,
+                    voiceMode: voiceMode
+                )
             }
         } else {
-            performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                         presentationMode: presentationMode, containerView: containerView,
-                         viewController: viewController, completion: completion)
+            performSetup(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
+                presentationMode: presentationMode,
+                containerView: containerView,
+                viewController: viewController,
+                completion: completion,
+                voiceMode: voiceMode
+            )
         }
     }
 
@@ -189,21 +259,49 @@ final class AIChatViewControllerManager {
     private func performSetup(_ query: String?,
                               payload: Any?,
                               autoSend: Bool,
+                              flowType: AIChatOnboardingFlowType = .default,
                               tools: [AIChatRAGTool]?,
+                              modelId: String?,
+                              reasoningEffort: AIChatReasoningEffort?,
+                              images: [AIChatNativePrompt.NativePromptImage]?,
+                              files: [AIChatNativePrompt.NativePromptFile]?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
-                              completion: (() -> Void)?) {
+                              completion: (() -> Void)?,
+                              voiceMode: Bool = false) {
         switch presentationMode {
         case .modal:
             guard let viewController = viewController else { return }
-            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend,
-                                  tools: tools, on: viewController)
+            setupAndPresentAIChat(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
+                on: viewController,
+                voiceMode: voiceMode
+            )
         case .container:
             guard let containerView = containerView, let viewController = viewController else { return }
-            setupAndAddToContainer(query, payload: payload, autoSend: autoSend,
-                                   tools: tools, in: containerView,
-                                   parentViewController: viewController, completion: completion)
+            setupAndAddToContainer(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
+                in: containerView,
+                parentViewController: viewController,
+                completion: completion
+            )
         }
     }
 
@@ -215,14 +313,28 @@ final class AIChatViewControllerManager {
     private func setupAndPresentAIChat(_ query: String?,
                                        payload: Any?,
                                        autoSend: Bool,
+                                       flowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
-                                       on viewController: UIViewController) {
+                                       modelId: String?,
+                                       reasoningEffort: AIChatReasoningEffort?,
+                                       images: [AIChatNativePrompt.NativePromptImage]?,
+                                       files: [AIChatNativePrompt.NativePromptFile]?,
+                                       on viewController: UIViewController,
+                                       voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
-        setupChatViewController(aiChatViewController, query: query,
-                                payload: payload,
-                                autoSend: autoSend,
-                                tools: tools)
-
+        setupChatViewController(
+            aiChatViewController,
+            query: query,
+            payload: payload,
+            autoSend: autoSend,
+            flowType: flowType,
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files,
+            voiceMode: voiceMode
+        )
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
             allowedOrientation: .portrait
@@ -239,15 +351,28 @@ final class AIChatViewControllerManager {
     private func setupAndAddToContainer(_ query: String?,
                                         payload: Any?,
                                         autoSend: Bool,
+                                        flowType: AIChatOnboardingFlowType = .default,
                                         tools: [AIChatRAGTool]?,
+                                        modelId: String?,
+                                        reasoningEffort: AIChatReasoningEffort?,
+                                        images: [AIChatNativePrompt.NativePromptImage]?,
+                                        files: [AIChatNativePrompt.NativePromptFile]?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
                                         completion: (() -> Void)? = nil) {
         let aiChatViewController = createAIChatViewController(presentationMode: .container)
-        setupChatViewController(aiChatViewController, query: query,
-                                payload: payload,
-                                autoSend: autoSend,
-                                tools: tools)
+        setupChatViewController(
+            aiChatViewController,
+            query: query,
+            payload: payload,
+            autoSend: autoSend,
+            flowType: flowType,
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files
+        )
 
         parentViewController.addChild(aiChatViewController)
         containerView.addSubview(aiChatViewController.view)
@@ -321,7 +446,8 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent()
+        let fireMode = isFireModeProvider?() ?? false
+        let configuration = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
@@ -334,11 +460,36 @@ final class AIChatViewControllerManager {
                                          query: String?,
                                          payload: Any?,
                                          autoSend: Bool,
-                                         tools: [AIChatRAGTool]?) {
+                                         flowType: AIChatOnboardingFlowType = .default,
+                                         tools: [AIChatRAGTool]?,
+                                         modelId: String?,
+                                         reasoningEffort: AIChatReasoningEffort?,
+                                         images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                                         files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                                         voiceMode: Bool = false) {
+        if voiceMode {
+            aiChatViewController.loadVoiceMode()
+            return
+        }
+
         if let query = query {
-            aiChatViewController.loadQuery(query,
-                                           autoSend: autoSend,
-                                           tools: tools)
+            aiChatViewController.loadQuery(
+                query,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort
+            )
+            storePromptWithAttachmentsIfNeeded(
+                query,
+                autoSend: autoSend,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files
+            )
         }
 
         if let payload = payload as? AIChatPayload {
@@ -368,6 +519,31 @@ final class AIChatViewControllerManager {
     }
 }
 
+private extension AIChatViewControllerManager {
+
+    func storePromptWithAttachmentsIfNeeded(_ query: String,
+                                            autoSend: Bool,
+                                            tools: [AIChatRAGTool]?,
+                                            modelId: String?,
+                                            reasoningEffort: AIChatReasoningEffort?,
+                                            images: [AIChatNativePrompt.NativePromptImage]?,
+                                            files: [AIChatNativePrompt.NativePromptFile]?) {
+        guard images?.isEmpty == false || files?.isEmpty == false else { return }
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let prompt = AIChatNativePrompt.queryPrompt(
+            query,
+            autoSubmit: autoSend,
+            toolChoice: tools?.map(\.rawValue),
+            images: images,
+            files: files,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
+        )
+        AIChatPromptHandler.shared.setData(prompt)
+    }
+}
+
 // MARK: - UserContentControllerDelegate
 
 extension AIChatViewControllerManager: UserContentControllerDelegate {
@@ -382,6 +558,12 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
 
         aiChatUserScript = userScripts.aiChatUserScript
+        aiChatUserScript?.setFireModeProvider(isFireModeProvider)
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireModeProvider?() == true,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView
@@ -407,6 +589,10 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.aiChatViewControllerManager(self, didRequestOpenDownloadWithFileName: fileName)
         }
+    }
+    
+    func aiChatViewControllerWillStartDownload() {
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
     }
 }
 
@@ -434,6 +620,8 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             }
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
+        case .sendToSyncSettings, .sendToSetupSync:
+            delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
         default:
             break
         }
@@ -444,6 +632,20 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+
+            if let tier = metric.modelTier, case .plus = tier {
+                freeTrialConversionService.markDuckAIActivated()
+            }
+
+            DispatchQueue.main.async {
+                let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                    application: UIApplication.shared)
+                self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                    DispatchQueue.main.async {
+                        backgroundAssertion.release()
+                    }
+                }
+            }
         }
 
         pixelMetricHandler?.firePixelWithMetric(metric)

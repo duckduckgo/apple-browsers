@@ -24,14 +24,16 @@ class DownloadsListDataSource {
     
     @Published var model: DownloadsListModel
     
-    private var downloadManager = AppDependencyProvider.shared.downloadManager
+    private var downloadManager: DownloadManaging
     private var deleteDownloadsHelper = DownloadsDeleteHelper()
     
     private var bag: Set<AnyCancellable> = []
     
-    init() {
+    init(downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager) {
+        self.downloadManager = downloadManager
+        let downloadsDirectoryFiles = (try? downloadManager.downloadsDirectoryFiles) ?? []
         model = DownloadsListModel(ongoingDownloads: downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) },
-                                   completeDownloads: downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
+                                   completeDownloads: downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
         downloadManager.startMonitoringDownloadsDirectoryChanges()
         setupChangeListeners()
     }
@@ -46,7 +48,14 @@ class DownloadsListDataSource {
         let downloadFinishedPublisher = NotificationCenter.default.publisher(for: .downloadFinished)
         let downloadsDirectoryChangedPublisher = NotificationCenter.default.publisher(for: .downloadsDirectoryChanged)
         
-        downloadsDirectoryChangedPublisher.merge(with: downloadStartedPublisher, downloadFinishedPublisher)
+        downloadsDirectoryChangedPublisher
+            .merge(with: downloadStartedPublisher, downloadFinishedPublisher)
+            .sink { [weak self] _ in
+                self?.updateModel()
+            }
+            .store(in: &bag)
+        
+        deleteDownloadsHelper.temporaryDirectoryURLs
             .sink { [weak self] _ in
                 self?.updateModel()
             }
@@ -54,8 +63,9 @@ class DownloadsListDataSource {
     }
     
     private func updateModel() {
+        let downloadsDirectoryFiles = (try? downloadManager.downloadsDirectoryFiles) ?? []
         let ongoingDownloads = downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) }
-        let completeDownloads = downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
+        let completeDownloads = downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
         
         model.update(ongoingDownloads: ongoingDownloads,
                      completeDownloads: completeDownloads)

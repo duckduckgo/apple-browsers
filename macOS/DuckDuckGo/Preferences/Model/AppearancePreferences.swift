@@ -18,7 +18,7 @@
 
 import AppKit
 import Bookmarks
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import FeatureFlags
 import Foundation
@@ -47,6 +47,7 @@ protocol AppearancePreferencesPersistor {
     var homePageCustomBackground: String? { get set }
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
+    var didChangeAnyNewTabPageCustomizationSetting: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -54,6 +55,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     enum Key: String {
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
+        case newTabPageDidChangeAnyCustomizationSetting = "new-tab-page.did-change-any-customization-setting"
+    }
+
+    var didChangeAnyNewTabPageCustomizationSetting: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) }
     }
 
     var isOmnibarVisible: Bool {
@@ -159,17 +166,13 @@ protocol NewTabPageNavigator {
 final class DefaultNewTabPageNavigator: NewTabPageNavigator {
     func openNewTabPageBackgroundCustomizationSettings() {
         Task { @MainActor in
-            Application.appDelegate.windowControllersManager.showTab(with: .newtab)
-            try? await Task.sleep(interval: 0.2)
+            if Application.appDelegate.windowControllersManager.selectedTab?.content != .newtab {
+                Application.appDelegate.windowControllersManager.showTab(with: .newtab)
+                try? await Task.sleep(interval: 0.2)
+            }
             if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
-                if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
-                    if let webView = window.mainViewController.browserTabViewController.webView {
-                        Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
-                    }
-                } else {
-                    let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
-                    NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
-                }
+                let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
+                NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
             }
         }
     }
@@ -247,19 +250,25 @@ final class AppearancePreferences: ObservableObject {
     struct Constants {
         static let bookmarksBarAlignmentChangedIsCenterAlignedParameter = "isCenterAligned"
         static let showTabsAndBookmarksBarOnFullScreenParameter = "showTabsAndBookmarksBarOnFullScreen"
-        static let dismissNextStepsCardsAfterDays = 9
+        static let legacyDismissNextStepsCardsAfterDays = 9
+        static let maxNextStepsCardsDemonstrationDays = 14
     }
 
     @Published var themeAppearance: ThemeAppearance {
         didSet {
+            guard oldValue != themeAppearance else {
+                return
+            }
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
-            pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
         }
     }
 
     @Published var themeName: ThemeName {
         didSet {
+            guard oldValue != themeName else {
+                return
+            }
             persistor.themeName = themeName.rawValue
         }
     }
@@ -286,7 +295,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var isOmnibarAvailable: Bool {
-        return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+        return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
     @Published var isOmnibarVisible: Bool {
@@ -309,7 +318,26 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
-    @Published var isContinueSetUpCardsViewOutdated: Bool
+    var maxNextStepsCardsDemonstrationDays: Int {
+        if let featureFlagger,
+           featureFlagger.isFeatureOn(.nextStepsListWidget) &&
+            featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
+            return Constants.maxNextStepsCardsDemonstrationDays
+        } else {
+            return Constants.legacyDismissNextStepsCardsAfterDays
+        }
+    }
+
+    /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.
+    var nextStepsCardsDemonstrationDays: Int {
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated
+    }
+
+    private var shouldHideNextStepsCards: Bool {
+       persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays
+    }
+
+    @Published var isContinueSetUpCardsViewOutdated: Bool = false
 
     @Published var continueSetUpCardsClosed: Bool {
         didSet {
@@ -341,7 +369,7 @@ final class AppearancePreferences: ObservableObject {
                 persistor.continueSetUpCardsLastDemonstrated = Date()
                 persistor.continueSetUpCardsNumberOfDaysDemonstrated += 1
 
-                if persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays {
+                if shouldHideNextStepsCards {
                     self.isContinueSetUpCardsViewOutdated = true
                 }
             }
@@ -403,13 +431,34 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+
+    var isForceDarkModeVisible: Bool {
+        guard let darkReaderFeatureSettings else { return false }
+        return darkReaderFeatureSettings.isFeatureEnabled && themeAppearance != .light
+    }
+
+    var forceDarkModeEnabled: Bool {
+        get { darkReaderFeatureSettings?.isForceDarkModeEnabled ?? false }
+        set {
+            darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
+            objectWillChange.send()
+        }
+    }
+
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
+        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {
         NSApp.appearance = themeAppearance.appearance
+    }
+
+    @Published var didChangeAnyNewTabPageCustomizationSetting: Bool {
+        didSet {
+            persistor.didChangeAnyNewTabPageCustomizationSetting = didChangeAnyNewTabPageCustomizationSetting
+        }
     }
 
     func openNewTabPageBackgroundCustomizationSettings() {
@@ -418,11 +467,12 @@ final class AppearancePreferences: ObservableObject {
 
     convenience init(
         keyValueStore: ThrowingKeyValueStoring,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
@@ -430,17 +480,19 @@ final class AppearancePreferences: ObservableObject {
             pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
             dateTimeProvider: dateTimeProvider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig
         )
     }
 
     init(
         persistor: AppearancePreferencesPersistor,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -448,9 +500,9 @@ final class AppearancePreferences: ObservableObject {
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
         self.featureFlagger = featureFlagger
+        self.aiChatMenuConfig = aiChatMenuConfig
 
         /// when adding new properties, make sure to update `reload()` to include them there.
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
@@ -466,15 +518,18 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
 
+        isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         subscribeToOmnibarFeatureFlagChanges()
+        subscribeToNewTabPageCustomizationSettingChanges()
     }
 
     /// This function reloads preferences with persisted values.
     ///
     /// - Note: This is only used in the debug menu and shouldn't need to be called in the production code.
     func reload() {
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
+        isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
@@ -490,14 +545,16 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
     }
 
     private var persistor: AppearancePreferencesPersistor
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let privacyConfigurationManager: PrivacyConfigurationManaging?
     private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: FeatureFlagger?
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
@@ -509,7 +566,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private func subscribeToOmnibarFeatureFlagChanges() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
 
@@ -517,6 +574,30 @@ final class AppearancePreferences: ObservableObject {
             .filter { $0.0 == .newTabPageOmnibar }
             .sink { _ in
                 self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToNewTabPageCustomizationSettingChanges() {
+        let duckAISectionVisibilityPublisher = aiChatMenuConfig.valuesChangedPublisher
+            .compactMap { [weak self] in
+                self?.aiChatMenuConfig.shouldDisplayNewTabPageShortcut
+            }
+            .prepend(aiChatMenuConfig.shouldDisplayNewTabPageShortcut)
+            .removeDuplicates()
+
+        duckAISectionVisibilityPublisher
+            .combineLatest($themeAppearance,
+                           $themeName,
+                           $homePageCustomBackground)
+            .combineLatest($isOmnibarVisible,
+                           $isFavoriteVisible,
+                           $isProtectionsReportVisible)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !didChangeAnyNewTabPageCustomizationSetting else { return }
+                didChangeAnyNewTabPageCustomizationSetting = true
             }
             .store(in: &cancellables)
     }

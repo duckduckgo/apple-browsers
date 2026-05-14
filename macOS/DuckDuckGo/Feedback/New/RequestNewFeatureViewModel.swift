@@ -110,6 +110,6 @@ final class RequestNewFeatureViewModel: ObservableObject {
                                      category: .featureRequest,
                                      problemCategory: nil)
 
-         feedbackSender.sendFeedback(feedback)
+         feedbackSender.sendFeedback(feedback, completionHandler: nil)
     }
 }

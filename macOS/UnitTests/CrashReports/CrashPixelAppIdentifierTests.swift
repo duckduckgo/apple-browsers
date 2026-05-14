@@ -26,11 +26,15 @@ struct CrashPixelAppIdentifierTests {
         static let appStore = "com.duckduckgo.mobile.ios"
     }
 
-    @Test("Initializer returns nil for app bundles")
-    func testThatInitializerReturnsNilForAppBundles() {
+    @Test("Initializer returns nil when bundleID is nil")
+    func testThatInitializerReturnsNilWhenBundleIDIsNil() {
         #expect(CrashPixelAppIdentifier(nil, mainBundleID: BundleID.dmg) == nil)
-        #expect(CrashPixelAppIdentifier("com.duckduckgo.macos.browser", mainBundleID: BundleID.dmg) == nil)
-        #expect(CrashPixelAppIdentifier("com.duckduckgo.mobile.ios", mainBundleID: BundleID.appStore) == nil)
+    }
+
+    @Test("Initializer returns .app for main app bundles")
+    func testThatInitializerReturnsAppForMainAppBundles() {
+        #expect(CrashPixelAppIdentifier("com.duckduckgo.macos.browser", mainBundleID: BundleID.dmg) == .app)
+        #expect(CrashPixelAppIdentifier("com.duckduckgo.mobile.ios", mainBundleID: BundleID.appStore) == .app)
     }
 
     @Test("Initializer returns .dbp for DBP agent bundles")

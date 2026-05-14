@@ -17,9 +17,10 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
-/// https://app.asana.com/1/137249556945/project/1113117197328546/task/1211362861225166?focus=true
+/// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+/// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
 public enum AttributedMetricFeatureFlag: String {
     case attributedMetrics // general kill switch
 
@@ -43,13 +44,15 @@ public enum AttributedMetricFeatureFlag: String {
 
 extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
 
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
-        case .attributedMetrics, .emitAllMetrics, .retention, .canEmitRetention,
+        case .attributedMetrics:
+            return .enabled
+        case .emitAllMetrics, .retention, .canEmitRetention,
              .searchDaysAvg, .canEmitSearchDaysAvg, .searchCountAvg, .canEmitSearchCountAvg,
              .adClickCountAvg, .canEmitAdClickCountAvg, .aiUsageAvg, .canEmitAIUsageAvg,
              .subscriptionRetention, .canEmitSubscriptionRetention, .syncDevices, .canEmitSyncDevices:
-            return false
+            return .disabled
         }
     }
 
@@ -63,10 +66,10 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
         }
     }
 
-    public var source: BrowserServicesKit.FeatureFlagSource {
+    public var source: FeatureFlagSource {
         switch self {
         case .attributedMetrics:
-            return .remoteReleasable(.feature(.attributedMetrics))
+            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled))
         case .emitAllMetrics:
             return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.emitAllMetrics))
         case .retention:
@@ -100,5 +103,5 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
         }
     }
 
-    public var cohortType: (any BrowserServicesKit.FeatureFlagCohortDescribing.Type)? { nil }
+    public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
 }

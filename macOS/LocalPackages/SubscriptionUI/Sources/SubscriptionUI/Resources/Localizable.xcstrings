@@ -5,13 +5,64 @@
       "comment" : "CTA of the message displayed for logged in users during the Black Friday campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spare %d % im ersten Jahr"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Save %d%% on First Year"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahorra un %d%% el primer año"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Économisez %d % sur la première année"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risparmia il %d%% sul primo anno"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bespaar %d%% op het eerste jaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaoszczędź %d%% w pierwszym roku"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poupa %d%% no primeiro ano"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сэкономить %d%% в первый год"
+          }
         }
       }
+    },
+    "Change Tier" : {
+      "shouldTranslate" : false
     },
     "Close" : {
       "localizations" : {
@@ -1325,6 +1376,66 @@
         }
       }
     },
+    "subscription.cancel.pending.downgrade.banner.caption" : {
+      "comment" : "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tarif wird am %2$@ auf %1$@ herabgestuft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your plan will downgrade to %1$@ on %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan se se revertirá a %1$@ el %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait passera à %1$@ le %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano sarà declassato a %1$@ il giorno %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement wordt op %2$@ gedowngraded naar %1$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Será feito o downgrade do teu plano para %1$@ a %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш тарифный план будет понижен до %1$@ %2$@."
+          }
+        }
+      }
+    },
     "subscription.dialog.change.apple.description" : {
       "comment" : "Change plan or billing dialog subtitle description for subscription purchased via Apple",
       "extractionState" : "extracted_with_value",
@@ -1925,6 +2036,66 @@
         }
       }
     },
+    "subscription.preferences.button.view.all.plans" : {
+      "comment" : "Button for viewing all available subscription plans",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Tarife anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View All Plans"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver todos los planes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher tous les forfaits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza tutti i piani"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk alle abonnementen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz wszystkie plany"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver todos os planos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотреть все тарифы"
+          }
+        }
+      }
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",
@@ -1981,6 +2152,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Просмотреть тарифы"
+          }
+        }
+      }
+    },
+    "subscription.preferences.cancel.downgrade.button" : {
+      "comment" : "Button to cancel a pending downgrade of the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downgrade abbrechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Downgrade"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar degradación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler le changement de forfait"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla il downgrade"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downgrade annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj obniżenie poziomu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar alteração para versão inferior"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить понижение"
           }
         }
       }
@@ -2221,6 +2452,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identity Theft Restoration"
+          }
+        }
+      }
+    },
+    "subscription.preferences.manage.payment.or.cancel.button" : {
+      "comment" : "Button to manage payment or cancel subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zahlung verwalten oder stornieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage Payment or Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionar el pago o cancelar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer le paiement ou annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci il pagamento o Annulla"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betaling beheren of annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj płatnością lub anuluj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir pagamento ou Cancelar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление оплатой или Отмена"
           }
         }
       }
@@ -5411,62 +5702,182 @@
         }
       }
     },
-    "subscription.preferences.subscription.rebranding.message" : {
-      "comment" : "Message informing users that Subscription is now called the DuckDuckGo subscription",
+    "subscription.preferences.subscription.pending.downgrade.monthly.caption" : {
+      "comment" : "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo"
+            "value" : "Dein Tarif wird am %2$@ auf %1$@ monatlich herabgestuft."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Privacy Pro is now just called the DuckDuckGo subscription"
+            "value" : "Your plan will downgrade to %1$@ Monthly on %2$@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo"
+            "value" : "Tu plan se revertirá a %1$@ mensualmente el %2$@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo"
+            "value" : "Votre forfait passera à %1$@ mensuel le %2$@."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo"
+            "value" : "Il tuo piano sarà declassato a %1$@ mensile il giorno %2$@."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement"
+            "value" : "Je abonnement wordt op %2$@ gedowngraded naar %1$@ per maand."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro obecnie nazywa się po prostu subskrypcją DuckDuckGo"
+            "value" : "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@ z rozliczeniem miesięcznym."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Privacy Pro chama-se agora subscrição da DuckDuckGo"
+            "value" : "Será feito o downgrade do teu plano para %1$@ mensal a %2$@."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
+            "value" : "Ваш тарифный план будет понижен до %1$@ Monthly %2$@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.pending.downgrade.unknown.caption" : {
+      "comment" : "Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tarif wird am %2$@ auf %1$@ herabgestuft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your plan will downgrade to %1$@ on %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan se se revertirá a %1$@ el %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait passera à %1$@ le %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano sarà declassato a %1$@ il giorno %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement wordt op %2$@ gedowngraded naar %1$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Será feito o downgrade do teu plano para %1$@ a %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш тарифный план будет понижен до %1$@ %2$@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.pending.downgrade.yearly.caption" : {
+      "comment" : "Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tarif wird am %2$@ zu %1$@ jährlich herabgestuft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your plan will downgrade to %1$@ Yearly on %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan se revertirá a %1$@ anualmente el %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait passera à %1$@ annuel le %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano sarà declassato a %1$@ annuale il giorno %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement wordt op %2$@ gedowngraded naar %1$@ per jaar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@ z rozliczeniem rocznym."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Será feito o downgrade do teu plano para %1$@ anual a %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш тарифный план будет понижен до %1$@ Yearly %2$@."
           }
         }
       }
@@ -5887,6 +6298,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ЧаВо и поддержка"
+          }
+        }
+      }
+    },
+    "subscription.upgrade.button" : {
+      "comment" : "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade auf %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrade to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esegui l'upgrade a %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgraden naar %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź na poziom %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza para o %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поднимите тарифный план до %@"
+          }
+        }
+      }
+    },
+    "subscription.upgrade.section.caption" : {
+      "comment" : "Caption text in the upgrade section promoting AI features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze intelligentere und leistungsfähigere KI"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unlock smarter, more powerful AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea una IA más inteligente y más potente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Débloquez une IA plus intelligente et plus puissante"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sblocca un'AI più intelligente e potente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontgrendel slimmere, krachtigere AI"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odblokuj mądrzejszą i bardziej wydajną sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloqueia funcionalidades IA mais inteligentes e poderosas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раскройте потенциал более умного и мощного ИИ."
           }
         }
       }

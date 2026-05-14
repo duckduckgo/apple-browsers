@@ -88,7 +88,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         tabSwitcherViewController.prepareForPresentation()
         
         guard let homeScreen = mainViewController.newTabPageViewController,
-              let tab = mainViewController.tabManager.model.currentTab,
+              let tab = mainViewController.tabManager.currentTabsModel.currentTab,
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
@@ -113,7 +113,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         imageView.frame = imageContainer.bounds
         imageView.contentMode = .center
         if tabSwitcherSettings.isGridViewEnabled {
-            imageView.image = TabViewCell.logoImage
+            imageView.image = TabViewCell.logoImage(for: tab)
         }
         
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
@@ -164,11 +164,22 @@ class ToHomeScreenTransition: HomeScreenTransition {
         
         guard let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController,
               let homeScreen = mainViewController.newTabPageViewController,
-              let tab = mainViewController.tabManager.model.currentTab,
+              let tab = mainViewController.tabManager.currentTabsModel.currentTab,
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            transitionContext.completeTransition(true)
+            // Layout attributes can be nil when a new tab was just added but the collection view
+            // hasn't laid out its cell yet. Fall back to a simple crossfade to avoid a flash.
+            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+                mainViewController.view.alpha = 1
+            }
+            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+                self.tabSwitcherViewController.view.alpha = 0
+            }, completion: { _ in
+                self.solidBackground.removeFromSuperview()
+                self.imageContainer.removeFromSuperview()
+                transitionContext.completeTransition(true)
+            })
             return
         }
 
@@ -187,7 +198,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
         imageView.frame = previewFrame(for: imageContainer.bounds.size)
         imageView.contentMode = .center
         if tabSwitcherSettings.isGridViewEnabled {
-            imageView.image = TabViewCell.logoImage
+            imageView.image = TabViewCell.logoImage(for: tab)
             imageView.alpha = tab.viewed ? 1 : 0
         }
         imageView.backgroundColor = .clear

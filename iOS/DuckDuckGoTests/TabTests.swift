@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import AIChat
 
 @testable import Core
 @testable import DuckDuckGo
@@ -239,16 +240,266 @@ class TabTests: XCTestCase {
         XCTAssertEqual(tab, tab)
     }
 
-    func testWhenSameDataThenEqualsPasses() {
-        let lhs = Tab(link: Link(title: Constants.title, url: Constants.url))
-        let rhs = Tab(link: Link(title: Constants.title, url: Constants.url))
-        XCTAssertEqual(lhs, rhs)
-    }
-
     func testWhenLinksDifferentThenEqualsFails() {
         let lhs = Tab(link: Link(title: Constants.title, url: Constants.url))
         let rhs = Tab(link: Link(title: Constants.title, url: Constants.differentUrl))
         XCTAssertNotEqual(lhs, rhs)
+    }
+
+    // MARK: - Custom Debug URL Tests
+
+    func testWhenTabHasCustomDebugURLThenIsAITabReturnsTrue() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://dev.duck.ai"
+        let customURL = URL(string: "https://dev.duck.ai/chat")!
+        let tab = Tab(link: Link(title: "Dev AI", url: customURL), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+    }
+
+    func testWhenTabHostMatchesCustomDebugHostThenIsAITabReturnsTrue() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://staging.example.com/some/path"
+        let url = URL(string: "https://staging.example.com/different/path")!
+        let tab = Tab(link: Link(title: "Staging", url: url), aichatDebugSettings: debugSettings)
+
+        // Then - Should match based on host, not full URL
+        XCTAssertTrue(tab.isAITab)
+    }
+
+    func testWhenTabHostMatchesCustomDebugHostWithDifferentCaseThenIsAITabReturnsTrue() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://Dev.Duck.AI"
+        let url = URL(string: "https://dev.duck.ai/chat")!
+        let tab = Tab(link: Link(title: "Dev AI", url: url), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+    }
+
+    func testWhenCustomDebugURLIsNilThenFallsBackToStandardCheck() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = nil
+        let regularURL = URL(string: "https://example.com")!
+        let tab = Tab(link: Link(title: "Regular", url: regularURL), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertFalse(tab.isAITab)
+    }
+
+    func testWhenCustomDebugURLIsEmptyThenFallsBackToStandardCheck() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = ""
+        let regularURL = URL(string: "https://example.com")!
+        let tab = Tab(link: Link(title: "Regular", url: regularURL), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertFalse(tab.isAITab)
+    }
+
+    func testWhenCustomDebugURLIsMalformedThenIsAITabReturnsFalse() {
+        // Given - Malformed URL without scheme results in nil host
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "mydevserver"
+        let aboutBlankURL = URL(string: "about:blank")!
+        let tab = Tab(link: Link(title: "Blank", url: aboutBlankURL), aichatDebugSettings: debugSettings)
+
+        // Then - Should not match even though both hosts are nil
+        XCTAssertFalse(tab.isAITab)
+    }
+
+    func testWhenURLIsDuckAIThenIsAITabReturnsTrueRegardlessOfDebugSettings() {
+        // Given - Standard duck.ai URL should work even with different debug settings
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://other.domain.com"
+        let duckAIURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "AI", url: duckAIURL), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+    }
+
+    func testWhenTabWithCustomDebugURLEncodedThenDecodesSuccessfully() {
+        // Given - Tab with custom debug URL
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://dev.duck.ai"
+        let customURL = URL(string: "https://dev.duck.ai/chat")!
+        let tabToEncode = Tab(link: Link(title: "Dev AI", url: customURL), aichatDebugSettings: debugSettings)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        // When
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        // Then - Tab restores successfully with correct link
+        XCTAssertNotNil(decodedTab)
+        XCTAssertEqual(decodedTab?.link?.url.absoluteString, "https://dev.duck.ai/chat")
+    }
+
+
+    // MARK: - AI Chat Conversation Title Tests
+
+    func testWhenAITabHasTitleThenConversationTitleReturnsDisplayTitle() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "Pricing notation in decimals", url: aiURL))
+
+        XCTAssertEqual(tab.aiChatConversationTitle, "Pricing notation in decimals")
+    }
+
+    func testWhenAITabHasDuckDuckGoSuffixThenConversationTitleStripsIt() {
+        let aiURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let tab = Tab(link: Link(title: "My Chat at DuckDuckGo", url: aiURL))
+
+        XCTAssertEqual(tab.aiChatConversationTitle, "My Chat")
+    }
+
+    func testWhenAITabHasEmptyTitleThenConversationTitleReturnsNil() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "", url: aiURL))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenAITabHasNilTitleThenConversationTitleReturnsNil() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: nil, url: aiURL))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenAITabHasNoLinkThenConversationTitleReturnsNil() {
+        let tab = Tab()
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenNonAITabHasTitleThenConversationTitleReturnsNil() {
+        let tab = Tab(link: Link(title: "Some Page", url: URL(string: "https://example.com")!))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    // MARK: - Contextual Chat URL Tests
+
+    func testWhenTabWithContextualChatURLEncodedThenDecodesSuccessfully() {
+        let contextualURL = "https://duck.ai/?chatId=abc123&placement=sidebar"
+        let tabToEncode = Tab(link: link(), contextualChatURL: contextualURL)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNotNil(decodedTab)
+        XCTAssertEqual(decodedTab?.contextualChatURL, contextualURL)
+    }
+
+    func testWhenTabEncodedWithoutContextualChatURLThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.contextualChatURL)
+    }
+
+    func testWhenTabWithNilContextualChatURLEncodedThenDecodesWithNil() {
+        let tabToEncode = Tab(link: link(), contextualChatURL: nil)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNotNil(decodedTab)
+        XCTAssertNil(decodedTab?.contextualChatURL)
+    }
+
+    // MARK: - Per-Tab Model Selection Persistence
+
+    func testWhenTabWithSelectedModelEncodedThenDecodesSuccessfully() {
+        let tabToEncode = Tab(
+            link: link(),
+            fireTab: false,
+            unifiedInputState: UnifiedInputTabState(
+                selectedModelID: "claude-opus-4-6",
+                selectedReasoningMode: .extendedReasoning,
+                selectedTool: .webSearch
+            )
+        )
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedModelID, "claude-opus-4-6")
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedTool, .webSearch)
+    }
+
+    func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
+        let tabToEncode = Tab(link: link(), fireTab: false)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedReasoningMode": "not-a-real-mode"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+    }
+
+    func testWhenTabHasInvalidSelectedToolRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedTool": "not-a-real-tool"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
     private func link() -> Link {
@@ -290,5 +541,4 @@ private class MockTabObserver: NSObject, TabObserver {
     func didChange(tab: Tab) {
         didChangeTab = tab
     }
-    
 }

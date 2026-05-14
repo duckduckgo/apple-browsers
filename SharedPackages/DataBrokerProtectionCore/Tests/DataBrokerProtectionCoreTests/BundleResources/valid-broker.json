@@ -115,5 +115,6 @@
         "maxAttempts": -1
     },
     "addedDatetime": 1725632531153,
+    "removedAt": null,
     "version": "0.5.0"
 }

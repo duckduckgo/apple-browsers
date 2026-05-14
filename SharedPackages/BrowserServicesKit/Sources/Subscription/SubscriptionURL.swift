@@ -20,7 +20,7 @@ import Foundation
 
 // MARK: - URLs, ex URL+Subscription
 
-public enum SubscriptionURL {
+public enum SubscriptionURL: Equatable {
 
     case baseURL
     case purchase
@@ -38,6 +38,10 @@ public enum SubscriptionURL {
     case manageEmail
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
+    case plans
+    case upgradeToTier(String)
+    case addEmail
+    case addEmailSuccess
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -82,6 +86,14 @@ public enum SubscriptionURL {
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
                 baseURL.replacing(path: "identity-theft-restoration")
+            case .plans:
+                baseURL.appendingPathComponent("plans")
+            case .upgradeToTier(let tier):
+                baseURL.appendingPathComponent("plans").appendingParameter(name: "tier", value: tier)
+            case .addEmail:
+                baseURL.appendingPathComponent("add-email")
+            case .addEmailSuccess:
+                baseURL.appendingPathComponent("add-email/success")
             }
         }()
 
@@ -100,6 +112,7 @@ public enum SubscriptionURL {
             true
         }
     }
+
 }
 
 extension SubscriptionURL {
@@ -146,6 +159,27 @@ extension SubscriptionURL {
         }
         if let featurePage = featurePage {
             url = url.appendingParameter(name: "featurePage", value: featurePage)
+        }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
+
+    /**
+     * Creates URL components for the plans page with origin parameter
+     *
+     * - Parameters:
+     *   - origin: Attribution origin for analytics
+     *   - tier: If provided, includes tier=<value> parameter for direct upgrade flow to the specified tier.
+     *           The tier value should come from the backend's available upgrade tiers (e.g., "pro", "plus").
+     *   - environment: The subscription environment (production/staging)
+     *
+     * - Returns: URLComponents containing the plans URL with origin parameter
+     */
+    public static func plansURLComponents(_ origin: String, tier: String? = nil, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        var url = SubscriptionURL.plans
+            .subscriptionURL(environment: environment)
+            .appendingParameter(name: AttributionParameter.origin, value: origin)
+        if let tier {
+            url = url.appendingParameter(name: "tier", value: tier)
         }
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }

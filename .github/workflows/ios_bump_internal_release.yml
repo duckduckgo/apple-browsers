@@ -32,7 +32,7 @@ jobs:
   validate_input_conditions:
 
     name: Validate Input Conditions
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 10
 
     env:
@@ -47,7 +47,7 @@ jobs:
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Required to compute the git diff during validate_internal_release_bump
 
@@ -93,7 +93,7 @@ jobs:
 
     name: Increment Build Number
     needs: [ validate_input_conditions, run_tests ]
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     outputs:
@@ -102,7 +102,7 @@ jobs:
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}

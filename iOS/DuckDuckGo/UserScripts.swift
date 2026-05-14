@@ -20,19 +20,19 @@
 import AIChat
 import BrowserServicesKit
 import Core
+import os.log
 import Foundation
+import Persistence
+import PrivacyConfig
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SERPSettings
-import Persistence
 
 final class UserScripts: UserScriptsProvider {
 
-    let contentBlockerUserScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
@@ -42,6 +42,8 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
     let serpSettingsUserScript: SERPSettingsUserScript
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
+    let pageContextUserScript: PageContextUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -56,52 +58,123 @@ final class UserScripts: UserScriptsProvider {
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
-    private(set) var printingUserScript = PrintingUserScript()
-    private(set) var debugScript = DebugUserScript()
+    private(set) var printingSubfeature = PrintingSubfeature()
+    private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    let webEventsSubfeature: WebEventsSubfeature
+
+    private let isAutoconsentExtensionAvailable: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
-        contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
+        isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         do {
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
+                                                                privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
-                                                                        isIsolated: true,
-                                                                        privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                        scriptContext: .contentScopeIsolated,
+                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error)")
         }
-        autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability,
+            featureFlagger: featureFlagger
+        )
 
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
-        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
+        let aiChatSettings = AIChatSettings()
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
+                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
+                                                                                         httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          featureFlagger: featureFlagger,
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
+
+        if isNativeStorageBridgeAvailable,
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
+                originRules.append(.exact(hostname: debugHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
+
+        pageContextUserScript = PageContextUserScript()
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
+        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        webEventsSubfeature = WebEventsSubfeature(
+            isUserOptedIn: {
+                let adBlockingEnabled = (try? youTubeAdBlockingStorage.value(for: \.youTubeAdBlockingEnabled)) ?? false
+                let analyticsEnabled = (try? youTubeAdBlockingStorage.value(for: \.youTubeAnalyticsEnabled)) ?? false
+                return adBlockingEnabled && analyticsEnabled
+            },
+            onEvent: { type, loginState in
+                guard let pixel = Pixel.Event.adBlockingDetectedEvent(type: type) else { return }
+                DailyPixel.fire(
+                    pixel: pixel,
+                    withAdditionalParameters: ["loginState": loginState.rawValue]
+                )
+            }
+        )
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+        }
+        contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
+        contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -113,20 +186,22 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
-    lazy var userScripts: [UserScript] = [
-        debugScript,
-        autoconsentUserScript,
-        findInPageScript,
-        surrogatesScript,
-        contentBlockerUserScript,
-        faviconScript,
-        fullScreenVideoScript,
-        autofillUserScript,
-        printingUserScript,
-        loginFormDetectionScript,
-        contentScopeUserScript,
-        contentScopeUserScriptIsolated
-    ].compactMap({ $0 })
+    lazy var userScripts: [UserScript] = {
+        var scripts: [UserScript?] = [
+            findInPageScript,
+            fullScreenVideoScript,
+            autofillUserScript,
+            loginFormDetectionScript,
+            contentScopeUserScript,
+            contentScopeUserScriptIsolated
+        ]
+
+        if !isAutoconsentExtensionAvailable {
+            scripts.insert(autoconsentUserScript, at: 1)
+        }
+
+        return scripts.compactMap { $0 }
+    }()
     
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
@@ -161,5 +236,5 @@ final class UserScripts: UserScriptsProvider {
             return wkUserScripts
         }
     }
-    
+
 }

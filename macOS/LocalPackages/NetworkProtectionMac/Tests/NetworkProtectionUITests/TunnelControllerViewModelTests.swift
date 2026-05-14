@@ -313,6 +313,42 @@ final class TunnelControllerViewModelTests: XCTestCase {
         await fulfillment(of: [networkProtectionWasStarted], timeout: 0.1)
     }
 
+    /// We expect that starting the VPN notifies the UI action handler.
+    ///
+    @MainActor
+    func testWhenVPNStarts_ItNotifiesUIActionHandler() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
+        let controller = MockTunnelController()
+        let statusReporter = MockStatusReporter(status: .disconnected)
+        let uiActionHandler = MockVPNUIActionHandler()
+        let model = TunnelControllerViewModel(
+            controller: controller,
+            onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
+            statusReporter: statusReporter,
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
+            locationFormatter: MockVPNLocationFormatter(),
+            uiActionHandler: uiActionHandler)
+
+        let didStartVPNCalled = expectation(description: "didStartVPN was called on the handler")
+        uiActionHandler.didStartVPNCallback = {
+            didStartVPNCalled.fulfill()
+        }
+
+        Task { @MainActor in
+            model.isToggleOn.wrappedValue = true
+        }
+
+        await fulfillment(of: [didStartVPNCalled], timeout: 0.1)
+        XCTAssertTrue(uiActionHandler.didStartVPNCalled)
+    }
+
     /// We expect that setting the model's `isRunning` to `false`, will stop the VPN.
     ///
     @MainActor

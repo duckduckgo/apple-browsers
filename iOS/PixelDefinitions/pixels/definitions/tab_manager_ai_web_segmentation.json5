@@ -1,0 +1,31 @@
+// Tab switcher segmentation: Duck.ai vs web tabs (switch and close)
+{
+    "m_tab_manager_switch_to_ai_tab": {
+        "description": "User taps an existing Duck.ai tab in the tab switcher; measures how often users return to AI conversations via the switcher",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_manager_switch_to_web_tab": {
+        "description": "User taps an existing web tab in the tab switcher; measures how often users return to web browsing via the switcher",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_manager_close_ai_tab": {
+        "description": "User closes a Duck.ai tab from the tab switcher via the close button or swipe; tracks AI tab lifecycle",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_manager_close_web_tab": {
+        "description": "User closes a web tab from the tab switcher via the close button or swipe; tracks web tab lifecycle",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

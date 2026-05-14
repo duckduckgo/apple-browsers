@@ -23,8 +23,10 @@ import ContentBlocking
 import Foundation
 import MaliciousSiteProtection
 import Navigation
+import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
+import WebExtensions
 import WebKit
 
 final class PrivacyDashboardTabExtension {
@@ -79,7 +81,6 @@ final class PrivacyDashboardTabExtension {
                 self.privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: tracker.request)
             case .trackerWithSurrogate(host: let host):
                 self.privacyInfo?.trackerInfo.addInstalledSurrogateHost(host, for: tracker.request, onPageWithURL: url)
-                self.privacyInfo?.trackerInfo.addDetectedTracker(tracker.request, onPageWithURL: url)
             }
         }.store(in: &cancellables)
 
@@ -93,6 +94,26 @@ final class PrivacyDashboardTabExtension {
             }
         }
         .store(in: &cancellables)
+
+        if #available(macOS 15.4, *) {
+            NotificationCenter.default
+                .publisher(for: .webExtensionAutoconsentDashboardStateRefresh)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] notification in
+                    self?.handleWebExtensionDashboardStateRefresh(notification)
+                }
+                .store(in: &cancellables)
+        }
+    }
+
+    @available(macOS 15.4, *)
+    private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
+              privacyInfo?.url.host == domain else {
+            return
+        }
+        privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     @MainActor
@@ -252,5 +273,22 @@ extension Tab {
 extension TabExtensions {
     var privacyDashboard: PrivacyDashboardProtocol? {
         resolve(PrivacyDashboardTabExtension.self)
+    }
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(macOS 15.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
     }
 }

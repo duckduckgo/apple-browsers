@@ -17,16 +17,21 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case adBlocking = "Ad Blocking"
     case duckAI = "Duck.ai"
     case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
+    case subscription = "Subscription"
+    case popupBlocking = "Popup Blocking"
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
+    case webExtensions = "Web Extensions"
+    case webNotifications = "Web Notifications"
 
     public static func < (lhs: FeatureFlagCategory, rhs: FeatureFlagCategory) -> Bool {
         guard lhs != rhs else {
@@ -41,44 +46,4 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
 
 public protocol FeatureFlagCategorization {
     var category: FeatureFlagCategory { get }
-}
-
-extension FeatureFlag: FeatureFlagCategorization {
-    public var category: FeatureFlagCategory {
-        switch self {
-        case .aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
-                .aiChatPageContext,
-                .duckAISearchParameter,
-                .aiChatImprovements,
-                .aiChatKeepSession,
-                .aiChatDataClearing,
-                .standaloneMigration:
-            return .duckAI
-        case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage,
-                .willSoonDropBigSurSupport:
-            return .osSupportWarnings
-        case .syncSeamlessAccountSwitching,
-                .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes,
-                .exchangeKeysToSyncWithAnotherDevice:
-            return .sync
-        case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG,
-                .appStoreUpdateFlow:
-            return .updates
-        case .networkProtectionAppStoreSysex,
-                .networkProtectionAppStoreSysexMessage,
-                .vpnToolbarUpsell,
-                .winBackOffer:
-            return .vpn
-        case .dbpEmailConfirmationDecoupling,
-                .dbpRemoteBrokerDelivery:
-            return .dbp
-        default:
-            return .other
-        }
-    }
 }

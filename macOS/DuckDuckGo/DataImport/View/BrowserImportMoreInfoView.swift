@@ -43,7 +43,7 @@ struct BrowserImportMoreInfoView: View {
             Imported passwords are encrypted and only stored on this computer.
             """, comment: "Warning that Firefox-based browser name (%@) data import would require entering a Primary Password for the browser.")
 
-        case .safari, .safariTechnologyPreview, .yandex, .csv, .bitwarden, .lastPass, .onePassword7, .onePassword8, .bookmarksHTML, .tor:
+        case .safari, .safariTechnologyPreview, .yandex, .csv, .bitwarden, .lastPass, .onePassword7, .onePassword8, .bookmarksHTML, .fileImport, .tor:
             fatalError("Unsupported source for more info")
         }
     }

@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import os.log
+import PrivacyConfig
 
 public protocol TrackerDataURLProviding {
     var trackerDataURL: URL? { get }
@@ -199,8 +199,8 @@ public enum TDSExperimentType: String, CaseIterable {
 }
 
 extension TDSExperimentType: FeatureFlagDescribing {
-    public var defaultValue: Bool {
-        return false
+    public var defaultValue: FeatureFlagDefaultValue {
+        return .disabled
     }
 
     public var supportsLocalOverriding: Bool {

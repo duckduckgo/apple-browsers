@@ -108,6 +108,7 @@ public class AppUserDefaults: AppSettings {
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
         static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
+        static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
     }
 
     private var userDefaults: UserDefaults? {
@@ -169,11 +170,11 @@ public class AppUserDefaults: AppSettings {
         
     }
 
-    var autoClearAction: AutoClearSettingsModel.Action {
+    var autoClearAction: FireRequest.Options {
         
         get {
             let value = userDefaults?.integer(forKey: Keys.autoClearActionKey) ?? 0
-            return AutoClearSettingsModel.Action(rawValue: value)
+            return FireRequest.Options(rawValue: value)
         }
         
         set {
@@ -275,6 +276,9 @@ public class AppUserDefaults: AppSettings {
             NotificationCenter.default.post(name: Notifications.showsFullURLAddressSettingChanged, object: showFullSiteAddress)
         }
     }
+
+    @UserDefaultsWrapper(key: .showTrackersBlockedAnimation, defaultValue: true)
+    var showTrackersBlockedAnimation: Bool
 
     @UserDefaultsWrapper(key: .textZoom, defaultValue: 100)
     private var textZoom: Int {
@@ -445,6 +449,16 @@ public class AppUserDefaults: AppSettings {
 
         set {
             userDefaults?.set(newValue, forKey: DebugKeys.inspectableWebViewsEnabledKey)
+        }
+    }
+
+    var shakeToOpenDebugMenuEnabled: Bool {
+        get {
+            return userDefaults?.object(forKey: DebugKeys.shakeToOpenDebugMenuEnabledKey) as? Bool ?? true
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.shakeToOpenDebugMenuEnabledKey)
         }
     }
 
@@ -628,6 +642,7 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
     var autoClearAIChatHistory: Bool
+
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

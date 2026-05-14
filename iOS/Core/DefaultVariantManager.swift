@@ -108,11 +108,15 @@ public class DefaultVariantManager: VariantManager {
     }
 
     public convenience init() {
+        self.init(returningUserMeasurement: KeychainReturnUserMeasurement())
+    }
+
+    public convenience init(returningUserMeasurement: ReturnUserMeasurement) {
         self.init(
             variants: VariantIOS.defaultVariants,
             storage: StatisticsUserDefaults(),
             rng: Arc4RandomUniformVariantRNG(),
-            returningUserMeasurement: KeychainReturnUserMeasurement(),
+            returningUserMeasurement: returningUserMeasurement,
             variantNameOverride: LaunchOptionsHandler()
         )
     }

@@ -33,6 +33,7 @@ struct SuggestionProcessing {
     // MARK: - Constants
 
     static let maximumNumberOfSuggestions = 12
+    static let maximumNumberOfDuckDuckGoSuggestionsOnMobile = 5
     static let maximumNumberOfTopHits = 2
     static let minimumNumberInSuggestionGroup = 5
 
@@ -118,17 +119,25 @@ struct SuggestionProcessing {
             .compactMap { Suggestion($0.suggestion) }
 
         // STEP 11: Filter out website suggestions already present in Top Hits
-        let duckDuckGoPhrasesAndDomainSuggestions = duckDuckGoSuggestions.filter {
+        let duckDuckGoPhrasesAndDomainSuggestions = Array(duckDuckGoSuggestions.filter {
             !topHits.contains($0)
         }
-            .prefix(Self.maximumNumberOfSuggestions - (topHits.count + historyAndBookmarksAndOpenTabs.count))
+            .prefix(Self.maximumNumberOfSuggestions - (topHits.count + historyAndBookmarksAndOpenTabs.count)))
 
         // STEP 12: Return final ordered suggestions
         return SuggestionResult(
             topHits: topHits,
-            duckduckgoSuggestions: Array(duckDuckGoPhrasesAndDomainSuggestions),
+            duckduckgoSuggestions: limitSuggestionsToDisplay(duckDuckGoPhrasesAndDomainSuggestions),
             localSuggestions: historyAndBookmarksAndOpenTabs
         )
+    }
+
+    private func limitSuggestionsToDisplay(_ suggestions: [Suggestion]) -> [Suggestion] {
+        guard platform == .mobile else {
+            return suggestions
+        }
+
+        return Array(suggestions.prefix(Self.maximumNumberOfDuckDuckGoSuggestionsOnMobile))
     }
 
     /// Generates a list of phrase and website suggestions from the given API result filtering out the ignored URLs.

@@ -26,23 +26,16 @@ struct Simulated {
     private let rootViewController: UIViewController
 
     init() {
-        Pixel.isDryRun = true
         _ = DefaultUserAgentManager.shared
         Database.shared.loadStore { _, _ in }
         try? BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())
 
         rootViewController = UIStoryboard.init(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()!
-        let blockingDelegate = BlockingNavigationDelegate()
+        let blockingDelegate = BlockingNavigationDelegate(fireMode: false)
         let webView = blockingDelegate.prepareWebView()
         rootViewController.view.addSubview(webView)
         rootViewController.view.backgroundColor = .red
         webView.frame = CGRect(x: 10, y: 10, width: 300, height: 300)
-
-        if !Bundle.main.supportsScenes {
-            let window = UIWindow(frame: UIScreen.main.bounds)
-            configure(window)
-            UIApplication.shared.setWindow(window)
-        }
 
         let request = URLRequest(url: URL(string: "about:blank")!)
         webView.load(request)

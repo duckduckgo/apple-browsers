@@ -20,6 +20,9 @@ import Foundation
 
 public struct CreditCardValidation {
 
+    public static let minimumCardNumberLength = 8
+    public static let maximumCardNumberLength = 19
+
     public enum CardType {
         case amex
         case dinersClub
@@ -124,11 +127,11 @@ public struct CreditCardValidation {
     }
 
     public static func hasMinimumLength(_ cardNumber: String) -> Bool {
-        return cardNumber.count >= 8
+        return extractDigits(from: cardNumber).count >= minimumCardNumberLength
     }
 
     public static func hasMaximumLength(_ cardNumber: String) -> Bool {
-        return cardNumber.count <= 19
+        return extractDigits(from: cardNumber).count <= maximumCardNumberLength
     }
 
     public static func isValidCardNumber(_ number: String) -> Bool {

@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import BrowserServicesKit
 
 // MARK: - NavigationActionBarViewModel
 
@@ -34,25 +35,49 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var isCurrentTextValidURL: Bool = false
     @Published var isKeyboardVisible: Bool = false
 
+    var isUsingFadeOutAnimation: Bool {
+        switchBarHandler.isUsingFadeOutAnimation
+    }
+
+    var isTopBarPosition: Bool {
+        switchBarHandler.isTopBarPosition
+    }
+
+    var isFireTab: Bool {
+        switchBarHandler.isFireTab
+    }
+
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Voice Mode
+    let isVoiceModeFeatureEnabled: Bool
+
+    var shouldShowVoiceModeButton: Bool {
+        isVoiceModeFeatureEnabled && !isSearchMode && !hasText
+    }
 
     // MARK: - Action Callbacks
     let onMicrophoneTapped: () -> Void
     let onNewLineTapped: () -> Void
     let onSearchTapped: () -> Void
+    let onVoiceModeTapped: () -> Void
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling,
+         isVoiceModeFeatureEnabled: Bool = false,
          onMicrophoneTapped: @escaping () -> Void = {},
          onNewLineTapped: @escaping () -> Void = {},
-         onSearchTapped: @escaping () -> Void = {}) {
+         onSearchTapped: @escaping () -> Void = {},
+         onVoiceModeTapped: @escaping () -> Void = {}) {
 
         self.switchBarHandler = switchBarHandler
+        self.isVoiceModeFeatureEnabled = isVoiceModeFeatureEnabled
         self.onMicrophoneTapped = onMicrophoneTapped
         self.onNewLineTapped = onNewLineTapped
         self.onSearchTapped = onSearchTapped
+        self.onVoiceModeTapped = onVoiceModeTapped
 
         setupBindings()
         updateInitialState()
@@ -120,6 +145,10 @@ final class NavigationActionBarViewModel: ObservableObject {
         // https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
         guard isVoiceSearchEnabled else { return false }
 
+        if isUsingFadeOutAnimation {
+            return false
+        }
+
         // If no text, show mic only for top position,
         // for bottom we show mic inside input field.
         let hasNoTextInTopBar: Bool = !hasText && switchBarHandler.isTopBarPosition
@@ -129,4 +158,13 @@ final class NavigationActionBarViewModel: ObservableObject {
 
         return hasText && !hasUserInteractedWithText
     }
+
+    func searchButtonTapped() {
+        if shouldShowVoiceModeButton {
+            onVoiceModeTapped()
+        } else {
+            onSearchTapped()
+        }
+    }
+
 }

@@ -19,8 +19,8 @@
 import Common
 import Foundation
 import MaliciousSiteProtection
+import PrivacyConfig
 import TrackerRadarKit
-import BrowserServicesKit
 
 public protocol SecurityTrust { }
 extension SecTrust: SecurityTrust {}

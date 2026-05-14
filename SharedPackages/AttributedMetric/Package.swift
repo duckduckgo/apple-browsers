@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,6 +18,10 @@
 
 import PackageDescription
 
+let strictConcurrencySettings: [SwiftSetting] = [
+    .enableExperimentalFeature("StrictConcurrency")
+]
+
 let package = Package(
     name: "AttributedMetric",
     platforms: [
@@ -35,15 +39,17 @@ let package = Package(
         .target(
             name: "AttributedMetric",
             dependencies: [
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         ),
         .target(
             name: "AttributedMetricTestsUtils",
             dependencies: [
                 "AttributedMetric"
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         ),
         .testTarget(
             name: "AttributedMetricTests",
@@ -51,7 +57,8 @@ let package = Package(
                 "AttributedMetric",
                 "AttributedMetricTestsUtils",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit")
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         )
     ]
 )

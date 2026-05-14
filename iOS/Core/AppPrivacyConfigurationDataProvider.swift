@@ -18,14 +18,21 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
 
     public struct Constants {
-        public static let embeddedDataETag = "\"a3ac37c94597f73a205dbbb706714a4a\""
-        public static let embeddedDataSHA = "400110192c69db3fb4a15341dda6ddfafea4609f18c1ea8a01f7db26da684255"
+        public static let embeddedDataETag = "\"a8a0fc59a5413e37362c2f6e6b3468ac\""
+        public static let embeddedDataSHA = "21415ef261e3425d7e35e45b984e69542ae79b3c92b6b275cabc376ff806c0dc"
     }
+
+#if DEBUG || ALPHA
+    public enum EnvironmentKeys {
+        /// Used for automated testing to allow overriding Privacy Config with a local file
+        public static let testPrivacyConfigPath = "TEST_PRIVACY_CONFIG_PATH"
+    }
+#endif
 
     public var embeddedDataEtag: String {
         return Constants.embeddedDataETag
@@ -44,7 +51,12 @@ final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
     }
 
     static func loadEmbeddedAsData() -> Data {
-        let json = try? Data(contentsOf: embeddedUrl)
-        return json!
+        do {
+            return try Data(contentsOf: embeddedUrl)
+        } catch {
+            fatalError("Failed to load embedded privacy config: \(error.localizedDescription)")
+        }
     }
+
+    public init() {}
 }

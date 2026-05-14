@@ -18,23 +18,21 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OmniBarNotification: View {
-    
+
     @ObservedObject var viewModel: OmniBarNotificationViewModel
-    
+
     @State var isAnimatingCookie: Bool = false
-    
+
     @State var textOffset: CGFloat = 0
     @State var textWidth: CGFloat = 0
-    
-    @State var opacity: Double = 0
 
     var body: some View {
         HStack {
             HStack(spacing: 0) {
                 animation
-                
                 text
             }
             .background(
@@ -50,9 +48,29 @@ struct OmniBarNotification: View {
     
     @ViewBuilder
     private var animation: some View {
-        LottieView(lottieFile: viewModel.animationName,
-                   isAnimating: $isAnimatingCookie)
-        .frame(width: Constants.Size.animatedIcon.width, height: Constants.Size.animatedIcon.height)
+        if !viewModel.animationName.isEmpty {
+            LottieView(lottieFile: viewModel.animationName,
+                       isAnimating: $isAnimatingCookie)
+                       .frame(width: Constants.Size.animatedIcon.width, height: Constants.Size.animatedIcon.height)
+        } else if let staticIcon = viewModel.staticIconImage {
+            Image(uiImage: staticIcon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
+                .padding(.leading, 9)
+                .padding(.top, 7)
+                .padding(.bottom, 7)
+                .padding(.trailing, 9)
+        } else {
+            Image("ShieldColor")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
+                .padding(.leading, 9)
+                .padding(.top, 7)
+                .padding(.bottom, 7)
+                .padding(.trailing, 9)
+        }
     }
     
     @ViewBuilder
@@ -61,6 +79,7 @@ struct OmniBarNotification: View {
             .font(Constants.Fonts.text)
             .foregroundColor(Constants.Colors.text)
             .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .offset(x: textOffset)
             .padding(.trailing, Constants.Spacing.textTrailingPadding)
             .clipShape(Rectangle().inset(by: Constants.Spacing.textClippingShapeOffset))
@@ -69,13 +88,16 @@ struct OmniBarNotification: View {
                     textOffset = isOpen ? 0 : -textWidth
                 }
             }
-            .onReceive(viewModel.$animateCookie) { animateCookie in
-                isAnimatingCookie = animateCookie
+            .onReceive(viewModel.$isAnimating) { isAnimating in
+                isAnimatingCookie = isAnimating
             }
             .modifier(SizeModifier())
             .onPreferenceChange(SizePreferenceKey.self) {
                 textWidth = $0.width
-                textOffset = -textWidth
+                // Only reset offset if notification hasn't opened yet (text hasn't slid in)
+                if !viewModel.isOpen {
+                    textOffset = -textWidth
+                }
             }
     }
 }
@@ -107,8 +129,8 @@ private enum Constants {
     }
     
     enum Colors {
-        static let text = Color(designSystemColor: .textPrimary)
-        static let background = Color(designSystemColor: .panel)
+        static let text = Color(UIColor(designSystemColor: .textPrimary))
+        static let background = Color(UIColor(designSystemColor: .panel))
     }
 
     enum Spacing {
@@ -120,6 +142,7 @@ private enum Constants {
         static let animatedIcon = CGSize(width: 36, height: 36)
         static let cancel = CGSize(width: 13, height: 13)
         static let rowHeight: CGFloat = 76
+        static let staticIcon = CGSize(width: 21, height: 21)
     }
 
     enum Radius {

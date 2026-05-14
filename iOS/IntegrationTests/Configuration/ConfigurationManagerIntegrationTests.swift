@@ -21,6 +21,7 @@ import XCTest
 import Core
 @testable import Configuration
 @testable import DuckDuckGo
+import PrivacyConfig
 
 final class ConfigurationManagerIntegrationTests: XCTestCase {
 
@@ -28,7 +29,7 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
     var customURLProvider: CustomConfigurationURLProviding!
 
     override func setUpWithError() throws {
-        let internalUserDecider = MockInteranlUserDecider()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
         customURLProvider = MockCustomURLProvider()
         let fetcher = ConfigurationFetcher(store: MockConfigurationStoring(), configurationURLProvider: customURLProvider)

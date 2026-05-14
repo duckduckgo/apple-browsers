@@ -40,12 +40,13 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchProfile(with id: Int64) throws -> DataBrokerProtectionProfile?
     func deleteProfileData() throws
 
-    func save(broker: DataBroker) throws -> Int64
-    func update(_ broker: DataBroker, with id: Int64) throws
+    func save(brokerResource: BrokerResource) throws -> Int64
+    func update(_ brokerResource: BrokerResource, with id: Int64) throws
     func fetchBroker(with id: Int64) throws -> DataBroker?
     func fetchBroker(with name: String) throws -> DataBroker?
     func fetchAllNonRemovedBrokers() throws -> [DataBroker]
     func fetchAllBrokers() throws -> [DataBroker]
+    func fetchAllBrokerResources() throws -> [BrokerResource]
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
     func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
@@ -177,14 +178,14 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         try self.providers.database.deleteProfileData()
     }
 
-    public func save(broker: DataBroker) throws -> Int64 {
+    public func save(brokerResource: BrokerResource) throws -> Int64 {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
-        return try self.providers.database.save(mapper.mapToDB(broker))
+        return try self.providers.database.save(mapper.mapToDB(brokerResource))
     }
 
-    public func update(_ broker: DataBroker, with id: Int64) throws {
+    public func update(_ brokerResource: BrokerResource, with id: Int64) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
-        return try self.providers.database.update(mapper.mapToDB(broker, id: id))
+        return try self.providers.database.update(mapper.mapToDB(brokerResource, id: id))
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
@@ -215,6 +216,12 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchAllBrokers().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchAllBrokerResources() throws -> [BrokerResource] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+
+        return try self.providers.database.fetchAllBrokers().map(mapper.mapToResource(_:))
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {

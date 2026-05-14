@@ -18,6 +18,8 @@
 
 import XCTest
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import TrackerRadarKit
 @testable import BrowserServicesKit
 

@@ -52,12 +52,10 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     @Published private(set) var shouldShowNotificationDot: Bool = false
 
     // MARK: - Dependencies
-    private let isFirstLaunch: Bool
     private let isNewUser: Bool
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
-    private let featureFlagger: FeatureFlagger
     private let timerDuration: TimeInterval
     private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
@@ -71,29 +69,25 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private var timer: Timer?
     private var defaultBrowserPollingCount = 0
 
-    init(isFirstLaunch: Bool,
-         isNewUser: Bool,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(isNewUser: Bool,
+         subscriptionManager: any SubscriptionManager,
          defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
-         featureFlagger: FeatureFlagger,
          persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
          autoDismissDays: Int = Constants.autoDismissDays,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
-        self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
         self.defaultBrowserProvider = defaultBrowserProvider
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
-        self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
         self.pixelHandler = pixelHandler
     }
 
-    public func setup(isFirstLaunch: Bool) {
+    public func setup(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
         guard state == .uninitialized else {
             return
         }
@@ -112,20 +106,21 @@ final class VPNUpsellVisibilityManager: ObservableObject {
                     return
                 }
 
-                self.start(isFirstLaunch: isFirstLaunch)
+                self.start(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
             }
             .store(in: &cancellables)
 
         checkPurchaseEligibility()
     }
 
-    private func start(isFirstLaunch: Bool) {
+    private func start(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
         if isFirstLaunch {
             monitorFirstLaunchConditions()
+        } else if !isOnboardingFinished {
+            monitorOnboardingOnly()
         } else {
             updateState(.visible)
         }
-
         monitorSubscriptionChanges()
     }
 
@@ -133,10 +128,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     private var isUserEligible: Bool {
         isNewUser && !subscriptionManager.isUserAuthenticated
-    }
-
-    private var isFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.vpnToolbarUpsell)
     }
 
     private var shouldDismiss: Bool {
@@ -154,7 +145,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private func checkPurchaseEligibility() {
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
-            subscriptionManager.canPurchasePublisher
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
                 .sink { [weak self] canPurchase in
                     self?.canUserPurchaseSubject.send(canPurchase)
                 }
@@ -190,6 +181,21 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
         updateState(.waitingForConditions)
         monitorDefaultBrowserChanges()
+    }
+
+    private func monitorOnboardingOnly() {
+        updateState(.waitingForConditions)
+
+        contextualOnboardingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] onboardingDone in
+                guard let self, onboardingDone else {
+                    return
+                }
+
+                self.updateState(.visible)
+            }
+            .store(in: &cancellables)
     }
 
     private func monitorSubscriptionChanges() {
@@ -322,7 +328,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        guard isFeatureOn, isUserEligible else {
+        guard isUserEligible else {
             state = .notEligible
             return
         }

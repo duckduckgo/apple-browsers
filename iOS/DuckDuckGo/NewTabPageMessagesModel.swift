@@ -24,6 +24,7 @@ import RemoteMessaging
 final class NewTabPageMessagesModel: ObservableObject {
 
     @Published private(set) var homeMessageViewModels: [HomeMessageViewModel] = []
+    @Published private(set) var isFirePromotionVisible = false
 
     private var observable: NSObjectProtocol?
 
@@ -32,17 +33,31 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelFiring: PixelFiring.Type
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
+    private let imageLoader: RemoteMessagingImageLoading
+    private let pixelReporter: RemoteMessagingPixelReporting?
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
+    private let isOpenedAfterIdle: Bool
+
+    var onTryFireModeRequested: (() -> Void)?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         messageActionHandler: RemoteMessagingActionHandling) {
+         messageActionHandler: RemoteMessagingActionHandling,
+         imageLoader: RemoteMessagingImageLoading,
+         pixelReporter: RemoteMessagingPixelReporting? = nil,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         isOpenedAfterIdle: Bool = false) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.messageActionHandler = messageActionHandler
+        self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
+        self.fireModePromotionEligibility = fireModePromotionEligibility
+        self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
     func load() {
@@ -69,27 +84,60 @@ final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Private
 
     func refresh() {
-        homePageMessagesConfiguration.refresh()
+        homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle)
         updateHomeMessageViewModel()
     }
 
     private func updateHomeMessageViewModel() {
-        self.homeMessageViewModels = homePageMessagesConfiguration.homeMessages.compactMap(self.homeMessageViewModel(for:))
+        let messages = homePageMessagesConfiguration.homeMessages
+        isFirePromotionVisible = messages.contains(.firePromotion)
+        homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
     }
+
+    // MARK: - Fire Mode Promotion Actions
+
+    func firePromotionDidAppear() {
+        fireModePromotionEligibility?.markNTPPromotionShown()
+    }
+
+    @MainActor
+    func firePromotionTryFireTabsTapped() async {
+        fireModePromotionEligibility?.markNTPPromotionEngaged()
+        await dismissHomeMessage(.firePromotion)
+        onTryFireModeRequested?()
+    }
+
+    @MainActor
+    func firePromotionDismissed() async {
+        fireModePromotionEligibility?.markNTPPromotionDismissed()
+        await dismissHomeMessage(.firePromotion)
+    }
+
+    @MainActor
+    func firePromotionClosed() async {
+        fireModePromotionEligibility?.markNTPPromotionDismissed()
+        await dismissHomeMessage(.firePromotion)
+    }
+
+    // MARK: - HomeMessageViewModel Mapping
 
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:
             return HomeMessageViewModel(messageId: "",
-                                        sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        messageActionHandler: messageActionHandler) { [weak self] _ in
+                                        messageActionHandler: messageActionHandler,
+                                        preloadedImage: nil,
+                                        loadRemoteImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
             } onAttachAdditionalParameters: { _, params in
                 params
             }
+        case .firePromotion:
+            return nil
+
         case .remoteMessage(let remoteMessage):
 
             // call didAppear here to support marking messages as shown when they appear on the new tab page
@@ -98,7 +146,9 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
-                                                     messageActionHandler: messageActionHandler) { @MainActor [weak self] action in
+                                                     messageActionHandler: messageActionHandler,
+                                                     imageLoader: imageLoader,
+                                                     pixelReporter: pixelReporter) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

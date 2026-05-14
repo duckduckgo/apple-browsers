@@ -1,0 +1,73 @@
+//
+//  MockFeatureFlagger.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Combine
+
+public final class MockFeatureFlagger: FeatureFlagger {
+
+    public init(allActiveExperiments: Experiments = [:],
+                didCallResolveCohort: Bool = false,
+                internalUserDecider: any InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
+                localOverrides: (any FeatureFlagLocalOverriding)? = nil,
+                mockActiveExperiments: [String: ExperimentData] = [:],
+                featuresStub: [String: Bool] = [:],
+                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil) {
+        self.allActiveExperiments = allActiveExperiments
+        self.didCallResolveCohort = didCallResolveCohort
+        self.internalUserDecider = internalUserDecider
+        self.localOverrides = localOverrides
+        self.mockActiveExperiments = mockActiveExperiments
+        self._featuresStub = featuresStub
+        self.resolveCohortStub = resolveCohortStub
+    }
+
+    public var allActiveExperiments: Experiments = [:]
+
+    private(set) var didCallResolveCohort: Bool = false
+
+    public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+    public var localOverrides: FeatureFlagLocalOverriding?
+
+    private let updatesSubject = PassthroughSubject<Void, Never>()
+    public var updatesPublisher: AnyPublisher<Void, Never> {
+        updatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    public func triggerUpdate() {
+        updatesSubject.send()
+    }
+
+    var mockActiveExperiments: [String: ExperimentData] = [:]
+
+    private let lock = NSLock()
+    private var _featuresStub: [String: Bool] = [:]
+    public var featuresStub: [String: Bool] {
+        get { lock.withLock { _featuresStub } }
+        set { lock.withLock { _featuresStub = newValue } }
+    }
+    public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+        featuresStub[featureFlag.rawValue] ?? false
+    }
+
+    var resolveCohortStub: (any FeatureFlagCohortDescribing)?
+    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        resolveCohortStub
+    }
+}

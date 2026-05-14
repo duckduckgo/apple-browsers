@@ -33,6 +33,7 @@ final class StatePersistenceService {
     private var lastSessionStateArchive: Data?
     private let queue = DispatchQueue(label: "StateRestorationManager.queue", qos: .background)
     private var job: DispatchWorkItem?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     private(set) var error: Error?
 
@@ -46,9 +47,10 @@ final class StatePersistenceService {
         }
     }
 
-    init(fileStore: FileStore, fileName: String) {
+    init(fileStore: FileStore, fileName: String, dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
         self.fileStore = fileStore
         self.fileName = fileName
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
     }
 
     var canRestoreLastSessionState: Bool {
@@ -63,14 +65,19 @@ final class StatePersistenceService {
         write(data, sync: sync)
     }
 
-    func clearState(sync: Bool = false) {
+    func clearState(sync: Bool) -> Result<Void, Error> {
         dispatchPrecondition(condition: .onQueue(.main))
 
         job?.cancel()
+
+        var capturedResult: Result<Void, Error>?
         job = DispatchWorkItem {
-            self.performClearState()
+            capturedResult = self.performClearState()
         }
         queue.dispatch(job!, sync: sync)
+
+        // sync is always true in production code; sync is only false for tests in persistState/write methods
+        return capturedResult ?? .success(())
     }
 
     func flush() {
@@ -82,12 +89,39 @@ final class StatePersistenceService {
     }
 
     // perform state clearing synchronously, called from `clearState(sync:)` on `StateRestorationManager.queue`
-    func performClearState() {
+    func performClearState() -> Result<Void, Error> {
         lastSessionStateArchive = nil
+        var firstError: Error?
+
         let location = URL.persistenceLocation(for: self.fileName)
-        fileStore.remove(fileAtURL: location)
-        fileStore.remove(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
-        fileStore.remove(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
+        do {
+            try fileStore.removeOrThrow(fileAtURL: location)
+        } catch {
+            if firstError == nil {
+                firstError = error
+            }
+        }
+
+        do {
+            try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
+        } catch {
+            if firstError == nil {
+                firstError = error
+            }
+        }
+
+        do {
+            try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
+        } catch {
+            if firstError == nil {
+                firstError = error
+            }
+        }
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded
@@ -150,7 +184,20 @@ final class StatePersistenceService {
             throw CocoaError(.fileReadNoSuchFile)
         }
         let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        registerLegacyClassMappings(on: unarchiver)
         try restore(unarchiver)
+    }
+
+}
+
+// MARK: - Instrumentation Helper
+
+private extension StatePersistenceService {
+
+    func registerLegacyClassMappings(on unarchiver: NSKeyedUnarchiver) {
+        // Older archives encoded AI chat state under AIChatSidebar class names.
+        // Map those names to AIChatState so legacy sessions can decode on rename.
+        unarchiver.setClass(AIChatState.self, forClassName: "DuckDuckGo_Privacy_Browser.AIChatSidebar")
     }
 
 }

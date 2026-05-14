@@ -20,6 +20,8 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 
 @testable import DuckDuckGo_Privacy_Browser

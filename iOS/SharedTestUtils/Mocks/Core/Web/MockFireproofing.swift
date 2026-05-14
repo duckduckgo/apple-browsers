@@ -18,19 +18,46 @@
 //
 
 import Foundation
-import XCTest
 @testable import Core
 
-// MARK: Mocks
+class MockFireproofing: Fireproofing {
 
-class MockFireproofing: UserDefaultsFireproofing {
-    override var allowedDomains: [String] {
-        return domains
+    var loginDetectionEnabled: Bool = false
+    var allowedDomains: [String]
+
+    var isAllowedCookieDomainHandler: ((String) -> Bool)?
+    var isAllowedFireproofDomainHandler: ((String) -> Bool)?
+
+    init(domains: [String] = []) {
+        self.allowedDomains = domains
     }
 
-    let domains: [String]
-    init(domains: [String] = []) {
-        self.domains = domains
+    func addToAllowed(domain: String) {
+        allowedDomains.append(domain)
+    }
+
+    func remove(domain: String) {
+        allowedDomains.removeAll { $0 == domain }
+    }
+
+    func clearAll() {
+        allowedDomains.removeAll()
+    }
+
+    func isAllowed(cookieDomain: String) -> Bool {
+        isAllowedCookieDomainHandler?(cookieDomain) ?? false
+    }
+
+    func isAllowed(fireproofDomain domain: String) -> Bool {
+        isAllowedFireproofDomainHandler?(domain) ?? false
+    }
+
+    func displayDomain(for domain: String) -> String {
+        domain
+    }
+
+    func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool {
+        false
     }
 
 }

@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import NewTabPage
-import BrowserServicesKit
 import Combine
 import FeatureFlags
+import Foundation
+import NewTabPage
+import PrivacyConfig
 
 extension Notification.Name {
 
@@ -36,16 +36,18 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
     internal init(featureFlagger: any FeatureFlagger) {
         self.featureFlagger = featureFlagger
 
-        subscribeToOmnibarFeatureFlagChanges()
+        subscribeToFeatureFlagChanges()
     }
 
-    private func subscribeToOmnibarFeatureFlagChanges() {
+    private func subscribeToFeatureFlagChanges() {
         guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
 
         overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .newTabPageOmnibar }
+            .filter { flag, _ in
+                flag == .newTabPageOmnibar || flag == .nextStepsListWidget
+            }
             .sink { _ in
                 NotificationCenter.default.post(name: .newTabPageSectionsAvailabilityDidChange, object: nil)
             }
@@ -54,6 +56,10 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
 
     var isOmnibarAvailable: Bool {
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    var isNextStepsListWidgetAvailable: Bool {
+        return featureFlagger.isFeatureOn(.nextStepsListWidget)
     }
 
 }

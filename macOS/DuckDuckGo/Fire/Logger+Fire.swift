@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var fire = { Logger(subsystem: "Fire", category: "") }()
+    static let fire = Logger(subsystem: "Fire", category: "")
 }

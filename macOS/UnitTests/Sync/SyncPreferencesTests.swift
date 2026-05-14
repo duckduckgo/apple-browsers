@@ -17,15 +17,17 @@
 //
 
 import Bookmarks
+import BrowserServicesKit
 import Combine
+import FeatureFlags
 import Persistence
-@testable import SyncUI_macOS
 import XCTest
 import PersistenceTestingUtils
-@testable import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser
-import FeatureFlags
+@testable import SyncUI_macOS
 
 private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
@@ -91,7 +93,10 @@ final class SyncPreferencesTests: XCTestCase {
     override func setUp() {
         cancellables = []
         setUpDatabase()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: MockFeatureFlagger(),
+                                                      aiChatMenuConfig: MockAIChatConfig())
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
 
@@ -135,6 +140,9 @@ final class SyncPreferencesTests: XCTestCase {
         syncCredentialsAdapter = nil
         syncCreditCardsAdapter = nil
         syncIdentitiesAdapter = nil
+
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
     }
 
     private func setUpDatabase() {

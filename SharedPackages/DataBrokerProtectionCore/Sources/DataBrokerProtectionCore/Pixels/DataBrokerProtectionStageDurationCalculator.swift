@@ -33,6 +33,7 @@ public enum Stage: String {
     case emailConfirm = "email-confirm"
     case emailConfirmHalted = "email-confirm-halted"
     case emailConfirmDecoupled = "email-confirm-decoupled"
+    case emailGetData = "email-get-data"
     case validate
     case other
     case fillForm = "fill-form"
@@ -43,6 +44,7 @@ public enum Stage: String {
 public protocol StageDurationCalculator {
     var attemptId: UUID { get }
     var isImmediateOperation: Bool { get }
+    var isFreeScan: Bool? { get }
     var tries: Int { get }
 
     func durationSinceLastStage() -> Double
@@ -56,9 +58,10 @@ public protocol StageDurationCalculator {
     func fireOptOutFillForm()
     func fireOptOutEmailReceive()
     func fireOptOutEmailConfirm()
+    func fireOptOutEmailGetData()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
-    func fireOptOutFailure(tries: Int)
+    func fireOptOutFailure(tries: Int, error: Error)
     func fireOptOutConditionFound()
     func fireOptOutConditionNotFound()
 #if os(iOS)
@@ -88,6 +91,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerVersion: String
     let startTime: Date
     let parentURL: String?
+    let isAuthenticated: Bool
+    let isFreeScan: Bool?
     var lastStateTime: Date
     private(set) var actionID: String?
     private(set) var actionType: String?
@@ -104,6 +109,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
          parentURL: String? = nil,
+         isAuthenticated: Bool = true,
+         isFreeScan: Bool?,
          vpnConnectionState: String,
          vpnBypassStatus: String) {
         self.attemptId = attemptId
@@ -114,6 +121,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
         self.parentURL = parentURL
+        self.isAuthenticated = isAuthenticated
+        self.isFreeScan = isFreeScan
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
     }
@@ -218,6 +227,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          actionId: actionID ?? ""))
     }
 
+    func fireOptOutEmailGetData() {
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
+        handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
+                                         attemptId: attemptId,
+                                         duration: duration,
+                                         dataBrokerVersion: dataBrokerVersion,
+                                         tries: tries,
+                                         parent: parentURL ?? "",
+                                         actionId: actionID ?? ""))
+    }
+
     func fireOptOutValidate() {
         setStage(.validate)
         let duration = durationSinceLastStage()
@@ -253,12 +273,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           vpnBypassStatus: vpnBypassStatus))
     }
 
-    func fireOptOutFailure(tries: Int) {
+    func fireOptOutFailure(tries: Int, error: Error) {
+        let errorCategory = errorCategory(for: error)
+
         handler.fire(.optOutFailure(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
                                     parent: parentURL ?? "",
+                                    errorCategory: errorCategory.toString,
+                                    errorDetails: error.localizedDescription,
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
@@ -304,7 +328,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                   isImmediateOperation: isImmediateOperation,
                                   vpnConnectionState: vpnConnectionState,
                                   vpnBypassStatus: vpnBypassStatus,
-                                  parent: parentURL ?? ""))
+                                  parent: parentURL ?? "",
+                                  isAuthenticated: isAuthenticated,
+                                  isFreeScan: isFreeScan))
     }
 
     func fireScanNoResults() {
@@ -317,36 +343,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     vpnBypassStatus: vpnBypassStatus,
                                     parent: parentURL ?? "",
                                     actionID: actionID ?? "unknown",
-                                    actionType: actionType ?? "unknown"))
+                                    actionType: actionType ?? "unknown",
+                                    isAuthenticated: isAuthenticated,
+                                    isFreeScan: isFreeScan))
     }
 
     func fireScanError(error: Error) {
-        var errorCategory: ErrorCategory = .unclassified
-
-        if let dataBrokerProtectionError = error as? DataBrokerProtectionError {
-            switch dataBrokerProtectionError {
-            case .httpError(let httpCode):
-                if httpCode < 500 {
-                    if httpCode == 404 {
-                        fireScanNoResults()
-                        return
-                    } else {
-                        errorCategory = .clientError(httpCode: httpCode)
-                    }
-                } else {
-                    errorCategory = .serverError(httpCode: httpCode)
-                }
-            default:
-                errorCategory = .validationError
-            }
-        } else if let databaseError = error as? SecureStorageError {
-            errorCategory = .databaseError(domain: SecureStorageError.errorDomain, code: databaseError.errorCode)
-        } else {
-            if let nsError = error as NSError? {
-                if nsError.domain == NSURLErrorDomain {
-                    errorCategory = .networkError
-                }
-            }
+        let errorCategory = errorCategory(for: error)
+        if errorCategory == .clientError(httpCode: 404) {
+            fireScanNoResults()
+            return
         }
 
         handler.fire(
@@ -361,7 +367,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 vpnBypassStatus: vpnBypassStatus,
                 parent: parentURL ?? "",
                 actionId: actionID ?? "unknown",
-                actionType: actionType ?? "unknown"
+                actionType: actionType ?? "unknown",
+                isAuthenticated: isAuthenticated,
+                isFreeScan: isFreeScan
             )
         )
     }
@@ -389,5 +397,33 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func incrementTries() {
         self.tries += 1
+    }
+}
+
+private extension DataBrokerProtectionStageDurationCalculator {
+
+    func errorCategory(for error: Error) -> ErrorCategory {
+        if let dataBrokerProtectionError = error as? DataBrokerProtectionError {
+            switch dataBrokerProtectionError {
+            case .httpError(let httpCode):
+                if httpCode < 500 {
+                    return .clientError(httpCode: httpCode)
+                } else {
+                    return .serverError(httpCode: httpCode)
+                }
+            default:
+                return .validationError
+            }
+        } else if let databaseError = error as? SecureStorageError {
+            return .databaseError(domain: SecureStorageError.errorDomain, code: databaseError.errorCode)
+        } else {
+            if let nsError = error as NSError? {
+                if nsError.domain == NSURLErrorDomain {
+                    return .networkError
+                }
+            }
+        }
+
+        return .unclassified
     }
 }

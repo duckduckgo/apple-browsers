@@ -19,7 +19,8 @@
 
 import XCTest
 
-@testable import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import Core
 
 final class AppURLsTests: XCTestCase {
@@ -217,15 +218,27 @@ final class AppURLsTests: XCTestCase {
     }
 
     func testExtiUrlCreatesUrlWithAtbParam() throws {
-        let url = URL.makeExtiURL(atb: "x")
+        let url = URL.makeExtiURL(atb: "x", isPad: false)
         XCTAssertEqual(url.getParameter(named: "atb"), "x")
+        XCTAssertEqual(url.getParameter(named: "is_tablet"), "0")
+    }
+
+    func testExtiUrlCreatesUrlWithAtbParamForPad() throws {
+        let url = URL.makeExtiURL(atb: "x", isPad: true)
+        XCTAssertEqual(url.getParameter(named: "atb"), "x")
+        XCTAssertEqual(url.getParameter(named: "is_tablet"), "1")
     }
 
     func testSearchUrlCreatesUrlWithSourceParam() throws {
         let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeSearchURL(text: "query")!
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
     }
-    
+
+    func testSearchUrlCreatesUrlWithSourceParamForiPad() throws {
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore, isPad: true).makeSearchURL(text: "query")!
+        XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios_tablet")
+    }
+
     func testWhenExistingQueryUsesVerticalThenItIsAppliedToNewOne() throws {
         let contextURL = URL(string: "https://duckduckgo.com/?q=query&iar=images&ko=-1&ia=images")!
         let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore)
@@ -292,5 +305,57 @@ final class AppURLsTests: XCTestCase {
         XCTAssertEqual(URL.bloomFilter.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom.bin")
         XCTAssertEqual(URL.bloomFilterSpec.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom-spec.json")
         XCTAssertEqual(URL.bloomFilterExcludedDomains.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-false-positives.json")
+    }
+
+    // MARK: - Duck.ai ATB URL Tests
+
+    func testWhenAtbNotPersistedThenDuckAIAtbUrlIsNil() {
+        XCTAssertNil(StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL())
+    }
+
+    func testWhenAtbPersistedWithoutDuckAIRetentionAtbThenDuckAIAtbUrlHasNoSetAtb() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+        mockStatisticsStore.variant = "ru"
+
+        // When
+        // duckAIRetentionAtb is nil (first prompt scenario)
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "atb"), "v516-3ru")
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
+        XCTAssertNil(url!.getParameter(named: "set_atb"))
+        XCTAssertNil(url!.getParameter(named: "email"))
+    }
+
+    func testWhenAtbAndDuckAIRetentionAtbPersistedThenDuckAIAtbUrlHasCorrectParams() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+        mockStatisticsStore.variant = "ru"
+        mockStatisticsStore.duckAIRetentionAtb = "v516-2"
+
+        // When
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "atb"), "v516-3ru")
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
+        XCTAssertEqual(url!.getParameter(named: "set_atb"), "v516-2")
+        XCTAssertNil(url!.getParameter(named: "email"))
+    }
+
+    func testWhenDuckAIAtbUrlCreatedThenActivityTypeIsDuckAI() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+
+        // When
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
     }
 }

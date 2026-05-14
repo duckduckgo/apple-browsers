@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import BrowserServicesKit
 import Common
 import Foundation

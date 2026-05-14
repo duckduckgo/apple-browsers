@@ -19,9 +19,14 @@
 import Foundation
 import Common
 
+public enum PixelKitStandardParameter {
+    case pixelSource
+}
+
 /// An event that can be fired using PixelKit.
 public protocol PixelKitEvent {
     var name: String { get }
+    var standardParameters: [PixelKitStandardParameter]? { get }
     var parameters: [String: String]? { get }
     /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
     var error: NSError? { get }

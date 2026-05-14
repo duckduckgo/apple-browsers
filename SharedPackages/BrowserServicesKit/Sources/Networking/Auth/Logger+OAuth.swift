@@ -20,6 +20,6 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var OAuth = { Logger(subsystem: "Networking", category: "OAuth") }()
-    static var OAuthClient = { Logger(subsystem: "Networking", category: "OAuthClient") }()
+    static let OAuth = Logger(subsystem: "Networking", category: "OAuth")
+    static let OAuthClient = Logger(subsystem: "Networking", category: "OAuthClient")
 }

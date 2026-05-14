@@ -32,6 +32,7 @@ public extension OnboardingStyles {
 #endif
         private let maxHeight: CGFloat
         private var maxWidth: CGFloat? = .infinity
+        private let cornerRadius: CGFloat
 
 #if os(macOS)
         private let fontSize = 12.0
@@ -41,9 +42,12 @@ public extension OnboardingStyles {
 
         @State private var isHovered = false
 
-        public init(maxWidth: CGFloat? = .infinity, maxHeight: CGFloat = Self.defaultMaxHeight) {
+        public init(maxWidth: CGFloat? = .infinity,
+                    maxHeight: CGFloat = Self.defaultMaxHeight,
+                    cornerRadius: CGFloat = 12) {
             self.maxWidth = maxWidth
             self.maxHeight = maxHeight
+            self.cornerRadius = cornerRadius
         }
 
         public func makeBody(configuration: Configuration) -> some View {
@@ -56,7 +60,7 @@ public extension OnboardingStyles {
                 .padding()
                 .frame(minWidth: 0, maxWidth: maxWidth, maxHeight: maxHeight)
                 .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                .cornerRadius(12)
+                .cornerRadius(cornerRadius)
                 .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
                 .onHover { hovering in
                     #if os(macOS)
@@ -66,6 +70,7 @@ public extension OnboardingStyles {
         }
 
         private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
+#if os(iOS)
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
                 return .lightRestBlue
@@ -82,9 +87,13 @@ public extension OnboardingStyles {
             case (_, _, _):
                 return .lightRestBlue
             }
+#else
+            return Color(designSystemColor: .accentTextPrimary)
+#endif
         }
 
         private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {
+#if os(iOS)
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
                 return .shade(0.01)
@@ -101,6 +110,17 @@ public extension OnboardingStyles {
             case (_, _, _):
                 return .clear
             }
+#else
+            if isPressed {
+                return Color(designSystemColor: .controlsFillSecondary)
+            }
+
+            if isHovered {
+                return Color(designSystemColor: .controlsFillPrimary)
+            }
+
+            return .clear
+#endif
         }
     }
 

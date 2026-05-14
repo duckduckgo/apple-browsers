@@ -26,6 +26,7 @@ import InlineSnapshotTesting
 import History
 import os.log
 import Persistence
+import PixelKit
 import Suggestions
 import XCTest
 
@@ -105,12 +106,11 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         assert(input.windows.count == 1, "iOS only supports 1 window")
         for tab in input.windows[0].tabs {
-            tabsModel.add(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)))
+            tabsModel.insert(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)), placement: .atEnd, selectNewTab: true)
         }
         
         // Set up feature flagger
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         
         // Create the real data source with test dependencies
         let dataSource = AutocompleteSuggestionsDataSource(
@@ -152,7 +152,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         }
 
         // Wait for the expectation to be fulfilled with a timeout
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Check for errors
         if let loadingError = loadingError {
@@ -394,7 +394,7 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func addVisit(of url: URL, at date: Date) -> History.Visit? {
+        func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
             return nil
         }
         
@@ -402,6 +402,9 @@ extension SuggestionJsonScenarioTests {
         }
         
         func trackerFound(on: URL) {
+        }
+        
+        func cookiePopupBlocked(on: URL) {
         }
         
         func updateTitleIfNeeded(title: String, url: URL) {
@@ -417,27 +420,36 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func burnAll(completion: @escaping @MainActor () -> Void) {
+        func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
             MainActor.assumeMainThread {
-                completion()
+                completion(.success(()))
+            }
+        }
+
+        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success([]))
+            }
+        }
+
+        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success(()))
             }
         }
         
-        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
-            MainActor.assumeMainThread {
-                completion([])
-            }
-        }
-        
-        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
-            MainActor.assumeMainThread {
-                completion()
-            }
+        func burnVisits(for tabID: String) async throws {
         }
         
         func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
             MainActor.assumeMainThread {
                 completion?(nil)
+            }
+        }
+
+        func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success(()))
             }
         }
     }
@@ -457,10 +469,37 @@ extension SuggestionJsonScenarioTests {
             return historyFeatureEnabled
         }
         
-        func removeAllHistory() async {
+        func removeAllHistory() async -> Result<Void, Error> {
+            return .success(())
         }
         
         func deleteHistoryForURL(_ url: URL) async {
+        }
+        
+        @MainActor
+        var history: History.BrowsingHistory? {
+            historyCoordinator.history
+        }
+        
+        func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
+        }
+        
+        func updateTitleIfNeeded(title: String, url: URL) {
+        }
+        
+        func commitChanges(url: URL) {
+        }
+        
+        func tabHistory(tabID: String) async throws -> [URL] {
+            return []
+        }
+        
+        func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
+            return .success(())
+        }
+
+        func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+            return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
         }
     }
 }

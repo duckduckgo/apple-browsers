@@ -25,6 +25,7 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import WebExtensions
 
 extension DebugScreensViewModel {
 
@@ -33,6 +34,20 @@ extension DebugScreensViewModel {
     var screens: [DebugScreen] {
         return [
             // MARK: Actions
+            .action(title: "Clear WebKit Cache", { _ in
+                WKWebsiteDataStore.default().removeData(
+                    ofTypes: [WKWebsiteDataTypeDiskCache,
+                              WKWebsiteDataTypeMemoryCache,
+                              WKWebsiteDataTypeOfflineWebApplicationCache],
+                    modifiedSince: .distantPast) { }
+            }),
+            .action(title: "Clear Cached Scriptlets", { d in
+                if #available(iOS 18.4, *) {
+                    Task { @MainActor in
+                        d.webExtensionManager?.clearCachedScriptlets()
+                    }
+                }
+            }),
             .action(title: "Reset Autoconsent Prompt", { _ in
                 AppUserDefaults().clearAutoconsentUserSetting()
             }),
@@ -66,19 +81,30 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
-            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
+            .action(title: "Reset Fire Mode Promotion", { _ in
+                FireModePromotionsCoordinator.resetState()
+                ActionMessageView.present(message: "Fire Mode Promotion state reset")
+            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
-            .view(title: "AI Chat", { _ in
-                AIChatDebugView()
+            .view(title: "Ad Blocking", { d in
+                AdBlockingDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "AI Chat", { dependencies in
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+            }),
+            .view(title: "Duck.ai Toggle Prompt", { _ in
+                DuckAIToggleDebugView()
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
+            }),
+            .view(title: "UI Test Overrides", { _ in
+                UITestOverridesDebugView()
             }),
             .view(title: "ContentScope Experiments", { _ in
                 ContentScopeExperimentsDebugView()
@@ -89,17 +115,20 @@ extension DebugScreensViewModel {
             .view(title: "DuckPlayer", { _ in
                 DuckPlayerDebugSettingsView()
             }),
+            .view(title: "Idle Return NTP", { _ in
+                IdleReturnNTPDebugView()
+            }),
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
-            .view(title: "History", { _ in
-                HistoryDebugRootView()
+            .view(title: "History", { d in
+                HistoryDebugRootView(tabManager: d.tabManager)
             }),
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()
             }),
-            .view(title: "Remote Messaging", { _ in
-                RemoteMessagingDebugRootView()
+            .view(title: "Remote Messaging", { dependencies in
+                RemoteMessagingDebugRootView(remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
             .view(title: "Settings Cells Demo", { _ in
                 SettingsCellDemoDebugView()
@@ -110,7 +139,7 @@ extension DebugScreensViewModel {
                 configuration.processPool = WKProcessPool()
 
                 let ddgURL = URL(string: "https://duckduckgo.com/")!
-                let tab = d.tabManager.model.safeGetTabAt(d.tabManager.model.currentIndex)
+                let tab = d.tabManager.currentTabsModel.currentTab
                 let url = tab?.link?.url ?? ddgURL
                 return BareBonesBrowserView(initialURL: url,
                                             homeURL: ddgURL,
@@ -137,8 +166,8 @@ extension DebugScreensViewModel {
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "What's New", { d in
-                WhatsNewDebugView(keyValueStore: d.keyValueStore)
+            .view(title: "What's New", { dependencies in
+                WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
 
             // MARK: Controllers
@@ -146,7 +175,7 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
-                                                  tabsModel: d.tabManager.model,
+                                                  tabsModel: d.tabManager.allTabsModel,
                                                   fireproofing: d.fireproofing)
                 }
             }),
@@ -175,9 +204,12 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate,
+                                                            freemiumPIRDebugSettings: self.dependencies.freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: self.dependencies.freemiumDBPUserStateManager)
                 }
             }) : nil,
+            webExtensionsDebugScreen,
             .controller(title: "File Size Inspector", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
@@ -203,9 +235,9 @@ extension DebugScreensViewModel {
             .controller(title: "Logging", { _ in
                 return LoggingDebugViewController()
             }),
-            .controller(title: "Subscription", { _ in
+            .controller(title: "Subscription", { dependencies in
                 return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
-                    SubscriptionDebugViewController(coder: coder)
+                    SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
             }),
             .controller(title: "Configuration URLs", { _ in
@@ -220,12 +252,36 @@ extension DebugScreensViewModel {
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
+
+                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
+
+                    func searchFromOnboarding(for query: String) {}
                 }
 
+                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
+
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
+
+                    let controller: Onboarding = if flow.isRebranding {
+                        OnboardingIntroViewController.rebranded(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
+                        )
+                    } else {
+                        OnboardingIntroViewController.legacy(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
+                        )
+                    }
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
@@ -241,24 +297,6 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
-
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-
-        controller.present(pickerViewController, animated: true)
-    }
-    
-    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStore()
-        pickerStorage.reset()
-        
-        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
-    }
-
     private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
         let store = PromptCooldownKeyValueFilesStore(
             keyValueStore: dependencies.keyValueStore,
@@ -266,6 +304,21 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private var webExtensionsDebugScreen: DebugScreen? {
+        guard #available(iOS 18.4, *),
+              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+            return nil
+        }
+
+        return .view(title: "Web Extensions") { d in
+            if let manager = d.webExtensionManager {
+                WebExtensionsDebugView(webExtensionManager: manager)
+            } else {
+                Text("Web Extensions not available")
+            }
+        }
     }
 
 }

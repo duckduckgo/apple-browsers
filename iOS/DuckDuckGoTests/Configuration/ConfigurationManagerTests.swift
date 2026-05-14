@@ -22,6 +22,8 @@ import Configuration
 @testable import BrowserServicesKit
 @testable import DuckDuckGo
 import Combine
+@testable import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 
 // Temporary disabled since flaky 

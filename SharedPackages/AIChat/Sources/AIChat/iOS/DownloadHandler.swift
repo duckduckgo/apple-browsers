@@ -19,16 +19,24 @@
 #if os(iOS)
 import WebKit
 
-typealias DownloadCompletionHandler = (Result<String, Error>) -> Void
+// MARK: - Public API
 
-protocol DownloadHandling: WKDownloadDelegate {
-    var downloadsPath: URL { get set }
+public typealias DownloadCompletionHandler = (Result<String, Error>) -> Void
+
+public protocol DownloadHandling: WKDownloadDelegate {
     var onDownloadComplete: DownloadCompletionHandler? { get set }
 }
 
+/// Factory function to create a download handler with the specified downloads path.
+public func makeDownloadHandler(downloadsPath: URL) -> DownloadHandling {
+    return DownloadHandler(downloadsPath: downloadsPath)
+}
+
+// MARK: - Internal Implementation
+
 final class DownloadHandler: NSObject, DownloadHandling {
     var onDownloadComplete: DownloadCompletionHandler?
-    var downloadsPath: URL
+    private let downloadsPath: URL
     private var filename: String?
 
     init(downloadsPath: URL) {
@@ -37,16 +45,21 @@ final class DownloadHandler: NSObject, DownloadHandling {
 
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         filename = suggestedFilename
-        return downloadsPath.appendingPathComponent(suggestedFilename)
+        let destination = downloadsPath.appendingPathComponent(suggestedFilename)
+        return destination
     }
 
     func downloadDidFinish(_ download: WKDownload) {
         guard let filename = filename else { return }
-        onDownloadComplete?(.success(filename))
+        DispatchQueue.main.async { [weak self] in
+            self?.onDownloadComplete?(.success(filename))
+        }
     }
 
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-        onDownloadComplete?(.failure(error))
+        DispatchQueue.main.async { [weak self] in
+            self?.onDownloadComplete?(.failure(error))
+        }
     }
 }
 #endif

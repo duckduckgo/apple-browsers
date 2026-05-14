@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -47,6 +48,20 @@ final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
         provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
 
         XCTAssertFalse(provider.isOmnibarAvailable)
+    }
+
+    func testIsNextStepsListWidgetAvailable_WhenFeatureFlagIsOn_ReturnsTrue() {
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
+        provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
+
+        XCTAssertTrue(provider.isNextStepsListWidgetAvailable)
+    }
+
+    func testIsNextStepsListWidgetAvailable_WhenFeatureFlagIsOff_ReturnsFalse() {
+        featureFlagger.enabledFeatureFlags = []
+        provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
+
+        XCTAssertFalse(provider.isNextStepsListWidgetAvailable)
     }
 
 }

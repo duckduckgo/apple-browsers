@@ -34,27 +34,20 @@ public class SecureVaultLoginImporter: LoginImporter {
 
         let vault = try AutofillSecureVaultFactory.makeVault(reporter: reporter)
 
-        var successful: [String] = []
-        var duplicates: [String] = []
-        var failed: [String] = []
+        var successful: Int = 0
+        var duplicateItems: [DataImport.DataImportItem] = []
+        var failedItems: [DataImport.DataImportItem] = []
 
         let encryptionKey = try vault.getEncryptionKey()
         let hashingSalt = try vault.getHashingSalt()
 
         let accounts = (try? vault.accounts()) ?? .init()
 
-        try vault.inDatabaseTransaction { database in
+        try vault.inDatabaseTransaction { [weak self] database in
             for (idx, login) in logins.enumerated() {
                 let title = login.title
                 let account = SecureVaultModels.WebsiteAccount(title: title, username: login.username, domain: login.url, notes: login.notes)
                 let credentials = SecureVaultModels.WebsiteCredentials(account: account, password: login.password.data(using: .utf8)!)
-                let importSummaryValue: String
-
-                if let title = account.title {
-                    importSummaryValue = "\(title): \(credentials.account.domain ?? "") (\(credentials.account.username ?? ""))"
-                } else {
-                    importSummaryValue = "\(credentials.account.domain ?? "") (\(credentials.account.username ?? ""))"
-                }
 
                 do {
                     if let signature = try vault.encryptPassword(for: credentials, key: encryptionKey, salt: hashingSalt).account.signature {
@@ -66,14 +59,23 @@ public class SecureVaultLoginImporter: LoginImporter {
                         }
                     }
                     _ = try vault.storeWebsiteCredentials(credentials, in: database, encryptedUsing: encryptionKey, hashedUsing: hashingSalt)
-                    successful.append(importSummaryValue)
+                    successful += 1
                 } catch {
-                    if case .duplicateRecord = error as? SecureStorageError {
-                        duplicates.append(importSummaryValue)
-                    } else if case .duplicate = error as? ImporterError {
-                        duplicates.append(importSummaryValue)
+                    let domain = login.url ?? login.eTldPlusOne ?? ""
+                    let isDuplicate = self?.isDuplicateError(error) ?? false
+                    let errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+
+                    let importItem = DataImport.DataImportItem.password(
+                        title: login.title,
+                        domain: domain,
+                        username: login.username,
+                        errorMessage: errorMessage
+                    )
+
+                    if isDuplicate {
+                        duplicateItems.append(importItem)
                     } else {
-                        failed.append(importSummaryValue)
+                        failedItems.append(importItem)
                     }
                 }
 
@@ -81,12 +83,26 @@ public class SecureVaultLoginImporter: LoginImporter {
             }
         }
 
-        if successful.count > 0 {
+        if successful > 0 {
             NotificationCenter.default.post(name: .autofillSaveEvent, object: nil, userInfo: nil)
         }
 
         loginImportState?.hasImportedLogins = true
-        return .init(successful: successful.count, duplicate: duplicates.count, failed: failed.count)
+        return DataImport.DataTypeSummary(
+            successful: successful,
+            duplicateItems: duplicateItems,
+            failedItems: failedItems
+        )
+    }
+
+    private func isDuplicateError(_ error: Error) -> Bool {
+        if case .duplicateRecord = error as? SecureStorageError {
+            return true
+        } else if case .duplicate = error as? ImporterError {
+            return true
+        } else {
+            return false
+        }
     }
 }
 

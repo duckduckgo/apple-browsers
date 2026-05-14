@@ -30,4 +30,14 @@ extension Image {
     public init(systemNamed: SystemImageName) {
         self.init(systemName: systemNamed.rawValue)
     }
+
+    public enum ImageName: String {
+        case appearanceDark = "AppearanceDark"
+        case appearanceLight = "AppearanceLight"
+        case appearanceSystem = "AppearanceSystem"
+    }
+
+    public init(named: ImageName) {
+        self.init(named.rawValue)
+    }
 }

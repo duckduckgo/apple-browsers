@@ -40,7 +40,8 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
 
     // MARK: - Record Activity
 
-    @Test("Check Activity Is Stored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Activity Is Stored", .timeLimit(.minutes(1)))
     func testWhenRecordActivityIsCalled_AndTodayActivityIsNotRecorded_ThenAskStoreToUpdateActivity() {
         // GIVEN
         #expect(!storeMock.didCallSaveActivity)
@@ -52,7 +53,8 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
         #expect(storeMock.didCallSaveActivity)
     }
 
-    @Test("Check Last Activity Date And Second Last Activity Date Are Set To The Same Value When No Activity Stored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Last Activity Date And Second Last Activity Date Are Set To The Same Value When No Activity Stored", .timeLimit(.minutes(1)))
     func testWhenRecordActivityIsCalled_AndNoActivityIsRecorded_ThenSetDaysToTheSameValue() {
         // GIVEN
         storeMock.activityToReturn = .init(lastActiveDate: nil, secondLastActiveDate: nil)
@@ -69,7 +71,8 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
         #expect(storeMock.capturedSaveActivity?.lastActiveDate == Calendar.current.startOfDay(for: Self.today))
     }
 
-    @Test("Check Activity Counter Is Increased And Activity Dates Are Updated When Activity Is Stored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Activity Counter Is Increased And Activity Dates Are Updated When Activity Is Stored", .timeLimit(.minutes(1)))
     func testWhenRecordActivityIsCalled_AndTodayActivityIsNotRecorded_ThenIncrementNumberOfActiveDaysAndUpdateActiveDates() {
         // GIVEN
         let lastActivity = Calendar.current.startOfDay(for: Self.today)
@@ -88,7 +91,8 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
         #expect(storeMock.capturedSaveActivity?.lastActiveDate == Calendar.current.startOfDay(for: tomorrow))
     }
 
-    @Test("Check Activity Is Not Updated When a Record For The Same Day Already Exists")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Activity Is Not Updated When a Record For The Same Day Already Exists", .timeLimit(.minutes(1)))
     func testWhenRecordActivityIsCalled_AndTodayActivityIsRecorded_ThenDoNotAskStoreToUpdateActivity() {
         // GIVEN
         dateProviderMock.setNowDate(Self.today)
@@ -107,7 +111,8 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
 
     // MARK: - Number of Inactive Days
 
-    @Test("Check Correct Number Of Inactive Days Is Returned")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Correct Number Of Inactive Days Is Returned", .timeLimit(.minutes(1)))
     func testWhenNumberOfInactiveDaysIsCalledThenReturnNumberOfInactiveDays() {
         // GIVEN
         let secondLastActivityDate = Self.today

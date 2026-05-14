@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Foundation
 import NetworkExtension
 import VPN
@@ -62,6 +62,19 @@ extension NetworkExtensionController {
         } catch {
             throw error
         }
+    }
+
+    func openSystemExtensionSettings() {
+        systemExtensionManager.openSystemExtensionSettings()
+    }
+
+    func systemExtensionActivationState() async -> SystemExtensionActivationState {
+        await systemExtensionManager.activationState()
+    }
+
+    @available(macOS 15.1, *)
+    func makeSystemExtensionActivationStateObserver(onStateChange: @escaping () -> Void) -> SystemExtensionActivationStateObserver {
+        systemExtensionManager.makeActivationStateObserver(onStateChange: onStateChange)
     }
 
 }

@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Foundation
 import MaliciousSiteProtection
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import NetworkingTestingUtils
 import XCTest
 
@@ -31,10 +32,10 @@ final class MaliciousSiteProtectionTests: XCTestCase {
     lazy var phishingDetection: MaliciousSiteProtectionManager! = { () -> MaliciousSiteProtectionManager in
         let configManager = MockPrivacyConfigurationManager()
         let privacyConfig = MockPrivacyConfiguration()
-        privacyConfig.isSubfeatureKeyEnabled = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
+        privacyConfig.isSubfeatureEnabledCheck = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
             if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
         }
-        configManager.mockPrivacyConfig = privacyConfig
+        configManager.privacyConfig = privacyConfig
         return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlagger: featureFlagger)
     }()
     var apiService: MockAPIService!

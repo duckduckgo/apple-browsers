@@ -34,6 +34,20 @@
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AttributedMetricTests"
+               BuildableName = "AttributedMetricTests"
+               BlueprintName = "AttributedMetricTests"
+               ReferencedContainer = "container:../SharedPackages/AttributedMetric">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -106,17 +120,6 @@
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">
                </Test>
             </SkippedTests>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WaitlistTests"
-               BuildableName = "WaitlistTests"
-               BlueprintName = "WaitlistTests"
-               ReferencedContainer = "container:LocalPackages/Waitlist">
-            </BuildableReference>
          </TestableReference>
          <TestableReference
             skipped = "NO"
@@ -196,7 +199,37 @@
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"
-               ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MetricBuilderTests"
+               BuildableName = "MetricBuilderTests"
+               BlueprintName = "MetricBuilderTests"
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/MetricBuilder">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WebExtensionsTests"
+               BuildableName = "WebExtensionsTests"
+               BlueprintName = "WebExtensionsTests"
+               ReferencedContainer = "container:../SharedPackages/WebExtensions">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "ICSParserTests"
+               BuildableName = "ICSParserTests"
+               BlueprintName = "ICSParserTests"
+               ReferencedContainer = "container:../SharedPackages/ICSParser">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -232,6 +265,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-com.apple.CoreData.Logging.stderr 1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-isOnboardingCompleted false"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ff.onboardingRebranding true"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

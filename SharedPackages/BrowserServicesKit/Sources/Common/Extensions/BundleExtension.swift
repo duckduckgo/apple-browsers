@@ -38,6 +38,8 @@ public extension Bundle {
 
         public static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
         public static let vpnMenuAgentProductName = "AGENT_PRODUCT_NAME"
+        public static let vpnSystemExtensionBundleId = "SYSEX_BUNDLE_ID"
+        public static let vpnProxyExtensionBundleId = "PROXY_SYSEX_BUNDLE_ID"
 
         public static let ipcAppGroup = "IPC_APP_GROUP"
 
@@ -74,6 +76,20 @@ public extension Bundle {
             fatalError("Info.plist is missing \(Key.vpnMenuAgentProductName)")
         }
         return loginItemsURL.appendingPathComponent(productName + ".app")
+    }
+
+    var vpnSystemExtensionBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Key.vpnSystemExtensionBundleId) as? String else {
+            fatalError("Info.plist is missing \(Key.vpnSystemExtensionBundleId)")
+        }
+        return bundleID
+    }
+
+    var vpnProxyExtensionBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Key.vpnProxyExtensionBundleId) as? String else {
+            fatalError("Info.plist is missing \(Key.vpnProxyExtensionBundleId)")
+        }
+        return bundleID
     }
 
     var dbpBackgroundAgentBundleId: String {

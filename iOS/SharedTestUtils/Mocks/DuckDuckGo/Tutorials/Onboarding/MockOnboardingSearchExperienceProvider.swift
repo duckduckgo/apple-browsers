@@ -25,5 +25,12 @@ final class MockOnboardingSearchExperienceProvider: OnboardingSearchExperiencePr
     var didMakeChoiceDuringOnboarding = false
     var didApplyOnboardingChoiceSettings = false
 
-    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {}
+    var storeAIChatSearchInputDuringOnboardingChoiceCalled = false
+    var lastStoredValue: Bool?
+
+    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
+        storeAIChatSearchInputDuringOnboardingChoiceCalled = true
+        lastStoredValue = enable
+        didEnableAIChatSearchInputDuringOnboarding = enable
+    }
 }

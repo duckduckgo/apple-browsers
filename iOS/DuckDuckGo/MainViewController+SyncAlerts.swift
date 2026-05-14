@@ -55,6 +55,8 @@ extension MainViewController: SyncAlertsPresenting {
             showSyncPausedAlert(
                 title: UserText.syncCreditCardsPausedAlertTitle,
                 informative: UserText.syncBadCreditCardsRequestAlertDescription)
+        case .aiChatsCountLimitExceeded, .aiChatsRequestSizeLimitExceeded, .badRequestAiChats:
+            return
         }
     }
     

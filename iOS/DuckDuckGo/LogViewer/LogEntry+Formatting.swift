@@ -98,9 +98,10 @@ struct LogFilter {
                    entry.subsystem.lowercased().contains(searchString) ||
                    entry.category.lowercased().contains(searchString)
         }
-        
+
         return true
     }
+
     
     static let allLogsFilter = LogFilter(
         subsystemFilter: nil,
@@ -110,6 +111,16 @@ struct LogFilter {
         filterEmptySubsystems: true,
         filterAppleLogs: true
     )
+
+    static let pixelFilter = LogFilter(
+        subsystemFilter: "Pixel",
+        categoryFilter: nil,
+        levelFilter: nil,
+        searchText: nil,
+        filterEmptySubsystems: false,
+        filterAppleLogs: false
+    )
+
 }
 
 extension OSLogEntryLog.Level {

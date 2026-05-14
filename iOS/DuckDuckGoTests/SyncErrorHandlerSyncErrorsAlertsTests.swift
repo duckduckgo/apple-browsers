@@ -23,6 +23,7 @@ import Combine
 import Common
 import BrowserServicesKitTestsUtils
 @testable import Core
+@testable import DuckDuckGo
 
 final class SyncErrorHandlerSyncErrorsAlertsTests: XCTestCase {
     var handler: SyncErrorHandler!

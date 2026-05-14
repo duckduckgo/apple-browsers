@@ -31,7 +31,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     var mockOptOutRunner: MockOptOutSubJobWebRunner!
     var mockDatabase: MockDatabase!
     var mockEventsHandler: MockOperationEventsHandler!
-    var mockPixelHandler: MockPixelHandler!
+    var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     var mockDependencies: MockBrokerProfileJobDependencies!
 
     override func setUp() {
@@ -40,7 +40,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockDatabase = MockDatabase()
         mockEventsHandler = MockOperationEventsHandler()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
 
         mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.mockScanRunner = self.mockScanRunner
@@ -160,7 +160,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     // MARK: - createStageDurationContext
 
     func testCreateStageDurationContext_configuresCalculatorAndFiresStart() {
-        let pixelHandler = MockPixelHandler()
+        let pixelHandler = MockDataBrokerProtectionPixelsHandler()
 
         let brokerData = makeFixtureBrokerProfileQueryData()
         let identifiers = makeFixtureIdentifiers()
@@ -212,7 +212,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
-                                                                     handler: MockPixelHandler(),
+                                                                     handler: MockDataBrokerProtectionPixelsHandler(),
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -274,6 +275,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         calculator.setLastAction(ClickAction(id: "action", actionType: .click))
@@ -307,6 +309,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let identifiers = makeFixtureIdentifiers()
@@ -341,6 +344,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let identifiers = makeFixtureIdentifiers()
@@ -364,6 +368,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let identifiers = makeFixtureIdentifiers()
@@ -584,7 +589,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         } catch {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
                 switch lastPixelFired {
-                case .optOutFailure(_, _, _, _, _, _, let tries, _, _, _, _, _):
+                case .optOutFailure(_, _, _, _, _, _, _, _, let tries, _, _, _, _, _):
                     XCTAssertEqual(tries, 3)
                 default: XCTFail("We should be firing the opt-out submit-success pixel last")
                 }
@@ -647,9 +652,10 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
+        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: [])
+        let mockOptOutOperation = OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date.now, historyEvents: historyEvents, attemptCount: 0, extractedProfile: ExtractedProfile(id: extractedProfileId))
 
-        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation)
+        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation, optOutJobData: [mockOptOutOperation])
         mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
         try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: config, database: mockDatabase)

@@ -18,15 +18,16 @@
 //
 
 import BrowserServicesKit
-import Common
-import UIKit
 import Combine
-import Foundation
-import WebKit
-import UserScript
-import Core
+import Common
 import ContentScopeScripts
+import Core
+import Foundation
+import PrivacyConfig
 import SwiftUI
+import WebKit
+import UIKit
+import UserScript
 
 /// Values that the frontend can use to determine the current state.
 struct InitialPlayerSettings: Codable {
@@ -401,10 +402,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     // Add a convenience initializer that creates a new presenter
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
-                  nativeUIPresenter: DuckPlayerNativeUIPresenter())
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies))
     }
 
     deinit {
@@ -470,12 +472,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupHideBrowserChromeTimer() {
         hideBrowserChromeTimer?.invalidate()
 
-        weak var weakHostView = hostView
-        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { _ in
+        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak hostView] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.hideChrome()
+                    hostView?.hideChrome()
                 }
             }
         }

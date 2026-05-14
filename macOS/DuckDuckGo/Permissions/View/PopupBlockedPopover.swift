@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 final class PopupBlockedPopover: NSPopover {
 
@@ -24,7 +25,7 @@ final class PopupBlockedPopover: NSPopover {
         super.init()
 
         behavior = .applicationDefined
-        setupContentController()
+        contentViewController = PopupBlockedViewController()
     }
 
     required init?(coder: NSCoder) {
@@ -39,28 +40,131 @@ final class PopupBlockedPopover: NSPopover {
     }
 
     // swiftlint:disable force_cast
-    private func setupContentController() {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        let controller = storyboard
-            .instantiateController(withIdentifier: "PopupBlockedViewController") as! PopupBlockedViewController
-        contentViewController = controller
+    var viewController: PopupBlockedViewController {
+        get {
+            if contentViewController == nil {
+                contentViewController = PopupBlockedViewController()
+            }
+            return contentViewController as! PopupBlockedViewController
+        }
     }
     // swiftlint:enable force_cast
 
 }
 
 final class PopupBlockedViewController: NSViewController {
-    @IBOutlet weak var descriptionLabel: NSTextField!
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        descriptionLabel.stringValue = UserText.permissionPopupBlockedPopover
-    }
+    private var swiftUIHostingView: NSHostingView<PopupBlockedSwiftUIView>?
+    private var dismissWorkItem: DispatchWorkItem?
 
-    override func viewDidAppear() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.dismiss()
+    weak var query: PermissionAuthorizationQuery? {
+        didSet {
+            setupSwiftUIView()
         }
     }
 
+    init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("PopupBlockedViewController: Use init() instead")
+    }
+
+    override func loadView() {
+        view = NSView()
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupSwiftUIView()
+    }
+
+    override func viewDidAppear() {
+        // Cancel any existing work item to prevent multiple timers
+        dismissWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.dismiss()
+        }
+        dismissWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0, execute: workItem)
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+    }
+
+    private func setupSwiftUIView() {
+        view.subviews.forEach { $0.removeFromSuperview() }
+        swiftUIHostingView = nil
+
+        // Check if the popup has an empty or about: URL
+        let isEmptyPopup: Bool = {
+            guard let url = query?.url else { return true }
+            return url.isEmpty || url.navigationalScheme == .about
+        }()
+
+        let swiftUIView = PopupBlockedSwiftUIView(
+            isEmptyPopup: isEmptyPopup,
+            onOpenClicked: { [weak self] in
+                self?.handleOpen()
+            }
+        )
+
+        let hostingView = NSHostingView(rootView: swiftUIView)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        // Set preferred content size for the popover
+        let fittingSize = hostingView.fittingSize
+        preferredContentSize = fittingSize
+
+        swiftUIHostingView = hostingView
+    }
+
+    private func handleOpen() {
+        dismiss()
+        query?.handleDecision(grant: true)
+    }
+}
+
+// MARK: - PopupBlockedSwiftUIView
+
+struct PopupBlockedSwiftUIView: View {
+
+    /// Whether the blocked popup has an empty or about: URL
+    let isEmptyPopup: Bool
+    let onOpenClicked: () -> Void
+
+    private var buttonText: String {
+        isEmptyPopup ? UserText.permissionPopupAllowPopupsButton : UserText.permissionPopupOpenButton
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(UserText.permissionPopupBlockedPopover)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+            Button(action: onOpenClicked) {
+                Text(buttonText)
+                    .font(.system(size: 13))
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .fixedSize()
+    }
 }

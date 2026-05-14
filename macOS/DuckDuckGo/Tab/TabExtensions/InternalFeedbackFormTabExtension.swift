@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Navigation
@@ -24,6 +23,7 @@ import Foundation
 import UserScript
 import WebKit
 import PixelKit
+import PrivacyConfig
 
 /**
  * This is a wrapper class for a hardcoded script evaluated on the Internal Feedback Form page.
@@ -42,23 +42,16 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 
-    override init() {
-        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil)
-
-#if APPSTORE
-        var distributionType = "App Store"
-#else
-        var distributionType = "DMG"
-#endif
-
-#if ALPHA
-        distributionType.append(" Alpha")
-#endif
+    init(quickMode: Bool = false, diagnostics: String = "") {
+        let appVersionModel = AppVersionModel()
 
         do {
             source = try Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
                 "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-                "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
+                "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
+                "%QUICK_MODE%": quickMode ? "true" : "false",
+                "%DIAGNOSTICS%": diagnostics,
+                "%SCREENSHOT_BASE64%": "",
             ])
             super.init()
         } catch {

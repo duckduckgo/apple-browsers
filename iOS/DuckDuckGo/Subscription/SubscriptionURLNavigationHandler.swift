@@ -55,14 +55,38 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     /// Navigates to the subscription purchase flow.
     /// Called when Duck.ai need to start a new subscription purchase.
     func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
-        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
-            origin: origin,
-            featurePage: featurePage
-        )
+        let components = makeURLComponents(origin: origin, featurePage: featurePage)
         let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: components)
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: settingsDeepLink
         )
+    }
+
+    /// Navigates to the subscription plans flow.
+    /// Called when Duck.ai needs to start a new subscription upgrade.
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
+        let components = makeURLComponents(origin: origin, featurePage: featurePage)
+        let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(redirectURLComponents: components)
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: settingsDeepLink
+        )
+    }
+
+    /// Creates URLComponents containing only query parameters.
+    /// The downstream factories build the actual URL using their subscription manager.
+    private func makeURLComponents(origin: String?, featurePage: String?) -> URLComponents? {
+        var queryItems: [URLQueryItem] = []
+        if let featurePage {
+            queryItems.append(URLQueryItem(name: "featurePage", value: featurePage))
+        }
+        if let origin {
+            queryItems.append(URLQueryItem(name: AttributionParameter.origin, value: origin))
+        }
+        guard !queryItems.isEmpty else { return nil }
+        var components = URLComponents()
+        components.queryItems = queryItems
+        return components
     }
 }

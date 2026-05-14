@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import TrackerRadarKit
 import Common
 import ContentBlocking
+import Foundation
+import TrackerRadarKit
 
 public class TrackerResolver {
 

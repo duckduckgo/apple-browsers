@@ -17,7 +17,7 @@
 //
 
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 
 final class ApplicationDockMenu: NSMenu {
 

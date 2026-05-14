@@ -30,7 +30,7 @@ public struct OAuthRequest {
         apiRequest.urlRequest.url!
     }
 
-    public enum BodyErrorCode: String, Decodable {
+    public enum BodyErrorCode: String, Decodable, Equatable {
         case invalidAuthorizationRequest = "invalid_authorization_request"
         case authorizeFailed = "authorize_failed"
         case invalidRequest = "invalid_request"
@@ -95,8 +95,59 @@ public struct OAuthRequest {
         }
     }
 
-    struct BodyError: Decodable {
-        let error: BodyErrorCode
+    /// API `TOKEN_STATUS` values describing refresh token validity.
+    /// https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#access-token scroll down to `TOKEN_STATUS` enum values
+    /// Task: https://app.asana.com/1/137249556945/project/1205842942115003/task/1212840065651597?focus=true
+    public enum TokenStatus: Int, Equatable, Decodable, DDGError, CustomStringConvertible {
+        /// Token is invalid in a non-stateful way (e.g., bad signature, malformed, etc) or the request failed for a reason unrelated to the token itself (e.g., suspended account).
+        case invalid = 0
+        /// Token is valid but has expired. Specifically the exp claim in the JWT indicates a time in the past. This means the tokens is more than 30 days old.
+        case expired = 1
+        /// Token has prematurely expired because it was previously used more than an hour ago. The refresh token reuse window has expired and the token can no longer be reused.
+        case reused = 2
+        /// Token was logged out and can no longer be used. Tokens are immediately marked invalid on logout.
+        case loggedOut = 3
+        /// Token has been invalidated due to detected fraud during the authentication flow. This can happen if an authentication session is reused during login (e.g., same login credentials are submitted multiple times for the same session id) or if an authorization code is reused in the Access Token Request for the authorization_code grant_type.
+        case fraudDetected = 4
+
+        public var description: String {
+            switch self {
+            case .invalid:
+                return "Token is invalid or request failed"
+            case .expired:
+                return "Token is expired"
+            case .reused:
+                return "Token reuse window expired"
+            case .loggedOut:
+                return "Token was logged out"
+            case .fraudDetected:
+                return "Token invalidated due to suspected fraud"
+            }
+        }
+
+        public static var errorDomain: String { "com.duckduckgo.networking.TokenStatus" }
+
+        public var errorCode: Int { rawValue }
+
+        public var underlyingError: Error? { nil }
+    }
+
+    public struct BodyError: Decodable, Equatable {
+        public let errorCode: BodyErrorCode
+        public let tokenStatus: TokenStatus?
+
+        private enum CodingKeys: String, CodingKey {
+            case errorCode = "error"
+            case tokenStatus = "error_code"
+        }
+
+        public var description: String {
+            var result = "Error code: \(self.errorCode.description)"
+            if let tokenStatus = self.tokenStatus {
+                result += ", token status: \(tokenStatus.description)"
+            }
+            return result
+        }
     }
 
     private struct Defaults {
@@ -344,26 +395,6 @@ public struct OAuthRequest {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
-    }
-
-    // MARK: Exchange token
-
-    static func exchangeToken(baseURL: URL, accessTokenV1: String, authSessionID: String) -> OAuthRequest? {
-        guard !accessTokenV1.isEmpty, !authSessionID.isEmpty else { return nil }
-
-        let path = "/api/auth/v2/exchange"
-        guard let domain = baseURL.host,
-              let cookie = Self.ddgAuthSessionCookie(domain: domain, path: path, authSessionID: authSessionID)
-        else { return nil }
-
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .post,
-                                         headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1)) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
-            return nil
-        }
-        return OAuthRequest(apiRequest: request,
-                            httpSuccessCode: .found,
-                            httpErrorCodes: [.badRequest, .internalServerError])
     }
 
     // MARK: JWKs

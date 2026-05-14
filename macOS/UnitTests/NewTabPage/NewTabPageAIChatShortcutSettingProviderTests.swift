@@ -18,6 +18,7 @@
 
 import AIChat
 import Combine
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

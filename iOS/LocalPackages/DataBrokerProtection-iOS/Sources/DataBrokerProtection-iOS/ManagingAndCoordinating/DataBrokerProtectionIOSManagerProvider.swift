@@ -28,24 +28,8 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import PrivacyConfig
 import SwiftUI
-
-public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
-
-    public init() {
-        super.init { event, _, _, _ in
-            switch event {
-            default:
-                print("event happened")
-            }
-        }
-    }
-
-    @available(*, unavailable)
-    override init(mapping: @escaping EventMapping<JobEvent>.Mapping) {
-        fatalError("Use init()")
-    }
-}
 
 extension DataBrokerProtectionSettings: @retroactive AppRunTypeProviding {
 
@@ -60,18 +44,21 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: DBPFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
+                                  userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
-                                  feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
+                                  feedbackViewCreator: @escaping () -> (any View),
+                                  eventsHandler: EventMapping<JobEvent>,
+                                  freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+                                  isWebViewInspectable: Bool = false,
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-
-        let eventsHandler = DefaultOperationEventsHandler()
 
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
@@ -105,8 +92,12 @@ public class DataBrokerProtectionIOSManagerProvider {
             assertionFailure("Failed to make secure storage vault")
             return nil
         }
-
-        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        
+        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: dbpSettings),
+                                                        vault: vault,
+                                                        pixelHandler: sharedPixelsHandler,
+                                                        runTypeProvider: dbpSettings,
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
@@ -129,7 +120,8 @@ public class DataBrokerProtectionIOSManagerProvider {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                             settings: dbpSettings,
                                             servicePixel: backendServicePixels)
-        let emailConfirmationDataService = EmailConfirmationDataService(database: database,
+        let emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: database,
+                                                                        database: database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
@@ -148,9 +140,11 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
+            applicationNameForUserAgent: nil,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 
         return DataBrokerProtectionIOSManager(
@@ -158,6 +152,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
+            userNotificationService: userNotificationService,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
@@ -167,7 +162,11 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             settings: dbpSettings,
             subscriptionManager: subscriptionManager,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            eventsHandler: eventsHandler,
+            isWebViewInspectable: isWebViewInspectable,
+            freeTrialConversionService: freeTrialConversionService,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
     }
 }

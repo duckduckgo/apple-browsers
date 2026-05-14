@@ -2,6 +2,54 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d καρτέλα και τα δεδομένα τους διαγράφηκαν</string>
+			<key>other</key>
+			<string>%1$d καρτέλες και τα δεδομένα τους διαγράφηκαν</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Διαγραφή από 1 ιστότοπο. Μπορεί να σας αποσυνδέσει από τους λογαριασμούς.</string>
+			<key>other</key>
+			<string>Διαγραφή από %1$d ιστότοπους. Μπορεί να σας αποσυνδέσει από τους λογαριασμούς.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Κλείσιμο καρτέλας</string>
+			<key>other</key>
+			<string>Κλείσιμο και των %1$d καρτελών</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -121,9 +169,57 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Αποκλείστηκε %1$d παρακολούθηση</string>
+			<string>%1$d εφαρμογή παρακολούθησης αποκλείστηκε από τη φόρτωση</string>
 			<key>other</key>
-			<string>Αποκλείστηκαν %1$d παρακολουθήσεις</string>
+			<string>%1$d εφαρμογές παρακολούθησης αποκλείστηκαν από τη φόρτωση</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Ιχνηλάτης</string>
+			<key>other</key>
+			<string>%1$d Ιχνηλάτης</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ακόμη τομέας φορτώθηκε</string>
+			<key>other</key>
+			<string>%1$d ακόμη τομείς φορτώθηκαν</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d εφαρμογή παρακολούθησης που ανήκει σε αυτόν τον ιστότοπο (φορτώθηκε)</string>
+			<key>other</key>
+			<string>%1$d εφαρμογές παρακολούθησης που ανήκουν σε αυτόν τον ιστότοπο (φορτώθηκε)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -546,6 +642,38 @@
 			<string>%1$d επιλεγμένες καρτέλες</string>
 			<key>other</key>
 			<string>%1$d επιλεγμένες καρτέλες</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ιστότοπος εξαιρέθηκε από την εκκαθάριση</string>
+			<key>other</key>
+			<string>%1$d ιστότοποι εξαιρέθηκαν από την εκκαθάριση</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Ιχνηλάτης</string>
+			<key>other</key>
+			<string>%2$@ Ιχνηλάτης</string>
 		</dict>
 	</dict>
 </dict>

@@ -21,14 +21,15 @@ import PixelKit
 import UIKit
 
 enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
-    
+
     case acInit
-    case missedPopup
     case errorMultiplePopups
     case errorOptoutFailed
+    case errorReloadLoop
     case popupFound
     case done
     case doneCosmetic
+    case doneHeuristic
     case animationShown
     case animationShownCosmetic
     case disabledForSite
@@ -37,17 +38,19 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorCacheNotSet
 
     case summary(events: [String: Int])
 
     static var summaryPixels: [AutoconsentPixel] =  [
         .acInit,
-        .missedPopup,
         .errorMultiplePopups,
         .errorOptoutFailed,
+        .errorReloadLoop,
         .popupFound,
         .done,
         .doneCosmetic,
+        .doneHeuristic,
         .animationShown,
         .animationShownCosmetic,
         .disabledForSite,
@@ -61,12 +64,13 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     var name: String {
         switch self {
         case .acInit: "autoconsent_init"
-        case .missedPopup: "autoconsent_missed-popup"
         case .errorMultiplePopups: "autoconsent_error_multiple-popups"
         case .errorOptoutFailed: "autoconsent_error_optout"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .popupFound: "autoconsent_popup-found"
         case .done: "autoconsent_done"
         case .doneCosmetic: "autoconsent_done_cosmetic"
+        case .doneHeuristic: "autoconsent_done_heuristic"
         case .animationShown: "autoconsent_animation-shown"
         case .animationShownCosmetic: "autoconsent_animation-shown_cosmetic"
         case .disabledForSite: "autoconsent_disabled-for-site"
@@ -75,6 +79,7 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .errorCacheNotSet: "autoconsent_error_cache-not-set"
         case .summary: "autoconsent_summary"
         }
     }
@@ -93,7 +98,33 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         }
     }
 
-        
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .acInit,
+                .errorMultiplePopups,
+                .errorOptoutFailed,
+                .errorReloadLoop,
+                .popupFound,
+                .done,
+                .doneCosmetic,
+                .doneHeuristic,
+                .animationShown,
+                .animationShownCosmetic,
+                .disabledForSite,
+                .detectedByPatterns,
+                .detectedByBoth,
+                .detectedOnlyRules,
+                .selfTestOk,
+                .selfTestFail,
+                .summary:
+            return [.pixelSource]
+        case .errorCacheNotSet:
+            return []
+
+        }
+    }
+
+
     var namePrefix: String {
 #if os(macOS)
         return "m_mac"

@@ -17,11 +17,17 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
+import DuckAiDataStore
+import Persistence
+import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
 import Subscription
+import RemoteMessaging
+import WebExtensions
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -37,7 +43,10 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing = UserDefaultsFireproofing.xshared
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
+        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
+    )
+    private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
@@ -50,45 +59,102 @@ struct Launching: LaunchingHandling {
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let onboardingManager: OnboardingManager
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        favicons = Favicons(fireproofing: fireproofing)
+
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
-        
+        lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+
         // Initialize configuration with the key-value store
-        configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        configuration = AppConfiguration(
+            appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            featureFlagger: featureFlagger
+        )
+
+        var isBookmarksDBFilePresent: Bool?
+        if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
+            isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
+        }
 
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        try configuration.start()
+        try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+
+        // Migrate existing fireproofed domains to eTLD+1 store
+        fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
+
+        // Set idleReturnNewUser at launch (before statistics load) so new vs existing users get the correct after-inactivity default.
+        IdleReturnCohort.setCohortIfNeeded(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            statisticsStore: StatisticsUserDefaults()
+        )
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
-        // This approach aims to optimise performance and ensure critical functionalities are ready ASAP
-        let autofillService = AutofillService()
+        // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
+        let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+
+        let contentBlocking = ContentBlocking.shared
+
+        onboardingManager = OnboardingManager(appDefaults: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager, tutorialSettings: DefaultTutorialSettings())
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                      faviconStoring: favicons)
+
+        let webExtensionManagerHolder = WebExtensionManagerHolder()
+        let webExtensionAvailability = WebExtensionAvailability(
+            featureFlagger: featureFlagger,
+            webExtensionManagerProvider: {
+                webExtensionManagerHolder.manager
+            }
+        )
+
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+        let fireModeStorageController = FireModeNativeStorageController(
+            featureFlagger: featureFlagger,
+            consentSeedSource: duckAiNativeStorageHandler,
+            appConfigurationGroupName: Global.appConfigurationGroupName
+        )
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
+                                                            contentBlocking: contentBlocking,
+                                                            sync: syncService.sync,
+                                                            fireproofing: fireproofing,
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                            syncErrorHandler: syncService.syncErrorHandler,
+                                                            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                                            webExtensionAvailability: webExtensionAvailability,
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            fireModeStorageController: fireModeStorageController)
 
-        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
+                                    contentBlocking: contentBlockingService.common,
+                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService()
+        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
-                                                pixelKit: PixelKit.shared!,
+                                                pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
-                                      privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
-                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
@@ -97,7 +163,17 @@ struct Launching: LaunchingHandling {
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
                                                                   daxDialogs: daxDialogs)
+        let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
+            featureFlagger: featureFlagger,
+            runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
+            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings
+        )
 
+        let remoteMessagingImageLoader = RemoteMessagingImageLoader(
+            dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+            cache: RemoteMessagingImageLoader.defaultCache
+        )
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -107,15 +183,18 @@ struct Launching: LaunchingHandling {
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
-                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter)
+                                                            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                            freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                            remoteMessagingImageLoader: remoteMessagingImageLoader,
+                                                            dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger,
-            subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
         )
 
         // Service to display the Default Browser prompt.
@@ -129,7 +208,21 @@ struct Launching: LaunchingHandling {
         // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
+        // Create What's New repository for use in modal prompts and settings
+        let whatsNewRepository = DefaultWhatsNewMessageRepository(
+            remoteMessageStore: remoteMessagingService.remoteMessagingClient.store,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
+        // Subscription promo for reinstallers / skipped-onboarding users
+        let subscriptionPromoCoordinator = SubscriptionPromoCoordinator(
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
+
         // Initialise modal prompts coordination
+        let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -137,20 +230,24 @@ struct Launching: LaunchingHandling {
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
+                whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
+                remoteMessagingImageLoader: remoteMessagingImageLoader,
                 appSettings: appSettings,
                 aiChatSettings: aiChatSettings,
                 experimentalAIChatManager: ExperimentalAIChatManager(),
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
-                winBackOfferCoordinator: winBackOfferService.coordinator
+                winBackOfferCoordinator: winBackOfferService.coordinator,
+                subscriptionPromoPresenter: subscriptionPromoPresenter,
+                subscriptionPromoCoordinator: subscriptionPromoCoordinator,
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies,
+                omniBarFocuser: omniBarFocuser
             )
         )
 
-        let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
-                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -170,6 +267,7 @@ struct Launching: LaunchingHandling {
                                               contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
+                                              favicons: favicons,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
@@ -179,25 +277,36 @@ struct Launching: LaunchingHandling {
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
+                                              freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                              freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                              freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
-                                              mobileCustomization: mobileCustomization)
+                                              mobileCustomization: mobileCustomization,
+                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                              whatsNewRepository: whatsNewRepository,
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
+                                              wideEvent: AppDependencyProvider.shared.wideEvent,
+                                              onboardingManager: onboardingManager
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
 
+        webExtensionManagerHolder.manager = mainCoordinator.webExtensionManager
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
-        
+        omniBarFocuser.focuser = mainCoordinator.controller
+
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
-        
+
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
         )
-        
+
         winBackOfferService.setURLHandler(mainCoordinator)
 
         // MARK: - App Services aggregation
@@ -227,18 +336,25 @@ struct Launching: LaunchingHandling {
                                aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
-        
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(
+#if DEBUG || ALPHA
+        mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
+#else
+        _ = configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager
+        )
+#endif
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.
@@ -246,6 +362,24 @@ struct Launching: LaunchingHandling {
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+    }
+
+    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
+              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+            return nil
+        }
+        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+        do {
+            return try DuckAiNativeStorageHandler(
+                .disk(path: containerURL,
+                      keyStoreProvider: DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName),
+                      pixelFiring: DuckAiNativeStoragePixelAdapter())
+            )
+        } catch {
+            Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+            return nil
+        }
     }
 
     private func logAppLaunchTime() {
@@ -265,10 +399,11 @@ struct Launching: LaunchingHandling {
             aiChatSettings: aiChatSettings,
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
-            appSettings: appSettings
+            appSettings: appSettings,
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
-    
+
 }
 
 extension Launching {
@@ -286,7 +421,51 @@ extension Launching {
     }
 
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window)
+        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
+}
+
+struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
+
+    func fire(_ event: DuckAiNativeStorageEvent) {
+        switch event {
+        case .initSuccess:
+            Pixel.fire(pixel: .duckAiNativeStorageInitSuccess)
+        case .initError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageInitError, error: error)
+        case .migrationDone(let key):
+            UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
+        case .migrationDoneBlankKey:
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneBlankCount)
+        case .migrationStarted:
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationStarted)
+        case .migrationAlreadyDone:
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationAlreadyDone)
+        case .migrationError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationError, error: error)
+        case .settingsPutError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageSettingsPutError, error: error)
+        case .settingsGetError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageSettingsGetError, error: error)
+        case .settingsDeleteError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageSettingsDeleteError, error: error)
+        case .chatPutError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageChatPutError, error: error)
+        case .chatGetError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageChatGetError, error: error)
+        case .chatDeleteError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageChatDeleteError, error: error)
+        case .filePutError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageFilePutError, error: error)
+        case .fileGetError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageFileGetError, error: error)
+        case .fileListError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageFileListError, error: error)
+        case .fileDeleteError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
+        }
+    }
 }

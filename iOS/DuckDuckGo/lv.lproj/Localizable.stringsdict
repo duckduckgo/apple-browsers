@@ -2,6 +2,60 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d cilnes un to dati izdzēsti</string>
+			<key>one</key>
+			<string>%1$d cilne un tās dati izdzēsti</string>
+			<key>other</key>
+			<string>%1$d cilnes un to dati izdzēsti</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Dzēst no %1$d vietnēm. Var izrakstīt tevi no kontiem.</string>
+			<key>one</key>
+			<string>Dzēst no 1 vietnes. Var izrakstīt tevi no kontiem.</string>
+			<key>other</key>
+			<string>Dzēst no %1$d vietnēm. Var izrakstīt tevi no kontiem.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+			<key>one</key>
+			<string>Aizvērt cilni</string>
+			<key>other</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -139,11 +193,65 @@ Es tos nobloķēju!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>zero</key>
-			<string>%1$d Izsekotāji ir bloķēti</string>
+			<string>%1$d izsekotāju ielādēšana ir bloķēta</string>
 			<key>one</key>
-			<string>%1$d Izsekotājs ir bloķēts</string>
+			<string>%1$d izsekotāja ielādēšana ir bloķēta</string>
 			<key>other</key>
-			<string>%1$d Izsekotāji ir bloķēti</string>
+			<string>%1$d izsekotāju ielādēšana ir bloķēta</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d Zsekotājs</string>
+			<key>one</key>
+			<string>%1$d Zsekotājs</string>
+			<key>other</key>
+			<string>%1$d Izsekotāji</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d citi domēni ielādēti</string>
+			<key>one</key>
+			<string>%1$d cits domēns ielādēts</string>
+			<key>other</key>
+			<string>%1$d citi domēni ielādēti</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d izsekotāji, kas pieder šai vietnei (ielādēti)</string>
+			<key>one</key>
+			<string>%1$d izsekotājs, kas pieder šai vietnei (ielādēts)</string>
+			<key>other</key>
+			<string>%1$d izsekotāji, kas pieder šai vietnei (ielādēti)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -620,6 +728,42 @@ Es tos nobloķēju!
 			<string>%1$d atlasītā cilne</string>
 			<key>other</key>
 			<string>%1$d atlasītās cilnes</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d vietas izslēgtas no tīrīšanas</string>
+			<key>one</key>
+			<string>%1$d vieta izslēgta no tīrīšanas</string>
+			<key>other</key>
+			<string>%1$d vietas izslēgtas no tīrīšanas</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ Zsekotājs</string>
+			<key>one</key>
+			<string>%2$@ Zsekotājs</string>
+			<key>other</key>
+			<string>%2$@ Izsekotāji</string>
 		</dict>
 	</dict>
 </dict>

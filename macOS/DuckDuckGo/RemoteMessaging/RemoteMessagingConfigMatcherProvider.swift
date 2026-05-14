@@ -16,15 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
-import Persistence
 import Bookmarks
-import RemoteMessaging
-import VPN
-import Subscription
-import Freemium
+import BrowserServicesKit
+import Common
+import DataBrokerProtection_macOS
 import FeatureFlags
+import Foundation
+import Freemium
+import Persistence
+import PrivacyConfig
+import RemoteMessaging
+import Subscription
+import VPN
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
@@ -38,9 +41,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -54,7 +58,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             variantManager: DefaultVariantManager(database: database),
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            themeManager: themeManager
+            themeManager: themeManager,
+            dbpDataManagerProvider: dbpDataManagerProvider
         )
     }
 
@@ -68,9 +73,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         statisticsStore: @escaping @autoclosure () -> StatisticsStore,
         featureDiscovery: @escaping @autoclosure () -> FeatureDiscovery,
         variantManager: @escaping @autoclosure () -> VariantManager,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -84,6 +90,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
+        self.dbpDataManagerProvider = dbpDataManagerProvider
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -95,9 +102,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let statisticsStore: () -> StatisticsStore
     let featureDiscovery: () -> FeatureDiscovery
     let variantManager: () -> VariantManager
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
+    let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -110,7 +118,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
-        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
+        let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
@@ -166,18 +174,23 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
 
-#if APPSTORE
-        let isInstalledMacAppStore = true
-#else
-        let isInstalledMacAppStore = false
-#endif
-
         let duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor()
 
         let deprecatedRemoteMessageStorage = DefaultSurveyRemoteMessagingStorage.surveys()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
+        let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
+
+        let dbpDataManager = dbpDataManagerProvider?()
+        let isCurrentPIRUser: Bool
+
+        if isCurrentFreemiumDBPUser || hasPIREntitlement, let dbpDataManager {
+            let profile = try? dbpDataManager.fetchProfile()
+            isCurrentPIRUser = profile != nil
+        } else {
+            isCurrentPIRUser = false
+        }
 
         let pinnedTabsCount: Int = await MainActor.run {
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
@@ -191,7 +204,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: isInstalledMacAppStore),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),
@@ -215,9 +228,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
+                                                       isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
-                                                       enabledFeatureFlags: enabledFeatureFlags
-                                                      ),
+                                                       enabledFeatureFlags: enabledFeatureFlags),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
@@ -244,5 +257,9 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionExpiryDate: Date? {
         return expiresOrRenewsAt
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return hasActiveTrialOffer
     }
 }

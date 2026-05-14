@@ -45,11 +45,57 @@ class MockTextZoomCoordinator: TextZoomCoordinating {
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) {
     }
     
-    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView) -> BrowsingMenuEntry? {
+    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool, percentageInDetail: Bool) -> BrowsingMenuEntry? {
         return nil
     }
 
+    private(set) var resetTextZoomLevelsCallCount = 0
+    private(set) var resetTextZoomLevelsExcludingDomainsArg: [String]?
+    
     func resetTextZoomLevels(excludingDomains: [String]) {
+        resetTextZoomLevelsCallCount += 1
+        resetTextZoomLevelsExcludingDomainsArg = excludingDomains
+    }
+
+    private(set) var resetTextZoomLevelsForVisitedDomainsCallCount = 0
+    private(set) var resetTextZoomLevelsForVisitedDomains: [String]?
+    private(set) var resetTextZoomLevelsForVisitedExcludingDomains: [String]?
+
+    func resetTextZoomLevels(forVisitedDomains domains: [String], excludingDomains: [String]) {
+        resetTextZoomLevelsForVisitedDomainsCallCount += 1
+        resetTextZoomLevelsForVisitedDomains = domains
+        resetTextZoomLevelsForVisitedExcludingDomains = excludingDomains
+    }
+
+}
+
+final class MockTextZoomCoordinatorProvider: TextZoomCoordinatorProviding {
+
+    private var coordinators: [TextZoomContext: MockTextZoomCoordinator]
+
+    var normalCoordinator: MockTextZoomCoordinator {
+        coordinators[.normal]!
+    }
+
+    var fireCoordinator: MockTextZoomCoordinator {
+        coordinators[.fireMode]!
+    }
+
+    init(normalCoordinator: MockTextZoomCoordinator = MockTextZoomCoordinator(),
+         fireCoordinator: MockTextZoomCoordinator = MockTextZoomCoordinator()) {
+        self.coordinators = [
+            .normal: normalCoordinator,
+            .fireMode: fireCoordinator
+        ]
+    }
+
+    func coordinator(for context: TextZoomContext) -> TextZoomCoordinating {
+        if let existing = coordinators[context] {
+            return existing
+        }
+        let mock = MockTextZoomCoordinator()
+        coordinators[context] = mock
+        return mock
     }
 
 }

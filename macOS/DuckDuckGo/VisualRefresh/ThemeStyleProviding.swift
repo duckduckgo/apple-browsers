@@ -18,25 +18,25 @@
 
 import AppKit
 import Combine
-import BrowserServicesKit
 import FeatureFlags
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
+import PrivacyConfig
 
 protocol ThemeStyleProviding {
     var name: ThemeName { get }
-    var palette: ColorPalette { get }
+    var palette: ThemeColors { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
-    var areNavigationBarCornersRound: Bool { get }
     var fireButtonSize: CGFloat { get }
     var navigationToolbarButtonsSpacing: CGFloat { get }
     var tabBarButtonSize: CGFloat { get }
     var addToolbarShadow: Bool { get }
 
     var addressBarStyleProvider: AddressBarStyleProviding { get }
+    var navigationBarStyleProvider: NavigationBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
     var iconsProvider: IconsProviding { get }
@@ -64,13 +64,13 @@ enum AddressBarSizeClass {
 
 struct ThemeStyle: ThemeStyleProviding {
     let name: ThemeName
-    let palette: ColorPalette
+    let palette: ThemeColors
 
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
-    let areNavigationBarCornersRound: Bool
 
     let addressBarStyleProvider: AddressBarStyleProviding
+    let navigationBarStyleProvider: NavigationBarStyleProviding
     let tabStyleProvider: TabStyleProviding
     let colorsProvider: ColorsProviding
     let iconsProvider: IconsProviding
@@ -79,31 +79,25 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static var current: ThemeStyleProviding {
-        let palette = NewColorPalette()
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
-        return buildThemeStyle(name: .default, palette: palette, featureFlagger: featureFlagger)
-    }
-
-    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
+        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        return ThemeStyle(
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+        ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
-            areNavigationBarCornersRound: true,
             addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(displaysTabsAnimations: displaysTabsAnimations),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, displaysTabsAnimations: displaysTabsAnimations),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
-            tabBarButtonSize: 28,
+            tabBarButtonSize: 30,
             addToolbarShadow: true
         )
     }

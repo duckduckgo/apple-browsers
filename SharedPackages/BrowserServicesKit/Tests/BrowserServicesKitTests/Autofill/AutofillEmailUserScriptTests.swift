@@ -19,6 +19,7 @@
 import XCTest
 import WebKit
 import UserScript
+import BrowserServicesKitTestsUtils
 @testable import BrowserServicesKit
 
 class AutofillEmailUserScriptTests: XCTestCase {
@@ -63,7 +64,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
 
         let mockWebView = MockWebView()
         let message = MockUserScriptMessage(name: "emailHandlerGetAddresses", body: encryptedMessagingParams,
-                                          host: "example.com", webView: mockWebView)
+                                            host: "example.com", webView: mockWebView)
         userScript.processEncryptedMessage(message, from: userContentController)
 
         let expectedReply = "reply".data(using: .utf8)?.withUnsafeBytes {
@@ -101,7 +102,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         body["token"] = "testToken"
         body["username"] = "testUsername"
         body["cohort"] = "testCohort"
-        let message = MockWKScriptMessage(name: "emailHandlerStoreToken", body: body)
+        let message = WKScriptMessage.mock(name: "emailHandlerStoreToken", body: body)
         userScript.userContentController(userContentController, didReceive: message)
 
         waitForExpectations(timeout: 1.0, handler: nil)
@@ -117,7 +118,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         }
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "emailHandlerCheckAppSignedInStatus", body: encryptedMessagingParams, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "emailHandlerCheckAppSignedInStatus", body: encryptedMessagingParams, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message)
 
         XCTAssertEqual(mockWebView.javaScriptString?.contains("window.test-methodName("), true)
@@ -139,7 +140,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         body["shouldConsumeAliasIfProvided"] = false
         body["isIncontextSignupAvailable"] = false
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "emailHandlerGetAlias", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "emailHandlerGetAlias", body: body, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message)
 
         waitForExpectations(timeout: 2.0, handler: nil)
@@ -156,7 +157,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
             expect.fulfill()
         }
 
-        let message = MockWKScriptMessage(name: "emailHandlerRefreshAlias", body: encryptedMessagingParams)
+        let message = WKScriptMessage.mock(name: "emailHandlerRefreshAlias", body: encryptedMessagingParams)
         userScript.userContentController(userContentController, didReceive: message)
 
         waitForExpectations(timeout: 1.0, handler: nil)
@@ -172,7 +173,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         }
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "emailHandlerGetAddresses", body: encryptedMessagingParams, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "emailHandlerGetAddresses", body: encryptedMessagingParams, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message)
 
         waitForExpectations(timeout: 1.0, handler: nil)
@@ -190,7 +191,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         }
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "emailHandlerGetUserData", body: encryptedMessagingParams, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "emailHandlerGetUserData", body: encryptedMessagingParams, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message)
 
         waitForExpectations(timeout: 1.0, handler: nil)
@@ -199,36 +200,10 @@ class AutofillEmailUserScriptTests: XCTestCase {
     }
 
     func testWhenUnknownMessageReceivedThenNoProblem() {
-        let message = MockWKScriptMessage(name: "unknownmessage", body: "")
+        let message = WKScriptMessage.mock(name: "unknownmessage", body: "")
         userScript.userContentController(userContentController, didReceive: message)
     }
 
-}
-
-class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
-    }
 }
 
 class MockUserScriptMessage: UserScriptMessage {

@@ -18,13 +18,15 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKitIcons
 
 public enum ContextualOnboardingListItem: Equatable {
     case search(title: String)
     case site(title: String)
     case surprise(title: String, visibleTitle: String)
+    case aiChat(title: String)
 
-    var visibleTitle: String {
+    public var visibleTitle: String {
         switch self {
         case .search(let title):
             return title
@@ -32,6 +34,8 @@ public enum ContextualOnboardingListItem: Equatable {
             return title.replacingOccurrences(of: "https://", with: "")
         case .surprise(_, let visibleTitle):
             return visibleTitle
+        case .aiChat(let title):
+            return title
         }
     }
 
@@ -45,17 +49,21 @@ public enum ContextualOnboardingListItem: Equatable {
             return title
         case .surprise(let title, _):
             return title
+        case .aiChat(let title):
+            return title
         }
     }
 
-    var imageName: String {
+    public var image: DesignSystemImage {
         switch self {
         case .search:
-            return "SuggestLoupe"
+            return DesignSystemImages.Glyphs.Size16.findSearch
         case .site:
-            return "SuggestGlobe"
+            return DesignSystemImages.Glyphs.Size16.globe
         case .surprise:
-            return "Wand-16"
+            return DesignSystemImages.Glyphs.Size16.wand
+        case .aiChat:
+            return DesignSystemImages.Glyphs.Size16.aiChat
         }
     }
 
@@ -87,7 +95,7 @@ private let strokeColor = Color.blue
                 OnboardingBorderedButton(
                     content: {
                         HStack {
-                            Image(list[index].imageName, bundle: bundle)
+                            icon(forItemAt: index)
                                 .frame(width: iconSize, height: iconSize)
                             Text(list[index].visibleTitle)
                                 .frame(alignment: .leading)
@@ -100,6 +108,14 @@ private let strokeColor = Color.blue
                 )
             }
         }
+    }
+
+    private func icon(forItemAt index: Int) -> Image {
+#if os(iOS)
+        Image(uiImage: list[index].image)
+#elseif os(macOS)
+        Image(nsImage: list[index].image)
+#endif
     }
 }
 

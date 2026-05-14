@@ -19,12 +19,15 @@
 #if os(iOS)
 import XCTest
 import WebKit
+import BrowserServicesKitTestsUtils
 @testable import AIChat
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
     var customURL: String?
+    var contextualSessionTimerSeconds: Int?
     func reset() {}
+    func matchesCustomURL(_ url: URL) -> Bool { false }
 }
 
 final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
@@ -74,7 +77,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
     func testShouldAllowRequestWithDuckAIHost() {
         let url = URL(string: "https://duck.ai/chat")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: true)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -87,7 +90,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
     func testShouldAllowRequestWithNonMainFrame() {
         let url = URL(string: "https://example.com")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: false)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -99,7 +102,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
     func testShouldNotAllowRequestWithNonDuckAIURLAndMainFrame() {
         let url = URL(string: "https://example.com")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: true)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -113,7 +116,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         mockDebugSettings.messagePolicyHostname = "potato"
         let url = URL(string: "https://test.com")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: false)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -126,7 +129,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         mockDebugSettings.messagePolicyHostname = "potato"
         let url = URL(string: "https://duck.ai")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: false)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -139,7 +142,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         mockDebugSettings.messagePolicyHostname = nil
         let url = URL(string: "https://test.com")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: true)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -152,7 +155,7 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         mockDebugSettings.messagePolicyHostname = ""
         let url = URL(string: "https://test.com")!
         let request = URLRequest(url: url)
-        let targetFrame = MockWKFrameInfo(isMainFrame: true)
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
 
         let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
@@ -180,16 +183,4 @@ final class MockWKNavigationAction: WKNavigationAction {
     }
 }
 
-final class MockWKFrameInfo: WKFrameInfo {
-    private let mockIsMainFrame: Bool
-
-    init(isMainFrame: Bool) {
-        self.mockIsMainFrame = isMainFrame
-        super.init()
-    }
-
-    override var isMainFrame: Bool {
-        return mockIsMainFrame
-    }
-}
 #endif

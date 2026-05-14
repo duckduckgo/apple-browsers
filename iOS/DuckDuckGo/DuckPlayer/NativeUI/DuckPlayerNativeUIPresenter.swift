@@ -144,6 +144,9 @@ final class DuckPlayerNativeUIPresenter {
     // State management for pill presentation
     private var presentedPillType: PillType?
 
+    // Content Scripts dependencies
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+
     // Pixel Handler
     let pixelHandler: DuckPlayerPixelFiring.Type
 
@@ -154,12 +157,14 @@ final class DuckPlayerNativeUIPresenter {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          state: DuckPlayerState = DuckPlayerState(),
          notificationCenter: NotificationCenter = .default,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings
         self.state = state
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
+        self.userScriptsDependencies = userScriptsDependencies
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
     
@@ -719,7 +724,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp, source: source)
         self.playerViewModel = viewModel  // Keep strong reference
 
-        let webView = DuckPlayerWebView(viewModel: viewModel)
+        let webView = DuckPlayerWebView(viewModel: viewModel,
+                                        scriptSourceProviderDependencies: userScriptsDependencies)
         let duckPlayerView = DuckPlayerView(viewModel: viewModel, webView: webView)
 
         let hostingController = UIHostingController(rootView: duckPlayerView)

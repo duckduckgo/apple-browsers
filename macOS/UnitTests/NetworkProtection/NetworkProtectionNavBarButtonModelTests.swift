@@ -24,19 +24,20 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
+import NetworkingTestingUtils
 
 @MainActor
 final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
     var sut: NetworkProtectionNavBarButtonModel!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var cancellable: AnyCancellable?
 
     override func setUp() {
         super.setUp()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
     }
 
@@ -165,7 +166,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
             }
 
         // When
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then
@@ -189,10 +190,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
     func testWhenFeatureFlagIsDisabled_ItDoesNotAffectTheButton() {
         // Given
-        let upsellManager = createUpsellManager(
-            shouldShowUpsell: false,
-            featureEnabled: false
-        )
+        let upsellManager = createUpsellManager(shouldShowUpsell: false)
         sut = createButtonModel(with: upsellManager)
 
         // When
@@ -231,29 +229,21 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
 extension NetworkProtectionNavBarButtonModelTests {
     private func createUpsellManager(
-        shouldShowUpsell: Bool,
-        featureEnabled: Bool = true
+        shouldShowUpsell: Bool
     ) -> VPNUpsellVisibilityManager {
-        let mockFeatureFlagger = MockFeatureFlagger()
         let mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockDefaultBrowserProvider.isDefault = true
 
-        if featureEnabled && shouldShowUpsell {
-            mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
-        }
-
         let manager = VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
-            isNewUser: true,
+            isNewUser: shouldShowUpsell,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01
         )
 
-        manager.setup(isFirstLaunch: false)
+        manager.setup(isFirstLaunch: false, isOnboardingFinished: true)
 
         return manager
     }
@@ -268,7 +258,6 @@ extension NetworkProtectionNavBarButtonModelTests {
             onboardStatusPublisher: Just(.completed).eraseToAnyPublisher()
         )
         let statusReporter = TestNetworkProtectionStatusReporter()
-        let iconProvider = NavigationBarIconProvider()
 
         let themeManager = MockThemeManager()
         return NetworkProtectionNavBarButtonModel(

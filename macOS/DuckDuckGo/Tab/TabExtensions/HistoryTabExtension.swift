@@ -23,6 +23,13 @@ import Foundation
 import History
 import Navigation
 import WebKit
+import BrowserServicesKit
+import HistoryView
+
+protocol HistoryUserScriptProvider {
+    var historyViewUserScript: HistoryViewUserScript { get }
+}
+extension UserScripts: HistoryUserScriptProvider {}
 
 final class HistoryTabExtension: NSObject {
 
@@ -60,6 +67,14 @@ final class HistoryTabExtension: NSObject {
         }
     }
 
+    private weak var historyViewUserScript: HistoryViewUserScript?
+
+    private weak var webView: WKWebView? {
+        didSet {
+            historyViewUserScript?.webView = webView
+        }
+    }
+
     private enum VisitState {
         case expected
         case added
@@ -70,7 +85,9 @@ final class HistoryTabExtension: NSObject {
          historyCoordinating: HistoryCoordinating,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
-         titlePublisher: some Publisher<String?, Never>) {
+         titlePublisher: some Publisher<String?, Never>,
+         scriptsPublisher: some Publisher<some HistoryUserScriptProvider, Never>,
+         webViewPublisher: some Publisher<WKWebView, Never>) {
 
         self.historyCoordinating = historyCoordinating
         self.isCapturingHistory = isCapturingHistory
@@ -85,7 +102,10 @@ final class HistoryTabExtension: NSObject {
                 case .tracker:
                     self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
                 case .trackerWithSurrogate:
-                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                    // `surrogateInjected` is always paired with `resourceObserved` (the `.tracker`
+                    // case above) for the same URL by the TrackerProtection subfeature, so counting
+                    // it again here would double-count `numberOfTrackersBlocked`.
+                    break
                 case .thirdPartyRequest:
                     break
                 }
@@ -105,6 +125,17 @@ final class HistoryTabExtension: NSObject {
                 }
             }
             .store(in: &cancellables)
+
+        scriptsPublisher.sink { [weak self] scripts in
+            Task { @MainActor in
+                self?.historyViewUserScript = scripts.historyViewUserScript
+                self?.historyViewUserScript?.webView = self?.webView
+            }
+        }.store(in: &cancellables)
+
+        webViewPublisher.sink { [weak self] webView in
+            self?.webView = webView
+        }.store(in: &cancellables)
 
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationWillTerminate(_:)),
@@ -150,13 +181,8 @@ final class HistoryTabExtension: NSObject {
     @MainActor
     private func loadRestoredLocalHistoryIfNeeded() {
         if !localHistoryIDs.isEmpty {
-            let storedLocalHistory = localHistoryIDs.compactMap { id in
-                historyCoordinating.allHistoryVisits?.first(where: { visit in
-                    visit.identifier == id
-                })
-            }
+            _localHistory.append(contentsOf: historyCoordinating.visits(matching: localHistoryIDs))
             localHistoryIDs = []
-            _localHistory.append(contentsOf: storedLocalHistory)
         }
     }
 
@@ -202,6 +228,14 @@ extension HistoryTabExtension: NSCodingExtension {
 }
 
 extension HistoryCoordinating {
+
+    /// Resolves Visit objects from persisted identifiers by looking them up in global history.
+    @MainActor
+    func visits(matching ids: [Visit.ID]) -> [Visit] {
+        ids.compactMap { id in
+            allHistoryVisits?.first(where: { $0.identifier == id })
+        }
+    }
 
     @MainActor
     func addDetectedTracker(_ tracker: DetectedRequest, on url: URL) {
@@ -276,10 +310,17 @@ extension HistoryTabExtension: NavigationResponder {
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
     var localHistory: [Visit] { get }
     func clearNavigationHistory(keepingCurrent: Bool)
+    func restoreLocalHistoryIDs(_ urls: [URL])
 }
 
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
+
+    /// Seed visited-domain IDs from an unloaded tab's persisted state.
+    /// Same data that `awakeAfter(using:)` would set from an NSCoder.
+    func restoreLocalHistoryIDs(_ urls: [URL]) {
+        localHistoryIDs = urls
+    }
 }
 
 extension TabExtensions {

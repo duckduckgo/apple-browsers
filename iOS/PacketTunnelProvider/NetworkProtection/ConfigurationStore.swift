@@ -85,8 +85,8 @@ struct ConfigurationStore: ConfigurationStoring {
     }
     
     func loadEmbeddedEtag(for configuration: Configuration) -> String? {
-        // If we ever need the full embedded config, we need to return its etag here
-        return nil
+        guard configuration == .privacyConfiguration else { return nil }
+        return AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag
     }
     
     mutating func saveData(_ data: Data, for configuration: Configuration) throws {

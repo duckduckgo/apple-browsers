@@ -26,8 +26,8 @@ struct DataImportShortcutsView: ModalView {
 
     @ObservedObject private var model: DataImportShortcutsViewModel
 
-    init(model: DataImportShortcutsViewModel = DataImportShortcutsViewModel(), dataTypes: Set<DataType>? = nil) {
-        self.init(model: .init(dataTypes: dataTypes))
+    init(dataTypes: Set<DataType>? = nil, pinningManager: PinningManager) {
+        self.init(model: .init(dataTypes: dataTypes, pinningManager: pinningManager))
     }
 
     init(model: DataImportShortcutsViewModel) {
@@ -91,5 +91,5 @@ private func importShortcutsSubtitle() -> some View {
 }
 
 #Preview {
-    DataImportShortcutsView()
+    DataImportShortcutsView(pinningManager: Application.appDelegate.pinningManager)
 }

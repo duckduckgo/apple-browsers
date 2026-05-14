@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 
 /// Feature flag provider for the Win-back offer.

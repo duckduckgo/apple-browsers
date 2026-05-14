@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -22,6 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "AIChat",
+    defaultLocalization: "en",
     platforms: [
         .iOS("15.0"),
         .macOS("11.4")
@@ -31,11 +32,21 @@ let package = Package(
             name: "AIChat",
             targets: ["AIChat"]
         ),
+        .library(
+            name: "AIChatTestingUtilities",
+            targets: ["AIChatTestingUtilities"]
+        ),
+        .library(
+            name: "AIChatDebugServer",
+            targets: ["AIChatDebugServer"]
+        ),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit"),
-        .package(path: "../DesignResourcesKitIcons"),
-        .package(path: "../BrowserServicesKit")
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../BrowserServicesKit"),
+        .package(path: "../DebugServer"),
+        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
     ],
     targets: [
         .target(
@@ -45,15 +56,39 @@ let package = Package(
                 "DesignResourcesKitIcons",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
-                .product(name: "UserScript", package: "BrowserServicesKit")
+                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "DDGSync", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
+                .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [
-                .process("Resources/Assets.xcassets")
+                .process("Resources")
+            ]
+        ),
+        .target(
+            name: "AIChatTestingUtilities",
+            dependencies: [
+                "AIChat"
+            ]
+        ),
+        .target(
+            name: "AIChatDebugServer",
+            dependencies: [
+                "AIChat",
+                "DebugServer",
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
             ]
         ),
         .testTarget(
             name: "AIChatTests",
-            dependencies: ["AIChat"]
+            dependencies: [
+                "AIChat",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
+            ]
         )
     ]
 )

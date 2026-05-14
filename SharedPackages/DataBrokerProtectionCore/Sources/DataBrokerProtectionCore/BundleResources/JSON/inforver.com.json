@@ -1,7 +1,7 @@
 {
   "name": "Inforver",
   "url": "inforver.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://persontrust.com/ng/control/privacy",
   "steps": [
@@ -153,5 +153,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1763397120461
 }

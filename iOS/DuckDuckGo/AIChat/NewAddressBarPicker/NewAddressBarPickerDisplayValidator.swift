@@ -19,9 +19,10 @@
 
 import Foundation
 import os.log
+import BrowserServicesKit
 import Core
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import RemoteMessaging
 
@@ -30,7 +31,9 @@ protocol NewAddressBarPickerDisplayValidating {
 }
 
 struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating {
-    
+
+    static let installCooldown: TimeInterval = .days(1)
+
     // MARK: - Dependencies
     
     private let aiChatSettings: AIChatSettingsProvider
@@ -39,6 +42,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private let appSettings: AppSettings
     private let pickerStorage: NewAddressBarPickerStorageReading
     private let searchExperienceOnboardingProvider: OnboardingSearchExperienceProvider
+    private let statisticsStore: StatisticsStore
 
     // MARK: - Initialization
     
@@ -48,7 +52,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         experimentalAIChatManager: ExperimentalAIChatManager,
         appSettings: AppSettings,
         pickerStorage: NewAddressBarPickerStorage,
-        searchExperienceOnboardingProvider: OnboardingSearchExperienceProvider
+        searchExperienceOnboardingProvider: OnboardingSearchExperienceProvider,
+        statisticsStore: StatisticsStore = StatisticsUserDefaults()
     ) {
         self.aiChatSettings = aiChatSettings
         self.featureFlagger = featureFlagger
@@ -56,6 +61,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
         self.searchExperienceOnboardingProvider = searchExperienceOnboardingProvider
+        self.statisticsStore = statisticsStore
     }
     
     // MARK: - Public Interface
@@ -65,10 +71,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
         Logger.addressBarPicker.info("Checking picker display conditions...")
 
-        /// Do not display during automated UI runs
+        /// Do not display during automated UI runs or WebDriver automation
         /// https://app.asana.com/1/137249556945/project/414709148257752/task/1211474728965506?focus=true
-        guard !isRunningUITests else { return false }
-        Logger.addressBarPicker.info("✓ Not running UI Tests")
+        guard !isRunningUITests && !isRunningAutomation else { return false }
+        Logger.addressBarPicker.info("✓ Not running UI Tests or automation")
 
         guard isMainDuckAIEnabled else { return false }
         Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
@@ -76,14 +82,17 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard isFeatureFlagEnabled else { return false }
         Logger.addressBarPicker.info("✓ Feature flag is enabled")
 
+        guard hasInstallCooldownPassed else { return false }
+        Logger.addressBarPicker.info("✓ Install cooldown has passed")
+
         guard canShowPickerAfterOnboardingSelection else { return false }
         Logger.addressBarPicker.info("✓ Passes onboarding selection check")
 
         guard !isAIChatSearchInputEnabled else { return false }
         Logger.addressBarPicker.info("✓ AIChat address bar is disabled")
 
-        guard !isAddressBarPositionBottom else { return false }
-        Logger.addressBarPicker.info("✓ Address bar position is not bottom")
+        guard !isAIChatSearchInputDisabledByUser else { return false }
+        Logger.addressBarPicker.info("✓ AIChat address bar was NOT explicitly disabled by the user")
 
         guard !hasForceChoiceBeenShown else { return false }
         Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
@@ -101,15 +110,20 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private var isFeatureFlagEnabled: Bool {
         featureFlagger.isFeatureOn(.showAIChatAddressBarChoiceScreen)
     }
-    
+
+    private var hasInstallCooldownPassed: Bool {
+        guard let installDate = statisticsStore.installDate else { return false }
+        return Date().timeIntervalSince(installDate) >= Self.installCooldown
+    }
+
     // MARK: - Exclusion Criteria Variables
-    
+
+    private var isAIChatSearchInputDisabledByUser: Bool {
+        aiChatSettings.isAIChatSearchInputUserSettingsDisabledByUser
+    }
+
     private var isAIChatSearchInputEnabled: Bool {
         aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-    }
-    
-    private var isAddressBarPositionBottom: Bool {
-        appSettings.currentAddressBarPosition.isBottom
     }
 
     private var hasForceChoiceBeenShown: Bool {
@@ -117,13 +131,16 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var canShowPickerAfterOnboardingSelection: Bool {
-        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return true }
         guard searchExperienceOnboardingProvider.didMakeChoiceDuringOnboarding else { return true }
         return searchExperienceOnboardingProvider.didEnableAIChatSearchInputDuringOnboarding
     }
 
     private var isRunningUITests: Bool {
         ProcessInfo.isRunningUITests
+    }
+
+    private var isRunningAutomation: Bool {
+        LaunchOptionsHandler().isAutomationSession
     }
 }
 
@@ -142,8 +159,9 @@ typealias NewAddressBarPickerStorage = NewAddressBarPickerStorageReading & NewAd
 struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     private let keyValueStore: KeyValueStoring
     
-    private enum Key {
-        static let hasBeenShown = "aichat.storage.newAddressBarPickerShown"
+    enum Key {
+        static let hasBeenShown = "aichat.storage.newAddressBarPickerShown.v2"
+        static let legacyHasBeenShown = "aichat.storage.newAddressBarPickerShown"
     }
     
     init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {

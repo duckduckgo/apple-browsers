@@ -32,10 +32,6 @@ extension NSColor {
 
     static let detailAccentColor = NSColor(catalogName: "System", colorName: "detailAccentColor") ?? .controlAccentColor
 
-    static var addressBarSuffix: NSColor {
-        .detailAccentColor
-    }
-
     static var progressBarGradientDark: NSColor {
         .controlAccentColor
     }

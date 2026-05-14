@@ -16,50 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
-import BrowserServicesKit
+import XCTest
 @testable import Navigation
 
 @testable import DuckDuckGo_Privacy_Browser
-
-// Helper extension for creating test frames
-extension WKFrameInfo {
-    static func mock(url: URL) -> WKFrameInfo {
-        return WKFrameInfoMock(
-            webView: WKWebView(),
-            securityOrigin: WKSecurityOriginMock.new(url: url),
-            request: URLRequest(url: url),
-            isMainFrame: true
-        )
-    }
-}
-
-final class MockWKNavigationAction: WKNavigationAction {
-    private let mockRequest: URLRequest
-    private let mockTargetFrame: WKFrameInfo?
-    private let mockSourceFrame: WKFrameInfo
-
-    init(request: URLRequest, targetFrame: WKFrameInfo?, sourceFrame: WKFrameInfo) {
-        self.mockRequest = request
-        self.mockTargetFrame = targetFrame
-        self.mockSourceFrame = sourceFrame
-        super.init()
-    }
-
-    override var request: URLRequest {
-        return mockRequest
-    }
-
-    override var targetFrame: WKFrameInfo? {
-        return mockTargetFrame
-    }
-
-    override var sourceFrame: WKFrameInfo {
-        return mockSourceFrame
-    }
-}
 
 @MainActor
 final class DuckPlayerTabExtensionTests: XCTestCase {

@@ -16,10 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
-
-typealias MockFeatureFlagger = BrowserServicesKit.MockFeatureFlagger
 
 extension MockFeatureFlagger {
 

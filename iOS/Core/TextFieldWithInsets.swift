@@ -24,6 +24,16 @@ class TextFieldWithInsets: UITextField {
 
     var onCopyAction: ((UITextField) -> Void)?
 
+    /// When true, prevents the text field from resigning first responder.
+    /// Used during device rotation to keep the keyboard visible.
+    var suppressResignFirstResponder: Bool = false
+
+    @discardableResult
+    override func resignFirstResponder() -> Bool {
+        if suppressResignFirstResponder { return false }
+        return super.resignFirstResponder()
+    }
+
     @IBInspectable var leftInset: CGFloat = 0
     @IBInspectable var rightInset: CGFloat = 0
     @IBInspectable var topInset: CGFloat = 0

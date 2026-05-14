@@ -39,6 +39,7 @@ extension SyncSettingsView {
 
     @ViewBuilder
     func syncWithAnotherDeviceView() -> some View {
+        let syncWithAnotherDeviceMessage = model.isAIChatSyncEnabled ? UserText.syncWithAnotherDeviceMessageUpdated : UserText.syncWithAnotherDeviceMessage
         Section {
             HStack {
                 Spacer()
@@ -46,11 +47,11 @@ extension SyncSettingsView {
                     Image("Sync-Pair-96")
                     Text(UserText.syncWithAnotherDeviceTitle)
                         .daxTitle3()
-                    Text(UserText.syncWithAnotherDeviceMessage)
+                    Text(syncWithAnotherDeviceMessage)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
-                    Button(UserText.syncWithAnotherDeviceButton, action: model.scanQRCode)
+                    Button(UserText.syncWithAnotherDeviceButton, action: model.beginPairingFlow)
                         .buttonStyle(PrimaryButtonStyle(disabled: !model.isAccountCreationAvailable))
                         .frame(maxWidth: 310)
                         .disabled(!model.isAccountCreationAvailable)
@@ -74,28 +75,30 @@ extension SyncSettingsView {
     @ViewBuilder
     func otherOptions() -> some View {
         Section {
-            Button(UserText.syncAndBackUpThisDeviceLink) {
-                Task { @MainActor in
-                    await model.presentSyncWithSetUpSheetIfNeeded()
-                }
+            Button {
+                model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
+                model.beginBackupFlow()
+            } label: {
+                Text(UserText.syncAndBackUpThisDeviceLink)
+                    .foregroundColor(Color(designSystemColor: .accent))
             }
-            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, content: {
+            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, onDismiss: model.syncWithSetUpSheetDidDismiss, content: {
                 SyncWithServerView(model: model, onCancel: {
-                    model.isSyncWithSetUpSheetVisible = false
+                    model.dismissSyncWithSetUpSheet()
                 })
             })
             .disabled(!model.isAccountCreationAvailable)
 
-            Button(UserText.recoverSyncedDataLink) {
-                Task { @MainActor in
-                    if await model.commonAuthenticate() {
-                        isRecoverSyncedDataSheetVisible = true
-                    }
-                }
+            Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
+                model.beginRecoverFlow()
+            } label: {
+                Text(UserText.recoverSyncedDataLink)
+                    .foregroundColor(Color(designSystemColor: .accent))
             }
-            .sheet(isPresented: $isRecoverSyncedDataSheetVisible, content: {
+            .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible, content: {
                 RecoverSyncedDataView(model: model, onCancel: {
-                    isRecoverSyncedDataSheetVisible = false
+                    model.isRecoverSyncedDataSheetVisible = false
                 })
             })
             .disabled(!model.isAccountRecoveryAvailable)
@@ -150,11 +153,27 @@ extension SyncSettingsView {
     @ViewBuilder
     func saveRecoveryPDF() -> some View {
         Section {
+            if model.isAutoRestoreFeatureAvailable {
+                NavigationLink(destination: AutoRestoreSettingsView(model: model)) {
+                    HStack {
+                        Text(UserText.autoRestoreSettingsRowLabel)
+                            .daxBodyRegular()
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(model.autoRestoreStatusText)
+                            .daxBodyRegular()
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
             Button(UserText.saveRecoveryPDFButton) {
                 model.saveRecoveryPDF()
             }
+        } header: {
+            Text(UserText.recoverySectionHeader)
         } footer: {
-            Text(UserText.saveRecoveryPDFFooter)
+            Text(.init("\(UserText.saveRecoveryPDFFooter)"))
         }
     }
 
@@ -190,7 +209,7 @@ extension SyncSettingsView {
                     .padding()
             }
             devicesList()
-            Button(UserText.syncedDevicesSyncWithAnotherDeviceLabel, action: model.scanQRCode)
+            Button(UserText.syncedDevicesSyncWithAnotherDeviceLabel, action: model.beginPairingFlow)
                 .padding(.leading, 32)
                 .disabled(!model.isConnectingDevicesAvailable)
         } header: {
@@ -222,6 +241,10 @@ extension SyncSettingsView {
                     .frame(width: 8)
                     .padding(.bottom, 1)
                 devEnvironmentIndicator()
+            }
+        } footer: {
+            if model.isAIChatSyncEnabled {
+                Text(UserText.turnSyncOffSectionFooter)
             }
         }
     }

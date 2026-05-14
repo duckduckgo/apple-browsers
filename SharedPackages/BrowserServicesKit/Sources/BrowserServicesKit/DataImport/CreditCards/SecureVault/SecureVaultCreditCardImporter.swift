@@ -50,8 +50,8 @@ public final class SecureVaultCreditCardImporter: CreditCardImporter {
         }
 
         var successful = 0
-        var duplicates = 0
-        var failed = 0
+        var duplicateItems: [DataImport.DataImportItem] = []
+        var failedItems: [DataImport.DataImportItem] = []
 
         let sortedCards = cards.sorted(by: { $0.lastUsedTime ?? .distantPast < $1.lastUsedTime ?? .distantPast })
 
@@ -74,28 +74,50 @@ public final class SecureVaultCreditCardImporter: CreditCardImporter {
                         try vault.storeCreditCard(updatedCard)
                         successful += 1
                     } else {
-                        duplicates += 1
+                        let maskedNumber = maskCardNumber(importedCard.cardNumber)
+                        duplicateItems.append(.creditCard(
+                            maskedNumber: maskedNumber,
+                            cardholderName: importedCard.cardholderName,
+                            errorMessage: nil
+                        ))
                     }
                 } else {
                     try vault.storeCreditCard(creditCardToImport)
                     successful += 1
                 }
-
-                try completion(index + 1)
             } catch {
-                failed += 1
+                let maskedNumber = maskCardNumber(importedCard.cardNumber)
+                let errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                failedItems.append(.creditCard(
+                    maskedNumber: maskedNumber,
+                    cardholderName: importedCard.cardholderName,
+                    errorMessage: errorMessage
+                ))
                 Logger.autofill.debug("Failed to import card: \(error)")
             }
+
+            try completion(index + 1)
         }
 
         return DataImport.DataTypeSummary(
             successful: successful,
-            duplicate: duplicates,
-            failed: failed
+            duplicateItems: duplicateItems,
+            failedItems: failedItems
         )
     }
 
     // MARK: - Helper Functions
+
+    /// Masks all but the final 4 digits of the provided card number
+    ///
+    private func maskCardNumber(_ cardNumber: String) -> String {
+        guard cardNumber.count >= 4 else {
+            return "****"
+        }
+        let last4 = String(cardNumber.suffix(4))
+        return "****\(last4)"
+    }
+
     private func hasNewerExpiryDate(existing: SecureVaultModels.CreditCard,
                                     importing: SecureVaultModels.CreditCard) -> Bool {
         guard let importingMonth = importing.expirationMonth,

@@ -22,11 +22,13 @@ import UserScript
 import Combine
 import Core
 import Subscription
+import PrivacyConfig
 
 final class SubscriptionITPViewModel: ObservableObject {
     
     var userScript: IdentityTheftRestorationPagesUserScript?
     var subFeature: IdentityTheftRestorationPagesFeature?
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let manageITPURL: URL
     var viewTitle = UserText.settingsPProITRTitle
 
@@ -59,20 +61,26 @@ final class SubscriptionITPViewModel: ObservableObject {
     private var canGoBackCancellable: AnyCancellable?
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
+    private let featureFlagger: FeatureFlagger
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          isInternalUser: Bool = false,
-         isAuthV2Enabled: Bool) {
+         featureFlagger: FeatureFlagger) {
+        self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
+        
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
-        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager, isAuthV2Enabled: isAuthV2Enabled)
+        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager)
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
                                                                              isInternalUser: isInternalUser)
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
-                                                            contentBlocking: false)
+                                                            userScriptsDependencies: nil,
+                                                            featureFlagger: featureFlagger)
 
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
@@ -170,7 +178,9 @@ final class SubscriptionITPViewModel: ObservableObject {
         if let existingModel = externalLinksViewModel {
             return existingModel
         } else {
-            let model = SubscriptionExternalLinkViewModel(url: url, allowedDomains: externalAllowedDomains)
+            let model = SubscriptionExternalLinkViewModel(url: url,
+                                                          allowedDomains: externalAllowedDomains,
+                                                          userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
             externalLinksViewModel = model
             return model
         }

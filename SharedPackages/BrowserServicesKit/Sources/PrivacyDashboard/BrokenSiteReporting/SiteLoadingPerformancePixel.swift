@@ -113,5 +113,12 @@ enum SiteLoadingPerformancePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .performanceMetricsReceived:
+            return [.pixelSource]
+        }
+    }
+
     var error: NSError? { nil }
 }

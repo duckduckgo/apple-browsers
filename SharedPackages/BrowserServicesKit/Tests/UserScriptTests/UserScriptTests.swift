@@ -77,6 +77,48 @@ class UserScriptTests: XCTestCase {
         }
     }
 
+    // MARK: - loadJS replacement integration tests
+
+    func testLoadJSWithMultipleReplacements() throws {
+        let result = try TestUserScript.loadJS("testLoadJSReplacements", from: .module, withReplacements: [
+            "$A$": "1",
+            "$B$": "2",
+            "$C$": "3"
+        ])
+
+        XCTAssertEqual(result, "var a = 1;\nvar b = 2;\nvar c = 3;\nvar a2 = 1;\n")
+    }
+
+    func testLoadJSReplacesAllOccurrencesOfRepeatedKey() throws {
+        let result = try TestUserScript.loadJS("testLoadJSReplacements", from: .module, withReplacements: [
+            "$A$": "hello",
+            "$B$": "x",
+            "$C$": "x"
+        ])
+
+        XCTAssertTrue(result.contains("var a = hello;"))
+        XCTAssertTrue(result.contains("var a2 = hello;"))
+    }
+
+    func testLoadJSDoesNotReExpandReplacementValues() throws {
+        let result = try TestUserScript.loadJS("testLoadJSReplacements", from: .module, withReplacements: [
+            "$A$": "1",
+            "$B$": "$A$",
+            "$C$": "3"
+        ])
+
+        XCTAssertTrue(result.contains("var b = $A$;"))
+        XCTAssertTrue(result.contains("var a = 1;"))
+    }
+
+    func testLoadJSWithEmptyReplacements() throws {
+        let result = try TestUserScript.loadJS("testLoadJSReplacements", from: .module, withReplacements: [:])
+
+        XCTAssertTrue(result.contains("$A$"))
+        XCTAssertTrue(result.contains("$B$"))
+        XCTAssertTrue(result.contains("$C$"))
+    }
+
     private class MockBundle: Bundle, @unchecked Sendable {
         var pathToReturn: String?
 

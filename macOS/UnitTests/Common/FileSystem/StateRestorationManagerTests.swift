@@ -115,7 +115,7 @@ final class StateRestorationManagerTests: XCTestCase {
         srm.loadLastSessionState()
         XCTAssertTrue(srm.canRestoreLastSessionState)
 
-        srm.clearState(sync: true)
+        _ = srm.clearState(sync: true)
         XCTAssertFalse(srm.canRestoreLastSessionState)
     }
 
@@ -245,7 +245,7 @@ final class StateRestorationManagerTests: XCTestCase {
         changeState("val4", 4)
         changeState("val5", 5)
 
-        srm.clearState()
+        _ = srm.clearState(sync: true)
         srm.flush()
 
         XCTAssertThrowsError(try srm.restoreState(using: state.restoreState(from:)), NSCocoaErrorDomain) {

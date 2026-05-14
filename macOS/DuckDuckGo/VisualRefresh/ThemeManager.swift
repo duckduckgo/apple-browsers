@@ -20,10 +20,13 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {
+    var appearance: ThemeAppearance { get }
+    var appearancePublisher: Published<ThemeAppearance>.Publisher { get }
+
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
 }
@@ -32,24 +35,44 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    @Published private(set) var theme: ThemeStyleProviding
+    private let displaysTabsAnimations: Bool
+
+    @Published private(set) var appearance: ThemeAppearance
+
+    var appearancePublisher: Published<ThemeAppearance>.Publisher {
+        $appearance
+    }
+
+    @Published private(set) var theme: ThemeStyleProviding {
+        didSet {
+            switchDesignSystemPalette(to: theme.name.designColorPalette)
+        }
+    }
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 
-    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
+    @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
+
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.displaysTabsAnimations = displaysTabsAnimations
 
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        self.appearance = appearancePreferences.themeAppearance
+        self.designColorPalette = appearancePreferences.themeName.designColorPalette
+
+        switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
-        subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
+        subscribeToSystemAppearance()
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
         appearancePreferences.$themeName
             .dropFirst()
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] themeName in
                 self?.switchToTheme(named: themeName)
@@ -57,11 +80,13 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             .store(in: &cancellables)
     }
 
-    private func subscribeToInternalUserChanges(internalUserDecider: InternalUserDecider) {
-        internalUserDecider.isInternalUserPublisher
+    private func subscribeToSystemAppearance() {
+        appearancePreferences.$themeAppearance
+            .dropFirst()
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isInternalUser in
-                self?.resetThemeNameIfNeeded(isInternalUser: isInternalUser)
+            .sink { [weak self] appearance in
+                self?.appearance = appearance
             }
             .store(in: &cancellables)
     }
@@ -69,24 +94,15 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
 private extension ThemeManager {
 
+    /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
-        DesignSystemPalette.current = themeName.designColorPalette
-
-        /// Relay the change to all of our observers
-        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
     }
 
-    func resetThemeNameIfNeeded(isInternalUser: Bool) {
-        /// Internal Users should not see the `.default` theme
-        if isInternalUser, appearancePreferences.themeName == .default {
-            appearancePreferences.themeName = .figma
-            return
-        }
-
-        /// Non Internal Users should only see the `.default` theme
-        if isInternalUser == false, appearancePreferences.themeName != .default {
-            appearancePreferences.themeName = .default
-        }
+    /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    /// We're also keeping a reference to the active `designColorPalette`, so that it's Observable in SwiftUI
+    func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
+        DesignSystemPalette.current = palette
+        designColorPalette = palette
     }
 }

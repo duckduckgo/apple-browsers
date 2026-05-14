@@ -18,11 +18,10 @@
 
 import XCTest
 import Combine
-import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import Common
 @testable import DDGSync
-@testable import BrowserServicesKitTestsUtils
 
 // MARK: - Remote Polling Mocks
 
@@ -50,12 +49,15 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didFinishTransmittingRecoveryKeyCalled = { }
     var didReceiveRecoveryKeyCalled = { }
     var didRecognizeScannedCodeCalled = { }
+    var willPerformServerSyncOperationCalled = { }
     var didCreateSyncAccountCalled = { }
     var didCompleteAccountConnectionValue: Bool?
     var didCompleteLoginDevices: [RegisteredDevice]?
     var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     var didErrorCalled = { }
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
+    var shouldContinueServerSyncOperation = true
+    var willPerformServerSyncOperationCallCount = 0
 
     func controllerWillBeginTransmittingRecoveryKey() async {
         didBeginTransmittingRecoveryKeyCalled()
@@ -71,6 +73,12 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         didRecognizeScannedCodeCalled()
+    }
+
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        willPerformServerSyncOperationCallCount += 1
+        willPerformServerSyncOperationCalled()
+        return shouldContinueServerSyncOperation
     }
 
     func controllerDidCreateSyncAccount() {
@@ -90,8 +98,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
-        didErrorCalled()
         didErrorErrors = (error, underlyingError)
+        didErrorCalled()
     }
 }
 
@@ -188,9 +196,9 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createRemoteKeyExchangerStub = remoteExchanger
         remoteExchanger.pollForPublicKeyError = SyncError.unableToDecodeResponse("")
 
-        _ = try await controller.startExchangeMode()
-
-        let error = try await waitForError()
+        let error = try await waitForError {
+            _ = try await self.controller.startExchangeMode()
+        }
 
         XCTAssertEqual(error, SyncConnectionError.failedToFetchPublicKey)
     }
@@ -203,11 +211,38 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
         exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
 
-        _ = try await controller.startExchangeMode()
-
-        let error = try await waitForError()
+        let error = try await waitForError {
+            _ = try await self.controller.startExchangeMode()
+        }
 
         XCTAssertEqual(error, SyncConnectionError.failedToTransmitExchangeRecoveryKey)
+    }
+
+    @MainActor
+    func test_startExchangeMode_recoveryKeyTransmitFails_doesNotNotifyFinish() async throws {
+        let remoteExchanger = MockRemoteKeyExchanging()
+        givenExchangerPollForPublicKeySucceeds(remoteExchanger)
+
+        let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
+        exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
+        dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
+
+        let didErrorExpectation = expectation(description: "Delegate receives transmit error")
+        delegate.didErrorCalled = {
+            didErrorExpectation.fulfill()
+        }
+
+        let didFinishExpectation = expectation(description: "Delegate should not report transmit success")
+        didFinishExpectation.isInverted = true
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishExpectation.fulfill()
+        }
+
+        _ = try await controller.startExchangeMode()
+
+        await fulfillment(of: [didErrorExpectation, didFinishExpectation], timeout: 1.0)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToTransmitExchangeRecoveryKey)
+        XCTAssertEqual(remoteExchanger.stopPollingCalled, 1)
     }
 
     private func givenExchangerPollForPublicKeySucceeds(_ exchanger: MockRemoteKeyExchanging = MockRemoteKeyExchanging()) {
@@ -268,14 +303,37 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(spiedKey?.userId, userId)
     }
 
+    @MainActor
+    func test_startConnectMode_pollSucceeds_whenDelegateBlocksServerOperation_doesNotLogIn() async throws {
+        let remoteConnector = MockRemoteConnecting()
+        remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "test", primaryKey: Data())
+        dependencies.createRemoteConnectorStub = remoteConnector
+
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+
+        delegate.shouldContinueServerSyncOperation = false
+        let willPerformServerOperation = expectation(description: "Delegate asked whether server operation should continue")
+        delegate.willPerformServerSyncOperationCalled = {
+            willPerformServerOperation.fulfill()
+        }
+
+        _ = try await controller.startConnectMode()
+
+        await fulfillment(of: [willPerformServerOperation], timeout: 5)
+
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertFalse(mockAccountManager.loginCalled)
+    }
+
     func test_startConnectMode_pollingFails_sendsError() async throws {
         let remoteConnector = MockRemoteConnecting()
         remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
         dependencies.createRemoteConnectorStub = remoteConnector
 
-        _ = try await controller.startConnectMode()
-
-        let error = try await waitForError()
+        let error = try await waitForError {
+            _ = try await self.controller.startConnectMode()
+        }
 
         XCTAssertEqual(error, SyncConnectionError.failedToFetchConnectRecoveryKey)
     }
@@ -289,9 +347,9 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
 
-        _ = try await controller.startConnectMode()
-
-        let error = try await waitForError()
+        let error = try await waitForError {
+            _ = try await self.controller.startConnectMode()
+        }
 
         XCTAssertEqual(error, SyncConnectionError.failedToLogIn)
     }
@@ -403,12 +461,24 @@ final class SyncConnectionControllerTests: XCTestCase {
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
 
-        Task {
-            await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
+        let error = try await waitForError {
+            await self.controller.startPairingMode(self.createPairingInfo(code: Self.validConnectCode))
         }
-
-        let error = try await waitForError()
         XCTAssertEqual(error, .failedToCreateAccount)
+    }
+
+    @MainActor
+    func test_startPairingMode_withConnectCode_whenDelegateBlocksServerOperation_doesNotTransmitRecoveryKey() async {
+        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
+        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
+        delegate.shouldContinueServerSyncOperation = false
+
+        let result = await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 0)
+        XCTAssertNil(delegate.didCompleteAccountConnectionValue)
     }
 
     func test_startPairingMode_withConnectCode_transmitsRecoveryKey() async {
@@ -593,6 +663,19 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_withRecoveryCode_whenDelegateBlocksServerOperation_doesNotAttemptLogin() async {
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+        delegate.shouldContinueServerSyncOperation = false
+
+        let result = await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertFalse(mockAccountManager.loginCalled)
+    }
+
+    @MainActor
     func test_syncCodeEntered_withRecoveryCode_whenLoginFails_notifiesError() async throws {
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
@@ -640,11 +723,9 @@ final class SyncConnectionControllerTests: XCTestCase {
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
 
-        Task {
-            await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+        let error = try await waitForError {
+            await self.controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
         }
-
-        let error = try await waitForError()
         XCTAssertEqual(error, .failedToCreateAccount)
     }
 
@@ -685,12 +766,17 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    private func waitForError() async throws -> SyncConnectionError? {
-        let expectation = expectation(description: "didError called")
+    private func waitForError(
+        performing action: () async throws -> Void,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws -> SyncConnectionError {
+        let errorExpectation = expectation(description: "didError called")
         delegate.didErrorCalled = {
-            expectation.fulfill()
+            errorExpectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 5)
-        return try XCTUnwrap(delegate.didErrorErrors?.error)
+        try await action()
+        await fulfillment(of: [errorExpectation], timeout: 5)
+        return try XCTUnwrap(delegate.didErrorErrors?.error, file: file, line: line)
     }
 }

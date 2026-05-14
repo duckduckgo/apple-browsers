@@ -127,6 +127,7 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategoryLoggedOutUnexpectedly,
             UserText.problemSubcategoryLostTabsOrHistory,
             UserText.problemSubcategoryNoDownloadHistory,
+            UserText.problemSubcategoryPopupWindowsNotOpening,
             UserText.problemSubcategoryTooManyCaptchas,
             UserText.problemSubcategoryVideoAudioPlaysAutomatically,
             UserText.problemSubcategoryVideoDoesntPlay

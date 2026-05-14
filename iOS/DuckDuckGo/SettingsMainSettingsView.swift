@@ -48,6 +48,7 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.settingsLogins, build: Self.viewBuilder.buildPasswords),
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
+        SettingsEntry(label: UserText.youTubeAdBlockingTitle, build: Self.viewBuilder.buildYouTubeAdBlocking),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
     ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
@@ -73,8 +74,7 @@ struct SettingsMainSettingsView: View {
         @ViewBuilder func buildAIFeatures(viewModel: SettingsViewModel) -> AnyView {
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral),
-                                 isNew: viewModel.isUpdatedAIFeaturesSettingsEnabled)
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral))
             })
         }
 
@@ -93,7 +93,7 @@ struct SettingsMainSettingsView: View {
         }
 
         @ViewBuilder func buildDataClearing(viewModel: SettingsViewModel) -> AnyView {
-            AnyView(NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
+            AnyView(NavigationLink(destination: SettingsDataClearingView(viewModel: viewModel.dataClearingViewModel).environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
             })
@@ -108,11 +108,20 @@ struct SettingsMainSettingsView: View {
             }
         }
 
+        @ViewBuilder func buildYouTubeAdBlocking(viewModel: SettingsViewModel) -> AnyView? {
+            if viewModel.state.youTubeAdBlockingAvailable {
+                AnyView(NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.youTubeAdBlockingTitle,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayerBlocked))
+                })
+            }
+        }
+
         @ViewBuilder func buildSyncEntry(viewModel: SettingsViewModel) -> AnyView {
-            let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
+            let statusIndicator = StatusIndicatorView(status: viewModel.syncStatus)
             let label = viewModel.state.sync.title
             AnyView(SettingsCellView(label: label,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync1),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
                              action: { viewModel.presentLegacyView(.sync(nil)) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,

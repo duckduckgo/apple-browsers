@@ -39,8 +39,17 @@ public final class PixelKitMock: PixelFiring {
     }
 
     public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency)
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, onComplete: { _, _ in })
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     includeAppVersionParameter: Bool,
+                     withAdditionalParameters parameters: [String: String]?,
+                     onComplete: @escaping PixelKit.CompletionBlock) {
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter)
         actualFireCalls.append(fireCall)
+        onComplete(true, nil)
     }
 
     public func verifyExpectations(file: StaticString, line: UInt) {
@@ -51,10 +60,12 @@ public final class PixelKitMock: PixelFiring {
 public struct ExpectedFireCall: Equatable {
     let pixel: PixelKitEvent
     let frequency: PixelKit.Frequency
+    let includeAppVersionParameter: Bool
 
-    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency) {
+    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool = true) {
         self.pixel = pixel
         self.frequency = frequency
+        self.includeAppVersionParameter = includeAppVersionParameter
     }
 
     public static func == (lhs: ExpectedFireCall, rhs: ExpectedFireCall) -> Bool {
@@ -62,5 +73,6 @@ public struct ExpectedFireCall: Equatable {
         && lhs.pixel.parameters == rhs.pixel.parameters
         && (lhs.pixel.error as? NSError) == (rhs.pixel.error as? NSError)
         && lhs.frequency == rhs.frequency
+        && lhs.includeAppVersionParameter == rhs.includeAppVersionParameter
     }
 }

@@ -21,7 +21,8 @@ import os
 
 protocol DataManaging {
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) async -> DataKey.DataSet
-    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws
+    @discardableResult
+    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws -> Int
     func preloadData(for threatKinds: [ThreatKind]) async
 }
 
@@ -98,7 +99,8 @@ public actor DataManager: DataManaging {
         return storedDataSet
     }
 
-    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws {
+    @discardableResult
+    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws -> Int {
         var dataSet = self.dataSet(for: key)
         dataSet.apply(changeSet)
 
@@ -116,6 +118,8 @@ public actor DataManager: DataManaging {
         }
 
         try fileStore.write(data: data, to: fileName)
+
+        return data.count
     }
 
 }

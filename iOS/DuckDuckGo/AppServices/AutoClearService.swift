@@ -18,11 +18,13 @@
 //
 
 import UIKit
+import AIChat
 
 protocol AutoClearServiceProtocol {
 
     var autoClearTask: Task<Void, Never>? { get }
     var isClearingEnabled: Bool { get }
+    var isTabClearingEnabled: Bool { get }
     func waitForDataCleared() async
 
 }
@@ -31,6 +33,7 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     private let autoClear: AutoClearing
     private let overlayWindowManager: OverlayWindowManaging
+    private let aiChatSyncCleaner: AIChatSyncCleaning
     private let application: UIApplication
 
     private(set) var autoClearTask: Task<Void, Never>?
@@ -39,11 +42,17 @@ final class AutoClearService: AutoClearServiceProtocol {
         autoClear.isClearingEnabled
     }
 
+    var isTabClearingEnabled: Bool {
+        autoClear.isTabClearingEnabled
+    }
+
     init(autoClear: AutoClearing,
          overlayWindowManager: OverlayWindowManaging,
+         aiChatSyncCleaner: AIChatSyncCleaning,
          application: UIApplication = UIApplication.shared) {
         self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.application = application
 
         autoClearTask = Task {
@@ -66,10 +75,14 @@ final class AutoClearService: AutoClearServiceProtocol {
     // MARK: - Suspend
 
     func suspend() {
+        let now = Date()
         if autoClear.isClearingEnabled {
             overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
+            Task { [aiChatSyncCleaner] in
+                await aiChatSyncCleaner.recordAutoClearBackgroundTimestamp(date: now)
+            }
         }
-        autoClear.startClearingTimer(Date().timeIntervalSince1970)
+        autoClear.startClearingTimer(now.timeIntervalSince1970)
     }
 
     // MARK: -

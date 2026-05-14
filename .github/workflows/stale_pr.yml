@@ -17,3 +17,4 @@ jobs:
           days-before-pr-close: 7
           stale-pr-label: stale
           exempt-draft-pr: true
+          exempt-pr-labels: 'do-not-autoclose'

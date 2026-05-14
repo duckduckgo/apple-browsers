@@ -64,6 +64,13 @@ final class TunnelControllerIPCService {
         var parameters: [String: String]? {
             return nil
         }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .udsServerStartFailure:
+                return [.pixelSource]
+            }
+        }
     }
 
     init(tunnelController: NetworkProtectionTunnelController,
@@ -184,6 +191,7 @@ extension TunnelControllerIPCService: XPCServerInterface {
     func register(version: String, bundlePath: String, completion: @escaping (Error?) -> Void) {
         server.serverInfoChanged(statusReporter.serverInfoObserver.recentValue)
         server.statusChanged(statusReporter.statusObserver.recentValue)
+        server.vpnEnableChanged(statusReporter.vpnEnabledObserver.isVPNEnabled)
         if self.version != version {
             let error = TunnelControllerIPCService.IPCError.versionMismatched
             NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
@@ -220,6 +228,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
         }
     }
 
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        Task { @MainActor in
+            await tunnelController.refreshSystemState()
+            completion(nil)
+        }
+    }
+
     func resetAll(uninstallSystemExtension: Bool) async {
         try? await networkExtensionController.deactivateSystemExtension()
     }
@@ -250,6 +265,9 @@ extension TunnelControllerIPCService: XPCServerInterface {
             quitAgent()
         case .createLogSnapshot:
             assertionFailure("Unsupported on macOS")
+        case .triggerLeakCheck:
+            // Intentional no-op: handled by the extension
+            break
         }
     }
 

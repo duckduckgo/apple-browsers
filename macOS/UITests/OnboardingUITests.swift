@@ -103,6 +103,13 @@ final class OnboardingUITests: UITestCase {
         XCTAssertTrue(showHomeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         showHomeButton.click()
 
+        let nextButtonCustomize = welcomeWindow.webViews["Welcome"].buttons["Next"]
+        XCTAssertTrue(nextButtonCustomize.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        nextButtonCustomize.click()
+
+        // AI Chat
+        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Want easy access to private AI Chat?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         // Start Browsing
         let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons["Start Browsing"]
         XCTAssertTrue(startBrowsingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -114,11 +121,25 @@ final class OnboardingUITests: UITestCase {
         XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
+    func testDuckAIIsUnavailableDuringOnboarding() throws {
+        let button = app.windows.buttons[XCUIApplication.AccessibilityIdentifiers.aiChatButton]
+
+        XCTAssertFalse(button.exists, "AIChat Button should NOT be visible during onboarding")
+    }
+
+    func testPassiveAddressBarShowsWelcomeMessage() throws {
+        let passiveTextField = app.staticTexts[XCUIApplication.AccessibilityIdentifiers.addressBarPassiveTextField]
+
+        XCTAssertTrue(passiveTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "(Passive) AddressBar TextField should be visible")
+        XCTAssertEqual(passiveTextField.value as? String, "Welcome")
+    }
+
     func resetApplicationData() throws {
+        let bundleID = try XCTUnwrap(XCUIApplication().bundleID)
         let commands = [
-            "/usr/bin/defaults delete com.duckduckgo.macos.browser.review",
-            "/bin/rm -rf ~/Library/Containers/com.duckduckgo.macos.browser.review/Data",
-            "/usr/bin/defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1"
+            "/usr/bin/defaults delete \(bundleID)",
+            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data/* || true",
+            "/usr/bin/defaults write \(bundleID) moveToApplicationsFolderAlertSuppress 1"
         ]
 
         for command in commands {

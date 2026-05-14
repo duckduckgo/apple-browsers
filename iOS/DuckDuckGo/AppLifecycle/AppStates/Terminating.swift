@@ -31,7 +31,6 @@ enum TerminationError: Error {
 
 }
 
-
 enum TerminationReason {
 
     case insufficientDiskSpace
@@ -76,7 +75,7 @@ struct Terminating: TerminatingHandling {
         switch error {
         case .database(let error):
             additionalParams = [
-                PixelParameters.applicationState: "\(application.applicationState.rawValue)",
+                PixelParameters.applicationState: application.applicationState.stringValue,
                 PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"
             ]
             switch error {
@@ -103,7 +102,7 @@ struct Terminating: TerminatingHandling {
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: could not prepare database"
                 pixel = .debugBookmarksCouldNotPrepareDatabase
-                
+
             // Legacy storage errors
             case .noDBSchemeFound:
                 debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
@@ -124,7 +123,7 @@ struct Terminating: TerminatingHandling {
             case .couldNotFixFavoriteFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
                 pixel = .debugBookmarksCouldNotFixFavoriteFolder
-                
+
             // Migration errors
             case .couldNotPrepareBookmarksDBStructure(let error):
                 underlyingError = error
@@ -134,14 +133,14 @@ struct Terminating: TerminatingHandling {
                 underlyingError = error
                 debugMessage = "Bookmarks migration failed: could not write to DB"
                 pixel = .debugBookmarksCouldNotWriteToDB
-                
+
             // Generic
             case .other(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: \(bookmarkError)"
                 pixel = .bookmarksCouldNotLoadDatabase
             }
-            
+
             errorToReport = underlyingError
             mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):
@@ -166,18 +165,18 @@ struct Terminating: TerminatingHandling {
                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                      error: errorToReport,
                                      withAdditionalParameters: additionalParams)
+
         switch mode {
-        case .immediately(let message):
+        case .immediately(let debugMessage):
             Thread.sleep(forTimeInterval: 1)
-            fatalError(message)
-        case .afterAlert(let reason):
-            if !Bundle.main.supportsScenes {
-                let window = UIWindow(frame: UIScreen.main.bounds)
-                window.backgroundColor = .white
-                window.makeKeyAndVisible()
-                UIApplication.shared.setWindow(window)
-                alertAndTerminate(window: window)
-            }
+            fatalError(debugMessage)
+        case .afterAlert:
+            /// We do nothing here because the app jumps into the `Terminating` state
+            /// directly from `Launching` (something threw there). At this point
+            /// there is no window available. We need to wait for `scene(_:willConnectTo:)`
+            /// to be called - that's where `alertAndTerminate(window:)` will actually run.
+            /// See: `func respond(to event: AppEvent, in terminating: TerminatingHandling)` in `AppStateMachine`.
+            break
         }
     }
 
@@ -199,6 +198,19 @@ struct Terminating: TerminatingHandling {
         window.makeKeyAndVisible()
 
         rootViewController.present(alertController, animated: true, completion: nil)
+    }
+
+}
+
+private extension UIApplication.State {
+
+    var stringValue: String {
+        switch self {
+        case .active: return "active"
+        case .inactive: return "inactive"
+        case .background: return "background"
+        @unknown default: return "unknown"
+        }
     }
 
 }

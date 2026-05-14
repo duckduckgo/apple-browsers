@@ -56,7 +56,7 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
     func dataBrokerProtectionDataManagerDidDeleteData()
     func dataBrokerProtectionDataManagerWillOpenSendFeedbackForm()
     func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async
-    func isAuthenticatedUser() -> Bool
+    func isAuthenticatedUser() async -> Bool
     /// Returns whether the user is eligible for a free trial.
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
@@ -69,20 +69,31 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
+    /// Called when a profile is saved. Used for free trial conversion tracking.
+    public var onProfileSaved: (() -> Void)?
+
     internal let database: DataBrokerProtectionRepository
 
     required public init(database: DataBrokerProtectionRepository,
                          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
         self.database = database
-
         self.profileSavedNotifier = profileSavedNotifier
+        self.onProfileSaved = nil
         communicator.delegate = self
+    }
+
+    public convenience init(database: DataBrokerProtectionRepository,
+                            profileSavedNotifier: DBPProfileSavedNotifier? = nil,
+                            onProfileSaved: (() -> Void)?) {
+        self.init(database: database, profileSavedNotifier: profileSavedNotifier)
+        self.onProfileSaved = onProfileSaved
     }
 
     public func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {
         do {
             try await database.save(profile)
             profileSavedNotifier?.postProfileSavedNotificationIfPermitted()
+            onProfileSaved?()
         } catch {
             // We should still invalidate the cache if the save fails
             communicator.invalidateCache()
@@ -214,8 +225,8 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         await delegate?.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(bypass)
     }
 
-    public func isAuthenticatedUser() -> Bool {
-        delegate?.isAuthenticatedUser() ?? true
+    public func isAuthenticatedUser() async -> Bool {
+        (await delegate?.isAuthenticatedUser()) ?? true
     }
 
     /// Determines whether the current user is eligible for a free trial.
@@ -241,7 +252,7 @@ public typealias DBPUICommunicatorDelegate = UserProfileDelegate & UserActionDel
 public protocol UserProfileDelegate: AnyObject {
     func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws
     func removeAllData() throws
-    func isAuthenticatedUser() -> Bool
+    func isAuthenticatedUser() async -> Bool
     /// Determines whether the current user is eligible for a free trial.
     ///
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
@@ -284,8 +295,8 @@ public final class DBPUICommunicator {
 
 extension DBPUICommunicator: DBPUICommunicationDelegate {
 
-    public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
-        let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
+    public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
         let isUserEligibleForFreeTrial = delegate?.isUserEligibleForFreeTrial() ?? false
         return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser, isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
@@ -393,5 +404,13 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func removeOptOutFromDashboard(_ id: Int64) async {
         delegate?.willRemoveOptOutFromDashboard(id)
+    }
+
+    public func needBackgroundAppRefresh() async -> Bool {
+        false // macOS doesn't have Background App Refresh
+    }
+
+    public func enableBackgroundAppRefresh() async {
+        // No-op on macOS
     }
 }

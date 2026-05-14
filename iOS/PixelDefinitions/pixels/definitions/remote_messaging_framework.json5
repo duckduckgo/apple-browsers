@@ -1,0 +1,299 @@
+// RMF pixels
+{
+    "m_remote_message_shown_unique": {
+        "description": "Triggered when a remote message is displayed to the user for the first time",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "isReinstall",
+                "description": "Randomized subscription data reporting parameter: whether the user is a reinstall",
+                "type": "boolean"
+            },
+            {
+                "key": "fireButtonUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has used the fire button frequently",
+                "type": "boolean"
+            },
+            {
+                "key": "syncUsed",
+                "description": "Randomized subscription data reporting parameter: whether sync is in use",
+                "type": "boolean"
+            },
+            {
+                "key": "fireproofingUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has fireproofed any domains",
+                "type": "boolean"
+            },
+            {
+                "key": "appOnboardingCompleted",
+                "description": "Randomized subscription data reporting parameter: whether the user has completed onboarding",
+                "type": "boolean"
+            },
+            {
+                "key": "emailEnabled",
+                "description": "Randomized subscription data reporting parameter: whether Email Protection is enabled",
+                "type": "boolean"
+            },
+            {
+                "key": "widgetAdded",
+                "description": "Randomized subscription data reporting parameter: whether the user has added a widget",
+                "type": "boolean"
+            },
+            {
+                "key": "frequentUser",
+                "description": "Randomized subscription data reporting parameter: whether the user is considered frequent based on recent session activity",
+                "type": "boolean"
+            },
+            {
+                "key": "longTermUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has had the app installed for a long time",
+                "type": "boolean"
+            },
+            {
+                "key": "autofillUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has used autofill",
+                "type": "boolean"
+            },
+            {
+                "key": "validOpenTabsCount",
+                "description": "Randomized subscription data reporting parameter: whether the user has a valid number of open tabs",
+                "type": "boolean"
+            },
+            {
+                "key": "searchUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has performed a search recently",
+                "type": "boolean"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_remote_message_shown": {
+        "description": "Triggered when a remote message is displayed to the user, regardless of whether it’s their first time seeing it",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "isReinstall",
+                "description": "Randomized subscription data reporting parameter: whether the user is a reinstall",
+                "type": "boolean"
+            },
+            {
+                "key": "fireButtonUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has used the fire button frequently",
+                "type": "boolean"
+            },
+            {
+                "key": "syncUsed",
+                "description": "Randomized subscription data reporting parameter: whether sync is in use",
+                "type": "boolean"
+            },
+            {
+                "key": "fireproofingUsed",
+                "description": "Randomized subscription data reporting parameter: whether the user has fireproofed any domains",
+                "type": "boolean"
+            },
+            {
+                "key": "appOnboardingCompleted",
+                "description": "Randomized subscription data reporting parameter: whether the user has completed onboarding",
+                "type": "boolean"
+            },
+            {
+                "key": "emailEnabled",
+                "description": "Randomized subscription data reporting parameter: whether Email Protection is enabled",
+                "type": "boolean"
+            },
+            {
+                "key": "widgetAdded",
+                "description": "Randomized subscription data reporting parameter: whether the user has added a widget",
+                "type": "boolean"
+            },
+            {
+                "key": "frequentUser",
+                "description": "Randomized subscription data reporting parameter: whether the user is considered frequent based on recent session activity",
+                "type": "boolean"
+            },
+            {
+                "key": "longTermUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has had the app installed for a long time",
+                "type": "boolean"
+            },
+            {
+                "key": "autofillUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has used autofill",
+                "type": "boolean"
+            },
+            {
+                "key": "validOpenTabsCount",
+                "description": "Randomized subscription data reporting parameter: whether the user has a valid number of open tabs",
+                "type": "boolean"
+            },
+            {
+                "key": "searchUser",
+                "description": "Randomized subscription data reporting parameter: whether the user has performed a search recently",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_remote_message_dismissed": {
+        "description": "Triggered when a remote message is is dismissed by the user",
+        "owners": ["amddg44", "alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "dismiss_type",
+                "description": "The type of dismissal. This value is optional",
+                "type": "string",
+                "enum": ["close_button", "pull_down", "primary_action", "item_action"]
+            }
+        ]
+    },
+    "m_remote_message_action_clicked": {
+        "description": "Triggered when the user clicks the action button on the remote message",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_primary_action_clicked": {
+        "description": "Triggered when the user clicks the primary action button on the remote message",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_secondary_action_clicked": {
+        "description": "Triggered when the user clicks the secondary action button on the remote message",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_sheet": {
+        "description": "Triggered after the share action sheet has closed",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "success",
+                "description": "Indicates whether the user utilised one of the actions. `False` means the user closed the share action sheet without taking any action",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_remote_message_card_shown": {
+        "description": "Triggered when a card is displayed within a card-style remote message",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "card",
+                "description": "The identifier for the card, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_card_clicked": {
+        "description": "Triggered when a card is clicked within a card-style remote message",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            },
+            {
+                "key": "card",
+                "description": "The identifier for the card, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_image_load_success": {
+        "description": "Triggered when a remote message image is successfully loaded and displayed",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_image_load_failed": {
+        "description": "Triggered when a remote message image fails to load",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    }
+}

@@ -22,6 +22,7 @@ import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 import Foundation
+import Networking
 
 struct UnifiedFeedbackFormViewModelTests {
 
@@ -31,46 +32,26 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     private func makeViewModel(
-        subscriptionFeatures: [Entitlement.ProductName] = [],
+        subscriptionFeatures: [SubscriptionEntitlement] = [],
         isPaidAIChatFeatureEnabled: Bool = false,
+        isProTierPurchaseEnabled: Bool = false,
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
-
-        let subscriptionManager = makeSubscriptionManager(features: subscriptionFeatures)
-
+        let subscriptionManger = SubscriptionManagerMock()
+        subscriptionManger.resultFeatures = subscriptionFeatures
         let viewModel = UnifiedFeedbackFormViewModel(
-            subscriptionManager: subscriptionManager,
+            subscriptionManager: subscriptionManger,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
             feedbackSender: feedbackSender,
             isPaidAIChatFeatureEnabled: { isPaidAIChatFeatureEnabled },
+            isProTierPurchaseEnabled: { isProTierPurchaseEnabled },
             source: source
         )
 
         return viewModel
-    }
-
-    private func makeSubscriptionManager(features: [Entitlement.ProductName]) -> SubscriptionManagerMock {
-        let accountManager = AccountManagerMock()
-        accountManager.accessToken = "test-token"
-
-        let manager = SubscriptionManagerMock(
-            accountManager: accountManager,
-            subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-            authEndpointService: AuthEndpointServiceMock(),
-            storePurchaseManager: StorePurchaseManagerMock(),
-            currentEnvironment: SubscriptionEnvironment(
-                serviceEnvironment: .production,
-                purchasePlatform: .appStore
-            ),
-            canPurchase: false,
-            subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock()
-        )
-
-        manager.subscriptionFeatures = features
-        return manager
     }
 
     // MARK: - Initialization Tests
@@ -184,12 +165,34 @@ struct UnifiedFeedbackFormViewModelTests {
 
     @Test func testSubscriptionSubcategories_HaveCorrectDisplayNames() {
         #expect(SubscriptionFeedbackSubcategory.otp.displayName == UserText.pproFeedbackFormCategoryOTP)
+        #expect(SubscriptionFeedbackSubcategory.unableToAccessFeatures.displayName == UserText.pproFeedbackFormCategoryUnableToAccessFeatures)
         #expect(SubscriptionFeedbackSubcategory.somethingElse.displayName == UserText.pproFeedbackFormCategoryOther)
     }
 
     @Test func testSubscriptionSubcategories_HaveCorrectFAQUrls() {
         #expect(SubscriptionFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.unableToAccessFeatures.url.absoluteString.contains("activating") == true)
         #expect(SubscriptionFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
+    }
+
+    @Test func testAvailableSubscriptionSubcategories_WhenProTierEnabled_IncludesUnableToAccessFeatures() {
+        let viewModel = makeViewModel(isProTierPurchaseEnabled: true)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        #expect(subcategories.contains(.otp))
+        #expect(subcategories.contains(.unableToAccessFeatures))
+        #expect(subcategories.contains(.somethingElse))
+    }
+
+    @Test func testAvailableSubscriptionSubcategories_WhenProTierDisabled_ExcludesUnableToAccessFeatures() {
+        let viewModel = makeViewModel(isProTierPurchaseEnabled: false)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        #expect(subcategories.contains(.otp))
+        #expect(!subcategories.contains(.unableToAccessFeatures))
+        #expect(subcategories.contains(.somethingElse))
     }
 
     @Test func testVPNSubcategories_HaveCorrectDisplayNames() {

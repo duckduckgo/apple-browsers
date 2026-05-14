@@ -133,7 +133,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         fireCustomDataBrokerStatsPixels(customOptOutStats: customOptOutStats)
         fireCustomGlobalStatsPixel(customOptOutStats: customOptOutStats)
 
-        repository.customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 24)
+        repository.customStatsPixelsLastSentTimestamp = Date()
     }
 
 }

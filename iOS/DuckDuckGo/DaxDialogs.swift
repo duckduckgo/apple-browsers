@@ -24,6 +24,8 @@ import BrowserServicesKit
 import Common
 import PrivacyDashboard
 import Combine
+import os.log
+import Onboarding
 
 protocol EntityProviding {
     
@@ -54,6 +56,8 @@ protocol ContextualOnboardingLogic {
     var isAddFavoriteFlow: Bool { get }
     var isDismissedPublisher: PassthroughSubject<Bool, Never> { get }
 
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
+
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
 
@@ -73,7 +77,7 @@ protocol ContextualOnboardingLogic {
 
     func isStillOnboarding() -> Bool
 
-    func clearHeldURLData()
+    func clearHeldURLData() -> Result<Void, Error>
     func clearedBrowserData()
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> DaxDialogs.BrowsingSpec?
@@ -99,7 +103,7 @@ extension ContentBlockerRulesManager: EntityProviding {
 }
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
-    
+
     struct MajorTrackers {
         
         static let facebookDomain = "facebook.com"
@@ -140,7 +144,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     struct BrowsingSpec: Equatable {
         // swiftlint:disable nesting
 
-        enum SpecType: String {
+        enum SpecType: Equatable {
+            enum FireVariant: Equatable {
+                case standard
+                case duckAIOnboarding
+            }
+
             case afterSearch
             case visitWebsite
             case withoutTrackers
@@ -148,7 +157,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             case siteOwnedByMajorTracker
             case withOneTracker
             case withMultipleTrackers
-            case fire
+            case fire(FireVariant)
             case final
         }
         // swiftlint:enable nesting
@@ -177,18 +186,32 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                                        pixelName: .daxDialogsWithTrackersUnique,
                                                        message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers)
 
-        static let fire = BrowsingSpec(type: .fire, pixelName: .daxDialogsFireEducationShownUnique)
+        static let fire = BrowsingSpec(type: .fire(.standard),
+                                       pixelName: .daxDialogsFireEducationShownUnique,
+                                       message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
-        static let final = BrowsingSpec(type: .final, pixelName: .daxDialogsEndOfJourneyTabUnique)
+        static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
+                                                       pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
+                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
+                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
+                                                       allowsManualDismiss: false)
 
+        static let final = BrowsingSpec(type: .final,
+                                        pixelName: .daxDialogsEndOfJourneyTabUnique,
+                                        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage)
+
+        let title: String?
         let message: String
         let pixelName: Pixel.Event
         let type: SpecType
+        let allowsManualDismiss: Bool
 
-        init(type: SpecType, pixelName: Pixel.Event, message: String = "") {
+        init(type: SpecType, pixelName: Pixel.Event, title: String? = nil, message: String = "", allowsManualDismiss: Bool = true) {
             self.type = type
             self.pixelName = pixelName
+            self.title = title
             self.message = message
+            self.allowsManualDismiss = allowsManualDismiss
         }
 
         func format(args: CVarArg...) -> BrowsingSpec {
@@ -203,7 +226,19 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             BrowsingSpec(
                 type: type,
                 pixelName: pixelName,
-                message: message
+                title: title,
+                message: message,
+                allowsManualDismiss: allowsManualDismiss
+            )
+        }
+
+        func withManualDismissAllowed(_ allowsManualDismiss: Bool) -> BrowsingSpec {
+            BrowsingSpec(
+                type: type,
+                pixelName: pixelName,
+                title: title,
+                message: message,
+                allowsManualDismiss: allowsManualDismiss
             )
         }
     }
@@ -298,7 +333,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     var isShowingFireDialog: Bool {
         guard let lastShownDaxDialogType else { return false }
-        return lastShownDaxDialogType == .fire
+        if case .fire = lastShownDaxDialogType {
+            return true
+        }
+        return false
+    }
+
+    func setLastShownDialog(type: BrowsingSpec.SpecType) {
+        lastShownDaxDialogType = type
     }
 
     var isAddFavoriteFlow: Bool {
@@ -322,6 +364,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func dismiss() {
+        Logger.onboarding.debug("DaxDialogs.dismiss() called – ending onboarding, isDismissed will be set to true")
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)
@@ -340,11 +383,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     func resumeRegularFlow() {
         nextHomeScreenMessageOverride = nil
     }
-    
-    func clearHeldURLData() {
+
+    func clearHeldURLData() -> Result<Void, Error> {
         lastURLDaxDialogReturnedFor = nil
+        return .success(())
     }
-    
+
     private var fireButtonPulseTimer: Timer?
     private static let timeToFireButtonExpire: TimeInterval = 1 * 60 * 60
     
@@ -373,8 +417,13 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         case BrowsingSpec.SpecType.withOneTracker, BrowsingSpec.SpecType.withMultipleTrackers:
             guard let entityNames = blockedEntityNames(privacyInfo.trackerInfo) else { return nil }
             return trackersBlockedMessage(entityNames, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.fire:
-            return .fire
+        case .fire(let variant):
+            switch variant {
+            case .standard:
+                return .fire
+            case .duckAIOnboarding:
+                return .fireDuckAIOnboarding
+            }
         case BrowsingSpec.SpecType.final:
             return nil
         }
@@ -382,6 +431,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func fireButtonPulseStarted() {
         ViewHighlighter.dismissPrivacyIconPulseAnimation()
+        // Treat the fire button pulse as having seen the fire education, so the End Of Journey dialog
+        // can appear on the next NTP visit even if the user never taps the fire button.
+        setFireEducationMessageSeen()
         if settings.fireButtonPulseDateShown == nil {
             settings.fireButtonPulseDateShown = Date()
         }
@@ -508,6 +560,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         guard let homeScreenSpec = peekNextHomeScreenMessageExperiment() else {
             currentHomeSpec = nil
+            recoverFromZombieStateIfNeeded()
             return nil
         }
         currentHomeSpec = homeScreenSpec
@@ -544,7 +597,15 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if !settings.tryVisitASiteShown {
             return .subsequent
         }
-        
+
+        // If the user completed all NTP steps and visited a non-DDG site (saw a tracker dialog)
+        // but skipped the fire dialog step (e.g. navigated away or opened a new tab), unblock End Of Journey (EOJ)
+        // by treating the fire education as seen. This preserves the EOJ → Subscription offer flow.
+        if nonDDGBrowsingMessageSeen {
+            setFireEducationMessageSeen()
+            return .final
+        }
+
         return nil
     }
 
@@ -639,6 +700,19 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         return url1.isSameDuckDuckGoSearchURL(other: url2)
     }
 
+    /// Recovers from a zombie state where the final dialog was seen but `dismiss()` was never
+    /// called (e.g. user tapped the X button instead of the CTA on the final dialog).
+    /// This prevents `dismiss()` from ever being called and the user's settings
+    /// (e.g. the Search/Duck.ai toggle) from being applied.
+    private func recoverFromZombieStateIfNeeded() {
+        guard isEnabled else { return }
+
+        if finalDaxDialogSeen {
+            Logger.onboarding.debug("Recovering from onboarding zombie state – isDismissed: \(self.settings.isDismissed), finalDaxDialogSeen: \(self.finalDaxDialogSeen), fireMessageExperimentShown: \(self.settings.fireMessageExperimentShown)")
+            dismiss()
+        }
+    }
+
     private func clearOnboardingBrowsingData() {
         lastShownDaxDialogType = nil
         lastVisitedOnboardingWebsiteURL = nil
@@ -706,10 +780,6 @@ extension DaxDialogs {
 
     func setLastVisitedURL(_ url: URL?) {
         lastVisitedOnboardingWebsiteURL = url
-    }
-
-    func setLastShownDialog(type: BrowsingSpec.SpecType) {
-        lastShownDaxDialogType = type
     }
 
 }

@@ -21,6 +21,8 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -55,12 +57,13 @@ final class ScriptSourceProviderTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
+            pinningManager: MockPinningManager(),
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
         let fireCoordinator = FireCoordinator(tld: TLD(),
@@ -86,14 +89,21 @@ final class ScriptSourceProviderTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
+            themeManager: MockThemeManager(),
             startupPreferences: startupPreferences,
             windowControllersManager: windowControllersManager,
             bookmarkManager: MockBookmarkManager(),
+            pinningManager: MockPinningManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
-            newTabPageActionsManager: nil
+            syncServiceProvider: { nil },
+            syncErrorHandler: SyncErrorHandler(),
+            webExtensionAvailability: nil,
+            dockCustomization: DockCustomizerMock(),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
+            installDateProvider: { Date() }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

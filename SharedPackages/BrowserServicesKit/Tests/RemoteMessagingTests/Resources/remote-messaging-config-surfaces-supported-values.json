@@ -91,8 +91,27 @@
       "metrics": {
         "state": "enabled"
       }
+    },
+    {
+      "id": "6",
+      "surfaces": [
+        "tab_bar"
+      ],
+      "content": {
+        "messageType": "big_single_action",
+        "titleText": "Tab bar message",
+        "descriptionText": "description",
+        "placeholder": "DDGAnnounce",
+        "primaryActionText": "Ok",
+        "primaryAction": {
+          "type": "survey",
+          "value": "https://duckduckgo.com"
+        }
+      },
+      "metrics": {
+        "state": "enabled"
+      }
     }
   ],
   "rules": []
 }
-

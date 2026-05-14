@@ -43,8 +43,8 @@ public protocol SubscriptionProduct {
     /// The introductory offer associated with this subscription, if any.
     var introductoryOffer: SubscriptionProductIntroductoryOffer? { get }
 
-    /// A Boolean value that indicates whether this is a Free Trial product.
-    var isFreeTrialProduct: Bool { get }
+    /// A Boolean value that indicates whether this is a Pro tier product.
+    var isProTierProduct: Bool { get }
 
     /// Whether the user is eligible for an introductory offer.
     var isEligibleForFreeTrial: Bool { get }
@@ -95,11 +95,17 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
     public var introductoryOffer: (any SubscriptionProductIntroductoryOffer)? {
         product.introductoryOffer
     }
-    /// A Boolean value indicating whether this product relates to a free trial, forwarded from the underlying store product.
-    public var isFreeTrialProduct: Bool { product.isFreeTrialProduct }
+    /// A Boolean value indicating whether this product has a free trial offer.
+    public var hasIntroductoryFreeTrialOffer: Bool { product.hasIntroductoryFreeTrialOffer }
 
     /// User eligibility for free trial
     public var isEligibleForFreeTrial: Bool
+
+    /// A Boolean value indicating whether this product relates to a pro tier, based on id convention.
+    /// Ideally we would use the groupLevel parameter of the subscription but it's only available from macOS 13
+    /// and we cannot use it for the production products since we can't add them until last minute and one of the non pro product would be at group level 1
+    /// This is temporary for launch
+    public var isProTierProduct: Bool { product.id.hasSuffix(StoreSubscriptionConstants.proTierIdentifier) }
 
     /// Creates an AppStoreSubscriptionProduct with eligibility state
     /// - Parameters:
@@ -161,8 +167,8 @@ public protocol StoreProduct {
     var isYearly: Bool { get }
     /// The introductory offer associated with this subscription product, if available.
     var introductoryOffer: (any SubscriptionProductIntroductoryOffer)? { get }
-    /// A Boolean value indicating whether this product relates to a free trial offer.
-    var isFreeTrialProduct: Bool { get }
+    /// A Boolean value indicating whether this product has a free trial offer.
+    var hasIntroductoryFreeTrialOffer: Bool { get }
     /// Asynchronously determines whether the user is eligible for an introductory offer.
     var isEligibleForFreeTrial: Bool { get async }
     /// Initiates a purchase of the product with the specified options.
@@ -196,18 +202,18 @@ extension Product: StoreProduct {
         subscription?.introductoryOffer
     }
 
-    /// A Boolean value that indicates whether the subscription product is one which relates to a Free Trial.
+    /// A Boolean value indicating whether this product has a free trial offer.
     ///
     /// This property returns `true` if the subscription has an associated introductory offer marked as a free trial.
     /// If neither condition is met, the property returns `false`.
-    public var isFreeTrialProduct: Bool {
+    public var hasIntroductoryFreeTrialOffer: Bool {
         return subscription?.introductoryOffer?.isFreeTrial ?? false
     }
 
     /// Asynchronously checks if the user is eligible for an introductory offer.
     public var isEligibleForFreeTrial: Bool {
         get async {
-            guard isFreeTrialProduct, let subscription else { return false }
+            guard hasIntroductoryFreeTrialOffer, let subscription else { return false }
             return await subscription.isEligibleForIntroOffer
         }
     }

@@ -1,0 +1,44 @@
+{
+    "m_menu_refresh_page": {
+        "description": "Fires when the user taps the refresh page option from the browsing menu",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_nav_menu_error": {
+        "description": "Fires when the browsing menu is opened on an error page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_dismissed": {
+        "description": "Fires when the browsing menu is dismissed by the user",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_new_duck_address": {
+        "description": "Fires when the user taps the new Duck Address option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_vpn": {
+        "description": "Fires when the user taps the VPN option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_aichat": {
+        "description": "Fires when the user taps the AI chat option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

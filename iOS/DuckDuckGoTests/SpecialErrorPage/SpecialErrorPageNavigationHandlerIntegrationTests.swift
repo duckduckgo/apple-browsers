@@ -21,6 +21,7 @@ import Testing
 import WebKit
 import SpecialErrorPages
 import MaliciousSiteProtection
+import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - Integration Tests", .serialized)
@@ -37,9 +38,9 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         WKNavigationResponse.swizzleDealloc()
 
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.sslCertificatesBypass, .maliciousSiteProtection]
+        featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
         webView = MockSpecialErrorWebView(frame: CGRect(), configuration: .nonPersistent())
-        sslErrorPageNavigationHandler = SSLErrorPageNavigationHandler(featureFlagger: featureFlagger)
+        sslErrorPageNavigationHandler = SSLErrorPageNavigationHandler()
         let preferencesManager = MockMaliciousSiteProtectionPreferencesManager()
         preferencesManager.isMaliciousSiteProtectionOn = true
         maliciousSiteProtectionFeatureFlags = MockMaliciousSiteProtectionFeatureFlags()
@@ -62,8 +63,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
             detector: MockMaliciousSiteDetector(),
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlags,
-            supportedThreatsProvider: { return [] },
-            shouldRemoveWWWInCanonicalization: { true }
+            supportedThreatsProvider: { return [] }
         )
         maliciousSiteProtectionNavigationHandler = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: maliciousSiteProtectionManager)
         
@@ -299,7 +299,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         let url = try #require(URL(string: threatInfo.path))
         webView.setCurrentURL(url)
         sut.attachWebView(webView)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: navigationAction, webView: webView)
         let response = MockNavigationResponse.with(url: url)
         _ = await sut.handleDecidePolicy(for: response, webView: webView)
@@ -319,7 +319,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         let url = try #require(URL(string: "http://privacy-test-pages.site/"))
         webView.setCurrentURL(url)
         sut.attachWebView(webView)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: navigationAction, webView: webView)
         let response = MockNavigationResponse.with(url: url)
 
@@ -343,7 +343,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         let url = try #require(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html"))
         webView.setCurrentURL(url)
         sut.attachWebView(webView)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: navigationAction, webView: webView)
         let response = MockNavigationResponse.with(url: url)
 
@@ -378,7 +378,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         let url = try #require(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html"))
         webView.setCurrentURL(url)
         sut.attachWebView(webView)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: navigationAction, webView: webView)
         let response = MockNavigationResponse.with(url: url)
 
@@ -404,7 +404,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         sut.attachWebView(webView)
         let maliciousURL = try #require(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html"))
         webView.setCurrentURL(maliciousURL)
-        let maliciousSiteNavigationAction = MockNavigationAction(request: URLRequest(url: maliciousURL), targetFrame: MockFrameInfo(isMainFrame: true))
+        let maliciousSiteNavigationAction = MockNavigationAction(request: URLRequest(url: maliciousURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: maliciousSiteNavigationAction, webView: webView)
         let maliciousSiteResponse = MockNavigationResponse.with(url: maliciousURL)
 
@@ -429,7 +429,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         // GIVEN
         let safeURL = try #require(URL(string: "http://broken.third-party.site/"))
         webView.setCurrentURL(safeURL)
-        let safeSiteNavigationAction = MockNavigationAction(request: URLRequest(url: safeURL), targetFrame: MockFrameInfo(isMainFrame: true))
+        let safeSiteNavigationAction = MockNavigationAction(request: URLRequest(url: safeURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: safeSiteNavigationAction, webView: webView)
         let safeSiteResponse = MockNavigationResponse.with(url: safeURL)
 
@@ -455,7 +455,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         sut.attachWebView(webView)
         let maliciousURL = try #require(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html"))
         webView.setCurrentURL(maliciousURL)
-        let maliciousSiteNavigationAction = MockNavigationAction(request: URLRequest(url: maliciousURL), targetFrame: MockFrameInfo(isMainFrame: true))
+        let maliciousSiteNavigationAction = MockNavigationAction(request: URLRequest(url: maliciousURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: maliciousSiteNavigationAction, webView: webView)
         let maliciousSiteResponse = MockNavigationResponse.with(url: maliciousURL)
 
@@ -480,7 +480,7 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
         // GIVEN
         let safeURL = try #require(URL(string: "http://duckduckgo.com/"))
         webView.setCurrentURL(safeURL)
-        let safeSiteNavigationAction = MockNavigationAction(request: URLRequest(url: safeURL), targetFrame: MockFrameInfo(isMainFrame: true))
+        let safeSiteNavigationAction = MockNavigationAction(request: URLRequest(url: safeURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         sut.handleDecidePolicy(for: safeSiteNavigationAction, webView: webView)
         let safeSiteResponse = MockNavigationResponse.with(url: safeURL)
 

@@ -25,5 +25,6 @@ public protocol HistoryStoring {
     func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)]
     func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws
     func removeVisits(_ visits: some Sequence<Visit>) async throws
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID]
 
 }

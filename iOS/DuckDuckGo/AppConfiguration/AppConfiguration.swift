@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import WidgetKit
 import Core
@@ -24,31 +25,35 @@ import Networking
 import Configuration
 import Persistence
 import WebKit
+import DuckSansFont
+import PrivacyConfig
 
 struct AppConfiguration {
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
-
+    let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
-    let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     private let appKeyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
 
-    init(appKeyValueStore: ThrowingKeyValueStoring) {
+    init(appKeyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger) {
         self.appKeyValueStore = appKeyValueStore
+        self.featureFlagger = featureFlagger
     }
 
-    func start() throws {
+    func start(isBookmarksDBFilePresent: Bool?) throws {
+        // Register DuckSans custom font
+        DuckSansFont.registerFonts()
+
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
-        PixelConfiguration.configure(with: featureFlagger)
 
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBackground = UIApplication.shared.applicationState == .background
-        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground)
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()
+        setDefaultOmnibarModeIfNeeded()
         migratePromptCooldown()
 
         WidgetCenter.shared.reloadAllTimelines()
@@ -66,6 +71,23 @@ struct AppConfiguration {
             }
             return sharedUserDefaults ?? UserDefaults()
         })
+    }
+
+    /// Set the default omnibar mode for new users on first launch.
+    /// Must run before ATB is assigned (in `finalize`) so `hasInstallStatistics` correctly
+    /// distinguishes new installs (false) from existing users updating (true).
+    private func setDefaultOmnibarModeIfNeeded() {
+        let store = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
+        let key = LegacyAiChatUserDefaultsKeys.defaultOmnibarModeKey
+        guard store.object(forKey: key) == nil else { return }
+
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return
+        }
+
+        let isExistingUser = StatisticsUserDefaults().hasInstallStatistics
+        let defaultMode: DefaultOmnibarMode = isExistingUser ? .search : .lastUsed
+        store.set(defaultMode.rawValue, forKey: key)
     }
 
     /// Migrate Default Browser prompt cooldown to global modal prompt cooldown.
@@ -155,38 +177,37 @@ struct AppConfiguration {
     @MainActor
     func finalize(reportingService: ReportingService,
                   mainViewController: MainViewController,
-                  launchTaskManager: LaunchTaskManager) {
+                  launchTaskManager: LaunchTaskManager) -> AutomationServer? {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
-        startAutomationServerIfNeeded(mainViewController: mainViewController)
+        let automationServer = startAutomationServerIfNeeded(mainViewController: mainViewController)
         UserAgentConfiguration(
             store: appKeyValueStore,
             launchTaskManager: launchTaskManager
         ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
+        return automationServer
     }
 
-    private func startAutomationServerIfNeeded(mainViewController: MainViewController) {
+    @MainActor
+    private func startAutomationServerIfNeeded(mainViewController: MainViewController) -> AutomationServer? {
+#if DEBUG || ALPHA
         let launchOptionsHandler = LaunchOptionsHandler()
         guard launchOptionsHandler.automationPort != nil else {
-            return
+            return nil
         }
-        Task { @MainActor in
-            _ = AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
-        }
+        return AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
+#else
+        return nil
+#endif
     }
 
     // MARK: - Handle ATB and variant assigned logic here
 
     private func onVariantAssigned(reportingService: ReportingService) {
         onboardingConfiguration.adjustDialogsForUITesting()
-        hideHistoryMessageForNewUsers()
         reportingService.setupStorageForMarketPlacePostback()
-    }
-
-    private func hideHistoryMessageForNewUsers() {
-        HistoryMessageManager().dismiss()
     }
 
 }

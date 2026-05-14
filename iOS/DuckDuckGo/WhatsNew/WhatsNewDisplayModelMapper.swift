@@ -34,6 +34,14 @@ protocol WhatsNewDisplayModelMapping {
 
 struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
+    let imageLoader: RemoteMessagingImageLoading?
+    let pixelReporter: RemoteMessagingPixelReporting?
+
+    init(imageLoader: RemoteMessagingImageLoading? = nil, pixelReporter: RemoteMessagingPixelReporting? = nil) {
+        self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
+    }
+
     /// Maps a RemoteMessageModel to CardsListDisplayModel
     /// Returns nil if message is not a cardsList type
     /// - Parameters:
@@ -51,35 +59,84 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
         onDismiss: @escaping () -> Void
     ) -> RemoteMessagingUI.CardsListDisplayModel? {
 
+        func mapRemoteListItems(_ remoteListItems: [RemoteMessageModelType.ListItem]) -> [RemoteMessagingUI.CardsListDisplayModel.Item] {
+            // Map items to display model items
+            remoteListItems.map { remoteListItem in
+                switch remoteListItem.type {
+                    // Map Title Section Item
+                case let .titledSection(titleText, _):
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
+                    // Map Featured Two Lines Card Item
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                    let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
+                        icon: placeholderImage.rawValue,
+                        title: titleText,
+                        description: descriptionText,
+                        actionButtonTitle: primaryActionText,
+                        onAppear: {
+                            onItemAppear(remoteListItem.id)
+                        },
+                        onTapAction: primaryAction.map { action in
+                            makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
+                        }
+                    )
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
+                    // Map Two Lines Card Item
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                    let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+                    let twoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard(
+                        icon: placeholderImage.rawValue,
+                        title: titleText,
+                        description: descriptionText,
+                        disclosureIcon: disclosureIcon,
+                        onAppear: {
+                            onItemAppear(remoteListItem.id)
+                        },
+                        onTapAction: action.map { action in
+                            makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
+                        }
+                    )
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.twoLinesCard(twoLinesCard)
+                }
+            }
+        }
+
         guard
             let contentType = message.content,
-            case let .cardsList(mainTitleText, placeholder, items, primaryActionText, primaryAction) = contentType
+            case let .cardsList(mainTitleText, placeholder, imageUrl, items, primaryActionText, primaryAction) = contentType
         else {
             return nil
         }
 
-        // Map items to display model items
-        let promoItems = items.map { remoteListItem in
-            let disclosureIcon = remoteListItem.action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+        let listItems = mapRemoteListItems(items)
 
-            return RemoteMessagingUI.CardsListDisplayModel.Item(
-                icon: remoteListItem.placeholderImage.rawValue,
-                title: remoteListItem.titleText,
-                description: remoteListItem.descriptionText,
-                disclosureIcon: disclosureIcon,
-                onAppear: {
-                    onItemAppear(remoteListItem.id)
-                },
-                onTapAction: remoteListItem.action.map { action in
-                    makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
-                }
-            )
+        let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
+
+        if preloadedHeaderImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+        }
+
+        let loadHeaderImage: ((URL) async throws -> UIImage)? = if preloadedHeaderImage == nil {
+            imageLoader.map { loader in
+                { url in try await loader.loadImage(from: url) }
+            }
+        } else {
+            nil
         }
 
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
-            items: promoItems,
+            preloadedHeaderImage: preloadedHeaderImage,
+            headerImageUrl: imageUrl,
+            loadHeaderImage: loadHeaderImage,
+            onHeaderImageLoadSuccess: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+            } : nil,
+            onHeaderImageLoadFailed: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadFailed(message)
+            } : nil,
+            items: listItems,
             onAppear: onMessageAppear,
             primaryAction: (
                 title: primaryActionText,

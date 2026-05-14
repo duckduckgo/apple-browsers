@@ -16,13 +16,38 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import DDGSyncCrypto
-import Persistence
 import Foundation
 import os.log
+import Persistence
+import PrivacyConfig
+
+// ToDo: make it generic
+private extension Data {
+
+    func base64URLEncodedString() -> String {
+        let base64 = self.base64EncodedString()
+        return base64
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+}
+
+private extension String {
+    func base64URLDecodedData() -> Data? {
+        var base64 = self.replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let padding = (4 - (base64.count % 4)) % 4
+        if padding > 0 {
+            base64.append(String(repeating: "=", count: padding))
+        }
+        return Data(base64Encoded: base64)
+    }
+}
 
 public class DDGSync: DDGSyncing {
 
@@ -33,9 +58,15 @@ public class DDGSync: DDGSyncing {
         $featureFlags.eraseToAnyPublisher()
     }
 
-    enum Constants {
+    public enum Constants {
         public static let syncEnabledKey = "com.duckduckgo.sync.enabled"
         public static let keychainAttrMigratedKey = "com.duckduckgo.sync.keychain.attr.migrated"
+        static let aiChatHistoryEnabledKey = "com.duckduckgo.aichat.sync.chatHistoryEnabled"
+    }
+
+    private enum UnauthenticatedHandling {
+        case logoutOn401
+        case doNotLogoutOn401
     }
 
     @Published public private(set) var authState = SyncAuthState.initializing
@@ -67,18 +98,21 @@ public class DDGSync: DDGSyncing {
     }
 
     public weak var dataProvidersSource: DataProvidersSource?
+    private var customOperations: [any SyncCustomOperation] = []
 
     /// This is the constructor intended for use by app clients.
     public convenience init(dataProvidersSource: DataProvidersSource,
                             errorEvents: EventMapping<SyncError>,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             keyValueStore: ThrowingKeyValueStoring,
-                            environment: ServerEnvironment = .production) {
+                            environment: ServerEnvironment = .production,
+                            shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }) {
         let dependencies = ProductionDependencies(
             serverEnvironment: environment,
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
-            errorEvents: errorEvents
+            errorEvents: errorEvents,
+            shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled
         )
         self.init(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
     }
@@ -141,6 +175,44 @@ public class DDGSync: DDGSyncing {
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
+    }
+
+    public func mainTokenRescope(to scope: String) async throws -> String? {
+        guard let account = account else { throw SyncError.accountNotFound }
+        guard let token = account.token else { throw SyncError.noToken }
+        do {
+            return try await dependencies.createTokenRescope().rescope(scope: scope, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func deleteAIChats(until: Date) async throws {
+        guard let account = account else { throw SyncError.accountNotFound }
+        guard let token = account.token else { throw SyncError.noToken }
+        do {
+            try await dependencies.createAIChats().delete(until: until, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error, policy: .doNotLogoutOn401)
+        }
+    }
+
+    public func deleteAIChats(chatIds: [String]) async throws {
+        guard let account = account else { throw SyncError.accountNotFound }
+        guard let token = account.token else { throw SyncError.noToken }
+        do {
+            try await dependencies.createAIChats().delete(chatIds: chatIds, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error, policy: .doNotLogoutOn401)
+        }
+    }
+
+    public func setAIChatHistoryEnabled(_ enabled: Bool) {
+        try? dependencies.keyValueStore.set(enabled, forKey: Constants.aiChatHistoryEnabledKey)
+    }
+
+    public var isAIChatHistoryEnabled: Bool {
+        (try? dependencies.keyValueStore.object(forKey: Constants.aiChatHistoryEnabledKey) as? Bool) == true
     }
 
     public func disconnect() async throws {
@@ -219,6 +291,39 @@ public class DDGSync: DDGSyncing {
         initializeIfNeeded()
     }
 
+    public func encryptAndBase64Encode(_ values: [String]) throws -> [String] {
+        let key = try dependencies.crypter.fetchSecretKey()
+        return try values.map { try dependencies.crypter.encryptAndBase64Encode($0, using: key) }
+    }
+
+    public func base64DecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        let key = try dependencies.crypter.fetchSecretKey()
+        return try values.map { try dependencies.crypter.base64DecodeAndDecrypt($0, using: key) }
+    }
+
+    public func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
+        let key = try dependencies.crypter.fetchSecretKey()
+        return try values.map { value in
+            guard let plaintextData = value.base64URLDecodedData() else {
+                throw SyncError.failedToEncryptValue("Unable to decode Base64URL value")
+            }
+            return try dependencies.crypter.encrypt(plaintextData, using: key).base64URLEncodedString()
+        }
+    }
+
+    public func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        let key = try dependencies.crypter.fetchSecretKey()
+        return try values.map { value in
+            guard !value.isEmpty else { return "" }
+
+            guard let encryptedData = value.base64URLDecodedData() else {
+                throw SyncError.failedToDecryptValue("Unable to decode Base64URL value")
+            }
+
+            return try dependencies.crypter.decryptData(encryptedData, using: key).base64URLEncodedString()
+        }
+    }
+
     // MARK: -
 
     var dependencies: SyncDependencies
@@ -273,10 +378,36 @@ public class DDGSync: DDGSyncing {
 
         // Proceed to initialization - if needed
         guard syncEnabled else {
-            if account != nil {
+            let shouldPreserveAccount = dependencies.shouldPreserveAccountWhenSyncDisabled()
+
+            let storedAccount: SyncAccount?
+            let accountReadFailed: Bool
+            do {
+                storedAccount = try dependencies.secureStore.account()
+                accountReadFailed = false
+            } catch {
+                dependencies.errorEvents.fire(.failedToLoadAccount, error: error)
+                storedAccount = nil
+                accountReadFailed = true
+            }
+
+            // Feature-flagged in the app layer (FeatureFlag.syncAutoRestore) and only true when the user opted in.
+            if shouldPreserveAccount, storedAccount != nil || accountReadFailed {
+                authState = .inactive
+                return
+            }
+
+            var didRemoveAccount = false
+            do {
+                try dependencies.secureStore.removeAccount()
+                didRemoveAccount = true
+            } catch {
+                dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
+            }
+
+            if didRemoveAccount, storedAccount != nil {
                 dependencies.errorEvents.fire(.accountRemoved(.syncEnabledNotSetOnKeyValueStore))
             }
-            try? dependencies.secureStore.removeAccount()
             authState = .inactive
             return
         }
@@ -305,6 +436,34 @@ public class DDGSync: DDGSyncing {
         } catch {
             dependencies.errorEvents.fire(.failedToSetupEngine, error: error)
         }
+    }
+
+    public func enableSyncFromPreservedAccount() async throws {
+        if isSyncEngineReady {
+            return
+        }
+
+        try dependencies.keyValueStore.set(true, forKey: Constants.syncEnabledKey)
+        authState = .initializing
+        initializeIfNeeded()
+
+        guard isSyncEngineReady else {
+            authState = .inactive
+            do {
+                try dependencies.keyValueStore.removeObject(forKey: Constants.syncEnabledKey)
+            } catch {
+                try? dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
+            }
+            throw SyncError.failedToSetupEngine
+        }
+
+        dependencies.scheduler.notifyAppLifecycleEvent()
+    }
+
+    public func removePreservedSyncAccount() throws {
+        guard authState == .inactive else { return }
+        guard try dependencies.secureStore.account() != nil else { return }
+        try removeAccount(reason: .userStartedFreshSetup)
     }
 
     private func updateAccount(_ account: SyncAccount) throws {
@@ -393,6 +552,18 @@ public class DDGSync: DDGSyncing {
 
         dependencies.scheduler.isEnabled = true
         self.syncQueue = syncQueue
+        setCustomOperations(customOperations)
+    }
+
+    public func setCustomOperations(_ operations: [any SyncCustomOperation]) {
+        customOperations = operations
+        syncQueue?.customOperations = operations
+    }
+
+    private var isSyncEngineReady: Bool {
+        (authState == .active || authState == .addingNewDevice)
+        && syncQueue != nil
+        && dependencies.scheduler.isEnabled
     }
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
@@ -400,7 +571,13 @@ public class DDGSync: DDGSyncing {
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
         isDataSyncingFeatureFlagEnabledCancellable?.cancel()
-        try syncQueue?.dataProviders.forEach { try $0.deregisterFeature() }
+        let providersToDeregister: [DataProviding]
+        if let activeProviders = syncQueue?.dataProviders, !activeProviders.isEmpty {
+            providersToDeregister = activeProviders
+        } else {
+            providersToDeregister = dataProvidersSource?.makeDataProviders() ?? []
+        }
+        try providersToDeregister.forEach { try $0.deregisterFeature() }
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()
@@ -408,10 +585,15 @@ public class DDGSync: DDGSyncing {
         dependencies.errorEvents.fire(.accountRemoved(reason))
     }
 
-    private func handleUnauthenticatedAndMap(_ error: Error) -> Error {
+    private func handleUnauthenticatedAndMap(_ error: Error,
+                                             policy: UnauthenticatedHandling = .logoutOn401) -> Error {
         guard let syncError = error as? SyncError,
               case .unexpectedStatusCode(let statusCode) = syncError,
               statusCode == 401 else {
+            return error
+        }
+
+        if policy == .doNotLogoutOn401 {
             return error
         }
 

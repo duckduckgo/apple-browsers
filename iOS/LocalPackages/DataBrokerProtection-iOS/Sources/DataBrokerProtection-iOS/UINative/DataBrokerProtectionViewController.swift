@@ -25,12 +25,15 @@ import PixelKit
 import WebKit
 import Combine
 import DataBrokerProtectionCore
+import os.log
+import PrivacyConfig
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate
     private var databaseDelegate: DBPIOSInterface.DatabaseDelegate
+    private var userEventsDelegate: DBPIOSInterface.UserEventsDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
 
@@ -39,6 +42,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let feedbackViewCreator: () -> (any View)
     private let openURLHandler: (URL) -> Void
     private var reloadObserver: NSObjectProtocol?
+    private var cancellables = Set<AnyCancellable>()
+    private let isWebViewInspectable: Bool
 
     private lazy var webUIViewModel: DBPUIViewModel = {
         guard let pixelKit = PixelKit.shared else {
@@ -49,6 +54,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
+                              userEventsDelegate: userEventsDelegate,
                               webUISettings: webUISettings,
                               pixelHandler: sharedPixelsHandler,
                               privacyConfigManager: privacyConfigManager,
@@ -74,19 +80,23 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
     public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
                 databaseDelegate: DBPIOSInterface.DatabaseDelegate,
+                userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 openURLHandler: @escaping (URL) -> Void,
-                feedbackViewCreator: @escaping () -> (any View)) {
+                feedbackViewCreator: @escaping () -> (any View),
+                isWebViewInspectable: Bool = false) {
         self.openURLHandler = openURLHandler
         self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
 
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
+        self.userEventsDelegate = userEventsDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
+        self.isWebViewInspectable = isWebViewInspectable
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -117,6 +127,10 @@ final public class DataBrokerProtectionViewController: UIViewController {
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = isWebViewInspectable
+        }
     }
 
     private func setupLoadingView() {
@@ -128,6 +142,39 @@ final public class DataBrokerProtectionViewController: UIViewController {
         ])
 
         loadingView.startAnimating()
+    }
+
+    override public func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        webUIViewModel.viewDidAppear()
+        subscribeToBackgroundRefreshNotifications()
+    }
+
+    override public func viewDidDisappear(_ animated: Bool) {
+        cancellables.removeAll()
+        webUIViewModel.viewDidDisappear()
+        super.viewDidDisappear(animated)
+    }
+
+    private func subscribeToBackgroundRefreshNotifications() {
+        cancellables.removeAll()
+
+        Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification),
+            NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange),
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+        )
+        .sink { [weak self] notification in
+            Logger.dataBrokerProtection.debug("Background refresh state may have changed: \(notification.name.rawValue)")
+            self?.notifyBackgroundAppRefreshChange()
+        }
+        .store(in: &cancellables)
+    }
+
+    private func notifyBackgroundAppRefreshChange() {
+        Task { @MainActor in
+            await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
+        }
     }
 }
 

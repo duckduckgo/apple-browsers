@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -207,7 +208,7 @@ final class PermissionManagerTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(except: fireproofDomains) {}
+        manager.burnPermissions(except: fireproofDomains) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -223,7 +224,7 @@ final class PermissionManagerTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) {}
+        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -233,6 +234,74 @@ final class PermissionManagerTests: XCTestCase {
                      .ask)
     }
 
+}
+
+// MARK: - Notification Permission Tests
+
+extension PermissionManagerTests {
+
+    /// Tests that notification permissions can be stored and retrieved.
+    func testNotificationPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .notification)
+        XCTAssertEqual(result, .allow)
+    }
+
+    /// Tests that notification permissions are cleared on burn.
+    func testNotificationPermissionsClearedOnBurn() {
+        let notificationEntity = PermissionEntity(
+            permission: .init(id: .init(), decision: .allow),
+            domain: "notifications.example.com",
+            type: .notification
+        )
+        store.permissions = [notificationEntity]
+
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+        manager.burnPermissions(except: fireproofDomains) { _ in }
+
+        let result = manager.permission(forDomain: "notifications.example.com", permissionType: .notification)
+        XCTAssertEqual(result, .ask, "Notification permission should be cleared after burn")
+    }
+}
+
+// MARK: - PermissionType Round-Trip Tests
+
+extension PermissionManagerTests {
+
+    func testAutoplayPolicyRawValueRoundTrip() {
+        XCTAssertEqual(PermissionType.autoplayPolicy.rawValue, "autoplay_policy")
+        XCTAssertEqual(PermissionType(rawValue: "autoplay_policy"), .autoplayPolicy)
+    }
+
+    func testAutoplayPolicyPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .allow)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToDeny() {
+        store.permissions = []
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToAsk() {
+        store.permissions = []
+
+        manager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .ask)
+    }
 }
 
 fileprivate extension PermissionEntity {

@@ -42,11 +42,7 @@ public final class SecurityScopedFileURLController {
     /// - Note: when `manageSecurityScope` is `true` access to the represented URL will be stopped for the whole app on the controller deallocation.
     public init(url: URL, manageSecurityScope: Bool = true) {
         assert(url.isFileURL)
-#if APPSTORE
-        let didStartAccess = manageSecurityScope && url.startAccessingSecurityScopedResource()
-#else
-        let didStartAccess = false
-#endif
+        let didStartAccess = NSApp.isSandboxed ? (manageSecurityScope && url.startAccessingSecurityScopedResource()) : false
         self.url = url
         self.isManagingSecurityScope = didStartAccess
         Logger.fileDownload.debug("\(didStartAccess ? "🧪 " : "")SecurityScopedFileURLController.init: \(url.sandboxExtensionRetainCount) – \"\(url.path)\"")
@@ -69,7 +65,8 @@ public final class SecurityScopedFileURLController {
                 url.stopAccessingSecurityScopedResource()
             }
 
-#if DEBUG && APPSTORE
+#if DEBUG
+            guard NSApp.isSandboxed else { return }
             url.ensureUrlIsNotWritable {
             #if SANDBOX_TEST_TOOL
                 Logger.fileDownload.log("❗️ url \(url.path) is still writable after stopping access to it")
@@ -176,7 +173,7 @@ public extension URL {
         (self as NSURL).sandboxExtensionRetainCount += 1
     }
 
-#if DEBUG && APPSTORE
+#if DEBUG
     /// sandbox extension URL access should be stopped after SecurityScopedFileURLController is deallocated - this function validates it and breaks if the file is still writable
     func ensureUrlIsNotWritable(or handler: () -> Void) {
         let fm = FileManager.default

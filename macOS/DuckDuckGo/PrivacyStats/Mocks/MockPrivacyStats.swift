@@ -26,7 +26,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
     let statsUpdatePublisher: AnyPublisher<Void, Never> = PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     func fetchPrivacyStats() async -> [String: Int64] { [:] }
     func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
-    func clearPrivacyStats() async {}
+    func clearPrivacyStats() async -> Result<Void, Error> { .success(()) }
     func handleAppTermination() async {}
 }
 

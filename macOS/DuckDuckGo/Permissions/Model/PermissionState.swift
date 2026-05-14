@@ -53,6 +53,11 @@ enum PermissionState: Equatable {
         return false
     }
 
+    var isReloading: Bool {
+        if case .reloading = self { return true }
+        return false
+    }
+
 }
 
 extension Optional where Wrapped == PermissionState {

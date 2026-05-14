@@ -103,23 +103,33 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
     private let isPaidAIChatFeatureEnabled: () -> Bool
+    private let isProTierPurchaseEnabled: () -> Bool
 
     let source: String
 
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.subscription]
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
+        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
+        if !isProTierPurchaseEnabled() {
+            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
+        }
+        return subcategories
+    }
+
+    init(subscriptionManager: any SubscriptionManager,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
          isPaidAIChatFeatureEnabled: @escaping () -> Bool,
+         isProTierPurchaseEnabled: @escaping () -> Bool,
          source: Source = .unknown) {
         self.viewState = .feedbackPending
         self.subscriptionManager = subscriptionManager
@@ -128,6 +138,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
         self.isPaidAIChatFeatureEnabled = isPaidAIChatFeatureEnabled
+        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         self.source = source.rawValue
 
         Task {
@@ -196,7 +207,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                                subcategory: selectedSubcategory)
             }
         case .contactSupportClick:
-            await openSupport()
+            openSupport()
         }
     }
 

@@ -20,7 +20,7 @@
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import AIChat
 import Persistence
@@ -132,10 +132,58 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOn_DefaultsToTrue() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = [.aiChatAutoAttachContextByDefault]
+
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: false)
+
+        // Then
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOff_DefaultsToFalse() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = []
+
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+
+        // Then
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
 }
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
     var customURL: String?
+    var contextualSessionTimerSeconds: Int?
     func reset() {}
+    func matchesCustomURL(_ url: URL) -> Bool { false }
 }

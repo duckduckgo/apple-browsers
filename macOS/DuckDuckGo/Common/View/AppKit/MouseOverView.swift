@@ -64,6 +64,7 @@ internal class MouseOverView: NSControl, Hoverable {
 
     @IBInspectable dynamic var backgroundInset: NSPoint = .zero
     @IBInspectable dynamic var mouseDownColor: NSColor?
+    @IBInspectable dynamic var mustAnimateOnMouseOver: Bool = false
 
     @IBInspectable var clickThrough: Bool = false
 

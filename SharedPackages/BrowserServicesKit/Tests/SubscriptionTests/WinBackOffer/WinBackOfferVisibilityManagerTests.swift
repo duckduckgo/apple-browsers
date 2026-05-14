@@ -24,14 +24,14 @@ import SubscriptionTestingUtilities
 
 final class WinBackOfferVisibilityManagerTests: XCTestCase {
 
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockStore: MockWinbackOfferStore!
     var mockFeatureFlagProvider: MockWinBackOfferFeatureFlagProvider!
     var manager: WinBackOfferVisibilityManager!
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockStore = MockWinbackOfferStore()
         mockFeatureFlagProvider = MockWinBackOfferFeatureFlagProvider()
         manager = WinBackOfferVisibilityManager(
@@ -65,7 +65,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-4 * .day)
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.appleSubscription
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         manager = WinBackOfferVisibilityManager(
             subscriptionManager: mockSubscriptionManager,
@@ -265,22 +265,13 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         XCTAssertNotNil(mockStore.offerPresentationDate)
     }
 
-    // MARK: - Offer redemption
+    // MARK: - Offer start window
 
-    func testWhenSettingOfferRedeemedToTrue_ItStoresTheRedemption() {
-        // When
-        manager.setOfferRedeemed(true)
-
-        // Then
-        XCTAssertTrue(mockStore.offerRedeemed)
-    }
-
-    // MARK: - Subscription change observer
-
-    func testWhenSubscriptionExpires_ItStoresChurnDate() async {
+    func testWhenUserChurnedMoreThan3DaysAgo_ItStartsTheOfferWindow() async {
         // Given
+        let expiryDate = Date().addingTimeInterval(-4 * .day)
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
-        let newSubscription = createMockSubscription(status: .expired)
+        let newSubscription = createMockSubscription(status: .expired, expiryDate: expiryDate)
 
         // When
         NotificationCenter.default.post(
@@ -295,7 +286,63 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then
-        XCTAssertNotNil(mockStore.churnDate)
+        XCTAssertTrue(manager.shouldShowLaunchMessage)
+    }
+
+    func testWhenUserChurnedLessThan3DaysAgo_ItDoesNotStartOfferWindow() async {
+        // Given
+        let expiryDate = Date().addingTimeInterval(-2 * .day)
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let newSubscription = createMockSubscription(status: .expired, expiryDate: expiryDate)
+
+        // When
+        NotificationCenter.default.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: [
+                UserDefaultsCacheKey.subscription: newSubscription
+            ]
+        )
+
+        // Give time for async notification handling
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertFalse(manager.shouldShowLaunchMessage)
+    }
+
+    // MARK: - Offer redemption
+
+    func testWhenSettingOfferRedeemedToTrue_ItStoresTheRedemption() {
+        // When
+        manager.setOfferRedeemed(true)
+
+        // Then
+        XCTAssertTrue(mockStore.offerRedeemed)
+    }
+
+    // MARK: - Subscription change observer
+
+    func testWhenSubscriptionExpires_ItStoresChurnDate() async {
+        // Given
+        let expiryDate = Date().addingTimeInterval(-100 * .day)
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let newSubscription = createMockSubscription(status: .expired, expiryDate: expiryDate)
+
+        // When
+        NotificationCenter.default.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: [
+                UserDefaultsCacheKey.subscription: newSubscription
+            ]
+        )
+
+        // Give time for async notification handling
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertEqual(mockStore.churnDate, expiryDate)
         XCTAssertFalse(mockStore.offerRedeemed)
         XCTAssertNil(mockStore.offerPresentationDate)
     }
@@ -382,16 +429,19 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func createMockSubscription(status: DuckDuckGoSubscription.Status) -> DuckDuckGoSubscription {
+    private func createMockSubscription(status: DuckDuckGoSubscription.Status, expiryDate: Date = Date().addingTimeInterval(30 * .day)) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(
             productId: "test-product",
             name: "Privacy Pro",
             billingPeriod: .monthly,
             startedAt: Date().addingTimeInterval(-30 * .day),
-            expiresOrRenewsAt: Date().addingTimeInterval(30 * .day),
+            expiresOrRenewsAt: expiryDate,
             platform: .apple,
             status: status,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
         )
     }
 }

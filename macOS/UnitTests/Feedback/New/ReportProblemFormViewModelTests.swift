@@ -400,11 +400,12 @@ final class ReportProblemFormViewModelTests: XCTestCase {
 // MARK: - Mock Objects
 
 final class MockFeedbackSender: FeedbackSenderImplementing {
+
     var feedbackSent = false
     var lastFeedback: Feedback?
     var lastDataImportReport: DataImportReportModel?
 
-    func sendFeedback(_ feedback: Feedback) {
+    func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)? = nil) {
         feedbackSent = true
         lastFeedback = feedback
     }

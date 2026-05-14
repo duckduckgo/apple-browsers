@@ -17,10 +17,13 @@
 //
 
 import AppKit
-import PixelKit
 import BrowserServicesKit
-import DDGSync
 import Configuration
+import ContentBlocking
+import DDGSync
+import PixelKit
+import Suggestions
+import enum UserScript.UserScriptError
 
 enum GeneralPixel: PixelKitEvent {
 
@@ -28,6 +31,8 @@ enum GeneralPixel: PixelKitEvent {
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
+    case crashReportingFailedToReadContents
+    case crashReportSent
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -92,6 +97,21 @@ enum GeneralPixel: PixelKitEvent {
 
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
+
+    // Passwords Status Bar
+    // See macOS/PixelDefinitions/pixels/definitions/passwords_status_bar_pixels.json5
+    case autofillPasswordsStatusBarSettingEnabled
+    case autofillPasswordsStatusBarSettingDisabled
+    case autofillPasswordsStatusBarIconClicked
+
+    // Warn Before Quit
+    // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
+    // Discussion: https://app.asana.com/0/137249556945/1212837417207452
+    case warnBeforeQuitShown
+    case warnBeforeQuitQuit
+    case warnBeforeQuitCancelled
+    case warnBeforeQuitDontShowAgain
+    case warnBeforeQuitSettingsDisabled
 
     case bitwardenPasswordAutofilled
     case bitwardenPasswordSaved
@@ -202,24 +222,29 @@ enum GeneralPixel: PixelKitEvent {
     case syncDuckAddressOverride
     case syncSuccessRateDaily
     case syncLocalTimestampResolutionTriggered(Feature)
+    case syncAiChatActiveDaily
     case syncBookmarksObjectLimitExceededDaily
     case syncCredentialsObjectLimitExceededDaily
     case syncCreditCardsObjectLimitExceededDaily
     case syncIdentitiesObjectLimitExceededDaily
+    case syncAiChatsObjectLimitExceededDaily
     case syncBookmarksRequestSizeLimitExceededDaily
     case syncCredentialsRequestSizeLimitExceededDaily
     case syncCreditCardsRequestSizeLimitExceededDaily
     case syncIdentitiesRequestSizeLimitExceededDaily
+    case syncAiChatsRequestSizeLimitExceededDaily
     case syncBookmarksTooManyRequestsDaily
     case syncCredentialsTooManyRequestsDaily
     case syncCreditCardsTooManyRequestsDaily
     case syncIdentitiesTooManyRequestsDaily
     case syncSettingsTooManyRequestsDaily
+    case syncAiChatsTooManyRequestsDaily
     case syncBookmarksValidationErrorDaily
     case syncCredentialsValidationErrorDaily
     case syncCreditCardsValidationErrorDaily
     case syncIdentitiesValidationErrorDaily
     case syncSettingsValidationErrorDaily
+    case syncAiChatsValidationErrorDaily
     case syncDebugWasDisabledUnexpectedly
 
     // Remote Messaging Framework
@@ -229,6 +254,7 @@ enum GeneralPixel: PixelKitEvent {
     case remoteMessageActionClicked
     case remoteMessagePrimaryActionClicked
     case remoteMessageSecondaryActionClicked
+    case remoteMessageDebugCouldNotLoadDatabase
 
     // DataBroker Protection Waitlist
     case dataBrokerProtectionWaitlistUserActive
@@ -250,15 +276,10 @@ enum GeneralPixel: PixelKitEvent {
     case defaultRequestedFromHomepage
     case defaultRequestedFromHomepageSetupView
     case defaultRequestedFromSettings
-    case defaultRequestedFromOnboarding
     case defaultRequestedFromMainMenu
     case defaultRequestedFromMoreOptionsMenu
 
     // Adding to the Dock
-    case addToDockOnboardingStepPresented
-    case userAddedToDockDuringOnboarding
-    case userSkippedAddingToDockFromOnboarding
-    case startBrowsingOnboardingStepPresented
     case addToDockNewTabPageCardPresented
     case userAddedToDockFromNewTabPageCard
     case userAddedToDockFromSettings
@@ -266,6 +287,7 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromMoreOptionsMenu
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
+    case settingsAddToDockShowMeHowClicked
 
     // SERP Settings
     // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
@@ -274,6 +296,26 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsKeyValueStoreWriteError
     case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
+
+    case duckAiNativeStorageMigrationDoneUnique(key: String)
+    case duckAiNativeStorageMigrationDoneCount(key: String)
+    case duckAiNativeStorageMigrationDoneBlankCount
+
+    case duckAiNativeStorageInitSuccess
+    case duckAiNativeStorageInitError
+    case duckAiNativeStorageMigrationStarted
+    case duckAiNativeStorageMigrationAlreadyDone
+    case duckAiNativeStorageMigrationError
+    case duckAiNativeStorageSettingsPutError
+    case duckAiNativeStorageSettingsGetError
+    case duckAiNativeStorageSettingsDeleteError
+    case duckAiNativeStorageChatPutError
+    case duckAiNativeStorageChatGetError
+    case duckAiNativeStorageChatDeleteError
+    case duckAiNativeStorageFilePutError
+    case duckAiNativeStorageFileGetError
+    case duckAiNativeStorageFileListError
+    case duckAiNativeStorageFileDeleteError
 
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
@@ -293,8 +335,21 @@ enum GeneralPixel: PixelKitEvent {
     case autocompleteToggledOff
     case autocompleteToggledOn
 
+    /// Event Trigger: User selects a suggestion by clicking with the mouse
+    case suggestionSubmittedMouse(suggestionCategory: SuggestionPixelCategory?)
+
+    /// Event Trigger: User selects a suggestion by pressing enter
+    case suggestionSubmittedKeyboard(suggestionCategory: SuggestionPixelCategory?)
+
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
+    case onboardingStepCompleteWelcome
+    case onboardingStepCompleteGetStarted
+    case onboardingStepCompletePrivateByDefault
+    case onboardingStepCompleteCleanerBrowsing
+    case onboardingStepCompleteSystemSettings
+    case onboardingStepCompleteCustomize
+    case onboardingFinalStepComplete
 
     // MARK: - Advanced Usage
 
@@ -347,6 +402,7 @@ enum GeneralPixel: PixelKitEvent {
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
+    case dbValueTransformerRegistrationError
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -427,30 +483,6 @@ enum GeneralPixel: PixelKitEvent {
 
     case removedInvalidBookmarkManagedObjects
 
-    case bitwardenNotResponding
-    case bitwardenRespondedCannotDecrypt
-    case bitwardenHandshakeFailed
-    case bitwardenDecryptionOfSharedKeyFailed
-    case bitwardenStoringOfTheSharedKeyFailed
-    case bitwardenCredentialRetrievalFailed
-    case bitwardenCredentialCreationFailed
-    case bitwardenCredentialUpdateFailed
-    case bitwardenRespondedWithError
-    case bitwardenNoActiveVault
-    case bitwardenParsingFailed
-    case bitwardenStatusParsingFailed
-    case bitwardenHmacComparisonFailed
-    case bitwardenDecryptionFailed
-    case bitwardenSendingOfMessageFailed
-    case bitwardenSharedKeyInjectionFailed
-
-    case updaterAborted(reason: String)
-    case updaterDidFindUpdate
-    case updaterDidDownloadUpdate
-    case updaterDidRunUpdate
-    case updaterAttemptToRestartWithoutResumeBlock
-    case releaseNotesEmpty
-
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
     case historyEntryDecryptionFailedUnique
@@ -476,6 +508,7 @@ enum GeneralPixel: PixelKitEvent {
     case bookmarksSortByName(origin: String)
     case bookmarksSearchExecuted(origin: String)
     case bookmarksSearchResultClicked(origin: String)
+    case bookmarksSaveAllOpenTabs
 
     case syncSentUnauthenticatedRequest
     case syncMetadataCouldNotLoadDatabase
@@ -494,6 +527,8 @@ enum GeneralPixel: PixelKitEvent {
     case syncSettingsFailed
     case syncSettingsMetadataUpdateFailed
     case syncSettingsPatchCompressionFailed
+    case syncAiChatsFailed
+    case syncAiChatsPatchCompressionFailed
     case syncMigratedToFileStore
     case syncFailedToMigrateToFileStore
     case syncFailedToInitFileStore
@@ -555,15 +590,23 @@ enum GeneralPixel: PixelKitEvent {
      * - App crashes after this pixel is fired.
      * - Useful for investigating the underlying error causing the failure.
      */
-    case userScriptLoadJSFailed(jsFile: String, error: Error)
+    case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
+
+    // Website Autoplay
+    case autoplaySettingAllowAll
+    case autoplaySettingBlockAudio
+    case autoplaySettingBlockAll
 
     var name: String {
         switch self {
         case .crash(let appIdentifier):
-            if let appIdentifier {
-                return "m_mac_crash_\(appIdentifier.rawValue)"
-            } else {
+            switch appIdentifier {
+            case .app:
                 return "m_mac_crash"
+            case .some(let identifier):
+                return "m_mac_crash_\(identifier.rawValue)"
+            case .none:
+                return "m_mac_crash_unknown"
             }
 
         case .crashOnCrashHandlersSetUp:
@@ -572,8 +615,14 @@ enum GeneralPixel: PixelKitEvent {
         case .crashReportCRCIDMissing:
             return "m_mac_crashreporting_crcid-missing"
 
+        case .crashReportingFailedToReadContents:
+            return "m_mac_crashreporting_failed_to_read_crash_contents"
+
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
+
+        case .crashReportSent:
+            return "m_mac_crash-report_sent"
 
         case .compileRulesWait(onboardingShown: let onboardingShown, waitTime: let waitTime, result: let result):
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
@@ -703,6 +752,24 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autofill_logins_settings_enabled"
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
+
+        case .autofillPasswordsStatusBarSettingEnabled:
+            return "m_mac_autofill_passwords_status-bar_setting_enabled"
+        case .autofillPasswordsStatusBarSettingDisabled:
+            return "m_mac_autofill_passwords_status-bar_setting_disabled"
+        case .autofillPasswordsStatusBarIconClicked:
+            return "m_mac_autofill_passwords_status-bar_icon_clicked"
+
+        case .warnBeforeQuitShown:
+            return "m_mac_warn-before-quit_shown"
+        case .warnBeforeQuitQuit:
+            return "m_mac_warn-before-quit_quit"
+        case .warnBeforeQuitCancelled:
+            return "m_mac_warn-before-quit_cancelled"
+        case .warnBeforeQuitDontShowAgain:
+            return "m_mac_warn-before-quit_dont-show-again"
+        case .warnBeforeQuitSettingsDisabled:
+            return "m_mac_settings_warn-before-quit_disabled"
 
         case .bitwardenPasswordAutofilled:
             return "m_mac_bitwarden_autofill_password"
@@ -876,24 +943,29 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature):
             return "m_mac_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_mac_sync_ai_chat_active_daily"
         case .syncBookmarksObjectLimitExceededDaily: return "m_mac_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_mac_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_mac_sync_credit_cards_object_limit_exceeded_daily"
         case .syncIdentitiesObjectLimitExceededDaily: return "m_mac_sync_identities_object_limit_exceeded_daily"
+        case .syncAiChatsObjectLimitExceededDaily: return "m_mac_sync_ai_chats_object_limit_exceeded_daily"
         case .syncBookmarksRequestSizeLimitExceededDaily: return "m_mac_sync_bookmarks_request_size_limit_exceeded_daily"
         case .syncCredentialsRequestSizeLimitExceededDaily: return "m_mac_sync_credentials_request_size_limit_exceeded_daily"
         case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_mac_sync_credit_cards_request_size_limit_exceeded_daily"
         case .syncIdentitiesRequestSizeLimitExceededDaily: return "m_mac_sync_identities_request_size_limit_exceeded_daily"
+        case .syncAiChatsRequestSizeLimitExceededDaily: return "m_mac_sync_ai_chats_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_mac_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_mac_sync_credentials_too_many_requests_daily"
         case .syncCreditCardsTooManyRequestsDaily: return "m_mac_sync_credit_cards_too_many_requests_daily"
         case .syncIdentitiesTooManyRequestsDaily: return "m_mac_sync_identities_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_mac_sync_settings_too_many_requests_daily"
+        case .syncAiChatsTooManyRequestsDaily: return "m_mac_sync_ai_chats_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_mac_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_mac_sync_credentials_validation_error_daily"
         case .syncCreditCardsValidationErrorDaily: return "m_mac_sync_credit_cards_validation_error_daily"
         case .syncIdentitiesValidationErrorDaily: return "m_mac_sync_identities_validation_error_daily"
         case .syncSettingsValidationErrorDaily: return "m_mac_sync_settings_validation_error_daily"
+        case .syncAiChatsValidationErrorDaily: return "m_mac_sync_ai_chats_validation_error_daily"
         case .syncDebugWasDisabledUnexpectedly: return "m_mac_sync_was_disabled_unexpectedly"
 
         case .remoteMessageShown: return "m_mac_remote_message_shown"
@@ -902,6 +974,7 @@ enum GeneralPixel: PixelKitEvent {
         case .remoteMessageActionClicked: return "m_mac_remote_message_action_clicked"
         case .remoteMessagePrimaryActionClicked: return "m_mac_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_mac_remote_message_secondary_action_clicked"
+        case .remoteMessageDebugCouldNotLoadDatabase: return "m_mac_debug_remote_message_could-not-load-database"
 
         case .dataBrokerProtectionWaitlistUserActive:
             return "m_mac_dbp_waitlist_user_active"
@@ -937,14 +1010,9 @@ enum GeneralPixel: PixelKitEvent {
         case .defaultRequestedFromHomepage: return "m_mac_default_requested_from_homepage"
         case .defaultRequestedFromHomepageSetupView: return "m_mac_default_requested_from_homepage_setup_view"
         case .defaultRequestedFromSettings: return "m_mac_default_requested_from_settings"
-        case .defaultRequestedFromOnboarding: return "m_mac_default_requested_from_onboarding"
         case .defaultRequestedFromMainMenu: return "m_mac_default_requested_from_main_menu"
         case .defaultRequestedFromMoreOptionsMenu: return "m_mac_default_requested_from_more_options_menu"
 
-        case .addToDockOnboardingStepPresented: return "m_mac_add_to_dock_onboarding_step_presented"
-        case .userAddedToDockDuringOnboarding: return "m_mac_user_added_to_dock_during_onboarding"
-        case .userSkippedAddingToDockFromOnboarding: return "m_mac_user_skipped_adding_to_dock_from_onboarding"
-        case .startBrowsingOnboardingStepPresented: return "m_mac_start_browsing_onboarding_step_presented"
         case .addToDockNewTabPageCardPresented: return "m_mac_add_to_dock_new_tab_page_card_presented_u"
         case .userAddedToDockFromNewTabPageCard: return "m_mac_user_added_to_dock_from_new_tab_page_card"
         case .userAddedToDockFromSettings: return "m_mac_user_added_to_dock_from_settings"
@@ -952,12 +1020,33 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromMoreOptionsMenu: return "m_mac_user_added_to_dock_from_more_options_menu"
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
+        case .settingsAddToDockShowMeHowClicked: return "m_mac_settings_add-to-dock_show-me-how-clicked"
 
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
         case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
+
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_mac_duck-ai_native-storage_migration_done_blank_count"
+
+        case .duckAiNativeStorageInitSuccess: return "m_mac_duck-ai_native-storage_init_success"
+        case .duckAiNativeStorageInitError: return "m_mac_duck-ai_native-storage_init_error"
+        case .duckAiNativeStorageMigrationStarted: return "m_mac_duck-ai_native-storage_migration_started"
+        case .duckAiNativeStorageMigrationAlreadyDone: return "m_mac_duck-ai_native-storage_migration_already-done"
+        case .duckAiNativeStorageMigrationError: return "m_mac_duck-ai_native-storage_migration_error"
+        case .duckAiNativeStorageSettingsPutError: return "m_mac_duck-ai_native-storage_settings-put_error"
+        case .duckAiNativeStorageSettingsGetError: return "m_mac_duck-ai_native-storage_settings-get_error"
+        case .duckAiNativeStorageSettingsDeleteError: return "m_mac_duck-ai_native-storage_settings-delete_error"
+        case .duckAiNativeStorageChatPutError: return "m_mac_duck-ai_native-storage_chat-put_error"
+        case .duckAiNativeStorageChatGetError: return "m_mac_duck-ai_native-storage_chat-get_error"
+        case .duckAiNativeStorageChatDeleteError: return "m_mac_duck-ai_native-storage_chat-delete_error"
+        case .duckAiNativeStorageFilePutError: return "m_mac_duck-ai_native-storage_file-put_error"
+        case .duckAiNativeStorageFileGetError: return "m_mac_duck-ai_native-storage_file-get_error"
+        case .duckAiNativeStorageFileListError: return "m_mac_duck-ai_native-storage_file-list_error"
+        case .duckAiNativeStorageFileDeleteError: return "m_mac_duck-ai_native-storage_file-delete_error"
 
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"
@@ -975,11 +1064,20 @@ enum GeneralPixel: PixelKitEvent {
         case .autocompleteClickOpenTab: return "m_mac_autocomplete_click_opentab"
         case .autocompleteToggledOff: return "m_mac_autocomplete_toggled_off"
         case .autocompleteToggledOn: return "m_mac_autocomplete_toggled_on"
+        case .suggestionSubmittedMouse: return "m_mac_suggestion_submitted_mouse"
+        case .suggestionSubmittedKeyboard: return "m_mac_suggestion_submitted_keyboard"
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
+        case .onboardingStepCompleteWelcome: return "m_mac_onboarding_step-complete-welcome"
+        case .onboardingStepCompleteGetStarted: return "m_mac_onboarding_step-complete-get-started"
+        case .onboardingStepCompletePrivateByDefault: return "m_mac_onboarding_step-complete-private-by-default"
+        case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleaner-browsing"
+        case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
+        case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
+        case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
 
-        // “Advanced” usage
+        // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
         case .windowSplitScreen: return "m_mac_window_split_screen"
 
@@ -994,6 +1092,8 @@ enum GeneralPixel: PixelKitEvent {
             return "database_container_error"
         case .dbInitializationError:
             return "dbie"
+        case .dbValueTransformerRegistrationError:
+            return "db_value_transformer_registration_error"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1154,52 +1254,6 @@ enum GeneralPixel: PixelKitEvent {
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"
 
-        case .bitwardenNotResponding:
-            return "bitwarden_not_responding"
-        case .bitwardenRespondedCannotDecrypt:
-            return "bitwarden_responded_cannot_decrypt_d"
-        case .bitwardenHandshakeFailed:
-            return "bitwarden_handshake_failed"
-        case .bitwardenDecryptionOfSharedKeyFailed:
-            return "bitwarden_decryption_of_shared_key_failed"
-        case .bitwardenStoringOfTheSharedKeyFailed:
-            return "bitwarden_storing_of_the_shared_key_failed"
-        case .bitwardenCredentialRetrievalFailed:
-            return "bitwarden_credential_retrieval_failed"
-        case .bitwardenCredentialCreationFailed:
-            return "bitwarden_credential_creation_failed"
-        case .bitwardenCredentialUpdateFailed:
-            return "bitwarden_credential_update_failed"
-        case .bitwardenRespondedWithError:
-            return "bitwarden_responded_with_error"
-        case .bitwardenNoActiveVault:
-            return "bitwarden_no_active_vault"
-        case .bitwardenParsingFailed:
-            return "bitwarden_parsing_failed"
-        case .bitwardenStatusParsingFailed:
-            return "bitwarden_status_parsing_failed"
-        case .bitwardenHmacComparisonFailed:
-            return "bitwarden_hmac_comparison_failed"
-        case .bitwardenDecryptionFailed:
-            return "bitwarden_decryption_failed"
-        case .bitwardenSendingOfMessageFailed:
-            return "bitwarden_sending_of_message_failed"
-        case .bitwardenSharedKeyInjectionFailed:
-            return "bitwarden_shared_key_injection_failed"
-
-        case .updaterAborted:
-            return "updater_aborted"
-        case .updaterDidFindUpdate:
-            return "updater_did_find_update"
-        case .updaterDidDownloadUpdate:
-            return "updater_did_download_update"
-        case .updaterDidRunUpdate:
-            return "updater_did_run_update"
-        case .updaterAttemptToRestartWithoutResumeBlock:
-            return "updater_attempt_to_restart_without_resume_block"
-        case .releaseNotesEmpty:
-            return "m_mac_release_notes_empty"
-
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
         case .downloadListItemDecryptionFailedUnique:
@@ -1240,6 +1294,8 @@ enum GeneralPixel: PixelKitEvent {
         case .syncSettingsFailed: return "sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "sync_settings_patch_compression_failed"
+        case .syncAiChatsFailed: return "sync_ai_chats_failed"
+        case .syncAiChatsPatchCompressionFailed: return "sync_ai_chats_patch_compression_failed"
         case .syncMigratedToFileStore: return "sync_migrated_to_file_store"
         case .syncFailedToMigrateToFileStore: return "sync_failed_to_migrate_to_file_store"
         case .syncFailedToInitFileStore: return "sync_failed_to_init_file_store"
@@ -1290,6 +1346,7 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSortByName: return "m_mac_sort_bookmarks_by_name"
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
+        case .bookmarksSaveAllOpenTabs: return "m_mac_bookmarks_save-all-open-tabs"
 
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
@@ -1301,6 +1358,14 @@ enum GeneralPixel: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
+
+            // Website Autoplay
+        case .autoplaySettingAllowAll:
+            return "m_mac_autoplay_setting_allow-all"
+        case .autoplaySettingBlockAudio:
+            return "m_mac_autoplay_setting_block-audio"
+        case .autoplaySettingBlockAll:
+            return "m_mac_autoplay_setting_block-all"
         }
     }
 
@@ -1421,6 +1486,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1454,15 +1522,419 @@ enum GeneralPixel: PixelKitEvent {
                 .autocompleteClickOpenTab(from: let source):
             return ["source": source.rawValue]
 
-        case .updaterAborted(let reason):
-            return ["reason": reason]
+        case .suggestionSubmittedMouse(let category),
+             .suggestionSubmittedKeyboard(let category):
+            if let category {
+                return ["suggestionCategory": category.rawValue]
+            }
+            return nil
 
-        case let .userScriptLoadJSFailed(jsFile, error):
+        case let .userScriptLoadJSFailed(jsFile, error, source):
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
+            params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
         default: return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .crash,
+                .crashOnCrashHandlersSetUp,
+                .crashReportingSubmissionFailed,
+                .crashReportCRCIDMissing,
+                .crashReportingFailedToReadContents,
+                .crashReportSent,
+                .compileRulesWait,
+                .launch,
+                .dailyActiveUser,
+                .dailyDefaultBrowser,
+                .dailyAddedToDock,
+                .dailyFireWindowConfigurationStartupFireWindowEnabled,
+                .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
+                .dailyFireWindowConfigurationFireAnimationEnabled,
+                .navigation,
+                .navigationToExternalURL,
+                .serp,
+                .serpInitial,
+                .dailyOsVersionCounter,
+                .dataImportFailed,
+                .dataImportSucceeded,
+                .favoritesImportFailed,
+                .favoritesImportSucceeded,
+                .formAutofilled,
+                .autofillItemSaved,
+                .autofillLoginsSaveLoginInlineDisplayed,
+                .autofillLoginsSaveLoginInlineConfirmed,
+                .autofillLoginsSaveLoginInlineDismissed,
+                .autofillLoginsSavePasswordInlineDisplayed,
+                .autofillLoginsSavePasswordInlineConfirmed,
+                .autofillLoginsSavePasswordInlineDismissed,
+                .autofillLoginsSaveLoginModalExcludeSiteConfirmed,
+                .autofillLoginsSettingsResetExcludedDisplayed,
+                .autofillLoginsSettingsResetExcludedConfirmed,
+                .autofillLoginsSettingsResetExcludedDismissed,
+                .autofillLoginsUpdatePasswordInlineDisplayed,
+                .autofillLoginsUpdatePasswordInlineConfirmed,
+                .autofillLoginsUpdatePasswordInlineDismissed,
+                .autofillLoginsUpdateUsernameInlineDisplayed,
+                .autofillLoginsUpdateUsernameInlineConfirmed,
+                .autofillLoginsUpdateUsernameInlineDismissed,
+                .autofillActiveUser,
+                .autofillEnabledUser,
+                .autofillOnboardedUser,
+                .autofillToggledOn,
+                .autofillToggledOff,
+                .autofillLoginsStacked,
+                .autofillCreditCardsStacked,
+                .autofillIdentitiesStacked,
+                .autofillManagementOpened,
+                .autofillManagementCopyUsername,
+                .autofillManagementCopyPassword,
+                .autofillManagementDeleteLogin,
+                .autofillManagementDeleteAllLogins,
+                .autofillManagementSaveLogin,
+                .autofillManagementUpdateLogin,
+                .autofillLoginsSettingsEnabled,
+                .autofillLoginsSettingsDisabled,
+                .autofillPasswordsStatusBarSettingEnabled,
+                .autofillPasswordsStatusBarSettingDisabled,
+                .autofillPasswordsStatusBarIconClicked,
+                .warnBeforeQuitShown,
+                .warnBeforeQuitQuit,
+                .warnBeforeQuitCancelled,
+                .warnBeforeQuitDontShowAgain,
+                .warnBeforeQuitSettingsDisabled,
+                .bitwardenPasswordAutofilled,
+                .bitwardenPasswordSaved,
+                .ampBlockingRulesCompilationFailed,
+                .adClickAttributionDetected,
+                .adClickAttributionActive,
+                .adClickAttributionPageLoads,
+                .jsPixel,
+                .newTabInitial,
+                .emailEnabledInitial,
+                .watchInDuckPlayerInitial,
+                .setAsDefaultInitial,
+                .importDataInitial,
+                .continueSetUpSectionHidden,
+                .fireButtonFirstBurn,
+                .fireButton,
+                .fireAnimationSetting,
+                .fireButtonDetailsViewed,
+                .duckPlayerDailyUniqueView,
+                .duckPlayerWeeklyUniqueView,
+                .duckPlayerViewFromYoutubeViaMainOverlay,
+                .duckPlayerViewFromYoutubeViaHoverButton,
+                .duckPlayerViewFromYoutubeAutomatic,
+                .duckPlayerViewFromSERP,
+                .duckPlayerViewFromOther,
+                .duckPlayerOverlayYoutubeImpressions,
+                .duckPlayerOverlayYoutubeWatchHere,
+                .duckPlayerSettingAlwaysDuckPlayer,
+                .duckPlayerSettingAlwaysOverlaySERP,
+                .duckPlayerSettingAlwaysOverlayYoutube,
+                .duckPlayerSettingAlwaysSettings,
+                .duckPlayerSettingNeverOverlaySERP,
+                .duckPlayerSettingNeverOverlayYoutube,
+                .duckPlayerSettingNeverSettings,
+                .duckPlayerSettingBackToDefault,
+                .duckPlayerWatchOnYoutube,
+                .duckPlayerAutoplaySettingsOn,
+                .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
+                .duckPlayerNewTabSettingsOn,
+                .duckPlayerNewTabSettingsOff,
+                .duckPlayerContingencySettingsDisplayed,
+                .duckPlayerContingencyLearnMoreClicked,
+                .duckPlayerYouTubeSignInErrorImpression,
+                .duckPlayerYouTubeAgeRestrictedErrorImpression,
+                .duckPlayerYouTubeNoEmbedErrorImpression,
+                .duckPlayerYouTubeUnknownErrorImpression,
+                .duckPlayerYouTubeSignInErrorDaily,
+                .duckPlayerYouTubeAgeRestrictedErrorDaily,
+                .duckPlayerYouTubeNoEmbedErrorDaily,
+                .duckPlayerYouTubeUnknownErrorDaily,
+                .duckPlayerYouTubeOverlayNavigationBack,
+                .duckPlayerYouTubeOverlayNavigationRefresh,
+                .duckPlayerYouTubeNavigationWithinYouTube,
+                .duckPlayerYouTubeOverlayNavigationOutsideYoutube,
+                .duckPlayerYouTubeOverlayNavigationClosed,
+                .duckPlayerYouTubeNavigationIdle30,
+                .dashboardProtectionAllowlistAdd,
+                .dashboardProtectionAllowlistRemove,
+                .vpnBreakageReport,
+                .pproFeedbackFeatureRequest,
+                .pproFeedbackGeneralFeedback,
+                .pproFeedbackReportIssue,
+                .pproFeedbackFormShow,
+                .pproFeedbackSubmitScreenShow,
+                .pproFeedbackSubmitScreenFAQClick,
+                .networkProtectionEnabledOnSearch,
+                .networkProtectionGeoswitchingOpened,
+                .networkProtectionGeoswitchingSetNearest,
+                .networkProtectionGeoswitchingSetCustom,
+                .networkProtectionGeoswitchingNoLocations,
+                .syncSignupDirect,
+                .syncSignupConnect,
+                .syncLogin,
+                .syncDaily,
+                .syncDuckAddressOverride,
+                .syncSuccessRateDaily,
+                .syncLocalTimestampResolutionTriggered,
+                .syncAiChatActiveDaily,
+                .syncBookmarksObjectLimitExceededDaily,
+                .syncCredentialsObjectLimitExceededDaily,
+                .syncCreditCardsObjectLimitExceededDaily,
+                .syncIdentitiesObjectLimitExceededDaily,
+                .syncAiChatsObjectLimitExceededDaily,
+                .syncBookmarksRequestSizeLimitExceededDaily,
+                .syncCredentialsRequestSizeLimitExceededDaily,
+                .syncCreditCardsRequestSizeLimitExceededDaily,
+                .syncIdentitiesRequestSizeLimitExceededDaily,
+                .syncAiChatsRequestSizeLimitExceededDaily,
+                .syncBookmarksTooManyRequestsDaily,
+                .syncCredentialsTooManyRequestsDaily,
+                .syncCreditCardsTooManyRequestsDaily,
+                .syncIdentitiesTooManyRequestsDaily,
+                .syncSettingsTooManyRequestsDaily,
+                .syncAiChatsTooManyRequestsDaily,
+                .syncBookmarksValidationErrorDaily,
+                .syncCredentialsValidationErrorDaily,
+                .syncCreditCardsValidationErrorDaily,
+                .syncIdentitiesValidationErrorDaily,
+                .syncSettingsValidationErrorDaily,
+                .syncAiChatsValidationErrorDaily,
+                .syncDebugWasDisabledUnexpectedly,
+                .remoteMessageShown,
+                .remoteMessageShownUnique,
+                .remoteMessageDismissed,
+                .remoteMessageActionClicked,
+                .remoteMessagePrimaryActionClicked,
+                .remoteMessageSecondaryActionClicked,
+                .remoteMessageDebugCouldNotLoadDatabase,
+                .dataBrokerProtectionWaitlistUserActive,
+                .dataBrokerProtectionWaitlistEntryPointMenuItemDisplayed,
+                .dataBrokerProtectionWaitlistIntroDisplayed,
+                .dataBrokerProtectionWaitlistNotificationShown,
+                .dataBrokerProtectionWaitlistNotificationTapped,
+                .dataBrokerProtectionWaitlistCardUITapped,
+                .dataBrokerProtectionWaitlistTermsAndConditionsDisplayed,
+                .dataBrokerProtectionWaitlistTermsAndConditionsAccepted,
+                .dataBrokerEnableLoginItemDaily,
+                .dataBrokerDisableLoginItemDaily,
+                .dataBrokerResetLoginItemDaily,
+                .dataBrokerDisableAndDeleteDaily,
+                .defaultRequestedFromHomepage,
+                .defaultRequestedFromHomepageSetupView,
+                .defaultRequestedFromSettings,
+                .defaultRequestedFromMainMenu,
+                .defaultRequestedFromMoreOptionsMenu,
+                .addToDockNewTabPageCardPresented,
+                .userAddedToDockFromNewTabPageCard,
+                .userAddedToDockFromSettings,
+                .userAddedToDockFromMainMenu,
+                .userAddedToDockFromMoreOptionsMenu,
+                .userAddedToDockFromDefaultBrowserSection,
+                .serpAddedToDock,
+                .serpSettingsSerializationFailed,
+                .serpSettingsKeyValueStoreReadError,
+                .serpSettingsKeyValueStoreWriteError,
+                .hideAIGeneratedImagesButtonClicked,
+                .openDuckAIButtonClick,
+                .duckAiNativeStorageMigrationDoneUnique,
+                .duckAiNativeStorageMigrationDoneCount,
+                .duckAiNativeStorageMigrationDoneBlankCount,
+                .duckAiNativeStorageInitSuccess,
+                .duckAiNativeStorageInitError,
+                .duckAiNativeStorageMigrationStarted,
+                .duckAiNativeStorageMigrationAlreadyDone,
+                .duckAiNativeStorageMigrationError,
+                .duckAiNativeStorageSettingsPutError,
+                .duckAiNativeStorageSettingsGetError,
+                .duckAiNativeStorageSettingsDeleteError,
+                .duckAiNativeStorageChatPutError,
+                .duckAiNativeStorageChatGetError,
+                .duckAiNativeStorageChatDeleteError,
+                .duckAiNativeStorageFilePutError,
+                .duckAiNativeStorageFileGetError,
+                .duckAiNativeStorageFileListError,
+                .duckAiNativeStorageFileDeleteError,
+                .protectionToggledOffBreakageReport,
+                .debugBreakageExperiment,
+                .passwordImportKeychainPrompt,
+                .passwordImportKeychainPromptDenied,
+                .autocompleteClickPhrase,
+                .autocompleteClickWebsite,
+                .autocompleteClickBookmark,
+                .autocompleteClickFavorite,
+                .autocompleteClickHistory,
+                .autocompleteClickOpenTab,
+                .autocompleteToggledOff,
+                .autocompleteToggledOn,
+                .suggestionSubmittedMouse,
+                .suggestionSubmittedKeyboard,
+                .onboardingExceptionReported,
+                .onboardingStepCompleteWelcome,
+                .onboardingStepCompleteGetStarted,
+                .onboardingStepCompletePrivateByDefault,
+                .onboardingStepCompleteCleanerBrowsing,
+                .onboardingStepCompleteSystemSettings,
+                .onboardingStepCompleteCustomize,
+                .onboardingFinalStepComplete,
+                .windowFullscreen,
+                .windowSplitScreen,
+                .pictureInPictureVideoPlayback,
+                .developerToolsOpened,
+                .keyValueFileStoreInitError,
+                .dbContainerInitializationError,
+                .dbInitializationError,
+                .dbValueTransformerRegistrationError,
+                .dbSaveExcludedHTTPSDomainsError,
+                .dbSaveBloomFilterError,
+                .remoteMessagingSaveConfigError,
+                .remoteMessagingUpdateMessageShownError,
+                .remoteMessagingUpdateMessageStatusError,
+                .configurationFetchError,
+                .couldNotLoadConfiguration,
+                .couldNotParseConfiguration,
+                .trackerDataReloadFailed,
+                .privacyConfigurationReloadFailed,
+                .configurationFileCoordinatorError,
+                .fileStoreWriteFailed,
+                .fileMoveToDownloadsFailed,
+                .fileAccessRelatedItemFailed,
+                .fileGetDownloadLocationFailed,
+                .fileDownloadCreatePresentersFailed,
+                .downloadResumeDataCodingFailed,
+                .suggestionsFetchFailed,
+                .appOpenURLFailed,
+                .appStateRestorationFailed,
+                .contentBlockingErrorReportingIssue,
+                .contentBlockingCompilationFailed,
+                .contentBlockingCompilationTime,
+                .contentBlockingLookupRulesSucceeded,
+                .contentBlockingFetchLRCSucceeded,
+                .contentBlockingNoMatchInLRC,
+                .contentBlockingLRCMissing,
+                .contentBlockingCompilationTaskPerformance,
+                .secureVaultInitError,
+                .secureVaultError,
+                .feedbackReportingFailed,
+                .blankNavigationOnBurnFailed,
+                .historyRemoveFailed,
+                .historyReloadFailed,
+                .historyCleanEntriesFailed,
+                .historyCleanVisitsFailed,
+                .historySaveFailed,
+                .historySaveFailedDaily,
+                .historyInsertVisitFailed,
+                .historyRemoveVisitsFailed,
+                .emailAutofillKeychainError,
+                .bookmarksStoreRootFolderMigrationFailed,
+                .bookmarksStoreFavoritesFolderMigrationFailed,
+                .adAttributionCompilationFailedForAttributedRulesList,
+                .adAttributionGlobalAttributedRulesDoNotExist,
+                .adAttributionDetectionHeuristicsDidNotMatchDomain,
+                .adAttributionLogicUnexpectedStateOnRulesCompiled,
+                .adAttributionLogicUnexpectedStateOnInheritedAttribution,
+                .adAttributionLogicUnexpectedStateOnRulesCompilationFailed,
+                .adAttributionDetectionInvalidDomainInParameter,
+                .adAttributionLogicRequestingAttributionTimedOut,
+                .adAttributionLogicWrongVendorOnSuccessfulCompilation,
+                .adAttributionLogicWrongVendorOnFailedCompilation,
+                .webKitDidTerminate,
+                .userViewedWebKitTerminationErrorPage,
+                .webKitTerminationLoop,
+                .webKitTerminationIndicatorClicked,
+                .webKitDidTerminateNonRecoverableAggregated,
+                .removedInvalidBookmarkManagedObjects,
+                .faviconDecryptionFailedUnique,
+                .downloadListItemDecryptionFailedUnique,
+                .historyEntryDecryptionFailedUnique,
+                .permissionDecryptionFailedUnique,
+                .missingParent,
+                .bookmarksSaveFailed,
+                .bookmarksSaveFailedOnImport,
+                .bookmarksCouldNotLoadDatabase,
+                .bookmarksCouldNotPrepareDatabase,
+                .bookmarksMigrationAlreadyPerformed,
+                .bookmarksMigrationFailed,
+                .bookmarksMigrationCouldNotPrepareDatabase,
+                .bookmarksMigrationCouldNotPrepareDatabaseOnFailedMigration,
+                .bookmarksMigrationCouldNotRemoveOldStore,
+                .bookmarksMigrationCouldNotPrepareMultipleFavoriteFolders,
+                .bookmarksSortButtonClicked,
+                .bookmarksSortButtonDismissed,
+                .bookmarksSortByName,
+                .bookmarksSearchExecuted,
+                .bookmarksSearchResultClicked,
+                .bookmarksSaveAllOpenTabs,
+                .syncSentUnauthenticatedRequest,
+                .syncMetadataCouldNotLoadDatabase,
+                .syncBookmarksProviderInitializationFailed,
+                .syncBookmarksFailed,
+                .syncBookmarksPatchCompressionFailed,
+                .syncCredentialsProviderInitializationFailed,
+                .syncCredentialsFailed,
+                .syncCredentialsPatchCompressionFailed,
+                .syncCreditCardsProviderInitializationFailed,
+                .syncCreditCardsFailed,
+                .syncCreditCardsPatchCompressionFailed,
+                .syncIdentitiesProviderInitializationFailed,
+                .syncIdentitiesFailed,
+                .syncIdentitiesPatchCompressionFailed,
+                .syncSettingsFailed,
+                .syncSettingsMetadataUpdateFailed,
+                .syncSettingsPatchCompressionFailed,
+                .syncAiChatsFailed,
+                .syncAiChatsPatchCompressionFailed,
+                .syncMigratedToFileStore,
+                .syncFailedToMigrateToFileStore,
+                .syncFailedToInitFileStore,
+                .syncSignupError,
+                .syncLoginError,
+                .syncLogoutError,
+                .syncUpdateDeviceError,
+                .syncRemoveDeviceError,
+                .syncRefreshDevicesError,
+                .syncDeleteAccountError,
+                .syncLoginExistingAccountError,
+                .syncCannotCreateRecoveryPDF,
+                .syncSecureStorageReadError,
+                .syncSecureStorageDecodingError,
+                .syncAccountRemoved,
+                .bookmarksCleanupFailed,
+                .bookmarksCleanupAttemptedWhileSyncWasEnabled,
+                .favoritesCleanupFailed,
+                .bookmarksFaviconsFetcherStateStoreInitializationFailed,
+                .bookmarksFaviconsFetcherFailed,
+                .credentialsDatabaseCleanupFailed,
+                .credentialsCleanupAttemptedWhileSyncWasEnabled,
+                .creditCardsCleanupError,
+                .creditCardsCleanupAttemptedWhileSyncWasEnabled,
+                .identitiesCleanupError,
+                .identitiesCleanupAttemptedWhileSyncWasEnabled,
+                .invalidPayload,
+                .burnerTabMisplaced,
+                .loginItemUpdateError,
+                .installationAttribution,
+                .secureVaultKeystoreEventL1KeyMigration,
+                .secureVaultKeystoreEventL2KeyMigration,
+                .secureVaultKeystoreEventL2KeyPasswordMigration,
+                .compilationFailed,
+                .pageRefreshThreeTimesWithin20Seconds,
+                .siteNotWorkingShown,
+                .siteNotWorkingWebsiteIsBroken,
+                .usageSegments,
+                .userScriptLoadJSFailed:
+            return [.pixelSource]
+        case .settingsAddToDockShowMeHowClicked:
+            return nil
         }
     }
 
@@ -1647,4 +2119,35 @@ enum GeneralPixel: PixelKitEvent {
         case addressBar = "address_bar"
     }
 
+}
+
+// MARK: - Suggestion Pixel Types
+
+/// Category of the selected suggestion in the search box
+enum SuggestionPixelCategory: String, CaseIterable {
+    case website = "website"
+    case bookmark = "bookmark"
+    case historyEntry = "history"
+    case openTab = "tab"
+    case phrase = "phrase"
+    case internalPage = "internal-page"
+
+    init?(from suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            self = .website
+        case .bookmark:
+            self = .bookmark
+        case .historyEntry:
+            self = .historyEntry
+        case .openTab:
+            self = .openTab
+        case .phrase:
+            self = .phrase
+        case .internalPage:
+            self = .internalPage
+        case .unknown, .askAIChat:
+            return nil
+        }
+    }
 }

@@ -20,6 +20,7 @@ import Cocoa
 
 protocol NotificationBarViewAnimated: NSView {
     func startAnimation(_ completion: @escaping () -> Void)
+    func cancelAnimation()
 }
 
 final class NavigationBarBadgeAnimationView: NSView {
@@ -28,6 +29,8 @@ final class NavigationBarBadgeAnimationView: NSView {
     enum AnimationType {
         case cookiePopupManaged
         case cookiePopupHidden
+        case trackersBlocked(count: Int)
+        case youTubeAdBlockOn
     }
 
     func prepareAnimation(_ type: AnimationType) {
@@ -35,9 +38,25 @@ final class NavigationBarBadgeAnimationView: NSView {
         let viewToAnimate: NotificationBarViewAnimated
         switch type {
         case .cookiePopupHidden:
-            viewToAnimate = CookieManagedNotificationContainerView(isCosmetic: true)
+            viewToAnimate = BadgeNotificationContainerView(isCosmetic: true)
         case .cookiePopupManaged:
-            viewToAnimate = CookieManagedNotificationContainerView(isCosmetic: false)
+            viewToAnimate = BadgeNotificationContainerView(isCosmetic: false)
+        case .trackersBlocked(let count):
+            let textGenerator: (Int) -> String = { currentCount in
+                UserText.omnibarNotificationTrackersBlocked(currentCount)
+            }
+            let text = UserText.omnibarNotificationTrackersBlocked(count)
+            viewToAnimate = BadgeNotificationContainerView(
+                customText: text,
+                useShieldIcon: true,
+                trackerCount: count,
+                textGenerator: textGenerator
+            )
+        case .youTubeAdBlockOn:
+            viewToAnimate = BadgeNotificationContainerView(
+                customText: UserText.omnibarNotificationYouTubeAdBlockOn,
+                useVideoPlayerIcon: true
+            )
         }
 
         addSubview(viewToAnimate)
@@ -50,7 +69,9 @@ final class NavigationBarBadgeAnimationView: NSView {
     }
 
     func removeAnimation() {
+        animatedView?.cancelAnimation()
         animatedView?.removeFromSuperview()
+        animatedView = nil
     }
 
     private func setupConstraints() {

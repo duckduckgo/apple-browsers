@@ -47,7 +47,15 @@ final class ScriptSourceProviderTests: XCTestCase {
         let experimentManager = MockContentScopeExperimentManager()
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
-        let sourceProvider = DefaultScriptSourceProvider(appSettings: AppSettingsMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), fireproofing: MockFireproofing(), contentScopeExperimentsManager: experimentManager)
+        let dependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                     sync: MockDDGSyncing(),
+                                                                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                                     contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+                                                                     fireproofing: MockFireproofing(),
+                                                                     contentScopeExperimentsManager: experimentManager,
+                                                                     internalUserDecider: MockInternalUserDecider(),
+                                                                     syncErrorHandler: CapturingAdapterErrorHandler())
+        let sourceProvider = DefaultScriptSourceProvider(dependencies: dependencies)
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)

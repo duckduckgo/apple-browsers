@@ -30,8 +30,11 @@ public enum VPNRoutingRange {
     public static let alwaysExcludedIPv6Range: [VPN.IPAddressRange] = [
         "fe80::/10",  /* link local */
         "ff00::/8",   /* multicast */
-        "fc00::/7",   /* local unicast */
         "::1/128",    /* loopback */
+    ]
+
+    public static let localIPv6NetworkRange: [VPN.IPAddressRange] = [
+        "fc00::/7",   /* fc00:: - fdff:: Unique Local Addresses (ULA) */
     ]
 
     public static let localNetworkRangeWithoutDNS: [VPN.IPAddressRange] = [

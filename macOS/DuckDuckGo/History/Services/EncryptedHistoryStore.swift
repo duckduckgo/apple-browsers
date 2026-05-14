@@ -24,7 +24,7 @@ import History
 import PixelKit
 import os.log
 
-final class EncryptedHistoryStore: HistoryStoring {
+actor EncryptedHistoryStore: HistoryStoring {
 
     init(context: NSManagedObjectContext) {
         self.context = context
@@ -66,7 +66,7 @@ final class EncryptedHistoryStore: HistoryStoring {
         }
     }
 
-    private func remove(_ identifiers: [UUID], context: NSManagedObjectContext) -> Result<Void, Error> {
+    nonisolated private func remove(_ identifiers: [UUID], context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
         let chunkedIdentifiers = identifiers.chunked(into: 100)
 
@@ -99,7 +99,7 @@ final class EncryptedHistoryStore: HistoryStoring {
         return .success(())
     }
 
-    private func reload(_ context: NSManagedObjectContext) -> Result<BrowsingHistory, Error> {
+    nonisolated private func reload(_ context: NSManagedObjectContext) -> Result<BrowsingHistory, Error> {
         let fetchRequest = HistoryEntryManagedObject.fetchRequest() as NSFetchRequest<HistoryEntryManagedObject>
         fetchRequest.returnsObjectsAsFaults = false
         do {
@@ -113,7 +113,7 @@ final class EncryptedHistoryStore: HistoryStoring {
         }
     }
 
-    private func clean(_ context: NSManagedObjectContext, until date: Date) -> Result<Void, Error> {
+    nonisolated private func clean(_ context: NSManagedObjectContext, until date: Date) -> Result<Void, Error> {
         switch cleanEntries(context, until: date) {
         case .success:
             return cleanVisits(context, until: date)
@@ -122,7 +122,7 @@ final class EncryptedHistoryStore: HistoryStoring {
         }
     }
 
-    private func cleanEntries(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
+    nonisolated private func cleanEntries(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
         let deleteRequest = NSFetchRequest<NSManagedObject>(entityName: HistoryEntryManagedObject.className())
         deleteRequest.predicate = NSPredicate(format: "lastVisit < %@", date as NSDate)
 
@@ -156,7 +156,7 @@ final class EncryptedHistoryStore: HistoryStoring {
         return .success(())
     }
 
-    private func cleanVisits(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
+    nonisolated private func cleanVisits(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
         let visitDeleteRequest = NSFetchRequest<VisitManagedObject>(entityName: VisitManagedObject.className())
         visitDeleteRequest.predicate = NSPredicate(format: "date < %@", date as NSDate)
 
@@ -261,9 +261,9 @@ final class EncryptedHistoryStore: HistoryStoring {
         }
     }
 
-    private func insertNewVisits(of historyEntry: HistoryEntry,
-                                 into historyEntryManagedObject: HistoryEntryManagedObject,
-                                 context: NSManagedObjectContext) -> Result<[VisitManagedObject], Error> {
+    nonisolated private func insertNewVisits(of historyEntry: HistoryEntry,
+                                             into historyEntryManagedObject: HistoryEntryManagedObject,
+                                             context: NSManagedObjectContext) -> Result<[VisitManagedObject], Error> {
         var result: [VisitManagedObject]? = Array()
         historyEntry.visits
             .filter {
@@ -287,9 +287,9 @@ final class EncryptedHistoryStore: HistoryStoring {
         }
     }
 
-    private func insert(visit: Visit,
-                        into historyEntryManagedObject: HistoryEntryManagedObject,
-                        context: NSManagedObjectContext) -> Result<VisitManagedObject, Error> {
+    nonisolated private func insert(visit: Visit,
+                                    into historyEntryManagedObject: HistoryEntryManagedObject,
+                                    context: NSManagedObjectContext) -> Result<VisitManagedObject, Error> {
         let insertedObject = NSEntityDescription.insertNewObject(forEntityName: VisitManagedObject.className(), into: context)
         guard let visitMO = insertedObject as? VisitManagedObject else {
             PixelKit.fire(DebugEvent(GeneralPixel.historyInsertVisitFailed))
@@ -314,7 +314,12 @@ final class EncryptedHistoryStore: HistoryStoring {
         } as Void
     }
 
-    private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        // macOS does not currently record tab history in core data - return empty array
+        return []
+    }
+
+    nonisolated private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
         let chunkedVisits = visits.chunkedSequence(into: 100)
 
@@ -395,7 +400,8 @@ fileprivate extension HistoryEntry {
                   visits: visits,
                   numberOfTrackersBlocked: Int(numberOfTrackersBlocked),
                   blockedTrackingEntities: Set<String>(blockedTrackingEntities.components(separatedBy: "|")),
-                  trackersFound: historyEntryMO.trackersFound)
+                  trackersFound: historyEntryMO.trackersFound,
+                  cookiePopupBlocked: historyEntryMO.cookiePopupBlocked)
 
         visits.forEach { visit in
             visit.historyEntry = self
@@ -425,6 +431,7 @@ fileprivate extension HistoryEntryManagedObject {
         numberOfTrackersBlocked = Int64(entry.numberOfTrackersBlocked)
         blockedTrackingEntities = entry.blockedTrackingEntities.isEmpty ? "" : entry.blockedTrackingEntities.joined(separator: "|")
         trackersFound = entry.trackersFound
+        cookiePopupBlocked = entry.cookiePopupBlocked
     }
 
 }

@@ -143,4 +143,15 @@ struct ClassifierTests {
         let decision = try Classifier.classify(input: string)
         #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
+
+    @Test("classifies custom schemes as URL")
+    func classifiesCustomSchemesAsURL() async throws {
+        #expect(try Classifier.classify(input: "databrokerprotection://show_dashboard") == .navigate(url: URL(string: "databrokerprotection://show_dashboard")!))
+        #expect(try Classifier.classify(input: "duck://newtab") == .navigate(url: URL(string: "duck://newtab")!))
+        #expect(try Classifier.classify(input: "mailto:user@example.com") == .navigate(url: URL(string: "mailto:user@example.com")!))
+        #expect(try Classifier.classify(input: "networkprotection://example") == .navigate(url: URL(string: "networkprotection://example")!))
+        #expect(try Classifier.classify(input: "webkit-extension://sample-extension") == .navigate(url: URL(string: "webkit-extension://sample-extension")!))
+        #expect(try Classifier.classify(input: "x-safari-https://example.com") == .navigate(url: URL(string: "x-safari-https://example.com")!))
+    }
+
 }

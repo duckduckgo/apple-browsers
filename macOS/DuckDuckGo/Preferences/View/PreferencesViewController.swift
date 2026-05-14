@@ -17,14 +17,16 @@
 //
 
 import AppKit
-import BrowserServicesKit
+import BWManagementShared
 import SwiftUI
 import SwiftUIExtensions
 import Combine
 import DDGSync
 import VPN
 import AIChat
+import PrivacyConfig
 import Subscription
+import WebExtensions
 
 final class PreferencesViewController: NSViewController {
 
@@ -37,8 +39,9 @@ final class PreferencesViewController: NSViewController {
     private var selectedTabContentCancellable: AnyCancellable?
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
-    private var bitwardenManager: BWManagement = BWManager.shared
+    private var bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager
     private let featureFlagger: FeatureFlagger
+    private let pinningManager: PinningManager
 
     init(
         syncService: DDGSyncing,
@@ -55,19 +58,24 @@ final class PreferencesViewController: NSViewController {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
+        subscriptionManager: any SubscriptionManager,
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        pinningManager: PinningManager,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagger = featureFlagger
         self.aiChatRemoteSettings = aiChatRemoteSettings
+        self.pinningManager = pinningManager
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
-                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
                                         subscriptionManager: subscriptionManager,
@@ -79,9 +87,12 @@ final class PreferencesViewController: NSViewController {
                                         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                         aiChatPreferences: aiChatPreferences,
                                         aboutPreferences: aboutPreferences,
+                                        dockPreferences: dockPreferences,
                                         accessibilityPreferences: accessibilityPreferences,
                                         duckPlayerPreferences: duckPlayerPreferences,
-                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager)
+                                        youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
+                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                        adBlockingAvailability: adBlockingAvailability)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -95,29 +106,21 @@ final class PreferencesViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if !Application.appDelegate.isUsingAuthV2 {
-            let prefRootView = Preferences.RootView(model: model,
-                                                    subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
-                                                    subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        } else {
-            let prefRootView = Preferences.RootViewV2(model: model,
-                                                      subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                      featureFlagger: featureFlagger,
-                                                      aiChatURLSettings: aiChatRemoteSettings,
-                                                      wideEvent: Application.appDelegate.wideEvent)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        }
+        let prefRootView = Preferences.RootViewV2(model: model,
+                                                  subscriptionManager: Application.appDelegate.subscriptionManager,
+                                                  subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatURLSettings: aiChatRemoteSettings,
+                                                  wideEvent: Application.appDelegate.wideEvent,
+                                                  pinningManager: pinningManager)
+        let host = NSHostingView(rootView: prefRootView)
+        view.addAndLayout(host)
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
         model.refreshSections()
-        bitwardenManager.refreshStatusIfNeeded()
+        bitwardenManager?.refreshStatusIfNeeded()
     }
 
     override func viewDidAppear() {

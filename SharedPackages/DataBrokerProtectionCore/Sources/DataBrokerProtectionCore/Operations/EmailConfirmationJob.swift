@@ -134,6 +134,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             dataBrokerVersion: broker.version,
             handler: jobDependencies.pixelHandler,
             parentURL: broker.parent,
+            isFreeScan: false,
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
@@ -216,6 +217,10 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
 
+        let applicationNameForUserAgent: String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
+            ? jobDependencies.applicationNameForUserAgent
+            : nil
+
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
         if let webRunnerForTesting = self.webRunnerForTesting {
             webRunner = webRunnerForTesting
@@ -227,6 +232,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
                 captchaService: jobDependencies.captchaService,
                 featureFlagger: jobDependencies.featureFlagger,
+                applicationNameForUserAgent: applicationNameForUserAgent,
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
@@ -251,7 +257,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
-                }
+                },
+                applicationNameForUserAgent: applicationNameForUserAgent
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")

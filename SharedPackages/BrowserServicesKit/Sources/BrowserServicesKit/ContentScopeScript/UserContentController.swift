@@ -19,6 +19,7 @@
 import Combine
 import Common
 import os.log
+import PrivacyConfig
 import QuartzCore
 import UserScript
 @preconcurrency import WebKit

@@ -17,10 +17,13 @@
 //
 
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
@@ -39,9 +42,9 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
         userScript = AutoconsentUserScript(
             config: MockPrivacyConfiguration(),
-            statsManager: MockAutoconsentDailyStat(),
             management: AutoconsentManagement(),
-            preferences: preferences
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger()
         )
     }
 
@@ -57,7 +60,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "file://helicopter"
         ])
@@ -76,7 +79,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "https://example.com"
         ])
@@ -102,11 +105,13 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     func testEval() {
-        let message = MockWKScriptMessage(name: "eval", body: [
+        let webView = WKWebView()
+        let message = WKScriptMessage.mock(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
-        ], webView: WKWebView())
+        ], webView: webView)
+
         let expect = expectation(description: "testEval")
         userScript.handleMessage(
             replyHandler: {(msg: Any?, _: String?) in
@@ -123,7 +128,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "popupFound", body: [
+        let message = WKScriptMessage.mock(name: "popupFound", body: [
             "type": "popupFound",
             "cmp": "some cmp",
             "url": "https://example.com"
@@ -138,31 +143,5 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             message: message
         )
         waitForExpectations(timeout: 1.0)
-    }
-}
-
-class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
     }
 }

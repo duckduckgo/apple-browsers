@@ -79,7 +79,15 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool
     public let supportsStandaloneMigration: Bool
+    public let supportsAIChatFullMode: Bool
+    public let supportsAIChatContextualMode: Bool
     public let appVersion: String
+    public let supportsHomePageEntryPoint: Bool
+    public let supportsOpenAIChatLink: Bool
+    public let supportsAIChatSync: Bool
+    public let supportsMultipleContexts: Bool
+    public let supportsTabPicker: Bool
+    public let supportsNativeStorage: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -89,10 +97,17 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativePrompt: false,
                                         supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: false,
-                                        supportsFullChatRestoration: false,
+                                        supportsURLChatIDRestoration: true,
+                                        supportsFullChatRestoration: true,
                                         supportsPageContext: false,
-                                        appVersion: "")
+                                        supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true,
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
 
 #if os(macOS)
@@ -105,7 +120,14 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
-                                        appVersion: "")
+                                        supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true,
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
     }
 
@@ -118,7 +140,15 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsURLChatIDRestoration: Bool,
                 supportsFullChatRestoration: Bool,
                 supportsPageContext: Bool,
-                appVersion: String) {
+                supportsAIChatFullMode: Bool,
+                supportsAIChatContextualMode: Bool,
+                appVersion: String,
+                supportsHomePageEntryPoint: Bool = true,
+                supportsOpenAIChatLink: Bool = true,
+                supportsAIChatSync: Bool,
+                supportsMultipleContexts: Bool = false,
+                supportsTabPicker: Bool = false,
+                supportsNativeStorage: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -129,13 +159,28 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsFullChatRestoration = supportsFullChatRestoration
         self.supportsPageContext = supportsPageContext
         self.supportsStandaloneMigration = supportsStandaloneMigration
+        self.supportsAIChatFullMode = supportsAIChatFullMode
+        self.supportsAIChatContextualMode = supportsAIChatContextualMode
         self.appVersion = appVersion
+        self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
+        self.supportsOpenAIChatLink = supportsOpenAIChatLink
+        self.supportsAIChatSync = supportsAIChatSync
+        self.supportsMultipleContexts = supportsMultipleContexts
+        self.supportsTabPicker = supportsTabPicker
+        self.supportsNativeStorage = supportsNativeStorage
     }
 }
 
 public struct AIChatNativePrompt: Codable, Equatable {
+    /// Mode value for image generation prompts.
+    public static let imageGenerationMode = "image-generation"
+    /// Mode value for voice-chat prompts. Duck.ai routes to the voice flow purely from this
+    /// mode in the handoff payload — no `?mode=voice` URL parameter is required.
+    public static let voiceMode = "voice-mode"
+
     public let platform: String
     public let tool: Tool?
+    public let pageContext: AIChatPageContextData?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -144,11 +189,83 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
     }
 
+    public struct NativePromptImage: Codable, Equatable {
+        public let data: String
+        public let format: String
+
+        public init(data: String, format: String) {
+            self.data = data
+            self.format = format
+        }
+    }
+
+    public struct NativePromptFile: Codable, Equatable {
+        public let data: String
+        public let fileName: String
+        public let mimeType: String
+
+        public init(data: String, fileName: String, mimeType: String) {
+            self.data = data
+            self.fileName = fileName
+            self.mimeType = mimeType
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
         public let prompt: String
         public let autoSubmit: Bool
+        public let toolChoice: [String]?
+        public let images: [NativePromptImage]?
+        public let files: [NativePromptFile]?
+        public let modelId: String?
+        public let mode: String?
+        public let reasoningEffort: AIChatReasoningEffort?
+
+        private enum CodingKeys: String, CodingKey {
+            case prompt
+            case autoSubmit
+            case toolChoice
+            case images
+            case files
+            case modelId
+            case mode
+            case reasoningEffort
+        }
+
+        public init(
+            prompt: String,
+            autoSubmit: Bool,
+            toolChoice: [String]?,
+            images: [NativePromptImage]?,
+            files: [NativePromptFile]?,
+            modelId: String?,
+            mode: String?,
+            reasoningEffort: AIChatReasoningEffort?
+        ) {
+            self.prompt = prompt
+            self.autoSubmit = autoSubmit
+            self.toolChoice = toolChoice
+            self.images = images
+            self.files = files
+            self.modelId = modelId
+            self.mode = mode
+            self.reasoningEffort = reasoningEffort
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            prompt = try container.decode(String.self, forKey: .prompt)
+            autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
+            toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
+            images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
+            files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
+            modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
+            mode = try container.decodeIfPresent(String.self, forKey: .mode)
+            let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
+            reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        }
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -200,11 +317,13 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case query
         case summary
         case translation
+        case pageContext
     }
 
-    public init(platform: String, tool: Tool?) {
+    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextData? = nil) {
         self.platform = platform
         self.tool = tool
+        self.pageContext = pageContext
     }
 
     public init(from decoder: Decoder) throws {
@@ -227,6 +346,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         default:
             tool = nil
         }
+
+        pageContext = try container.decodeIfPresent(AIChatPageContextData.self, forKey: .pageContext)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -247,10 +368,12 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case .none:
             try container.encodeNil(forKey: .tool)
         }
+
+        try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit)))
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

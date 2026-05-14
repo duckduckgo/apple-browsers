@@ -19,6 +19,7 @@
 
 import Foundation
 import Testing
+import AIChatTestingUtilities
 @testable import DuckDuckGo
 @testable import Core
 
@@ -34,6 +35,10 @@ final class MockAutoClear: AutoClearing {
     var lastBaseTimeInterval: TimeInterval?
 
     var isClearingEnabled: Bool {
+        isClearingEnabledValue
+    }
+
+    var isTabClearingEnabled: Bool {
         isClearingEnabledValue
     }
 
@@ -62,17 +67,20 @@ final class AutoClearServiceTests {
 
     var mockAutoClear: MockAutoClear!
     var mockOverlayWindowManager: MockOverlayWindowManager!
+    var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
 
     init() {
         mockAutoClear = MockAutoClear()
         mockOverlayWindowManager = MockOverlayWindowManager()
+        mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
 
     @Test("autoClearService's init() should start clearing data")
     func clearDataOnInit() async {
         // When
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
         // Then
         await autoClearService.autoClearTask?.value
@@ -84,7 +92,8 @@ final class AutoClearServiceTests {
     func resume() async {
         // Given
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
         // When
         autoClearService.resume()
@@ -100,7 +109,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.didTimeExpired = false
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
         // When
         autoClearService.resume()
@@ -116,7 +126,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.isClearingEnabledValue = true
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
         // When
         autoClearService.suspend()
@@ -131,7 +142,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.isClearingEnabledValue = false
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
 
         // When
@@ -146,7 +158,8 @@ final class AutoClearServiceTests {
     func waitForDataCleared() async {
         // Given
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
 
         // When
         await autoClearService.waitForDataCleared()

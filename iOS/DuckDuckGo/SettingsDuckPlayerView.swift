@@ -66,6 +66,7 @@ struct SettingsDuckPlayerView: View {
                     .daxBodyRegular()
                     .accentColor(Color.init(designSystemColor: .accent))
                 }
+                .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
             }
 
@@ -73,8 +74,7 @@ struct SettingsDuckPlayerView: View {
             // Duck Player Classic UI
             if !viewModel.duckPlayerNativeUI.wrappedValue {
                 Section {
-                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                           label: UserText.settingsOpenVideosInDuckPlayerLabel,
+                    SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
                                            options: DuckPlayerMode.allCases,
                                            selectedOption: viewModel.duckPlayerModeBinding)
                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
@@ -93,8 +93,7 @@ struct SettingsDuckPlayerView: View {
                 }
 
                 Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                       label: UserText.duckPlayerYoutubeLabel,
+                SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
                                        options: NativeDuckPlayerYoutubeMode.allCases,
                                        selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
                     .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)

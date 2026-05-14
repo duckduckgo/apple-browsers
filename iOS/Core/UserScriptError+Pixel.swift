@@ -20,11 +20,20 @@
 import enum UserScript.UserScriptError
 
 extension UserScriptError {
-    public func fireLoadJSFailedPixelIfNeeded(pixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+
+    public enum Source: String {
+        case browser
+        case dbp
+    }
+
+    public func fireLoadJSFailedPixelIfNeeded(source: Source = .browser, pixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
         guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
             return
         }
-        let params = [PixelParameters.jsFile: jsFile]
+        let params = [
+            PixelParameters.jsFile: jsFile,
+            PixelParameters.source: source.rawValue
+        ]
         pixelFiring.fireDailyAndCount(.userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
         Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }

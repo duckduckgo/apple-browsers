@@ -48,8 +48,8 @@ private final class MockDeviceSyncCoordinationDelegate: DeviceSyncCoordinationDe
 @MainActor
 final class SyncDialogControllerTests: XCTestCase {
 
-    private var scheduler: CapturingScheduler! = CapturingScheduler()
-    private var managementDialogModel: ManagementDialogModel! = ManagementDialogModel()
+    private var scheduler: CapturingScheduler!
+    private var managementDialogModel: ManagementDialogModel!
     private var authenticator: MockUserAuthenticator!
     private var ddgSyncing: MockDDGSyncing!
     private var pausedStateManager: MockSyncPausedStateManaging!
@@ -61,7 +61,10 @@ final class SyncDialogControllerTests: XCTestCase {
     var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
+        super.setUp()
         cancellables = []
+        scheduler = CapturingScheduler()
+        managementDialogModel = ManagementDialogModel()
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
         featureFlagger = MockSyncFeatureFlagger()
@@ -92,6 +95,7 @@ final class SyncDialogControllerTests: XCTestCase {
         managementDialogModel = nil
         scheduler = nil
         authenticator = nil
+        super.tearDown()
     }
 
     func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {

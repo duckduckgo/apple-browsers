@@ -27,6 +27,8 @@ protocol HistoryBurning {
 struct FireHistoryBurner: HistoryBurning {
     let fireproofDomains: DomainFireproofStatusProviding
     let fire: () async -> FireProtocol
+    /// Records that AI chat history was cleared specifically for Sync (server-side delete timestamping).
+    let recordAIChatHistoryClearForSync: (() -> Void)?
 
     /**
      * The arguments here are async closures because FireHistoryBurner is initialized
@@ -34,15 +36,21 @@ struct FireHistoryBurner: HistoryBurning {
      */
     init(
         fireproofDomains: DomainFireproofStatusProviding,
-        fire: @escaping () async -> FireProtocol
+        fire: @escaping () async -> FireProtocol,
+        recordAIChatHistoryClearForSync: (() -> Void)? = nil
     ) {
         self.fireproofDomains = fireproofDomains
         self.fire = fire
+        self.recordAIChatHistoryClearForSync = recordAIChatHistoryClearForSync
     }
 
     func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
         guard !visits.isEmpty else {
             return
+        }
+
+        if burnChats {
+            recordAIChatHistoryClearForSync?()
         }
 
         await withCheckedContinuation { continuation in
@@ -53,7 +61,8 @@ struct FireHistoryBurner: HistoryBurning {
                                         closeWindows: false,
                                         clearSiteData: true,
                                         clearChatHistory: burnChats,
-                                        urlToOpenIfWindowsAreClosed: .history) {
+                                        urlToOpenIfWindowsAreClosed: .history,
+                                        dataClearingWideEventService: nil) {
                     continuation.resume()
                 }
             }
@@ -61,10 +70,12 @@ struct FireHistoryBurner: HistoryBurning {
     }
 
     func burnAll() async {
+        recordAIChatHistoryClearForSync?()
         await fire().burnAll(opening: .history)
     }
 
     func burnChats() async {
-        await fire().burnChatHistory()
+        recordAIChatHistoryClearForSync?()
+        _ = await fire().burnChatHistory()
     }
 }

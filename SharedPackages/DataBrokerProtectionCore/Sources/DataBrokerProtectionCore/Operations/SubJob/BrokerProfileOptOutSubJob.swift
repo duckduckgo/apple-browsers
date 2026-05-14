@@ -210,6 +210,7 @@ struct BrokerProfileOptOutSubJob {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
             parentURL: brokerProfileQueryData.dataBroker.parent,
+            isFreeScan: false,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
@@ -362,7 +363,7 @@ struct BrokerProfileOptOutSubJob {
                                                           brokerId: identifiers.brokerId,
                                                           profileQueryId: identifiers.profileQueryId,
                                                           extractedProfileId: identifiers.extractedProfileId)
-        stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
+        stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1, error: error)
         handleOperationError(
             origin: .optOut,
             brokerId: identifiers.brokerId,

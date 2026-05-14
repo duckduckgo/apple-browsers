@@ -1,7 +1,7 @@
 {
   "name": "Spokeo",
   "url": "spokeo.com",
-  "version": "0.7.0",
+  "version": "0.10.0",
   "addedDatetime": 1692572400000,
   "optOutUrl": "https://spokeo.com/optout",
   "mirrorSites": [
@@ -48,7 +48,7 @@
           "actionType": "extract",
           "id": "bd52ece4-55ba-4839-8360-a201c99d6ae6",
           "selector": "div[role='listitem']",
-          "noResultsSelector": ".no_results_container",
+          "noResultsSelector": "//div[contains(., 'did not match') and not(descendant::div[contains(., 'did not match')])]",
           "profile": {
             "name": {
               "selector": "h3",
@@ -60,20 +60,19 @@
             },
             "addressCityState": {
               "selector": ".//div[contains(text(), 'Reside')]",
-              "afterText": "Resides in"
+              "afterText": " IN "
             },
             "addressCityStateList": {
-              "selector": ".//div[span[text() = 'Lived In']]",
-              "afterText": "Lived In",
+              "selector": ".//span[contains(text(), 'Lived')]/following-sibling::text()[1]",
               "separator": ","
             },
             "relativesList": {
-              "selector": ".//div[span[text() = 'Related To']]/a",
+              "selector": ".//span[contains(text(), 'Related To')]/following-sibling::a",
               "findElements": true
             },
             "alternativeNamesList": {
-              "selector": ".//div[span[text() = 'Also known as']]",
-              "afterText": "Also known as"
+              "selector": ".//span[contains(text(), 'Also known')]/following-sibling::text()[1]",
+              "separator": ","
             },
             "profileUrl": {
               "selector": "a",

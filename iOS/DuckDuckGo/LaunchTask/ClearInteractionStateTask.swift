@@ -28,18 +28,25 @@ struct ClearInteractionStateTask: LaunchTask {
     var name: String = "Clear Interaction State"
 
     func run(context: LaunchTaskContext) {
-        guard !autoClearService.isClearingEnabled, let interactionStateSource else {
+        guard !autoClearService.isTabClearingEnabled, let interactionStateSource else {
             context.finish()
             return
         }
 
         // Accessing tabManager.model.tabs must happen on the main thread
-        let statesToRemove: [URL] = DispatchQueue.main.sync {
-            interactionStateSource.urlsToRemove(excluding: tabManager.model.tabs)
+        let statesToRemoveResult: Result<[URL], Error> = DispatchQueue.main.sync {
+            interactionStateSource.urlsToRemove(excluding: tabManager.allTabsModel.tabs)
         }
 
         // Perform file removal on the current background queue as it is thread-safe
-        interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
+        let statesToRemove: [URL]
+        switch statesToRemoveResult {
+        case .success(let urls):
+            statesToRemove = urls
+        case .failure:
+            statesToRemove = []
+        }
+        _ = interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
         context.finish()
     }
 

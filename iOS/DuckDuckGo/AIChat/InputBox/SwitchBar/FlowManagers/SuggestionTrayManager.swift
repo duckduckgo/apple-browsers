@@ -23,6 +23,7 @@ import Combine
 import BrowserServicesKit
 import Bookmarks
 import Persistence
+import PrivacyConfig
 import History
 import Suggestions
 import Core
@@ -33,12 +34,13 @@ struct SuggestionTrayDependencies {
     let favoritesViewModel: FavoritesListInteracting
     let bookmarksDatabase: CoreDataDatabase
     let historyManager: HistoryManaging
-    let tabsModel: TabsModel
+    let tabsModelProvider: () -> TabsModelManaging
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
     let featureDiscovery: FeatureDiscovery
     let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 }
 
 /// Protocol for handling suggestion tray events
@@ -47,6 +49,14 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager)
+    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager)
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
+}
+
+extension SuggestionTrayManagerDelegate {
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {}
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -67,10 +77,20 @@ final class SuggestionTrayManager: NSObject {
     }
 
     var shouldDisplayFavoritesOverlay: Bool {
+        // Fire tabs render a dedicated empty state (managed by DaxLogoManager), so favorites must not sit behind it.
+        guard !switchBarHandler.isFireTab else { return false }
         let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
         let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 
         return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
+    }
+
+    var hasFavorites: Bool {
+        suggestionTrayViewController?.hasFavorites ?? false
+    }
+
+    var hasRemoteMessages: Bool {
+        suggestionTrayViewController?.hasRemoteMessages ?? false
     }
 
     var shouldDisplaySuggestionTray: Bool {
@@ -97,31 +117,41 @@ final class SuggestionTrayManager: NSObject {
     }
     
     // MARK: - Public Methods
-    
+
+    func setSuggestionsSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setSuggestionsSectionTitle(title)
+    }
+
+    func setFavoritesSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setFavoritesSectionTitle(title)
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, openTabCount: Int) {
+        suggestionTrayViewController?.setEscapeHatch(model)
+        suggestionTrayViewController?.setOpenTabCount(openTabCount)
+    }
+
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        suggestionTrayViewController?.additionalTopInset = inset
+    }
+
     /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
+    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil, openTabCount: Int = 0) {
         guard suggestionTrayViewController == nil else { return }
         
-        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
-        
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            SuggestionTrayViewController(
-                coder: coder,
-                favoritesViewModel: self.dependencies.favoritesViewModel,
-                bookmarksDatabase: self.dependencies.bookmarksDatabase,
-                historyManager: self.dependencies.historyManager,
-                tabsModel: self.dependencies.tabsModel,
-                featureFlagger: self.dependencies.featureFlagger,
-                appSettings: self.dependencies.appSettings,
-                aiChatSettings: self.dependencies.aiChatSettings,
-                featureDiscovery: self.dependencies.featureDiscovery,
-                newTabPageDependencies: self.dependencies.newTabPageDependencies,
-                hideBorder: true
-            )
-        }) else {
-            assertionFailure("Failed to instantiate SuggestionTrayViewController")
-            return
-        }
+
+        let controller = SuggestionTrayViewController(
+            favoritesViewModel: self.dependencies.favoritesViewModel,
+            bookmarksDatabase: self.dependencies.bookmarksDatabase,
+            historyManager: self.dependencies.historyManager,
+            tabsModelProvider: self.dependencies.tabsModelProvider,
+            featureFlagger: self.dependencies.featureFlagger,
+            appSettings: self.dependencies.appSettings,
+            aiChatSettings: self.dependencies.aiChatSettings,
+            featureDiscovery: self.dependencies.featureDiscovery,
+            newTabPageDependencies: self.dependencies.newTabPageDependencies,
+            productSurfaceTelemetry: self.dependencies.productSurfaceTelemetry,
+            hideBorder: true)
 
         controller.coversFullScreen = true
 
@@ -138,12 +168,18 @@ final class SuggestionTrayManager: NSObject {
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor)
+            controller.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         controller.autocompleteDelegate = self
         controller.newTabPageControllerDelegate = self
+        controller.onURLFallbackVisibilityChanged = { [weak self] in
+            guard let self else { return }
+            self.delegate?.suggestionTrayManagerDidUpdateVisibility(self)
+        }
         controller.didMove(toParent: parentViewController)
+        controller.setEscapeHatch(escapeHatch)
+        controller.setOpenTabCount(openTabCount)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()
@@ -155,7 +191,35 @@ final class SuggestionTrayManager: NSObject {
 
         updateSuggestionTrayForCurrentState(animated: animated)
     }
-    
+
+    /// Shows URL-only autocomplete suggestions in duck.ai mode as a fallback
+    /// when chat history has no matches. Users typing URLs should still get
+    /// autocomplete without seeing search phrase suggestions.
+    func showURLOnlySuggestions(for query: String, animated: Bool) {
+        guard let suggestionTray = suggestionTrayViewController else { return }
+        suggestionTray.suggestionFilter = .urlsOnly
+        let canShow = suggestionTray.canShow(for: .autocomplete(query: query), animated: animated)
+        if canShow {
+            // Don't set view.isHidden = false here — the tray stays hidden until
+            // results arrive. autocompleteDidReloadResults shows it if non-empty.
+            suggestionTray.fill()
+            suggestionTray.show(for: .autocomplete(query: query), animated: animated)
+        } else {
+            suggestionTray.didHide(animated: animated)
+        }
+    }
+
+    /// Hides the URL-only suggestions and resets the filter
+    func hideURLOnlySuggestions(animated: Bool) {
+        suggestionTrayViewController?.suggestionFilter = .all
+        suggestionTrayViewController?.didHide(animated: animated)
+    }
+
+    /// Resets the filter to show all suggestion types without hiding the tray.
+    func resetSuggestionFilter() {
+        suggestionTrayViewController?.suggestionFilter = .all
+    }
+
     /// Shows the suggestion tray for the initial selected state
     func showInitialSuggestions() {
         updateSuggestionTrayForCurrentState()
@@ -200,7 +264,7 @@ final class SuggestionTrayManager: NSObject {
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType, animated: Bool) {
         guard let suggestionTray = suggestionTrayViewController else { return }
-        
+
         let canShowSuggestion =
             suggestionTray.canShow(for: type, animated: animated) ||
             (type == .favorites && suggestionTray.hasRemoteMessages)
@@ -284,4 +348,15 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         // no-op this is handled by the main view controller on a real new tab page
     }
 
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestTabSwitcher(self)
+    }
+
+    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestTryFireMode(self)
+    }
 }

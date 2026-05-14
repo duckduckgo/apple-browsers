@@ -37,7 +37,9 @@ actor CurrentPack {
      *
      * This happens after recording new blocked tracker, when no new tracker has been recorded for 1s.
      */
-    nonisolated private(set) lazy var commitChangesPublisher: AnyPublisher<PrivacyStatsPack, Never> = commitChangesSubject.eraseToAnyPublisher()
+    nonisolated var commitChangesPublisher: AnyPublisher<PrivacyStatsPack, Never> {
+        commitChangesSubject.eraseToAnyPublisher()
+    }
 
     nonisolated private let commitChangesSubject = PassthroughSubject<PrivacyStatsPack, Never>()
     private var commitTask: Task<Void, Never>?

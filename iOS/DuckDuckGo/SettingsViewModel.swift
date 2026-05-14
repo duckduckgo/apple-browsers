@@ -20,6 +20,7 @@
 import Core
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import SwiftUI
 import Common
 import Combine
@@ -33,31 +34,42 @@ import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
+import Networking
+import WebExtensions
+
+enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
+    case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
+    case youTubeAnalyticsEnabled = "com_duckduckgo_ios_youTubeAnalyticsEnabled"
+    case shouldHideYouTubeAdBlockingDisclosure = "com_duckduckgo_ios_shouldHideYouTubeAdBlockingDisclosure"
+
+    static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
+}
+
+struct YouTubeAdBlockingKeys: StoringKeys {
+    let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
+    let youTubeAnalyticsEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabled)
+    let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.shouldHideYouTubeAdBlockingDisclosure)
+}
 
 final class SettingsViewModel: ObservableObject {
-
-    /// There's an improved picker cell being rolled out with the feature flag below.
-    /// Once it has passed a ship review we'll move to the improved one.
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
-    }
 
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
-    private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
-    private let historyManager: HistoryManaging
+    private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
-    let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private let tabSwitcherSettings: TabSwitcherSettings
+    private let autoplaySettings: AutoplaySettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -66,14 +78,39 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
+
+    private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
+        NewBadgeVisibilityManager(
+            keyValueStore: keyValueStore,
+            configProvider: DefaultNewBadgeConfigProvider(
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            currentAppVersionProvider: { AppVersion.shared.versionNumber }
+        )
+    }()
+
+    private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private var youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+
+    // What's New Dependencies
+    private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let isAuthV2Enabled: Bool
-    let subscriptionManagerV1: (any SubscriptionManager)?
-    let subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
@@ -102,25 +139,25 @@ final class SettingsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     // App Data State Notification Observer
-    private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
-
-    // Subscription Free Trials
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+    private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
-    var onRequestPushLegacyView: ((UIViewController) -> Void)?
+    var onRequestPushLegacyView: ((UIViewController, _ animated: Bool) -> Void)?
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
+    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
+    private var lastEnabledDuckPlayerMode: DuckPlayerMode?
+    private var lastEnabledNativeYoutubeMode: NativeDuckPlayerYoutubeMode?
 
     // MARK: Cell Visibility
     enum Features {
@@ -137,10 +174,6 @@ final class SettingsViewModel: ObservableObject {
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
 
-    var isForgetAllInSettingsEnabled: Bool {
-        featureFlagger.isFeatureOn(.forgetAllInSettings)
-    }
-
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
@@ -150,26 +183,37 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }
 
+    var meetsLocaleRequirement: Bool {
+        runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
+    var canShowFreemiumPIRSettingsEntryPoint: Bool {
+        freemiumPIREligibilityChecker.canShowEntryPoint()
+            && dataBrokerProtectionViewControllerProvider != nil
+    }
+
     var dbpMeetsProfileRunPrequisite: Bool {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
         }
     }
 
-    var isUpdatedAIFeaturesSettingsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
-    }
-
-    var isDuckAiDataClearingEnabled: Bool {
-        featureFlagger.isFeatureOn(.duckAiDataClearing)
-    }
-
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isDefaultOmnibarModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
+    }
+
+    var isTabSwitcherTrackerCountEnabled: Bool {
+        featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
+    }
+
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
+
+    var isForceWebsiteDarkModeAvailable: Bool {
+        darkReaderFeatureSettings.isFeatureEnabled
     }
 
     var isBlackFridayCampaignEnabled: Bool {
@@ -207,6 +251,9 @@ final class SettingsViewModel: ObservableObject {
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
+    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
+
     // MARK: Bindings
 
     var selectedToolbarButton: Binding<MobileCustomization.Button> {
@@ -242,27 +289,27 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
                 self.state.appThemeStyle = $0
                 ThemeManager.shared.setThemeStyle($0)
-            }
-        )
-    }
-    var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
-        Binding<FireButtonAnimationType>(
-            get: { self.state.fireButtonAnimation },
-            set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
-                self.appSettings.currentFireButtonAnimation = $0
-                self.state.fireButtonAnimation = $0
-                NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
-                self.animator.animate {
-                    // no op
-                } onTransitionCompleted: {
-                    // no op
-                } completion: {
-                    // no op
+                self.state.forceWebsiteDarkMode = self.darkReaderFeatureSettings.isForceDarkModeEnabled
+                // Delay to allow web views to re-render with the new interface style
+                // before the dark reader extension is enabled or disabled.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.darkReaderFeatureSettings.themeDidChange()
                 }
             }
         )
     }
+    
+    // MARK: - Child View Models
+    
+    @MainActor
+    private(set) lazy var dataClearingViewModel: DataClearingSettingsViewModel = {
+        DataClearingSettingsViewModel(
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
+            fireproofing: legacyViewProvider.fireproofing,
+            delegate: self
+        )
+    }()
 
     // MARK: - Actions
 
@@ -278,7 +325,7 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -288,6 +335,20 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var autoplayBlockingModeBinding: Binding<AutoplayBlockingMode> {
+        Binding<AutoplayBlockingMode>(
+            get: {
+                self.state.autoplayBlockingMode
+            },
+            set: {
+                self.autoplaySettings.currentAutoplayBlockingMode = $0
+                self.state.autoplayBlockingMode = $0
+                Pixel.fire(pixel: .settingsAutoplayChanged,
+                          withAdditionalParameters: [PixelParameters.autoplayBlockingMode: $0.rawValue])
             }
         )
     }
@@ -303,12 +364,63 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var showTrackersBlockedAnimationBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.showTrackersBlockedAnimation },
+            set: {
+                self.state.showTrackersBlockedAnimation = $0
+                self.appSettings.showTrackersBlockedAnimation = $0
+                Pixel.fire(pixel: .settingsTrackerCountInAddressBarToggled,
+                          withAdditionalParameters: [PixelParameters.enabled: String($0)])
+            }
+        )
+    }
+
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.applicationLock },
             set: {
                 self.privacyStore.authenticationEnabled = $0
                 self.state.applicationLock = $0
+            }
+        )
+    }
+
+    var shouldShowNTPAfterIdleSetting: Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    var idleTimeInterval: String {
+        formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
+    }
+
+    var afterInactivityFooterText: String {
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .always {
+            return UserText.settingsAfterInactivityFooterAlways
+        }
+        return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
+    }
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        Binding<AfterInactivityOption>(
+            get: { self.afterInactivityOption },
+            set: { newValue in
+                self.afterInactivityOption = newValue
+                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                let pixel: Pixel.Event = newValue == .newTab
+                    ? .ntpAfterIdleSettingChangedToNewTab
+                    : .ntpAfterIdleSettingChangedToLastUsedTab
+                DailyPixel.fireDailyAndCount(pixel: pixel)
+            }
+        )
+    }
+
+    var afterInactivityIdleIntervalBinding: Binding<AfterInactivityIdleInterval> {
+        Binding<AfterInactivityIdleInterval>(
+            get: { self.afterInactivityIdleInterval },
+            set: { newValue in
+                self.afterInactivityIdleInterval = newValue
+                try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
             }
         )
     }
@@ -432,7 +544,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerMode = $0
                 self.state.duckPlayerMode = $0
-                
+
                 switch self.state.duckPlayerMode {
                 case .alwaysAsk:
                     Pixel.fire(pixel: Pixel.Event.duckPlayerSettingBackToDefault)
@@ -446,7 +558,87 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
+    private var resolvedDuckPlayerMode: DuckPlayerMode {
+        if let lastEnabledDuckPlayerMode {
+            return lastEnabledDuckPlayerMode
+        }
+        if let current = state.duckPlayerMode, current != .disabled {
+            return current
+        }
+        return .alwaysAsk
+    }
+
+    private var resolvedNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
+        if let lastEnabledNativeYoutubeMode {
+            return lastEnabledNativeYoutubeMode
+        }
+        let current = state.duckPlayerNativeYoutubeMode
+        return current != .never ? current : .ask
+    }
+
+    var isDuckPlayerEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode != .disabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+
+                if !newValue {
+                    if oldMode != .disabled {
+                        self.lastEnabledDuckPlayerMode = oldMode
+                    }
+                    self.appSettings.duckPlayerMode = .disabled
+                    self.state.duckPlayerMode = .disabled
+                } else {
+                    let restoredMode = self.resolvedDuckPlayerMode
+                    self.appSettings.duckPlayerMode = restoredMode
+                    self.state.duckPlayerMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerMode {
+                    switch self.state.duckPlayerMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    case .none:
+                        break
+                    }
+                }
+            }
+        )
+    }
+
+    var isAlwaysOpenBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode == .enabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+                let newMode: DuckPlayerMode = newValue ? .enabled : .alwaysAsk
+
+                self.appSettings.duckPlayerMode = newMode
+                self.state.duckPlayerMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    }
+                }
+            }
+        )
+    }
+
     var duckPlayerOpenInNewTabBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.duckPlayerOpenInNewTab },
@@ -493,6 +685,51 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var youTubeAdBlockingEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.youTubeAdBlockingEnabled },
+            set: {
+                guard $0 != self.state.youTubeAdBlockingEnabled else { return }
+                let disclosureVisibleAtToggle = !self.state.youTubeAdBlockingDisclosureHidden
+                try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+                self.state.youTubeAdBlockingEnabled = $0
+                if !$0 {
+                    self.setYouTubeAnalyticsEnabled(false)
+                } else if disclosureVisibleAtToggle {
+                    self.setYouTubeAnalyticsEnabled(true)
+                }
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
+                NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+            }
+        )
+    }
+
+    func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
+        try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+    }
+
+    var isYouTubeAdBlockingDisclosureHidden: Bool {
+        state.youTubeAdBlockingDisclosureHidden
+    }
+
+    /// Settings-pane open hook. If the disclosure preference has never been
+    /// written, pin it to the current YouTube Ad Blocking state — existing
+    /// users (toggle already on) get the disclosure hidden, new users (toggle
+    /// off) keep the disclosure until they explicitly opt in. Always refreshes
+    /// `state.youTubeAdBlockingDisclosureHidden` so external writes (e.g. debug
+    /// menu) are picked up.
+    func markYouTubeAdBlockingDisclosureHiddenIfExistingUser() {
+        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+            try? youTubeAdBlockingStorage.set(state.youTubeAdBlockingEnabled,
+                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        }
+        state.youTubeAdBlockingDisclosureHidden =
+            (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
+    }
+
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
@@ -509,6 +746,66 @@ final class SettingsViewModel: ObservableObject {
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
                 case .never:
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
+            }
+        )
+    }
+
+    var isShowDuckPlayerOnYoutubeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode != .never
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+
+                if !newValue {
+                    if oldMode != .never {
+                        self.lastEnabledNativeYoutubeMode = oldMode
+                    }
+                    self.appSettings.duckPlayerNativeYoutubeMode = .never
+                    self.state.duckPlayerNativeYoutubeMode = .never
+                } else {
+                    let restoredMode = self.resolvedNativeYoutubeMode
+                    self.appSettings.duckPlayerNativeYoutubeMode = restoredMode
+                    self.state.duckPlayerNativeYoutubeMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerNativeYoutubeMode {
+                    switch self.state.duckPlayerNativeYoutubeMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
+                }
+            }
+        )
+    }
+
+    var isOpenAutomaticallyBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode == .auto
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+                let newMode: NativeDuckPlayerYoutubeMode = newValue ? .auto : .ask
+
+                self.appSettings.duckPlayerNativeYoutubeMode = newMode
+                self.state.duckPlayerNativeYoutubeMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
                 }
             }
         )
@@ -553,6 +850,20 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var forceWebsiteDarkModeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.forceWebsiteDarkMode },
+            set: {
+                self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
+                self.state.forceWebsiteDarkMode = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
+            }
+        )
+    }
+
     var universalLinksBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.allowUniversalLinks },
@@ -580,11 +891,7 @@ final class SettingsViewModel: ObservableObject {
     var autoClearAIChatHistoryBinding: Binding<Bool> {
         Binding<Bool>(
             get: {
-                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
-                    return self.state.autoClearAIChatHistory
-                } else {
-                    return false
-                }
+                self.state.autoClearAIChatHistory
             },
             set: {
                 self.appSettings.autoClearAIChatHistory = $0
@@ -606,12 +913,12 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var enablesUnifiedFeedbackForm: Bool {
-        subscriptionAuthV1toV2Bridge.isUserAuthenticated
+        subscriptionManager.isUserAuthenticated
     }
 
     // Indicates if the Paid AI Chat entitlement flag is available for the current user
     var isPaidAIChatAvailable: Bool {
-        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+        state.subscription.subscriptionFeatures.contains(.paidAIChat)
     }
 
     // Indicates if AI features are generally enabled
@@ -622,17 +929,13 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         isAuthV2Enabled: Bool,
-         subscriptionManagerV1: (any SubscriptionManager)?,
-         subscriptionManagerV2: (any SubscriptionManagerV2)?,
-         subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
-         textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
@@ -641,30 +944,37 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
+         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings,
+         adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
 
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
+        self.tabSwitcherSettings = tabSwitcherSettings
+        self.autoplaySettings = autoplaySettings
         self.legacyViewProvider = legacyViewProvider
-        self.isAuthV2Enabled = isAuthV2Enabled
-        self.subscriptionManagerV1 = subscriptionManagerV1
-        self.subscriptionManagerV2 = subscriptionManagerV2
-        self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
+        self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter
-        self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
@@ -673,23 +983,33 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerSettings = duckPlayerSettings
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
+        self.userScriptsDependencies = userScriptsDependencies
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
+        )
+        self.whatsNewCoordinator = whatsNewCoordinator
+        self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
 
     deinit {
         subscriptionSignOutObserver = nil
-        appDataClearingObserver = nil
         textZoomObserver = nil
+        aiChatSettingsObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
         }
@@ -707,16 +1027,16 @@ extension SettingsViewModel {
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: appSettings.currentFireButtonAnimation,
-            textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
+            textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
+            showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
+            forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
-            autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
@@ -728,7 +1048,7 @@ extension SettingsViewModel {
             showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
-            debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
+            debugModeEnabled: isInternalUser || isDebugBuild,
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
@@ -736,13 +1056,17 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage,
+            duckPlayerEnabled: !adBlockingAvailability.isFeatureAvailable && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
+            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
+            autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
+            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
+            youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )
 
         // Subscribe to DuckPlayerSettings updates
@@ -772,7 +1096,7 @@ extension SettingsViewModel {
     private func clearHistoryIfNeeded() {
         if !historyManager.isEnabledByUser {
             Task {
-                await self.historyManager.removeAllHistory()
+                _ = await self.historyManager.removeAllHistory()
             }
         }
     }
@@ -880,6 +1204,28 @@ extension SettingsViewModel {
         shouldShowSetAsDefaultBrowser = false
         shouldShowImportPasswords = false
     }
+
+    private func formattedIdleThreshold(from seconds: Int) -> String {
+        let oneHour = 3600
+        if seconds >= oneHour {
+            let hours = seconds / oneHour
+            if hours == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalHourSingular
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalHoursFormat, hours)
+        }
+        let minutes = seconds / 60
+        if minutes >= 1 {
+            if minutes == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalMinuteSingular
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, minutes)
+        }
+        if seconds == 1 {
+            return UserText.settingsAfterInactivityIdleIntervalSecondSingular
+        }
+        return String(format: UserText.settingsAfterInactivityIdleIntervalSecondsFormat, seconds)
+    }
 }
 
 // MARK: Subscribers
@@ -906,15 +1252,17 @@ extension SettingsViewModel {
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
     }
 
-    func onAppear() {
+    func onFirstAppear() {
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
         }
     }
-    
-    func onDisappear() {
-        self.deepLinkTarget = nil
+
+    func onSubsequentAppear() {
+        Task {
+            await setupSubscriptionEnvironment()
+        }
     }
 
     @MainActor
@@ -942,18 +1290,19 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.activeWebsiteCreditCard = card
         state.showCreditCardManagement = showCreditCardManagement
+        state.showSettingsScreen = showSettingsScreen
         state.autofillSource = source
         
         presentLegacyView(.autofill)
     }
 
-    @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
+    @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil, animated: Bool = true) {
         state.syncSource = source
-        presentLegacyView(.sync(nil))
+        presentLegacyView(.sync(nil), animated: animated)
     }
 
     func openEmailProtection() {
@@ -966,6 +1315,23 @@ extension SettingsViewModel {
 
     func openEmailSupport() {
         urlOpener.open(URL.emailProtectionSupportLink)
+    }
+
+    func shouldShowNewBadge(for feature: NewBadgeFeature) -> Bool {
+        guard isFeatureAvailableForNewBadge(feature) else { return false }
+        return newBadgeVisibilityManager.shouldShowBadge(for: feature)
+    }
+
+    func storeNewBadgeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature) {
+        guard isFeatureAvailableForNewBadge(feature) else { return }
+        newBadgeVisibilityManager.storeFirstImpressionDateIfNeeded(for: feature)
+    }
+
+    private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
+        switch feature {
+        case .personalInformationRemoval:
+            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+        }
     }
 
     func openOtherPlatforms() {
@@ -1019,7 +1385,6 @@ extension SettingsViewModel {
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
-
 }
 
 // MARK: Legacy View Presentation
@@ -1028,21 +1393,19 @@ extension SettingsViewModel {
 // can review and migrate
 extension SettingsViewModel {
     
-    @MainActor func presentLegacyView(_ view: SettingsLegacyViewProvider.LegacyView) {
+    @MainActor func presentLegacyView(_ view: SettingsLegacyViewProvider.LegacyView, animated: Bool = true) {
         
         switch view {
         
         case .addToDock:
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync(let pairingInfo):
-            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo))
+            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo), animated: animated)
         case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
             self?.state.appIcon = appIcon
         }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
-        case .autoclearData:
-            pushViewController(legacyViewProvider.autoclearData)
         case .keyboard: pushViewController(legacyViewProvider.keyboard)
         case .debug: pushViewController(legacyViewProvider.debug)
             
@@ -1054,6 +1417,7 @@ extension SettingsViewModel {
                                                                 selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
                                                                 showCreditCardManagement: state.showCreditCardManagement,
+                                                                showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -1063,18 +1427,36 @@ extension SettingsViewModel {
         case .autoconsent:
             pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
-            pushViewController(legacyViewProvider.importPasswords(delegate: self))
+            pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
+                                                                  delegate: self,
+                                                                  onFinished: { [weak self] in
+                                                                      Task { @MainActor [weak self] in
+                                                                          self?.handleDataImportCompletion()
+                                                                      }
+                                                                  }))
         }
     }
  
     @MainActor
-    private func pushViewController(_ view: UIViewController) {
-        onRequestPushLegacyView?(view)
+    private func pushViewController(_ view: UIViewController, animated: Bool = true) {
+        onRequestPushLegacyView?(view, animated)
     }
     
     @MainActor
     private func presentViewController(_ view: UIViewController, modal: Bool) {
         onRequestPresentLegacyView?(view, modal)
+    }
+
+    @MainActor
+    private func handleDataImportCompletion() {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        pushViewController(legacyViewProvider.loginSettings(delegate: self,
+                                                            selectedAccount: nil,
+                                                            selectedCard: nil,
+                                                            showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
+                                                            showSettingsScreen: nil,
+                                                            source: state.autofillSource))
     }
     
 }
@@ -1092,13 +1474,7 @@ extension SettingsViewModel: AutofillSettingsViewControllerDelegate {
 extension SettingsViewModel: DataImportViewControllerDelegate {
     @MainActor
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
-        AppDependencyProvider.shared.autofillLoginSession.startSession()
-        pushViewController(legacyViewProvider.loginSettings(delegate: self,
-                                                            selectedAccount: nil,
-                                                            selectedCard: nil,
-                                                            showPasswordManagement: true,
-                                                            showCreditCardManagement: false,
-                                                            source: state.autofillSource))
+        handleDataImportCompletion()
     }
 }
 
@@ -1111,6 +1487,7 @@ extension SettingsViewModel {
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
+        case subscriptionPlanChangeFlow(redirectURLComponents: URLComponents? = nil)
         case restoreFlow
         case duckPlayer
         case aiChat
@@ -1119,6 +1496,7 @@ extension SettingsViewModel {
         case customizeToolbarButton
         case customizeAddressBarButton
         case appearance
+        case general
         // Add other cases as needed
 
         var id: String {
@@ -1127,6 +1505,7 @@ extension SettingsViewModel {
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"
+            case .subscriptionPlanChangeFlow: return "subscriptionPlanChangeFlow"
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
@@ -1135,6 +1514,7 @@ extension SettingsViewModel {
             case .customizeToolbarButton: return "customizeToolbarButton"
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
+            case .general: return "general"
             // Ensure all cases are covered
             }
         }
@@ -1143,7 +1523,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
                 return .navigationLink
             }
         }
@@ -1185,13 +1565,13 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
-        updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
+        updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionAuthV1toV2Bridge.getAccessToken() else {
+        guard (try? await subscriptionManager.getAccessToken()) != nil else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false
@@ -1209,7 +1589,7 @@ extension SettingsViewModel {
         }
 
         do {
-            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             updatedSubscription.platform = subscription.platform
             updatedSubscription.hasSubscription = true
             updatedSubscription.hasActiveSubscription = subscription.isActive
@@ -1217,21 +1597,18 @@ extension SettingsViewModel {
             updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
-            var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var currentEntitlements: [SubscriptionEntitlement] = []
+            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isFeatureEnabled(entitlement),
+                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
                     hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             updatedSubscription.entitlements = currentEntitlements
-
-            // This requires follow-up work:
-            // https://app.asana.com/1/137249556945/task/1210799126744217
-            updatedSubscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
+            updatedSubscription.subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             updatedSubscription.hasSubscription = false
@@ -1265,19 +1642,20 @@ extension SettingsViewModel {
             }
         }
         
-        // Observe App Data clearing state
-        appDataClearingObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.appDataClearingUpdated,
-                                                                         object: nil,
-                                                                         queue: .main) { [weak self] _ in
-            guard let settings = self?.appSettings else { return }
-            self?.state.autoclearDataEnabled = (AutoClearSettingsModel(settings: settings) != nil)
-        }
-        
         textZoomObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.textZoomChange,
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
-            self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
+            self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
+        })
+        
+        aiChatSettingsObserver = NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                                                  object: nil,
+                                                                  queue: .main, using: { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.refreshAutoClearOptionsIfNeeded()
+            }
         })
 
         if #available(iOS 18.2, *) {
@@ -1290,75 +1668,19 @@ extension SettingsViewModel {
         }
     }
 
-    func forgetAll() {
-        autoClearActionDelegate?.performDataClearing()
+    func forgetAll(fireRequest: FireRequest) {
+        autoClearActionDelegate?.performDataClearing(for: fireRequest)
     }
 
     func restoreAccountPurchase() async {
-        if !isAuthV2Enabled {
-            await restoreAccountPurchaseV1()
-        } else {
-            await restoreAccountPurchaseV2()
-        }
-    }
-
-    func restoreAccountPurchaseV1() async {
-        guard let subscriptionManagerV1 else {
-            assertionFailure("Missing dependency: subscriptionManagerV1")
-            return
-        }
-
-        DispatchQueue.main.async { self.state.subscription.isRestoring = true }
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManagerV1.accountManager,
-                                                             storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManagerV1.authEndpointService)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-        switch result {
-        case .success:
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-            }
-            await self.setupSubscriptionEnvironment()
-            
-        case .failure(let restoreFlowError):
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
-                }
-            }
-
-            switch restoreFlowError {
-            case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
-            case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
-            case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
-            case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
-            case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
-            case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
-            }
-        }
+        await restoreAccountPurchaseV2()
     }
 
     func restoreAccountPurchaseV2() async {
-
-        guard let subscriptionManagerV2 else {
-            assertionFailure("Missing dependency: subscriptionManagerV2")
-            return
-        }
-
         DispatchQueue.main.async { self.state.subscription.isRestoring = true }
 
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                             storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager())
         let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         switch result {
         case .success:
@@ -1397,12 +1719,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
-        if isAuthV2Enabled {
-            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        } else {
-            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        }
+        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
 }
@@ -1447,11 +1764,21 @@ extension SettingsViewModel {
 
     var aiChatSearchInputEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            get: {
+                self.onboardingSearchExperienceSettingsResolver.deferredValue ?? self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            },
             set: { newValue in
-                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                self.objectWillChange.send()
-                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                if self.onboardingSearchExperienceSettingsResolver.shouldUseDeferredOnboardingChoice {
+                    if self.onboardingSearchExperienceSettingsResolver.storeIfDeferred(newValue) {
+                        self.objectWillChange.send()
+                    }
+                } else {
+                    guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
+                    withAnimation {
+                        self.objectWillChange.send()
+                        self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    }
+                }
             }
         )
     }
@@ -1474,8 +1801,111 @@ extension SettingsViewModel {
         )
     }
 
+    var isAutomaticContextAttachmentEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
+                }
+            }
+        )
+    }
+
+    var defaultOmnibarModeBinding: Binding<DefaultOmnibarMode> {
+        Binding<DefaultOmnibarMode>(
+            get: { self.aiChatSettings.defaultOmnibarMode },
+            set: { newValue in
+                guard newValue != self.aiChatSettings.defaultOmnibarMode else { return }
+                self.objectWillChange.send()
+                self.aiChatSettings.setDefaultOmnibarMode(newValue)
+            }
+        )
+    }
+
+    var isChatSuggestionsEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isChatSuggestionsEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableChatSuggestions(enable: newValue)
+                }
+            }
+        )
+    }
+
+    var showTrackerCountInTabSwitcherBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
+            set: { newValue in
+                self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
+                Pixel.fire(pixel: .settingsTrackerCountInTabSwitcherToggled,
+                          withAdditionalParameters: [PixelParameters.enabled: String(newValue)])
+            }
+        )
+    }
+
     func launchAIFeaturesLearnMore() {
         urlOpener.open(URL.aiFeaturesLearnMore)
     }
 
+}
+
+@MainActor
+extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
+
+    func navigateToFireproofSites() {
+        presentLegacyView(.fireproofSites)
+    }
+
+    func navigateToAutoClearData() {
+        let viewModel = AutoClearSettingsViewModel(
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings
+        )
+        let view = AutoClearSettingsView(viewModel: viewModel)
+            .environmentObject(self)
+        let hostingController = UIHostingController(rootView: view)
+        pushViewController(hostingController)
+    }
+
+    func presentFireConfirmation(from sourceRect: CGRect) {
+        onRequestPresentFireConfirmation?(sourceRect, { [weak self] fireRequest in
+            self?.forgetAll(fireRequest: fireRequest)
+        }, {
+            // Cancelled - no action needed
+        })
+    }
+    
+    private func refreshAutoClearOptionsIfNeeded() {
+        if !aiChatSettings.isAIChatEnabled {
+            appSettings.autoClearAction = appSettings.autoClearAction.subtracting(.aiChats)
+        }
+    }
+}
+
+// MARK: - Settings + What's New
+
+extension SettingsViewModel {
+
+    @MainActor
+    var shouldShowWhatsNew: Bool {
+        featureFlagger.isFeatureOn(.showWhatsNewPromptOnDemand) && whatsNewCoordinator.canShowPromptOnDemand
+    }
+
+    @MainActor
+    func openWhatsNew() {
+        guard let viewController = whatsNewCoordinator.provideModalPrompt()?.viewController else {
+            assertionFailure("Prompt should not be nil")
+            return
+        }
+
+        Pixel.fire(pixel: .settingsWhatsNewOpen)
+        // Set Modal false to prevent caller to set fullScreen modal presentation style.
+        // Coordinator already sets the appropriate presentation style for iPhone and iPad.
+        presentViewController(viewController, modal: false)
+    }
+    
 }

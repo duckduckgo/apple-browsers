@@ -29,13 +29,9 @@ protocol DataImportFlowRelaunching {
     /// Launches the data import flow with the specified configuration
     /// - Parameters:
     ///   - model: The view model containing import data and state
-    ///   - title: The title to display in the import dialog
-    ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
     @MainActor
     func relaunchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
+        model: DataImportViewModel
     )
 }
 
@@ -63,18 +59,21 @@ protocol LegacyDataImportFlowRelaunching {
 /// integration and customizable UI configurations. Handles the coordination between
 /// data import functionality and sync features when available.
 final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportFlowRelaunching {
+    private let pinningManager: PinningManager
+
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
+    }
+
     @MainActor
     func relaunchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
+        model: DataImportViewModel
     ) {
         DataImportView(
             model: model,
             importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show()
     }
 
@@ -89,7 +88,8 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             importFlowLauncher: self,
             title: title,
             isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show()
     }
 
@@ -110,17 +110,21 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
                 importFlowLauncher: self,
                 title: title,
                 isDataTypePickerExpanded: isDataTypePickerExpanded,
-                syncFeatureVisibility: syncFeatureVisibility
+                syncFeatureVisibility: syncFeatureVisibility,
+                pinningManager: pinningManager
             ).show(in: window, completion: completion)
             return
         }
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
+        let viewModel = DataImportViewModel(
+            syncFeatureVisibility: syncFeatureVisibility,
+            onFinished: onFinished,
+            onCancelled: onCancelled
+        )
         DataImportView(
             model: viewModel,
             importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show(in: window, completion: completion)
     }
 

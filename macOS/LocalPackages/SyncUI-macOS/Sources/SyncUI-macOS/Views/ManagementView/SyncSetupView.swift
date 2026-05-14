@@ -58,7 +58,9 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
             Image(.syncPair96)
             VStack(alignment: .center, spacing: 8) {
                 SyncUIViews.TextHeader(text: UserText.beginSyncTitle)
-                SyncUIViews.TextDetailSecondary(text: UserText.beginSyncDescription)
+                SyncUIViews.TextDetailSecondary(text: model.isAIChatSyncEnabled
+                                                ? UserText.beginSyncDescriptionUpdated
+                                                : UserText.beginSyncDescription)
             }
             .padding(.bottom, 16)
             Button(UserText.beginSyncButton) {

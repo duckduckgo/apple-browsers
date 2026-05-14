@@ -90,13 +90,14 @@ class FormFactorMigratingMock: BookmarkFormFactorFavoritesMigrating {
 class BookmarksStateValidationMock: BookmarksStateValidation {
 
     var onValidateInitialState: () -> Bool = { return true }
-    func validateInitialState(context: NSManagedObjectContext, validationError: Core.BookmarksStateValidator.ValidationError, isBackground: Bool) -> Bool {
+    func validateInitialState(context: NSManagedObjectContext, validationError: Core.BookmarksStateValidator.ValidationError) -> Bool {
         onValidateInitialState()
     }
-    
+
     var onValidateBookmarksStructure: () -> Void = { }
-    func validateBookmarksStructure(context: NSManagedObjectContext) {
+    func validateBookmarksStructure(context: NSManagedObjectContext) -> Bool {
         onValidateBookmarksStructure()
+        return true
     }
 }
 

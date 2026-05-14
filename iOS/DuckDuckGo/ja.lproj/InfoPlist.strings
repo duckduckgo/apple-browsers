@@ -1,0 +1,36 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "DuckDuckGo";
+
+/* Bundle name */
+"CFBundleName" = "DuckDuckGo";
+
+/* Privacy - Camera Usage Description */
+"NSCameraUsageDescription" = "写真や動画をアップロードできるようにします";
+
+/* Privacy - Face ID Usage Description */
+"NSFaceIDUsageDescription" = "Face IDを使用してロックを解除できるようにします";
+
+/* Privacy - Location When In Use Usage Description */
+"NSLocationWhenInUseUsageDescription" = "位置情報を共有することができます";
+
+/* Privacy - Microphone Usage Description */
+"NSMicrophoneUsageDescription" = "音声機能を使用するために必要です。DuckDuckGoがお客様の話したことを記録することはありません。";
+
+/* Privacy - Photo Library Additions Usage Description */
+"NSPhotoLibraryAddUsageDescription" = "デバイスに画像を保存できるようにします";
+
+/* Privacy - Speech Recognition Usage Description */
+"NSSpeechRecognitionUsageDescription" = "音声検索を利用するために必要です。DuckDuckGoがお客様の話したことを記録することはありません。";
+
+/* (No Comment) */
+"Paste from clipboard" = "クリップボードから貼り付け";
+
+/* No comment provided by engineer. */
+"Paste from Clipboard" = "クリップボードから貼り付け";
+
+/* (No Comment) */
+"Search Passwords" = "パスワードを検索";
+
+/* No comment provided by engineer. */
+"Voice Search" = "音声検索";
+

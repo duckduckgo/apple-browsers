@@ -68,7 +68,7 @@ final class LogViewerDataSource {
         refresh()
     }
     
-    func exportLogsToFile() -> URL? {
+    func exportLogsToFile(entries: [FormattedLogEntry]? = nil) -> URL? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         let timestamp = dateFormatter.string(from: Date())
@@ -79,8 +79,8 @@ final class LogViewerDataSource {
         let consoleFormatter = DateFormatter()
         consoleFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
         consoleFormatter.timeZone = TimeZone.current
-        
-        let logContent: String = logEntries.map { entry in
+
+        let logContent: String = (entries ?? logEntries).map { entry in
             let timestamp = consoleFormatter.string(from: entry.timestamp)
             let processName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "DuckDuckGo"
             return "\(timestamp) \(processName)\(entry.level.displayName): (\(entry.subsystem)) [\(entry.category)] \(entry.message)"

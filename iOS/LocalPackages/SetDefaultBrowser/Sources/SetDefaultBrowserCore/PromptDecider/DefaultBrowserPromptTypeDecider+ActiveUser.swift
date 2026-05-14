@@ -42,12 +42,6 @@ extension DefaultBrowserPromptTypeDecider {
 
 
         func promptType() -> DefaultBrowserPromptType? {
-            // If Feature is disabled return nil
-            guard featureFlagger.isDefaultBrowserPromptsForActiveUsersFeatureEnabled else {
-                Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Feature disabled.")
-                return nil
-            }
-
             guard let userType = userTypeProvider.currentUserType() else {
                 Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed to determine Active user type. Will not show prompt.")
                 return nil

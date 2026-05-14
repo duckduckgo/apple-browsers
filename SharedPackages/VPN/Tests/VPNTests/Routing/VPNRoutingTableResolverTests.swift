@@ -93,7 +93,41 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             XCTAssertTrue(excludedStrings.contains("240.0.0.0/4"),
                          "Should always exclude Class E \(config.description)")
 
+            // IPv6 system ranges should always be excluded
+            XCTAssertTrue(excludedStrings.contains("::1/128"),
+                         "Should always exclude IPv6 loopback \(config.description)")
+            XCTAssertTrue(excludedStrings.contains("fe80::/10"),
+                         "Should always exclude IPv6 link-local \(config.description)")
+            XCTAssertTrue(excludedStrings.contains("ff00::/8"),
+                         "Should always exclude IPv6 multicast \(config.description)")
+
         }
+    }
+
+    /// Verifies that IPv6 ULA (fc00::/7) is excluded when local networks are excluded
+    func testIPv6ULAExcludedWhenExcludingLocalNetworks() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: true
+        )
+
+        let excludedStrings = resolver.excludedRoutes.map { $0.description }
+
+        XCTAssertTrue(excludedStrings.contains("fc00::/7"),
+                     "Should exclude IPv6 ULA when excluding local networks")
+    }
+
+    /// Verifies that IPv6 ULA (fc00::/7) is NOT excluded when including local networks
+    func testIPv6ULANotExcludedWhenIncludingLocalNetworks() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: false
+        )
+
+        let excludedStrings = resolver.excludedRoutes.map { $0.description }
+
+        XCTAssertFalse(excludedStrings.contains("fc00::/7"),
+                      "Should NOT exclude IPv6 ULA when including local networks")
     }
 
     // MARK: - Included Routes Logic Tests

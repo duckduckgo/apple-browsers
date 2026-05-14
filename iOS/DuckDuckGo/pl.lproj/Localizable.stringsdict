@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Usunięto %1$d kartę wraz z danymi</string>
+			<key>few</key>
+			<string>Usunięto %1$d karty wraz z danymi</string>
+			<key>many</key>
+			<string>Usunięto %1$d kart wraz z danymi</string>
+			<key>other</key>
+			<string>Usunięto %1$d karty wraz z danymi</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Usuń z 1 witryny. Może spowodować wylogowanie z kont.</string>
+			<key>few</key>
+			<string>Usuń z %1$d witryn. Może spowodować wylogowanie z kont.</string>
+			<key>many</key>
+			<string>Usuń z %1$d witryn. Może spowodować wylogowanie z kont.</string>
+			<key>other</key>
+			<string>Usuń z %1$d witryny. Może spowodować wylogowanie z kont.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknij kartę</string>
+			<key>few</key>
+			<string>Zamknij wszystkie %1$d karty</string>
+			<key>many</key>
+			<string>Zamknij wszystkie %1$d kart</string>
+			<key>other</key>
+			<string>Zamknij wszystkie %1$d karty</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -157,13 +217,73 @@ Zablokowałem ich!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokowano %1$d skrypt śledzący</string>
+			<string>%1$d śledzący zablokowany przed ładowaniem</string>
 			<key>few</key>
-			<string>Zablokowano %1$d skrypty śledzące</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
 			<key>many</key>
-			<string>Zablokowano %1$d skryptów śledzących</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
 			<key>other</key>
-			<string>Zablokowano %1$d skryptu śledzącego</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d śledzący</string>
+			<key>few</key>
+			<string>%1$d śledzące</string>
+			<key>many</key>
+			<string>%1$d śledzące</string>
+			<key>other</key>
+			<string>%1$d śledzące</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Inna domena załadowana</string>
+			<key>few</key>
+			<string>%1$d Inne domeny załadowane</string>
+			<key>many</key>
+			<string>%1$d Innych domen załadowanych</string>
+			<key>other</key>
+			<string>%1$d Innych domen załadowanych</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d śledzący należący do tej witryny (załadowany)</string>
+			<key>few</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
+			<key>many</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
+			<key>other</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -694,6 +814,46 @@ Zablokowałem ich!
 			<string>%1$d wybranych kart</string>
 			<key>other</key>
 			<string>%1$d wybranej karty</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d witryna wyłączona z czyszczenia</string>
+			<key>few</key>
+			<string>%1$d witryny wyłączone z czyszczenia</string>
+			<key>many</key>
+			<string>%1$d witryn wyłączonych z czyszczenia</string>
+			<key>other</key>
+			<string>%1$d witryny wyłączonej z czyszczenia</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ śledzący</string>
+			<key>few</key>
+			<string>%2$@ śledzące</string>
+			<key>many</key>
+			<string>%2$@ śledzące</string>
+			<key>other</key>
+			<string>%2$@ śledzące</string>
 		</dict>
 	</dict>
 </dict>

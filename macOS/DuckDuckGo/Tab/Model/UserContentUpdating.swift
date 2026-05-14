@@ -22,16 +22,19 @@ import Common
 import BrowserServicesKit
 import History
 import NewTabPage
+import Persistence
+import PrivacyConfig
 import UserScript
 import Configuration
+import DDGSync
+import WebExtensions
 
 extension ContentBlockerRulesIdentifier.Difference {
     static let notification = ContentBlockerRulesIdentifier.Difference(rawValue: 1 << 8)
 }
 
 protocol UserScriptDependenciesProviding: AnyObject {
-    @MainActor
-    func makeNewTabPageActionsManager() -> NewTabPageActionsManager?
+    var syncService: DDGSyncing? { get }
 }
 
 final class UserContentUpdating {
@@ -63,17 +66,23 @@ final class UserContentUpdating {
     /// This property is used to avoid race condition upon app initialization.
     ///
     /// `makeValue` closure in the initializer requires `userScriptDependenciesProvider`
-    /// (that initializes `newTabPageActionsManager`), but the dependencies provider
-    /// is only set after the initializer returns. In the rare case when
-    /// `AppDelegate.init` takes too long, and content blocking rules get updated
-    /// before dependencies provider is assigned, `makeValue` would use nil
-    /// `newTabPageActionsManager`. By halting `updatesStream` until this property
+    /// but the dependencies provider is only set after the initializer returns.
+    /// In the rare case when `AppDelegate.init` takes too long, and content blocking
+    /// rules get updated before dependencies provider is assigned, `makeValue` might use
+    /// nil dependencies. By halting `updatesStream` until this property
     /// is `true` we ensure that `ScriptSourceProvider` is initialized with a correct
-    /// value of `newTabPageActionsManager`.
+    /// values of user script dependencies.
+    ///
+    /// - Note: This was introduced for "New Tab Page per Tab" feature that has
+    ///         ultimately been reverted. This logic stays in place to support
+    ///         future user script dependencies that may need similar handling.
+    ///
     @Published private var isDependenciesProviderInitialized: Bool = false
 
     @MainActor
-    private lazy var newTabPageActionsManager: NewTabPageActionsManager? = userScriptDependenciesProvider?.makeNewTabPageActionsManager()
+    private lazy var syncServiceProvider: () -> DDGSyncing? = { [weak userScriptDependenciesProvider] in
+        return userScriptDependenciesProvider?.syncService
+    }
 
     @MainActor
     init(contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
@@ -88,14 +97,21 @@ final class UserContentUpdating {
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
+         themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         pinningManager: PinningManager,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
-         contentScopePreferences: ContentScopePreferences
+         contentScopePreferences: ContentScopePreferences,
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?,
+         dockCustomization: DockCustomization,
+         reinstallUserDetection: ReinstallingUserDetecting,
+         installDateProvider: @escaping () -> Date
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -115,27 +131,38 @@ final class UserContentUpdating {
             .eraseToAnyPublisher()
 
         let makeValue: (Update) async -> NewContent = { [weak self] rulesUpdate in
-            let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
-                                                      privacyConfigurationManager: privacyConfigurationManager,
-                                                      webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                      cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                                                      duckPlayer: duckPlayer,
-                                                      contentBlockingManager: contentBlockerRulesManager,
-                                                      trackerDataManager: trackerDataManager,
-                                                      experimentManager: experimentManager(),
-                                                      tld: tld,
-                                                      featureFlagger: featureFlagger,
-                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
-                                                      appearancePreferences: appearancePreferences,
-                                                      startupPreferences: startupPreferences,
-                                                      windowControllersManager: windowControllersManager,
-                                                      bookmarkManager: bookmarkManager,
-                                                      historyCoordinator: historyCoordinator,
-                                                      fireproofDomains: fireproofDomains,
-                                                      fireCoordinator: fireCoordinator,
-                                                      autoconsentManagement: autoconsentManagement,
-                                                      newTabPageActionsManager: self?.newTabPageActionsManager)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+            let syncServiceProvider = self?.syncServiceProvider ?? { nil }
+            let newContentTask = Task.detached(priority: .utility) {
+                let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
+                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                                          duckPlayer: duckPlayer,
+                                                          contentBlockingManager: contentBlockerRulesManager,
+                                                          trackerDataManager: trackerDataManager,
+                                                          experimentManager: experimentManager(),
+                                                          tld: tld,
+                                                          featureFlagger: featureFlagger,
+                                                          onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                          appearancePreferences: appearancePreferences,
+                                                          themeManager: themeManager,
+                                                          startupPreferences: startupPreferences,
+                                                          windowControllersManager: windowControllersManager,
+                                                          bookmarkManager: bookmarkManager,
+                                                          pinningManager: pinningManager,
+                                                          historyCoordinator: historyCoordinator,
+                                                          fireproofDomains: fireproofDomains,
+                                                          fireCoordinator: fireCoordinator,
+                                                          autoconsentManagement: autoconsentManagement,
+                                                          syncServiceProvider: syncServiceProvider,
+                                                          syncErrorHandler: syncErrorHandler,
+                                                          webExtensionAvailability: webExtensionAvailability,
+                                                          dockCustomization: dockCustomization,
+                                                          reinstallUserDetection: reinstallUserDetection,
+                                                          installDateProvider: installDateProvider)
+                return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+            }
+            return await newContentTask.value
         }
 
         let updatesStream = AsyncStream { continuation in

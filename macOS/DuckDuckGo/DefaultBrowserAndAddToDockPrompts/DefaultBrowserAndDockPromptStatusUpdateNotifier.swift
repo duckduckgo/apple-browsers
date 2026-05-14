@@ -47,7 +47,7 @@ final class DefaultBrowserAndDockPromptStatusUpdateNotifier: DefaultBrowserAndDo
     }
 
     init(
-        dockCustomizer: DockCustomization = DockCustomizer(),
+        dockCustomizer: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
         timerFactory: TimerCreating = TimerFactory()
     ) {

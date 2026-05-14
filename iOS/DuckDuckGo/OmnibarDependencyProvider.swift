@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Bookmarks
 import Persistence
@@ -27,19 +27,25 @@ import Core
 protocol OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol { get }
     var featureFlagger: FeatureFlagger { get }
+    var aichatIPadTabFeature: AIChatIPadTabFeatureProviding { get }
     var aiChatSettings: AIChatSettingsProvider { get }
+    var aiChatAddressBarExperience: AIChatAddressBarExperienceProviding { get }
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
     var appSettings: AppSettings { get }
     var daxEasterEggPresenter: DaxEasterEggPresenting { get }
     var mobileCustomization: MobileCustomization { get }
+    var duckAiNativeStorageHandler: DuckAiNativeStorageHandling? { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     let appSettings: any AppSettings
     let daxEasterEggPresenter: DaxEasterEggPresenting
     let mobileCustomization: MobileCustomization
+    var duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 }

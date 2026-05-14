@@ -20,7 +20,7 @@
 import UIKit
 import Core
 import Suggestions
-import BrowserServicesKit
+import PrivacyConfig
 import DesignResourcesKitIcons
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
@@ -42,22 +42,26 @@ class BlankSnapshotViewController: UIViewController {
     let addressBarPosition: AddressBarPosition
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettings
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let mobileCustomization: MobileCustomization
 
     var viewCoordinator: MainViewCoordinator!
+    var useMinimalChromeLayout: Bool = false
 
     weak var delegate: BlankSnapshotViewRecoveringDelegate?
 
     init(addressBarPosition: AddressBarPosition,
          aiChatSettings: AIChatSettings,
+         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
          appSettings: AppSettings,
          mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
@@ -72,10 +76,11 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherStaticButton()
+        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
                                                               appSettings: appSettings,
@@ -87,10 +92,12 @@ class BlankSnapshotViewController: UIViewController {
 
         configureOmniBar()
 
-        if AppWidthObserver.shared.isLargeWidth {
+        if useMinimalChromeLayout {
             viewCoordinator.toolbar.isHidden = true
-            viewCoordinator.constraints.navigationBarContainerTop.constant = 40
-            configureTabBar()
+            if AppWidthObserver.shared.isLargeWidth {
+                viewCoordinator.constraints.navigationBarContainerTop.constant = 40
+                configureTabBar()
+            }
         } else {
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
         }
@@ -120,7 +127,7 @@ class BlankSnapshotViewController: UIViewController {
     // Need to do this at this phase to support split screen on iPad
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth
+        viewCoordinator.toolbar.isHidden = useMinimalChromeLayout
     }
 
     private func configureTabBar() {
@@ -147,7 +154,7 @@ class BlankSnapshotViewController: UIViewController {
         layout?.scrollDirection = .horizontal
 
         viewCoordinator.navigationBarCollectionView.dataSource = self
-        if AppWidthObserver.shared.isLargeWidth {
+        if useMinimalChromeLayout {
             viewCoordinator.omniBar.enterPadState()
         }
     }

@@ -144,4 +144,12 @@ final class QuantisedTimePastTests: XCTestCase {
         let nextMonth = calendar.date(from: DateComponents(year: 2024, month: 2, day: 2))!
         XCTAssertEqual(QuantisedTimePast.daysBetween(from: acrossMonths, to: nextMonth), 3)
     }
+
+    func testEquatableNegativeCases() {
+        XCTAssertNotEqual(QuantisedTimePast.none, .weeks(1))
+        XCTAssertNotEqual(QuantisedTimePast.none, .months(1))
+        XCTAssertNotEqual(QuantisedTimePast.weeks(1), .months(1))
+        XCTAssertNotEqual(QuantisedTimePast.weeks(1), .weeks(2))
+        XCTAssertNotEqual(QuantisedTimePast.months(1), .months(2))
+    }
 }

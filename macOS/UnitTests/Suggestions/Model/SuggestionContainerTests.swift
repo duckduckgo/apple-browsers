@@ -22,6 +22,8 @@ import History
 import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import Suggestions
 import WebKit
@@ -204,7 +206,6 @@ final class SuggestionContainerTests: XCTestCase {
                                                                         selectedWindow: selectedWindow)
 
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         mockFeatureFlagger.enabledFeatureFlags.append(.paidAIChat)
 
         // Tested object
@@ -238,7 +239,7 @@ final class SuggestionContainerTests: XCTestCase {
         }
 
         // Get the compiled suggestions
-        let resultPromise = suggestionContainer.$result.dropFirst().timeout(1).first().promise()
+        let resultPromise = suggestionContainer.$result.dropFirst().timeout(5).first().promise()
         suggestionContainer.getSuggestions(for: input.query)
 
         let actualResults = try await resultPromise.get()
@@ -382,7 +383,7 @@ extension SuggestionContainerTests {
         let contentBlockingMock = ContentBlockingMock()
         let privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureKeyEnabled = { _, _ in
+        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tabs = openTabs.map {
@@ -518,7 +519,7 @@ private extension URLSession {
 private extension Suggestion {
 
     func expectedSuggestion(query: String) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
-        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, themeManager: MockThemeManager())
+        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
         switch self {
         case .phrase(phrase: let phrase):
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)

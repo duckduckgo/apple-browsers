@@ -28,14 +28,19 @@ protocol OmniBar: AnyObject {
 
     var omniDelegate: OmniBarDelegate? { get set }
 
+    var isExpandedPhone: Bool { get set }
+
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int)
+
     var isTextFieldEditing: Bool { get }
     var text: String? { get set }
 
     // Updates text and calls a query update function
     func updateQuery(_ query: String?)
     func refreshText(forUrl url: URL?, forceFullURL: Bool)
+    func refreshFireMode(fireMode: Bool)
 
-    func beginEditing(animated: Bool)
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?)
     func endEditing()
 
     func showSeparator()
@@ -59,6 +64,7 @@ protocol OmniBar: AnyObject {
     func selectTextToEnd(_ offset: Int)
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
+    func showYouTubeAdBlockNotification()
 
     func showOrScheduleOnboardingPrivacyIconAnimation()
     func dismissOnboardingPrivacyIconAnimation()
@@ -82,9 +88,18 @@ protocol OmniBar: AnyObject {
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode()
+
+    /// Sets the selected text entry mode for the toggle (search or aiChat).
+    func setSelectedTextEntryMode(_ mode: TextEntryMode)
 }
 
 extension OmniBar {
+    /// Begins editing without overriding the toggle mode. The SwitchBarHandler
+    /// will use its self-resolved default from settings.
+    func beginEditing(animated: Bool) {
+        beginEditing(animated: animated, forTextEntryMode: nil)
+    }
+
     func adjust(for position: AddressBarPosition) {
         switch position {
         case .bottom:

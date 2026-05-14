@@ -32,9 +32,13 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults), pixelKitProvider: { PixelKit.shared })
-        firedPixels.removeAll()
         setupMockPixelKit()
+        wideEvent = WideEvent(
+            useMockRequests: true,
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            featureFlagProvider: MockWideEventFeatureFlagProvider()
+        )
+        firedPixels.removeAll()
     }
 
     override func tearDown() {
@@ -83,12 +87,11 @@ final class SubscriptionWideEventTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
-        let context = WideEventContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            contextData: context
+            funnelName: "funnel_onboarding_ios"
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -141,7 +144,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
-        XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertNil(params["context.name"])
 
         XCTAssertNotNil(params["app.name"])
         XCTAssertNotNil(params["app.version"])
@@ -153,12 +157,11 @@ final class SubscriptionWideEventTests: XCTestCase {
     }
 
     func testSuccessfulStripeSubscriptionFlow() throws {
-        let context = WideEventContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
-            contextData: context
+            funnelName: "funnel_onboarding_ios"
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -187,7 +190,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertNil(params["context.name"])
     }
 
     // MARK: - Failed Subscription Flow Tests
@@ -229,10 +233,14 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_CREATE")
-        XCTAssertEqual(params["feature.data.error.domain"], "Error")
-        XCTAssertEqual(params["feature.data.error.code"], "123")
-        XCTAssertEqual(params["feature.data.error.underlying_domain"], "UnderlyingError")
-        XCTAssertEqual(params["feature.data.error.underlying_code"], "456")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "Error")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "123")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_domain"], "UnderlyingError")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_code"], "456")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
+        XCTAssertNil(params["feature.data.error.underlying_domain"])
+        XCTAssertNil(params["feature.data.error.underlying_code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "10000") // Bucketed from 8000
     }
 
@@ -272,8 +280,10 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_PAYMENT")
-        XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
-        XCTAssertEqual(params["feature.data.error.code"], "2")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "SKErrorDomain")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "2")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "30000")
     }
@@ -338,8 +348,138 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
-        XCTAssertEqual(params["feature.status_reason"], "activation_timeout")
+        XCTAssertEqual(params["feature.data.ext.status_reason"], "activation_timeout")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
     }
 
+    func testCompletionDecision_noActivateIntervalStart_returnsPartialData() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date()
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(10))
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_activationTimeoutExceeded_returnsTimeout() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .stripe,
+            subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout - 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with timeout")
+        }
+    }
+
+    func testCompletionDecision_withinTimeout_returnsKeepPending() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .stripe,
+            subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout + 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending")
+        }
+    }
+
+    func testCompletionDecision_entitlementsCheckerReturnsTrue_completesWithSuccess() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date()
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+        subscriptionData.entitlementsChecker = { true }
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .success(reason: SubscriptionPurchaseWideEventData.StatusReason.missingEntitlementsDelayedActivation.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with success")
+        }
+    }
+
+    func testCompletionDecision_noEntitlementsChecker_neverCompletesWithSuccess() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout + 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending without entitlements checker")
+        }
+    }
+
+}
+
+struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
+    }
 }

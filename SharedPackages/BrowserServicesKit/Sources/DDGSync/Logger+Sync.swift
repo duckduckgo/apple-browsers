@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var sync = { Logger(subsystem: "Sync", category: "") }()
+    static let sync = Logger(subsystem: "Sync", category: "")
 }

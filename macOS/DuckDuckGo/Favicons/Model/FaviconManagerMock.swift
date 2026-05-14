@@ -22,6 +22,8 @@ import Common
 import Combine
 import Foundation
 import History
+import UserScript
+import WebKit
 
 final class FaviconManagerMock: FaviconManagement {
 
@@ -39,7 +41,7 @@ final class FaviconManagerMock: FaviconManagement {
 
     // MARK: - FaviconManagement
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         nil
     }
 
@@ -75,10 +77,12 @@ final class FaviconManagerMock: FaviconManagement {
         return nil
     }
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error> {
+        return .success(())
     }
 
-    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async {
+    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async -> Result<Void, Error> {
+        return .success(())
     }
 }
 #endif

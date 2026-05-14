@@ -21,12 +21,22 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import PrivacyConfig
 
 struct SERPSettingsView: View {
+
     /// Used to show the right settings screen on SERP
     let page: Page
     
-    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false, contentBlocking: false))
+    let webViewModel: AsyncHeadlessWebViewViewModel
+
+    init(page: Page, featureFlagger: FeatureFlagger) {
+        self.page = page
+        self.webViewModel = AsyncHeadlessWebViewViewModel(
+            settings: AsyncHeadlessWebViewSettings(bounces: false,
+                                                   userScriptsDependencies: nil,
+                                                   featureFlagger: featureFlagger))
+    }
 
     var body: some View {
         AsyncHeadlessWebView(viewModel: webViewModel)
@@ -41,11 +51,14 @@ struct SERPSettingsView: View {
 
         case general
         case searchAssist
+        case hideAIGeneratedImages
 
         var url: URL {
             return switch self {
             case .searchAssist:
                 URL.embeddedSearchAssistSettings
+            case .hideAIGeneratedImages:
+                URL.embeddedHideAIGeneratedImagesSettings
             default:
                 URL.embeddedGeneralSERPSettings
             }

@@ -52,24 +52,25 @@ final class SiteThemeColorManager {
         startObservingThemeColor()
     }
 
-    func updateThemeColor() {
+    @discardableResult
+    func updateThemeColor() -> Bool {
         guard isCurrentTabShowingAIChat == false else {
             resetThemeColor()
-            return
+            return false
         }
 
         guard isCurrentTabShowingDaxPlayer == false else {
-            return
+            return false
         }
 
         guard let host = currentTabViewController()?.url?.host,
               let cachedColor = colorCache[host],
               shouldApplyColorToCurrentTab else {
             resetThemeColor()
-            return
+            return false
         }
 
-        updateThemeColor(cachedColor)
+        return updateThemeColor(cachedColor)
     }
 
     func resetThemeColor() {
@@ -81,9 +82,7 @@ final class SiteThemeColorManager {
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
 
-            guard let self, self.isCurrentTabShowingAIChat == false, self.isCurrentTabShowingDaxPlayer == false else {
-                return
-            }
+            guard let self, self.isCurrentTabShowingDaxPlayer == false, self.isCurrentTabShowingAIChat == false else { return }
 
             guard self.shouldApplyColorToCurrentTab, let host = webView.url?.host else {
                 self.resetThemeColor()
@@ -93,7 +92,7 @@ final class SiteThemeColorManager {
             if let newColor = change.newValue as? UIColor {
                 colorCache[host] = newColor
                 if isCurrentTab {
-                    updateThemeColor(newColor)
+                    _ = updateThemeColor(newColor)
                 }
             } else {
                 self.resetThemeColor()
@@ -119,18 +118,19 @@ final class SiteThemeColorManager {
     private var isCurrentTabShowingDaxPlayer: Bool {
         currentTabViewController()?.url?.isDuckPlayer == true
     }
-
+    
     private var isCurrentTabShowingAIChat: Bool {
-        currentTabViewController()?.tabModel.isAITab == true
+        currentTabViewController()?.url?.isDuckAIURL == true
     }
 
-    private func updateThemeColor(_ color: UIColor) {
+    private func updateThemeColor(_ color: UIColor) -> Bool {
         guard viewCoordinator.suggestionTrayContainer.isHidden else {
             resetThemeColor()
-            return
+            return false
         }
 
         applyThemeColor(adjustColor(color))
+        return true
     }
 
     private func adjustColor(_ color: UIColor) -> UIColor {
@@ -139,18 +139,15 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
-
-        var newColor = UIColor(designSystemColor: .background)
-
-        if let color {
-            newColor = color
-        }
+        let newColor = color ?? UIColor(designSystemColor: .background)
+        let statusBackgroundColor: UIColor
 
         if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-            viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+            statusBackgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
         } else {
-            viewCoordinator.statusBackground.backgroundColor = newColor
+            statusBackgroundColor = newColor
         }
+        viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
         tabViewController?.webView?.underPageBackgroundColor = newColor
         tabViewController?.webView?.scrollView.backgroundColor = newColor

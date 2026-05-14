@@ -1,0 +1,9 @@
+{
+    "m_webview_external-scheme-navigation_x-safari-https_loop-detected": {
+        "description": "Fires when a redirect loop is detected after user chose to stay in DuckDuckGo",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

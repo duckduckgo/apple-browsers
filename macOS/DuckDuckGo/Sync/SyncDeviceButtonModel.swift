@@ -21,7 +21,7 @@ import Persistence
 import AppKit
 import DDGSync
 import FeatureFlags
-import BrowserServicesKit
+import PrivacyConfig
 
 public final class SyncDeviceButtonModel: ObservableObject {
     @Published var shouldShowSyncButton: Bool = false

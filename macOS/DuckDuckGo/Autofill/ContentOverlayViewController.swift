@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import Common
 import PixelKit
+import PrivacyConfig
 import SecureStorage
 import WebKit
 import enum UserScript.UserScriptError
@@ -42,7 +43,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     }()
 
     lazy var vaultManager: SecureVaultManager = {
-        let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
+        let manager = SecureVaultManager(passwordManager: Application.appDelegate.passwordManagerCoordinator,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
                                          tld: tld)
         manager.delegate = self
@@ -65,12 +66,14 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
-        tld: TLD
+        tld: TLD,
+        pinningManager: PinningManager
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
+        self.pinningManager = pinningManager
         super.init(coder: coder)
     }
 
@@ -78,12 +81,13 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         fatalError("init(coder:) has not been implemented")
     }
 
-    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
+    private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
@@ -291,11 +295,11 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
-    public func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    public func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
-    public func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    public func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
@@ -373,13 +377,13 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
             self.emailManager.updateLastUseDate()
 
-            PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)), withAdditionalParameters: pixelParameters)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters, doNotEnforcePrefix: true)
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
-            PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), doNotEnforcePrefix: true)
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
-            var parameters = usageProvider.formattedFillDate.flatMap {
+            let parameters = usageProvider.formattedFillDate.flatMap {
                 existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
                 return existingParameters
             } ?? existingParameters
@@ -399,9 +403,9 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestPasswordManagerForDomain domain: String) {
-        let mngr = PasswordManagerCoordinator.shared
+        let mngr = Application.appDelegate.passwordManagerCoordinator
         if mngr.isEnabled {
-            mngr.bitwardenManagement.openBitwarden()
+            mngr.bitwardenManagement?.openBitwarden()
         } else {
             autofillPreferencesModel.showAutofillPopover(.logins, source: .manage)
         }
@@ -409,10 +413,12 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
         let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
-                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
+                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig),
+                                                themeVariant: themeVariant)
 
         do {
             let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
@@ -432,6 +438,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

@@ -24,6 +24,7 @@ typealias PlatformColor = NSColor
 
 import SwiftUI
 import Combine
+import UIComponents
 
 // MARK: - View
 public struct AnimatableTypingText: View {
@@ -31,19 +32,26 @@ public struct AnimatableTypingText: View {
     private var startAnimating: Binding<Bool>
     private var skipAnimation: Binding<Bool>
     private var onTypingFinished: (() -> Void)?
+    /// Alignment of the typed text inside its infinite-width frame. Defaults to `.leading`;
+    /// centered callers must pass `.center` (otherwise the inner `Text` ignores the parent's
+    /// `.multilineTextAlignment`).
+    private let alignment: Alignment
 
     @StateObject private var model: AnimatableTypingTextModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(
         _ text: NSAttributedString,
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
+        alignment: Alignment = .leading,
         onTypingFinished: (() -> Void)? = nil
     ) {
         self.text = text
         _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: text, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
+        self.alignment = alignment
         self.onTypingFinished = onTypingFinished
     }
 
@@ -51,6 +59,7 @@ public struct AnimatableTypingText: View {
         _ text: String,
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
+        alignment: Alignment = .leading,
         onTypingFinished: (() -> Void)? = nil
     ) {
         let attributesText = NSAttributedString(string: text)
@@ -58,21 +67,15 @@ public struct AnimatableTypingText: View {
         _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: attributesText, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
+        self.alignment = alignment
         self.onTypingFinished = onTypingFinished
     }
 
     public var body: some View {
-        Group {
-            if #available(iOS 15, macOS 12, *) {
-                Text(AttributedString(model.typedAttributedText))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(model.typedAttributedText.string)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
+        Text(attributedStringWithAttachments: model.typedAttributedText)
+            .frame(maxWidth: .infinity, alignment: alignment)
         .onChange(of: startAnimating.wrappedValue, perform: { shouldAnimate in
-            if skipAnimation.wrappedValue {
+            if skipAnimation.wrappedValue || reduceMotion {
                 model.skip()
                 return
             }
@@ -88,8 +91,13 @@ public struct AnimatableTypingText: View {
                 model.skip()
             }
         })
+        .onChange(of: reduceMotion) { shouldReduce in
+            if shouldReduce {
+                model.skip()
+            }
+        }
         .onAppear {
-            if skipAnimation.wrappedValue {
+            if skipAnimation.wrappedValue || reduceMotion {
                 model.skip()
             } else if startAnimating.wrappedValue {
                 model.startAnimating()
@@ -200,4 +208,5 @@ extension NSAttributedString {
 
         return mutableAttributedString
     }
+
 }

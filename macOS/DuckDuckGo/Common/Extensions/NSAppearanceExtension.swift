@@ -22,4 +22,8 @@ extension NSAppearance {
     static func withAppAppearance(_ closure: () -> Void) {
         NSApp.effectiveAppearance.performAsCurrentDrawingAppearance(closure)
     }
+
+    var effectiveThemeAppearance: ThemeAppearance {
+        bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+    }
 }

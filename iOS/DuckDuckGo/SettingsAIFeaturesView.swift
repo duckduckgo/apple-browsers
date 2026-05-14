@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Common
 import Networking
 import PixelKit
+import AIChat
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -33,13 +34,9 @@ struct SettingsAIFeaturesView: View {
         List {
 
             VStack(alignment: .center) {
-                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                    Image(.settingAIFeaturesHero)
-                        .padding(.top, -20)
-                } else {
-                    Image(.settingsAIChatHero)
-                        .padding(.top, -20)
-                }
+                Image(.settingAIFeaturesHero)
+                    .padding(.top, -20)
+
                 Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
@@ -73,93 +70,76 @@ struct SettingsAIFeaturesView: View {
             if viewModel.isAiChatEnabledBinding.wrappedValue {
                 if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
 
-                    if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                        Section {
-                            HStack {
-                                SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
-                                    .padding(.vertical, 8)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        } footer: {
-                            Text(footerAttributedString)
-                                .environment(\.openURL, OpenURLAction { url in
-                                    switch FooterAction.from(url) {
-                                    case .shareFeedback?:
-                                        viewModel.presentLegacyView(.feedback)
-                                        return .handled
-                                    case nil:
-                                        return .systemAction
-                                    }
-                                })
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
-                    } else {
-                        Section {
-                            SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                             accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
-                        } footer: {
-                            Text(UserText.settingsAiChatSearchInputFooter)
-                        }
-                    }
-                }
-
-                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Section {
-                        NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
-                            SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
+                        HStack {
+                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                                .padding(.vertical, 8)
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                        if viewModel.aiChatSearchInputEnabledBinding.wrappedValue,
+                           viewModel.isDefaultOmnibarModeEnabled {
+                            SettingsPickerCellView(
+                                label: UserText.settingsDefaultOmnibarModeHeader,
+                                subtitle: UserText.settingsDefaultOmnibarModeFooter,
+                                options: DefaultOmnibarMode.allCases.map { Optional($0) },
+                                selectedOption: viewModel.defaultOmnibarModeBinding
+                            )
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    } footer: {
+                        Text(footerAttributedString)
+                            .environment(\.openURL, OpenURLAction { url in
+                                switch FooterAction.from(url) {
+                                case .shareFeedback?:
+                                    viewModel.presentLegacyView(.feedback)
+                                    return .handled
+                                case nil:
+                                    return .systemAction
+                                }
+                            })
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
-                } else {
-                    Section(header: Text(UserText.aiChatSettingsBrowserShortcutsSectionTitle)) {
-                        SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                        SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                }
 
-                        if viewModel.state.voiceSearchEnabled {
-                            SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                             accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
-                        }
-
-                        SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                if viewModel.experimentalAIChatManager.isContextualDuckAIModeEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAutomaticPageContextTitle,
+                                         subtitle: UserText.settingsAutomaticPageContextSubtitle,
+                                         accessory: .toggle(isOn: viewModel.isAutomaticContextAttachmentEnabled))
                     }
                 }
+
+                Section {
+                    NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
+                        SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
+                    }
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
+
             }
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    if viewModel.embedSERPSettings {
-                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
-                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                        if viewModel.shouldShowHideAIGeneratedImagesSection {
-                            NavigationLink(destination:
-                                SERPSettingsView(page: .searchAssist)
-                                    .environmentObject(viewModel)
-                                    .onAppear {
-                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                    }
-                            ) {
-                                SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
-                                                 subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
-                                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
-                            }
-                            .listRowBackground(Color(designSystemColor: .surface))
-                        }
-                    } else {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist, featureFlagger: viewModel.featureFlagger)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                         action: { viewModel.openAssistSettings() },
-                                         webLinkIndicator: true,
-                                         isButton: true)
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
+                    }
+                    .listRowBackground(Color(designSystemColor: .surface))
+
+                    if viewModel.shouldShowHideAIGeneratedImagesSection {
+                        NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
+                                .onAppear {
+                                    PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                                }
+                        ) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                             subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
                     }
                 }
             }
@@ -215,6 +195,16 @@ private enum FooterAction {
         switch url.host {
         case "share-feedback": return .shareFeedback
         default: return nil
+        }
+    }
+}
+
+extension DefaultOmnibarMode: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .search: return UserText.settingsDefaultOmnibarModeSearch
+        case .duckAI: return UserText.settingsDefaultOmnibarModeDuckAI
+        case .lastUsed: return UserText.settingsDefaultOmnibarModeLastUsed
         }
     }
 }

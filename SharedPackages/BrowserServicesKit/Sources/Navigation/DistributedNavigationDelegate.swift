@@ -26,7 +26,6 @@ public final class DistributedNavigationDelegate: NSObject {
 
     internal var responders = ResponderChain()
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
-    private let isPerformanceReportingEnabled: Bool
 
     /// approved navigation before `navigationDidStart` event received (useful for authentication challenge and redirect events)
     @MainActor
@@ -42,6 +41,10 @@ public final class DistributedNavigationDelegate: NSObject {
             navigationActionDecisionTask?.cancel()
         }
     }
+
+    /// Gater for createWebView callbacks to ensure they are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    private let createWebViewCallbackGater = CreateWebViewCallbackGater()
 
     /// ongoing Main Frame navigation (after `navigationDidStart` event received)
     @MainActor
@@ -77,9 +80,8 @@ public final class DistributedNavigationDelegate: NSObject {
     private var currentHistoryItemIdentity: HistoryItemIdentity? { nil }
 #endif
 
-    public init(isPerformanceReportingEnabled: Bool) {
+    public override init() {
         dispatchPrecondition(condition: .onQueue(.main))
-        self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
         super.init()
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
         _=WKWebView.swizzleLoadMethodOnce
@@ -96,6 +98,13 @@ public final class DistributedNavigationDelegate: NSObject {
         dispatchPrecondition(condition: .onQueue(.main))
 
         responders.setResponders(refs.compactMap { $0 })
+    }
+
+    /// Dispatches a callback so it runs only after all NavigationActions that were executing at the moment of dispatch
+    /// finish their `decidePolicyForNavigationAction` responder-chain processing.
+    @MainActor
+    public func dispatchCreateWebView(_ callback: @escaping @MainActor @Sendable () -> Void) {
+        createWebViewCallbackGater.dispatchCreateWebView(callback)
     }
 
 }
@@ -312,6 +321,12 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         // extract WKNavigationAction mapped to NavigationAction from the Navigation or make new for non-main-frame Navigation Actions
         let navigationAction = navigation?.navigationAction
             ?? NavigationAction(webView: webView, navigationAction: wkNavigationAction, currentHistoryItemIdentity: currentHistoryItemIdentity, redirectHistory: nil, mainFrameNavigation: startedNavigation)
+        createWebViewCallbackGater.beginExecutingNavigationAction(identifier: navigationAction.identifier)
+        let webKitDecisionHandler = decisionHandler
+        let decisionHandler = { [createWebViewCallbackGater] (policy: WKNavigationActionPolicy, preferences: WKWebpagePreferences) in
+            webKitDecisionHandler(policy, preferences)
+            createWebViewCallbackGater.endExecutingNavigationAction(identifier: navigationAction.identifier)
+        }
         // associate NavigationAction with WKNavigationAction object
         wkNavigationAction.navigationAction = navigationAction
 
@@ -964,8 +979,6 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     @objc(_webView:didGeneratePageLoadTiming:)
     @available(macOS 15.2, *)
     public func webView(_ webView: WKWebView, didGeneratePageLoadTiming timing: NSObject) {
-        guard isPerformanceReportingEnabled else { return }
-
         // Create wrapper that extracts data from WebKit's private _WKPageLoadTiming object
         let pageLoadTiming = WKPageLoadTiming(timing)
 

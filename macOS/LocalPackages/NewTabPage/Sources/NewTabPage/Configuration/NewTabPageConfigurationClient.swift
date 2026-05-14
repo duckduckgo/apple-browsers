@@ -25,6 +25,7 @@ import WebKit
 
 public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
     var isOmnibarAvailable: Bool { get }
+    var isNextStepsListWidgetAvailable: Bool { get }
 }
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
@@ -59,10 +60,17 @@ public protocol NewTabPageLinkOpening {
 
 public enum NewTabPageConfigurationEvent: Equatable {
     case newTabPageError(message: String)
+    case newTabPageTelemetry(payload: NewTabPageDataModel.TelemetryEvent)
 }
 
 public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
+    public enum Environment: String {
+        case development
+        case production
+    }
+
+    private let environment: Environment
     private var cancellables = Set<AnyCancellable>()
     private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding
     private let sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding
@@ -74,6 +82,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let stateProvider: NewTabPageStateProviding
 
     public init(
+        environment: Environment,
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
         sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding,
         omnibarConfigProvider: NewTabPageOmnibarConfigProviding,
@@ -83,6 +92,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
         stateProvider: NewTabPageStateProviding
     ) {
+        self.environment = environment
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
         self.omnibarConfigProvider = omnibarConfigProvider
@@ -121,9 +131,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case open
         case reportInitException
         case reportPageException
+        case tabsOnDataUpdate = "tabs_onDataUpdate"
+        case telemetryEvent
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
-        case tabsOnDataUpdate = "tabs_onDataUpdate"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -133,6 +144,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             MessageName.open.rawValue: { [weak self] in try await self?.open(params: $0, original: $1) },
             MessageName.reportInitException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
             MessageName.reportPageException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
+            MessageName.telemetryEvent.rawValue: { [weak self] in try await self?.processTelemetryEvent(params: $0, original: $1) },
             MessageName.widgetsSetConfig.rawValue: { [weak self] in try await self?.widgetsSetConfig(params: $0, original: $1) }
         ])
     }
@@ -142,7 +154,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .subscriptionWinBackBanner),
-            .init(id: .nextSteps),
+            sectionsAvailabilityProvider.isNextStepsListWidgetAvailable ? .init(id: .nextStepsList) : .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ]
@@ -273,15 +285,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-#if DEBUG || REVIEW
-        let env = "development"
-#else
-        let env = "production"
-#endif
-
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
+
         let tabs = stateProvider
             .getState()?
             .first(where: { $0.webView === original.webView })?
@@ -289,7 +296,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,
-            env: env,
+            env: environment.rawValue,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             settings: .init(customizerDrawer: .init(state: .enabled)),
@@ -333,6 +340,15 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
         eventMapper?.fire(.newTabPageError(message: exception.message))
         Logger.general.error("New Tab Page error: \("\(exception.message)", privacy: .public)")
+        return nil
+    }
+
+    @MainActor
+    private func processTelemetryEvent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let event: NewTabPageDataModel.TelemetryEvent = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        eventMapper?.fire(.newTabPageTelemetry(payload: event))
         return nil
     }
 }

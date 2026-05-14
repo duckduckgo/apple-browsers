@@ -70,6 +70,35 @@ final class DataBrokerJobTests: XCTestCase {
         // Then
         XCTAssertFalse(mockActionsHandler.didCallNextAction)
     }
+
+    func testWhenScan_thenWillRetryOnce() async throws {
+        // Given
+        let sut = optOutJob
+        let mockActionsHandler = MockActionsHandler(stepType: .scan)
+        sut.actionsHandler = mockActionsHandler
+
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+
+        // When
+        _ = await sut.evaluateActionAndHaltIfNeeded(action)
+
+        // Then
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
+
+    func testWhenOptOut_thenWillRetryOnce() async throws {
+        // Given
+        let sut = optOutJob
+        let mockActionsHandler = MockActionsHandler(stepType: .optOut)
+        sut.actionsHandler = mockActionsHandler
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+
+        // When
+        _ = await sut.evaluateActionAndHaltIfNeeded(action)
+
+        // Then
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
 }
 
 private extension DataBrokerJobTests {
@@ -81,8 +110,9 @@ private extension DataBrokerJobTests {
                                          emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                          captchaService: CaptchaServiceMock(),
                                          featureFlagger: MockDBPFeatureFlagger(),
+                                         applicationNameForUserAgent: nil,
                                          stageDurationCalculator: MockStageDurationCalculator(),
-                                         pixelHandler: MockPixelHandler(),
+                                         pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                          executionConfig: BrokerJobExecutionConfig(),
                                          shouldRunNextStep: { true })
     }
@@ -94,8 +124,9 @@ private extension DataBrokerJobTests {
                                            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                            captchaService: CaptchaServiceMock(),
                                            featureFlagger: MockDBPFeatureFlagger(),
+                                           applicationNameForUserAgent: nil,
                                            stageCalculator: MockStageDurationCalculator(),
-                                           pixelHandler: MockPixelHandler(),
+                                           pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),
                                            actionsHandlerMode: .optOut,
                                            shouldRunNextStep: { true })

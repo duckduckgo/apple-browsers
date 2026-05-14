@@ -41,9 +41,11 @@ struct VPNRoutingTableResolver {
 
     var excludedRoutes: [IPAddressRange] {
         var routes = VPNRoutingRange.alwaysExcludedIPv4Range
+                   + VPNRoutingRange.alwaysExcludedIPv6Range
 
         if excludeLocalNetworks {
             routes += VPNRoutingRange.localNetworkRangeWithoutDNS
+            routes += VPNRoutingRange.localIPv6NetworkRange
         }
 
         return routes

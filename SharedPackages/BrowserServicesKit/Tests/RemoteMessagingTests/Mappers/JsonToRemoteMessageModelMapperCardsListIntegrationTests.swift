@@ -44,7 +44,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         // WHEN
         let firstMessage = try #require(config.messages.first(where: { $0.id == "whats_new_v1" }))
 
-        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = firstMessage.content else {
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = firstMessage.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -57,24 +57,28 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         #expect(primaryAction == .dismiss)
 
         // Verify first item
-        #expect(items[safe: 0]?.id == "hide_search_images")
-        #expect(items[safe: 0]?.type == .twoLinesItem)
-        #expect(items[safe: 0]?.titleText == "Hide AI Images in Search")
-        #expect(items[safe: 0]?.descriptionText == "Easily hide AI images from your search results")
-        #expect(items[safe: 0]?.placeholderImage == .announce)
-        #expect(items[safe: 0]?.action == .urlInContext(value: "https://example.com"))
+        let firstItem = try #require(items[safe: 0])
+        #expect(firstItem.id == "hide_search_images")
+        #expect(firstItem.titleText == "Hide AI Images in Search")
+        #expect(firstItem.descriptionText == "Easily hide AI images from your search results")
+        #expect(firstItem.placeholderImage == .announce)
+        #expect(firstItem.action == .urlInContext(value: "https://example.com"))
 
         // Verify second item
-        #expect(items[safe: 1]?.id == "enhanced_scam_blocker")
-        #expect(items[safe: 1]?.titleText == "Enhanced Scam Blocker")
-        #expect(items[safe: 1]?.placeholderImage == .privacyShield)
-        #expect(items[safe: 1]?.action == .urlInContext(value: "https://example.com"))
+        let secondItem = try #require(items[safe: 1])
+        #expect(secondItem.id == "enhanced_scam_blocker")
+        #expect(secondItem.titleText == "Enhanced Scam Blocker")
+        #expect(secondItem.descriptionText == "Browse confidently with protection against scam sites")
+        #expect(secondItem.placeholderImage == .subscription)
+        #expect(secondItem.action == .urlInContext(value: "https://example.com"))
 
         // Verify third item
-        #expect(items[safe: 2]?.id == "duck_ai_chat")
-        #expect(items[safe: 2]?.titleText == "Duck AI Chat")
-        #expect(items[safe: 2]?.placeholderImage == .aiChat)
-        #expect(items[safe: 2]?.action == .navigation(value: .importPasswords))
+        let thirdItem = try #require(items[safe: 2])
+        #expect(thirdItem.id == "duck_ai_chat")
+        #expect(thirdItem.titleText == "Duck AI Chat")
+        #expect((thirdItem.descriptionText == "Private AI chat built into your browser"))
+        #expect(thirdItem.placeholderImage == .aiChat)
+        #expect(thirdItem.action == .navigation(value: .importPasswords))
     }
 
     @Test("Check Duplicate Item IDs Are Handled - First Occurrence Kept")
@@ -83,7 +87,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_duplicate_ids" }))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -98,7 +102,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_invalid_items" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -141,7 +145,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_all_placeholders" }))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -191,7 +195,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_item_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -230,7 +234,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_null_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -249,7 +253,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_missing_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -268,7 +272,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_invalid_items_with_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -304,4 +308,96 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         let rule2 = try #require(config.rules.first(where: { $0.id == 2 }))
         #expect(rule2.targetPercentile == nil, "Rule 2 should not have percentile targeting")
     }
+
+}
+
+@Suite("RMF - Mapping - Cards List Items with Sections - JSON Integration")
+struct JsonToRemoteMessageModelMapperCardsListWithSectionsIntegrationTests {
+    let config: RemoteConfigModel
+
+    init() throws {
+        self.config = try RemoteMessagingConfigDecoder.decodeAndMapJson(
+            fileName: "remote-messaging-config-cards-list-items-with-sections.json",
+            bundle: .module
+        )
+    }
+
+    @Test("Check Valid Cards List With Section Configuration Decodes And Maps Successfully")
+    func validCardsListConfigurationDecodesAndMapsSuccessfully() throws {
+        // WHEN
+        let firstMessage = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections" }))
+
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = firstMessage.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(titleText == "What's New")
+        #expect(placeholder == nil)
+        #expect(items.count == 5)
+        #expect(primaryActionText == "Got It")
+        #expect(primaryAction == .dismiss)
+
+        // Verify first item
+        let firstItem = try #require(items[safe: 0])
+        #expect(firstItem.id == "hide_search_images")
+        #expect(firstItem.titleText == "Hide AI Images in Search")
+        #expect(firstItem.descriptionText == "Easily hide AI images from your search results")
+        #expect(firstItem.placeholderImage == .announce)
+        #expect(firstItem.action == .urlInContext(value: "https://example.com"))
+
+        // Verify second item
+        let secondItem = try #require(items[safe: 1])
+        #expect(secondItem.id == "enhanced_scam_blocker")
+        #expect(secondItem.titleText == "Enhanced Scam Blocker")
+        #expect(secondItem.descriptionText == "Browse confidently with protection against scam sites")
+        #expect(secondItem.placeholderImage == .subscription)
+        #expect(secondItem.action == .urlInContext(value: "https://example.com"))
+
+        // Verify third item
+        let thirdItem = try #require(items[safe: 2])
+        #expect(thirdItem.id == "duck_ai_chat")
+        #expect(thirdItem.titleText == "Duck AI Chat")
+        #expect((thirdItem.descriptionText == "Private AI chat built into your browser"))
+        #expect(thirdItem.placeholderImage == .aiChat)
+        #expect(thirdItem.action == .navigation(value: .importPasswords))
+
+        // Verify fourth item (section)
+        let fourthItem = try #require(items[safe: 3])
+        #expect(fourthItem.id == "privacy_pro_section")
+        #expect(fourthItem.titleText == "Become a DuckDuckPro!")
+
+        // Verify fifth item
+        let fifthItem = try #require(items[safe: 4])
+        #expect(fifthItem.id == "privacy_pro_item")
+        #expect(fifthItem.titleText == "Search Faster With Bangs")
+        #expect(fifthItem.descriptionText == "Did you know? Bangs are shortcuts that take you to search results on your fave sites like Wikipedia, YouTube, and more.")
+        #expect(fifthItem.placeholderImage == .aiChat)
+        #expect(fifthItem.action == .urlInContext(value: "https://example.com"))
+    }
+
+    @Test("Check Section With Empty Item Id Is Discarded")
+    func listItemsWithMatchingAndExclusionRulesMapped() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections_and_empty_ids" }))
+
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(items.count == 4)
+
+        // Verify first item
+        #expect(items[safe: 0]?.id == "hide_search_images")
+        // Verify second item
+        #expect(items[safe: 1]?.id == "enhanced_scam_blocker")
+        // Verify third item
+        #expect(items[safe: 2]?.id == "duck_ai_chat")
+        // Verify fourth item item (section is discarded because no item ids provided)
+        #expect(items[safe: 3]?.id == "privacy_pro_item")
+    }
+
 }

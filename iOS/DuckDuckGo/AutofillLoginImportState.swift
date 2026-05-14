@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Foundation
 import Persistence
+import PrivacyConfig
 
 final class AutofillLoginImportState: AutofillLoginImportStateProvider, AutofillLoginImportStateStoring {
 

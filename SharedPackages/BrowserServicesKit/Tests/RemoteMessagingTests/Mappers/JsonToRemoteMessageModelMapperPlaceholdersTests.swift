@@ -22,13 +22,41 @@ import RemoteMessagingTestsUtils
 
 @Suite("RMF - Mapping - Placeholders")
 struct JsonToRemoteMessageModelMapperPlaceholdersTests {
+    private static let placeholderMappings: [(RemoteMessageResponse.JsonPlaceholder, RemotePlaceholder)] = [
+        (.announce, .announce),
+        (.ddgAnnounce, .ddgAnnounce),
+        (.criticalUpdate, .criticalUpdate),
+        (.appUpdate, .appUpdate),
+        (.macComputer, .macComputer),
+        (.newForMacAndWindows, .newForMacAndWindows),
+        (.macAndWindows, .macAndWindows),
+        (.privacyShield, .subscription),
+        (.aiChat, .aiChat),
+        (.visualDesignUpdate, .visualDesignUpdate),
+        (.imageAI, .imageAI),
+        (.radar, .radar),
+        (.radarCheckGreen, .radarCheckGreen),
+        (.radarCheckPurple, .radarCheckPurple),
+        (.keyImport, .keyImport),
+        (.mobileCustomization, .mobileCustomization),
+        (.newTabOptions, .newTabOptions),
+        (.splitBarMobile, .splitBarMobile),
+        (.pir, .pir),
+        (.subscription, .subscription),
+        (.veryCriticalUpdate, .veryCriticalUpdate),
+    ]
+
+    @Test("Check Placeholder Mapping Coverage")
+    func placeholderMappingIsExhaustive() {
+        let mappedKeys = Set(Self.placeholderMappings.map { $0.0 })
+        let allKeys = Set(RemoteMessageResponse.JsonPlaceholder.allCases)
+
+        #expect(mappedKeys == allKeys)
+    }
 
     @Test(
         "Check Placeholders Are Mapped Correctly",
-        arguments: zip(
-            RemoteMessageResponse.JsonPlaceholder.allCases,
-            RemotePlaceholder.allCases
-        )
+        arguments: Self.placeholderMappings
     )
     func placeholderAPIModelIsMappedCorrectly(apiValue: RemoteMessageResponse.JsonPlaceholder, expectedDomainValue: RemotePlaceholder) {
         // WHEN
@@ -61,12 +89,20 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .privacyShield),
-            ("9", .aiChat),
-            ("10", .visualDesignUpdate),
-            ("11", .imageAI),
-            ("12", .radar),
-            ("13", .keyImport),
+            ("8", .macAndWindows),
+            ("9", .subscription),
+            ("10", .aiChat),
+            ("11", .visualDesignUpdate),
+            ("12", .imageAI),
+            ("13", .radarCheckGreen),
+            ("14", .keyImport),
+            ("15", .radar),
+            ("16", .radarCheckPurple),
+            ("17", .pir),
+            ("18", .subscription),
+            ("20", .newTabOptions),
+            ("21", .splitBarMobile),
+            ("22", .veryCriticalUpdate),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForMessages(id: String, expectedDomainValue: RemotePlaceholder) throws {
@@ -74,7 +110,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == id }))
 
         // WHEN
-        guard case let .medium(_, _, placeholder) = message.content else {
+        guard case let .medium(_, _, placeholder, _) = message.content else {
             Issue.record("Expected medium content type")
             return
         }
@@ -94,17 +130,25 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .privacyShield),
-            ("9", .aiChat),
-            ("10", .visualDesignUpdate),
-            ("11", .imageAI),
-            ("12", .radar),
-            ("13", .keyImport),
+            ("8", .macAndWindows),
+            ("9", .subscription),
+            ("10", .aiChat),
+            ("11", .visualDesignUpdate),
+            ("12", .imageAI),
+            ("13", .radarCheckGreen),
+            ("14", .keyImport),
+            ("15", .radar),
+            ("16", .radarCheckPurple),
+            ("17", .pir),
+            ("18", .subscription),
+            ("19", .newTabOptions),
+            ("20", .splitBarMobile),
+            ("21", .veryCriticalUpdate),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForItemsInList(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
-        let messageId = "14"
+        let messageId = "19"
         let message = try #require(config.messages.first(where: { $0.id == messageId }))
         let listItems = try #require(message.content?.listItems)
 

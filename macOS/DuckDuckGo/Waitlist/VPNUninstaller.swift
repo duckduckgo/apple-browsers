@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppLauncher
 import BrowserServicesKit
 import Common
 import LoginItems
-import NetworkExtension
 import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -113,11 +113,22 @@ final class VPNUninstaller: VPNUninstalling {
             }
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .prevented,
+                    .begin,
+                    .cancelled,
+                    .success,
+                    .failure:
+                return [.pixelSource]
+            }
+        }
+
     }
 
     private let ipcServiceLauncher: IPCServiceLauncher
     private let loginItemsManager: LoginItemsManaging
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
     private let settings: VPNSettings
     private let userDefaults: UserDefaults
     private let vpnMenuLoginItem: LoginItem
@@ -129,7 +140,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     init(ipcServiceLauncher: IPCServiceLauncher? = nil,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
-         pinningManager: LocalPinningManager = .shared,
+         pinningManager: PinningManager,
          userDefaults: UserDefaults = .netP,
          settings: VPNSettings = .init(defaults: .netP),
          ipcClient: VPNControllerIPCClient = VPNControllerUDSClient(),

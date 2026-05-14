@@ -29,7 +29,8 @@ final public class HistoryEntry {
                 visits: Set<Visit>,
                 numberOfTrackersBlocked: Int,
                 blockedTrackingEntities: Set<String>,
-                trackersFound: Bool) {
+                trackersFound: Bool,
+                cookiePopupBlocked: Bool = false) {
         self.identifier = identifier
         self.url = url
         self.title = title
@@ -40,6 +41,7 @@ final public class HistoryEntry {
         self.numberOfTrackersBlocked = numberOfTrackersBlocked
         self.blockedTrackingEntities = blockedTrackingEntities
         self.trackersFound = trackersFound
+        self.cookiePopupBlocked = cookiePopupBlocked
     }
 
     public let identifier: UUID
@@ -56,8 +58,8 @@ final public class HistoryEntry {
 
     public var visits: Set<Visit>
 
-    func addVisit(at date: Date = Date()) -> Visit {
-        let visit = Visit(date: date, historyEntry: self)
+    func addVisit(at date: Date = Date(), tabID: String?) -> Visit {
+        let visit = Visit(date: date, historyEntry: self, tabID: tabID)
         visits.insert(visit)
 
         lastVisit = numberOfTotalVisits == 0 ? date : max(lastVisit, date)
@@ -71,6 +73,10 @@ final public class HistoryEntry {
     public private(set) var numberOfTrackersBlocked: Int
     public private(set) var blockedTrackingEntities: Set<String>
     public var trackersFound: Bool
+
+    // MARK: - Cookie Popup Blocking
+
+    public var cookiePopupBlocked: Bool
 
     public func addBlockedTracker(entityName: String) {
         numberOfTrackersBlocked += 1
@@ -95,7 +101,8 @@ extension HistoryEntry {
                   visits: Set<Visit>(),
                   numberOfTrackersBlocked: 0,
                   blockedTrackingEntities: Set<String>(),
-                  trackersFound: false)
+                  trackersFound: false,
+                  cookiePopupBlocked: false)
     }
 
 }
@@ -127,7 +134,8 @@ extension HistoryEntry: NSCopying {
                                 visits: Set(visits),
                                 numberOfTrackersBlocked: numberOfTrackersBlocked,
                                 blockedTrackingEntities: blockedTrackingEntities,
-                                trackersFound: trackersFound)
+                                trackersFound: trackersFound,
+                                cookiePopupBlocked: cookiePopupBlocked)
         entry.visits.forEach { $0.historyEntry = entry }
         return entry
     }

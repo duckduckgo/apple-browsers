@@ -19,12 +19,13 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
+import BrowserServicesKit
+import Common
+import ContentBlocking
 import Foundation
 import TrackerRadarKit
-import BrowserServicesKit
 import WebKit
 import XCTest
-import Common
 
 final class CountedFulfillmentTestExpectation: XCTestExpectation, @unchecked Sendable {
     private(set) var currentFulfillmentCount: Int = 0

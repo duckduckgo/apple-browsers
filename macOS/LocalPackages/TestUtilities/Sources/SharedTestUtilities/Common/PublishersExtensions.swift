@@ -31,9 +31,10 @@ public extension Publisher where Failure == Never {
 
 public extension Publisher where Failure: Error {
 
-    func timeout(_ interval: TimeInterval, _ description: String? = nil, file: StaticString = #file, line: UInt = #line) -> Publishers.Timeout<Publishers.MapError<Self, Error>, DispatchQueue> {
-        return self.mapError { $0 }
+    func timeout(_ interval: TimeInterval, _ description: String? = nil, file: StaticString = #file, line: UInt = #line) -> AnyPublisher<Output, Error> {
+        self.mapError { $0 }
             .timeout(.seconds(interval), scheduler: DispatchQueue.main, customError: { TimeoutError(interval: interval, description: description, file: file, line: line) })
+            .eraseToAnyPublisher()
     }
 
 }

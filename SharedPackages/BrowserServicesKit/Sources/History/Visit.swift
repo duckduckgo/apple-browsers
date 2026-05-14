@@ -29,15 +29,17 @@ final public class Visit {
 
     public typealias ID = URL
 
-    public init(date: Date, identifier: ID? = nil, historyEntry: HistoryEntry? = nil) {
+    public init(date: Date, identifier: ID? = nil, historyEntry: HistoryEntry? = nil, tabID: String? = nil) {
         self.date = date
         self.identifier = identifier
         self.historyEntry = historyEntry
+        self.tabID = tabID
     }
 
     public let date: Date
     public var identifier: ID?
     public weak var historyEntry: HistoryEntry?
+    public var tabID: String?
 
 }
 
@@ -58,7 +60,8 @@ extension Visit: NSCopying {
     public func copy(with zone: NSZone? = nil) -> Any {
         let visit = Visit(date: date,
                           identifier: identifier,
-                          historyEntry: nil)
+                          historyEntry: nil,
+                          tabID: tabID)
         visit.savingState = savingState
         return visit
     }

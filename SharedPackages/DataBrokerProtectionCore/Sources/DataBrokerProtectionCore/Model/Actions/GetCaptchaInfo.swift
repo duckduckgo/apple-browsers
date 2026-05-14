@@ -21,7 +21,37 @@ import Foundation
 struct GetCaptchaInfoAction: Action {
     let id: String
     let actionType: ActionType
-    let selector: String
-    let dataSource: DataSource?
-    let captchaType: String?
+    let json: Data?
+
+    enum CodingKeys: CodingKey {
+        case id
+        case actionType
+    }
+
+    init(id: String,
+         actionType: ActionType,
+         json: Data? = nil) {
+        self.id = id
+        self.actionType = actionType
+        self.json = json
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        actionType = try container.decode(ActionType.self, forKey: .actionType)
+        json = nil
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(actionType, forKey: .actionType)
+    }
+
+    func with(json: Data?) -> GetCaptchaInfoAction {
+        GetCaptchaInfoAction(id: id,
+                             actionType: actionType,
+                             json: json)
+    }
 }

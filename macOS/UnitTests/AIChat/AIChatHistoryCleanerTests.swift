@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatHistoryCleanerTests: XCTestCase {
@@ -44,8 +46,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsTrue() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+    func testWhenAIChatShouldBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsTrue() {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
@@ -54,8 +55,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
         XCTAssertTrue(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
-    func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasNotUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+    func testWhenAIChatShouldBeShown_andAIChatWasNotUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
 
@@ -64,8 +64,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
-    func testWhenFeatureFlagIsOn_andAIChatShouldNotBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+    func testWhenAIChatShouldNotBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = false
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
@@ -74,18 +73,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
-    func testWhenFeatureFlagIsOff_andAIChatShouldBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = []
-        aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
-        featureDiscoveryMock.setReturnValue(true, for: .aiChat)
-
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, privacyConfig: privacyConfigMock)
-
-        XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
-    }
-
     func testWhenNotificationIsPosted_thenShouldDisplayCleanAIChatHistoryOptionIsEnabled() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
         let notificationCenter = NotificationCenter()

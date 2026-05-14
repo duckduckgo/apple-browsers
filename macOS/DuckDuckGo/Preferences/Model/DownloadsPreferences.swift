@@ -109,18 +109,18 @@ final class DownloadsPreferences: ObservableObject {
             if let selectedDownloadLocation = selectedDownloadLocationController?.url {
                 return selectedDownloadLocation
             }
-#if APPSTORE
-            var isStale = false
-            if let bookmarkData = persistor.selectedDownloadLocation.flatMap({ Data(base64Encoded: $0) }),
-               let url = try? URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale) {
-                if isStale {
-                    setSelectedDownloadLocation(url) // update bookmark data and selectedDownloadLocationController
-                } else {
-                    selectedDownloadLocationController = SecurityScopedFileURLController(url: url)
+            if NSApp.isSandboxed {
+                var isStale = false
+                if let bookmarkData = persistor.selectedDownloadLocation.flatMap({ Data(base64Encoded: $0) }),
+                   let url = try? URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale) {
+                    if isStale {
+                        setSelectedDownloadLocation(url) // update bookmark data and selectedDownloadLocationController
+                    } else {
+                        selectedDownloadLocationController = SecurityScopedFileURLController(url: url)
+                    }
+                    return url
                 }
-                return url
             }
-#endif
             guard let url = persistor.selectedDownloadLocation.flatMap(URL.init(string:)),
                   url.isFileURL else { return nil }
             return url.resolvingSymlinksInPath()
@@ -137,11 +137,11 @@ final class DownloadsPreferences: ObservableObject {
     private func setSelectedDownloadLocation(_ url: URL?) {
         selectedDownloadLocationController = url.map { SecurityScopedFileURLController(url: $0) }
         let locationString: String?
-#if APPSTORE
-        locationString = (try? url?.bookmarkData(options: .withSecurityScope).base64EncodedString()) ?? url?.absoluteString
-#else
-        locationString = url?.absoluteString
-#endif
+        if NSApp.isSandboxed {
+            locationString = (try? url?.bookmarkData(options: .withSecurityScope).base64EncodedString()) ?? url?.absoluteString
+        } else {
+            locationString = url?.absoluteString
+        }
         persistor.selectedDownloadLocation = locationString
     }
 

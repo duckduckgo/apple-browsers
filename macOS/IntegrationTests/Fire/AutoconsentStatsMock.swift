@@ -17,6 +17,7 @@
 //
 
 import AutoconsentStats
+import Combine
 import Foundation
 
 final class AutoconsentStatsMock: AutoconsentStatsCollecting {
@@ -27,11 +28,18 @@ final class AutoconsentStatsMock: AutoconsentStatsCollecting {
     private var totalClicksMade: Int64 = 0
     private var totalTimeSpent: TimeInterval = 0
 
+    var statsUpdatePublisher: AnyPublisher<Void, Never> {
+        statsUpdateSubject.eraseToAnyPublisher()
+    }
+
+    private let statsUpdateSubject = PassthroughSubject<Void, Never>()
+
     func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {
         recordAutoconsentActionCalled = true
         totalCookiePopUpsBlocked += 1
         totalClicksMade += clicksMade
         totalTimeSpent += timeSpent
+        statsUpdateSubject.send()
     }
 
     func fetchTotalCookiePopUpsBlocked() async -> Int64 {
@@ -46,10 +54,12 @@ final class AutoconsentStatsMock: AutoconsentStatsCollecting {
         )
     }
 
-    func clearAutoconsentStats() async {
+    func clearAutoconsentStats() async -> Result<Void, Error> {
         clearAutoconsentStatsCalled = true
         totalCookiePopUpsBlocked = 0
         totalClicksMade = 0
         totalTimeSpent = 0
+        statsUpdateSubject.send()
+        return .success(())
     }
 }

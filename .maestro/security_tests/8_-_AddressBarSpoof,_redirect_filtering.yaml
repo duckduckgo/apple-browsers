@@ -1,0 +1,50 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - securityTest
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Test 1: Typed URL shows immediately in address bar
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: "Address Bar Spoofing Pages"
+- copyTextFrom:
+    id: "searchEntry"
+- assertTrue: ${maestro.copiedText.indexOf("privacy-test-pages") != -1}
+
+# Test 2: Cross-origin redirect chain does not flash intermediate URL
+# Click link that triggers: ptp -> first-party.site (instant) -> ptp (3s delay)
+# During the 3s delay, the address bar should NOT show first-party.site
+- tapOn: "Redirect Chain (cross-origin, 3s delay)"
+- copyTextFrom:
+    id: "searchEntry"
+- assertTrue: ${maestro.copiedText.indexOf("first-party") == -1}
+# Wait for redirect chain to complete, then verify final destination
+- runFlow:
+    file: ../shared/delay.yaml
+- copyTextFrom:
+    id: "searchEntry"
+- assertTrue: ${maestro.copiedText.indexOf("privacy-test-pages") != -1}
+
+# Test 3: Back navigation shows correct URL
+- tapOn: "Browse Back"
+- assertVisible: "Address Bar Spoofing Pages"
+- copyTextFrom:
+    id: "searchEntry"
+- assertTrue: ${maestro.copiedText.indexOf("privacy-test-pages") != -1}
+
+# Test 4: Forward navigation shows correct URL
+- tapOn: "Browse Forward"
+- runFlow:
+    file: ../shared/delay.yaml
+- copyTextFrom:
+    id: "searchEntry"
+- assertTrue: ${maestro.copiedText.indexOf("privacy-test-pages") != -1}

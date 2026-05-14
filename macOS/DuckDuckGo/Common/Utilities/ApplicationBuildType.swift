@@ -16,25 +16,45 @@
 //  limitations under the License.
 //
 
+import Common
+import Foundation
+
 protocol ApplicationBuildType {
     var isSparkleBuild: Bool { get }
     var isAppStoreBuild: Bool { get }
+    var isDebugBuild: Bool { get }
+    var isReviewBuild: Bool { get }
+    var isAlphaBuild: Bool { get }
 }
 
-final class StandardApplicationBuildType: ApplicationBuildType {
-    var isSparkleBuild: Bool {
-        #if SPARKLE
+struct StandardApplicationBuildType: ApplicationBuildType {
+
+    let isAppStoreBuild: Bool = AppVersion.isAppStoreBuild
+    var isSparkleBuild: Bool { !isAppStoreBuild }
+
+    var isDebugBuild: Bool {
+#if DEBUG
         return true
-        #else
+#else
         return false
-        #endif
+#endif
     }
 
-    var isAppStoreBuild: Bool {
-        #if APPSTORE
-        return true
-        #else
-        return false
-        #endif
+    let isReviewBuild: Bool = Bundle.main.bundleIdentifier?.contains(".review") ?? false
+    let isAlphaBuild: Bool = Bundle.main.bundleIdentifier?.contains(".alpha") ?? false
+
+}
+
+extension ApplicationBuildType {
+
+    /// Returns the pixel channel name based on internal-user status and build type.
+    ///
+    /// - `"canary"` — internal users (logged in via the internal user flow)
+    /// - `"dev"` — alpha or review builds that are not internal users
+    /// - `nil` — non-internal users on production builds (channel parameter is omitted)
+    func channelName(isInternalUser: Bool) -> String? {
+        if isInternalUser { return "canary" }
+        if isAlphaBuild || isReviewBuild { return "dev" }
+        return nil
     }
 }

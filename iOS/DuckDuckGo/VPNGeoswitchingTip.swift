@@ -39,10 +39,12 @@ extension VPNGeoswitchingTip: Tip {
 
     var title: Text {
         Text(UserText.networkProtectionGeoswitchingTipTitle)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
     }
 
     var message: Text? {
         Text(UserText.networkProtectionGeoswitchingTipMessage)
+            .foregroundStyle(Color(designSystemColor: .textSecondary))
     }
 
     var image: Image? {

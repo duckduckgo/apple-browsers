@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import RemoteMessaging
+import SwiftUI
+import UIComponents
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -29,25 +30,31 @@ struct NewTabPageView: View {
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
+    let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
+    let layoutConfiguration: NewTabPageLayoutConfiguration
 
-    init(narrowLayoutInLandscape: Bool = false,
+    init(isFocussedState: Bool = false,
+         narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
+         layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
+        self.isFocussedState = isFocussedState
         self.viewModel = viewModel
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
+        self.layoutConfiguration = layoutConfiguration
 
         self.messagesModel.load()
     }
 
     private var isShowingSections: Bool {
-        !favoritesViewModel.allFavorites.isEmpty
+        !favoritesViewModel.allFavorites.isEmpty && !viewModel.fireTab
     }
 
     var body: some View {
@@ -76,6 +83,16 @@ struct NewTabPageView: View {
     }
 }
 
+struct NewTabPageLayoutConfiguration {
+    let expandsEscapeHatchToAvailableWidth: Bool
+    let escapeHatchHorizontalPadding: CGFloat
+
+    static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
+                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding)
+    static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
+                                                                  escapeHatchHorizontalPadding: 0)
+}
+
 private extension NewTabPageView {
     // MARK: - Views
     @ViewBuilder
@@ -83,10 +100,20 @@ private extension NewTabPageView {
         GeometryReader { proxy in
             ScrollView {
                 LazyVStack(spacing: Metrics.sectionSpacing) {
-                    
+                    escapeHatchSectionView
+
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+
+                    if let title = viewModel.sectionTitle, !title.isEmpty {
+                        Text(title)
+                            .daxTitle3()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, Metrics.sectionTitleTopPadding)
+                            .padding(.trailing, Metrics.sectionTitleTrailingPadding)
+                    }
 
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
@@ -107,23 +134,101 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var emptyStateView: some View {
-        ZStack {
-            if messagesModel.homeMessageViewModels.isEmpty {
-                NewTabPageDaxLogoView()
-            }
-
-            VStack(spacing: Metrics.sectionSpacing) {
-                messagesSectionView
-                    .padding(.top, Metrics.nonGridSectionTopPadding)
-                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        if viewModel.fireTab {
+            FireModeEmptyStateView(type: .tab,
+                                   escapeHatch: viewModel.escapeHatch,
+                                   onEscapeHatchTap: viewModel.onEscapeHatchTap)
+        } else {
+            logoEmptyView
         }
-        .padding(Metrics.regularPadding)
+    }
+    
+    @ViewBuilder
+    private var logoEmptyView: some View {
+        GeometryReader { proxy in
+            ZStack {
+                if shouldShowLogoInEmptyState {
+                    NewTabPageDaxLogoView()
+                }
+
+                ScrollView {
+                    VStack(spacing: Metrics.sectionSpacing) {
+                        escapeHatchSectionView
+
+                        messagesSectionView
+                            .padding(.top, Metrics.nonGridSectionTopPadding)
+                            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.vertical, sectionsViewPadding(in: proxy))
+                    .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
+                }
+                .if(dismissKeyboardOnScroll, transform: {
+                    $0.withScrollKeyboardDismiss()
+                })
+            }
+        }
+        .if(dismissKeyboardOnScroll, transform: {
+            $0.ignoresSafeArea(.keyboard)
+        })
     }
 
+    private var shouldShowLogoInEmptyState: Bool {
+        guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
+        if viewModel.escapeHatch?.tabType == .aiChat { return false }
+        if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
+        if viewModel.escapeHatch != nil && isFocussedState { return false }
+        return true
+    }
+
+    /// The unified toggle input design lets the hatch fill the same content span as favorites.
+    /// Legacy NTP keeps its existing max widths so the flag-off UI remains unchanged.
+    private var escapeHatchMaxWidth: CGFloat {
+        if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
+            return .infinity
+        }
+        if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
+            return Metrics.escapeHatchMaximumWidthPad
+        }
+        return Metrics.messageMaximumWidth
+    }
+
+    @ViewBuilder
+    private var escapeHatchSectionView: some View {
+        if let escapeHatch = viewModel.escapeHatch {
+            EscapeHatchView(
+                model: escapeHatch,
+                openTabCount: viewModel.openTabCount,
+                onCardTap: { viewModel.onEscapeHatchTap?() },
+                onTabSwitcherTap: { viewModel.onTabSwitcherTap?() }
+            )
+            .frame(maxWidth: escapeHatchMaxWidth)
+            .padding(.top, Metrics.nonGridSectionTopPadding)
+            .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
+        }
+    }
+
+    @ViewBuilder
     private var messagesSectionView: some View {
+        if messagesModel.isFirePromotionVisible {
+            FireModePromotionCardView(
+                onTryFireTabs: {
+                    Task { await messagesModel.firePromotionTryFireTabsTapped() }
+                },
+                onDismiss: {
+                    Task { await messagesModel.firePromotionDismissed() }
+                },
+                onClose: {
+                    Task { await messagesModel.firePromotionClosed() }
+                },
+                onDidAppear: {
+                    messagesModel.firePromotionDidAppear()
+                }
+            )
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .transition(.scale.combined(with: .opacity))
+        }
+
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
@@ -163,9 +268,14 @@ private struct Metrics {
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
     static let updatedNonGridSectionHorizontalPadding = -8.0
+    static let sectionTitleTopPadding = -7.0
+    static let sectionTitleTrailingPadding = 60.0
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455
+    /// Matches the favorites grid's content width on iPad regular size class (5 cols × 96pt
+    /// max item width + 4 × 32pt spacing) so the escape hatch row aligns visually with the grid.
+    static let escapeHatchMaximumWidthPad: CGFloat = 608
 
     static let verySmallScreenWidth: CGFloat = 320
 }
@@ -174,12 +284,13 @@ private struct Metrics {
 
 #Preview("Regular") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -187,7 +298,7 @@ private struct Metrics {
 
 #Preview("With message") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: [
@@ -203,7 +314,8 @@ private struct Metrics {
                     )
                 ]
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -211,12 +323,13 @@ private struct Metrics {
 
 #Preview("No favorites") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -224,12 +337,13 @@ private struct Metrics {
 
 #Preview("Empty") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -242,7 +356,7 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
         self.homeMessages = homeMessages
     }
 
-    func refresh() {
+    func refresh(openedAfterIdle: Bool) {
 
     }
 
@@ -252,5 +366,13 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         homeMessages = homeMessages.dropLast()
+    }
+}
+
+private final class PreviewImageLoader: RemoteMessagingImageLoading {
+    func prefetch(_ urls: [URL]) {}
+    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }

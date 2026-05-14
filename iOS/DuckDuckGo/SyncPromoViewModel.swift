@@ -33,6 +33,8 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksTitle
         case .passwords:
             UserText.syncPromoPasswordsTitle
+        case .dataImport:
+            ""
         }
     }
 
@@ -42,27 +44,20 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksMessage
         case .passwords:
             UserText.syncPromoPasswordsMessage
+        case .dataImport:
+            ""
         }
     }
 
     var image: String {
-        switch touchpointType {
-        default:
-            return "Sync-Start-96"
-        }
+        return "Sync-Pending-96"
     }
 
     var primaryButtonTitle: String {
-        switch touchpointType {
-        case .bookmarks, .passwords:
-            UserText.syncPromoConfirmAction
-        }
+        UserText.syncPromoConfirmAction
     }
 
     var secondaryButtonTitle: String {
-        switch touchpointType {
-        case .bookmarks, .passwords:
-            UserText.syncPromoDismissAction
-        }
+        UserText.syncPromoDismissAction
     }
 }

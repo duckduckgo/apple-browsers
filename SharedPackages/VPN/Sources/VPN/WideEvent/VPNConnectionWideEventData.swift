@@ -21,11 +21,15 @@ import PixelKit
 
 public class VPNConnectionWideEventData: WideEventData {
 
-    #if DEBUG
-    public static let pixelName = "vpn_connection_debug"
-    #else
-    public static let pixelName = "vpn_connection"
-    #endif
+    public static let metadata = WideEventMetadata(
+        pixelName: "vpn_connection",
+        featureName: "vpn-connection",
+        mobileMetaType: "ios-vpn-connection",
+        desktopMetaType: "macos-vpn-connection",
+        version: "1.2.0"
+    )
+
+    public static let connectionTimeout: TimeInterval = .minutes(15)
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -34,7 +38,8 @@ public class VPNConnectionWideEventData: WideEventData {
     // VPN-specific
     public var extensionType: ExtensionType
     public var startupMethod: StartupMethod
-    public var isSetup: Bool
+    public var isSetup: SetupState
+    public var onboardingStatus: MacOSOnboardingStatus?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -55,7 +60,8 @@ public class VPNConnectionWideEventData: WideEventData {
 
     public init(extensionType: ExtensionType,
                 startupMethod: StartupMethod,
-                isSetup: Bool = false,
+                isSetup: SetupState = .unknown,
+                onboardingStatus: MacOSOnboardingStatus? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -72,6 +78,7 @@ public class VPNConnectionWideEventData: WideEventData {
         self.extensionType = extensionType
         self.startupMethod = startupMethod
         self.isSetup = isSetup
+        self.onboardingStatus = onboardingStatus
         self.overallDuration = overallDuration
 
         // Per-step latencies
@@ -92,7 +99,24 @@ public class VPNConnectionWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    private static let featureName = "vpn-connection"
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard let start = overallDuration?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard overallDuration?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.connectionTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
+    }
 }
 
 // MARK: - Public
@@ -111,15 +135,29 @@ extension VPNConnectionWideEventData {
         case manualByTheSystem = "manual_by_the_system"
     }
 
-    public enum StatusReason: String {
+    public enum MacOSOnboardingStatus: String, Codable, CaseIterable {
+        case needsToAllowExtension = "needs_to_allow_extension"
+        case needsToAllowVPNConfiguration = "needs_to_allow_vpn_configuration"
+        case completed
+        case unknown
+    }
+
+    public enum SetupState: String, Codable, CaseIterable {
+        case yes
+        case no
+        case unknown
+    }
+
+    public enum StatusReason: String, Codable, CaseIterable {
         case partialData = "partial_data"
         case timeout
+        case retried
     }
 
     public enum Step: String, Codable, CaseIterable {
         case browserStart = "browser_start"
         case controllerStart = "controller_start"
-        case oauth = "oauth"
+        case oauth
         case tunnelStart = "tunnel_start"
 
         public var durationPath: WritableKeyPath<VPNConnectionWideEventData, WideEvent.MeasuredInterval?> {
@@ -141,18 +179,14 @@ extension VPNConnectionWideEventData {
         }
     }
 
-    public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
-        params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup ? "true" : "false"
-
-        // Overall latency
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
-        }
+    public func jsonParameters() -> [String: Encodable] {
+        var params: [String: Encodable] = Dictionary(compacting: [
+            (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
+            (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
+            (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
+            (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.intValue(.noBucketing)),
+        ])
 
         for step in Step.allCases {
             addStepLatency(self[keyPath: step.durationPath], step: step, to: &params)
@@ -167,14 +201,14 @@ extension VPNConnectionWideEventData {
 
 private extension VPNConnectionWideEventData {
 
-    func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: String]) {
+    func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: Encodable]) {
         guard let duration = interval?.durationMilliseconds else { return }
-        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(Int(duration))
+        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = Int(duration)
     }
 
-    func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: String]) {
+    func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: Encodable]) {
         guard let error else { return }
-        let errorParams = error.pixelParameters()
+        let errorParams = error.jsonParameters()
         for (key, value) in errorParams {
             let stepKey = transformErrorKey(key, for: step)
             params[stepKey] = value
@@ -213,6 +247,7 @@ extension WideEventParameter {
     public enum VPNConnectionFeature {
         static let extensionType = "feature.data.ext.extension_type"
         static let startupMethod = "feature.data.ext.startup_method"
+        static let onboardingStatus = "feature.data.ext.onboarding_status"
         static let isSetup = "feature.data.ext.is_setup"
         static let latency = "feature.data.ext.latency_ms"
 

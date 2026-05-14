@@ -24,9 +24,12 @@ class FireWindowByDefaultTests: UITestCase {
         continueAfterFailure = false
 
         // Assume feature flag is on by default
-        app = XCUIApplication.setUp(featureFlags: ["openFireWindowByDefault": true])
+        app = XCUIApplication.setUp()
 
         app.enforceSingleWindow()
+
+        // Disable warn before quit to allow Cmd+Q to quit immediately in tests
+        app.disableWarnBeforeQuitting()
     }
 
     override func tearDownWithError() throws {

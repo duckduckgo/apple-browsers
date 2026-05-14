@@ -22,7 +22,7 @@ import Common
 import AIChat
 import Persistence
 import UserScript
-import BrowserServicesKit
+import PrivacyConfig
 import SERPSettings
 
 final class SERPSettingsProvider: SERPSettingsProviding {

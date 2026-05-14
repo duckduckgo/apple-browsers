@@ -34,9 +34,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         privacyStats = CapturingPrivacyStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
     }
 
     // MARK: - Initialization Tests
@@ -52,9 +54,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         settingsPersistor.activeFeed = .activity
 
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertFalse(model.isViewExpanded)
         XCTAssertEqual(model.activeFeed, .activity)
@@ -156,6 +160,72 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(model.isRecentActivityVisible)
     }
 
+    // MARK: - Widget New Label Tests
+
+    func testWhenNoWidgetNewLabelDateIsStoredThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        settingsPersistor.widgetNewLabelFirstShownDate = nil
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+        XCTAssertNotNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should store current date when first accessed")
+    }
+
+    func testWhenWidgetNewLabelDateIsWithinSevenDaysThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let recentDate = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = recentDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsOlderThanSevenDaysThenShouldShowProtectionsReportNewLabelReturnsFalse() {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertFalse(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsInTheFutureThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let futureDate = Date().addingTimeInterval(24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = futureDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
     // MARK: - Burn Animation Tests
 
     func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {
@@ -164,9 +234,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
+                                                 showBurnAnimation: false,
+                                                 isAutoconsentEnabled: { true })
         XCTAssertFalse(model.shouldShowBurnAnimation)
     }
 
@@ -175,9 +247,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
             settingsPersistor: settingsPersistor,
             burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-            showBurnAnimation: false
+            showBurnAnimation: false,
+            isAutoconsentEnabled: { true }
         )
 
         try makeShouldShowBurnAnimationStream()
@@ -190,9 +264,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertTrue(model.shouldShowBurnAnimation)
 
@@ -206,9 +282,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         try makeShouldShowBurnAnimationStream()
 

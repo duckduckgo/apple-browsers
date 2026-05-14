@@ -18,6 +18,8 @@
 
 import XCTest
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
@@ -28,15 +30,15 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        let featureFlaggerMock = MockFeatureFlagger()
         let privacyConfigManagerMock = MockPrivacyConfigurationManager()
         let storeMock = MockThrowingKeyValueStore()
         notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
-        sut = DefaultBrowserAndDockPromptService(featureFlagger: featureFlaggerMock,
-                                                 privacyConfigManager: privacyConfigManagerMock,
+        sut = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigManagerMock,
                                                  keyValueStore: storeMock,
                                                  notificationPresenter: notificationPresenterMock,
-                                                 isOnboardingCompletedProvider: { true })
+                                                 uiHosting: { nil },
+                                                 isOnboardingCompletedProvider: { true },
+                                                 dockCustomization: DockCustomizerMock())
     }
 
     override func tearDownWithError() throws {

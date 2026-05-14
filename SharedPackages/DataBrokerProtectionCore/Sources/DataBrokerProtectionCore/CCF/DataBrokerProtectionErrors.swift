@@ -38,6 +38,7 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case httpError(code: Int)
     case dataNotInDatabase
     case jobTimeout
+    case webContentProcessTerminated
 
     static func parse(params: Any) -> DataBrokerProtectionError {
         let errorDataResult = try? JSONSerialization.data(withJSONObject: params)
@@ -88,6 +89,8 @@ extension DataBrokerProtectionError {
             return "dataNotInDatabase"
         case .jobTimeout:
             return "jobTimeout"
+        case .webContentProcessTerminated:
+            return "webContentProcessTerminated"
         }
     }
 }
@@ -127,6 +130,8 @@ extension DataBrokerProtectionError: LocalizedError {
             return "Data not in database"
         case .jobTimeout:
             return "Job timed out"
+        case .webContentProcessTerminated:
+            return "Web content process terminated"
         }
     }
 }
@@ -150,6 +155,7 @@ extension DataBrokerProtectionError: CustomNSError {
         case .dataNotInDatabase: return 113
         /// code 114 was for .vaultNotAvailable error, which has been removed
         case .jobTimeout: return 115
+        case .webContentProcessTerminated: return 116
         }
     }
 }

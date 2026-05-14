@@ -19,314 +19,170 @@
 import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
+@testable import Networking
+import NetworkingTestingUtils
 
+@available(macOS 12.0, iOS 15.0, *)
 final class AppStoreRestoreFlowTests: XCTestCase {
 
-    private struct Constants {
-        static let authToken = UUID().uuidString
-        static let accessToken = UUID().uuidString
-        static let externalID = UUID().uuidString
-        static let email = "dax@duck.com"
+    private var sut: DefaultAppStoreRestoreFlow!
+    private var subscriptionManagerMock: SubscriptionManagerMock!
+    private var storePurchaseManagerMock: StorePurchaseManagerMock!
+    private var pendingTransactionHandlerMock: MockPendingTransactionHandler!
 
-        static let mostRecentTransactionJWS = "dGhpcyBpcyBub3QgYSByZWFsIEFw(...)cCBTdG9yZSB0cmFuc2FjdGlvbiBKV1M="
-        static let storeLoginResponse = StoreLoginResponse(authToken: Constants.authToken,
-                                                           email: Constants.email,
-                                                           externalID: Constants.externalID,
-                                                           id: 1,
-                                                           status: "authenticated")
-
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, statusDescription: "unknown_error")
+    override func setUp() {
+        super.setUp()
+        subscriptionManagerMock = SubscriptionManagerMock()
+        storePurchaseManagerMock = StorePurchaseManagerMock()
+        pendingTransactionHandlerMock = MockPendingTransactionHandler()
+        sut = DefaultAppStoreRestoreFlow(
+            subscriptionManager: subscriptionManagerMock,
+            storePurchaseManager: storePurchaseManagerMock,
+            pendingTransactionHandler: pendingTransactionHandlerMock
+        )
     }
 
-    var accountManager: AccountManagerMock!
-    var storePurchaseManager: StorePurchaseManagerMock!
-    var subscriptionService: SubscriptionEndpointServiceMock!
-    var authService: AuthEndpointServiceMock!
-
-    var appStoreRestoreFlow: AppStoreRestoreFlow!
-
-    override func setUpWithError() throws {
-        accountManager = AccountManagerMock()
-        storePurchaseManager = StorePurchaseManagerMock()
-        subscriptionService = SubscriptionEndpointServiceMock()
-        authService = AuthEndpointServiceMock()
-
-        appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                                         storePurchaseManager: storePurchaseManager,
-                                                         subscriptionEndpointService: subscriptionService,
-                                                         authEndpointService: authService)
+    override func tearDown() {
+        sut = nil
+        subscriptionManagerMock = nil
+        storePurchaseManagerMock = nil
+        pendingTransactionHandlerMock = nil
+        super.tearDown()
     }
 
-    override func tearDownWithError() throws {
-        accountManager = nil
-        subscriptionService = nil
-        authService = nil
-        storePurchaseManager = nil
+    // MARK: - restoreAccountFromPastPurchase Tests
 
-        appStoreRestoreFlow = nil
-    }
+    func test_restoreAccountFromPastPurchase_withNoTransaction_returnsMissingAccountOrTransactionsError() async {
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
 
-    // MARK: - Tests for restoreAccountFromPastPurchase
+        let result = await sut.restoreAccountFromPastPurchase()
 
-    func testRestoreAccountFromPastPurchaseSuccess() async throws {
-        // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-
-        authService.storeLoginResult = .success(Constants.storeLoginResponse)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .success(Constants.accessToken)
-
-        accountManager.fetchAccountDetailsResult = .success(AccountManager.AccountDetails(email: Constants.email,
-                                                                                          externalID: Constants.externalID))
-        accountManager.onFetchAccountDetails = { accessToken in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-        }
-
-        let subscription = SubscriptionMockFactory.appleSubscription
-        subscriptionService.getSubscriptionResult = .success(subscription)
-
-        XCTAssertTrue(subscription.isActive)
-
-        accountManager.onStoreAuthToken = { authToken in
-            XCTAssertEqual(authToken, Constants.authToken)
-        }
-
-        accountManager.onStoreAccount = { accessToken, email, externalID in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-            XCTAssertEqual(externalID, Constants.externalID)
-        }
-
-        // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            // Then
-            XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertTrue(accountManager.fetchAccountDetailsCalled)
-            XCTAssertTrue(accountManager.storeAuthTokenCalled)
-            XCTAssertTrue(accountManager.storeAccountCalled)
-
-            XCTAssertTrue(accountManager.isUserAuthenticated)
-            XCTAssertEqual(accountManager.authToken, Constants.authToken)
-            XCTAssertEqual(accountManager.accessToken, Constants.accessToken)
-            XCTAssertEqual(accountManager.externalID, Constants.externalID)
-            XCTAssertEqual(accountManager.email, Constants.email)
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+        switch result {
         case .failure(let error):
-            XCTFail("Unexpected failure: \(error)")
-        }
-    }
-
-    func testRestoreAccountFromPastPurchaseErrorDueToSubscriptionBeingExpired() async throws {
-        // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-
-        authService.storeLoginResult = .success(Constants.storeLoginResponse)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .success(Constants.accessToken)
-
-        accountManager.fetchAccountDetailsResult = .success(AccountManager.AccountDetails(email: nil, externalID: Constants.externalID))
-        accountManager.onFetchAccountDetails = { accessToken in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-        }
-
-        let subscription = SubscriptionMockFactory.expiredSubscription
-        subscriptionService.getSubscriptionResult = .success(subscription)
-
-        XCTAssertFalse(subscription.isActive)
-
-        accountManager.onStoreAuthToken = { authToken in
-            XCTAssertEqual(authToken, Constants.authToken)
-        }
-
-        accountManager.onStoreAccount = { accessToken, email, externalID in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-            XCTAssertEqual(externalID, Constants.externalID)
-        }
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
-        // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            XCTFail("Unexpected success")
-        case .failure(let error):
-            // Then
-            XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertTrue(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
-
-            guard case .subscriptionExpired(let accountDetails) = error else {
-                XCTFail("Expected .subscriptionExpired error")
-                return
-            }
-
-            XCTAssertEqual(accountDetails.authToken, Constants.authToken)
-            XCTAssertEqual(accountDetails.accessToken, Constants.accessToken)
-            XCTAssertEqual(accountDetails.externalID, Constants.externalID)
-
-            XCTAssertFalse(accountManager.isUserAuthenticated)
-        }
-    }
-
-    func testRestoreAccountFromPastPurchaseErrorWhenNoRecentTransaction() async throws {
-        // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.mostRecentTransactionResult = nil
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
-        // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            XCTFail("Unexpected success")
-        case .failure(let error):
-            // Then
-            XCTAssertFalse(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertFalse(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
             XCTAssertEqual(error, .missingAccountOrTransactions)
-
-            XCTAssertFalse(accountManager.isUserAuthenticated)
+        case .success:
+            XCTFail("Unexpected success")
         }
     }
 
-    func testRestoreAccountFromPastPurchaseErrorDueToStoreLoginFailure() async throws {
-        // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
+    func test_restoreAccountFromPastPurchase_withExpiredSubscription_returnsSubscriptionExpiredError() async {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
 
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
+        let result = await sut.restoreAccountFromPastPurchase()
 
-        authService.storeLoginResult = .failure(Constants.unknownServerError)
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
-        // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .subscriptionExpired)
         case .success:
             XCTFail("Unexpected success")
+        }
+    }
+
+    func test_restoreAccountFromPastPurchase_withPastTransactionAuthenticationError_returnsAuthenticationError() async {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = nil // Triggers an error when calling getSubscriptionFrom()
+
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+        switch result {
         case .failure(let error):
-            // Then
-            XCTAssertFalse(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertFalse(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
             XCTAssertEqual(error, .pastTransactionAuthenticationError)
-
-            XCTAssertFalse(accountManager.isUserAuthenticated)
+        case .success:
+            XCTFail("Unexpected success")
         }
     }
 
-    func testRestoreAccountFromPastPurchaseErrorDueToStoreAuthTokenExchangeFailure() async throws {
-        // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
+    func test_restoreAccountFromPastPurchase_withActiveSubscription_returnsSuccess() async {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
+        let result = await sut.restoreAccountFromPastPurchase()
 
-        authService.storeLoginResult = .success(Constants.storeLoginResponse)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .failure(Constants.unknownServerError)
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
-        // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            XCTFail("Unexpected success")
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+        switch result {
         case .failure(let error):
-            // Then
-            XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertFalse(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
-            XCTAssertEqual(error, .failedToObtainAccessToken)
-
-            XCTAssertFalse(accountManager.isUserAuthenticated)
+            XCTFail("Unexpected error: \(error)")
+        case .success:
+            break
         }
     }
 
-    func testRestoreAccountFromPastPurchaseErrorDueToAccountDetailsFetchFailure() async throws {
+    // MARK: - PendingTransactionHandler Tests
+
+    func test_restoreAccountFromPastPurchase_withSuccess_callsHandleSubscriptionActivated() async {
         // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-
-        authService.storeLoginResult = .success(Constants.storeLoginResponse)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .success(Constants.accessToken)
-
-        accountManager.fetchAccountDetailsResult = .failure(Constants.unknownServerError)
-        accountManager.onFetchAccountDetails = { accessToken in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-        }
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
         // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            XCTFail("Unexpected success")
-        case .failure(let error):
-            // Then
-            XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertTrue(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
-            XCTAssertEqual(error, .failedToFetchAccountDetails)
+        let result = await sut.restoreAccountFromPastPurchase()
 
-            XCTAssertFalse(accountManager.isUserAuthenticated)
+        // Then
+        switch result {
+        case .success:
+            XCTAssertTrue(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+        case .failure:
+            XCTFail("Unexpected failure")
         }
     }
 
-    func testRestoreAccountFromPastPurchaseErrorDueToSubscriptionFetchFailure() async throws {
+    func test_restoreAccountFromPastPurchase_withMissingTransaction_doesNotCallHandleSubscriptionActivated() async {
         // Given
-        XCTAssertFalse(accountManager.isUserAuthenticated)
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
 
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-
-        authService.storeLoginResult = .success(Constants.storeLoginResponse)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .success(Constants.accessToken)
-
-        accountManager.fetchAccountDetailsResult = .success(AccountManager.AccountDetails(email: nil, externalID: Constants.externalID))
-        accountManager.onFetchAccountDetails = { accessToken in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-        }
-
-        subscriptionService.getSubscriptionResult = .failure(.apiError(Constants.unknownServerError))
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                              storePurchaseManager: storePurchaseManager,
-                                              subscriptionEndpointService: subscriptionService,
-                                              authEndpointService: authService)
         // When
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .missingAccountOrTransactions)
+            XCTAssertFalse(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
         case .success:
             XCTFail("Unexpected success")
-        case .failure(let error):
-            // Then
-            XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-            XCTAssertTrue(accountManager.fetchAccountDetailsCalled)
-            XCTAssertFalse(accountManager.storeAuthTokenCalled)
-            XCTAssertFalse(accountManager.storeAccountCalled)
-            XCTAssertEqual(error, .failedToFetchSubscriptionDetails)
-
-            XCTAssertFalse(accountManager.isUserAuthenticated)
         }
+    }
+
+    func test_restoreAccountFromPastPurchase_withExpiredSubscription_doesNotCallHandleSubscriptionActivated() async {
+        // Given
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
+
+        // When
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .subscriptionExpired)
+            XCTAssertFalse(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+}
+
+// MARK: - Mock
+
+@available(macOS 12.0, iOS 15.0, *)
+private final class MockPendingTransactionHandler: PendingTransactionHandling {
+    var markPurchasePendingCalled = false
+    var handleSubscriptionActivatedCalled = false
+    var handlePendingTransactionApprovedCalled = false
+
+    func markPurchasePending() {
+        markPurchasePendingCalled = true
+    }
+
+    func handleSubscriptionActivated() {
+        handleSubscriptionActivatedCalled = true
+    }
+
+    func handlePendingTransactionApproved() {
+        handlePendingTransactionApprovedCalled = true
     }
 }

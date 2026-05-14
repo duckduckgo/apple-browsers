@@ -40,6 +40,7 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     @IBInspectable dynamic var cornerRadius: CGFloat = 0
     @IBInspectable dynamic var backgroundInset: NSPoint = .zero
+    @IBInspectable dynamic var mustAnimateOnMouseOver: Bool = false
 
     @IBInspectable var mouseOverTintColor: NSColor? {
         didSet {
@@ -179,14 +180,20 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     func updateTintColor() {
         NSAppearance.withAppAppearance {
-            if isMouseDown {
-                self.contentTintColor = self.mouseDownTintColor ?? self.normalTintColor
-            } else if isMouseOver {
-                self.contentTintColor = self.mouseOverTintColor ?? self.normalTintColor
-            } else {
-                self.contentTintColor = self.normalTintColor
-            }
+            self.contentTintColor = currentTintColor()
         }
+    }
+
+    private func currentTintColor() -> NSColor? {
+        if isMouseDown {
+            return mouseDownTintColor ?? normalTintColor
+        }
+
+        if isMouseOver {
+            return mouseOverTintColor ?? normalTintColor
+        }
+
+        return normalTintColor
     }
 
     private var hoverTrackingArea: HoverTrackingArea? {

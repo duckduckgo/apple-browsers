@@ -1,7 +1,7 @@
 {
   "name": "Clubset",
   "url": "clubset.com",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "addedDatetime": 1702965600000,
   "optOutUrl": "https://clubset.com/private/control/privacy",
   "steps": [
@@ -156,5 +156,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1763742029893
 }

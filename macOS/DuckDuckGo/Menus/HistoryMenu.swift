@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import FeatureFlags
 import History
 import os.log
+import PrivacyConfig
 
 final class HistoryMenu: NSMenu {
 
@@ -61,7 +61,7 @@ final class HistoryMenu: NSMenu {
     convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.init(
             location: location,
-            historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            historyGroupingProvider: .init(dataSource: historyGroupingDataSource),
             recentlyClosedCoordinator: recentlyClosedCoordinator,
             featureFlagger: featureFlagger
         )

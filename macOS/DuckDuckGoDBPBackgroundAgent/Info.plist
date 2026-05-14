@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>DBP_APP_GROUP</key>
 	<string>$(DBP_APP_GROUP)</string>
 	<key>NSAppTransportSecurity</key>
@@ -19,5 +25,9 @@
 	<string>$(NETP_APP_GROUP)</string>
 	<key>DBP_BACKGROUND_AGENT_BUNDLE_ID</key>
 	<string>$(DBP_BACKGROUND_AGENT_BUNDLE_ID)</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>DuckDuckGo doesn’t need access to the local network.
+
+Please select DON’T ALLOW.</string>
 </dict>
 </plist>

@@ -54,14 +54,7 @@ struct NewImportTypePickerView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(designSystemColor: .surfacePrimary))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(.blackWhite10), lineWidth: 1)
-            )
+            .borderedBackground()
 
             HStack {
                 Spacer()

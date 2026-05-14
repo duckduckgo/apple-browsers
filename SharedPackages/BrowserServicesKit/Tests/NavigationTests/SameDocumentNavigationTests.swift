@@ -199,7 +199,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
             .didSameDocumentNavigation(Nav(action: navAct(15), .finished, isCurrent: false), 0),
 
             // #8 go back to URL#namedlink
-            .willStart(Nav(action: NavAction(req(urls.localHashed, defaultHeaders.allowingExtraKeys), .backForw(-1), from: history[16], src: main(urls.localHashed)), .approved, isCurrent: false)),
+            .willStart(Nav(action: NavAction(req(urls.localHashed, defaultHeaders.allowingExtraKeys.allowingAnyCachePolicy), .backForw(-1), from: history[16], src: main(urls.localHashed)), .approved, isCurrent: false)),
             .didSameDocumentNavigation(Nav(action: NavAction(req(urls.localHashed, [:]), .sameDocumentNavigation(.sessionStatePop), from: history[16], src: main(urls.localHashed)), .finished), 3)
         ])
     }

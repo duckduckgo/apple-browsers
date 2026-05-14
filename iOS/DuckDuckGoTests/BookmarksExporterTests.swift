@@ -208,6 +208,82 @@ class BookmarksExporterTests: XCTestCase {
         }
     }
 
+    func test_WhenImportInvalidURLs_ThenExportSkipsInvalidBookmarks() async throws {
+        let importer = BookmarksImporter(
+            coreDataStore: storage,
+            favoritesDisplayMode: .displayNative(.mobile),
+            htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_export_invalid_urls.html")
+        )
+        let result = await importer.parseAndSave()
+        switch result {
+        case .success:
+            guard let exportedHtml = try? exporter.exportBookmarksToContent() else {
+                return XCTFail("Could not export HTML")
+            }
+
+            let expected = [
+                BookmarksExporter.Template.header,
+                BookmarksExporter.Template.bookmark(level: 2, title: "Valid", url: "https://valid.example/"),
+                BookmarksExporter.Template.footer
+            ].joined()
+            XCTAssertEqual(exportedHtml, expected)
+        case .failure:
+            XCTFail("Could not import HTML")
+        }
+    }
+
+    func test_WhenImportFolderWithEmptyTitle_ThenExportUsesEmptyFolderTitle() async throws {
+        let importer = BookmarksImporter(
+            coreDataStore: storage,
+            favoritesDisplayMode: .displayNative(.mobile),
+            htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_export_empty_folder_title.html")
+        )
+        let result = await importer.parseAndSave()
+        switch result {
+        case .success:
+            guard let exportedHtml = try? exporter.exportBookmarksToContent() else {
+                return XCTFail("Could not export HTML")
+            }
+
+            let expected = [
+                BookmarksExporter.Template.header,
+                BookmarksExporter.Template.openFolder(level: 2, named: ""),
+                BookmarksExporter.Template.bookmark(level: 3, title: "Nested link", url: "https://example.com"),
+                BookmarksExporter.Template.closeFolder(level: 2),
+                BookmarksExporter.Template.footer
+            ].joined()
+            XCTAssertEqual(exportedHtml, expected)
+        case .failure:
+            XCTFail("Could not import HTML")
+        }
+    }
+
+    func test_WhenImportFolderWithSpecialCharacters_ThenExportEscapesFolderTitle() async throws {
+        let importer = BookmarksImporter(
+            coreDataStore: storage,
+            favoritesDisplayMode: .displayNative(.mobile),
+            htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_export_folder_title_special_chars.html")
+        )
+        let result = await importer.parseAndSave()
+        switch result {
+        case .success:
+            guard let exportedHtml = try? exporter.exportBookmarksToContent() else {
+                return XCTFail("Could not export HTML")
+            }
+
+            let expected = [
+                BookmarksExporter.Template.header,
+                BookmarksExporter.Template.openFolder(level: 2, named: "A &amp; &lt;B&gt; &gt; C"),
+                BookmarksExporter.Template.bookmark(level: 3, title: "Nested link", url: "https://example.com"),
+                BookmarksExporter.Template.closeFolder(level: 2),
+                BookmarksExporter.Template.footer
+            ].joined()
+            XCTAssertEqual(exportedHtml, expected)
+        case .failure:
+            XCTFail("Could not import HTML")
+        }
+    }
+
     func buildCommonContent(level: Int = 2) -> String {
         return [
             BookmarksExporter.Template.openFolder(level: level, named: "FolderA-Level1"),

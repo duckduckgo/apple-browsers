@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -35,7 +35,7 @@ let package = Package(
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
+        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
@@ -43,6 +43,7 @@ let package = Package(
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../SystemExtensionManager"),
         .package(path: "../../../SharedPackages/VPN"),
     ],
     targets: [
@@ -134,6 +135,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
                 .product(name: "Lottie", package: "lottie-spm")
             ],
             resources: [

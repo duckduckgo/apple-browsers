@@ -41,6 +41,14 @@ enum AutofillSettingsSource: String {
     case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
     case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
     case customizedToolbarButton = "customized_toolbar_button"
+    case extensionEnablePrompt = "extension_enable_prompt"
+}
+
+enum AutofillSettingsDestination: String {
+    case autofillSettings
+    case autofillPasswordSettings
+    case autofillCreditCardSettings
+    case extensionManagement
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {
@@ -59,10 +67,12 @@ final class AutofillSettingsViewController: UIViewController {
     private let selectedCard: SecureVaultModels.CreditCard?
     private let showPasswordManagement: Bool
     private let showCardManagement: Bool
+    private let showSettingsScreen: AutofillSettingsDestination?
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
     private let keyValueStore: ThrowingKeyValueStoring
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(appSettings: AppSettings,
          syncService: DDGSyncing,
@@ -71,10 +81,12 @@ final class AutofillSettingsViewController: UIViewController {
          selectedCard: SecureVaultModels.CreditCard?,
          showPasswordManagement: Bool,
          showCardManagement: Bool = false,
+         showSettingsScreen: AutofillSettingsDestination?,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.appSettings = appSettings
         self.syncService = syncService
@@ -83,10 +95,12 @@ final class AutofillSettingsViewController: UIViewController {
         self.selectedCard = selectedCard
         self.showPasswordManagement = showPasswordManagement
         self.showCardManagement = showCardManagement
+        self.showSettingsScreen = showSettingsScreen
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source, syncService: syncService, syncDataProviders: syncDataProviders)
         
         super.init(nibName: nil, bundle: nil)
@@ -107,8 +121,12 @@ final class AutofillSettingsViewController: UIViewController {
             segueToPasswords()
         } else if selectedCard != nil || showCardManagement {
             segueToCreditCards()
+        } else if let screen = showSettingsScreen {
+            if case .extensionManagement = screen {
+                segueToExtensionManagement()
+            }
         }
-        
+
         Pixel.fire(pixel: .autofillSettingsOpened)
     }
 
@@ -132,7 +150,8 @@ final class AutofillSettingsViewController: UIViewController {
             source: source,
             bookmarksDatabase: bookmarksDatabase,
             favoritesDisplayMode: favoritesDisplayMode,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         navigationController?.pushViewController(autofillLoginListViewController, animated: true)
     }
@@ -146,20 +165,40 @@ final class AutofillSettingsViewController: UIViewController {
             source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
-    
-    private func segueToFileImport() {
+
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(vault: viewModel.secureVault,
                                                   reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
-        Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
+        return dataImportViewController
+    }
+
+    private func segueToFileImport() {
+        let entryPoint: DataImportViewModel.ImportScreen = .settings
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: entryPoint) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
+        case .hub:
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: entryPoint,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
     
     private func segueToImportViaSync() {
@@ -183,6 +222,19 @@ final class AutofillSettingsViewController: UIViewController {
             }
         }
     }
+
+    private func handleDataImportCompletion() {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        segueToPasswords()
+    }
+
+    private func segueToExtensionManagement() {
+        if #available(iOS 18, *) {
+            let extensionSource: AutofillExtensionSettingsViewController.Source = source == .extensionEnablePrompt ? .inlinePromotion : .autofillSettings
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: extensionSource)
+            navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
+        }
+    }
 }
 
 // MARK: AutofillSettingsViewModelDelegate
@@ -204,7 +256,11 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
     func navigateToCreditCards(viewModel: AutofillSettingsViewModel) {
         segueToCreditCards()
     }
-    
+
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel) {
+        segueToExtensionManagement()
+    }
+
 }
 
 // MARK: DataImportViewControllerDelegate
@@ -212,8 +268,7 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
 extension AutofillSettingsViewController: DataImportViewControllerDelegate {
     
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
-        AppDependencyProvider.shared.autofillLoginSession.startSession()
-        segueToPasswords()
+        handleDataImportCompletion()
     }
     
 }

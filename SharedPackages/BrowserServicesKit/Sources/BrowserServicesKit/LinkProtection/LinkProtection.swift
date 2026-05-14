@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import WebKit
 import Common
+import PrivacyConfig
+import WebKit
 
 public struct LinkProtection {
 

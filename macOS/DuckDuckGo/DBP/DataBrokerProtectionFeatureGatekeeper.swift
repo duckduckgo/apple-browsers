@@ -23,6 +23,7 @@ import DataBrokerProtection_macOS
 import Foundation
 import Freemium
 import os.log
+import PrivacyConfig
 import Subscription
 
 protocol DataBrokerProtectionFeatureGatekeeper {
@@ -36,7 +37,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private let subscriptionAvailability: SubscriptionFeatureAvailability
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -44,7 +45,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureDisabler = featureDisabler
@@ -90,8 +91,6 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
 
         let isAuthenticated = subscriptionManager.isUserAuthenticated
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
-
-        // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
         let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
         return hasEntitlements && isAuthenticated

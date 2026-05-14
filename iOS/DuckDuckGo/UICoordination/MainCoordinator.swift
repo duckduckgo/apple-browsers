@@ -19,7 +19,10 @@
 
 import Foundation
 import Core
+import Combine
 import BrowserServicesKit
+import PixelKit
+import PrivacyConfig
 import Subscription
 import Persistence
 import DDGSync
@@ -27,6 +30,10 @@ import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import PrivacyStats
+import Networking
+import WebExtensions
+import Onboarding
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -44,6 +51,14 @@ protocol ShortcutItemHandling {
 }
 
 @MainActor
+protocol UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool
+
+}
+
+@MainActor
 final class MainCoordinator {
 
     let controller: MainViewController
@@ -51,11 +66,31 @@ final class MainCoordinator {
     private(set) var tabManager: TabManager
     private(set) var interactionStateSource: TabInteractionStateSource?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
+    private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
+    private let privacyStats: PrivacyStatsProviding
+    private let wideEvent: WideEventManaging
+    private let voiceSessionStateManager: VoiceSessionStateProviding
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    private var webExtensionFeatureFlagHandler: AnyObject?
+    private var dataImportUserActivityHandler: DataImportUserActivityHandling?
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
+    private var isSyncingEmbeddedExtensions = false
+    private var darkReaderCancellables = Set<AnyCancellable>()
+    private var youTubeAdBlockingCancellable: AnyCancellable?
+    private var webExtensionLoadTask: Task<Void, Never>?
+    private var isWebExtensionLoadPending = false
+    private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let onboardingManager: OnboardingFlowManaging
+
+    private var hasPresentedOnboarding = false
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -71,7 +106,8 @@ final class MainCoordinator {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         favicons: FaviconManaging,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
@@ -81,42 +117,70 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         whatsNewRepository: WhatsNewMessageRepository,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
+         syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
+         wideEvent: WideEventManaging,
+         onboardingManager: OnboardingManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
+        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
+                                                                      privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.wideEvent = wideEvent
+        self.onboardingManager = onboardingManager
+        self.voiceSessionStateManager = VoiceSessionStateManager()
+        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
+        FireModeCapability.resolve(using: featureFlagger)
+        let fireModeCapability = FireModeCapability.create()
+        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
-        let historyManager = try Self.makeHistoryManager()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
-        reportingService.subscriptionDataReporter.injectTabsModel(tabsModel)
-        let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
-                                                                      contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
+        let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
+        reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
+        let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
+                                                         contextualOnboardingLogic: daxDialogs,
+                                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
-        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
-        interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            featureFlagger: featureFlagger,
-            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider
         )
-        tabManager = TabManager(model: tabsModel,
-                                persistence: tabsPersistence,
+        let onboardingSearchExperienceSettingsResolver = OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: onboardingSearchExperienceProvider,
+            daxDialogsStatusProvider: daxDialogs
+        )
+        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
                                 privacyConfigurationManager: privacyConfigurationManager,
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
+                                userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                 contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                 subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -125,23 +189,66 @@ final class MainCoordinator {
                                 featureFlagger: featureFlagger,
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
-                                textZoomCoordinator: textZoomCoordinator,
+                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
+                                favicons: favicons,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
-                                aiChatSettings: aiChatSettings)
+                                aiChatSettings: aiChatSettings,
+                                productSurfaceTelemetry: productSurfaceTelemetry,
+                                sharedSecureVault: sharedSecureVault,
+                                privacyStats: privacyStats,
+                                voiceSearchHelper: voiceSearchHelper,
+                                launchSourceManager: launchSourceManager,
+                                darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                toggleModeStorage: toggleModeStorage,
+                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: websiteDataManager,
+                                        daxDialogsManager: daxDialogsManager,
+                                        syncService: syncService.sync,
+                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
+                                        fireproofing: fireproofing,
+                                        favicons: favicons,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: autoconsentManagementProvider,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: privacyConfigurationManager,
+                                        appSettings: AppDependencyProvider.shared.appSettings,
+                                        privacyStats: privacyStats,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        fireModeStorageController: contentBlockingService.fireModeStorageController,
+                                        wideEvent: wideEvent)
+        let syncAutoRestoreHandler = SyncAutoRestoreHandler(
+            decisionManager: syncAutoRestoreDecisionManager,
+            syncService: syncService.sync
+        )
+        let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyConfigurationManager,
+            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
-                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
                                         syncDataProviders: syncService.syncDataProviders,
+                                        userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -152,33 +259,250 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        favicons: favicons,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
+                                        onboardingSearchExperienceSettingsResolver: onboardingSearchExperienceSettingsResolver,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                        freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                        freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
-                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        remoteMessagingImageLoader: remoteMessagingService.remoteMessagingImageLoader,
+                                        remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
+                                        productSurfaceTelemetry: productSurfaceTelemetry,
+                                        fireExecutor: fireExecutor,
+                                        remoteMessagingDebugHandler: remoteMessagingService,
+                                        privacyStats: privacyStats,
+                                        whatsNewRepository: whatsNewRepository,
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                        toggleModeStorage: toggleModeStorage,
+                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                        onboardingManager: onboardingManager)
+
+        setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
+
+        // Apply tracker animation suppression early for cold starts
+        // This must happen before tabs load their URLs
+        if launchSourceManager.source == .standard {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
+
     }
 
     func start() {
         controller.loadViewIfNeeded()
     }
 
-    private static func makeHistoryManager() throws -> HistoryManaging {
+    private func subscribeToDarkReaderChanges() {
+        darkReaderFeatureSettings.forceDarkModeChangedPublisher
+            .sink { [weak self] _ in
+                guard #available(iOS 18.4, *) else { return }
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+            .store(in: &darkReaderCancellables)
+    }
+
+    private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+
+        guard #available(iOS 18.4, *) else { return }
+
+        let webExtensionsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensions)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        let embeddedExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.embeddedExtension)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        let adBlockingExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtension)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        youTubeAdBlockingCancellable = NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+
+        webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+            featureFlagPublisher: webExtensionsPublisher,
+            embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            onFeatureFlagEnabled: { [weak self] in
+                self?.initializeWebExtensions()
+            },
+            onFeatureFlagDisabled: { [weak self] in
+                self?.clearWebExtensionReferences()
+            },
+            onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            }
+        )
+
+        if featureFlagger.isFeatureOn(.webExtensions) {
+            initializeWebExtensions()
+        } else {
+            clearWebExtensionReferences()
+        }
+    }
+
+    @available(iOS 18.4, *)
+    private func initializeWebExtensions() {
+        guard webExtensionManager == nil else {
+            // Already initialized, just reload extensions and re-register tabs
+            scheduleExtensionLoad()
+            return
+        }
+
+        guard let privacyConfigurationManager else { return }
+
+        let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            mainViewController: controller,
+            privacyConfigurationManager: privacyConfigurationManager,
+            autoconsentPreferences: AppUserDefaults(),
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
+        )
+        self.webExtensionManager = webExtensionManager
+
+        self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
+            webExtensionManager: webExtensionManager,
+            mainViewController: controller
+        )
+
+        tabManager.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+        controller.setWebExtensionManager(webExtensionManager)
+        subscribeToDarkReaderChanges()
+
+        // Defer extension loading until onAppReadyForInteractions to ensure
+        // the WebKit process, protected data, and UI are fully available.
+        // Loading too early blocks the main thread with WKWebExtension file I/O,
+        // risking a watchdog kill (0x8badf00d) during launch.
+        isWebExtensionLoadPending = true
+        if UIApplication.shared.applicationState == .active {
+            loadWebExtensionsIfPending()
+        }
+    }
+
+    @available(iOS 18.4, *)
+    func loadWebExtensionsIfPending() {
+        guard isWebExtensionLoadPending else { return }
+        scheduleExtensionLoad()
+    }
+
+    @available(iOS 18.4, *)
+    private func scheduleExtensionLoad() {
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = Task { @MainActor [weak self] in
+            guard let self, let manager = self.webExtensionManager as? WebExtensionManager else { return }
+            await self.loadAndSyncEmbeddedExtensions(manager)
+            guard !Task.isCancelled else { return }
+            self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        }
+    }
+
+    @available(iOS 18.4, *)
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            pixelFiring: iOSWebExtensionPixelFiring(),
+            isProduction: !isDebugBuild
+        )
+    }
+
+    @available(iOS 18.4, *)
+    private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
+
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+        if featureFlagger.isFeatureOn(.embeddedExtension) {
+            enabledTypes.insert(.embedded)
+        }
+        if darkReaderFeatureSettings.isForceDarkModeEnabled == true {
+            enabledTypes.insert(.darkReader)
+        }
+        if controller.adBlockingAvailability.isEnabled {
+            enabledTypes.insert(.adBlockingExtension)
+        }
+        return enabledTypes
+    }
+
+    private func clearWebExtensionReferences() {
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = nil
+        webExtensionManager = nil
+        webExtensionEventsCoordinator = nil
+        darkReaderCancellables.removeAll()
+        tabManager.setWebExtensionManager(nil)
+        controller.setWebExtensionEventsCoordinator(nil)
+        controller.setWebExtensionManager(nil)
+    }
+
+    private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
+                                   openTabIDsProvider: { tabsModel.tabs.map { $0.uid } },
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
             throw TerminationError.historyDatabase(error)
@@ -189,35 +513,40 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
-                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModel {
+                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
-        let tabsModel: TabsModel
-        if AutoClearSettingsModel(settings: appSettings) != nil {
-            tabsModel = TabsModel(desktop: isPadDevice)
-            tabsPersistence.clear()
-            tabsPersistence.save(model: tabsModel)
-            previewsSource.removeAllPreviews()
+        let normalModel: TabsModel
+        let fireModel: TabsModel
+
+        if let autoClearSettings = AutoClearSettingsModel(settings: appSettings),
+           autoClearSettings.action.contains(.tabs) {
+            normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
+            fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
+            tabsPersistence.clearAll()
+            _ = tabsPersistence.save(model: normalModel, for: .normal)
+            _ = tabsPersistence.save(model: fireModel, for: .fire)
+            _ = previewsSource.removeAllPreviews()
         } else {
-            if let storedModel = try tabsPersistence.getTabsModel() {
-                tabsModel = storedModel
-            } else {
-                tabsModel = TabsModel(desktop: isPadDevice)
-            }
+            normalModel = try tabsPersistence.getTabsModel(for: .normal)
+                ?? TabsModel(desktop: isPadDevice, mode: .normal)
+            fireModel = try tabsPersistence.getTabsModel(for: .fire)
+                ?? TabsModel(desktop: isPadDevice, mode: .fire)
         }
-        return tabsModel
+        return TabsModelProvider(normalTabsModel: normalModel,
+                                 fireModeTabsModel: fireModel,
+                                 persistence: tabsPersistence)
     }
 
-    private static func makeTextZoomCoordinator() -> TextZoomCoordinator {
-        TextZoomCoordinator(appSettings: AppDependencyProvider.shared.appSettings,
-                            storage: TextZoomStorage(),
-                            featureFlagger: AppDependencyProvider.shared.featureFlagger)
+    private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {
+        TextZoomCoordinatorProvider(appSettings: AppDependencyProvider.shared.appSettings)
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
     }
 
     // MARK: - Public API
@@ -230,23 +559,59 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal()
     }
 
+    func presentDataBrokerProtectionDashboard() {
+        controller.presentDataBrokerProtectionDashboard()
+    }
+
     func presentModalPromptIfNeeded() {
         modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling
 
-    func onForeground() {
+    func onForeground(isFirstForeground: Bool) {
+        // Apply tracker animation suppression based on launch source
+        // Must be called after launchSourceManager.handleAppAction sets the source
+        if isFirstForeground {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
+
+        // Clear external launch flags when app comes to foreground
+        // This ensures flags are reset for subsequent in-app navigations
+        tabManager.clearExternalLaunchFlags()
+
         controller.showBars()
         controller.onForeground()
+
+        fireDailyAdBlockingPixel()
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didFocusWindow()
+        }
     }
 
     func onBackground() {
         resetAppStartTime()
+        Task {
+            await privacyStats.handleAppTermination()
+        }
     }
 
     private func resetAppStartTime() {
         controller.appDidFinishLaunchingStartTime = nil
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        let isEnabled = controller.adBlockingAvailability.isEnabled
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
+        DailyPixel.fire(
+            pixel: .webExtensionDailyAdBlockingState,
+            withAdditionalParameters: [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
+        )
     }
 
 }
@@ -275,7 +640,13 @@ extension MainCoordinator: URLHandling {
     }
 
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
-        if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
+        controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+
+        fireMediumWidgetPixelIfNeeded(url: url)
+
+        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
+            && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
+            && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
         switch AppDeepLinkSchemes.fromURL(url) {
@@ -290,7 +661,8 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            controller.forgetAllWithAnimation()
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
+            controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
             controller.onVoiceSearchPressed()
         case .newEmail:
@@ -301,19 +673,18 @@ extension MainCoordinator: URLHandling {
             handleOpenPasswords(url: url)
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
+        case .openAIVoiceChat:
+            AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
+        case .openBookmarks:
+            controller.segueToBookmarks()
+        case .customProductPage:
+            AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
                 return true
             }
-            guard application.applicationState == .active, let currentTab = controller.currentTab else {
-                return false
-            }
-            // If app is in active state, treat this navigation as something initiated form the context of the current tab.
-            controller.tab(currentTab,
-                           didRequestNewTabForUrl: url,
-                           openedByPage: true,
-                           inheritingAttribution: nil)
+            return false
         }
         return true
     }
@@ -332,6 +703,20 @@ extension MainCoordinator: URLHandling {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: source)
         }
+    }
+
+    private func fireMediumWidgetPixelIfNeeded(url: URL) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems,
+              queryItems.first(where: { $0.name == WidgetSourceType.sourceKey })?.value
+                  == WidgetSourceType.quickActionsMedium.rawValue,
+              let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
+        else { return }
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .widgetMediumLaunch,
+            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
+        )
     }
 
     func handleAIChatAppIconShortuct() {
@@ -362,7 +747,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query)
+        controller.loadQueryInNewTab(query, fromExternalLink: true)
     }
 
     private func handleSearchPassword() {
@@ -372,6 +757,60 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+extension MainCoordinator: UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        if dataImportUserActivityHandler == nil {
+            dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+        }
+
+        guard dataImportUserActivityHandler?.handle(userActivity) == true else {
+            Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
+            return false
+        }
+
+        return true
+    }
+
+    private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
+        DataImportUserActivityHandler(keyValueStore: keyValueStore) { [weak self] result in
+            self?.handleDataImportResult(result)
+        }
+    }
+
+    private func handleDataImportResult(_ result: Result<DataImportSummary, Error>) {
+        switch result {
+        case .success(let summary):
+            controller.presentDataImportSummary(summary, importScreen: .passwords)
+        case .failure(let error):
+            Logger.general.error("Data import failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+}
+
+// MARK: - IdleReturnLaunchDelegate
+
+extension MainCoordinator: IdleReturnLaunchDelegate {
+
+    func showNewTabPageAfterIdleReturn() {
+        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            return
+        }
+
+        controller.prepareForIdleReturnNTP { [weak self] in
+            guard let self else { return }
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+        }
+    }
+
+    func markLastUsedTabAsResumedAfterIdle() {
+        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
     }
 
 }
@@ -396,4 +835,22 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
     func detachPlayerView(_ view: UIView) {
         view.removeFromSuperview()
     }
+
+}
+
+// MARK: MainCoordinator + Onboarding
+
+extension MainCoordinator: OnboardingPresenting {
+
+    func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+        // 1. Configure Onboarding Flow
+        onboardingManager.configureOnboardingFlow(from: url)
+
+        // 2. Presenting Onboarding Flow if needed
+        guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
+        hasPresentedOnboarding = true
+        controller.startupOnboardingCover.bringToFront()
+        controller.startOnboardingFlowIfNotSeenBefore()
+    }
+
 }

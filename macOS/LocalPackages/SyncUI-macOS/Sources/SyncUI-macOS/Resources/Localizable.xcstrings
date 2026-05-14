@@ -1679,6 +1679,66 @@
         }
       }
     },
+    "preferences.begin-sync.card-description-updated" : {
+      "comment" : "Begin Syncing card description in sync settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisiere Lesezeichen, Daten für das automatische Ausfüllen und Duck.ai-Chats sicher zwischen deinen Geräten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Securely sync bookmarks, autofill data, and Duck.ai chats between your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza de forma segura los marcadores, los datos de autocompletado y los chats de Duck.ai entre tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez en toute sécurité vos signets, données de remplissage automatique et discussions Duck.ai entre vos appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza in modo sicuro segnalibri, dati di compilazione automatica e chat di Duck.ai nei tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer veilig bladwijzers, autofill gegevens en Duck.ai chats tussen je apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpiecznie synchronizuj zakładki, dane autouzupełniania i czaty Duck.ai między swoimi urządzeniami."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza de forma segura os teus marcadores, dados de preenchimento automático e conversas do Duck.ai entre os teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безопасная синхронизация закладок, данных автозаполнения и чатов Duck.ai между устройствами."
+          }
+        }
+      }
+    },
     "preferences.begin-sync.card-footer" : {
       "comment" : "Footer / caption on the Begin Syncing card in sync settings",
       "extractionState" : "extracted_with_value",
@@ -2219,6 +2279,66 @@
         }
       }
     },
+    "preferences.preparing-to-sync.dialog-subtitle-updated" : {
+      "comment" : "Preparing to sync dialog subtitle during sync set up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir richten die Verbindung ein, um deine Lesezeichen, Daten für das automatische Ausfüllen und Duck.ai-Chats mit dem anderen Gerät zu synchronisieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estamos configurando la conexión para sincronizar tus marcadores, datos de autocompletado y chats de Duck.ai con el otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous configurons la connexion pour synchroniser vos signets, vos données de remplissage automatique et vos discussions Duck.ai avec l'autre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stiamo configurando la connessione per sincronizzare i segnalibri, i dati di compilazione automatica e le chat di Duck.ai con l'altro dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We zijn de verbinding aan het instellen om je bladwijzers, automatisch in te vullen gegevens en Duck.ai-chats met het andere apparaat te synchroniseren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konfigurujemy połączenie, aby synchronizować zakładki, dane autouzupełniania i czaty Duck.ai z innym urządzeniem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estamos a configurar a ligação para sincronizar os teus favoritos, preencher automaticamente os dados e as conversas do Duck.ai com o outro dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идет подготовка подключения для синхронизации закладок, данных автозаполнения и чатов Duck.ai с другим устройством."
+          }
+        }
+      }
+    },
     "preferences.preparing-to-sync.dialog-title" : {
       "comment" : "Preparing to sync dialog title during sync set up",
       "extractionState" : "extracted_with_value",
@@ -2699,6 +2819,66 @@
         }
       }
     },
+    "preferences.sync.card-footer-updated" : {
+      "comment" : "Footer / caption on the Sync card in sync settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Unterstützung für bestimmte Datentypen variiert je nach Plattform. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Support for certain data types varies by platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compatibilidad con determinados tipos de datos varía en función de la plataforma. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prise en charge de certains types de données varie selon la plateforme. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il supporto per alcuni tipi di dati varia a seconda della piattaforma. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ondersteuning voor bepaalde gegevenstypen verschilt per platform. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wsparcie dla niektórych typów danych różni się w zależności od platformy. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A compatibilidade com determinados tipos de dados varia consoante a plataforma. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка некоторых типов данных зависит от платформы. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        }
+      }
+    },
     "preferences.sync.connected" : {
       "comment" : "Sync state is enabled",
       "extractionState" : "extracted_with_value",
@@ -2815,6 +2995,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробности..."
+          }
+        }
+      }
+    },
+    "preferences.sync.recovery-instructions.footer" : {
+      "comment" : "Footer / caption on the restore synced data section in sync settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I dati Sync & Backup non possono essere recuperati dopo 18 mesi di inattività. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danych Sync & Backup nie można odzyskać po 18 miesiącach braku aktywności. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível recuperar os dados de Sync & Backup após 18 meses de inatividade. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
           }
         }
       }
@@ -3119,6 +3359,66 @@
         }
       }
     },
+    "preferences.sync.single-device-setup.action" : {
+      "comment" : "Button to turn on sync and backup for a single device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur dieses Gerät synchronisieren und sichern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Back Up This Device Only"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar y hacer una copia de seguridad solo en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser et sauvegarder cet appareil uniquement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ed esegui il backup solo di questo dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen dit apparaat synchroniseren en back-up maken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj i twórz kopie zapasowe tylko tego urządzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar e fazer cópia de segurança apenas deste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить только на этом устройстве"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
       "extractionState" : "stale",
@@ -3181,7 +3481,7 @@
     },
     "preferences.sync.sync-with-another-device.dialog-subtitle2" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3419,6 +3719,66 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.scan-qr-code-button" : {
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanne diesen QR-Code"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan This QR Code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanear este código QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanner ce QR code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansiona questo codice QR"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan deze QR-code"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeskanuj ten kod QR"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lê este código QR"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсканировать QR-код"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.show-code-button" : {
       "comment" : "Text on show code button on Sync with another device dialog",
       "extractionState" : "extracted_with_value",
@@ -3600,61 +3960,61 @@
       }
     },
     "preferences.sync.sync-with-another-device.show-qr-code-button" : {
-      "comment" : "Text on show QR code button on Sync with another device dialog",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "QR-Code anzeigen"
+            "value" : "Scanne diesen QR-Code"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show QR Code"
+            "value" : "Scan This QR Code"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar código QR"
+            "value" : "Escanear este código QR"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher le code QR"
+            "value" : "Scanner ce QR code"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra il codice QR"
+            "value" : "Scansiona questo codice QR"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "QR-code weergeven"
+            "value" : "Scan deze QR-code"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż kod QR"
+            "value" : "Zeskanuj ten kod QR"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar código QR"
+            "value" : "Lê este código QR"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показать QR-код"
+            "value" : "Отсканировать QR-код"
           }
         }
       }
@@ -3721,7 +4081,7 @@
     },
     "preferences.sync.sync-with-another-device.show-qr-code-explanation-app" : {
       "comment" : "Sync with another device dialog show qr code explanation - app name",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3781,7 +4141,7 @@
     },
     "preferences.sync.sync-with-another-device.show-qr-code-explanation-prefix" : {
       "comment" : "Sync with another device dialog show qr code explanation - first part (second part will be the app name)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3835,6 +4195,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сканировать с помощью"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step1" : {
+      "comment" : "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne auf einem anderen Gerät **DuckDuckGo**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On another device, open **DuckDuckGo**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre **DuckDuckGo** en otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur un autre appareil, ouvrez **DuckDuckGo**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su un altro dispositivo, apri **DuckDuckGo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open **DuckDuckGo** op een ander apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na innym urządzeniu otwórz **DuckDuckGo**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noutro dispositivo, abre o **DuckDuckGo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте **DuckDuckGo** на втором устройстве."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step2" : {
+      "comment" : "Second instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the Settings path.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gehe zu **Einstellungen › Sync & Backup › Mit einem anderen Gerät synchronisieren**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to **Settings › Sync & Backup › Sync With Another Device**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ve a **Ajustes › Sync & Backup › Sincronizar con otro dispositivo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allez dans **Réglages > Sync & Backup > Synchroniser avec un autre appareil**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai a **Impostazioni › Sync & Backup › Sincronizzazione con un altro dispositivo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga naar **Instellingen › Sync & Backup › Synchroniseren met een ander apparaat**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź do **Ustawienia › Sync & Backup › Synchronizuj z innym urządzeniem**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acede a **Definições › Sync & Backup › Sincronizar com outro dispositivo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте **Настройки > Sync & Backup > Синхронизировать с другим устройством**."
           }
         }
       }
@@ -4195,6 +4675,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-server-subtitle1-updated" : {
+      "comment" : "Sync with server dialog first subtitle",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen, Passwörter, Kreditkarten, Identitäten und Duck.ai-Chats auf dem sicheren Server von DuckDuckGo erstellt, der mit deinen anderen Geräten synchronisiert werden kann."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This creates an encrypted backup of your bookmarks, passwords, credit cards, identities, and Duck.ai chats on DuckDuckGo’s secure server, which can be synced with your other devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto crea una copia de seguridad encriptada de tus marcadores, contraseñas, tarjetas de crédito, identidades y chats de Duck.ai en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela crée une sauvegarde cryptée de vos signets, mots de passe, cartes bancaires, identités et discussions Duck.ai sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa azione crea un backup crittografato di segnalibri, password, carte di credito, identità e chat di Duck.ai sul server sicuro di DuckDuckGo, che può essere sincronizzato con gli altri tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee maak je een versleutelde back-up van je bladwijzers, wachtwoorden, creditcards, identiteiten en Duck.ai-chats op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek, haseł, kart kredytowych, tożsamości i czatów Duck.ai, którą można zsynchronizować z innymi urządzeniami. \n\n"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto cria uma cópia de segurança encriptada dos teus marcadores, palavras-passe, cartões de crédito, identidades e conversas do Duck.ai no servidor seguro da DuckDuckGo, que pode ser sincronizada com os teus outros dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок, паролей, реквизитов платежных карт, персональных данных и чатов Duck.ai на надежном сервере. Копию можно синхронизировать с другими устройствами."
           }
         }
       }
@@ -5106,55 +5646,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Geräte werden getrennt und deine synchronisierten Daten werden vom Server gelöscht."
+            "value" : "Dein Backup wird vom Server gelöscht. Alle Geräte werden von der Synchronisierung getrennt, es werden jedoch keine Daten von den Geräten gelöscht."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "These devices will be disconnected and your synced data will be deleted from the server."
+            "value" : "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos dispositivos se desdesconectarán y tus datos sincronizados se eliminarán del servidor."
+            "value" : "Tu copia de seguridad se eliminará del servidor. Todos los dispositivos se desconectarán de la sincronización, pero no se eliminará nada de ningún dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ces appareils seront déconnectés et vos données synchronisées seront supprimées du serveur."
+            "value" : "Votre sauvegarde sera supprimée du serveur. Tous les appareils seront déconnectés de la synchronisation, mais rien ne sera supprimé sur aucun appareil."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questi dispositivi saranno disconnessi e i dati sincronizzati saranno eliminati dal server."
+            "value" : "Il tuo backup verrà eliminato dal server. Tutti i dispositivi verranno disconnessi dalla sincronizzazione, ma nessun dato verrà eliminato da alcun dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De verbinding met deze apparaten wordt verbroken en je gesynchroniseerde gegevens worden van de server verwijderd."
+            "value" : "Je back-up wordt verwijderd van de server. Alle apparaten worden losgekoppeld van de synchronisatie, maar er wordt niets van de apparaten verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Te urządzenia zostaną odłączone, a zsynchronizowane dane usunięte z serwera."
+            "value" : "Twoja kopia zapasowa zostanie usunięta z serwera. Wszystkie urządzenia zostaną odłączone od synchronizacji, ale nic nie zostanie usunięte z żadnego urządzenia."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estes dispositivos serão desconectados e os dados sincronizados serão eliminados do servidor."
+            "value" : "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Привязка устройств будет отключена, а синхронизированные данные — удалены с сервера."
+            "value" : "Ваша резервная копия будет удалена с сервера. Все устройства будут отключены от синхронизации, но никакие данные с устройств удалены не будут."
           }
         }
       }
@@ -6966,55 +7506,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Personen, die Zugriff auf diesen Code haben, können auf deine synchronisierten Daten zugreifen. Bewahre ihn daher bitte an einem sicheren Ort auf."
+            "value" : "Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Anyone with access to this code can access your synced data, so please keep it in a safe place."
+            "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cualquiera que tenga acceso a este código puede acceder a tus datos sincronizados, así que guárdalo en un lugar seguro."
+            "value" : "Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toute personne ayant accès à ce code peut accéder à vos données synchronisées. Veuillez donc le garder en lieu sûr."
+            "value" : "Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiunque abbia accesso a questo codice può accedere ai tuoi dati sincronizzati, quindi conservalo in un luogo sicuro."
+            "value" : "I dati di Sync & Backup non possono essere recuperati dopo 18 mesi di inattività."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Iedereen met toegang tot deze code kan bij je gesynchroniseerde gegevens. Bewaar de code daarom op een veilige plek."
+            "value" : "Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Każdy, kto ma dostęp do tego kodu, może uzyskać dostęp do zsynchronizowanych danych, więc przechowuj go w bezpiecznym miejscu."
+            "value" : "Danych Sync & Backup nie można odzyskać po 18 miesiącach braku aktywności."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Qualquer pessoa com acesso a este código pode aceder aos teus dados sincronizados, por isso, guarda o código num local seguro."
+            "value" : "Não é possível recuperar os dados de Sync & Backup após 18 meses de inatividade."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Этот код позволяет получить доступ к вашим синхронизированным данным, поэтому храните его в надежном месте."
+            "value" : "Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия."
           }
         }
       }
@@ -7621,7 +8161,7 @@
     },
     "sync.with.another.device.path" : {
       "comment" : "Path to Sync with another device",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

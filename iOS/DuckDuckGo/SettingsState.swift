@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Subscription
+import Networking
 
 struct SettingsState {
     
@@ -32,19 +33,18 @@ struct SettingsState {
     }
     
     struct TextZoom {
-        var enabled: Bool
         var level: TextZoomLevel
     }
 
     struct Subscription: Codable {
-        var canPurchase: Bool
+        var hasAppStoreProductsAvailable: Bool
         var isSignedIn: Bool
         var hasSubscription: Bool
         var hasActiveSubscription: Bool
         var isRestoring: Bool
         var shouldDisplayRestoreSubscriptionError: Bool
-        var subscriptionFeatures: [Entitlement.ProductName]
-        var entitlements: [Entitlement.ProductName]
+        var subscriptionFeatures: [SubscriptionEntitlement]
+        var entitlements: [SubscriptionEntitlement]
         var platform: DuckDuckGoSubscription.Platform
         var isShowingStripeView: Bool
         var isActiveTrialOffer: Bool
@@ -62,18 +62,18 @@ struct SettingsState {
     // Appearance properties
     var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
-    var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
+    var showTrackersBlockedAnimation: Bool
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
+    var forceWebsiteDarkMode: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
     var autoconsentEnabled: Bool
-    var autoclearDataEnabled: Bool
     var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
@@ -88,6 +88,7 @@ struct SettingsState {
     var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
     var autofillSource: AutofillSettingsSource?
     var showCreditCardManagement: Bool
+    var showSettingsScreen: AutofillSettingsDestination?
 
     // About properties
     var version: String
@@ -115,25 +116,33 @@ struct SettingsState {
     var duckPlayerOpenInNewTab: Bool
     var duckPlayerOpenInNewTabEnabled: Bool
     
-    // Duck Player Native UI    
+    // Duck Player Native UI
     var duckPlayerAutoplay: Bool
     var duckPlayerNativeUISERPEnabled: Bool
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
+
+    // Autoplay
+    var autoplayBlockingMode: AutoplayBlockingMode
+  
+    // YouTube Ad Blocking
+    var youTubeAdBlockingAvailable: Bool
+    var youTubeAdBlockingEnabled: Bool
+    var youTubeAdBlockingDisclosureHidden: Bool
 
     static var defaults: SettingsState {
         return SettingsState(
             appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: .fireRising,
-            textZoom: TextZoom(enabled: false, level: .percent100),
+            textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
+            showTrackersBlockedAnimation: true,
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
+            forceWebsiteDarkMode: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
-            autoclearDataEnabled: false,
             autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,
@@ -151,7 +160,7 @@ struct SettingsState {
             speechRecognitionAvailable: false,
             loginsEnabled: false,
             networkProtectionConnected: false,
-            subscription: Subscription(canPurchase: false,
+            subscription: Subscription(hasAppStoreProductsAvailable: false,
                                        isSignedIn: false,
                                        hasSubscription: false,
                                        hasActiveSubscription: false,
@@ -172,7 +181,11 @@ struct SettingsState {
             duckPlayerOpenInNewTabEnabled: false,
             duckPlayerAutoplay: true,
             duckPlayerNativeUISERPEnabled: true,
-            duckPlayerNativeYoutubeMode: .ask
+            duckPlayerNativeYoutubeMode: .ask,
+            autoplayBlockingMode: .blockAudio,
+            youTubeAdBlockingAvailable: false,
+            youTubeAdBlockingEnabled: false,
+            youTubeAdBlockingDisclosureHidden: false
         )
     }
 }

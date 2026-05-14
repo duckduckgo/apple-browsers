@@ -53,4 +53,19 @@ enum NonStandardPixel: PixelKitEvent {
         return nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .brokenSiteReport,
+                .brokenSiteReportShown,
+                .brokenSiteReportSent,
+                .privacyDashboardReportBrokenSite,
+                .emailEnabled,
+                .emailDisabled,
+                .emailUserPressedUseAddress,
+                .emailUserPressedUseAlias,
+                .emailUserCreatedAlias:
+            return [.pixelSource]
+        }
+    }
+
 }

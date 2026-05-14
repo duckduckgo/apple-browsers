@@ -74,6 +74,10 @@ final class UserDialogRequest<Info, Output>: UserDialogRequestProtocol {
         getDecisionHandlerOnce()?(.success(result))
     }
 
+    func cancel() {
+        getDecisionHandlerOnce()?(.failure(.deinitialized))
+    }
+
     func addCompletionHandler(_ completionHandler: @escaping (Swift.Result<Void, Failure>) -> Void) {
         guard let callback /* isComplete == false */ else {
             assertionFailure("The dialog was already completed")

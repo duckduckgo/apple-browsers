@@ -25,19 +25,22 @@ import UIComponents
 
 public enum OmniBarIcon {
     case duckPlayer
+    case duckAI
     case specialError
 
     var image: UIImage {
         switch self {
         case .duckPlayer:
             return UIImage(resource: .duckPlayerURLIcon)
+        case .duckAI:
+            return DesignSystemImages.Color.Size24.aiChatGradient
         case .specialError:
             return DesignSystemImages.Glyphs.Size24.globe
         }
     }
 }
 
-final class DefaultOmniBarView: UIView, OmniBarView {
+final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }
     var privacyInfoContainer: PrivacyInfoContainerView! { searchAreaView.privacyInfoContainer }
@@ -54,6 +57,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var bookmarksButton: UIButton! { bookmarksButtonView }
     var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
+    var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
@@ -65,6 +69,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var stackViewLeadingConstraint: NSLayoutConstraint?
+    private var stackViewTrailingConstraint: NSLayoutConstraint?
 
     let fieldContainerLayoutGuide = UILayoutGuide()
 
@@ -81,8 +87,21 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     }
 
     var isBookmarksButtonHidden: Bool {
-        get { bookmarksButtonView.isHidden }
-        set { bookmarksButtonView.isHidden = newValue }
+        get { bookmarksButtonView.isHidden && leadingBookmarksButtonView.isHidden }
+        set {
+            bookmarksButtonView.isHidden = newValue
+            leadingBookmarksButtonView.isHidden = newValue
+        }
+    }
+
+    func setBookmarksPosition(leading: Bool, hidden: Bool) {
+        leadingBookmarksButtonView.isHidden = leading ? hidden : true
+        bookmarksButtonView.isHidden = leading ? true : hidden
+    }
+
+    var isPasswordsButtonHidden: Bool {
+        get { passwordsButtonView.isHidden }
+        set { passwordsButtonView.isHidden = newValue }
     }
 
     var isMenuButtonHidden: Bool {
@@ -93,6 +112,16 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var isSettingsButtonHidden: Bool {
         get { settingsButtonView.isHidden }
         set { settingsButtonView.isHidden = newValue }
+    }
+
+    var isFireButtonHidden: Bool {
+        get { fireButtonView.isHidden }
+        set { fireButtonView.isHidden = newValue }
+    }
+
+    var isTabSwitcherButtonHidden: Bool {
+        get { tabSwitcherContainerView.isHidden }
+        set { tabSwitcherContainerView.isHidden = newValue }
     }
 
     // Universal elements
@@ -114,6 +143,11 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var isRefreshButtonHidden: Bool {
         get { searchAreaView.reloadButton.isHidden }
         set { searchAreaView.reloadButton.isHidden = newValue }
+    }
+    
+    var isExternalRefreshButtonHidden: Bool {
+        get { externalRefreshButtonView.isHidden }
+        set { externalRefreshButtonView.isHidden = newValue }
     }
 
     var isCustomizableButtonHidden: Bool {
@@ -139,6 +173,16 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         get { searchAreaView.aiChatButton.isHidden }
         set { searchAreaView.aiChatButton.isHidden = newValue }
     }
+    
+    var isModeToggleHidden: Bool {
+        get { searchAreaView.isModeToggleHidden }
+        set { searchAreaView.isModeToggleHidden = newValue }
+    }
+    
+    var selectedModeToggleState: TextEntryMode {
+        get { searchAreaView.modeToggleView.selectedMode }
+        set { searchAreaView.modeToggleView.selectedMode = newValue }
+    }
 
     var isSearchLoupeHidden: Bool {
         get { searchLoupe.isHidden }
@@ -153,6 +197,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     /// Controls whether the AI Chat mode UI is hidden (false = AI Chat mode, true = regular mode)
     var isFullAIChatHidden: Bool = true {
         didSet {
+            guard oldValue != isFullAIChatHidden else { return }
             if isFullAIChatHidden {
                 hideAIChatOmnibar()
             } else {
@@ -161,15 +206,59 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         }
     }
 
-    var isUsingCompactLayout: Bool = false {
-        didSet {
-            leadingButtonsContainer.isHidden = isUsingCompactLayout
-            trailingButtonsContainer.isHidden = isUsingCompactLayout
-            bookmarksButtonView.isHidden = isUsingCompactLayout
+    /// When true, `safeAreaInsets` returns `.zero` because the parent container
+    /// (e.g. `OmniBarCell`) already accounts for safe area via its own layout guide constraints.
+    /// This prevents the system-calculated insets from shifting during horizontal scrolling.
+    var safeAreaManagedByContainer = false
 
-            readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
-            largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
+    override var safeAreaInsets: UIEdgeInsets {
+        safeAreaManagedByContainer ? .zero : super.safeAreaInsets
+    }
+
+    private(set) var layoutMode: OmniBarLayoutMode = .compact
+
+    func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {
+        guard layoutMode != newMode else { return }
+
+        if animated {
+            layoutIfNeeded()
+            let entering = newMode == .compact
+            if entering {
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
+                    self.leadingButtonsContainer.alpha = 0
+                    self.trailingButtonsContainer.alpha = 0
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            } else {
+                leadingButtonsContainer.alpha = 0
+                trailingButtonsContainer.alpha = 0
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
+                    self.leadingButtonsContainer.alpha = 1
+                    self.trailingButtonsContainer.alpha = 1
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            }
+        } else {
+            applyLayoutMode(newMode)
         }
+    }
+
+    private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
+        layoutMode = newMode
+        let showButtons = newMode != .compact
+        leadingButtonsContainer.isHidden = !showButtons
+        trailingButtonsContainer.isHidden = !showButtons
+        readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad
+        largeSizeSpacingConstraint?.isActive = showButtons
+
+        let isExpandedPhone = newMode == .expandedPhone
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
+        stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
+        stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -190,6 +279,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         }
     }
 
+    private var fireMode: Bool = false
+
     var onTextEntered: (() -> Void)?
     var onVoiceSearchButtonPressed: (() -> Void)?
     var onAbortButtonPressed: (() -> Void)?
@@ -199,20 +290,22 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onMenuButtonLongPressed: (() -> Void)?
     var onTrackersViewPressed: (() -> Void)?
     var onSettingsButtonPressed: (() -> Void)?
+    var onSettingsButtonLongPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
     var onCustomizableButtonPressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
+    var onPasswordsPressed: (() -> Void)?
     var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
+    var onFirePressed: (() -> Void)?
+    var onSearchModePressed: (() -> Void)?
+    var onAIChatModePressed: (() -> Void)?
     
     /// Callback fired when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)?
-
-    /// Callback fired when the AI Chat right button is tapped
-    var onAIChatRightButtonPressed: (() -> Void)?
 
     /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)?
@@ -236,16 +329,63 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
     let settingsButtonView = BrowserChromeButton()
     let bookmarksButtonView = BrowserChromeButton()
+    /// Needed because UIStackView doesn't support reparenting — one in leading, one in trailing.
+    let leadingBookmarksButtonView = BrowserChromeButton()
+    let passwordsButtonView = BrowserChromeButton()
     let menuButtonView = BrowserChromeButton()
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
+    let externalRefreshButtonView = BrowserChromeButton()
+    let fireButtonView = BrowserChromeButton()
+    let tabSwitcherContainerView = UIView()
 
     private let aiChatLeftButton = BrowserChromeButton()
-    private let aiChatRightButton = BrowserChromeButton()
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
+    private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
-    private var aiChatLeadingSpacingConstraint: NSLayoutConstraint?
-    private var aiChatTrailingSpacingConstraint: NSLayoutConstraint?
+    // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
+
+    let aiChatSendButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+        button.isHidden = true
+        button.layer.cornerRadius = Metrics.sendButtonSize / 2
+        button.layer.masksToBounds = true
+        return button
+    }()
+
+    var onAIChatSendPressed: (() -> Void)?
+    var isAIVoiceChatEnabled: Bool = false
+
+    let aiChatTextView: UITextView = {
+        let textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.isHidden = true
+        textView.backgroundColor = .clear
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        textView.textContainer.lineFragmentPadding = 0
+        return textView
+    }()
+
+    var duckAITextViewDelegate: UITextViewDelegate? {
+        get { aiChatTextView.delegate }
+        set { aiChatTextView.delegate = newValue }
+    }
+    var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
+    var onCollapseAnimationCompleted: (() -> Void)?
+    private(set) var isSearchAreaExpanded: Bool = false {
+        didSet {
+            guard oldValue != isSearchAreaExpanded, !suppressExpansionUpdate else { return }
+            updateSearchAreaExpansion(animated: false)
+        }
+    }
+    private var suppressExpansionUpdate = false
+    private var searchAreaCenterYConstraint: NSLayoutConstraint?
+    private var searchAreaTopPinConstraint: NSLayoutConstraint?
+    private var expandedHeightConstraint: NSLayoutConstraint?
+    private var searchStackBottomEqualConstraint: NSLayoutConstraint?
+    private var searchStackBottomGTEConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -254,8 +394,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
-    private let leadingButtonsContainer = UIStackView()
-    private let trailingButtonsContainer = UIStackView()
+    private(set) var leadingButtonsContainer = UIStackView()
+    private(set) var trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
@@ -301,6 +441,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
+        leadingButtonsContainer.addArrangedSubview(externalRefreshButtonView)
+        leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
+        leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
         searchAreaAlignmentView.addSubview(searchAreaStackView)
 
@@ -309,12 +452,15 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaContainerView.addSubview(searchAreaView)
         searchAreaContainerView.addSubview(omniBarProgressView)
 
+        trailingButtonsContainer.addArrangedSubview(fireButtonView)
+        trailingButtonsContainer.addArrangedSubview(tabSwitcherContainerView)
         trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
-        addSubview(aiChatLeftButton)
-        addSubview(aiChatRightButton)
+        searchAreaContainerView.addSubview(aiChatTextView)
+        searchAreaContainerView.addSubview(aiChatSendButton)
+        searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -325,7 +471,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private func addAIChatFullModeBrandingView() {
         let brandingView = AIChatFullModeOmniBrandingView()
         brandingView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(brandingView)
+        searchAreaContainerView.addSubview(brandingView)
 
         aiChatBrandingView = brandingView
 
@@ -354,9 +500,14 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaStackView.translatesAutoresizingMaskIntoConstraints = false
 
+        let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
+        let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
+        stackViewLeadingConstraint = leadingConstraint
+        stackViewTrailingConstraint = trailingConstraint
+
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
+            leadingConstraint,
+            trailingConstraint,
             textAreaTopPaddingConstraint,
             textAreaBottomPaddingConstraint,
 
@@ -364,10 +515,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
             searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
             searchAreaView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
@@ -380,7 +529,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
             omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
 
             searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
-            searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor),
             searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
             searchAreaStackView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
 
@@ -395,37 +543,36 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         DefaultOmniBarView.activateItemSizeConstraints(for: backButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: externalRefreshButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: leadingBookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: passwordsButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: fireButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
 
         // AI Chat Full Mode
         aiChatLeftButton.translatesAutoresizingMaskIntoConstraints = false
-        aiChatRightButton.translatesAutoresizingMaskIntoConstraints = false
 
         let aiChatButtonConstraints = [
-            aiChatLeftButton.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
+            aiChatLeftButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             aiChatLeftButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-            aiChatRightButton.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
-            aiChatRightButton.centerYAnchor.constraint(equalTo: centerYAnchor)
         ]
         NSLayoutConstraint.activate(aiChatButtonConstraints)
         
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
-        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatRightButton)
 
-        aiChatLeadingSpacingConstraint = searchAreaContainerView.leadingAnchor.constraint(equalTo: aiChatLeftButton.trailingAnchor, constant: Metrics.expandedSizeSpacing)
-        aiChatTrailingSpacingConstraint = searchAreaContainerView.trailingAnchor.constraint(equalTo: aiChatRightButton.leadingAnchor, constant: -Metrics.expandedSizeSpacing)
-
+        // AI Chat mode constraints (inactive by default, activated only in AI Chat mode)
         if let brandingView = aiChatBrandingView {
-            NSLayoutConstraint.activate([
-                brandingView.centerXAnchor.constraint(equalTo: centerXAnchor),
-                brandingView.centerYAnchor.constraint(equalTo: centerYAnchor),
-                brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-                brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
-            ])
+            aiChatModeConstraints = [
+                brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+                brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
+                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
+            ]
         }
+
+        setUpExpandedSearchAreaConstraints()
     }
 
     private func setUpProperties() {
@@ -443,7 +590,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -452,37 +599,57 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
-        activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
         activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
         activeOutlineView.layer.cornerCurve = .continuous
         activeOutlineView.backgroundColor = .clear
 
+        updateFireModeAppearance()
+
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
-        stackView.spacing = Metrics.expandedSizeSpacing
+        stackView.spacing = Metrics.expandedPadSizeSpacing
 
-        searchAreaStackView.spacing = Metrics.expandedSizeSpacing
+        searchAreaStackView.spacing = Metrics.expandedPadSizeSpacing
 
         trailingButtonsContainer.isHidden = true
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
+        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         DefaultOmniBarView.setUpCommonProperties(for: backButtonView)
 
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
         DefaultOmniBarView.setUpCommonProperties(for: forwardButtonView)
+        
+        externalRefreshButtonView.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall)
+        DefaultOmniBarView.setUpCommonProperties(for: externalRefreshButtonView)
 
         bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         DefaultOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
+
+        leadingBookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
+        DefaultOmniBarView.setUpCommonProperties(for: leadingBookmarksButtonView)
+
+        passwordsButtonView.setImage(DesignSystemImages.Glyphs.Size24.key)
+        DefaultOmniBarView.setUpCommonProperties(for: passwordsButtonView)
+        passwordsButtonView.isHidden = true
 
         menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
         DefaultOmniBarView.setUpCommonProperties(for: menuButtonView)
 
         settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
         DefaultOmniBarView.setUpCommonProperties(for: settingsButtonView)
+
+        fireButtonView.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        DefaultOmniBarView.setUpCommonProperties(for: fireButtonView)
+        fireButtonView.isHidden = true
+
+        tabSwitcherContainerView.translatesAutoresizingMaskIntoConstraints = false
+        tabSwitcherContainerView.isHidden = true
+        DefaultOmniBarView.activateItemSizeConstraints(for: tabSwitcherContainerView)
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
@@ -490,11 +657,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         aiChatLeftButton.isHidden = true
         DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
 
-        aiChatRightButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatAdd, for: .normal)
-        aiChatRightButton.isHidden = true
-        DefaultOmniBarView.setUpCommonProperties(for: aiChatRightButton)
-
         progressView?.hide()
+
+        setUpExpandedTextViewProperties()
 
         updateShadows()
     }
@@ -512,7 +677,17 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
         settingsButtonView.addTarget(self, action: #selector(settingsButtonTap), for: .touchUpInside)
         bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        leadingBookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        passwordsButtonView.addTarget(self, action: #selector(passwordsButtonTap), for: .touchUpInside)
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
+        externalRefreshButtonView.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
+        fireButtonView.addTarget(self, action: #selector(fireButtonTap), for: .touchUpInside)
+        searchAreaView.modeToggleView.onSearchTapped = { [weak self] in
+            self?.onSearchModePressed?()
+        }
+        searchAreaView.modeToggleView.onAIChatTapped = { [weak self] in
+            self?.onAIChatModePressed?()
+        }
 
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
 
@@ -520,9 +695,23 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
 
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
+        settingsButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(settingsButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
-        aiChatRightButton.addTarget(self, action: #selector(aiChatRightButtonTap), for: .touchUpInside)
+        aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
+    }
+
+    private func updateFireModeAppearance() {
+        if fireMode {
+            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
+            activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
+        } else {
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+        }
+        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
+        searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
     private func updateShadows() {
@@ -542,10 +731,22 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         forwardButtonView.accessibilityLabel = "Browse forward"
         forwardButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowseForward"
         forwardButtonView.accessibilityTraits = .button
+        
+        externalRefreshButtonView.accessibilityLabel = "Refresh page"
+        externalRefreshButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.RefreshExternal"
+        externalRefreshButtonView.accessibilityTraits = .button
 
         bookmarksButtonView.accessibilityLabel = "Bookmarks"
         bookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Bookmarks"
         bookmarksButtonView.accessibilityTraits = .button
+
+        leadingBookmarksButtonView.accessibilityLabel = "Bookmarks"
+        leadingBookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BookmarksLeading"
+        leadingBookmarksButtonView.accessibilityTraits = .button
+
+        passwordsButtonView.accessibilityLabel = "Passwords"
+        passwordsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Passwords"
+        passwordsButtonView.accessibilityTraits = .button
 
         menuButtonView.accessibilityLabel = "Browsing Menu"
         menuButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowsingMenu"
@@ -585,6 +786,14 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
         searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
         searchAreaView.dismissButtonView.accessibilityTraits = .button
+
+        aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
+        aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
+
+        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
+        aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
+        aiChatSendButton.accessibilityTraits = .button
     }
 
     private func setUpInitialState() {
@@ -608,12 +817,43 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
+    /// Returns the expanded-area subview (text view or send button) at the given point.
+    /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
+    private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard isSearchAreaExpanded else { return nil }
+        let candidates: [UIView] = [aiChatSendButton, aiChatTextView]
+        return candidates.first { candidate in
+            guard !candidate.isHidden else { return false }
+            let localPoint = candidate.convert(point, from: self)
+            return candidate.point(inside: localPoint, with: event)
+        }
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        overflowTarget(at: point, with: event) != nil || super.point(inside: point, with: event)
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let target = overflowTarget(at: point, with: event) {
+            let localPoint = target.convert(point, from: self)
+            return target.hitTest(localPoint, with: event) ?? target
+        }
+        return super.hitTest(point, with: event)
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+            updateFireModeAppearance()
         }
+    }
+    
+    func refreshFireMode(fireMode: Bool) {
+        self.fireMode = fireMode
+        updateFireModeAppearance()
+        setUpExpandedTextViewProperties()
+        searchAreaView.updateFireModeAppearance(fireMode: fireMode)
     }
 
     @objc private func privacyIconPressed() {
@@ -636,15 +876,25 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onSettingsButtonPressed?()
     }
 
+    @objc private func settingsButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        onSettingsButtonLongPressed?()
+    }
+
     @objc private func bookmarksButtonTap() {
         onBookmarksPressed?()
+    }
+
+    @objc private func passwordsButtonTap() {
+        onPasswordsPressed?()
     }
 
     @objc private func menuButtonTap() {
         onMenuButtonPressed?()
     }
 
-    @objc private func menuButtonLongPress() {
+    @objc private func menuButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
         onMenuButtonLongPressed?()
     }
 
@@ -677,6 +927,10 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     }
 
     @objc private func searchAreaPressed() {
+        if isSearchAreaExpanded {
+            aiChatTextView.becomeFirstResponder()
+            return
+        }
         onTrackersViewPressed?()
     }
 
@@ -684,12 +938,16 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onAIChatLeftButtonPressed?()
     }
 
-    @objc private func aiChatRightButtonTap() {
-        onAIChatRightButtonPressed?()
+    @objc private func aiChatSendButtonTap() {
+        onAIChatSendPressed?()
     }
 
     @objc private func aiChatBrandingViewTapped() {
         onAIChatBrandingPressed?()
+    }
+
+    @objc private func fireButtonTap() {
+        onFirePressed?()
     }
 
     private struct Metrics {
@@ -702,6 +960,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
+        
+        static let buttonToSearchContainerSpace: CGFloat = 4
 
         // Used when OmniBar is positioned on the bottom of the screen
         static let textAreaTopPaddingAdjustedSpacing: CGFloat = 10
@@ -709,12 +969,26 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
 
-        static let expandedSizeSpacing: CGFloat = 24.0
-        static let expandedSizeMargins = NSDirectionalEdgeInsets(
+        static let expandedSearchAreaHeight: CGFloat = 120.0
+        static let duckAITextViewBottomPadding: CGFloat = 8.0
+        static let sendButtonSize: CGFloat = 40.0
+        static let expansionAnimationDuration: TimeInterval = 0.25
+
+        static let expandedPadSizeSpacing: CGFloat = 24.0
+        static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
             top: 0,
-            leading: expandedSizeSpacing,
+            leading: expandedPadSizeSpacing,
             bottom: 0,
-            trailing: expandedSizeSpacing
+            trailing: expandedPadSizeSpacing
+        )
+
+        static let expandedPhoneSizeSpacing: CGFloat = 16.0
+        static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
+        static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 4,
+            bottom: 0,
+            trailing: 4
         )
     }
 
@@ -751,6 +1025,23 @@ extension DefaultOmniBarView {
         // no-op
     }
 
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) {
+        setLayoutMode(mode, animated: false)
+        tabSwitcherContainerView.subviews.forEach { $0.removeFromSuperview() }
+        if mode != .compact {
+            let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            tabSwitcherContainerView.addSubview(button)
+            NSLayoutConstraint.activate([
+                button.centerXAnchor.constraint(equalTo: tabSwitcherContainerView.centerXAnchor),
+                button.centerYAnchor.constraint(equalTo: tabSwitcherContainerView.centerYAnchor),
+                button.widthAnchor.constraint(equalToConstant: 34),
+                button.heightAnchor.constraint(equalToConstant: 44),
+            ])
+            button.tabCount = tabCount
+        }
+    }
+
     func hideButtons() {
         privacyInfoContainer.alpha = 0
         searchAreaView.hideButtons()
@@ -765,32 +1056,29 @@ extension DefaultOmniBarView {
     private func showAIChatOmnibar() {
         aiChatBrandingView?.isHidden = false
         searchAreaView.textField.isHidden = true
-
-        aiChatLeadingSpacingConstraint?.isActive = true
-        aiChatTrailingSpacingConstraint?.isActive = true
         aiChatLeftButton.isHidden = false
-        aiChatRightButton.isHidden = false
         aiChatLeftButton.alpha = 1.0
-        aiChatRightButton.alpha = 1.0
+        NSLayoutConstraint.activate(aiChatModeConstraints)
+        searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
 
-        layoutIfNeeded()
+        setNeedsLayout()
     }
 
     /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
     private func hideAIChatOmnibar() {
         aiChatBrandingView?.isHidden = true
-        searchAreaView.textField.isHidden = false
-        aiChatLeadingSpacingConstraint?.isActive = false
-        aiChatTrailingSpacingConstraint?.isActive = false
         aiChatLeftButton.isHidden = true
-        aiChatRightButton.isHidden = true
         aiChatLeftButton.alpha = 0.0
-        aiChatRightButton.alpha = 0.0
+        NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
-        searchAreaView.textField.alpha = 1.0
-        searchAreaView.revealButtons()
+        searchAreaView.textField.isHidden = false
 
-        layoutIfNeeded()
+        if !isSearchAreaExpanded {
+            searchAreaView.textField.alpha = 1.0
+            searchAreaView.revealButtons()
+        }
+
+        setNeedsLayout()
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
@@ -801,7 +1089,7 @@ extension DefaultOmniBarView {
     }
 
     private func updateMaskLayer() {
-        guard clipsContent else {
+        guard clipsContent, !isSearchAreaExpanded else {
             layer.mask = nil
             return
         }
@@ -820,5 +1108,209 @@ extension DefaultOmniBarView {
         maskLayer.backgroundColor = UIColor.black.cgColor
 
         layer.mask = maskLayer
+    }
+}
+
+// MARK: - iPad Duck.ai Expanded Search Area
+
+extension DefaultOmniBarView {
+
+    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool) {
+        guard expanded != isSearchAreaExpanded else { return }
+        suppressExpansionUpdate = true
+        isSearchAreaExpanded = expanded
+        suppressExpansionUpdate = false
+        updateSearchAreaExpansion(animated: animated)
+    }
+
+    func setUpExpandedSearchAreaConstraints() {
+        NSLayoutConstraint.activate([
+            aiChatTextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
+            aiChatTextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
+            aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
+            aiChatTextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+
+            aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+            aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+        ])
+
+        let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
+        bottomEqual.isActive = true
+        searchStackBottomEqualConstraint = bottomEqual
+
+        let bottomGTE = searchAreaStackView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
+        bottomGTE.isActive = false
+        searchStackBottomGTEConstraint = bottomGTE
+
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        centerY.isActive = true
+        searchAreaCenterYConstraint = centerY
+
+        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
+        topPin.isActive = false
+        searchAreaTopPinConstraint = topPin
+
+        let expandedHeight = searchAreaContainerView.heightAnchor.constraint(equalToConstant: Metrics.expandedSearchAreaHeight)
+        expandedHeight.isActive = false
+        expandedHeightConstraint = expandedHeight
+    }
+
+    func setUpExpandedTextViewProperties() {
+        aiChatTextView.font = UIFont.daxBodyRegular()
+        aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
+        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        aiChatTextView.autocapitalizationType = .none
+        aiChatTextView.autocorrectionType = .no
+        aiChatTextView.spellCheckingType = .no
+        aiChatTextView.keyboardType = .webSearch
+        aiChatTextView.isScrollEnabled = true
+    }
+
+    func updateSearchAreaExpansion(animated: Bool) {
+        applyTextViewVisibility()
+        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
+
+        guard animated else {
+            searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
+            if !isSearchAreaExpanded {
+                aiChatSendButton.isHidden = true
+            }
+            applyExpansionConstraints()
+            applyExpansionClipping()
+            layoutIfNeeded()
+            if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
+                aiChatTextView.becomeFirstResponder()
+            }
+            return
+        }
+
+        layoutIfNeeded()
+
+        if isSearchAreaExpanded {
+            searchAreaContainerView.applyShadowOpacityMultiplier(0)
+            applyExpansionClipping()
+        }
+
+        applyExpansionConstraints()
+
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            if self.isSearchAreaExpanded {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.alpha = 1
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+                self.aiChatSendButton.alpha = 0
+            }
+            self.layoutIfNeeded()
+        } completion: { _ in
+            if !self.isSearchAreaExpanded {
+                self.applyExpansionClipping()
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.isHidden = true
+                self.onCollapseAnimationCompleted?()
+                self.onCollapseAnimationCompleted = nil
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            }
+            if self.isSearchAreaExpanded {
+                self.aiChatTextView.becomeFirstResponder()
+            }
+        }
+    }
+
+    private func applyTextViewVisibility() {
+        if isSearchAreaExpanded {
+            let currentText = textField.text ?? ""
+            textField.text = ""
+            textField.alpha = currentText.isEmpty ? 1 : 0
+
+            aiChatTextView.text = currentText
+            aiChatTextView.isHidden = false
+            searchAreaContainerView.bringSubviewToFront(aiChatTextView)
+
+            aiChatSendButton.isHidden = false
+            aiChatSendButton.alpha = 0
+            searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
+            updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } else {
+            let currentText = aiChatTextView.text ?? ""
+            aiChatTextView.isHidden = true
+            aiChatTextView.text = ""
+
+            textField.text = currentText
+            textField.alpha = 1
+        }
+    }
+
+    /// Toggles the textField's visibility so its placeholder shows through
+    /// the transparent duckAITextView when empty, and hides when there's text.
+    func updateTextFieldPlaceholderVisibility(hasText: Bool) {
+        guard isSearchAreaExpanded else { return }
+        textField.alpha = hasText ? 0 : 1
+    }
+
+    func updateAIChatSendButton(hasText: Bool) {
+        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        if hasText {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            aiChatSendButton.backgroundColor = accentColor
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            aiChatSendButton.isEnabled = true
+        } else if isAIVoiceChatEnabled {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
+            aiChatSendButton.backgroundColor = accentColor
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            aiChatSendButton.isEnabled = true
+        } else {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            aiChatSendButton.backgroundColor = .clear
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
+            aiChatSendButton.isEnabled = false
+        }
+    }
+
+    func updateLeftIconForMode(_ mode: TextEntryMode) {
+        switch mode {
+        case .aiChat:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.aiChat
+        case .search:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
+        }
+    }
+
+    func setLeftIconHiddenForModeToggle(_ hidden: Bool) {
+        searchAreaView.setLeftIconAreaHidden(hidden)
+    }
+
+    private func applyExpansionConstraints() {
+        if isSearchAreaExpanded {
+            searchStackBottomEqualConstraint?.isActive = false
+            searchAreaCenterYConstraint?.isActive = false
+            searchStackBottomGTEConstraint?.isActive = true
+            expandedHeightConstraint?.isActive = true
+            searchAreaTopPinConstraint?.isActive = true
+        } else {
+            expandedHeightConstraint?.isActive = false
+            searchAreaTopPinConstraint?.isActive = false
+            searchStackBottomGTEConstraint?.isActive = false
+            searchStackBottomEqualConstraint?.isActive = true
+            searchAreaCenterYConstraint?.isActive = true
+        }
+    }
+
+    private func applyExpansionClipping() {
+        let allowOverflow = isSearchAreaExpanded
+
+        let clippingViews: [UIView] = [self, stackView, searchAreaAlignmentView, searchAreaStackView, searchAreaContainerView]
+        clippingViews.forEach { $0.clipsToBounds = !allowOverflow }
+
+        if allowOverflow {
+            layer.mask = nil
+        } else {
+            updateMaskLayer()
+        }
     }
 }

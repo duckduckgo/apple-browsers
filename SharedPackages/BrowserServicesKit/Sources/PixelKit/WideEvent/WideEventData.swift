@@ -19,8 +19,55 @@
 import Foundation
 import Common
 
+public struct WideEventMetadata {
+    /// The name used when sending the pixel.
+    /// This will be appended to `m_(ios|macos)_wide_`.
+    public let pixelName: String
+
+    /// The name used in the event payload. This is used to identify the feature that the event is related to, and can be the same across platforms.
+    public let featureName: String
+
+    /// Globally unique identifier for the event type.
+    public let type: String
+
+    /// The version of the event schema (semantic versioning, e.g., "1.0.0").
+    /// The major version should ONLY be bumped when the base wide event format (`base_event.json`) changes.
+    /// The minor and patch versions should always be incremented when changing an event format, but it's up to the developer to decide which one
+    /// to bump in this case. The PixelDefinition infrastructure will generate a new definition file when the version has changed.
+    public let version: String
+
+    public init(pixelName: String,
+                featureName: String,
+                mobileMetaType: String,
+                desktopMetaType: String,
+                version: String) {
+        #if os(iOS)
+        let type = mobileMetaType
+        #elseif os(macOS)
+        let type = desktopMetaType
+        #else
+        fatalError("Platform type is required")
+        #endif
+
+        self.pixelName = pixelName
+        self.featureName = featureName
+        self.type = type
+        self.version = version
+    }
+}
+
+extension WideEventMetadata: WideEventParameterProviding {
+    public func jsonParameters() -> [String: Encodable] {
+        Dictionary(compacting: [
+            (WideEventParameter.Meta.type, type),
+            (WideEventParameter.Meta.version, version),
+        ])
+    }
+}
+
 public protocol WideEventData: Codable, WideEventParameterProviding {
-    static var pixelName: String { get }
+    /// Metadata describing the wide event.
+    static var metadata: WideEventMetadata { get }
 
     /// Data about the context that the event was sent in, such as the parent feature that the event is operating in.
     /// For example, the context name for a data import event could be the flow that triggered the import, such as onboarding.
@@ -35,6 +82,10 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
     /// Optional error data.
     /// All layers of underlying errors will be reported.
     var errorData: WideEventErrorData? { get set }
+
+    /// Returns the completion decision for this event based on the given trigger.
+    /// Override this method to provide custom completion logic for your event type.
+    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
 }
 
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
@@ -129,12 +180,12 @@ public struct WideEventGlobalData: Codable {
 }
 
 extension WideEventGlobalData: WideEventParameterProviding {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
 
         parameters[WideEventParameter.Global.platform] = platform
         parameters[WideEventParameter.Global.type] = type
-        parameters[WideEventParameter.Global.sampleRate] = String(sampleRate)
+        parameters[WideEventParameter.Global.sampleRate] = sampleRate
 
         return parameters
     }
@@ -153,13 +204,14 @@ public struct WideEventAppData: Codable {
     /// - Note: This value is only set for mobile devices, to a value of either `phone` or `tablet`.
     public var formFactor: String?
 
-    /// Whether the event was sent by an instance of the app with the internal flag set.
+    /// Legacy property retained for Codable backwards compatibility.
+    /// Previously used to track internal user status in the `app.*` namespace.
+    /// New events should use feature-specific data fields instead.
     public var internalUser: Bool?
 
     public init(name: String = Self.defaultAppName(),
                 version: String = AppVersion.shared.versionNumber,
-                formFactor: String? = nil,
-                internalUser: Bool? = nil) {
+                formFactor: String? = nil) {
         self.name = name
         self.version = version
 
@@ -168,7 +220,6 @@ public struct WideEventAppData: Codable {
         #else
         self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
-        self.internalUser = internalUser
     }
 
     /// Returns the appropriate app name for the current platform.
@@ -176,7 +227,15 @@ public struct WideEventAppData: Codable {
     /// - iOS: Uses CFBundleExecutable (the product name, which maps to Xcode targets)
     public static func defaultAppName() -> String {
         #if os(iOS)
-        return AppVersion.shared.productName
+        let productName = AppVersion.shared.productName
+
+        // We can't check whether we're running in the alpha build from BSK, but need to avoid sending the alpha
+        // product name - this check intercepts the alpha product name and returns the default app name instead.
+        if productName == "DuckDuckGo-Alpha" {
+            return "DuckDuckGo"
+        } else {
+            return productName
+        }
         #else
         return AppVersion.shared.name
         #endif
@@ -185,21 +244,12 @@ public struct WideEventAppData: Codable {
 
 extension WideEventAppData: WideEventParameterProviding {
 
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.App.name] = name
-        parameters[WideEventParameter.App.version] = version
-
-        if let formFactor = formFactor {
-            parameters[WideEventParameter.App.formFactor] = formFactor
-        }
-
-        if let internalUser {
-            parameters[WideEventParameter.App.internalUser] = internalUser ? "true" : nil
-        }
-
-        return parameters
+    public func jsonParameters() -> [String: Encodable] {
+        Dictionary(compacting: [
+            (WideEventParameter.App.name, name),
+            (WideEventParameter.App.version, version),
+            (WideEventParameter.App.formFactor, formFactor),
+        ])
     }
 
 }
@@ -218,13 +268,15 @@ public struct WideEventContextData: Codable {
 
 extension WideEventContextData: WideEventParameterProviding {
 
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-        if let name = name { parameters[WideEventParameter.Context.name] = name }
-        return parameters
+    public func jsonParameters() -> [String: Encodable] {
+        Dictionary(compacting: [
+            (WideEventParameter.Context.name, name),
+        ])
     }
 
 }
+
+// MARK: - WideEventErrorData
 
 public struct WideEventErrorData: Codable {
 
@@ -266,17 +318,17 @@ extension WideEventErrorData {
 }
 
 extension WideEventErrorData: WideEventParameterProviding {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
 
         parameters[WideEventParameter.Feature.errorDomain] = domain
-        parameters[WideEventParameter.Feature.errorCode] = String(code)
+        parameters[WideEventParameter.Feature.errorCode] = code
         parameters[WideEventParameter.Feature.errorDescription] = description
 
         for (index, nested) in underlyingErrors.enumerated() {
             let suffix = index == 0 ? "" : String(index + 1)
             parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain
-            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(nested.code)
+            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = nested.code
         }
 
         return parameters
@@ -284,8 +336,32 @@ extension WideEventErrorData: WideEventParameterProviding {
 }
 
 extension WideEvent.MeasuredInterval {
-    public var durationMilliseconds: Double? {
+
+    public var durationMilliseconds: Int? {
         guard let start, let end else { return nil }
-        return max(end.timeIntervalSince(start) * 1000, 0)
+        return max(Int(end.timeIntervalSince(start) * 1000), 0)
+    }
+
+    public func stringValue(_ bucket: DurationBucket) -> String? {
+        durationMilliseconds.map { String(bucket.apply($0)) }
+    }
+
+    public func intValue(_ bucket: DurationBucket) -> Int? {
+        durationMilliseconds.map { bucket.apply($0) }
+    }
+
+}
+
+public enum DurationBucket {
+    case noBucketing
+    case bucketed((Int) -> Int)
+
+    func apply(_ ms: Int) -> Int {
+        switch self {
+        case .noBucketing:
+            return ms
+        case .bucketed(let fn):
+            return fn(ms)
+        }
     }
 }

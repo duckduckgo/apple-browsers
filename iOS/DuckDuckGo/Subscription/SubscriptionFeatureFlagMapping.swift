@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 
 public final class SubscriptionFeatureFlagMapping: FeatureFlaggerMapping<SubscriptionFeatureFlags> {

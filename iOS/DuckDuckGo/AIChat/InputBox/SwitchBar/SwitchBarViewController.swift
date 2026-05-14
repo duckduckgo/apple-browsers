@@ -61,12 +61,15 @@ class SwitchBarViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
+    var addressBarToToggleSpacing: CGFloat {
+        usesReducedTopPadding ? Constants.textEntryViewReducedTopPadding : Constants.textEntryViewTopPadding
+    }
 
     // Items for the segmented picker
     private let pickerItems = [
         ImageSegmentedPickerItem(
             text: UserText.searchInputToggleSearchButtonTitle,
-            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
+            selectedImage: Image(uiImage: DesignSystemImages.Color.Size16.searchFindToggle),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
         ),
         ImageSegmentedPickerItem(
@@ -135,6 +138,9 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func updateLayouts() {
+        // Skip layoutIfNeeded() here because layout updates are animated in SwitchBarTextEntryView
+        guard !switchBarHandler.isUsingFadeOutAnimation else { return }
+        
         self.view.layoutIfNeeded()
     }
 

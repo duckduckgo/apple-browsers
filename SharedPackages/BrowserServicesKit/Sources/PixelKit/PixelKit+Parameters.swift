@@ -26,7 +26,10 @@ public extension PixelKit {
         public static let test = "test"
         public static let appVersion = "appVersion"
         public static let pixelSource = "pixelSource"
+        public static let channel = "channel"
         public static let osMajorVersion = "osMajorVersion"
+        public static let osUpgradeCapability = "can_update"
+        public static let maxSupportedOSVersion = "maxSupportedOS"
 
         public static let errorCode = "e"
         public static let errorDomain = "d"
@@ -62,6 +65,9 @@ public extension PixelKit {
         // Dashboard
         public static let dashboardTriggerOrigin = "trigger_origin"
 
+        // Themes
+        public static let themeName = "themeName"
+
         // VPN
         public static let vpnBreakageCategory = "breakageCategory"
         public static let vpnBreakageDescription = "breakageDescription"
@@ -84,6 +90,7 @@ public extension PixelKit {
 
         // UserScript
         public static let jsFile = "jsFile"
+        public static let userScriptSource = "source"
     }
 
     enum Values {
@@ -112,6 +119,7 @@ public extension Error {
 
         params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
         params[PixelKit.Parameters.errorDomain] = nsError.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
         params.merge(underlyingErrorParameters) { first, _ in
@@ -133,12 +141,14 @@ public extension Error {
     ///
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             // Check if the underlying error has an underlying error of its own

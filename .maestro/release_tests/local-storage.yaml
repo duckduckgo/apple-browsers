@@ -30,8 +30,10 @@ tags:
 - assertVisible: "Storage Counter: 2"
 
 # Fireproofing
-- tapOn: "Browsing menu"
-- tapOn: "Fireproof This Site"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+        ITEM: "Fireproof This Site"
 - tapOn: "Fireproof"
 
 # Fire button
@@ -52,8 +54,10 @@ tags:
 - assertVisible: "Cookie Counter: 2"
 
 # Remove Fireproofing
-- tapOn: "Browsing menu"
-- tapOn: "Remove Fireproofing"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+        ITEM: "Remove Fireproofing"
 
 # Fire button
 - runFlow:

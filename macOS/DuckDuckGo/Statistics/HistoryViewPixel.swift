@@ -170,4 +170,18 @@ enum HistoryViewPixel: PixelKitEvent {
         static let message = "message"
         static let source = "source"
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .historyPageShown,
+                .filterSet,
+                .filterCleared,
+                .itemOpened,
+                .delete,
+                .singleItemDeleted,
+                .multipleItemsDeleted,
+                .historyPageExceptionReported:
+            return [.pixelSource]
+        }
+    }
 }

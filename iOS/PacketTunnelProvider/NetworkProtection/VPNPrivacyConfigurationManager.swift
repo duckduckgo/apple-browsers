@@ -19,7 +19,7 @@
 
 import Foundation
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 
@@ -30,22 +30,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
     private let lock = NSLock()
 
     var embeddedConfigData: Data {
-        let configString = """
-    {
-            "readme": "https://github.com/duckduckgo/privacy-configuration",
-            "version": 1693838894358,
-            "features": {
-                "networkProtection": {
-                    "state": "enabled",
-                    "exceptions": [],
-                    "settings": {}
-                }
-            },
-            "unprotectedTemporary": []
-        }
-    """
-        let data = configString.data(using: .utf8)
-        return data!
+        AppPrivacyConfigurationDataProvider().embeddedData
     }
 
     private var _fetchedConfigData: PrivacyConfigurationManager.ConfigurationData?
@@ -75,7 +60,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
         updatesSubject.eraseToAnyPublisher()
     }
 
-    public var privacyConfig: BrowserServicesKit.PrivacyConfiguration {
+    public var privacyConfig: PrivacyConfiguration {
         guard let privacyConfigurationData = try? PrivacyConfigurationData(data: currentConfig) else {
             fatalError("Could not retrieve privacy configuration data")
         }

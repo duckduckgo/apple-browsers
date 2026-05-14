@@ -82,14 +82,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 
         // Recovery
         PreferencePaneSection(UserText.recovery) {
-            HStack(alignment: .top, spacing: 12) {
-                Text(UserText.recoveryInstructions)
-                    .fixMultilineScrollableText()
-                Spacer()
-                Button(UserText.saveRecoveryPDF) {
-                    model.saveRecoveryPDF()
-                }
-            }
+            recoverySection()
         }
 
         // Turn Off and Delete Data
@@ -98,6 +91,27 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 model.presentDeleteAccount()
             }
         }
+    }
+
+    private func recoverySection() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            recoveryInstructionsRow()
+            recoveryInstructionsFooter()
+        }
+    }
+
+    private func recoveryInstructionsRow() -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(UserText.recoveryInstructions)
+                .fixMultilineScrollableText()
+            Spacer()
+            Button(UserText.saveRecoveryPDF, action: model.saveRecoveryPDF)
+        }
+    }
+
+    private func recoveryInstructionsFooter() -> some View {
+        SyncUIViews.TextDetailSecondary(text: UserText.recoveryInstructionsFooter)
+            .font(.system(size: 11))
     }
 
     @ViewBuilder

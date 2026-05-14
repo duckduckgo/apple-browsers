@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
+import FeatureFlags
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PasswordManagementItemListModelTests: XCTestCase {
@@ -167,6 +169,71 @@ final class PasswordManagementItemListModelTests: XCTestCase {
         XCTAssertEqual(model.selected?.id, String(describing: accounts[0]))
     }
 
+    func testWhenFeatureFlagEnabledAndFilterMatchesDomain_ThenFirstDomainMatchIsSelected() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enableFeatures([.autofillPasswordSearchPrioritizeDomain])
+
+        let account1 = makeAccount(id: 1, title: nil, username: "user1", domain: "example.com")
+        let account2 = makeAccount(id: 2, title: nil, username: "example", domain: "test.com")
+        let account3 = makeAccount(id: 3, title: nil, username: "user3", domain: "example.org")
+        let accounts = [account1, account2, account3]
+
+        let model = makeModel(with: featureFlagger, accounts: accounts, category: .allItems, filter: "example")
+        model.selectFirst()
+
+        XCTAssertEqual(model.selected?.id, String(describing: account1))
+    }
+
+    func testWhenFeatureFlagEnabledAndFilterMatchesDomainInLoginsCategory_ThenFirstDomainMatchIsSelected() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enableFeatures([.autofillPasswordSearchPrioritizeDomain])
+
+        let account1 = makeAccount(id: 1, title: nil, username: "user1", domain: "example.com")
+        let account2 = makeAccount(id: 2, title: nil, username: "example", domain: "test.com")
+        let account3 = makeAccount(id: 3, title: nil, username: "user3", domain: "example.org")
+        let accounts = [account1, account2, account3]
+
+        let model = makeModel(with: featureFlagger, accounts: accounts, category: .logins, filter: "example")
+        model.selectFirst()
+
+        XCTAssertEqual(model.selected?.id, String(describing: account1))
+    }
+
+    func testWhenFeatureFlagEnabledAndNoDomainMatch_ThenFirstItemIsSelected() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enableFeatures([.autofillPasswordSearchPrioritizeDomain])
+
+        let account1 = makeAccount(id: 1, title: nil, username: "user1", domain: "example.com")
+        let account2 = makeAccount(id: 2, title: nil, username: "example", domain: "test.com")
+        let account3 = makeAccount(id: 3, title: nil, username: "user3", domain: "other.org")
+        let accounts = [account1, account2, account3]
+
+        let model = makeModel(with: featureFlagger, accounts: accounts, category: .allItems, filter: "user")
+        model.selectFirst()
+
+        XCTAssertNotNil(model.selected)
+        let filteredAccounts = self.accounts(from: model.displayedSections)
+        XCTAssertEqual(filteredAccounts.count, 2, "Should have 2 accounts matching 'user' in username")
+        assertSelectedMatchesFirstFilteredAccount(model: model, filteredAccounts: filteredAccounts)
+    }
+
+    func testWhenFeatureFlagDisabledAndFilterMatchesDomain_ThenFirstItemIsSelected() {
+        let featureFlagger = MockFeatureFlagger()
+        // Feature flag is not enabled
+
+        let account1 = makeAccount(id: 1, title: nil, username: "user1", domain: "example.com")
+        let account2 = makeAccount(id: 2, title: nil, username: "example", domain: "test.com")
+        let account3 = makeAccount(id: 3, title: nil, username: "user3", domain: "example.org")
+        let accounts = [account1, account2, account3]
+
+        let model = makeModel(with: featureFlagger, accounts: accounts, category: .allItems, filter: "example")
+        model.selectFirst()
+
+        XCTAssertNotNil(model.selected)
+        let filteredAccounts = self.accounts(from: model.displayedSections)
+        assertSelectedMatchesFirstFilteredAccount(model: model, filteredAccounts: filteredAccounts)
+    }
+
     func makeAccount(id: Int64, title: String? = nil, username: String = "username", domain: String = "domain") -> SecureVaultItem {
         let account = SecureVaultModels.WebsiteAccount(id: String(id),
                                                 title: title,
@@ -199,13 +266,38 @@ final class PasswordManagementItemListModelTests: XCTestCase {
         return accounts
     }
 
+    private func makeModel(with featureFlagger: FeatureFlagger?,
+                           accounts: [SecureVaultItem],
+                           category: SecureVaultSorting.Category,
+                           filter: String) -> PasswordManagementItemListModel {
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected,
+                                                    onAddItemSelected: onAddItemSelected,
+                                                    featureFlagger: featureFlagger)
+        model.update(items: accounts)
+        model.sortDescriptor.category = category
+        model.filter = filter
+        return model
+    }
+
+    private func assertSelectedMatchesFirstFilteredAccount(model: PasswordManagementItemListModel,
+                                                           filteredAccounts: [SecureVaultModels.WebsiteAccount]) {
+        guard let firstAccountId = filteredAccounts.first?.id,
+              let expectedId = Int64(firstAccountId) else {
+            XCTFail("Failed to get account ID for comparison")
+            return
+        }
+        XCTAssertEqual(model.selected?.secureVaultID, expectedId)
+    }
+
 }
 
 extension PasswordManagementItemListModel {
 
     convenience init(onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
-                     onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
+                     onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void,
+                     featureFlagger: FeatureFlagger? = nil) {
         self.init(passwordManagerCoordinator: PasswordManagerCoordinatingMock(), syncPromoManager: SyncPromoManager(),
+                  featureFlagger: featureFlagger,
                   onItemSelected: onItemSelected,
                   onAddItemSelected: onAddItemSelected)
     }

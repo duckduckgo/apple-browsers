@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import Gzip
 import Persistence
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Networking
 
 @testable import DDGSync
@@ -155,50 +156,35 @@ extension DefaultInternalUserDecider {
     }
 }
 
-class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
-    var currentConfig: Data = .init()
-    var updatesSubject = PassthroughSubject<Void, Never>()
-    let updatesPublisher: AnyPublisher<Void, Never>
-    var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
-    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
-        .downloaded
-    }
-
-    init() {
-        updatesPublisher = updatesSubject.eraseToAnyPublisher()
-    }
-}
-
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
-    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool { true }
+    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool { true }
 
-    func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         return .enabled
     }
 
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         true
     }
 
-    func stateFor(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
         return .enabled
     }
 
-    func stateFor(subfeatureID: BrowserServicesKit.SubfeatureID, parentFeatureID: BrowserServicesKit.ParentFeatureID, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
         return .enabled
     }
 
-    func cohorts(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> [BrowserServicesKit.PrivacyConfigurationData.Cohort]? {
+    func cohorts(for subfeature: any PrivacySubfeature) -> [PrivacyConfigurationData.Cohort]? {
         return nil
     }
 
-    func cohorts(subfeatureID: BrowserServicesKit.SubfeatureID, parentFeatureID: BrowserServicesKit.ParentFeatureID) -> [BrowserServicesKit.PrivacyConfigurationData.Cohort]? {
+    func cohorts(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID) -> [PrivacyConfigurationData.Cohort]? {
         return nil
     }
 
-    func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
+    func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return nil
     }
 
@@ -227,8 +213,9 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var secureStore: SecureStoring = SecureStorageStub()
     var crypter: CryptingInternal = CryptingMock()
     var scheduler: SchedulingInternal = SchedulerMock()
-    var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
+    var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
+    var shouldPreserveAccountWhenSyncDisabled: () -> Bool = { false }
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
@@ -269,6 +256,17 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     }
 
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
+
+    var createTokenRescopeStub: TokenRescoping?
+    func createTokenRescope() -> any TokenRescoping {
+        createTokenRescopeStub ?? MockTokenRescoping()
+    }
+
+    var createAIChatsStub: AIChatsHandling?
+    func createAIChats() -> any AIChatsHandling {
+        createAIChatsStub ?? MockAIChatsHandling()
+    }
+
 }
 
 final class MockRemoteConnecting: RemoteConnecting {
@@ -351,6 +349,42 @@ final class MockExchangeRecoveryKeyTransmitting: ExchangeRecoveryKeyTransmitting
     }
 }
 
+final class MockTokenRescoping: TokenRescoping {
+
+    private(set) var rescopeCalls: [(scope: String, token: String)] = []
+    var rescopeResult: String?
+    var rescopeError: Error?
+
+    func rescope(scope: String, token: String) async throws -> String? {
+        rescopeCalls.append((scope: scope, token: token))
+        if let rescopeError {
+            throw rescopeError
+        }
+        return rescopeResult
+    }
+}
+
+final class MockAIChatsHandling: AIChatsHandling {
+
+    private(set) var deleteCalls: [(until: Date, token: String)] = []
+    private(set) var deleteChatIdsCalls: [(chatIds: [String], token: String)] = []
+    var deleteError: Error?
+
+    func delete(until: Date, token: String) async throws {
+        deleteCalls.append((until: until, token: token))
+        if let deleteError {
+            throw deleteError
+        }
+    }
+
+    func delete(chatIds: [String], token: String) async throws {
+        deleteChatIdsCalls.append((chatIds: chatIds, token: token))
+        if let deleteError {
+            throw deleteError
+        }
+    }
+}
+
 final class MockDataProvidersSource: DataProvidersSource {
     var dataProviders: [DataProviding] = []
 
@@ -416,12 +450,16 @@ class InspectableSyncRequestMaker: SyncRequestMaking {
     }
 
     func makePatchRequest(with result: SyncRequest, clientTimestamp: Date, isCompressed: Bool) throws -> HTTPRequesting {
+        lock.lock()
+        defer { lock.unlock() }
+
         makePatchRequestCallCount += 1
         makePatchRequestCallArgs.append(.init(result: result, clientTimestamp: clientTimestamp, isCompressed: isCompressed))
         return try requestMaker.makePatchRequest(with: result, clientTimestamp: clientTimestamp, isCompressed: isCompressed)
     }
 
     let requestMaker: SyncRequestMaker
+    private let lock = NSLock()
 
     init(requestMaker: SyncRequestMaker) {
         self.requestMaker = requestMaker
@@ -451,6 +489,30 @@ struct CryptingMock: CryptingInternal {
         .init()
     }
 
+    func encrypt(_ value: Data, using secretKey: Data) throws -> Data {
+        // Test helper: treat input as UTF-8 if possible, otherwise pass through.
+        if let string = String(data: value, encoding: .utf8) {
+            return try encrypt(string, using: secretKey)
+        }
+        return value
+    }
+
+    func decryptData(_ value: Data, using secretKey: Data) throws -> Data {
+        // Test helper: decrypt to UTF-8 string and return UTF-8 bytes.
+        Data(try decrypt(value, using: secretKey).utf8)
+    }
+
+    func encrypt(_ value: String, using secretKey: Data) throws -> Data {
+        Data(try _encryptAndBase64Encode(value).utf8)
+    }
+
+    func decrypt(_ value: Data, using secretKey: Data) throws -> String {
+        guard let string = String(data: value, encoding: .utf8) else {
+            throw SyncError.failedToDecryptValue("bytes could not be converted to string")
+        }
+        return try _base64DecodeAndDecrypt(string)
+    }
+
     func encryptAndBase64Encode(_ value: String) throws -> String {
         try _encryptAndBase64Encode(value)
     }
@@ -473,6 +535,14 @@ struct CryptingMock: CryptingInternal {
 
     func unseal(encryptedData: Data, publicKey: Data, secretKey: Data) throws -> Data {
         encryptedData
+    }
+
+    func jwtSeal(_ data: Data, secretKey key: Data) throws -> Data {
+        data
+    }
+
+    func jwtUnseal(_ data: Data, secretKey key: Data) throws -> Data {
+        data
     }
 
     func createAccountCreationKeys(userId: String, password: String) throws -> AccountCreationKeys {

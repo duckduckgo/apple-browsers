@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var bookmarks = { Logger(subsystem: "Bookmarks", category: "") }()
+    static let bookmarks = Logger(subsystem: "Bookmarks", category: "")
 }

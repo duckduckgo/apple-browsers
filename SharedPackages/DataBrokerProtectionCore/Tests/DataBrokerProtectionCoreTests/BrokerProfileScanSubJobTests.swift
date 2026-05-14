@@ -30,7 +30,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     var mockOptOutRunner: MockOptOutSubJobWebRunner!
     var mockDatabase: MockDatabase!
     var mockEventsHandler: MockOperationEventsHandler!
-    var mockPixelHandler: MockPixelHandler!
+    var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     var mockDependencies: MockBrokerProfileJobDependencies!
 
     override func setUp() {
@@ -39,7 +39,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockDatabase = MockDatabase()
         mockEventsHandler = MockOperationEventsHandler()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
 
         mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.mockScanRunner = self.mockScanRunner
@@ -177,6 +177,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
+                                                 isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -192,6 +194,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: true,
+                                                 isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -208,6 +212,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
+                                                 isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -219,6 +225,42 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertFalse(calculator.isImmediateOperation)
     }
 
+    func testCreateScanStageContext_whenFreeScan_setsIsFreeScanTrue() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 isAuthenticated: false,
+                                                 isFreeScan: true,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled")
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertEqual(calculator.isFreeScan, true)
+    }
+
+    func testCreateScanStageContext_whenPaidScan_setsIsFreeScanFalse() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 isAuthenticated: true,
+                                                 isFreeScan: false,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled")
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertEqual(calculator.isFreeScan, false)
+    }
+
     // MARK: - markScanStarted
 
     func testMarkScanStarted_persistsHistoryEvent() throws {
@@ -227,6 +269,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -244,6 +287,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
@@ -267,6 +311,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -341,6 +386,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
@@ -370,6 +416,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate, ExtractedProfile.mockWithoutId]
@@ -394,6 +441,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
@@ -419,6 +467,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         var storeNoMatchesCalled = false
@@ -440,6 +489,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -501,6 +551,53 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                         currentScanProfiles: currentProfiles)
 
         XCTAssertTrue(removedProfiles.isEmpty)
+    }
+
+    // MARK: - markSavedProfilesAsRemovedAndNotifyUser
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileIsNewlyRemoved_firesTransitionPixels() throws {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertTrue(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertTrue(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileAlreadyHasRemovedDate_doesNotFireTransitionPixels() throws {
+        // Maintenance-scan scenario: the profile was already confirmed removed on a prior scan
+        // (removedDate set) but the current scan still doesn't find it, so it re-enters the
+        // confirmation path with stored attempt info. The transition pixels must NOT re-fire.
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertFalse(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
     }
 
     // MARK: - handleRemovedProfiles
@@ -617,6 +714,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
@@ -644,6 +742,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
@@ -670,6 +769,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
@@ -696,6 +796,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.actionFailed(actionID: "test", message: "test message")
@@ -864,16 +965,23 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
             let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-            let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
+            let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: [])
 
             let extractedProfileSaved = ExtractedProfile(id: 1, name: "Some name", profileUrl: "abc")
 
-            let optOutData = [OptOutJobData.mock(with: extractedProfileSaved)]
+            let optOutJobData = OptOutJobData(brokerId: brokerId,
+                                              profileQueryId: profileQueryId,
+                                              createdDate: Date(),
+                                              preferredRunDate: currentPreferredRunDate,
+                                              historyEvents: historyEvents,
+                                              attemptCount: 0,
+                                              submittedSuccessfullyDate: nil,
+                                              extractedProfile: extractedProfileSaved)
 
             let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker,
                                                                 profileQuery: mockProfileQuery,
                                                                 scanJobData: mockScanOperation,
-                                                                optOutJobData: optOutData)
+                                                                optOutJobData: [optOutJobData])
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = []
@@ -916,18 +1024,32 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
             let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-            let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
+            let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: [])
 
             let extractedProfileSaved1 = ExtractedProfile(id: 1, name: "Some name", profileUrl: "abc", identifier: "abc")
             let extractedProfileSaved2 = ExtractedProfile(id: 1, name: "Some name", profileUrl: "zxz", identifier: "zxz")
 
-            let optOutData = [OptOutJobData.mock(with: extractedProfileSaved1),
-                              OptOutJobData.mock(with: extractedProfileSaved2)]
+            let optOutJobData1 = OptOutJobData(brokerId: brokerId,
+                                               profileQueryId: profileQueryId,
+                                               createdDate: Date(),
+                                               preferredRunDate: currentPreferredRunDate,
+                                               historyEvents: historyEvents,
+                                               attemptCount: 0,
+                                               submittedSuccessfullyDate: nil,
+                                               extractedProfile: extractedProfileSaved1)
+            let optOutJobData2 = OptOutJobData(brokerId: brokerId,
+                                               profileQueryId: profileQueryId,
+                                               createdDate: Date(),
+                                               preferredRunDate: currentPreferredRunDate,
+                                               historyEvents: [],
+                                               attemptCount: 0,
+                                               submittedSuccessfullyDate: nil,
+                                               extractedProfile: extractedProfileSaved2)
 
             let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker,
                                                                 profileQuery: mockProfileQuery,
                                                                 scanJobData: mockScanOperation,
-                                                                optOutJobData: optOutData)
+                                                                optOutJobData: [optOutJobData1, optOutJobData2])
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = [extractedProfileSaved1]
@@ -1239,7 +1361,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
+        let optOutJobData = [OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date(), historyEvents: [historyEvent], attemptCount: 0, extractedProfile: .mockWithoutRemovedDate)]
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: optOutJobData)]
+
         let schedulingConfig = DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 0, maintenanceScan: 0, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
@@ -1251,8 +1376,11 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenUpdatingDatesOnScanAndLastEventIsError_thenWeSetPreferredRunDateWithRetryErrorDate() throws {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: nil, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
-        let schedulingConfig = DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 0, maintenanceScan: 0, maxAttempts: -1)
+        let historyEvent = HistoryEvent(extractedProfileId: nil, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
+        let scanJobData = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, historyEvents: [historyEvent])
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [])]
+
+        let schedulingConfig = DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 100, maintenanceScan: 100, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: nil, schedulingConfig: schedulingConfig, database: mockDatabase)
 
@@ -1264,8 +1392,11 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)
-        let schedulingConfig = DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 1, maintenanceScan: 0, maxAttempts: -1)
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)
+        let optOutJobData = [OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date(), historyEvents: [historyEvent], attemptCount: 0, extractedProfile: .mockWithoutRemovedDate)]
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: optOutJobData)]
+
+        let schedulingConfig = DataBrokerScheduleConfig(retryError: 100, confirmOptOutScan: 1, maintenanceScan: 100, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
 
@@ -1277,7 +1408,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)
+        let optOutJobData = [OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date(), historyEvents: [historyEvent], attemptCount: 0, extractedProfile: .mockWithoutRemovedDate)]
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: optOutJobData)]
+
         let schedulingConfig = DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 1, maintenanceScan: 0, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
@@ -1290,7 +1424,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .matchesFound(count: 0))
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .matchesFound(count: 0))
+        let optOutJobData = [OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date(), historyEvents: [historyEvent], attemptCount: 0, extractedProfile: .mockWithoutRemovedDate)]
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: optOutJobData)]
+
         let schedulingConfig = DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 0, maintenanceScan: 1, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
@@ -1303,25 +1440,31 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted)
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted)
+        let optOutJobData = [OptOutJobData(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: Date(), historyEvents: [historyEvent], attemptCount: 0, extractedProfile: .mockWithoutRemovedDate)]
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: optOutJobData)]
+
         let schedulingConfig = DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 0, maintenanceScan: 1, maxAttempts: -1)
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
 
-        XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)
+        // Scan is updated to maintenance (no scan events, opt-out has only optOutStarted); opt-out date is unchanged (optOutStarted returns currentPreferredRunDate)
+        XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnScan, date2: Date().addingTimeInterval(schedulingConfig.maintenanceScan.hoursToSeconds)))
         XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
-        XCTAssertNil(mockDatabase.lastPreferredRunDateOnScan)
-        XCTAssertNil(mockDatabase.lastPreferredRunDateOnOptOut)
     }
 
     func testWhenUpdatingDatesAndLastEventIsScanStarted_thenNothingHappens() throws {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
-        let extractedProfileId: Int64 = 1
-        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
+        let historyEvent = HistoryEvent(extractedProfileId: nil, brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
+        let maintenanceDate = Date().addingTimeInterval(1.hoursToSeconds)
+        let scanJobData = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: maintenanceDate, historyEvents: [historyEvent])
+        mockDatabase.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [])]
+
         let schedulingConfig = DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 0, maintenanceScan: 1, maxAttempts: -1)
 
-        try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
+        try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: nil, schedulingConfig: schedulingConfig, database: mockDatabase)
 
         XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)
         XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
@@ -1348,9 +1491,18 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
+        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: [])
 
-        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation)
+        let optOutJobData = OptOutJobData(brokerId: brokerId,
+                                          profileQueryId: profileQueryId,
+                                          createdDate: Date(),
+                                          preferredRunDate: currentPreferredRunDate,
+                                          historyEvents: historyEvents,
+                                          attemptCount: 0,
+                                          submittedSuccessfullyDate: nil,
+                                          extractedProfile: .mockWithoutRemovedDate)
+
+        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation, optOutJobData: [optOutJobData])
         mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
         try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: config, database: mockDatabase)
@@ -1382,18 +1534,24 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
+        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: [])
 
-        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation)
+        let optOutJobData = OptOutJobData(brokerId: brokerId,
+                                          profileQueryId: profileQueryId,
+                                          createdDate: Date(),
+                                          preferredRunDate: currentPreferredRunDate,
+                                          historyEvents: [],
+                                          attemptCount: 0,
+                                          submittedSuccessfullyDate: nil,
+                                          extractedProfile: .mockWithoutRemovedDate)
+
+        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation, optOutJobData: [optOutJobData])
         mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
         try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: config, database: mockDatabase)
 
         XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnScan, date2: expectedPreferredRunDate), "\(String(describing: mockDatabase.lastPreferredRunDateOnScan)) is not equal to \(expectedPreferredRunDate)")
-
-        XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
-        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(config.hoursUntilNextOptOutAttempt.hoursToSeconds)))
     }
 
     func testScanSubJob_whenExecutedSuccessfully_returnsTrue() async throws {

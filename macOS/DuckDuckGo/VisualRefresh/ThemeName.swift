@@ -21,7 +21,6 @@ import DesignResourcesKit
 
 enum ThemeName: String, CaseIterable {
     case `default`
-    case figma
     case coolGray
     case desert
     case green
@@ -33,12 +32,16 @@ enum ThemeName: String, CaseIterable {
 
 extension ThemeName {
 
+    static var allCasesSorted: [ThemeName] {
+        [
+            .default, .coolGray, .slateBlue, .green, .violet, .rose, .orange, .desert
+        ]
+    }
+
     var designColorPalette: DesignResourcesKit.ColorPalette {
         switch self {
         case .default:
             .default
-        case .figma:
-            .figma
         case .coolGray:
             .coolGray
         case .desert:
@@ -54,10 +57,5 @@ extension ThemeName {
         case .violet:
             .violet
         }
-    }
-
-    /// Exclude the "Legacy Theme" for Internal Users
-    static var internalUserThemes: [ThemeName] {
-        ThemeName.allCases.filter { $0 != .default }
     }
 }

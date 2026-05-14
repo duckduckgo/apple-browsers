@@ -20,29 +20,24 @@ import XCTest
 import Persistence
 import PersistenceTestingUtils
 @testable import AutoconsentStats
-@testable import BrowserServicesKit
 import Common
 
 final class AutoconsentStatsTests: XCTestCase {
 
     var mockKeyValueStore: MockKeyValueFileStore!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var autoconsentStats: AutoconsentStats!
     var mockEventMapping: MockAutoconsentStatsEventMapping?
 
     override func setUp() async throws {
         try await super.setUp()
         mockKeyValueStore = try MockKeyValueFileStore()
-        mockFeatureFlagger = MockFeatureFlagger()
         autoconsentStats = AutoconsentStats(
-            keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger
+            keyValueStore: mockKeyValueStore
         )
     }
 
     override func tearDown() async throws {
         mockKeyValueStore = nil
-        mockFeatureFlagger = nil
         autoconsentStats = nil
         mockEventMapping = nil
         try await super.tearDown()
@@ -398,7 +393,6 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger,
             errorEvents: mockEventMapping
         )
 
@@ -423,7 +417,6 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger,
             errorEvents: mockEventMapping
         )
 
@@ -449,7 +442,6 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger,
             errorEvents: mockEventMapping
         )
 
@@ -491,7 +483,6 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger,
             errorEvents: mockEventMapping
         )
 
@@ -518,7 +509,6 @@ final class AutoconsentStatsTests: XCTestCase {
         // Given - No event mapping (nil)
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            featureFlagger: mockFeatureFlagger,
             errorEvents: nil
         )
 

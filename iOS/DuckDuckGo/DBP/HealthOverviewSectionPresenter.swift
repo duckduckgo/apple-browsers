@@ -296,7 +296,7 @@ Last 7 days: \(count) operations
 extension RunPrerequisitesStatus {
     init(debuggingDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate) async {
-        self.hasAccount = debuggingDelegate?.isUserAuthenticated() ?? false
+        self.hasAccount = (await debuggingDelegate?.isUserAuthenticated()) ?? false
         self.hasEntitlement = (try? await runPrerequisitesDelegate.meetsEntitlementRunPrequisite) ?? false
         self.hasProfile = (try? runPrerequisitesDelegate.meetsProfileRunPrequisite) ?? false
     }

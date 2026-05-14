@@ -19,22 +19,44 @@
 import AppKit
 import Combine
 import Foundation
+import AIChat
+import PixelKit
 
-final class AutoClearHandler {
+protocol AutoClearAlertPresenting {
+    func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse
+}
+
+struct DefaultAutoClearAlertPresenter: AutoClearAlertPresenting {
+    func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse {
+        let alert = NSAlert.autoClearAlert(clearChats: clearChats)
+        return alert.runModal()
+    }
+}
+
+final class AutoClearHandler: ApplicationTerminationDecider {
 
     private let dataClearingPreferences: DataClearingPreferences
     private let startupPreferences: StartupPreferences
     private let fireViewModel: FireViewModel
-    private let stateRestorationManager: AppStateRestorationManager
+    private let stateRestorationManager: AppStateRestorationManaging
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
+    private let alertPresenter: AutoClearAlertPresenting
+    private let dataClearingWideEventService: DataClearingWideEventService
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
-         stateRestorationManager: AppStateRestorationManager) {
+         stateRestorationManager: AppStateRestorationManaging,
+         aiChatSyncCleaner: AIChatSyncCleaning?,
+         wideEvent: WideEventManaging,
+         alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
         self.stateRestorationManager = stateRestorationManager
+        self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.alertPresenter = alertPresenter
+        self.dataClearingWideEventService = DataClearingWideEventService(wideEvent: wideEvent)
     }
 
     @MainActor
@@ -43,30 +65,53 @@ final class AutoClearHandler {
         resetTheCorrectTerminationFlag()
     }
 
-    var onAutoClearCompleted: (() -> Void)?
+    // MARK: - ApplicationTerminationDecider
 
     @MainActor
-    func handleAppTermination() -> NSApplication.TerminateReply? {
-        guard dataClearingPreferences.isAutoClearEnabled else { return nil }
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        guard dataClearingPreferences.isAutoClearEnabled else { return .sync(.next) }
+
+        // Skip auto-clear if app is relaunching for an update
+        if stateRestorationManager.isRelaunchingAutomatically {
+            appTerminationHandledCorrectly = true
+            return .sync(.next)
+        }
 
         if dataClearingPreferences.isWarnBeforeClearingEnabled {
             switch confirmAutoClear() {
             case .alertFirstButtonReturn:
                 // Clear and Quit
-                performAutoClear()
-                return .terminateLater
+                return .async(Task {
+                    await performAutoClear()
+                    return .next
+                })
             case .alertSecondButtonReturn:
                 // Quit without Clearing Data
                 appTerminationHandledCorrectly = true
-                return .terminateNow
+                return .sync(.next)
             default:
                 // Cancel
-                return .terminateCancel
+                return .sync(.cancel)
             }
         }
 
-        performAutoClear()
-        return .terminateLater
+        // Autoclear without warning
+        return .async(Task {
+            await performAutoClear()
+            return .next
+        })
+    }
+
+    @MainActor
+    func deciderSequenceCompleted(shouldProceed: Bool) {
+        // Reset stale relaunch flag if termination was cancelled.
+        // Scenario: User clicks "Restart to Update" (sets flag=true), but an earlier
+        // decider (e.g., ActiveDownloadsAppTerminationDecider) cancels termination.
+        // Without this reset, the flag stays true and the next normal quit would
+        // incorrectly skip data clearing.
+        if !shouldProceed && stateRestorationManager.isRelaunchingAutomatically {
+            stateRestorationManager.resetRelaunchFlag()
+        }
     }
 
     func resetTheCorrectTerminationFlag() {
@@ -76,17 +121,21 @@ final class AutoClearHandler {
     // MARK: - Private
 
     private func confirmAutoClear() -> NSApplication.ModalResponse {
-        let alert = NSAlert.autoClearAlert(clearChats: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
-        let response = alert.runModal()
-        return response
+        return alertPresenter.confirmAutoClear(clearChats: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
     }
 
     @MainActor
-    private func performAutoClear() {
-        fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
-            self?.appTerminationHandledCorrectly = true
-            self?.onAutoClearCompleted?()
+    private func performAutoClear() async {
+        if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
+            Task {
+                await aiChatSyncCleaner?.recordLocalClear(date: Date())
+            }
         }
+        await fireViewModel.fire.burnAll(isBurnOnExit: true,
+                                         includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
+                                         isAutoClear: true,
+                                         dataClearingWideEventService: dataClearingWideEventService)
+        appTerminationHandledCorrectly = true
     }
 
     // MARK: - Burn On Start
@@ -101,7 +150,10 @@ final class AutoClearHandler {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
+                                   isAutoClear: true,
+                                   dataClearingWideEventService: dataClearingWideEventService)
+
         return true
     }
 

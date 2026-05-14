@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -32,6 +32,7 @@ let package = Package(
             targets: ["NewTabPage"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/AIChat"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
@@ -43,6 +44,7 @@ let package = Package(
         .target(
             name: "NewTabPage",
             dependencies: [
+                .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "Bookmarks", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
@@ -61,6 +63,9 @@ let package = Package(
             dependencies: [
                 "NewTabPage",
                 "Utilities",
+                .product(name: "AIChat", package: "AIChat"),
+                .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]
         ),
     ]

@@ -36,4 +36,12 @@ struct WebsiteInfo: Equatable {
         self.url = url
         self.title = tab.title ?? url.host ?? url.absoluteString
     }
+
+    init?(_ tab: AnyTab) {
+        guard case let .url(url, _, _) = tab.content else {
+            return nil
+        }
+        self.url = url
+        self.title = tab.title ?? url.host ?? url.absoluteString
+    }
 }

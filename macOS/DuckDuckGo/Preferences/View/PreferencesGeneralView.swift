@@ -24,6 +24,7 @@ import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKitIcons
 
 extension Preferences {
 
@@ -34,9 +35,9 @@ extension Preferences {
         @ObservedObject var tabsModel: TabsPreferences
         @ObservedObject var dataClearingModel: DataClearingPreferences
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
+        @ObservedObject var autoplayModel: AutoplayPreferences
+        @ObservedObject var dockModel: DockPreferencesModel
         @State private var showingCustomHomePageSheet = false
-        @State private var isAddedToDock = false
-        var dockCustomizer: DockCustomizer
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -57,78 +58,97 @@ extension Preferences {
             firePinnedTabsPixel(newMode)
         }
 
+        private var isPresentingAddToDockDemoVideo: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
                 // SECTION: Shortcuts
-#if !APPSTORE
-                PreferencePaneSection(UserText.shortcuts, spacing: 4) {
-                    PreferencePaneSubSection {
-                        HStack {
-                            if isAddedToDock || dockCustomizer.isAddedToDock {
-                                HStack {
-                                    Image(.checkCircle).foregroundColor(Color(.successGreen))
-                                    Text(UserText.isAddedToDock)
-                                }
-                                .transition(.opacity)
-                                .padding(.trailing, 8)
-                            } else {
-                                HStack {
-                                    Image(.warning).foregroundColor(Color(.linkBlue))
-                                    Text(UserText.isNotAddedToDock)
-                                }
-                                .padding(.trailing, 8)
-                                Button(action: {
-                                    withAnimation {
-                                        PixelKit.fire(GeneralPixel.userAddedToDockFromSettings,
-                                                      includeAppVersionParameter: false)
-                                        dockCustomizer.addToDock()
-                                        isAddedToDock = true
+                if dockModel.canAddToDock {
+                    PreferencePaneSection(UserText.shortcuts, spacing: 4) {
+                        PreferencePaneSubSection {
+                            HStack {
+                                if dockModel.isAddedToDock {
+                                    HStack {
+                                        Image(.checkCircle).foregroundColor(Color(.successGreen))
+                                        Text(UserText.isAddedToDock)
                                     }
-                                }) {
-                                    Text(UserText.addToDock)
-                                        .fixedSize(horizontal: true, vertical: false)
-                                        .multilineTextAlignment(.center)
+                                    .transition(.opacity)
+                                    .padding(.trailing, 8)
+                                } else {
+                                    HStack {
+                                        Image(.warning).foregroundColor(Color(.linkBlue))
+                                        Text(UserText.isNotAddedToDock)
+                                    }
+                                    .padding(.trailing, 8)
+                                    Button(action: {
+                                        withAnimation {
+                                            dockModel.addToDock(from: .general)
+                                        }
+                                    }) {
+                                        Text(UserText.addToDock)
+                                            .fixedSize(horizontal: true, vertical: false)
+                                            .multilineTextAlignment(.center)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .onAppear {
+                        dockModel.refresh()
+                    }
+                } else if dockModel.canShowDockInstructions {
+                    PreferencePaneSection(UserText.shortcuts, spacing: 4) {
+                        PreferencePaneSubSection {
+                            HStack(alignment: .top) {
+                                Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
+                                    .foregroundColor(Color(.linkBlue))
+                                Text(UserText.addToDockInstructions)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                TextButton(UserText.addToDockShowMeHow) {
+                                    dockModel.showAddToDockDemoVideo()
                                 }
                             }
                         }
                     }
                 }
-#endif
+
                 // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
 
                     PreferencePaneSubSection {
                         Picker(selection: $startupModel.restorePreviousSession, content: {
-                            if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 0) {
-                                        Text(UserText.openANew)
-                                        Picker("", selection: $startupModel.startupWindowType) {
-                                            ForEach(StartupWindowType.allCases, id: \.self) { windowType in
-                                                Text(windowType.displayName).tag(windowType)
-                                                    .accessibilityIdentifier({
-                                                        switch windowType {
-                                                        case .window:
-                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
-                                                        case .fireWindow:
-                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
-                                                        }
-                                                    }())
-                                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 0) {
+                                    Text(UserText.openANew)
+                                    Picker("", selection: $startupModel.startupWindowType) {
+                                        ForEach(StartupWindowType.allCases, id: \.self) { windowType in
+                                            Text(windowType.displayName).tag(windowType)
+                                                .accessibilityIdentifier({
+                                                    switch windowType {
+                                                    case .window:
+                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+                                                    case .fireWindow:
+                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+                                                    }
+                                                }())
                                         }
-                                        .pickerStyle(.menu)
-                                        .fixedSize()
-                                        .disabled(startupModel.restorePreviousSession)
                                     }
+                                    .pickerStyle(.menu)
+                                    .fixedSize()
+                                    .disabled(startupModel.restorePreviousSession)
                                 }
-                                .tag(false)
-                                .padding(.bottom, 4)
-                            } else {
-                                Text(UserText.showHomePage).tag(false)
-                                    .padding(.bottom, 4)
-                                    .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
                             }
+                            .tag(false)
+                            .padding(.bottom, 4)
+
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
@@ -138,9 +158,9 @@ extension Preferences {
 
                         if (dataClearingModel.isAutoClearEnabled || dataClearingModel.shouldOpenFireWindowByDefault) && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
-                                TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
+                                TextMenuItemCaption(UserText.disableAutoDeleteToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
-                                    startupModel.show(url: .settingsPane(.dataClearing))
+                                    NSApp.delegateTyped.windowControllersManager.show(url: .settingsPane(.dataClearing), source: .appOpenUrl)
                                 }
                             }
                             .padding(.leading, 19)
@@ -215,10 +235,13 @@ extension Preferences {
                         TextMenuItemCaption(UserText.homePageDescription)
 
                         Picker(selection: $startupModel.launchToCustomHomePage, label: EmptyView()) {
-                            Text(UserText.newTab).tag(false)
+                            Text(UserText.newTab)
+                                .tag(false)
+                                .accessibilityIdentifier("PreferencesGeneralView.homePage.newTab")
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: 15) {
                                     Text(UserText.specificPage)
+                                        .accessibilityIdentifier("PreferencesGeneralView.homePage.specificPage")
                                     Button(UserText.setPage) {
                                         showingCustomHomePageSheet.toggle()
                                     }.disabled(!startupModel.launchToCustomHomePage)
@@ -278,6 +301,49 @@ extension Preferences {
                             .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
+
+                // SECTION: On Quit
+                if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                    PreferencePaneSection(UserText.settingsOnQuitSection) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.settingsConfirmQuitCheckbox, isOn: Binding(
+                                get: { tabsModel.warnBeforeQuitting },
+                                set: { newValue in
+                                    let oldValue = tabsModel.warnBeforeQuitting
+                                    tabsModel.warnBeforeQuitting = newValue
+                                    // Only fire pixel when user explicitly disables via toggle (not programmatic changes)
+                                    if oldValue && !newValue {
+                                        PixelKit.fire(GeneralPixel.warnBeforeQuitSettingsDisabled, frequency: .dailyAndCount)
+                                    }
+                                }
+                            ))
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
+                            ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
+                        }
+                    }
+                }
+
+                // SECTION: Permissions
+                if featureFlagger.isFeatureOn(.autoplayPolicy) {
+                    PreferencePaneSection(UserText.permissionsSection) {
+                        PreferencePaneSubSection {
+                            HStack {
+                                Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
+                                    ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
+                                        Text(mode.description).tag(mode)
+                                    }
+                                }
+                            }
+                            TextMenuItemCaption(UserText.autoplayCaption)
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: isPresentingAddToDockDemoVideo) {
+                PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                      videoSize: DockPreferencesModel.demoVideoSize,
+                                      isPresented: isPresentingAddToDockDemoVideo)
             }
         }
     }

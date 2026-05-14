@@ -34,6 +34,10 @@ final class HoverTrackingArea: NSTrackingArea {
         trackingArea.updateLayer(animated: false)
     }
 
+    private enum Animations {
+        static let duration: TimeInterval = 0.15
+    }
+
     // mouseEntered and mouseExited events will be received by the HoverTrackingArea itself
     override var owner: AnyObject? {
         self
@@ -82,7 +86,9 @@ final class HoverTrackingArea: NSTrackingArea {
             owner.observe(\.backgroundInset) { [weak self] _, _ in self?.updateLayer() },
             (owner as? NSControl)?.observe(\.isEnabled) { [weak self] _, _ in self?.updateLayer(animated: false) },
             owner.observe(\.isMouseDown) { [weak self] _, _ in self?.mouseDownDidChange() },
-            owner.observe(\.isMouseOver, options: .new) { [weak self] _, c in self?.updateLayer(animated: !(c.newValue /* isMouseOver */ ?? false)) },
+            owner.observe(\.isMouseOver, options: .new) { [weak self] _, change in
+                self?.processMouseOverEvent(isMouseOver: change.newValue ?? false)
+            },
             owner.observe(\.window) { [weak self] _, _ in self?.viewWindowDidChange() },
         ].compactMap { $0 }
     }
@@ -107,9 +113,11 @@ final class HoverTrackingArea: NSTrackingArea {
                 context.allowsImplicitAnimation = true
                 // mousedown/over state should be applied instantly
                 // animation should be also disabled on view reuse
-                if !animated || view.isMouseDown || view.isMouseOver {
+                if !animated || view.isMouseDown || view.isMouseOver && !view.mustAnimateOnMouseOver {
                     layer.removeAllAnimations()
                     context.duration = 0.0
+                } else {
+                    context.duration = Animations.duration
                 }
 
                 layer.backgroundColor = color.cgColor
@@ -193,7 +201,16 @@ final class HoverTrackingArea: NSTrackingArea {
         view.isMouseOver = view.isMouseLocationInsideBounds()
         updateLayer(animated: false)
     }
+}
 
+private extension HoverTrackingArea {
+
+    func processMouseOverEvent(isMouseOver: Bool) {
+        let mustAnimateOnMouseOver = view?.mustAnimateOnMouseOver ?? false
+        let animated = !isMouseOver || mustAnimateOnMouseOver
+
+        updateLayer(animated: animated)
+    }
 }
 
 extension NSTrackingArea {
@@ -227,6 +244,8 @@ extension NSTrackingArea {
     @objc dynamic var isMouseDown: Bool { get }
 
     @objc dynamic var isMouseOver: Bool { get set }
+
+    @objc dynamic var mustAnimateOnMouseOver: Bool { get }
 
 }
 

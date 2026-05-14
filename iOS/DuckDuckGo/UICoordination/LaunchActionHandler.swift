@@ -24,19 +24,42 @@ enum LaunchAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
-    case showKeyboard(Date?)
+    case handleUserActivity(NSUserActivity)
+    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?) {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
         case .handleShortcutItem(let shortcutItem)?:
             self = .handleShortcutItem(shortcutItem)
+        case .handleUserActivity(let userActivity)?:
+            self = .handleUserActivity(userActivity)
         case nil:
-            self = .showKeyboard(lastBackgroundDate)
+            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
         }
     }
 
+    var url: URL? {
+        switch self {
+        case .openURL(let url):
+            return url
+        case .handleShortcutItem, .handleUserActivity, .standardLaunch:
+            return nil
+        }
+    }
+
+}
+
+@MainActor
+protocol OnboardingPresenting: AnyObject {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?)
+}
+
+@MainActor
+protocol IdleReturnLaunchDelegate: AnyObject {
+    func showNewTabPageAfterIdleReturn()
+    func markLastUsedTabAsResumedAfterIdle()
 }
 
 @MainActor
@@ -51,19 +74,28 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     private let urlHandler: URLHandling
     private let shortcutItemHandler: ShortcutItemHandling
+    private let userActivityHandler: UserActivityHandling
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: PixelFiring.Type
     private let launchSourceManager: LaunchSourceManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
+    private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
+         userActivityHandler: UserActivityHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
+         idleReturnEvaluator: IdleReturnEvaluating,
+         idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
+        self.userActivityHandler = userActivityHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
+        self.idleReturnEvaluator = idleReturnEvaluator
+        self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
 
@@ -75,12 +107,24 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
-        case .showKeyboard(let lastBackgroundDate):
+        case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
-            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate)
+            userActivityHandler.handleUserActivity(userActivity)
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
+            launchSourceManager.setSource(.standard)
+            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+                switch idleReturnEvaluator.treatmentForIdleReturn() {
+                case .ntp:
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+                    return
+                case .lut:
+                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
+                }
+            }
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
         }
     }
-
+    
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.absoluteString)")
         fireAppLaunchedWithExternalLinkPixel(url: url)

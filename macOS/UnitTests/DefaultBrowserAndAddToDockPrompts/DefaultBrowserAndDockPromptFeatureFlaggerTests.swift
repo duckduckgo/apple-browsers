@@ -16,39 +16,13 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Testing
-import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
     let privacyConfigManagerMock = MockPrivacyConfigurationManager()
-    let featureFlaggerMock = MockFeatureFlagger()
-
-    @Test("Check Feature Flag Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserAndDockPromptFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        featureFlaggerMock.enabledFeatureFlags = isEnabled ? [.scheduledSetDefaultBrowserAndAddToDockPrompts] : []
-        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
-
-        // WHEN
-        let result = sut.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
-
-    @Test("Check Feature Flag For Inactive Users Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        featureFlaggerMock.enabledFeatureFlags = isEnabled ? [.scheduledDefaultBrowserAndDockPromptsInactiveUser] : []
-        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
-
-        // WHEN
-        let result = sut.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
 
     @Test("Check Remote Subfeature Settings Are Returned Correctly")
     func checkRemoteSettingsAreReturnedCorrectly() throws {
@@ -61,7 +35,7 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
             DefaultBrowserAndDockPromptFeatureSettings.inactiveModalNumberOfDaysSinceInstall.rawValue: 10,
             DefaultBrowserAndDockPromptFeatureSettings.inactiveModalNumberOfInactiveDays.rawValue: 5
         ]
-        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
+        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock)
 
         // WHEN
         let firstPopoverDelayDays = sut.firstPopoverDelayDays
@@ -83,7 +57,7 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
         // GIVEN
         let privacyConfigMock = privacyConfigManagerMock.privacyConfig as! MockPrivacyConfiguration
         privacyConfigMock.featureSettings = [:]
-        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
+        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock)
 
         // WHEN
         let firstPopoverDelayDays = sut.firstPopoverDelayDays

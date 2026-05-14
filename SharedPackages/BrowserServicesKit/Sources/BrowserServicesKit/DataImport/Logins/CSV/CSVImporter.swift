@@ -132,7 +132,7 @@ final public class CSVImporter: DataImporter {
             case .onePassword7, .onePassword8:
                 self.init(titleIndex: 3, urlIndex: 5, usernameIndex: 6, passwordIndex: 2)
             case .lastPass, .firefox, .edge, .chrome, .chromium, .coccoc, .brave, .opera, .operaGX,
-                 .safari, .safariTechnologyPreview, .tor, .vivaldi, .yandex, .csv, .bookmarksHTML, .bitwarden:
+                    .safari, .safariTechnologyPreview, .tor, .vivaldi, .yandex, .csv, .bookmarksHTML, .bitwarden, .fileImport:
                 return nil
             }
         }

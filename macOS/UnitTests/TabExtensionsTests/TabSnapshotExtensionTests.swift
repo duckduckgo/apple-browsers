@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Navigation
+import PrivacyConfig
 import WebKit
 import XCTest
 
@@ -31,6 +32,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     var mockTabSnapshotStore: MockTabSnapshotStore!
     var mockWebViewPublisher: PassthroughSubject<WKWebView, Never>!
     var mockContentPublisher: PassthroughSubject<Tab.TabContent, Never>!
+    var mockInteractionEventsPublisher: PassthroughSubject<WebViewInteractionEvent, Never>!
 
     override func setUp() {
         super.setUp()
@@ -39,6 +41,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockTabSnapshotStore = MockTabSnapshotStore()
         mockWebViewPublisher = PassthroughSubject<WKWebView, Never>()
         mockContentPublisher = PassthroughSubject<Tab.TabContent, Never>()
+        mockInteractionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
 
         tabSnapshotExtension = TabSnapshotExtension(
             store: mockTabSnapshotStore,
@@ -46,6 +49,7 @@ class TabSnapshotExtensionTests: XCTestCase {
             viewSnapshotRenderer: mockViewSnapshotRenderer,
             webViewPublisher: mockWebViewPublisher.eraseToAnyPublisher(),
             contentPublisher: mockContentPublisher.eraseToAnyPublisher(),
+            interactionEventsPublisher: mockInteractionEventsPublisher.eraseToAnyPublisher(),
             isBurner: false)
     }
 
@@ -56,6 +60,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockTabSnapshotStore = nil
         mockWebViewPublisher = nil
         mockContentPublisher = nil
+        mockInteractionEventsPublisher = nil
         super.tearDown()
     }
 
@@ -69,7 +74,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         await Task.yield()
 
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -80,7 +85,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         await Task.yield()
 
-        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: WKFrameInfo())
+        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: .mock())
 
         await Task.yield()
 
@@ -94,7 +99,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         let snapshot = NSImage()
         mockTabSnapshotStore.snapshots[uuid] = snapshot
 
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -103,7 +108,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         let snapshot2 = NSImage()
         mockWebViewSnapshotRenderer.nextSnapshot = snapshot2
 
-        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: WKFrameInfo())
+        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: .mock())
 
         await Task.yield()
 
@@ -113,7 +118,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenUserInteractsAndWebViewIsNotLoading_ThenSnapshotRenderingIsTriggered() async {
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -124,7 +129,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         // Simulate user interaction with webView
         let event = NSEvent()
-        tabSnapshotExtension.webView(webView, keyDown: event)
+        mockInteractionEventsPublisher.send(.keyDown(event))
 
         // Simulate user unselected the tab and render the snapshot
         await tabSnapshotExtension.renderWebViewSnapshot()
@@ -134,7 +139,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenSnapshotDataUnchangedAndNoNewUserInteraction_ThenRedundantRenderingIsAvoided() async {
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -145,7 +150,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         // Simulate user interaction with webView
         let event = NSEvent()
-        tabSnapshotExtension.webView(webView, keyDown: event)
+        mockInteractionEventsPublisher.send(.keyDown(event))
 
         // Simulate user unselected the tab and render the snapshot
         await tabSnapshotExtension.renderWebViewSnapshot()
@@ -164,7 +169,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenSnapshotIsRendered_ThenItIsPersistedCorrectly() async {
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -187,8 +192,9 @@ class TabSnapshotExtensionTests: XCTestCase {
             viewSnapshotRenderer: mockViewSnapshotRenderer,
             webViewPublisher: mockWebViewPublisher.eraseToAnyPublisher(),
             contentPublisher: mockContentPublisher.eraseToAnyPublisher(),
+            interactionEventsPublisher: mockInteractionEventsPublisher.eraseToAnyPublisher(),
             isBurner: true)
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
 
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
@@ -207,7 +213,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     func testWhenURLIsDuckPlayerURL_ThenSnapshotIsRendered() async throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "duck://player/12345"))
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(url, source: .ui)
         mockContentPublisher.send(content)
@@ -225,7 +231,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     func testWhenURLIsOnboardingURL_ThenSnapshotIsRendered() async throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "duck://onboarding"))
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(url, source: .ui)
         mockContentPublisher.send(content)
@@ -243,7 +249,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     func testWhenURLIsHistoryURL_ThenSnapshotIsRendered() async throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "duck://history"))
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(url, source: .ui)
         mockContentPublisher.send(content)
@@ -261,7 +267,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     func testWhenURLHasDuckScheme_AndIsNotDuckPlayerOrHistoryOrOnboardingURL_ThenSnapshotIsNotRendered() async throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "duck://\(#function)"))
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(url, source: .ui)
         mockContentPublisher.send(content)
@@ -279,7 +285,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     func testWhenURLIsDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "duck://player/12345"))
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(url, source: .ui)
         mockContentPublisher.send(content)
@@ -295,7 +301,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     @MainActor
     func testWhenURLIsNotDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
         // GIVEN
-        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration(), featureFlagger: MockFeatureFlagger())
         mockWebViewPublisher.send(webView)
         let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
         mockContentPublisher.send(content)
@@ -308,6 +314,53 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
+    // MARK: - renderSnapshotSync(from:)
+
+    @MainActor
+    func testWhenRenderSnapshotSync_AndRendererProducesImage_ThenSnapshotIsStored() throws {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        let rendered = NSImage(size: NSSize(width: 280, height: 187))
+        mockViewSnapshotRenderer.nextSnapshot = rendered
+
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+
+        let stored = try XCTUnwrap(tabSnapshotExtension.snapshot)
+        XCTAssertIdentical(stored, rendered)
+    }
+
+    @MainActor
+    func testWhenRenderSnapshotSync_AndRendererReturnsNil_ThenSnapshotIsCleared() {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        mockViewSnapshotRenderer.nextSnapshot = NSImage(size: NSSize(width: 280, height: 187))
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+        XCTAssertNotNil(tabSnapshotExtension.snapshot)
+
+        mockViewSnapshotRenderer.nextSnapshot = nil
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
+    // MARK: - shouldClearSnapshotOnDeinit
+
+    @MainActor
+    func testWhenShouldClearSnapshotOnDeinitIsTrue_ThenSnapshotIsClearedOnDeinit() {
+        let identifier = tabSnapshotExtension.identifier
+
+        tabSnapshotExtension = nil
+
+        XCTAssertTrue(mockTabSnapshotStore.clearedSnapshotIDs.contains(identifier))
+    }
+
+    @MainActor
+    func testWhenShouldClearSnapshotOnDeinitIsFalse_ThenSnapshotIsNotClearedOnDeinit() {
+        let identifier = tabSnapshotExtension.identifier
+        tabSnapshotExtension.shouldClearSnapshotOnDeinit = false
+
+        tabSnapshotExtension = nil
+
+        XCTAssertFalse(mockTabSnapshotStore.clearedSnapshotIDs.contains(identifier))
+    }
 }
 
 fileprivate extension URL {

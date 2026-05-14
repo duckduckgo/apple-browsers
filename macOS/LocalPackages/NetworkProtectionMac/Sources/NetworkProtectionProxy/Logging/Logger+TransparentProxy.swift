@@ -21,5 +21,5 @@ import os.log
 
 public extension Logger {
     fileprivate static let subsystem = "Network Protection"
-    static var transparentProxyLogger = { Logger(subsystem: Logger.subsystem, category: "Transparent Proxy") }()
+    static let transparentProxyLogger = Logger(subsystem: Logger.subsystem, category: "Transparent Proxy")
 }

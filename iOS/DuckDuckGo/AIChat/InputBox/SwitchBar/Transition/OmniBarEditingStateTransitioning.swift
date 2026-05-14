@@ -23,4 +23,11 @@ protocol OmniBarEditingStateTransitioning: AnyObject {
     var switchBarVC: SwitchBarViewController { get }
     var actionBarView: UIView? { get }
     func setLogoYOffset(_ offset: CGFloat)
+
+    // Escape Hatch
+    func setLogoHidden(_ hidden: Bool)
+    /// When true, use opaque-from-frame-0 transition and single-logo behaviour. Gated by showNTPAfterIdleReturn.
+    var useNewTransitionBehaviour: Bool { get }
+    /// When true, the NTP is showing the escape hatch card; the transition hides the editing-state Dax logo so only the NTP logo is visible.
+    var isEscapeHatchCardVisible: Bool { get }
 }

@@ -41,6 +41,12 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didRemoveCalled = true
     }
 
+    var didReplaceCalled = false
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        didReplaceCalled = true
+    }
+
     var didMoveCalled = false
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {

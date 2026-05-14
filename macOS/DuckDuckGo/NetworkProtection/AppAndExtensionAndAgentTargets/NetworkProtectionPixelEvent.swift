@@ -36,6 +36,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
     case networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken
     case networkProtectionTunnelStartSuccess
     case networkProtectionTunnelStartFailure(_ error: Error)
+    case networkProtectionConnectionFailureLoopDetected(_ error: Error)
 
     case networkProtectionTunnelStopAttempt
     case networkProtectionTunnelStopSuccess
@@ -157,6 +158,9 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
         case .networkProtectionTunnelStartFailure:
             return "netp_tunnel_start_failure"
+
+        case .networkProtectionConnectionFailureLoopDetected:
+            return "netp_connection_failure_loop_detected"
 
         case .networkProtectionTunnelStopAttempt:
             return "netp_tunnel_stop_attempt"
@@ -424,6 +428,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error.pixelParameters
         case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(let error):
             return error.pixelParameters
+        case .networkProtectionConnectionFailureLoopDetected(let error):
+            return error.pixelParameters
         case .networkProtectionActiveUser,
                 .networkProtectionNewUser,
                 .networkProtectionControllerStartAttempt,
@@ -473,6 +479,88 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
                 .networkProtectionConfigurationInvalidPayload:
             return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .networkProtectionActiveUser,
+                .networkProtectionNewUser,
+                .networkProtectionControllerStartAttempt,
+                .networkProtectionControllerStartSuccess,
+                .networkProtectionControllerStartCancelled,
+                .networkProtectionControllerStartFailure,
+                .networkProtectionTunnelStartAttempt,
+                .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
+                .networkProtectionTunnelStartSuccess,
+                .networkProtectionTunnelStartFailure,
+                .networkProtectionTunnelStopAttempt,
+                .networkProtectionTunnelStopSuccess,
+                .networkProtectionTunnelStopFailure,
+                .networkProtectionTunnelUpdateAttempt,
+                .networkProtectionTunnelUpdateSuccess,
+                .networkProtectionTunnelUpdateFailure,
+                .networkProtectionTunnelWakeFailure,
+                .networkProtectionEnableAttemptConnecting,
+                .networkProtectionEnableAttemptSuccess,
+                .networkProtectionEnableAttemptFailure,
+                .networkProtectionTunnelFailureDetected,
+                .networkProtectionTunnelFailureRecovered,
+                .networkProtectionLatency,
+                .networkProtectionLatencyError,
+                .networkProtectionTunnelConfigurationNoServerRegistrationInfo,
+                .networkProtectionTunnelConfigurationCouldNotSelectClosestServer,
+                .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey,
+                .networkProtectionTunnelConfigurationCouldNotGetPeerHostName,
+                .networkProtectionTunnelConfigurationCouldNotGetInterfaceAddressRange,
+                .networkProtectionClientFailedToParseServerListResponse,
+                .networkProtectionClientFailedToEncodeRegisterKeyRequest,
+                .networkProtectionClientFailedToParseRegisteredServersResponse,
+                .networkProtectionClientInvalidAuthToken,
+                .networkProtectionWireguardErrorCannotLocateTunnelFileDescriptor,
+                .networkProtectionWireguardErrorFailedDNSResolution,
+                .networkProtectionNoAuthTokenFoundError,
+                .networkProtectionRekeyAttempt,
+                .networkProtectionRekeyCompleted,
+                .networkProtectionRekeyFailure,
+                .networkProtectionSystemExtensionActivationAttempt,
+                .networkProtectionSystemExtensionActivationSuccess,
+                .networkProtectionSystemExtensionActivationFailure,
+                .networkProtectionServerMigrationAttempt,
+                .networkProtectionServerMigrationSuccess,
+                .networkProtectionDNSUpdateCustom,
+                .networkProtectionDNSUpdateDefault,
+                .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
+                .networkProtectionConfigurationInvalidPayload,
+                .couldNotParseConfiguration,
+                .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure,
+                .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure,
+                .networkProtectionClientFailedToFetchLocations,
+                .networkProtectionClientFailedToFetchRegisteredServers,
+                .networkProtectionClientFailedToFetchServerList,
+                .networkProtectionClientFailedToFetchServerStatus,
+                .networkProtectionClientFailedToParseLocationsResponse,
+                .networkProtectionClientFailedToParseServerStatusResponse,
+                .networkProtectionConfigurationErrorLoadingCachedConfig,
+                .networkProtectionConnectionTesterExtendedFailureDetected,
+                .networkProtectionConnectionTesterExtendedFailureRecovered,
+                .networkProtectionConnectionTesterFailureDetected,
+                .networkProtectionConnectionTesterFailureRecovered,
+                .networkProtectionKeychainDeleteError,
+                .networkProtectionKeychainErrorFailedToCastKeychainValueToData,
+                .networkProtectionKeychainReadError,
+                .networkProtectionKeychainUpdateError,
+                .networkProtectionKeychainWriteError,
+                .networkProtectionServerMigrationFailure,
+                .networkProtectionUnhandledError,
+                .networkProtectionUnmanagedSubscriptionError,
+                .networkProtectionVPNAccessRevoked,
+                .networkProtectionWireguardErrorCannotSetNetworkSettings,
+                .networkProtectionWireguardErrorCannotSetWireguardConfig,
+                .networkProtectionWireguardErrorCannotStartWireguardBackend,
+                .networkProtectionWireguardErrorInvalidState,
+                .networkProtectionConnectionFailureLoopDetected:
+            return [.pixelSource]
         }
     }
 

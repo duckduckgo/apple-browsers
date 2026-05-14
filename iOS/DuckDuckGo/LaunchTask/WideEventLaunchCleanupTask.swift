@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 
 struct WideEventLaunchCleanupTask: LaunchTask {
 
@@ -26,7 +27,8 @@ struct WideEventLaunchCleanupTask: LaunchTask {
     var name: String = "Wide Event Launch Cleanup"
 
     func run(context: LaunchTaskContext) {
-        wideEventService.sendAbandonedPixels {
+        Task {
+            await wideEventService.sendPendingEvents(trigger: .appLaunch)
             context.finish()
         }
     }

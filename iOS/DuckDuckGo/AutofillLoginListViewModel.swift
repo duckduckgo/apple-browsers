@@ -26,6 +26,7 @@ import Core
 import DDGSync
 import PrivacyDashboard
 import Persistence
+import PrivacyConfig
 import os.log
 
 class AutofillLoginListViewModel: ObservableObject {
@@ -56,7 +57,11 @@ class AutofillLoginListViewModel: ObservableObject {
     var isAuthenticating = false
 
     @Published private var accounts = [SecureVaultModels.WebsiteAccount]()
-    private var accountsToSuggest = [SecureVaultModels.WebsiteAccount]()
+    private var _accountsToSuggest = [SecureVaultModels.WebsiteAccount]()
+    private var accountsToSuggest: [SecureVaultModels.WebsiteAccount] {
+        get { _accountsToSuggest }
+        set { _accountsToSuggest = sortedAccountsForSuggestions(newValue) }
+    }
     private var cancellables: Set<AnyCancellable> = []
     private var appSettings: AppSettings
     private let tld: TLD
@@ -71,6 +76,8 @@ class AutofillLoginListViewModel: ObservableObject {
     private let keyValueStore: ThrowingKeyValueStoring
     private let locale: Locale
     private var showBreakageReporter: Bool = false
+    private let extensionPromotionManager: AutofillExtensionPromotionManaging
+    private let featureFlagger: FeatureFlagger
 
     private lazy var reporterDateFormatter = {
         let dateFormatter = DateFormatter()
@@ -124,7 +131,9 @@ class AutofillLoginListViewModel: ObservableObject {
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
          syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
-         locale: Locale = Locale.current) {
+         locale: Locale = Locale.current,
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.appSettings = appSettings
         self.tld = tld
         self.secureVault = secureVault
@@ -134,6 +143,8 @@ class AutofillLoginListViewModel: ObservableObject {
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.locale = locale
+        self.extensionPromotionManager = extensionPromotionManager ?? AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
+        self.featureFlagger = featureFlagger
 
         if let count = getAccountsCount() {
             authenticationNotRequired = count == 0 || AppDependencyProvider.shared.autofillLoginSession.isSessionValid
@@ -230,25 +241,44 @@ class AutofillLoginListViewModel: ObservableObject {
     
     func updateData() {
         self.accounts = fetchAccounts()
-        self.accountsToSuggest = fetchSuggestedAccounts()
+
+        if !isSearching {
+            self.accountsToSuggest = fetchSuggestedAccounts()
+        }
+
         self.sections = makeSections(with: accounts)
         self.showBreakageReporter = shouldShowBreakageReporter()
     }
     
     func filterData(with query: String? = nil) {
         var filteredAccounts = self.accounts
+        accountsToSuggest = []
         
-        if let query = query, query.count > 0 {
+        if let query = query?.lowercased(), query.count > 0 {
             filteredAccounts = filteredAccounts.filter { account in
-                if !account.name(tld: tld, autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher).lowercased().contains(query.lowercased()) &&
-                    !(account.domain ?? "").lowercased().contains(query.lowercased()) &&
-                    !(account.username ?? "").lowercased().contains(query.lowercased()) {
-                    return false
-                }
-                return true
+                account.name(tld: tld, autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher).lowercased().contains(query) ||
+                (account.domain ?? "").lowercased().contains(query) ||
+                (account.username ?? "").lowercased().contains(query)
             }
+            
+            // Prioritize domain matches into their own section if feature flag is enabled
+            if featureFlagger.isFeatureOn(.autofillPasswordSearchPrioritizeDomain) {
+                accountsToSuggest = filteredAccounts.filter { account in
+                    domainMatchesQuery(account.domain, query: query)
+                }
+            }
+        } else if !isSearching {
+            // When search is cleared and not searching, restore suggestions based on `currentTabUrl`
+            accountsToSuggest = fetchSuggestedAccounts()
         }
         self.sections = makeSections(with: filteredAccounts)
+        self.showBreakageReporter = shouldShowBreakageReporter()
+    }
+
+    /// - returns: True if the query is present within the domain, false otherwise.
+    private func domainMatchesQuery(_ domain: String?, query: String) -> Bool {
+        guard let domain = domain, !domain.isEmpty, !query.isEmpty else { return false }
+        return domain.lowercased().contains(query.lowercased())
     }
 
     func resetNeverPromptWebsites() {
@@ -330,6 +360,32 @@ class AutofillLoginListViewModel: ObservableObject {
         autofillCredentialsImportManager.passwordsScreenDidRequestPermanentCredentialsImportPromptDismissal()
     }
 
+    @MainActor
+    func shouldShowExtensionPromo(completion: @escaping (Bool) -> Void) {
+        guard viewState == .showItems, !isEditing else {
+            completion(false)
+            return
+        }
+
+        if let currentTabUrl {
+            let currentTabDomain = tld.eTLDplus1(forStringURL: currentTabUrl.absoluteString) ??
+            autofillDomainNameUrlMatcher.normalizeUrlForWeb(currentTabUrl.absoluteString)
+            guard extensionPromotionManager.domainExtensionPromptLastShownOn != currentTabDomain else {
+                completion(false)
+                return
+            }
+        }
+
+        extensionPromotionManager.shouldShowPromotion(for: .passwords, totalCredentialsCount: accountsCount) { shouldShow in
+            completion(shouldShow)
+        }
+    }
+
+    @MainActor
+    func dismissExtensionPromo() {
+        extensionPromotionManager.markPromotionDismissed(for: .passwords)
+    }
+
     // MARK: Private Methods
 
     private func saveReport(for currentTabUrl: URL) {
@@ -349,7 +405,6 @@ class AutofillLoginListViewModel: ObservableObject {
                                       protectionsState: true,
                                       reportFlow: .appMenu,
                                       siteType: .mobile,
-                                      atb: "",
                                       model: "",
                                       errors: nil,
                                       httpStatusCodes: nil,
@@ -361,7 +416,8 @@ class AutofillLoginListViewModel: ObservableObject {
                                       cookieConsentInfo: nil,
                                       debugFlags: "",
                                       privacyExperiments: "",
-                                      isPirEnabled: nil)
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }
@@ -409,25 +465,35 @@ class AutofillLoginListViewModel: ObservableObject {
             )
         }
 
-        let sortedSuggestions = suggestedAccounts.sorted(by: {
+        return suggestedAccounts
+    }
+    
+    private func sortedAccountsForSuggestions(_ accounts: [SecureVaultModels.WebsiteAccount]) -> [SecureVaultModels.WebsiteAccount] {
+        return accounts.sorted(by: {
             autofillDomainNameUrlSort.compareAccountsForSortingAutofill(lhs: $0, rhs: $1, tld: tld) == .orderedAscending
         })
+    }
 
-        return sortedSuggestions
+    private func hasSuggestedAccountMatchingCurrentTab(url: URL) -> Bool {
+        accountsToSuggest.contains { account in
+            autofillDomainNameUrlMatcher.isMatchingForAutofill(
+                currentSite: url.absoluteString,
+                savedSite: account.domain ?? "",
+                tld: tld
+            )
+        }
     }
 
     private func makeSections(with accounts: [SecureVaultModels.WebsiteAccount]) -> [AutofillLoginListSectionType] {
         var newSections = [AutofillLoginListSectionType]()
 
-        if !isSearching {
-            if !accountsToSuggest.isEmpty {
-                let accountItems = accountsToSuggest.map { AutofillLoginItem(account: $0,
-                                                                             tld: tld,
-                                                                             autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher,
-                                                                             autofillDomainNameUrlSort: autofillDomainNameUrlSort)
-                }
-                newSections.append(.suggestions(title: UserText.autofillLoginListSuggested, items: accountItems))
+        if !accountsToSuggest.isEmpty {
+            let accountItems = accountsToSuggest.map { AutofillLoginItem(account: $0,
+                                                                         tld: tld,
+                                                                         autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher,
+                                                                         autofillDomainNameUrlSort: autofillDomainNameUrlSort)
             }
+            newSections.append(.suggestions(title: UserText.autofillLoginListSuggested, items: accountItems))
         }
 
         let viewModelsGroupedByFirstLetter = accounts.groupedByFirstLetter(
@@ -542,7 +608,7 @@ class AutofillLoginListViewModel: ObservableObject {
 
     func shouldShowBreakageReporter() -> Bool {
         guard let currentTabUrl = currentTabUrl,
-              !accountsToSuggest.isEmpty,
+              hasSuggestedAccountMatchingCurrentTab(url: currentTabUrl),
               privacyConfig.isEnabled(featureKey: .autofillBreakageReporter),
               let identifier = currentTabUrl.privacySafeDomainIdentifier,
               !privacyConfig.isInExceptionList(domain: currentTabUrl.host, forFeature: .autofillBreakageReporter) else {

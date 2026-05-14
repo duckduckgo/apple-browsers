@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AddressBarPerformance
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox
@@ -25,6 +26,8 @@ import PixelKit
 import Suggestions
 import Subscription
 import os.log
+import UIComponents
+import AIChat
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -64,12 +67,27 @@ final class AddressBarTextField: NSTextField {
     private var addressBarStringCancellable: AnyCancellable?
     private var contentTypeCancellable: AnyCancellable?
     private var windowFrameCancellable: AnyCancellable?
+    private var sharedTextStateCancellable: AnyCancellable?
+
+    private var performanceCoordinator: AddressBarPerformanceCoordinator?
+    private var perfTerminatorCancellables: Set<AnyCancellable> = []
+    private var perfAIModeTerminatorCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
-    weak var sharedTextState: AddressBarSharedTextState?
+    var aiChatPreferences: AIChatPreferencesStorage?
+
+    weak var sharedTextState: AddressBarSharedTextState? {
+        didSet {
+            subscribeToSharedTextState()
+        }
+    }
+    weak var customToggleControl: NSControl?
+
+    /// Flag to prevent loops when updating value from shared state
+    private var isUpdatingFromSharedState = false
 
     private enum TextDidChangeEventType {
         case none
@@ -109,6 +127,29 @@ final class AddressBarTextField: NSTextField {
         currentEditor()?.selectAll(self)
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        perfTerminatorCancellables.removeAll()
+        if let window {
+            performanceCoordinator?.attach(to: window)
+            /// `object: nil` + filter inside the sink — passing `object: window` makes the subscription
+            /// strong-retain it, forming a cycle through `perfTerminatorCancellables` that keeps the
+            /// whole view tree alive (the window can't dealloc, so `viewDidMoveToWindow(nil)` never runs
+            /// to clear the cancellables).
+            NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
+                .sink { [weak self] notification in
+                    guard let self, (notification.object as? NSWindow) === self.window else { return }
+                    self.performanceCoordinator?.terminateInteraction()
+                }
+                .store(in: &perfTerminatorCancellables)
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+                .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
+                .store(in: &perfTerminatorCancellables)
+        } else {
+            performanceCoordinator?.detach()
+        }
+    }
+
     // MARK: Observation
 
     private func subscribeToSuggestionResult() {
@@ -117,6 +158,7 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
+                    self.performanceCoordinator?.markSuggestionsUpdated()
                     self.showSuggestionWindow()
                 }
             }
@@ -134,7 +176,12 @@ final class AddressBarTextField: NSTextField {
             .compactMap { $0 }
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
+                performanceCoordinator?.terminateInteraction()
                 hideSuggestionWindow()
+                /// Point sharedTextState at the incoming tab before `restoreValueIfPossible` runs. Otherwise
+                /// `updateValue`'s `sharedTextState?.reset()` would clear the OUTGOING tab's state (including the
+                /// per-tab duck.ai flag), wiping the persistent duck.ai mode from the tab we just left.
+                sharedTextState = selectedTabViewModel.addressBarSharedTextState
                 subscribeToAddressBarString(selectedTabViewModel: selectedTabViewModel)
                 subscribeToContentType(selectedTabViewModel: selectedTabViewModel)
             }
@@ -149,6 +196,55 @@ final class AddressBarTextField: NSTextField {
                 let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
                 let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
+            }
+    }
+
+    /// Pins `value` to `.text(sharedTextState.text, userTyped: true)` for the unfocused duck.ai state so the
+    /// bar renders the preserved prompt (or an empty string that triggers the "Ask anything privately"
+    /// placeholder) even when the underlying tab has a URL loaded — without this, entering unfocused duck.ai
+    /// on a browsing tab would leave `value = .url(...)` and the bar would render the URL + privacy indicators.
+    /// Call at transitions that enter `.inactiveWithAIChat` — NOT from `updateView`, because assigning `value`
+    /// fires the `$value` sink which re-enters `updateView` and would recurse forever.
+    func applyDuckAIUnfocusedValue() {
+        /// `textForSingleLineDisplay` collapses any newline (LF / CR / CRLF / Unicode line
+        /// separators) to a space — the address bar is single-line and a multi-line prompt would
+        /// otherwise render with broken vertical alignment.
+        let text = sharedTextState?.textForSingleLineDisplay ?? ""
+        let target: Value = .text(text, userTyped: true)
+        guard value != target else { return }
+        isUpdatingFromSharedState = true
+        self.value = target
+        isUpdatingFromSharedState = false
+    }
+
+    /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
+    private func subscribeToSharedTextState() {
+        sharedTextStateCancellable?.cancel()
+        sharedTextStateCancellable = nil
+        perfAIModeTerminatorCancellable?.cancel()
+        perfAIModeTerminatorCancellable = nil
+
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let sharedTextState else { return }
+
+        perfAIModeTerminatorCancellable = sharedTextState.$isInDuckAIMode
+            .dropFirst()
+            .sink { [weak self] _ in self?.performanceCoordinator?.terminateInteraction() }
+
+        sharedTextStateCancellable = sharedTextState.$text
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self, weak sharedTextState] _ in
+                guard let self, let sharedTextState,
+                      !self.isUpdatingFromSharedState,
+                      !self.isFirstResponder else { return }
+                let textForAddressBar = sharedTextState.textForSingleLineDisplay
+                /// Only update if the text actually changed and user interacted with shared state
+                guard sharedTextState.hasUserInteractedWithText,
+                      self.stringValueWithoutSuffix != textForAddressBar else { return }
+
+                self.isUpdatingFromSharedState = true
+                self.value = Value(stringValue: textForAddressBar, userTyped: true)
+                self.isUpdatingFromSharedState = false
             }
     }
 
@@ -216,8 +312,9 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
+            let hideSuffix = !isFirstResponder || (Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarCluster))
 
-            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -242,22 +339,38 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func restoreValueIfPossible(newSelectedTabViewModel: TabViewModel) {
-        // save current (possibly modified) value into the old TabViewModel when selecting another Tab
-        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
-            guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
-                return
-            }
-            oldSelectedTabViewModel.lastAddressBarTextFieldValue = value
+        // Tab-switch restore must not wipe the incoming tab's duck.ai mode / tool mode / attachments — the controller
+        // sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
+        // `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
+        // whenever the incoming tab had no user-typed address-bar value to restore.
+        //
+        // The snapshot of the OUTGOING tab's bar value into its `lastAddressBarTextFieldValue` is owned by
+        // `AddressBarViewController.subscribeToOutgoingTabSnapshot`, which is registered first and fires
+        // before this subscriber. Saving here would race with `applyDuckAIUnfocusedValue` (which the
+        // controller's main sink runs LAST) and could record the incoming tab's prompt onto the outgoing
+        // tab, re-introducing the cross-tab leak.
+        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+           oldSelectedTabViewModel === newSelectedTabViewModel {
+            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            return
         }
         let lastAddressBarTextFieldValue = newSelectedTabViewModel.lastAddressBarTextFieldValue
+
+        /// When the incoming tab is in duck.ai mode, the controller's main `$selectedTabViewModel` sink
+        /// (which fires right after this one) calls `applyDuckAIUnfocusedValue` to set `self.value` from
+        /// the preserved `sharedTextState.text`. Calling `updateValue` here in the empty/url fallback
+        /// branches would set the value to the tab's `addressBarString` (typically `""` for an NTP) one
+        /// runloop tick before the controller sink corrects it — visible as a brief "Ask anything
+        /// privately" placeholder flicker before the prompt appears. Skipping `updateValue` for duck.ai
+        /// tabs lets `applyDuckAIUnfocusedValue` be the single, correct value-setter.
+        let incomingIsInDuckAIMode = newSelectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
 
         switch lastAddressBarTextFieldValue {
         case .text(let text, userTyped: let userTyped):
             if !text.isEmpty {
                 restoreValue(.text(text, userTyped: userTyped))
-            } else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+            } else if !incomingIsInDuckAIMode {
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
             }
         case .suggestion(let suggestionViewModel):
             let suggestion = suggestionViewModel.suggestion
@@ -267,12 +380,16 @@ final class AddressBarTextField: NSTextField {
             case .phrase(phrase: let phase):
                 restoreValue(Value.text(phase, userTyped: false))
             case .unknown, .askAIChat:
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+                if !incomingIsInDuckAIMode {
+                    updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+                }
             }
         case .url(urlString: let urlString, url: _, userTyped: true):
             restoreValue(Value(stringValue: urlString, userTyped: true))
         case .url, .none:
-            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+            if !incomingIsInDuckAIMode {
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            }
         }
     }
 
@@ -296,11 +413,19 @@ final class AddressBarTextField: NSTextField {
             }
         }
         if !self.isFirstResponder || shouldUpdateValue {
+            /// The tab's `addressBarString` just changed — this fires from navigation (submit, link
+            /// click, JS) on the currently-selected tab. Whatever pending draft the user had in
+            /// `lastAddressBarTextFieldValue` (live-saved per-keystroke from `handleTextDidChange`) has
+            /// been consumed by the navigation, so clear it. Otherwise switching away and back to this
+            /// tab would restore the stale draft over the freshly-loaded URL (e.g. typing "wiki",
+            /// picking the wikipedia.org suggestion, switching tabs, returning — the bar would show
+            /// "wiki" instead of the centered passive `wikipedia.org`).
+            selectedTabViewModel?.lastAddressBarTextFieldValue = nil
             updateValue(selectedTabViewModel: selectedTabViewModel, addressBarString: addressBarString)
         }
     }
 
-    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?) {
+    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?, clearingDuckAIState: Bool = true) {
         guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel?.selectedTabViewModel else { return }
 
         let addressBarString = addressBarString ?? selectedTabViewModel.addressBarString
@@ -310,7 +435,7 @@ final class AddressBarTextField: NSTextField {
 
         /// Reset shared state when navigating to a website (not user-typed)
         /// This prevents old typed text from appearing when toggling modes while on a website
-        sharedTextState?.reset()
+        sharedTextState?.reset(clearingDuckAIState: clearingDuckAIState)
     }
 
     func clearValue() {
@@ -322,12 +447,58 @@ final class AddressBarTextField: NSTextField {
     }
 
     func addressBarEnterPressed() {
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt(inputMethod: .keyboard)
+            hideSuggestionWindow()
+            return
+        }
+
+        fireSuggestionSubmittedPixel(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
 
         hideSuggestionWindow()
+    }
+
+    /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
+    func openAIChatWithPrompt() {
+        openAIChatWithPrompt(inputMethod: .keyboard)
+    }
+
+    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod) {
+        let prompt = stringValueWithoutSuffix
+
+        let behavior = LinkOpenBehavior(
+            modifierFlags: NSEvent.modifierFlags,
+            switchToNewTabWhenOpenedPreference: shouldSwitchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        let pixel: AIChatPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .aiChatSuggestionAIChatSubmittedKeyboard
+        case .mouse:
+            pixel = .aiChatSuggestionAIChatSubmittedMouse
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
+        currentEditor()?.selectAll(self)
+    }
+
+    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: SuggestionPixelCategory?) {
+        let pixel: GeneralPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .suggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+        case .mouse:
+            pixel = .suggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -408,9 +579,26 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            reconcilePerformanceCoordinator()
+            performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
         }
         return result
+    }
+
+    /// Creates the coordinator on demand when the FF is on (attaching to the current window),
+    /// or releases it when the FF is off. Called from focus-gained so flag flips take effect
+    /// without an app restart. Re-enabling mid-session works too: the next focus event will
+    /// create a fresh coordinator.
+    private func reconcilePerformanceCoordinator() {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.addressBarPerformanceInstrumentation) else {
+            performanceCoordinator = nil
+            return
+        }
+        guard performanceCoordinator == nil, let window else { return }
+        let coordinator = AddressBarPerformanceCoordinator()
+        coordinator.attach(to: window)
+        performanceCoordinator = coordinator
     }
 
     private func updateTabUrlWithUrl(_ providedUrl: URL, userEnteredValue: String, downloadRequested: Bool, suggestion: Suggestion?) {
@@ -419,8 +607,8 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-#if APPSTORE
-        if providedUrl.isFileURL, !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
+        if providedUrl.isFileURL,
+           NSApp.isSandboxed && !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
            let window = self.window {
 
             NSAlert.cannotOpenFileAlert().beginSheetModal(for: window) { response in
@@ -435,11 +623,10 @@ final class AddressBarTextField: NSTextField {
             }
             return
         }
-#endif
 
         // Prevent typing in subscription URLs directly in the address bar
-        let baseURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .baseURL)
-        let identityTheftRestorationURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .identityTheftRestoration)
+        let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)
+        let identityTheftRestorationURL = Application.appDelegate.subscriptionManager.url(for: .identityTheftRestoration)
         if providedUrl.isChild(of: baseURL) || providedUrl.isChild(of: identityTheftRestorationURL) {
             self.updateValue(selectedTabViewModel: nil, addressBarString: nil) // reset
             self.window?.makeFirstResponder(nil)
@@ -554,6 +741,8 @@ final class AddressBarTextField: NSTextField {
 
     enum SuggestionWindowSizes {
         static let padding = CGPoint(x: -20, y: 1)
+        /// Vertical offset to align suggestions panel with the AI Chat omnibar toggle
+        static let aiChatToggleVerticalOffset: CGFloat = 4
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
@@ -562,7 +751,9 @@ final class AddressBarTextField: NSTextField {
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                     isBurner: self.isBurner,
-                                                                    themeManager: self.themeManager)
+                                                                    themeManager: self.themeManager,
+                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                    featureFlagger: Application.appDelegate.featureFlagger)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }
@@ -645,7 +836,11 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        let padding = SuggestionWindowSizes.padding
+        let basePadding = SuggestionWindowSizes.padding
+        /// Move suggestions panel up to vertically align the toggle
+        let yOffset: CGFloat = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) ? SuggestionWindowSizes.aiChatToggleVerticalOffset : 0
+        let padding = CGPoint(x: basePadding.x, y: basePadding.y + yOffset)
+
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
         var point = superview.bounds.origin
@@ -715,6 +910,14 @@ final class AddressBarTextField: NSTextField {
 
         let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatToggle(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showSearchAndDuckAIToggle.toggle()
+
+        let shouldShowToggle = preferences.showSearchAndDuckAIToggle
+        menuItem.state = shouldShowToggle ? .on : .off
     }
 
 }
@@ -857,16 +1060,15 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool, hideSuffix: Bool = false) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
-                    .foregroundColor: NSColor.textColor,
-                    .kern: -0.16
+                    .foregroundColor: NSColor.textColor
                 ]
             }
 
-            guard let suffix else { return nil }
+            guard let suffix, !hideSuffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
             attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
@@ -930,7 +1132,7 @@ extension AddressBarTextField {
         case openTab(URL)
 
         func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString {
-            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor.addressBarSuffix
+            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor(designSystemColor: .accentTextPrimary)
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size, weight: .light),
                 .foregroundColor: suffixColor
@@ -978,10 +1180,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
+        performanceCoordinator?.terminateInteraction()
         focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     func controlTextDidChange(_ obj: Notification) {
+        performanceCoordinator?.armCharRenderIfPending()
         handleTextDidChange()
         onboardingDelegate?.measureAddressBarTypedIn()
     }
@@ -1004,14 +1208,32 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager, featureFlagger: Application.appDelegate.featureFlagger))
 
         } else {
             suggestionContainerViewModel?.clearSelection()
             self.value = Value(stringValue: stringValueWithoutSuffix, userTyped: true)
         }
 
-        sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+        if !isUpdatingFromSharedState {
+            sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+            /// Keep the caret in sync with the search-mode field editor so toggling to duck.ai mid-type places
+            /// the prompt cursor where the user left it instead of at position 0. Without this the duck.ai
+            /// panel's `focusTextViewRestoringCursorPosition` only ever sees the default `(0, 0)` selection.
+            if let editor = currentEditor() {
+                sharedTextState?.updateSelection(editor.selectedRange)
+            }
+        }
+
+        /// Live-save the user's typed text into the current tab's `lastAddressBarTextFieldValue` so the
+        /// snapshot is always up-to-date by the time a tab switch fires — no Combine ordering can race
+        /// with this. We always store the canonical typed `.text(stringValueWithoutSuffix, userTyped: true)`
+        /// shape (not whatever speculative `.suggestion` the engine surfaced over the typed text), so the
+        /// restore path on switch-back doesn't have to disambiguate suggestion shapes — the user's intent
+        /// is the typed text itself.
+        if let currentTab = tabCollectionViewModel?.selectedTabViewModel {
+            currentTab.lastAddressBarTextFieldValue = .text(stringValueWithoutSuffix, userTyped: true)
+        }
     }
 
     private func autocompleteSuggestionBeingTypedOverByUser(with newUserEnteredValue: String) -> SuggestionViewModel? {
@@ -1026,20 +1248,25 @@ extension AddressBarTextField: NSTextFieldDelegate {
         return nil
     }
 
-    // MARK: - Shared Text State
+    /// Refreshes suggestions based on current text content and shows the suggestion window if results exist
+    func refreshSuggestions() {
+        let text = stringValueWithoutSuffix
+        guard !text.isEmpty else { return }
 
-    /// Restores text from the shared text state
-    func restoreFromSharedState() {
-        guard let sharedTextState = sharedTextState else { return }
-
-        let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
-        self.value = Value(stringValue: textToRestore, userTyped: true)
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let editor = self.currentEditor() as? NSTextView else { return }
-            let textLength = editor.string.count
-            editor.selectedRange = NSRange(location: textLength, length: 0)
+        suggestionContainerViewModel?.setUserStringValue(text, userAppendedStringToTheEnd: false)
+        if suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
+            showSuggestionWindow()
         }
+    }
+
+    func refreshStyle() {
+        updateAttributedStringValue()
+    }
+
+    func moveCursorToEnd() {
+        guard let editor = currentEditor() as? NSTextView else { return }
+        let textLength = editor.string.count
+        editor.selectedRange = NSRange(location: textLength, length: 0)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -1049,6 +1276,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            if let customToggleControl = customToggleControl,
+               !customToggleControl.isHidden,
+               customToggleControl.isEnabled {
+                window?.makeFirstResponder(customToggleControl)
+                return true
+            }
             window?.makeFirstResponder(nextKeyView)
             return false
 
@@ -1090,6 +1323,8 @@ extension AddressBarTextField: NSTextFieldDelegate {
 extension AddressBarTextField: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, userTypedString typedString: String, at insertionNsRange: NSRange, callback: () -> Void) {
+        performanceCoordinator?.markKeystroke()
+
         let oldValue = stringValueWithoutSuffix
         let insertionRange = Range(insertionNsRange, in: oldValue) ?? oldValue.startIndex..<oldValue.endIndex
 
@@ -1148,15 +1383,28 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         if let sharingMenuItem = menu.item(with: Self.shareMenuItemAction) {
             sharingMenuItem.title = UserText.shareMenuItem
-            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField)
+            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
-        let additionalMenuItems: [NSMenuItem] = [
+        let featureFlagger = Application.appDelegate.featureFlagger
+        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isChromeSidebarEnabled = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+        let isGlobalAIEnabled = AIChatPreferences().isAIFeaturesEnabled
+
+        var additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
-            .toggleFullWebsiteAddressMenuItem,
-            .toggleAIChatAddressMenuItem,
-            .separator()
+            .toggleFullWebsiteAddressMenuItem
         ]
+
+        if isGlobalAIEnabled && !isChromeSidebarEnabled {
+            additionalMenuItems.append(.toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled))
+        }
+
+        if isGlobalAIEnabled && isAIChatOmnibarToggleEnabled {
+            additionalMenuItems.append(.toggleAIChatToggleMenuItem)
+        }
+
+        additionalMenuItems.append(.separator())
         let insertionPoint = menuItemInsertionPoint(within: menu)
         for (idx, item) in additionalMenuItems.enumerated() {
             menu.insertItem(item, at: insertionPoint + idx)
@@ -1179,7 +1427,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         return menu.numberOfItems
     }
 
-    private static var selectorsToRemove = Set([
+    static var selectorsToRemove = Set([
         Selector(("_openLinkFromMenu:")),
         NSSelectorFromString("invoke"),
         Selector(("_openPreview")),
@@ -1192,14 +1440,15 @@ extension AddressBarTextField: NSTextViewDelegate {
         #selector(NSStandardKeyBindingResponding.uppercaseWord(_:)),
         #selector(NSTextView.startSpeaking(_:)),
         #selector(NSTextView.changeLayoutOrientation(_:)),
-        #selector(NSTextView.orderFrontSubstitutionsPanel(_:))
+        #selector(NSTextView.orderFrontSubstitutionsPanel(_:)),
+        { if #available(macOS 15.2, *) { #selector(showWritingTools(_:)) } else { Selector(("noop")) } }(),
     ])
     private static let shareMenuItemAction = Selector(("_performStandardShareMenuItem:"))
 
     private func removeUnwantedMenuItems(from menu: NSMenu) {
         // filter out menu items with action from `selectorsToRemove` or containing submenu items with action from the list
         menu.items = menu.items.filter { menuItem in
-            menuItem.action.map { action in  Self.selectorsToRemove.contains(action) } != true
+            menuItem.action.map { action in Self.selectorsToRemove.contains(action) } != true
             && Self.selectorsToRemove.isDisjoint(with: menuItem.submenu?.items.compactMap(\.action) ?? [])
         }
     }
@@ -1230,14 +1479,27 @@ private extension NSMenuItem {
         return menuItem
     }
 
-    static var toggleAIChatAddressMenuItem: NSMenuItem {
+    static func toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: Bool) -> NSMenuItem {
+        let title = isOmnibarToggleEnabled ? UserText.showAIChatShortcutInAddress : UserText.showAIChatInAddress
         let menuItem = NSMenuItem(
-            title: UserText.showAIChatInAddress,
+            title: title,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
             keyEquivalent: ""
         )
 
         menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
+    static var toggleAIChatToggleMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatToggleInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatToggle(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showSearchAndDuckAIToggle ? .on : .off
 
         return menuItem
     }
@@ -1276,10 +1538,28 @@ private extension NSMenuItem {
 extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
+        suggestionContainerViewModel?.clearUserStringValue()
+
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt(inputMethod: .mouse)
+            hideSuggestionWindow()
+            return
+        }
+
+        fireSuggestionSubmittedPixel(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
     }
 
+}
+
+// MARK: - Suggestion Input Method
+
+enum SuggestionInputMethod {
+    case keyboard
+    case mouse
 }
 
 fileprivate extension NSStoryboard {
@@ -1333,4 +1613,16 @@ extension URL {
         }
     }
 
+}
+
+// MARK: - SharingMenuDelegate
+extension AddressBarTextField: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
 }

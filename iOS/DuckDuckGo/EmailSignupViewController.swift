@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Common
 import Core
 import Networking
+import PrivacyConfig
 import UserScript
 import WebKit
 import DesignResourcesKit
@@ -163,7 +164,7 @@ class EmailSignupViewController: UIViewController {
     // MARK: - Private
 
     private func setupWebView() {
-        let configuration =  WKWebViewConfiguration.persistent()
+        let configuration =  WKWebViewConfiguration.persistent(fireMode: false)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
@@ -171,6 +172,7 @@ class EmailSignupViewController: UIViewController {
 
         webView = WKWebView(frame: view.bounds, configuration: configuration)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.preventFlashOnLoad()
 
         view.addSubview(webView)
 
@@ -400,7 +402,6 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op
     }
@@ -408,7 +409,6 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op
     }

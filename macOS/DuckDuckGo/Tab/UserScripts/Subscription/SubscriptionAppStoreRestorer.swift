@@ -21,7 +21,7 @@ import Subscription
 import SubscriptionUI
 import enum StoreKit.StoreKitError
 import PixelKit
-import BrowserServicesKit
+import PrivacyConfig
 
 @available(macOS 12.0, *)
 protocol SubscriptionAppStoreRestorer {
@@ -30,114 +30,21 @@ protocol SubscriptionAppStoreRestorer {
 }
 
 @available(macOS 12.0, *)
-struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
-    private let subscriptionManager: SubscriptionManager
-    private let subscriptionErrorReporter: SubscriptionErrorReporter
-    private let appStoreRestoreFlow: AppStoreRestoreFlow
-    let uiHandler: SubscriptionUIHandling
-
-    public init(subscriptionManager: SubscriptionManager,
-                subscriptionErrorReporter: SubscriptionErrorReporter = DefaultSubscriptionErrorReporter(),
-                appStoreRestoreFlow: AppStoreRestoreFlow,
-                uiHandler: SubscriptionUIHandling) {
-        self.subscriptionManager = subscriptionManager
-        self.subscriptionErrorReporter = subscriptionErrorReporter
-        self.appStoreRestoreFlow = appStoreRestoreFlow
-        self.uiHandler = uiHandler
-    }
-
-    func restoreAppStoreSubscription() async {
-        await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
-
-        do {
-            try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
-            await continueRestore()
-        } catch {
-            await uiHandler.dismissProgressViewController()
-
-            switch error as? StoreKitError {
-            case .some(.userCancelled):
-                break
-            default:
-                let alertResponse = await uiHandler.show(alertType: .appleIDSyncFailed, text: error.localizedDescription)
-                if alertResponse == .alertFirstButtonReturn {
-                    await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
-                    await continueRestore()
-                }
-            }
-        }
-    }
-
-    private func continueRestore() async {
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-        await uiHandler.dismissProgressViewController()
-        switch result {
-        case .success:
-            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-        case .failure(let error):
-            switch error {
-            case .missingAccountOrTransactions:
-                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
-                await showSubscriptionNotFoundAlert()
-            case .subscriptionExpired:
-                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
-                await showSubscriptionInactiveAlert()
-            case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-                await showSomethingWentWrongAlert()
-            case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-                await showSubscriptionNotFoundAlert()
-            }
-        }
-    }
-
-    // MARK: - UI interactions
-
-    private func showSomethingWentWrongAlert() async {
-        await uiHandler.show(alertType: .somethingWentWrong)
-    }
-
-    private func showSubscriptionNotFoundAlert() async {
-        switch await uiHandler.show(alertType: .subscriptionNotFound) {
-        case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
-            await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
-        default: return
-        }
-    }
-
-    private func showSubscriptionInactiveAlert() async {
-        switch await uiHandler.show(alertType: .subscriptionInactive) {
-        case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
-            await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
-        default: return
-        }
-    }
-}
-
-@available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
-    private let subscriptionManager: SubscriptionManagerV2
-    private let subscriptionErrorReporter: SubscriptionErrorReporter
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
+    private let subscriptionManager: SubscriptionManager
+    private let subscriptionErrorReporter: SubscriptionEventReporter
+    private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let featureFlagger: FeatureFlagger
 
     // Wide Event
     private let wideEvent: WideEventManaging
     private let subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
-    private var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
-    }
 
     let uiHandler: SubscriptionUIHandling
 
-    public init(subscriptionManager: SubscriptionManagerV2,
-                subscriptionErrorReporter: SubscriptionErrorReporter = DefaultSubscriptionErrorReporter(),
-                appStoreRestoreFlow: AppStoreRestoreFlowV2,
+    public init(subscriptionManager: SubscriptionManager,
+                subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
+                appStoreRestoreFlow: AppStoreRestoreFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData? = nil,
                 featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
@@ -156,7 +63,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
 
         do {
-            if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
+            if let data = subscriptionRestoreWideEventData {
                 data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                 wideEvent.startFlow(data)
             }
@@ -167,7 +74,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
 
             switch error as? StoreKitError {
             case .some(.userCancelled):
-                if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
+                if let data = subscriptionRestoreWideEventData {
                     wideEvent.discardFlow(data)
                 }
             default:
@@ -175,7 +82,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 if alertResponse == .alertFirstButtonReturn {
                     await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
                     await continueRestore()
-                } else if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
+                } else if let data = subscriptionRestoreWideEventData {
                     // User clicked cancel on the alert
                     wideEvent.discardFlow(data)
                 }
@@ -189,7 +96,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         switch result {
         case .success:
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-            if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
+            if let data = subscriptionRestoreWideEventData {
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
             }
@@ -244,7 +151,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     // MARK: - Wide Pixel Helper
 
     private func markSubscriptionRestoreWideEventAsFailure(with error: Error) {
-        guard isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData else { return }
+        guard let data = subscriptionRestoreWideEventData else { return }
         data.appleAccountRestoreDuration?.complete()
         data.errorData = .init(error: error)
         wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })

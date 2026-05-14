@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Foundation
 import Combine
 import PixelKit
+import PrivacyConfig
 import WebKit
 import UserScript
 import os.log
@@ -33,7 +34,7 @@ protocol AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { get }
 
     /// Deletes all Duck.ai chat history.
-    @MainActor func cleanAIChatHistory() async
+    @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
@@ -43,6 +44,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     let notificationCenter: NotificationCenter
     private var featureDiscoveryObserver: NSObjectProtocol?
     private let pixelKit: PixelKit?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
     private var historyCleaner: HistoryCleaning
 
     @Published
@@ -60,14 +62,19 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
          featureDiscovery: FeatureDiscovery,
          notificationCenter: NotificationCenter = .default,
          pixelKit: PixelKit? = PixelKit.shared,
-         privacyConfig: PrivacyConfigurationManaging) {
+         privacyConfig: PrivacyConfigurationManaging,
+         nativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.notificationCenter = notificationCenter
         self.pixelKit = pixelKit
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
-        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                            privacyConfig: privacyConfig,
+                                            nativeStorageHandler: nativeStorageHandler,
+                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelKit)
         subscribeToChanges()
     }
 
@@ -79,8 +86,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
 
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
-    func cleanAIChatHistory() async {
-        guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
+    func cleanAIChatHistory() async -> Result<Void, Error> {
         let result = await historyCleaner.cleanAIChatHistory()
 
         switch result {
@@ -94,6 +100,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
+
+        return result
     }
 
     private func subscribeToChanges() {
@@ -106,9 +114,9 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         $aiChatWasUsedBefore.combineLatest(aiChatMenuConfiguration.valuesChangedPublisher.prepend(()))
             .map { [weak self] wasUsed, _ in
                 guard let self else { return false }
-                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing)
+                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
             }
-            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing))
+            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature)
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }

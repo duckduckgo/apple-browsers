@@ -17,12 +17,13 @@
 //
 
 import XCTest
-import BrowserServicesKit
-@testable import DuckDuckGo_Privacy_Browser
 import Combine
 import Persistence
-@testable import Configuration
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+@testable import Configuration
+@testable import DuckDuckGo_Privacy_Browser
 
 final class ConfigurationManagerIntegrationTests: XCTestCase {
 

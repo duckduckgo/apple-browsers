@@ -21,26 +21,10 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import NewTabPage
 import PixelKit
+import PrivacyConfig
 import Subscription
-import FeatureFlags
-
-import VPN
-import NetworkProtectionUI
-
-protocol ContinueSetUpModelTabOpening {
-    @MainActor
-    func openTab(_ tab: Tab)
-}
-
-struct TabCollectionViewModelTabOpener: ContinueSetUpModelTabOpening {
-    let tabCollectionViewModel: TabCollectionViewModel
-
-    @MainActor
-    func openTab(_ tab: Tab) {
-        tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
-    }
-}
 
 extension HomePage.Models {
 
@@ -60,21 +44,15 @@ extension HomePage.Models {
         let itemsPerRow = Const.featuresPerRow
         let itemsRowCountWhenCollapsed = Const.featureRowCountWhenCollapsed
         let gridWidth = FeaturesGridDimensions.width
-        let deleteActionTitle = UserText.newTabSetUpRemoveItemAction
-        let privacyConfigurationManager: PrivacyConfigurationManaging
-
-        var duckPlayerURL: String {
-            let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
-            return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
-        }
 
         private let defaultBrowserProvider: DefaultBrowserProvider
         private let dockCustomizer: DockCustomization
         private let dataImportProvider: DataImportStatusProviding
-        private let tabOpener: ContinueSetUpModelTabOpening
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
-
+        private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
+        private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
+        private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
             didSet {
@@ -86,37 +64,7 @@ extension HomePage.Models {
         private var cancellables: Set<AnyCancellable> = []
         let shouldShowAllFeaturesPublisher: AnyPublisher<Bool, Never>
         private let shouldShowAllFeaturesSubject = PassthroughSubject<Bool, Never>()
-
-        struct Settings {
-            @UserDefaultsWrapper(key: .homePageShowMakeDefault, defaultValue: true)
-            var shouldShowMakeDefaultSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowAddToDock, defaultValue: true)
-            var shouldShowAddToDockSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowImport, defaultValue: true)
-            var shouldShowImportSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowDuckPlayer, defaultValue: true)
-            var shouldShowDuckPlayerSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowEmailProtection, defaultValue: true)
-            var shouldShowEmailProtectionSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageIsFirstSession, defaultValue: true)
-            var isFirstSession: Bool
-
-            func clear() {
-                _shouldShowMakeDefaultSetting.clear()
-                _shouldShowAddToDockSetting.clear()
-                _shouldShowImportSetting.clear()
-                _shouldShowDuckPlayerSetting.clear()
-                _shouldShowEmailProtectionSetting.clear()
-                _isFirstSession.clear()
-            }
-        }
-
-        private let settings: Settings
+        private var persistor: HomePageContinueSetUpModelPersisting
 
         var isMoreOrLessButtonNeeded: Bool {
             return featuresMatrix.count > itemsRowCountWhenCollapsed
@@ -126,7 +74,7 @@ extension HomePage.Models {
             return !featuresMatrix.isEmpty
         }
 
-        lazy var listOfFeatures = settings.isFirstSession ? firstRunFeatures : randomisedFeatures
+        lazy var listOfFeatures = persistor.isFirstSession ? firstRunFeatures : randomisedFeatures
 
         @Published var featuresMatrix: [[FeatureType]] = [[]] {
             didSet {
@@ -137,21 +85,24 @@ extension HomePage.Models {
         @Published var visibleFeaturesMatrix: [[FeatureType]] = [[]]
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-             dockCustomizer: DockCustomization = DockCustomizer(),
+             dockCustomizer: DockCustomization,
              dataImportProvider: DataImportStatusProviding,
-             tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging) {
+             subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+             persistor: HomePageContinueSetUpModelPersisting,
+             pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
             self.dataImportProvider = dataImportProvider
-            self.tabOpener = tabOpener
             self.emailManager = emailManager
             self.duckPlayerPreferences = duckPlayerPreferences
-            self.privacyConfigurationManager = privacyConfigurationManager
-            self.settings = .init()
+            self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
+            self.pixelHandler = pixelHandler
+            self.cardActionsHandler = cardActionsHandler
+            self.persistor = persistor
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -164,70 +115,51 @@ extension HomePage.Models {
             // (the notification in this case) to trigger a refresh.
             NotificationCenter.default.addObserver(self, selector: #selector(refreshFeaturesForHTMLNewTabPage(_:)), name: .newTabPageWebViewDidAppear, object: nil)
 
+            observeSubscriptionCardVisibilityChanges()
         }
 
         @MainActor func performAction(for featureType: FeatureType) {
-            switch featureType {
-            case .defaultBrowser:
-                performDefaultBrowserAction()
-            case .dock:
-                performDockAction()
-            case .importBookmarksAndPasswords:
-                performImportBookmarksAndPasswordsAction()
-            case .duckplayer:
-                performDuckPlayerAction()
-            case .emailProtection:
-                performEmailProtectionAction()
+            let card = NewTabPageDataModel.CardID(featureType)
+            cardActionsHandler.performAction(for: card) { [weak self] in
+                self?.refreshFeaturesMatrix()
             }
-        }
-
-        private func performDefaultBrowserAction() {
-            do {
-                PixelKit.fire(GeneralPixel.defaultRequestedFromHomepageSetupView)
-                try defaultBrowserProvider.presentDefaultBrowserPrompt()
-            } catch {
-                defaultBrowserProvider.openSystemPreferences()
-            }
-        }
-
-        private func performImportBookmarksAndPasswordsAction() {
-            dataImportProvider.showImportWindow(customTitle: nil, completion: { self.refreshFeaturesMatrix() })
-        }
-
-        @MainActor
-        private func performDuckPlayerAction() {
-            if let videoUrl = URL(string: duckPlayerURL) {
-                let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
-                tabOpener.openTab(tab)
-            }
-        }
-
-        @MainActor
-        private func performEmailProtectionAction() {
-            let tab = Tab(content: .url(EmailUrls().emailProtectionLink, source: .ui), shouldLoadInBackground: true)
-            tabOpener.openTab(tab)
-        }
-
-        func performDockAction() {
-            PixelKit.fire(GeneralPixel.userAddedToDockFromNewTabPageCard,
-                          includeAppVersionParameter: false)
-            dockCustomizer.addToDock()
         }
 
         func removeItem(for featureType: FeatureType) {
+            fireNextStepsCardDismissedPixel(for: featureType)
             switch featureType {
             case .defaultBrowser:
-                settings.shouldShowMakeDefaultSetting = false
+                persistor.shouldShowMakeDefaultSetting = false
             case .dock:
-                settings.shouldShowAddToDockSetting = false
+                persistor.shouldShowAddToDockSetting = false
             case .importBookmarksAndPasswords:
-                settings.shouldShowImportSetting = false
+                persistor.shouldShowImportSetting = false
             case .duckplayer:
-                settings.shouldShowDuckPlayerSetting = false
+                persistor.shouldShowDuckPlayerSetting = false
             case .emailProtection:
-                settings.shouldShowEmailProtectionSetting = false
+                persistor.shouldShowEmailProtectionSetting = false
+            case .subscription:
+                pixelHandler.fireSubscriptionCardDismissedPixel()
+                subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
+        }
+
+        // MARK: - Pixel Firing
+
+        private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
+            let card = NewTabPageDataModel.CardID(featureType)
+            pixelHandler.fireNextStepsCardDismissedPixel(card)
+        }
+
+        private func observeSubscriptionCardVisibilityChanges() {
+            subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
+                .removeDuplicates()
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshFeaturesMatrix()
+                }
+                .store(in: &cancellables)
         }
 
         func refreshFeaturesMatrix() {
@@ -257,20 +189,22 @@ extension HomePage.Models {
                 return shouldDuckPlayerCardBeVisible
             case .emailProtection:
                 return shouldEmailProtectionCardBeVisible
+            case .subscription:
+                return shouldSubscriptionCardBeVisible
             }
         }
 
         // Helper Functions
         @MainActor
         @objc private func newTabOpenNotification(_ notification: Notification) {
-            if !settings.isFirstSession {
+            if !persistor.isFirstSession {
                 listOfFeatures = randomisedFeatures
             }
 #if DEBUG
-            settings.isFirstSession = false
+            persistor.isFirstSession = false
 #endif
             if OnboardingActionsManager.isOnboardingFinished {
-                settings.isFirstSession = false
+                persistor.isFirstSession = false
             }
         }
 
@@ -288,16 +222,24 @@ extension HomePage.Models {
 
         var randomisedFeatures: [FeatureType] {
             var features: [FeatureType]  = [.defaultBrowser]
-            var shuffledFeatures = FeatureType.allCases.filter { $0 != .defaultBrowser }
+            var shuffledFeatures = availableFeatures.filter { $0 != .defaultBrowser }
             shuffledFeatures.shuffle()
             features.append(contentsOf: shuffledFeatures)
             return features
         }
 
         var firstRunFeatures: [FeatureType] {
-            var features = FeatureType.allCases.filter { $0 != .duckplayer }
+            var features = availableFeatures.filter { $0 != .duckplayer }
             features.insert(.duckplayer, at: 0)
             return features
+        }
+
+        private var availableFeatures: [FeatureType] {
+            if dockCustomizer.supportsAddingToDock {
+                return [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+            } else {
+                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
+            }
         }
 
         private func updateVisibleMatrix() {
@@ -309,121 +251,38 @@ extension HomePage.Models {
         }
 
         private var shouldMakeDefaultCardBeVisible: Bool {
-            settings.shouldShowMakeDefaultSetting && !defaultBrowserProvider.isDefault
+            persistor.shouldShowMakeDefaultSetting && !defaultBrowserProvider.isDefault
         }
 
         private var shouldDockCardBeVisible: Bool {
-#if !APPSTORE
-            settings.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
-#else
-            return false
-#endif
+            dockCustomizer.supportsAddingToDock && persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
         }
 
         private var shouldImportCardBeVisible: Bool {
-            settings.shouldShowImportSetting && !dataImportProvider.didImport
+            persistor.shouldShowImportSetting && !dataImportProvider.didImport
         }
 
         private var shouldDuckPlayerCardBeVisible: Bool {
-            settings.shouldShowDuckPlayerSetting && duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+            persistor.shouldShowDuckPlayerSetting && duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
         }
 
         private var shouldEmailProtectionCardBeVisible: Bool {
-            settings.shouldShowEmailProtectionSetting && !emailManager.isSignedIn
+            persistor.shouldShowEmailProtectionSetting && !emailManager.isSignedIn
         }
 
+        private var shouldSubscriptionCardBeVisible: Bool {
+            subscriptionCardVisibilityManager.shouldShowSubscriptionCard
+        }
     }
 
     // MARK: Feature Type
     enum FeatureType: CaseIterable, Equatable, Hashable {
-
-        // CaseIterable doesn't work with enums that have associated values, so we have to implement it manually.
-        // We ignore the `networkProtectionRemoteMessage` case here to avoid it getting accidentally included - it has special handling and will get
-        // included elsewhere.
-        static var allCases: [HomePage.Models.FeatureType] {
-#if APPSTORE
-            [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords]
-#else
-            [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords]
-#endif
-        }
-
         case duckplayer
         case emailProtection
         case defaultBrowser
         case dock
         case importBookmarksAndPasswords
-
-        var title: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserCardTitle
-            case .dock:
-                return UserText.newTabSetUpDockCardTitle
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportCardTitle
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerCardTitle
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionCardTitle
-            }
-        }
-
-        var summary: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserSummary
-            case .dock:
-                return UserText.newTabSetUpDockSummary
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportSummary
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerSummary
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionSummary
-            }
-        }
-
-        var action: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserAction
-            case .dock:
-                return UserText.newTabSetUpDockAction
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportAction
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerAction
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionAction
-            }
-        }
-
-        var confirmation: String? {
-            switch self {
-            case .dock:
-                return UserText.newTabSetUpDockConfirmation
-            default:
-                return nil
-            }
-        }
-
-        var icon: NSImage {
-            let iconSize = NSSize(width: 64, height: 48)
-
-            switch self {
-            case .defaultBrowser:
-                return .defaultApp128.resized(to: iconSize)
-            case .dock:
-                return .dock128.resized(to: iconSize)
-            case .importBookmarksAndPasswords:
-                return .import128.resized(to: iconSize)
-            case .duckplayer:
-                return .cleanTube128.resized(to: iconSize)
-            case .emailProtection:
-                return .inbox128.resized(to: iconSize)
-            }
-        }
+        case subscription
     }
 
     enum FeaturesGridDimensions {

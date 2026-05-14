@@ -60,6 +60,29 @@ final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptT
                                                                                    daysSinceInstallProvider: daysSinceInstall)
     }
 
+    /// **TIMING LOGIC DISPATCHER**
+    ///
+    /// Called by `DefaultBrowserAndDockPromptCoordinator.getPromptType()` to determine if timing conditions are met.
+    /// This is where the timing rules are enforced.
+    ///
+    /// **Global Checks (apply to all prompts):**
+    /// 1. **Permanent dismissal**: If user clicked "Never Ask Again" on banner → returns nil
+    /// 2. **Daily limit**: If any prompt already shown today → returns nil (prevents spam)
+    ///
+    /// **Priority Order:**
+    /// 1. **Inactive user prompt** (checked first, highest priority)
+    ///    - See `DefaultBrowserAndDockPromptTypeDecider.InactiveUser`
+    /// 2. **Active user prompts** (popover or banner)
+    ///    - See `DefaultBrowserAndDockPromptTypeDecider.ActiveUser`
+    ///
+    /// **Remote Configuration:**
+    /// All timing thresholds (install delay, popover→banner delay, banner repeat interval, inactive user thresholds) come from
+    /// `DefaultBrowserAndDockPromptFeatureFlagger` so the schedule can be fine-tuned via Privacy Config.
+    ///
+    /// **See also:**
+    /// - `DefaultBrowserAndDockPromptTypeDecider.ActiveUser.promptType()` - active user timing
+    /// - `DefaultBrowserAndDockPromptTypeDecider.InactiveUser.promptType()` - inactive user timing
+    /// - `hasAlreadySeenAnyModalToday()` - daily limit check
     func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
         // If user has permanently disabled prompt or user has already seen any prompt today do not show another one.
         guard !store.isBannerPermanentlyDismissed, !hasAlreadySeenAnyModalToday() else {

@@ -1,8 +1,32 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
+
+/* No comment provided by engineer. */
+"Account" = "account";
 
 /* Buton label for Edit action */
 "action.generic.edit" = "Uredi";
@@ -30,6 +54,15 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai čavrljanja";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Novo čavrljanje";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Postavke usluge Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Lozinke";
@@ -61,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai glasovni način";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Uredi knjižnu oznaku";
 
@@ -73,14 +109,16 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Kartice i podaci su obrisani";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Izbriši kartice, podatke i razgovore s Duck.ai";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvori u pozadini";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nova Fire kartica";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Otvori na Fire kartici";
 /* Create New Tab action */
-"action.title.newTabAction" = "Novo";
+"action.title.newTabAction" = "Nova kartica";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otvori u novoj kartici";
@@ -168,6 +206,44 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI značajke";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Snimi fotografiju";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Za analitičke zadatke";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Prošireno rasuđivanje";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Brzi odgovori";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Brzo";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Za složene zadatke";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Rasuđivanje";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odgovore";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pretvori tekst u slike";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Izradi sliku";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Pronađi aktualne informacije";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Pretraživanje mreže";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Postojeće knjižne oznake neće se duplicirati.";
@@ -313,12 +389,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Pretraži DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Prijedlozi za pretraživanje sada uključuju i nedavno posjećena mrežna mjesta. Isključi u Postavkama ili izbriši u bilo kojem trenutku pomoću Fire Buttona 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ista privatnost.\nBolji prijedlozi za pretraživanje!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Prebaci se na karticu";
 
@@ -462,6 +532,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Omogući Email Protection";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotovo";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatsko popunjavanje lozinki je aktivirano!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Koristi lozinke koje si spremio u DuckDuckGou u svim aplikacijama na svom uređaju.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Omogućeno automatsko popunjavanje u drugim aplikacijama";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Odredi kasnije u Postavkama";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Uključi automatsko popunjavanje u drugim aplikacijama";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Koristi DuckDuckGo za sigurno automatsko popunjavanje lozinki za sve svoje aplikacije.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Brzo se prijavi u svoje aplikacije bez upisivanja lozinki";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatski popuni lozinke u drugim aplikacijama";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Uključi";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Uključeno";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Isključi u postavkama sustava...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Uključi...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Sakrij CVV";
@@ -784,6 +899,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ne, hvala";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ne sada";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Sigurno pohrani svoju lozinku na uređaj pomoću usluge automatskog popunjavanja DuckDuckGo Passwords & Autofill.";
 
@@ -799,8 +917,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Uvezi lozinke";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcije";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcije za lozinku";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavi problem s automatskim popunjavanjem";
@@ -849,6 +967,21 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Želiš li ažurirati korisničko ime?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Omogući zvuk i video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokiraj zvuk i video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokiraj zvuk";
+
+/* No comment provided by engineer. */
+"Available Products" = "Dostupni proizvodi";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Uštedi %d%% na prvoj godini";
 
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj knjižnu oznaku";
@@ -973,17 +1106,35 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Otkazivanje nije dopušteno više od jednom";
 
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Provjeravamo postojeći račun...";
+
 /* Close All Tabs */
 "close.all.tabs" = "Zatvori sve kartice";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguracija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdi";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Izbriši čavrljanje";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Izbrisati ovo čavrljanje?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskoči";
@@ -1066,6 +1217,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Iznenadi me!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Pronađi **DuckDuckGo** na popisu, a zatim dodirni **Duck.ai Voice** za njegovo dodavanje";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Pronađi **DuckDuckGo** na popisu, zatim dodirni **VPN kontrolu** za njeno dodavanje.";
 
@@ -1100,7 +1254,16 @@
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* No comment provided by engineer. */
+"Current Subscriptions" = "Postojeće pretplate";
+
+/* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "PRILAGOĐENI SADRŽAJ ĆELIJA";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Prilagođeni URL: %@";
@@ -1117,6 +1280,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Uvezi knjižne oznake u DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Otvori Chrome, zatim idi na Upravitelj lozinki i slijedi korake u nastavku:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Postavke** > **Izvoz podataka**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Pritisni **Nastavi**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Odaberi **DuckDuckGo** kao odredište";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Uvezeno iz Chromea";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Je li izvoz završen?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Trebaš otići u aplikaciju Passwords, a zatim slijediti korake za uvoz.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Dodirni **···** > **Izvoz podataka u drugu aplikaciju**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Dodirni **Odaberi sve** > **Nastavi**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Odaberi **DuckDuckGo** kao odredište";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Uvoz iz Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Prvo izvezi svoje lozinke i oznake iz Safarija, a zatim se vrati ovdje da preneseš datoteku.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Izvoz iz Safarija";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Uvoz iz Safarija";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Prenesi izvezenu datoteku...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "U zip datoteci nisu pronađeni podržani podaci. Pregledaj upute za izvoz Safarija i pokušaj ponovno.";
 
@@ -1126,6 +1334,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Nije moguće pročitati %@ datoteku. Možda postoji problem s podacima u datoteci.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Shvatio/la sam";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Nije moguće pročitati %@ datoteku. Pokušaj prenijeti drugu datoteku ili isprobaj drugu metodu uvoza.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Datoteka je možda oštećena";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "U zip datoteci nisu pronađeni podržani podaci. Pregledaj upute za izvoz i pokušaj ponovno.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nisu pronađeni podaci";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Odabrana datoteka nije podržana. Odaberi drugu datoteku i pokušaj ponovno.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepodržana datoteka";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1134,6 +1363,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Prenesi na DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Odaberi **Izvoz**, a na sljedećem zaslonu odaberi **Knjižne oznake** i **Spremi u Preuzimanja**.";
@@ -1145,7 +1377,7 @@
 "data.import.passwords.instructions.chrome.step1" = "U Chromeu, idi na **Google Password Manager**, a zatim na **Postavke**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Odaberi **Izvoz lozinki**, zatim **Spremi u datoteke** i spremi datoteku u mapu koju možeš zapamtiti.";
+"data.import.passwords.instructions.chrome.step2" = "Odaberi **Izvoz podataka**, zatim **···** i potom **Preuzmi u CSV** i spremi datoteku u mapu koje se možeš sjetiti.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kako izvesti lozinke";
@@ -1173,6 +1405,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Uvezi lozinke u DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Otvori postavke za izvoz";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Ne zaboravi pritisnuti\n \"Izvoz u datoteke\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikacija Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safarija";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Uvezi iz";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sinkroniziraj iz";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGoa na drugom uređaju";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Knjižne oznake";
@@ -1210,6 +1466,18 @@
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Lozinke";
 
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Želiš li prenijeti i svoje knjižne oznake iz Safarija?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Nastavi";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ne sada";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Želiš li ponijeti i svoje lozinke?";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Prošli mjesec";
 
@@ -1221,6 +1489,18 @@
 
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Jučer";
+
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Pronašao si skriveni logotip!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logotip je spremljen";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Resetiraj logotip pretraživanja";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Pređi na ovaj logotip";
 
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Pažnja! Ne mogu spriječiti %1$@ da vidi tvoju aktivnost na %2$@. \n\nAli pretražuj sa mnom i mogu umanjiti ono što %1$@ može saznati o tebi tako što ću blokirati te tragače na mnogim drugim mrežnim mjestima.";
@@ -1327,8 +1607,50 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Na funkcionalnost Duck Playera utjecale su nedavne promjene na YouTubeu. Radimo na rješavanju ovih problema i cijenimo tvoje razumijevanje.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Dodirni widget za uređivanje, a zatim postavi **Duck.ai** i **Duck.ai Voice** kao prečace";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Pronađi i odaberi **DuckDuckGo**, zatim prijeđi prstom do **Prilagođenih prečaca** i odaberi **Dodaj widget**";
+
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Priloži sadržaj stranice";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Poslano s tvojom porukom Duck.ai-u";
+
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Nedavna čavrljanja";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Nedavna čavrljanja";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Prikaži sva čavrljanja";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Dodaj Duck.ai glasovni prečac u svoj kontrolni centar";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI značajke privatne su i neobavezne. Tvoji podaci se ne koriste za obuku AI-a.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Priloži sadržaj stranice";
+
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Pitaj o stranici";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Sažmi ovu stranicu";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Sažetak stranice";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai u kontrolni centar";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodaj Duck.ai widget na početni zaslon";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Prikaži Duck.ai gumbe i poveznice u rezultatima pretraživanja s DuckDuckGoom.";
@@ -1341,6 +1663,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Prečaci preglednika";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Razgovaraj s Duck.ai putem Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresna traka";
@@ -1359,6 +1684,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Prečaci";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri prečaci omogućuju ti pokretanje Duck.ai glasovnog čavrljanja brzom glasovnom naredbom, poput \"Siri, pokreni DuckDuckGo glasovno čavrljanje\". To je brz način čavrljanja s Duck.ai bez upotrebe ruku.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, pokreni DuckDuckGo glasovno čavrljanje.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, razgovaraj s DuckDuckGoom.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, glasovno čavrljanje s DuckDuckGoom.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Razgovaraj s Duck.ai koristeći Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Sva čavrljanja su %@ privatna";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privatna";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo za iOS";
@@ -1432,14 +1781,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Nastavi u Duck Playeru";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Uvijek otvaraj YouTube videozapise u Duck Playeru";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videozapisi otvoreni u Duck Playeru automatski će započeti reprodukciju. Isključi ovo ako želiš ručno pokrenuti reprodukciju videozapisa otvorenih u Duck Playeru.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatska reprodukcija videozapisa";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Omogući Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentalno";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ti omogućuje gledanje YouTubea bez ciljanih oglasa i sprječava da aktivnost gledanja utječe na tvoje preporuke.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo pruža sve bitne elemente Privacy Essentials koje su ti potrebne da se zaštitiš dok pregledavaš web.";
@@ -1586,7 +1947,10 @@
 "empty.search" = "Nema pronađenih rezultata";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Upisani: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1621,6 +1985,29 @@
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Došlo je do nepoznate pogreške";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Prebacuje na ovu karticu";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Zadnje korištena Fire kartica";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Povratak na %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Vrati se na…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vrati se na %1$@, %2$@";
+
+/* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "Vanjski ID: %@";
+
 /* No comment provided by engineer. */
 "favorite" = "Omiljeno";
 
@@ -1643,7 +2030,7 @@
 "favorites.settings.mobile-only" = "Samo favoriti na mobilnom uređaju";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Značajka: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasa i skočnih prozora";
@@ -1858,6 +2245,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ODABERI KATEGORIJU";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Ne možeš pristupiti značajkama Plus ili Pro razine";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Tvoje anonimne povratne informacije važne za su nas.";
 
@@ -1891,8 +2281,70 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Pronađi na stranici";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Izbriši sve čavrljanja";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai čavrljanja";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Možda će te odjaviti s računa";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Kolačići i podaci mrežne lokacije";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Kartice";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Odaberi što želiš izbrisati";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prijavi se na web-mjesto drugim računom";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Pregledavanje bez spremanja lokalne povijesti";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Rješavanje problema s web-stranicama";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Kartice Fire izolirane su od ostalih podataka preglednika. Njihovi se podaci brišu kada ih sve zatvoriš. Daju ti istu zaštitu od praćenja kao i ostale kartice.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nova Fire kartica";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire kartice";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Novo";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Novo! Pregledavaj bez spremanja lokalne povijesti ili se prijavi na web-mjesta drugim računom.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne sada";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Isprobaj Fire kartice";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Isprobaj Fire kartice";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Isprobaj kartice Fire za pregledavanje bez spremanja lokalne povijesti.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Novo: kartice Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire kartica";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Pakao Klasik";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Pakao";
@@ -1902,6 +2354,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Vrtlog";
+
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
 
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Na računalu idi na:";
@@ -1949,7 +2404,16 @@
 "import.passwords.promo.title" = "Uvezi svoje lozinke u DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Pitaj privatno";
+"input.field.placeholder.duckai" = "Privatno pitaj bilo što";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Postavi dodatno pitanje...";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Instaliraj proširenje";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Instalirani dodaci (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Trebaš omogućiti VPN iz aplikacije DuckDuckGo.";
@@ -1999,6 +2463,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Pretraži ili unesi adresu";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nova Fire kartica";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nova kartica";
 
@@ -2028,6 +2495,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Posljednja obrada: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Učitavanje dostupnih proizvoda...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Učitavanje brokera...";
@@ -2068,6 +2538,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo aplikacija za Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Upozori me na web-mjestima označenim zbog prijevara, krađe identiteta ili zlonamjernog softvera";
 
@@ -2094,6 +2573,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Poruke";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Gumb adresne trake";
@@ -2148,6 +2630,18 @@
 
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN je prekinut zbog istekle pretplate. Pretplati se na DuckDuckGo za ponovno povezivanje VPN-a.";
+
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nije moguće provesti autentifikaciju. Provjeri je li tvoja pretplata aktivna i pokušaj ponovno.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nije moguće spojiti se na VPN poslužitelj. Pokušaj ponovno nešto kasnije.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tvoja pretplata je istekla. U svrhu povezivanja s VPN poslužiteljem, ponovno se pretplati.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Došlo je do neočekivane pogreške. Pokušaj ponovno. Ako se ovaj problem nastavi, pomakni se do **O nama** i dodirni **Često postavljana pitanja i podrška** za pomoć.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN nije se mogao povezati. Pokušaj ponovno nešto kasnije.";
@@ -2245,11 +2739,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS poslužitelj";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Pokušaj ponovno nešto kasnije.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Povezivanje nije uspjelo.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Povezivanje nije uspjelo";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP adresa";
@@ -2362,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne sada";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Značajke umjetne inteligencije privatne su i neobavezne.\nIzmjene možeš napraviti u izborniku Postavke > AI značajke.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Želiš li jednostavan pristup privatnom AI čavrljanju u adresnoj traci?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Pretraživanje i Duck.ai";
 
@@ -2375,13 +2872,34 @@
 "new.address.bar.picker.title" = "Opcija adresne trake";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nema aktivnih pretplata";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nema postojeće pretplate";
+
+/* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Nema instaliranih proširenja";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nema zapisnika";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nema rezultata za \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Nema poruka";
 
 /* No comment provided by engineer. */
 "No results found" = "Nema rezultata";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nema dostupnih pretplata";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "U redu";
@@ -2394,6 +2912,12 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Skočni prozor je sakriven";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokiranje YouTube oglasa je uključeno";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
@@ -2449,8 +2973,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Preskoči";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Pozdrav.\n\nJesi li spreman za brži preglednik koji te štiti?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Pozdrav.\n\nJesi li spreman za brži preglednik koji te štiti i omogućuje ti da odlučiš kada i kako koristiti AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Dalje";
@@ -2464,11 +2988,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Postavke > AI značajke.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Želiš lakši pristup privatnom AI čavrljanju?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Prebacuj se između pretraživanja i Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Učinimo to!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Samo pretraživanje";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Želiš li jednostavan pristup privatnom AI čavrljanju u adresnoj traci?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Započnimo!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Već sam bio ovdje";
@@ -2476,11 +3006,41 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Saznajte više";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Ne, hvala";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Preskoči";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Da, prije nego što zaboravim...";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Jeste li znali?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privatno. Brzo. Manje oglasa.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Jesi li spreman za brži preglednik koji ti daje kontrolu?\n\nUmjetna inteligencija uvijek je neobavezna, a zaštita privatnosti uvijek aktivna.";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Bok!";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Želiš li vratiti svoje oznake, lozinke i još mnogo toga iz prethodne DuckDuckGo sinkronizacije?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Vrati mi stvari";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Preskoči";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Nastavimo tamo gdje si stao/stala";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Započni pretraživanje";
@@ -2493,6 +3053,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Shvaćam! Preskočit ću ostale savjete.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Isprobaj besplatno!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Isprobaj besplatno!";
@@ -2749,6 +3312,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvori u drugoj aplikaciji?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Vrati se";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Želiš li otvoriti ovu stranicu u Safariju?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Nažalost, stranica se nije mogla učitati.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Otvori u Safariju";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Ostani u DuckDuckGou";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Neke značajke mrežne lokacije možda nisu kompatibilne u ovom pregledniku.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Ova stranica želi se otvoriti u Safariju.";
+
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni zapisnici obrade";
 
@@ -2765,7 +3349,48 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Rezultati";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Skeniranje u tijeku...";
+
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Želiš li izbrisati Fire kartice i njihove podatke?";
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Izbrisati kartice i podatke mrežne lokacije?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Izbrisati kartice, podatke mrežne lokacije i čavrljanja?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Izbriši sve";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Izbriši ovo čavrljanje";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Izbriši sve\" neće izbrisati tvoju Duck.ai povijest čavrljanja.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ovu karticu";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Ovo će otkazati preuzimanja u tijeku.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nove kartice koje si kreirao također se mogu pojedinačno izbrisati.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Brisanje podataka mrežnih lokacija može te odjaviti s računa.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pretraži ili unesi adresu";
@@ -2824,6 +3449,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Dodajte widget na početni zaslon";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Dodaj Duck.ai prečace na početni zaslon";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Dodaj DuckDuckGo VPN widget na svoj početni zaslon";
 
@@ -2833,11 +3461,38 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Pokaži cijelu adresu web-mjesta";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Pretraživanje i Duck.ai";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Prikaži u adresnoj traci";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Samo pretraživanje";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Odaberi što ćeš vidjeti kada se vratiš nakon %@ neaktivnosti.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 sat";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d sata/i";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minutu";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minute/a";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekundu";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekunde/i";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Nakon neaktivnosti";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Posljednja korištena kartica";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nova kartica";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Isprobaj novu opciju za prebacivanje između pretraživanja i Duck.ai u adresnoj traci.";
@@ -2856,6 +3511,15 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Pretraži postavke Assista";
+
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Automatski pošalji sadržaj stranice Duck.ai-ju";
+
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Automatski pošalji sadržaj";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Prijedlozi za čavrljanje";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Sakrij slike generirane umjetnom inteligencijom";
@@ -2878,11 +3542,50 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Onemogući da spriječiš automatsko otvaranje poveznica u drugim instaliranim aplikacijama.";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Obriši kartice i podatke";
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Izbriši sve podatke mrežne lokacije, uključujući posjećene mrežne lokacije. Možda će te odjaviti s računa.";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Izbriši kartice, podatke i razgovore s Duck.ai";
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Kolačići i podaci mrežne lokacije";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Izbriši sve razgovore, uključujući prikvačene razgovore";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai čavrljanja";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Izbriši";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Zatvori sve otvorene kartice";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Kartice";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Izlaz iz aplikacije, neaktivna 1 sat";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Izlaz iz aplikacije, neaktivna 5 minuta";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Izlaz iz aplikacije, neaktivna 15 minuta";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Izlaz iz aplikacije, neaktivna 30 minuta";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Samo izlaz iz aplikacije";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Izlaz iz aplikacije definira se povlačenjem prsta po zaslonu za zatvaranje, a neaktivnost znači da je aplikacija otvorena u pozadini.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Željeno vrijeme brisanja";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Podaci će biti izbrisani nakon ponovnog pokretanja aplikacije.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Prijedlozi za pretraživanje";
@@ -2896,11 +3599,32 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Prikaži prijedloge pretraživanja dok tipkaš, uključujući knjižne oznake. Sve pretrage su privatne.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Prikaži prijedloge iz tvoje povijesti, oznaka i (izborno) povijesti čavrljanja na Duck.ai dok tipkaš u traku za pretraživanje. Sva su pretraživanja privatna.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Zaključavanje aplikacije";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ako su omogućeni Touch ID, Face ID ili pristupna šifra sustava, od tebe će se tražiti da otključaš aplikaciju prilikom otvaranja.";
+
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Izbriši";
+
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatsko brisanje podataka";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatski izbrisati podatke";
+
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatsko pokretanje";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Postavke Duck Playera";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Postavke automatske reprodukcije primjenjivat će se samo na novootvorene kartice. Izmjene se ne mogu primijeniti na postojeće kartice osim ako se aplikacija ne pokrene ponovno. Za upravljanje automatskom reprodukcijom u Duck Playeru, idi na ";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije preglednika";
@@ -2908,11 +3632,8 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button će također izbrisati povijest Duck.ai, uključujući prikvačene razgovore.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Izbriši razgovore s Duck.ai";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automatsko brisanje podataka";
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Izbriši podatke o pregledavanju";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dovrši postavljanje";
@@ -2926,20 +3647,41 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje skočnim prozorima kolačića";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Izbriši kartice i podatke";
+
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodba";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Briše sve kartice, razgovore na Duck.ai i podatke za sve mrežne lokacije koje nisu označene kao Fireproof.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Briše sve kartice i podatke za sve mrežne lokacije koje nisu označene kao Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Brisanje podataka";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Brisanje podataka može pomoći u zaštiti tvoje privatnosti na mreži. Pomoću Fire Buttona ručno izbriši podatke ili postavi automatsko brisanje.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Zadani preglednik";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Zadani položaj preklopnika na novim karticama.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Položaj preklopnika";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Posljednje korišteno";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Traži";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Izbriši Duck.ai čavrljanja";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Izbriši kartice i podatke";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Onemogući automatsko popunjavanje podataka za zaštitu e-pošte Email protection";
@@ -2980,8 +3722,11 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacija gumba Vatre";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Zaštićena web-mjesta";
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Zaštićene mrežne lokacije (Fireproof)";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Prisilno aktiviranje tamnog načina rada za mrežne lokacije";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Općenito";
@@ -2998,7 +3743,7 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Uvezi lozinke";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Novo";
 
 /* Settings screen cell for Keyboard */
@@ -3018,6 +3763,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Upravljanje računom";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Mediji";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Više od DuckDuckGoa";
@@ -3142,14 +3890,26 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sinkronizacija i sigurnosno kopiranje";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Prikaži u upravitelju kartica";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Kartice";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Zadano zumiranje teksta";
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Tema";
 
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Daje web stranicama tamni izgled ako koristiš tamnu temu.";
+
 /* Title for the Settings View */
 "settings.title" = "Postavke";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animacija blokiranih alata za praćenje";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomaže u blokiranju trećih strana koje se pokušavaju prikriti unutar web-mjesta pomoću DNS-a.";
@@ -3235,6 +3995,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Preglednik DuckDuckGo pruža zaštite od praćenja koje su uvijek aktivne. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Što je novo";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikazuje zapisnike iz posljednje minute kako bi se problemi mogli dijagnosticirati odmah nakon osvježavanja.";
 
@@ -3272,13 +4035,19 @@
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Status: poništeno";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Pohranjeno ime glavnog računala: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podznačajka: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj na uređaj";
@@ -3325,8 +4094,14 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Pretplatnički paketi";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Otkaži smanjenje";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tvoja je pretplata uklonjena s ovog uređaja.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Tvoj će se plan vratiti na %1$@ dana %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Ažuriraj plan ili odustani";
@@ -3385,6 +4160,9 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoć i podrška";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Upravljanje plaćanjem ili otkazivanje";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Upravljanje planom";
 
@@ -3415,17 +4193,23 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Pretplatnički paketi";
+
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Završava se promjena plana…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dovršavanje kupnje...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Promjena plana u tijeku...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Kupnja u tijeku...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje pretplate...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro sada se jednostavno zove DuckDuckGo pretplata";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ukloni s ovog uređaja";
@@ -3484,6 +4268,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Tvoja godišnja pretplata istječe %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tvoj će se plan smanjiti na %1$@ mjesečno dana %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Tvoj će se plan vratiti na %1$@ dana %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tvoj će se plan smanjiti na %1$@ godišnje dana %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tvoja će se mjesečna pretplata obnoviti %@.";
 
@@ -3505,6 +4298,18 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Besplatno probno razdoblje je aktivno";
 
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Nadogradi na %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Otključaj pametniju i moćniju umjetnu inteligenciju";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Nadogradnja";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Pogledaj sve planove";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI upozorenje";
 
@@ -3515,7 +4320,7 @@
 "sync.delete.all.confirm.action" = "Brisanje podataka poslužitelja";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Svi uređaji bit će isključeni i tvoji sinkronizirani podaci bit će izbrisani s poslužitelja.";
+"sync.delete.all.confirm.message" = "Tvoja sigurnosna kopija bit će izbrisana s poslužitelja. Svi uređaji bit će isključeni iz sinkronizacije, ali ništa se neće izbrisati s bilo kojeg uređaja.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Izbrisati podatke poslužitelja?";
@@ -3528,6 +4333,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Postavljanje sinkronizacije";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sinkronizacija i sigurnosno kopiranje tvojih kreditnih kartica";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sinkronizacija i sigurnosno kopiranje tvojih podataka";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
@@ -3577,6 +4388,30 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Želiš li ukloniti uređaj?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kôd je kopiran";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Uređaj je uspješno sinkroniziran!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup je uključen";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Šifra za oporavak je kopirana";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nije moguće uključiti opciju Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Isključi";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tvoje oznake i lozinke na ovom uređaju neće biti promijenjene.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Isključiti Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Ukloni";
 
@@ -3595,15 +4430,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Žao nam je, ali Sync & Backup (sinkronizacija i sigurnosno kopiranje) više nisu dostupni u ovoj verziji aplikacije. Molimo te da za nastavak ažuriraš DuckDuckGo na najnoviju verziju.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Zatvori kartica";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Kartica Nepročitano";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Zatvori Fire karticu";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Zatvori kartica";
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvori početnu karticu";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Zatvorite „%1$@” na %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire kartica";
+
+/* New tab title */
+"tab.new.title" = "Nova kartica";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvori početnu karticu";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Otvori novu karticu";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Otvori Fire karticu";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvorite „%1$@” na %2$@";
 
@@ -3618,6 +4474,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Označi sve kartice";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Sakrij";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Ovo možeš ponovno uključiti kroz Postavke > Izgled.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Sakrij broj tragača?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opcije brojanja elementa za praćenje";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvaput dodirni za prikaz opcija za skrivanje ovog banera";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Zadrži";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Povećajte ili smanjite veličinu teksta na svim web-mjestima.";
@@ -3657,6 +4537,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Zaštita privatnosti je omogućena za %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -3901,6 +4784,9 @@
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Pozvani ste!";
 
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Web proširenja nisu dostupna";
+
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Omiljena je stavka uklonjena";
 
@@ -3924,6 +4810,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Poruka od %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Povezat će se s POSTOJEĆIM računom";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Izradit će NOVI račun";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠTEDI 25 %";
@@ -3981,6 +4873,21 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo uklanja video oglase na YouTubeu, tako da možeš gledati videozapise bez prekida.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokiranje YouTube oglasa";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTubeu";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kad je uključen, DuckDuckGo će anonimno otkriti smetnje u blokiranju oglasa ili pogreške na YouTubeu kako bi poboljšao iskustvo za sve. DuckDuckGo nikad ne vidi koje videozapise gledaš niti bilo kakve osobne podatke.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Saznaj više";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Knjižne oznake";

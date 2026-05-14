@@ -20,9 +20,10 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var general = { Logger(subsystem: "General", category: "") }()
+    static let general = Logger(subsystem: "General", category: "")
 
-    static var contentBlocking = { Logger(subsystem: "Content Blocking", category: "") }()
-    static var passwordManager = { Logger(subsystem: "Password Manager", category: "") }()
-    static var autoconsent = { Logger(subsystem: "Autoconsent", category: "") }()
+    static let contentBlocking = Logger(subsystem: "Content Blocking", category: "")
+    static let passwordManager = Logger(subsystem: "Password Manager", category: "")
+    static let autoconsent = Logger(subsystem: "Autoconsent", category: "")
+    static let nativeStorageDebug = Logger(subsystem: "AIChatNativeStorage", category: "AIChat")
 }

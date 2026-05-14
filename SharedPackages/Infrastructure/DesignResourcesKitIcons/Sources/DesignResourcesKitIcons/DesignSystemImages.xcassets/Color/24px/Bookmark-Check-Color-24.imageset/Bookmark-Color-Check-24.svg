@@ -1,0 +1,17 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#7295f6" d="M14.406 2.625a4.22 4.22 0 0 1 4.219 4.219v3.468c0 .329-.313.568-.637.516a6.25 6.25 0 0 0-6.922 8.139c.09.27-.038.57-.293.693-.776.372-1.514.892-2.25 1.308-1.406.796-3.148-.22-3.148-1.836V6.844a4.22 4.22 0 0 1 4.219-4.219z"/>
+  <path fill="url(#Bookmark-Check-Color-24_svg__a)" d="M14.406 2a4.844 4.844 0 0 1 4.844 4.844v3.303c0 .492-.497.833-.978.733a6 6 0 0 0-.272-.05V6.844a3.594 3.594 0 0 0-3.594-3.594H9.594A3.594 3.594 0 0 0 6 6.844v12.4a1.485 1.485 0 0 0 2.22 1.29l2.478-1.413q.177-.1.364-.173.068.208.15.41c.17.416.032.912-.362 1.128-.275.15-.57.312-.772.427l-1.24.707c-1.822 1.04-4.088-.278-4.088-2.376v-12.4A4.844 4.844 0 0 1 9.594 2z"/>
+  <path fill="#4cba3c" d="M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0"/>
+  <path fill="url(#Bookmark-Check-Color-24_svg__b)" fill-rule="evenodd" d="M17 12a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 1.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5" clip-rule="evenodd"/>
+  <path fill="#fff" d="M18.433 15.464a.625.625 0 1 1 .884.884l-2.344 2.344a.625.625 0 0 1-.884 0l-1.406-1.406a.625.625 0 0 1 .86-.906l.024.022.964.964z"/>
+  <defs>
+    <linearGradient id="Bookmark-Check-Color-24_svg__a" x1="12" x2="12" y1="2" y2="21.983" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557ff3"/>
+      <stop offset="1" stop-color="#2b55ca"/>
+    </linearGradient>
+    <linearGradient id="Bookmark-Check-Color-24_svg__b" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4cba3c"/>
+      <stop offset="1" stop-color="#288419"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -24,7 +24,52 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
-class DownloadManager {
+enum DownloadError: DDGError {
+    case failedToGenerateUniqueFilename(underlying: Error)
+    
+    var errorDomain: String { "com.duckduckgo.downloads" }
+        
+    var errorCode: Int {
+        switch self {
+        case .failedToGenerateUniqueFilename:
+            return 1
+        }
+    }
+    
+    var underlyingError: Error? {
+        switch self {
+        case .failedToGenerateUniqueFilename(underlying: let underlyingError):
+            return underlyingError
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .failedToGenerateUniqueFilename:
+            return "Failed to generate unique filename"
+        }
+    }
+    
+    /// Compares two DownloadError instances by their error type and underlying error.
+    public static func == (lhs: DownloadError, rhs: DownloadError) -> Bool {
+        switch (lhs, rhs) {
+        case (.failedToGenerateUniqueFilename(let lhsError), .failedToGenerateUniqueFilename(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        }
+    }
+}
+
+protocol DownloadManaging {
+    var downloadList: Set<Download> { get }
+    var downloadsDirectoryFiles: [URL] { get throws }
+    func cancelDownload(_ download: Download)
+    func cancelAllDownloads()
+    func markAllDownloadsSeen()
+    func startMonitoringDownloadsDirectoryChanges()
+    func stopMonitoringDownloadsDirectoryChanges()
+}
+
+class DownloadManager: DownloadManaging {
 
     struct UserInfoKeys {
         static let download = "com.duckduckgo.com.userInfoKey.download"
@@ -43,17 +88,15 @@ class DownloadManager {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.notificationCenter = notificationCenter
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
-        Logger.general.debug("Downloads directory location \(self.downloadsDirectoryHandler.downloadsDirectory.absoluteString)")
     }
 
     func makeDownload(response: URLResponse,
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
+                      temporary: Bool? = nil) throws -> Download? {
 
-        guard let metaData = downloadMetaData(for: response, suggestedFilename: suggestedFilename),
+        guard let metaData = try downloadMetaData(for: response, suggestedFilename: suggestedFilename),
               let url = response.url
         else { return nil }
 
@@ -86,16 +129,17 @@ class DownloadManager {
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
-        makeDownload(response: navigationResponse.response,
-                     suggestedFilename: suggestedFilename,
-                     downloadSession: downloadSession,
-                     cookieStore: cookieStore,
-                     temporary: temporary)
+                      temporary: Bool? = nil) throws -> Download? {
+        try makeDownload(response: navigationResponse.response,
+                         suggestedFilename: suggestedFilename,
+                         downloadSession: downloadSession,
+                         cookieStore: cookieStore,
+                         temporary: temporary)
     }
 
-    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename, mimeType: response.mimeType)
+    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) throws -> DownloadMetadata? {
+        let filename = try filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+                                mimeType: response.mimeType)
         return DownloadMetadata(response, filename: filename)
     }
 
@@ -116,7 +160,7 @@ class DownloadManager {
     func markAllDownloadsSeen() {
         unseenDownloadsAvailable = false
     }
-
+    
     private func move(_ download: Download, toPath path: URL) {
         guard let location = download.location else { return }
         do {
@@ -129,8 +173,9 @@ class DownloadManager {
         }
     }
 
-    private func moveToDownloadDirectortIfNeeded(_ download: Download) {
+    private func moveToDownloadDirectoryIfNeeded(_ download: Download) {
         guard !download.temporary else { return }
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         move(download, toPath: downloadsDirectoryHandler.downloadsDirectory)
     }
 }
@@ -139,9 +184,15 @@ class DownloadManager {
 
 extension DownloadManager {
 
-    private func convertToUniqueFilename(_ filename: String) -> String {
+    private func convertToUniqueFilename(_ filename: String) throws -> String {
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(downloadsDirectoryHandler.downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames: Set<String>
+        do {
+            downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
+        } catch {
+            Logger.general.error("Failed to generate unique filename: \(error.localizedDescription, privacy: .public)")
+            throw DownloadError.failedToGenerateUniqueFilename(underlying: error)
+        }
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension
@@ -160,9 +211,9 @@ extension DownloadManager {
         return newFilename
     }
 
-    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) -> String {
+    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) throws -> String {
         let filename = sanitizeFilename(suggestedFilename, mimeType: mimeType)
-        return convertToUniqueFilename(filename)
+        return try convertToUniqueFilename(filename)
     }
 
     private func sanitizeFilename(_ originalFilename: String?, mimeType: String?) -> String {
@@ -200,7 +251,7 @@ extension DownloadManager {
 
 extension DownloadManager: DownloadDelegate {
     func downloadDidFinish(_ download: Download, error: Error?) {
-        moveToDownloadDirectortIfNeeded(download)
+        moveToDownloadDirectoryIfNeeded(download)
         var userInfo: [AnyHashable: Any] = [UserInfoKeys.download: download]
         if let error = error {
             userInfo[UserInfoKeys.error] = error
@@ -228,6 +279,10 @@ extension NSNotification.Name {
 
 
 extension DownloadManager {
-    var downloadsDirectoryFiles: [URL] { downloadsDirectoryHandler.downloadsDirectoryFiles }
+    var downloadsDirectoryFiles: [URL] {
+        get throws {
+            try downloadsDirectoryHandler.downloadsDirectoryFiles
+        }
+    }
     var downloadsDirectory: URL { downloadsDirectoryHandler.downloadsDirectory }
 }

@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import os.log
-import Common
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import BrowserServicesKit
 @testable import BloomFilterWrapper

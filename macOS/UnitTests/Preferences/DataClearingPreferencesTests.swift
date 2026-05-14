@@ -20,6 +20,7 @@ import BrowserServicesKit
 import FeatureFlags
 import PixelKit
 import PixelKitTestingUtilities
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 
@@ -96,25 +97,6 @@ class DataClearingPreferencesTests: XCTestCase {
         dataClearingPreferences.shouldOpenFireWindowByDefault = false
 
         XCTAssertFalse(mockPersistor.shouldOpenFireWindowByDefault)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsOffThenFireShouldShowDisableFireAnimationSectionIsFalse() {
-        let mockPersistor = MockFireButtonPreferencesPersistor()
-        let featureFlaggerMock = MockFeatureFlagger()
-        let sut = DataClearingPreferences(persistor: mockPersistor, featureFlagger: featureFlaggerMock)
-
-        XCTAssertFalse(sut.shouldShowDisableFireAnimationSection)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsOnThenFireShouldShowDisableFireAnimationSectionIsTrue() {
-        let mockPersistor = MockFireButtonPreferencesPersistor()
-        let featureFlaggerMock = MockFeatureFlagger()
-        featureFlaggerMock.enabledFeatureFlags = [.disableFireAnimation]
-        let sut = DataClearingPreferences(persistor: mockPersistor, featureFlagger: featureFlaggerMock)
-
-        XCTAssertTrue(sut.shouldShowDisableFireAnimationSection)
     }
 
     @MainActor

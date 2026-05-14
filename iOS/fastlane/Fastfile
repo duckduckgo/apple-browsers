@@ -30,6 +30,16 @@ platform :ios do
     do_sync_signing(options)
   end
 
+  desc 'Fetches and updates certificates and provisioning profiles for Experimental distribution'
+  lane :sync_signing_experimental do |options|
+    do_sync_signing(options)
+  end
+
+  desc 'Fetches and updates certificates and provisioning profiles for Experimental Ad-Hoc distribution'
+  lane :sync_signing_experimental_adhoc do |options|
+    do_sync_signing(options)
+  end
+
   desc 'Makes Ad-Hoc build with a specified name and alpha bundle ID in a given directory'
   lane :adhoc do |options|
     alpha_adhoc(options)
@@ -190,6 +200,84 @@ platform :ios do
     end
   end
 
+  desc 'Makes Ad-Hoc build for experimental with a specified name and experimental bundle ID in a given directory'
+  lane :experimental_adhoc do |options|
+
+    # Workaround for match + gym failing at build phase https://forums.swift.org/t/xcode-14-beta-code-signing-issues-when-spm-targets-include-resources/59685/32
+    if is_ci
+      configurations = [
+        {
+          targets: ["DuckDuckGo"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental"
+        },
+        {
+          targets: ["ShareExtension"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental.ShareExtension"
+        },
+        {
+          targets: ["OpenAction"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental.OpenAction2"
+        },
+        {
+          targets: ["WidgetsExtension"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental.Widgets"
+        },
+        {
+          targets: ["PacketTunnelProvider"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental.NetworkExtension"
+        },
+        {
+          targets: ["AutofillCredentialProvider"],
+          profile_name: "match AdHoc com.duckduckgo.mobile.ios.experimental.CredentialExtension"
+        }
+      ]
+
+      configurations.each do |config|
+        update_code_signing_settings(
+          use_automatic_signing: false,
+          build_configurations: ["Experimental"],
+          code_sign_identity: "iPhone Distribution",
+          **config
+        )
+      end
+    end
+
+    sync_signing_experimental_adhoc(options)
+
+    suffix = ""
+    plist_path = "../DuckDuckGo/Info-Experimental.plist"
+    if options[:suffix]
+      suffix = "#{options[:suffix]}-"
+      # Set the suffix in the Info.plist for the main app bundle
+      sh("/usr/libexec/PlistBuddy -c \"Add :DDG_ALPHA_BUILD_SUFFIX string #{options[:suffix]}\" #{plist_path} || /usr/libexec/PlistBuddy -c \"Set :DDG_ALPHA_BUILD_SUFFIX #{options[:suffix]}\" #{plist_path}")
+    else
+      # Remove the suffix key if no suffix is provided
+      sh("/usr/libexec/PlistBuddy -c \"Delete :DDG_ALPHA_BUILD_SUFFIX\" #{plist_path} || true")
+    end
+
+    timestamp = Time.now.strftime("%Y-%m-%d-%H-%M")
+    output_name = "DuckDuckGo-Experimental-#{suffix}#{timestamp}"
+
+    build_app(
+      output_directory: options[:output],
+      output_name: output_name,
+      export_method: "ad-hoc",
+      configuration: "Experimental",
+      scheme: "iOS Browser",
+      export_options: "experimentalAdhocExportOptions.plist",
+      derived_data_path: "DerivedData",
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
+    )
+
+    if is_ci
+      sh("echo output_name=#{output_name} >> $GITHUB_ENV")
+    end
+
+    Dir.chdir("..") do
+      sh("open", "#{options[:output]}") unless is_ci
+    end
+  end
+
   desc 'Promotes the latest TestFlight build to App Store without submitting for review'
   lane :promote_latest_testflight_to_appstore do |options|
 
@@ -285,6 +373,37 @@ platform :ios do
     )
   end
 
+  desc 'Makes Experimental release build and uploads it to TestFlight'
+  lane :release_experimental do |options|
+    build_experimental(options)
+    upload_experimental(options)
+  end
+
+  desc 'Makes Experimental release build only (without uploading)'
+  lane :build_experimental do |options|
+    sync_signing_experimental(options)
+
+    build_app(
+      output_name: "DuckDuckGo-Experimental",
+      export_method: "app-store",
+      configuration: "Experimental",
+      scheme: "iOS Browser",
+      export_options: "experimentalExportOptions.plist",
+      derived_data_path: "DerivedData",
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
+    )
+  end
+
+  desc 'Uploads pre-built Experimental app to TestFlight'
+  lane :upload_experimental do |options|
+    upload_to_testflight(
+      api_key: get_api_key,
+      groups: options[:groups],
+      skip_waiting_for_build_processing: true,
+      ipa: options[:ipa_path]
+    )
+  end
+
   desc 'Increment build number based on version in App Store Connect'
   lane :increment_build_number_for_version do |options|
     build_number = latest_testflight_build_number(
@@ -301,6 +420,73 @@ platform :ios do
         "#{Fastlane::Helper::DdgAppleAutomationHelper::BUILD_NUMBER_CONFIG_DEFINITION} = #{build_number + 1}\n"
       )
     end
+  end
+
+  desc 'Fetches latest App Store version and uploads metadata to CDN'
+  lane :upload_appstore_version_metadata do |options|
+    # Get latest App Store version using existing lane
+    version_info = fetch_appstore_version_info(options)
+    
+    # Extract values from lane context
+    version = lane_context[SharedValues::LATEST_VERSION]
+    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
+    timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    UI.message("App Store version: #{version}")
+    UI.message("App Store build: #{build_number}")
+    
+    # Generate metadata JSON
+    metadata = {
+      latest_ios_appstore_version: {
+        latest_version: version,
+        build_number: build_number,
+        release_date: timestamp
+      }
+    }
+    
+    # Get S3 configuration from environment
+    s3_bucket = ENV['RELEASE_BUCKET_NAME']
+    s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
+    cdn_path = ENV['CDN_PATH']
+    
+    unless s3_bucket && s3_prefix
+      UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
+    end
+    
+    s3_path = "s3://#{s3_bucket}/#{s3_prefix}/"
+    
+    # Download existing metadata (if exists)
+    existing_metadata = {}
+    cdn_url = "#{cdn_path}ios_release_metadata.json"
+    
+    begin
+      UI.message("Checking for existing metadata at #{cdn_url}")
+      existing_content = sh("curl -fLSs '#{cdn_url}'", log: false)
+      existing_metadata = JSON.parse(existing_content)
+      UI.message("Found existing metadata with keys: #{existing_metadata.keys}")
+    rescue => e
+      UI.message("No existing metadata found, will create new file")
+      existing_metadata = {}
+    end
+    
+    # Replace the latest_ios_appstore_version entry (this should overwrite any existing entry)
+    updated_metadata = existing_metadata.dup
+    updated_metadata['latest_ios_appstore_version'] = metadata[:latest_ios_appstore_version]
+    
+    # Write metadata to file
+    File.write('ios_release_metadata.json', JSON.pretty_generate(updated_metadata))
+    UI.message("Generated metadata:")
+    UI.message(JSON.pretty_generate(updated_metadata))
+    
+    # Upload to S3 with retry capability
+    UI.message("Uploading ios_release_metadata.json to S3...")
+    sh("AWS_MAX_ATTEMPTS=5 aws s3 cp ios_release_metadata.json '#{s3_path}ios_release_metadata.json' --acl public-read")
+    
+    UI.success("✅ Successfully updated iOS release metadata")
+    UI.message("Version: #{version}")
+    UI.message("Build: #{build_number}")
+    UI.message("Release Date: #{timestamp}")
+    UI.message("📍 Available at: #{cdn_url}")
   end
 
   #################################################
@@ -356,6 +542,20 @@ platform :ios do
       api_key: get_api_key,
       username: get_username(options),
       readonly: !is_ci
+    )
+  end
+
+  # Gets the latest App Store version and build number for iOS
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID
+  # @option [Boolean] live (default: true) Whether to get live version or TestFlight version
+  #
+  private_lane :fetch_appstore_version_info do |options|
+    app_store_build_number(
+      api_key: get_api_key,
+      username: get_username(options),
+      platform: 'ios',
+      live: true
     )
   end
 

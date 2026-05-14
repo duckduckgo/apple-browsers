@@ -26,8 +26,14 @@ import SwiftUI
 ///
 enum ControlCenterWidget {
     case vpnToggle
+    case duckAIVoiceChat
 
     var image: Image {
-        Image(.controlCenterVPNOff)
+        switch self {
+        case .vpnToggle:
+            return Image(.controlCenterVPNOff)
+        case .duckAIVoiceChat:
+            return Image(.aiVoiceChatSymbol)
+        }
     }
 }

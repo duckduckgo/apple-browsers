@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import XCTest
 import os.log
 import WebKit
@@ -58,6 +59,18 @@ final class FireButtonReferenceTests: XCTestCase {
         }
 
         let fireproofing = MockFireproofing(domains: sanitizedSites)
+        let tld = TLD()
+        let ddgDomains = [URL.ddg.host ?? "", URL.duckAi.host ?? ""]
+        let normalizedAllowed = Set((sanitizedSites + ddgDomains).compactMap { tld.eTLDplus1($0) })
+        fireproofing.isAllowedCookieDomainHandler = { cookieDomain in
+            let cleaned = cookieDomain.hasPrefix(".") ? String(cookieDomain.dropFirst()) : cookieDomain
+            guard let normalized = tld.eTLDplus1(cleaned) else { return false }
+            return normalizedAllowed.contains(normalized)
+        }
+        fireproofing.isAllowedFireproofDomainHandler = { domain in
+            guard let normalized = tld.eTLDplus1(domain) else { return false }
+            return normalizedAllowed.contains(normalized)
+        }
 
         let referenceTests = testData.fireButtonFireproofing.tests.filter {
             $0.exceptPlatforms.contains("ios-browser") == false

@@ -19,12 +19,14 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-@testable import TrackerRadarKit
-@testable import BrowserServicesKit
-import WebKit
 import Common
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
+import WebKit
+@testable import TrackerRadarKit
+@testable import BrowserServicesKit
 
 final class FingerprintingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()

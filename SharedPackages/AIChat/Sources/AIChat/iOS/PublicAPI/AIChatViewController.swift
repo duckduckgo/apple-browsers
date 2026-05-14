@@ -48,6 +48,9 @@ public protocol AIChatViewControllerDelegate: AnyObject {
     ///   - viewController: The `AIChatViewController` instance that completed the download.
     ///   - fileName: The name of the downloaded file that the user has requested to open
     func aiChatViewController(_ viewController: AIChatViewController, didRequestOpenDownloadWithFileName fileName: String)
+
+    /// Tells the delegate that the `AIChatViewController` will begin downloading a file.
+    func aiChatViewControllerWillStartDownload()
 }
 
 public final class AIChatViewController: UIViewController {
@@ -113,6 +116,7 @@ extension AIChatViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .black
+        self.view.accessibilityIdentifier = "AIChatViewController"
 
         if presentationMode == .modal {
             setupTitleBar()
@@ -124,18 +128,28 @@ extension AIChatViewController {
 
 // MARK: - Public functions
 extension AIChatViewController {
-    public func loadQuery(_ query: String, autoSend: Bool, tools: [AIChatRAGTool]?) {
+    public func loadQuery(_ query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?, modelId: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) {
         // Ensure the webViewController is added before loading the query
         if webViewController == nil {
             addWebViewController()
         }
         webViewController?.loadQuery(query,
                                      autoSend: autoSend,
-                                     tools: tools)
+                                     flowType: flowType,
+                                     tools: tools,
+                                     modelId: modelId,
+                                     reasoningEffort: reasoningEffort)
     }
 
     public func reload() {
         webViewController?.reload()
+    }
+
+    public func loadVoiceMode() {
+        if webViewController == nil {
+            addWebViewController()
+        }
+        webViewController?.loadVoiceMode()
     }
 }
 
@@ -203,6 +217,10 @@ extension AIChatViewController: AIChatWebViewControllerDelegate {
 
     func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL) {
         delegate?.aiChatViewController(self, didRequestToLoad: url)
+    }
+
+    func aiChatWebViewControllerWillStartDownload(_ viewController: AIChatWebViewController) {
+        delegate?.aiChatViewControllerWillStartDownload()
     }
 }
 #endif

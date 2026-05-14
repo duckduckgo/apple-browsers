@@ -23,7 +23,7 @@ import XCTest
 class DeviceAuthenticatorTests: XCTestCase {
 
     private func waitResult(for expectations: [XCTestExpectation], timeout: TimeInterval) -> XCTWaiter.Result {
-        XCTWaiter.wait(for: expectations, timeout: 0.2)
+        XCTWaiter.wait(for: expectations, timeout: timeout)
     }
 
     // MARK: - Tests
@@ -142,7 +142,7 @@ class DeviceAuthenticatorTests: XCTestCase {
         XCTAssertFalse(deviceAuthenticator.requiresAuthentication)
 
         let expectation = expectation(description: "Wait for the authenticator to become locked")
-        let result = await XCTWaiter.fulfillment(of: [expectation], timeout: 0.2)
+        let result = await XCTWaiter.fulfillment(of: [expectation], timeout: 5)
 
         if result == .timedOut {
             XCTAssertFalse(deviceAuthenticator.requiresAuthentication)

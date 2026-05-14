@@ -57,4 +57,12 @@ public enum DomainExclusionsEngagementPixel: VPNPixel {
             return [:]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .exclusionAdded,
+                .exclusionRemoved:
+            return [.pixelSource]
+        }
+    }
 }

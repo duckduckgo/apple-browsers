@@ -39,7 +39,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
 
     public var addVisitCalled = false
     public var visit: Visit?
-    public func addVisit(of url: URL, at date: Date) -> Visit? {
+    public func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit? {
         addVisitCalled = true
         return visit
     }
@@ -61,32 +61,39 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
 
     public var burnAllCalled = false
     public var onBurnAll: (() -> Void)?
-    public func burnAll(completion: @escaping @MainActor () -> Void) {
+    public func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         burnAllCalled = true
         onBurnAll?()
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
     public var burnDomainsCalled = false
     public var onBurnDomains: (() -> Void)?
-    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
         burnDomainsCalled = true
         onBurnDomains?()
         MainActor.assumeMainThread {
-            completion([])
+            completion(.success([]))
         }
     }
 
     public var burnVisitsCalled = false
     public var onBurnVisits: (() -> Void)?
-    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
+    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         burnVisitsCalled = true
         onBurnVisits?()
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
+    }
+
+    public var burnVisitsForTabIDCalled = false
+    public var burnVisitsForTabIDTabID: String?
+    public func burnVisits(for tabID: String) async throws {
+        burnVisitsForTabIDCalled = true
+        burnVisitsForTabIDTabID = tabID
     }
 
     public var markFailedToLoadUrlCalled = false
@@ -105,6 +112,23 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         trackerFoundCalled = true
     }
 
+    public var cookiePopupBlockedCalled = false
+    public func cookiePopupBlocked(on: URL) {
+        cookiePopupBlockedCalled = true
+    }
+
+    public var resetCookiePopupBlockedCalled = false
+    public var resetCookiePopupBlockedDomains: Set<String>?
+    public var resetCookiePopupBlockedTLD: Common.TLD?
+    public func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        resetCookiePopupBlockedCalled = true
+        resetCookiePopupBlockedDomains = domains
+        resetCookiePopupBlockedTLD = tld
+        MainActor.assumeMainThread {
+            completion(.success(()))
+        }
+    }
+
     public var removeUrlEntryCalled = false
     public func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
         removeUrlEntryCalled = true
@@ -121,7 +145,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     @MainActor
     public func delete(_ visits: [History.Visit]) async {
         await withCheckedContinuation { continuation in
-            burnVisits(visits) {
+            burnVisits(visits) { _ in
                 continuation.resume()
             }
         }

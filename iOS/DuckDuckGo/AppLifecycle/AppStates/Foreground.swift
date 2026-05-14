@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import Persistence
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -43,47 +44,64 @@ struct Foreground: ForegroundHandling {
     private let launchAction: LaunchAction
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
-    init(stateContext: Connected.StateContext, actionToHandle: AppAction?) {
+    init(stateContext: Connected.StateContext, actionToHandle: AppAction?,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
-            lastBackgroundDate: nil,
             isFirstForeground: true,
-            actionToHandle: actionToHandle
+            actionToHandle: actionToHandle,
+            lastBackgroundDateStorage: lastBackgroundDateStorage
         )
     }
 
-    init(stateContext: Background.StateContext, actionToHandle: AppAction?) {
+    init(stateContext: Background.StateContext, actionToHandle: AppAction?,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
-            lastBackgroundDate: stateContext.lastBackgroundDate,
             isFirstForeground: stateContext.didTransitionFromLaunching,
-            actionToHandle: actionToHandle
+            actionToHandle: actionToHandle,
+            lastBackgroundDateStorage: lastBackgroundDateStorage
         )
     }
 
     private init(appDependencies: AppDependencies,
                  sceneDependencies: SceneDependencies,
-                 lastBackgroundDate: Date?,
                  isFirstForeground: Bool,
-                 actionToHandle: AppAction?) {
+                 actionToHandle: AppAction?,
+                 lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.appDependencies = appDependencies
         self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
         launchAction = LaunchAction(actionToHandle: actionToHandle,
-                                    lastBackgroundDate: lastBackgroundDate)
+                                    lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+                                    isFirstForeground: isFirstForeground)
+        let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: appDependencies.featureFlagger,
+            keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
+            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
+        )
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
+            userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
-            launchSourceService: appDependencies.launchSourceManager
+            launchSourceService: appDependencies.launchSourceManager,
+            idleReturnEvaluator: idleReturnEvaluator,
+            idleReturnDelegate: appDependencies.mainCoordinator
         )
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
-            launchActionHandler: launchActionHandler
+            launchActionHandler: launchActionHandler,
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 
@@ -109,13 +127,15 @@ struct Foreground: ForegroundHandling {
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
             /// This is called when the **app is ready to handle web navigations** after all browser data has been cleared.
             onWebViewReadyForInteractions: {
-                /* ... */
+                if #available(iOS 18.4, *) {
+                    appDependencies.mainCoordinator.loadWebExtensionsIfPending()
+                }
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
                 appDependencies.launchTaskManager.start()
-                
+
                 // Mark that the app has successfully launched at least once
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
@@ -140,8 +160,11 @@ struct Foreground: ForegroundHandling {
         services.inactivityNotificationSchedulerService.resume()
         services.wideEventService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
-        appDependencies.mainCoordinator.onForeground()
-        
+
+        appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)
+
+        appDependencies.backgroundTaskManager.endBackgroundTask()
+
         let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
     }
@@ -156,6 +179,8 @@ struct Foreground: ForegroundHandling {
             launchActionHandler.handleLaunchAction(.openURL(url))
         case .handleShortcutItem(let shortcutItem):
             launchActionHandler.handleLaunchAction(.handleShortcutItem(shortcutItem))
+        case .handleUserActivity(let userActivity):
+            launchActionHandler.handleLaunchAction(.handleUserActivity(userActivity))
         }
     }
 
@@ -204,7 +229,8 @@ extension Foreground {
 
     func makeBackgroundState() -> any BackgroundHandling {
         Background(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies))
+                                              sceneDependencies: sceneDependencies),
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -214,7 +240,8 @@ extension Foreground {
         Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
                                                        appDependencies: appDependencies),
                   actionToHandle: actionToHandle,
-                  window: window)
+                  window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

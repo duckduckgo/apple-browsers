@@ -20,6 +20,6 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var newTabPageOmnibar = { Logger(subsystem: "newTabPageOmnibar", category: "") }()
-    static var newTabPageMetrics = { Logger(subsystem: "newTabPageMetrics", category: "") }()
+    static let newTabPageOmnibar = Logger(subsystem: "newTabPageOmnibar", category: "")
+    static let newTabPageMetrics = Logger(subsystem: "newTabPageMetrics", category: "")
 }

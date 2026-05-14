@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
 import Combine
-import ContentScopeScripts
-import UserScript
 import Common
+import ContentScopeScripts
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
+import UserScript
+import WebKit
 
 public protocol ContentScopeUserScriptDelegate: AnyObject {
     func contentScopeUserScript(_ script: ContentScopeUserScript, didReceiveDebugFlag debugFlag: String)
@@ -43,6 +45,51 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
     }
 }
 
+public enum ContentScopeScriptContext: Equatable {
+    /// Page-world content scope. Optionally carries surrogate-filtered tracker data
+    /// (a TDS subset containing only trackers with surrogate rules) which is serialised
+    /// as `trackerData` in the user-preferences payload for C-S-S surrogate injection.
+    case contentScope(surrogateTrackerData: TrackerData? = nil)
+    case contentScopeIsolated
+    case aiChatDataClearing
+    case aiChatHistory
+
+    public var isIsolated: Bool {
+        switch self {
+        case .contentScope, .aiChatDataClearing, .aiChatHistory:
+            return false
+        case .contentScopeIsolated:
+            return true
+        }
+    }
+
+    var fileName: String {
+        switch self {
+        case .contentScope:
+            return "contentScope"
+        case .contentScopeIsolated:
+            return "contentScopeIsolated"
+        case .aiChatDataClearing:
+            return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
+        }
+    }
+
+    var messagingContextName: String {
+        switch self {
+        case .contentScope:
+            return "contentScopeScripts"
+        case .aiChatDataClearing:
+            return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
+        case .contentScopeIsolated:
+            return "contentScopeScriptsIsolated"
+        }
+    }
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool
@@ -52,6 +99,7 @@ public final class ContentScopeProperties: Encodable {
     public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
+    public let themeVariant: String?
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -59,7 +107,8 @@ public final class ContentScopeProperties: Encodable {
                 isInternalUser: Bool = false,
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
-                currentCohorts: [ContentScopeExperimentData] = []) {
+                currentCohorts: [ContentScopeExperimentData] = [],
+                themeVariant: String? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
@@ -70,6 +119,7 @@ public final class ContentScopeProperties: Encodable {
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
         self.currentCohorts = currentCohorts
+        self.themeVariant = themeVariant
     }
 
     enum CodingKeys: String, CodingKey {
@@ -83,7 +133,7 @@ public final class ContentScopeProperties: Encodable {
         case platform
         case features
         case currentCohorts
-
+        case themeVariant
     }
 
 }
@@ -198,34 +248,28 @@ public struct ContentScopePlatform: Encodable {
 public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
-    public let isIsolated: Bool
+    public let scriptContext: ContentScopeScriptContext
     public let allowedNonisolatedFeatures: [String]
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
-    enum MessageName: String {
-        case contentScopeScriptsIsolated
-        case contentScopeScripts
-    }
-
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
-                isIsolated: Bool = false,
+                scriptContext: ContentScopeScriptContext = .contentScope(),
                 allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws {
-        self.isIsolated = isIsolated
+        self.scriptContext = scriptContext
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
-        let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
-        broker = UserScriptMessageBroker(context: contextName, requiresRunInPageContentWorld: !isIsolated)
+        broker = UserScriptMessageBroker(context: scriptContext.messagingContextName, requiresRunInPageContentWorld: !scriptContext.isIsolated, debug: properties.debug)
 
-        messageNames = [contextName]
+        messageNames = [scriptContext.messagingContextName]
 
         source = try ContentScopeUserScript.generateSource(
             privacyConfigManager,
             properties: properties,
-            isolated: isIsolated,
+            scriptContext: scriptContext,
             config: broker.messagingConfig(),
             privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
@@ -233,7 +277,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
     public static func generateSource(_ privacyConfigurationManager: PrivacyConfigurationManaging,
                                       properties: ContentScopeProperties,
-                                      isolated: Bool,
+                                      scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws -> String {
@@ -241,17 +285,14 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
-              let jsonProperties = try? JSONEncoder().encode(properties),
-              let jsonPropertiesString = String(data: jsonProperties, encoding: .utf8),
+              let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext),
               let jsonConfig = try? JSONEncoder().encode(config),
               let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
         else {
             return ""
         }
 
-        let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"
-
-        return try loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
+        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
@@ -259,10 +300,31 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         ])
     }
 
+    private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {
+        let jsonProperties = try JSONEncoder().encode(properties)
+        var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
+        dict["messagingContextName"] = scriptContext.messagingContextName
+
+        if case .contentScope(let surrogateTrackerData?) = scriptContext,
+           let encodedTrackerData = try? JSONEncoder().encode(surrogateTrackerData),
+           let trackerDataDict = try? JSONSerialization.jsonObject(with: encodedTrackerData, options: []) as? [String: Any] {
+            // Failure here is non-fatal: surrogate tracker data is optional metadata. If
+            // encoding fails we omit the key rather than aborting the whole content-scope
+            // script, which would disable all on-page protections.
+            dict["trackerData"] = trackerDataDict
+        }
+
+        let encoded = try JSONSerialization.data(withJSONObject: dict, options: [])
+        guard let result = String(data: encoded, encoding: .utf8) else {
+            throw EncodingError.invalidValue(properties, EncodingError.Context(codingPath: [], debugDescription: "Failed to convert ContentScopeProperties to dictionary" ))
+        }
+        return result
+    }
+
     public let source: String
     public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     public let forMainFrameOnly: Bool = false
-    public var requiresRunInPageContentWorld: Bool { !self.isIsolated }
+    public var requiresRunInPageContentWorld: Bool { !self.scriptContext.isIsolated }
 }
 
 @available(macOS 11.0, iOS 14.0, *)
@@ -271,8 +333,9 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
         propagateDebugFlag(message)
+
         // Don't propagate the message for ContentScopeScript non isolated context
-        if message.name == MessageName.contentScopeScripts.rawValue && !isAllowedNonisolatedFeature(message) {
+        if !scriptContext.isIsolated && !isAllowedNonisolatedFeature(message) {
             return (nil, nil)
         }
         // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"

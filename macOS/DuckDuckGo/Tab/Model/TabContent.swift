@@ -48,19 +48,31 @@ typealias HistoryPaneIdentifier = HistoryView.DataModel.HistoryRange
 extension TabContent {
 
     enum URLSource: Equatable {
+        /// Used for TabContent instantiated by state restoration
         case pendingStateRestoration
+        /// Used to identify already loaded TabContent after state restoration
         case loadedByStateRestoration
+        /// Used for URLs entered by the user in the address bar
         case userEntered(String, downloadRequested: Bool = false)
+        /// Used for history entries opened from browser UI
         case historyEntry
+        /// Used for bookmarks opened from browser UI
         case bookmark(isFavorite: Bool)
+        /// Used for URLs opened from internal browser UI (mostly for URLs like email protection, duck.ai, duckduckgo.com, etc.)
         case ui
+        /// Used for links opened from the web view
         case link
+        /// Used for URLs opened from an external application
         case appOpenUrl
+        /// Set to Tab Content being reloaded
         case reload
+        /// Dummy source for switching to an open tab already displaying the same URL
         case switchToOpenTab
 
+        /// Used for URLs whose change was triggered by the web view
         case webViewUpdated
 
+        /// Value actually entered by the user in the address bar at the moment of submission
         var userEnteredValue: String? {
             if case .userEntered(let userEnteredValue, _) = self {
                 userEnteredValue
@@ -69,10 +81,12 @@ extension TabContent {
             }
         }
 
+        /// Whether the URL was actually entered by the user in the address bar
         var isUserEnteredUrl: Bool {
             userEnteredValue != nil
         }
 
+        /// NavigationAction.navigationType that would be used to load this URLSource
         var navigationType: NavigationType {
             switch self {
             case .userEntered(_, downloadRequested: true):
@@ -100,6 +114,7 @@ extension TabContent {
             }
         }
 
+        /// URLRequest.CachePolicy that would be used to load this URLSource
         var cachePolicy: URLRequest.CachePolicy {
             switch self {
             case .pendingStateRestoration, .historyEntry:
@@ -144,12 +159,11 @@ extension TabContent {
             if url.isWebExtensionUrl {
                 return .webExtensionUrl(url)
             }
-            if url.isDuckAIURL,
-               NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatSidebar) {
-                    return .aiChat(url)
+            if url.isDuckAIURL {
+                return .aiChat(url)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = Application.appDelegate.subscriptionManager
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)
@@ -237,7 +251,28 @@ extension TabContent {
         }
     }
 
-    // !!! don‘t add `url` property to avoid ambiguity with the `.url` enum case
+    /// Resolves the display title for this content type.
+    ///
+    /// For content types with well-known titles (bookmarks, settings, etc.), returns those directly.
+    /// For URL-based content, falls back through: page title → host → file name → "Untitled".
+    func displayTitle(pageTitle: String?, pageURL: URL?) -> String {
+        if let title = self.title {
+            return title
+        }
+        if case .newtab = self {
+            return UserText.tabHomeTitle
+        }
+        if let tabTitle = pageTitle?.trimmingWhitespace(), !tabTitle.isEmpty {
+            return tabTitle
+        } else if let host = pageURL?.suggestedTitlePlaceholder, !host.isEmpty {
+            return host
+        } else if let pageURL, pageURL.isFileURL {
+            return pageURL.lastPathComponent
+        }
+        return UserText.tabUntitledTitle
+    }
+
+    // !!! don’t add `url` property to avoid ambiguity with the `.url` enum case
     // use `userEditableUrl` or `urlForWebView` instead.
 
     /// user-editable URL displayed in the address bar
@@ -253,7 +288,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url):
             return url
         case .newtab:
             return .newtab
@@ -273,10 +308,6 @@ extension TabContent {
             return .dataBrokerProtection
         case .releaseNotes:
             return .releaseNotes
-        case .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url):
-            return url
-        case .aiChat(let url):
-            return url
         case .none:
             return nil
         }
@@ -292,9 +323,9 @@ extension TabContent {
         }
     }
 
-    var isUrl: Bool {
+    var isExternalUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat:
+        case .url, .subscription, .identityTheftRestoration, .aiChat:
             return true
         default:
             return false
@@ -327,7 +358,10 @@ extension TabContent {
     }
 
     var displaysContentInWebView: Bool {
-        isUrl
+        switch self {
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat: true
+        default: false
+        }
     }
 
     var usesExternalWebView: Bool {
@@ -341,7 +375,7 @@ extension TabContent {
 
     var canBeDuplicated: Bool {
         switch self {
-        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .onboarding:
             return false
         default:
             return true
@@ -355,7 +389,7 @@ extension TabContent {
         case .releaseNotes:
             return false
         default:
-            return isUrl
+            return isExternalUrl
         }
     }
 

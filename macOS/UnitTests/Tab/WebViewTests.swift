@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,7 +32,7 @@ final class WebViewTests: XCTestCase {
     override func setUp() {
         autoreleasepool {
             window = MockWindow(isVisible: true)
-            webView = .init(frame: .zero)
+            webView = .init(frame: .zero, featureFlagger: MockFeatureFlagger())
             window.contentView = webView
             capturingZoomLevelDelegate = CapturingZoomLevelDelegate()
         }

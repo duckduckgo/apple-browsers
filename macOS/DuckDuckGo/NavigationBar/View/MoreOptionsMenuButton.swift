@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Cocoa
 import Combine
 import Common
@@ -23,9 +24,7 @@ import Common
 final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
     private var updateController: UpdateController?
-#if SPARKLE
     private var dockCustomization: DockCustomization?
-#endif
 
     var notificationLayer: CALayer?
     private var cancellable: AnyCancellable?
@@ -48,9 +47,7 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
         if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
-#if SPARKLE
             dockCustomization = Application.appDelegate.dockCustomization
-#endif
         }
         subscribeToUpdateInfo()
     }
@@ -60,19 +57,29 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
         setupNotificationLayerIfNeeded()
     }
 
+    private var isEnabledPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.isEnabled)
+            .eraseToAnyPublisher()
+    }
+
     private func subscribeToUpdateInfo() {
-        var dockPublisher: AnyPublisher<Bool, Never>
-#if SPARKLE
-        guard let dockCustomization = dockCustomization else { return }
-        dockPublisher = dockCustomization.shouldShowNotificationPublisher
-#else
-        dockPublisher = .init(Just(false))
-#endif
+        let dockPublisher: AnyPublisher<Bool, Never> =
+            dockCustomization?.shouldShowNotificationPublisher
+            ?? Just(false).eraseToAnyPublisher()
         guard let updateController else { return }
-        cancellable = Publishers.CombineLatest3(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher)
+
+        cancellable = Publishers.CombineLatest4(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher, isEnabledPublisher)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] hasPendingUpdate, needsNotificationDot, shouldNotificationForAddToDock in
-                self?.isNotificationVisible = hasPendingUpdate && needsNotificationDot || shouldNotificationForAddToDock
+            .sink { [weak self] hasPendingUpdate, needsNotificationDot, shouldNotificationForAddToDock, isEnabled in
+                guard let self else {
+                    return
+                }
+
+                /// During the Onboarding sequence we'll set `enabled = false`.
+                /// We'll avoid displaying the Update Notification, in this scenario, as users won't be able to interact with the More Options Menu anyways.
+                ///
+                let requiresBadge = (hasPendingUpdate && needsNotificationDot) || shouldNotificationForAddToDock
+                self.isNotificationVisible = requiresBadge && isEnabled
             }
     }
 

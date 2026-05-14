@@ -38,13 +38,18 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     var syncCreditCardsPausedButtonTitle: String? = "syncCreditCardsPausedButtonTitle"
 
     lazy var model: SyncSettingsViewModel = {
-        let model = SyncSettingsViewModel(isOnDevEnvironment: { false }, switchToProdEnvironment: {})
+        let model = SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
         model.delegate = self
         return model
     }()
 
     var createAccountAndStartSyncingCalled = false
     var capturedOptionModel: SyncSettingsViewModel?
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     func waitForInvocation() {
         let expectation = expectation(description: "Inv")
@@ -88,7 +93,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
     func testWhenScanQRCodePressed_ThenSyncWithAnotherDeviceViewIsShown() {
-        model.scanQRCode()
+        model.beginPairingFlow()
         waitForInvocation()
 
         // You can either test one individual call was made x number of times or check for a whole number of calls
@@ -154,8 +159,8 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
 
-    func testWhenRecoverSyncDataPressed_RecoverDataViewShown() {
-        model.recoverSyncDataPressed()
+    func testWhenStartRecoveryCodeEntry_RecoverDataViewShown() {
+        model.startRecoveryCodeEntry()
         waitForInvocation()
 
         // You can either test one individual call was made x number of times or check for a whole number of calls
@@ -163,7 +168,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.assert(#selector(authenticateUser).description.dropping(suffix: "WithCompletionHandler:"), calls: 1)
         monitor.assertCalls([
             #selector(authenticateUser).description.dropping(suffix: "WithCompletionHandler:"): 1,
-            #selector(showRecoverData).description: 1
+            #selector(showRecoveryCodeEntry).description: 1
         ])
     }
     // MARK: Delegate functions
@@ -176,12 +181,37 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-   func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         createAccountAndStartSyncingCalled = true
         capturedOptionModel = optionsViewModel
     }
 
-    func showRecoverData() {
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    func showRecoveryCodeEntry() {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func isPreservedAccountPromptNeeded() -> Bool {
+        false
+    }
+
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func showRecoveringDataAutoRestore() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
@@ -259,8 +289,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func shareLink(for url: URL, with message: String, from rect: CGRect) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
-
-
 }
 
 // MARK: An idea... can be made more public if works out

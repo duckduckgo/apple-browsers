@@ -17,14 +17,15 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
+import Common
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import PixelKit
+import PrivacyConfig
+import VPN
 import VPNAppState
 
 final class VPNPreferencesModel: ObservableObject {
@@ -72,11 +73,7 @@ final class VPNPreferencesModel: ObservableObject {
     /// Whether new app exclusions should be shown
     ///
     var showExclusionsFeature: Bool {
-#if APPSTORE
-        vpnAppState.isUsingSystemExtension
-#else
-        true
-#endif
+        AppVersion.isAppStoreBuild ? vpnAppState.isUsingSystemExtension : true
     }
 
     @Published
@@ -95,7 +92,7 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isInstalled
+            showUninstallVPN = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
         }
     }
 
@@ -134,7 +131,7 @@ final class VPNPreferencesModel: ObservableObject {
     init(vpnXPCClient: VPNControllerXPCClient = .shared,
          settings: VPNSettings = NSApp.delegateTyped.vpnSettings,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
-         pinningManager: PinningManager = LocalPinningManager.shared,
+         pinningManager: PinningManager,
          defaults: UserDefaults = .netP,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
 
@@ -170,6 +167,10 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
         subscribeToDNSSettingsChanges()
+    }
+
+    deinit {
+        cancellables.removeAll()
     }
 
     private func subscribeToAppRoutingRulesChanges() {
@@ -279,7 +280,7 @@ final class VPNPreferencesModel: ObservableObject {
 
         switch response {
         case .OK:
-            try? await VPNUninstaller().uninstall(
+            try? await VPNUninstaller(pinningManager: pinningManager).uninstall(
                 removeSystemExtension: true,
                 showNotification: true)
         default:

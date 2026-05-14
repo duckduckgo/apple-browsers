@@ -52,10 +52,12 @@ extension VPNAddWidgetTip: Tip {
 
     var title: Text {
         Text(UserText.networkProtectionAddWidgetTipTitle)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
     }
 
     var message: Text? {
         Text(UserText.networkProtectionAddWidgetTipMessage)
+            .foregroundStyle(Color(designSystemColor: .textSecondary))
     }
 
     var image: Image? {
@@ -65,7 +67,7 @@ extension VPNAddWidgetTip: Tip {
     var actions: [Action] {
         [Action(id: ActionIdentifiers.addWidget.rawValue) {
             Text(UserText.networkProtectionAddWidgetTipAction)
-                .foregroundStyle(Color(designSystemColor: .accent))
+                .foregroundStyle(Color(designSystemColor: .buttonsPrimaryText))
         }]
     }
 

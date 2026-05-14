@@ -19,6 +19,7 @@
 import Common
 import History
 import HistoryView
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -28,7 +29,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
     var dataSource: CapturingHistoryDataSource!
     var burner: CapturingHistoryBurner!
     var dateFormatter: MockHistoryViewDateFormatter!
-    var featureFlagger: MockFeatureFlagger!
     var pixelHandler: CapturingHistoryViewDataProviderPixelHandler!
 
     @MainActor
@@ -36,14 +36,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
         dataSource = CapturingHistoryDataSource()
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.historyViewSitesSection]
         pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,
             historyBurner: burner,
             dateFormatter: dateFormatter,
-            featureFlagger: featureFlagger,
             pixelHandler: pixelHandler,
             tld: TLD()
         )
@@ -56,7 +53,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
         dataSource = nil
         burner = nil
         dateFormatter = nil
-        featureFlagger = nil
         pixelHandler = nil
     }
 

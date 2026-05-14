@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Common
 import Foundation
+import Persistence
 import UserScript
 import WebKit
 
@@ -29,6 +30,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private(set) var messageDestinationPolicy: MessageOriginPolicy
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -36,26 +38,30 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.broker = broker
     }
 
-    init(handler: AIChatUserScriptHandling, urlSettings: AIChatDebugURLSettingsRepresentable) {
+    init(handler: AIChatUserScriptHandling, urlSettings: any KeyedStoring<AIChatDebugURLSettings>) {
         self.handler = handler
-        var rules = [HostnameMatchingRule]()
+        var originRules = [HostnameMatchingRule]()
+        var destinationRules = [HostnameMatchingRule]()
 
         /// Default rule for DuckDuckGo AI Chat
         if let ddgDomain = URL.duckDuckGo.host {
-            rules.append(.exact(hostname: ddgDomain))
+            originRules.append(.exact(hostname: ddgDomain))
         }
 
         /// Default rule for standalone DuckDuckGo AI Chat
         if let duckAiDomain = URL.duckAi.host {
-            rules.append(.exact(hostname: duckAiDomain))
+            originRules.append(.exact(hostname: duckAiDomain))
+            destinationRules.append(.exact(hostname: duckAiDomain))
         }
 
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
         if let customURLHostname = urlSettings.customURLHostname {
-            rules.append(.exact(hostname: customURLHostname))
+            originRules.append(.exact(hostname: customURLHostname))
+            destinationRules.append(.exact(hostname: customURLHostname))
         }
-        self.messageOriginPolicy = .only(rules: rules)
+        self.messageOriginPolicy = .only(rules: originRules)
+        self.messageDestinationPolicy = .only(rules: destinationRules)
         super.init()
 
         handler.aiChatNativePromptPublisher
@@ -69,6 +75,13 @@ final class AIChatUserScript: NSObject, Subfeature {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
                 self?.submitAIChatPageContext(pageContext)
+            }
+            .store(in: &cancellables)
+
+        handler.syncStatusPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                self?.submitSyncStatusChanged(status)
             }
             .store(in: &cancellables)
     }
@@ -86,6 +99,17 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
         let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
+    }
+
+    private func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        // Push only to websites matching origin policy
+        guard let webView,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else {
+            return
+        }
+
+        broker?.push(method: AIChatUserScriptMessages.submitSyncStatusChanged.rawValue, params: status, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -112,8 +136,14 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openSummarizationSourceLink
         case .openTranslationSourceLink:
             return handler.openTranslationSourceLink
+        case .openAIChatLink:
+            return handler.openAIChatLink
         case .getAIChatPageContext:
             return handler.getAIChatPageContext
+        case .getAIChatOpenTabs:
+            return handler.getAIChatOpenTabs
+        case .getAIChatTabContent:
+            return handler.getAIChatTabContent
         case .reportMetric:
             return handler.reportMetric
         case .togglePageContextTelemetry:
@@ -126,6 +156,24 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getMigrationInfo
         case .clearMigrationData:
             return handler.clearMigrationData
+        case .getSyncStatus:
+            return handler.getSyncStatus
+        case .getScopedSyncAuthToken:
+            return handler.getScopedSyncAuthToken
+        case .encryptWithSyncMasterKey:
+            return handler.encryptWithSyncMasterKey
+        case .decryptWithSyncMasterKey:
+            return handler.decryptWithSyncMasterKey
+        case .sendToSetupSync:
+            return handler.sendToSetupSync
+        case .sendToSyncSettings:
+            return handler.sendToSyncSettings
+        case .setAIChatHistoryEnabled:
+            return handler.setAIChatHistoryEnabled
+        case .voiceSessionStarted:
+            return handler.voiceSessionStarted
+        case .voiceSessionEnded:
+            return handler.voiceSessionEnded
         default:
             return nil
         }

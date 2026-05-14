@@ -54,11 +54,6 @@
                BlueprintName = "UI Tests"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "PermissionsTests">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
@@ -101,6 +96,11 @@
          <EnvironmentVariable
             key = "OS_ACTIVITY_MODE"
             value = "debug"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "CI"
+            value = "$(CI)"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

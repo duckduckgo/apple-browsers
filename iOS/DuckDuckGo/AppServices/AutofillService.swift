@@ -21,21 +21,35 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Common
+import Persistence
+import PrivacyConfig
 
 final class AutofillService {
+
+    private struct Keys {
+        static let vaultAccessibilityMigration = "com.duckduckgo.autofill.keystore.accessibility.migrated.v4"
+    }
 
     private let autofillLoginSession = AppDependencyProvider.shared.autofillLoginSession
     private let autofillUsageMonitor = AutofillUsageMonitor()
     private var autofillPixelReporter: AutofillPixelReporter?
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
 
     var syncService: SyncService?
 
-    init() {
+    init(keyValueStore: ThrowingKeyValueStoring,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+        self.keyValueStore = keyValueStore
+        self.featureFlagger = featureFlagger
+
         if AppDependencyProvider.shared.appSettings.autofillIsNewInstallForOnByDefault == nil {
             AppDependencyProvider.shared.appSettings.setAutofillIsNewInstallForOnByDefault()
         }
         autofillPixelReporter = makeAutofillPixelReporter()
         registerForAutofillEnabledChanges()
+
+        migrateVaultAccessibilityIfNeeded()
     }
 
     private func makeAutofillPixelReporter() -> AutofillPixelReporter {
@@ -91,12 +105,16 @@ final class AutofillService {
     // MARK: - Resume
 
     func resume() {
+        DataImportHubSimulatedCompletionPersistor(keyValueStore: keyValueStore).fireExpiredFailurePixelsIfNeeded()
+
         guard let syncService else {
             assertionFailure("SyncService must be injected before calling onForeground.")
             return
         }
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService.sync)
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
+        Task {
+            await importPasswordsStatusHandler.checkSyncSuccessStatus()
+        }
     }
 
     // MARK: - Suspend
@@ -105,4 +123,19 @@ final class AutofillService {
         autofillLoginSession.endSession()
     }
 
+    // MARK: - Vault Accessibility Migration
+
+    private func migrateVaultAccessibilityIfNeeded() {
+        guard featureFlagger.isFeatureOn(.migrateKeychainAccessibility),
+              (try? keyValueStore.object(forKey: Keys.vaultAccessibilityMigration) as? Bool) != true else {
+            return
+        }
+
+        let keyStoreProvider = AutofillKeyStoreProvider()
+        let completed = keyStoreProvider.migrateKeychainAccessibility()
+
+        if completed {
+            try? keyValueStore.set(true, forKey: Keys.vaultAccessibilityMigration)
+        }
+    }
 }

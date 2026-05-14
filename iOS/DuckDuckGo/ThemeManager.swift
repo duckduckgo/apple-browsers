@@ -20,7 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol ThemeManaging {
     var currentTheme: Theme { get }

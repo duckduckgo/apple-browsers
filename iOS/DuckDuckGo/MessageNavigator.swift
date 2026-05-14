@@ -31,10 +31,12 @@ protocol MessageNavigationDelegate: AnyObject {
 
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style)
     func segueToSettings(presentationStyle: PresentationContext.Style)
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style)
     func segueToSettingsAppearance(presentationStyle: PresentationContext.Style)
     func segueToFeedback(presentationStyle: PresentationContext.Style)
     func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style)
     func segueToImportPasswords(presentationStyle: PresentationContext.Style)
+    func segueToPIR(presentationStyle: PresentationContext.Style)
 }
 
 class DefaultMessageNavigator: MessageNavigator {
@@ -53,6 +55,8 @@ class DefaultMessageNavigator: MessageNavigator {
                                             presentationStyle: presentationStyle)
         case .settings:
             delegate?.segueToSettings(presentationStyle: presentationStyle)
+        case .settingsGeneral:
+            delegate?.segueToSettingsGeneral(presentationStyle: presentationStyle)
         case .feedback:
             delegate?.segueToFeedback(presentationStyle: presentationStyle)
         case .sync:
@@ -61,7 +65,10 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
         case .appearance:
             delegate?.segueToSettingsAppearance(presentationStyle: presentationStyle)
-
+        case .personalInformationRemoval:
+            delegate?.segueToPIR(presentationStyle: presentationStyle)
+        case .softwareUpdate:
+            break // iOS has no public API to open Settings > Software Update
         }
     }
 

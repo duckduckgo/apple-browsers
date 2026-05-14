@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import SecureStorage
 import PixelKit
 import Common

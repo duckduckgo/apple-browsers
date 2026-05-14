@@ -19,6 +19,7 @@
 import Foundation
 import TrackerRadarKit
 import Common
+import ContentBlocking
 import Persistence
 import os.log
 

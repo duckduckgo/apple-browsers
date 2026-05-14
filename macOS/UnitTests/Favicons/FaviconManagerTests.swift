@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PrivacyConfigTestsUtils
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -34,6 +35,7 @@ class FaviconManagerTests: XCTestCase {
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             imageCache: { _ in self.imageCache },
             referenceCache: { _ in self.referenceCache }
         )
@@ -50,7 +52,8 @@ class FaviconManagerTests: XCTestCase {
         let faviconManager = FaviconManager(
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
-            fireproofDomains: MockFireproofDomains(domains: [])
+            fireproofDomains: MockFireproofDomains(domains: []),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
     }
@@ -203,5 +206,29 @@ class FaviconManagerTests: XCTestCase {
         XCTAssertNotNil(faviconManager.getCachedFavicon(forDomainOrAnySubdomain: host, sizeCategory: .huge, fallBackToSmaller: true))
         XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.count, 4)
         XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.map(\.sizeCategory), [.huge, .large, .medium, .small])
+    }
+
+    // MARK: getCachedFavicon(forUrlOrAnySubdomain:)
+
+    @MainActor
+    func testFaviconForURLOrAnySubdomainReturnsCachedFaviconForSameHostmaneWithDivergentSubdomain() async throws {
+        let host = "example.com"
+        let domainURL = try XCTUnwrap("https://\(host)".url)
+        let faviconURL = try XCTUnwrap("https://www.\(host)/path/favicon.ico".url)
+
+        let cacheMap: [URL: Favicon] = [
+            faviconURL: Favicon(identifier: UUID(), url: faviconURL, image: nil, relation: .favicon, documentUrl: domainURL, dateCreated: Date())
+        ]
+
+        referenceCache.getFaviconURLForHost = { _, _ in
+            faviconURL
+        }
+
+        imageCache.getFaviconWithURL = { url in
+            cacheMap[url]
+        }
+
+        XCTAssertNil(faviconManager.getCachedFavicon(for: domainURL, sizeCategory: .small))
+        XCTAssertNotNil(faviconManager.getCachedFavicon(forUrlOrAnySubdomain: domainURL, sizeCategory: .small, fallBackToSmaller: false))
     }
 }

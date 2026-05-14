@@ -19,9 +19,10 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
 import BrowserServicesKit
 import os
+import PrivacyConfig
+import XCTest
 
 class MockCompiledRuleListSource: CompiledRuleListsSource {
 

@@ -42,15 +42,16 @@ extension WKWebViewConfiguration {
         }
 
         allowsAirPlayForMediaPlayback = true
+
         if #available(macOS 12.3, *) {
             preferences.isElementFullscreenEnabled = true
         } else {
             preferences[.fullScreenEnabled] = true
         }
 
-#if !APPSTORE
-        preferences[.allowsPictureInPictureMediaPlayback] = true
-#endif
+        if !NSApp.isSandboxed {
+            preferences[.allowsPictureInPictureMediaPlayback] = true
+        }
 
         preferences[.developerExtrasEnabled] = true
         preferences[.backspaceKeyNavigationEnabled] = false
@@ -60,7 +61,7 @@ extension WKWebViewConfiguration {
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
             let featureFlagger = NSApp.delegateTyped.featureFlagger
             setURLSchemeHandler(
-                DuckURLSchemeHandler(featureFlagger: featureFlagger, isNTPSpecialPageSupported: featureFlagger.isFeatureOn(.newTabPagePerTab)),
+                DuckURLSchemeHandler(featureFlagger: featureFlagger),
                 forURLScheme: URL.NavigationalScheme.duck.rawValue
             )
         }

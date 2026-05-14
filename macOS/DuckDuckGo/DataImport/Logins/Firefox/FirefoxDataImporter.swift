@@ -27,20 +27,18 @@ internal class FirefoxDataImporter: DataImporter {
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
     private let profile: DataImport.BrowserProfile
-    private let featureFlagger: FeatureFlagger
     private var source: DataImport.Source {
         profile.browser.importSource
     }
 
     private let primaryPassword: String?
 
-    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger) {
+    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
         self.profile = profile
         self.primaryPassword = primaryPassword
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
-        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -98,7 +96,7 @@ internal class FirefoxDataImporter: DataImporter {
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
-            let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL, featureFlagger: featureFlagger)
+            let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL)
             let bookmarkResult = bookmarkReader.readBookmarks()
 
             guard case .success(var importedBookmarks) = bookmarkResult else {
@@ -106,17 +104,13 @@ internal class FirefoxDataImporter: DataImporter {
                 return summary
             }
 
-            var markRootBookmarksAsFavoritesByDefault = true
-            if featureFlagger.isFeatureOn(.updateFirefoxBookmarksImport) {
-                markRootBookmarksAsFavoritesByDefault = false
-                let newTabFavorites = fetchNewTabFavorites()
-                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
-            }
+            let newTabFavorites = fetchNewTabFavorites()
+            FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false, maxFavoritesCount: nil)
 
             await importFavicons()
 

@@ -21,87 +21,108 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
+
+private struct ClearButtonFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
+}
 
 struct SettingsDataClearingView: View {
 
-    @EnvironmentObject var viewModel: SettingsViewModel
-    @State private var isShowingBurnAlert: Bool = false
+    @EnvironmentObject var settingsViewModel: SettingsViewModel
+    @ObservedObject private var viewModel: DataClearingSettingsViewModel
+    @State private var clearButtonFrame: CGRect = .zero
+    
+    init(viewModel: DataClearingSettingsViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         List {
+            // Header section
+            let description = SettingsDescription(image: DesignSystemImages.Color.Size128.fire,
+                                                  title: UserText.dataClearing,
+                                                  status: nil,
+                                                  explanation: UserText.settingsDataClearingDescription)
+            SettingsDescriptionView(content: description)
+
             Section {
                 // Fire Button Animation
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                       label: UserText.settingsFirebutton,
+                SettingsPickerCellView(label: UserText.settingsFirebutton,
                                        options: FireButtonAnimationType.allCases,
-                                       selectedOption: viewModel.fireButtonAnimationBinding)
+                                        selectedOption: viewModel.fireButtonAnimationBinding)
+            }
+            
+            if viewModel.showAIChatsToggle {
+                aiChatsToggleSection
             }
 
             Section {
                 // Fireproof Sites
-                SettingsCellView(label: UserText.settingsFireproofSites,
-                                  action: { viewModel.presentLegacyView(.fireproofSites) },
+                SettingsCellView(label: viewModel.fireproofedSitesTitle,
+                                 subtitle: viewModel.fireproofedSitesSubtitle,
+                                 action: { viewModel.openFireproofSites() },
                                  disclosureIndicator: true,
                                  isButton: true)
 
                 // Automatically Clear Data
-                SettingsCellView(label: UserText.settingsClearData,
-                                  action: { viewModel.presentLegacyView(.autoclearData) },
-                                  accessory: .rightDetail(viewModel.state.autoclearDataEnabled
-                                                         ? UserText.autoClearAccessoryOn
-                                                         : UserText.autoClearAccessoryOff),
+                SettingsCellView(label: viewModel.autoClearTitle,
+                                 action: { viewModel.openAutoClearData() },
+                                 accessory: .rightDetail(viewModel.autoClearAccessibilityLabel),
                                   disclosureIndicator: true,
                                   isButton: true)
             }
-
-            if viewModel.isAIChatEnabled && viewModel.isDuckAiDataClearingEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsClearAIChatHistory,
-                                     accessory: .toggle(isOn: viewModel.autoClearAIChatHistoryBinding))
-                } footer: {
-                    Text(UserText.settingsClearAIChatHistoryFooter)
+                
+            Section {
+                SettingsCellView(action: {
+                    viewModel.presentFireConfirmation(from: clearButtonFrame)
+                }, customView: {
+                    forgetAllButtonContent
+                }, isButton: true)
+                .background(
+                    GeometryReader { geometryProxy in
+                        Color.clear
+                            .preference(key: ClearButtonFrameKey.self, value: geometryProxy.frame(in: .global))
+                    }
+                )
+                .onPreferenceChange(ClearButtonFrameKey.self) { newFrame in
+                        self.clearButtonFrame = newFrame
                 }
-            }
-            
-            if viewModel.isForgetAllInSettingsEnabled {
-                Section(footer: Text(footnoteText)) {
-                    SettingsCellView(action: {
-                        Pixel.fire(pixel: .forgetAllPressedSettings)
-                        isShowingBurnAlert = true
-                    }, customView: {
-                        AnyView(
-                            HStack(alignment: .center) {
-                                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
-                                    .tintIfAvailable(Color(designSystemColor: .icons))
-                                Text(forgetAllTitle)
-                                    .foregroundStyle(Color(designSystemColor: .accent))
-                                Spacer()
-                            }
-                        )
-                    }, isButton: true)
-                    .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-                    .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
-                                                  onConfirm: viewModel.forgetAll)
-                }
+                .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
             }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
-                                    viewModel: viewModel)
+                                    viewModel: settingsViewModel)
+        .background(Color(designSystemColor: .background))
+        .modifier(ScrollBounceBehaviorModifier())
+        .onAppear {
+            viewModel.refreshFireproofedSitesCount()
+        }
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }
     }
 
-    private var forgetAllTitle: String {
-        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    private var forgetAllButtonContent: AnyView {
+        AnyView(
+            HStack(alignment: .center) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
+                    .tintIfAvailable(Color(designSystemColor: .icons))
+                Text(viewModel.clearDataButtonTitle)
+                    .foregroundStyle(Color(designSystemColor: .accent))
+                Spacer()
+            }
+        )
     }
-
-    private var footnoteText: String {
-        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
+    
+    private var aiChatsToggleSection: some View {
+        Section {
+            SettingsCellView(label: viewModel.aiChatsToggleTitle,
+                             accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
+        } footer: {
+            Text(UserText.settingsClearAIChatHistoryFooter)
+        }
     }
 }

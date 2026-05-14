@@ -20,7 +20,7 @@
 import Combine
 import Foundation
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 
 enum CrashCollectionOptInStatus: String {
     case undetermined, optedIn, optedOut

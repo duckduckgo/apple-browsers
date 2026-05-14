@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
-import Subscription
-import Freemium
 import Combine
+import Foundation
+import Freemium
 import OSLog
+import PrivacyConfig
+import Subscription
 
 /// Constants for UserDefaults keys used by the Freemium DBP feature.
 enum FreemiumDBPFeatureKeys {
@@ -38,6 +38,12 @@ protocol FreemiumDBPFeature {
 
     /// A boolean indicating if the Freemium DBP feature is available, considering privacy config, auth status, and storefront.
     var isAvailable: Bool { get }
+
+    /// Whether the feature flag is enabled in privacy config (synchronous, no async dependencies).
+    var isFeatureFlagEnabled: Bool { get }
+
+    /// Availability ignoring only purchase capability — feature flag, auth, and storefront still apply.
+    var isAvailableIgnoringPurchaseCapability: Bool { get }
 
     /// Publishes updates to `isAvailable` when dependencies like privacy config or subscription status change.
     var isAvailablePublisher: AnyPublisher<Bool, Never> { get }
@@ -63,6 +69,16 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
         isEligible
     }
 
+    /// Checks if the feature flag is enabled in privacy config, with support for a debug override.
+    /// Synchronous — no async dependencies (unlike `isAvailable` which depends on product availability).
+    var isFeatureFlagEnabled: Bool {
+        featureFlagOverride ?? privacyConfigurationManager.freemiumIsEnabled
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront
+    }
+
     /// Publishes `true` when feature availability changes.
     var isAvailablePublisher: AnyPublisher<Bool, Never> {
         isAvailableSubject.eraseToAnyPublisher()
@@ -74,7 +90,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     /// Manages user subscriptions and authentication state.
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     /// Manages the user's state within the Freemium DBP system.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -106,7 +122,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     ///   - featureDisabler: Optional feature disabler. If not provided, the default `DataBrokerProtectionFeatureDisabler` is used lazily.
     ///   - userDefaults: UserDefaults instance for storing preferences, defaulting to `.dbp`.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          notificationCenter: NotificationCenter = .default,
          featureDisabler: DataBrokerProtectionFeatureDisabling? = nil,
@@ -153,7 +169,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
 
         // Subscribe to available product updates for App Store Environment
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
-            subscriptionManager.canPurchasePublisher
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
                 .sink { [weak self] canPurchase in
                     guard let self = self else { return }
 
@@ -183,14 +199,6 @@ private extension DefaultFreemiumDBPFeature {
         isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront && canPurchaseSubscription
     }
 
-    /// Checks if the feature flag is enabled in privacy config, with support for a debug override.
-    var isFeatureFlagEnabled: Bool {
-        if let featureFlagOverride {
-            return featureFlagOverride
-        }
-        return privacyConfigurationManager.freemiumIsEnabled
-    }
-
     /// Checks if the user is not a subscriber. Freemium is only for non-subscribed users.
     var isNotACurrentUser: Bool {
         !subscriptionManager.isUserAuthenticated
@@ -203,21 +211,10 @@ private extension DefaultFreemiumDBPFeature {
             return storefrontOverride
         }
         guard subscriptionManager.platformIsAppStore else { return true }
-
-        // Default to false for older macOS versions as a conservative approach
-        var isUSStoreFront = false
-        if #available(macOS 12.0, *) {
-            // Check both subscription manager types for compatibility
-            if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
-                isUSStoreFront = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion == .usa
-            } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
-                isUSStoreFront = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion == .usa
-            }
-        }
-        return isUSStoreFront
+        return subscriptionManager.currentStorefrontRegion == .usa
     }
 
-    /// Checks if the user can make purchases. Always true for Stripe, based on `canPurchase` for App Store.
+    /// Checks if the user can make purchases. Always true for Stripe, based on App Store product availability for App Store.
     var canPurchaseSubscription: Bool {
         subscriptionManager.isPotentialPurchaser
     }
@@ -269,7 +266,7 @@ private extension PrivacyConfigurationManaging {
 }
 
 /// Extension to provide computed properties for subscription manager platform and purchase logic.
-private extension SubscriptionAuthV1toV2Bridge {
+private extension SubscriptionManager {
 
     /// `true` if the subscription platform is App Store.
     var platformIsAppStore: Bool {
@@ -277,17 +274,5 @@ private extension SubscriptionAuthV1toV2Bridge {
     }
 
     /// `true` if the user is a potential purchaser.
-    ///
-    /// The logic varies by platform:
-    /// - **App Store**: Returns the actual `canPurchase` capability.
-    /// - **Stripe**: Always returns `true`.
-    var isPotentialPurchaser: Bool {
-        let platform = currentEnvironment.purchasePlatform
-        switch platform {
-        case .appStore:
-            return canPurchase
-        case .stripe:
-            return true
-        }
-    }
+    var isPotentialPurchaser: Bool { isSubscriptionPurchaseEligible }
 }

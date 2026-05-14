@@ -182,4 +182,10 @@ public extension SERPSettingsProviding {
 }
 
 /// Internal for testing purposes
-struct EmptyPayload: Codable {}
+struct EmptyPayload: Codable {
+    let noNativeSettings: Bool
+
+    init(noNativeSettings: Bool = true) {
+        self.noNativeSettings = noNativeSettings
+    }
+}

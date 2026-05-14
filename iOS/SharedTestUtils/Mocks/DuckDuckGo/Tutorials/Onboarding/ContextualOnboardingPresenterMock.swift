@@ -50,6 +50,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
     private(set) var didCallDisableDaxDialogs = false
+    private(set) var didCallSetLastShownDialog = false
+    private(set) var lastShownDialogType: DaxDialogs.BrowsingSpec.SpecType?
 
     var canStartFavoriteFlow = false
 
@@ -58,6 +60,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
     var isShowingSubscriptionPromotion: Bool = false
+
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
@@ -91,6 +94,11 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         didCallEnableAddFavoriteFlow = true
     }
 
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {
+        didCallSetLastShownDialog = true
+        lastShownDialogType = type
+    }
+
     func setDaxDialogDismiss() {
         didCallSetDaxDialogDismiss = true
     }
@@ -117,8 +125,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     }
 
-    func clearHeldURLData() {
-
+    func clearHeldURLData() -> Result<Void, Error> {
+        return .success(())
     }
 
     func fireButtonPulseStarted() {
@@ -151,10 +159,11 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var isAddFavoriteFlow: Bool = false
 
     var isShowingSubscriptionPromotion: Bool = false
-
     var subscriptionPromotionDialogSeen: Bool = false
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
+
+    private(set) var clearHeldURLDataCallCount = 0
 
     func setTryAnonymousSearchMessageSeen() { }
 
@@ -170,6 +179,8 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func setPrivacyButtonPulseSeen() { }
 
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {}
+
     func setDaxDialogDismiss() {}
 
     func enableAddFavoriteFlow() {}
@@ -182,7 +193,10 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func resumeRegularFlow() {}
 
-    func clearHeldURLData() {}
+    func clearHeldURLData() -> Result<Void, Error> {
+        clearHeldURLDataCallCount += 1
+        return .success(())
+    }
 
     func fireButtonPulseStarted() {}
 

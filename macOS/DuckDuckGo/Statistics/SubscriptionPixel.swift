@@ -16,18 +16,13 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
-import Subscription
-import PixelKit
 import Networking
+import PixelKit
+import Subscription
 
-// swiftlint:disable private_over_fileprivate
-#if APPSTORE
-fileprivate let appDistribution = "store"
-#else
-fileprivate let appDistribution = "direct"
-#endif
-// swiftlint:enable private_over_fileprivate
+private let appDistribution = AppVersion.isAppStoreBuild ? "store" : "direct"
 
 enum SubscriptionPixel: PixelKitEvent {
     // Subscription
@@ -73,13 +68,23 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionOfferYearlyPriceClick
     case subscriptionAddEmailSuccess
     case subscriptionWelcomeFAQClick
-    // Auth v2
+    // Tier Options
+    case subscriptionTierOptionsRequested
+    case subscriptionTierOptionsSuccess
+    case subscriptionTierOptionsFailure(error: Error)
+    case subscriptionTierOptionsUnexpectedProTier
+    // Plan Change
+    case subscriptionViewAllPlansClick
+    case subscriptionUpgradeClick
+    case subscriptionCancelPendingDowngradeClick
+    // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
-    case subscriptionAuthV2MigrationFailed(SubscriptionPixelHandler.Source, Error)
-    case subscriptionAuthV2MigrationSucceeded(SubscriptionPixelHandler.Source)
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    // Pending Transaction
+    case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
+    case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
     // KeychainManager
     case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
@@ -106,6 +111,16 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionWinBackOfferNewTabPageShown
     case subscriptionWinBackOfferNewTabPageCTAClicked
     case subscriptionWinBackOfferNewTabPageDismissed
+
+    // New Tab Page Next Steps Card
+    case subscriptionNewTabPageNextStepsCardClicked
+    case subscriptionNewTabPageNextStepsCardDismissed
+
+    // Free Trial Journey
+    case freeTrialStart
+    case freeTrialVPNActivation(activationDay: FreeTrialActivationDay)
+    case freeTrialPIRActivation(activationDay: FreeTrialActivationDay)
+    case freeTrialDuckAIActivation(activationDay: FreeTrialActivationDay)
 
     var name: String {
         switch self {
@@ -152,13 +167,22 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .subscriptionAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .subscriptionWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
-            // Auth v2
+            // Tier Options
+        case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
+            // Plan Change
+        case .subscriptionViewAllPlansClick: return "m_mac_\(appDistribution)_subscription_settings_view-all-plans_click"
+        case .subscriptionUpgradeClick: return "m_mac_\(appDistribution)_subscription_settings_upgrade_click"
+        case .subscriptionCancelPendingDowngradeClick: return "m_mac_\(appDistribution)_subscription_settings_cancel-pending-downgrade_click"
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .subscriptionAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
-        case .subscriptionAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .subscriptionAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_mac_\(appDistribution)_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_pending_transaction_approved"
             // KeychainManager
         case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
@@ -187,37 +211,134 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionWinBackOfferNewTabPageCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_cta_clicked"
 
         case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
+
+            // New Tab Page Next Steps Card
+        case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
+        case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_dismissed"
+            // Free Trial Journey
+        case .freeTrialStart: return "m_mac_\(appDistribution)_privacy-pro_freetrial_start"
+        case .freeTrialVPNActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_vpn_activation"
+        case .freeTrialPIRActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_pir_activation"
+        case .freeTrialDuckAIActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_duck_ai_activation"
         }
     }
 
     private struct SubscriptionPixelsDefaults {
-        static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let platformKey = "platform"
+        static let activationDayKey = "activation_day"
     }
 
     var parameters: [String: String]? {
         switch self {
         case .subscriptionInvalidRefreshTokenDetected(let source),
-                .subscriptionAuthV2MigrationSucceeded(let source),
+                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+                .subscriptionPendingTransactionApproved(let source),
                 .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
                 .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .subscriptionAuthV2GetTokensError(let policy, let source, let error):
-            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
-                    SubscriptionPixelsDefaults.policyCacheKey: policy.description,
-                    SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .subscriptionAuthV2MigrationFailed(let source, let error):
-            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
+        case .freeTrialVPNActivation(let activationDay),
+             .freeTrialPIRActivation(let activationDay),
+             .freeTrialDuckAIActivation(let activationDay):
+            return [SubscriptionPixelsDefaults.activationDayKey: activationDay.rawValue]
         default:
             return nil
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionActive,
+                .subscriptionOfferScreenImpression,
+                .subscriptionPurchaseAttempt,
+                .subscriptionPurchaseFailureOther,
+                .subscriptionPurchaseFailureStoreError,
+                .subscriptionPurchaseFailureBackendError,
+                .subscriptionPurchaseFailureAccountNotCreated,
+                .subscriptionPurchaseSuccess,
+                .subscriptionRestorePurchaseOfferPageEntry,
+                .subscriptionRestorePurchaseClick,
+                .subscriptionRestorePurchaseSettingsMenuEntry,
+                .subscriptionRestorePurchaseEmailStart,
+                .subscriptionRestorePurchaseStoreStart,
+                .subscriptionRestorePurchaseEmailSuccess,
+                .subscriptionRestorePurchaseStoreSuccess,
+                .subscriptionRestorePurchaseStoreFailureNotFound,
+                .subscriptionRestorePurchaseStoreFailureOther,
+                .subscriptionRestoreAfterPurchaseAttempt,
+                .subscriptionActivated,
+                .subscriptionWelcomeAddDevice,
+                .subscriptionWelcomeVPN,
+                .subscriptionWelcomePersonalInformationRemoval,
+                .subscriptionWelcomeAIChat,
+                .subscriptionWelcomeIdentityRestoration,
+                .subscriptionSettings,
+                .subscriptionVPNSettings,
+                .subscriptionPersonalInformationRemovalSettings,
+                .subscriptionPersonalInformationRemovalSettingsImpression,
+                .subscriptionPaidAIChatSettings,
+                .subscriptionPaidAIChatSettingsImpression,
+                .subscriptionIdentityRestorationSettings,
+                .subscriptionIdentityRestorationSettingsImpression,
+                .subscriptionManagementEmail,
+                .subscriptionManagementPlanBilling,
+                .subscriptionManagementRemoval,
+                .subscriptionPurchaseStripeSuccess,
+                .subscriptionSuccessfulSubscriptionAttribution,
+                .subscriptionOfferMonthlyPriceClick,
+                .subscriptionOfferYearlyPriceClick,
+                .subscriptionAddEmailSuccess,
+                .subscriptionWelcomeFAQClick,
+                .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionInvalidRefreshTokenSignedOut,
+                .subscriptionInvalidRefreshTokenRecovered,
+                .subscriptionAuthV2GetTokensError,
+                .subscriptionPurchaseSuccessAfterPendingTransaction,
+                .subscriptionPendingTransactionApproved,
+                .subscriptionKeychainManagerDataAddedToTheBacklog,
+                .subscriptionKeychainManagerDeallocatedWithBacklog,
+                .subscriptionKeychainManagerDataWroteFromBacklog,
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                .subscriptionToolbarButtonShown,
+                .subscriptionToolbarButtonPopoverShown,
+                .subscriptionToolbarButtonPopoverDismissButtonClicked,
+                .subscriptionToolbarButtonPopoverProceedButtonClicked,
+                .subscriptionWinBackOfferLaunchPromptShown,
+                .subscriptionWinBackOfferLaunchPromptCTAClicked,
+                .subscriptionWinBackOfferLaunchPromptDismissed,
+                .subscriptionWinBackOfferMainMenuShown,
+                .subscriptionWinBackOfferMainMenuClicked,
+                .subscriptionWinBackOfferSettingsSidebarBadgeShown,
+                .subscriptionWinBackOfferSettingsPageShown,
+                .subscriptionWinBackOfferSettingsPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageShown,
+                .subscriptionWinBackOfferNewTabPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionNewTabPageNextStepsCardClicked,
+                .subscriptionNewTabPageNextStepsCardDismissed,
+                .subscriptionTierOptionsRequested,
+                .subscriptionTierOptionsSuccess,
+                .subscriptionTierOptionsFailure,
+                .subscriptionTierOptionsUnexpectedProTier,
+                .subscriptionViewAllPlansClick,
+                .subscriptionUpgradeClick,
+                .subscriptionCancelPendingDowngradeClick,
+                .freeTrialStart,
+                .freeTrialVPNActivation,
+                .freeTrialPIRActivation,
+                .freeTrialDuckAIActivation:
+            return [.pixelSource]
+        }
+    }
+
 }
 
 enum SubscriptionErrorPixel: PixelKitEvent {
@@ -238,10 +359,17 @@ enum SubscriptionErrorPixel: PixelKitEvent {
         case .subscriptionKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
-                "error": accessError.errorDescription ?? "Unknown",
+                "error": accessError.description,
                 "source": source.rawValue,
                 "authVersion": authVersion.rawValue
             ]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionKeychainAccessError:
+            return [.pixelSource]
         }
     }
 

@@ -31,10 +31,12 @@ final class SubscriptionContainerViewModel: ObservableObject {
     let restore: SubscriptionRestoreViewModel
     let email: SubscriptionEmailViewModel
 
-    init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: SubscriptionManager,
          redirectPurchaseURL: URL? = nil,
+         flowType: SubscriptionFlowType = .firstPurchase,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
@@ -44,8 +46,10 @@ final class SubscriptionContainerViewModel: ObservableObject {
         self.subFeature = subFeature
 
         self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
+                                              flowType: flowType,
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,
+                                              userScriptsDependencies: userScriptsDependencies,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager,
                                               dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
@@ -53,6 +57,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                                     subFeature: subFeature)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
                                                 userScript: userScript,
+                                                userScriptsDependencies: userScriptsDependencies,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager,
                                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)

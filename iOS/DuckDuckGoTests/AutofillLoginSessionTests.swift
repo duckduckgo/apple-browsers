@@ -32,12 +32,15 @@ final class AutofillLoginSessionTests: XCTestCase {
 
     func testWhenSessionStartedThenAutofillSessionIsValid() {
         autofillSession.startSession()
+        Thread.sleep(forTimeInterval: 0.01)
         XCTAssertTrue(autofillSession.isSessionValid)
     }
 
     func testWhenSessionEndedThenAutofillSessionIsInvalid() {
         autofillSession.startSession()
+        Thread.sleep(forTimeInterval: 0.01)
         autofillSession.endSession()
+        Thread.sleep(forTimeInterval: 0.01)
         XCTAssertFalse(autofillSession.isSessionValid)
     }
 

@@ -20,7 +20,6 @@ import Common
 import Foundation
 import VPN
 import NetworkProtectionUI
-import NetworkExtension
 import SystemExtensions
 import LoginItems
 import NetworkProtectionIPC
@@ -48,6 +47,7 @@ final class NetworkProtectionDebugUtilities {
     // MARK: - Initializers
 
     init(loginItemsManager: LoginItemsManager = .init(),
+         pinningManager: PinningManager,
          settings: VPNSettings = .init(defaults: .netP),
          vpnAppState: VPNAppState = .init(defaults: .netP)) {
 
@@ -57,7 +57,7 @@ final class NetworkProtectionDebugUtilities {
         let ipcClient = VPNControllerXPCClient.shared
 
         self.ipcClient = ipcClient
-        self.vpnUninstaller = VPNUninstaller(ipcClient: ipcClient)
+        self.vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: ipcClient)
         self.vpnAppState = vpnAppState
     }
 
@@ -69,6 +69,10 @@ final class NetworkProtectionDebugUtilities {
 
     func restartAdapter() async throws {
         try await ipcClient.command(.restartAdapter)
+    }
+
+    func triggerLeakCheck() async throws {
+        try await ipcClient.command(.triggerLeakCheck)
     }
 
     func resetAllState(keepAuthToken: Bool) async throws {

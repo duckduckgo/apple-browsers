@@ -22,11 +22,22 @@ import Algorithms
 import os.log
 
 public protocol EmailConfirmationDataServiceProvider {
+    /// Fetches a disposable email address and, when the decoupling feature flag is on, queues an
+    /// `emailConfirmationStore` row so the background `emailConfirmation` poller can later look up
+    /// the confirmation link. Requires all IDs to be non-nil when the flag is on; throws
+    /// `dataNotInDatabase` otherwise. Use from the opt-out path where a downstream
+    /// `emailConfirmation` action will rely on the store row.
     func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                              dataBrokerURL: String,
                                              profileQueryId: Int64?,
                                              extractedProfileId: Int64?,
                                              attemptId: UUID) async throws -> EmailData
+
+    /// Fetches a disposable email address with no DB side effects. Use from the scan path where
+    /// there is no `ExtractedProfile` and no downstream `emailConfirmation` action that would
+    /// need a store row.
+    func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData
+
     func checkForEmailConfirmationData() async throws
 
     @available(*, deprecated, message: "Use checkForEmailConfirmationData() instead")
@@ -35,25 +46,49 @@ public protocol EmailConfirmationDataServiceProvider {
                              pollingInterval: TimeInterval,
                              attemptId: UUID,
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL
+
+    /// Polls until every `extract` key is present in the response (or `totalTimeout` elapses).
+    /// Returned bag is filtered to those keys. Empty `extract` returns an empty bag on first
+    /// `ready` — broker JSON is expected to always populate `extract`.
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      extract: [String],
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
-    private let database: DataBrokerProtectionRepository
+    private let emailConfirmationStore: EmailConfirmationSupporting
+    private let database: DataBrokerProtectionRepository?
     private let emailServiceV0: EmailServiceProtocol
     private let emailServiceV1: EmailServiceV1Protocol
     private let featureFlagger: DBPFeatureFlagging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
+    private let debugEventHandler: ((String) -> Void)?
 
-    public init(database: DataBrokerProtectionRepository,
+    /// - Parameters:
+    ///   - emailConfirmationStore: Persists confirmation state for email decoupling (DB in prod, in-memory in debug).
+    ///   - database: Optional repository for DB side effects (pixels/history/scheduling). Not used in debug.
+    ///   - emailServiceV0: Legacy API used for email generation and legacy confirmation lookups.
+    ///   - emailServiceV1: V1 API used for decoupled email confirmation polling and extraction.
+    ///   - featureFlagger: Controls decoupling and related flow switches.
+    ///   - pixelHandler: Optional pixel handler.
+    ///   - debugEventHandler: Debug-only hook to surface email confirmation events in the UI.
+    public init(emailConfirmationStore: EmailConfirmationSupporting,
+                database: DataBrokerProtectionRepository?,
                 emailServiceV0: EmailServiceProtocol,
                 emailServiceV1: EmailServiceV1Protocol,
                 featureFlagger: DBPFeatureFlagging,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?) {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?,
+                debugEventHandler: ((String) -> Void)? = nil) {
+        self.emailConfirmationStore = emailConfirmationStore
         self.database = database
         self.emailServiceV0 = emailServiceV0
         self.emailServiceV1 = emailServiceV1
         self.featureFlagger = featureFlagger
         self.pixelHandler = pixelHandler
+        self.debugEventHandler = debugEventHandler
     }
 
     public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
@@ -61,7 +96,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                     profileQueryId: Int64?,
                                                     extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
-        let emailData = try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
+        let emailData = try await getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
 
         if featureFlagger.isEmailConfirmationDecouplingFeatureOn {
             guard let dataBrokerId = dataBrokerId,
@@ -71,14 +106,18 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 throw DataBrokerProtectionError.dataNotInDatabase
             }
 
-            try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
-                                                     brokerId: dataBrokerId,
-                                                     extractedProfileId: extractedProfileId,
-                                                     generatedEmail: emailData.emailAddress,
-                                                     attemptID: attemptId.uuidString)
+            try emailConfirmationStore.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
+                                                                   brokerId: dataBrokerId,
+                                                                   extractedProfileId: extractedProfileId,
+                                                                   generatedEmail: emailData.emailAddress,
+                                                                   attemptID: attemptId.uuidString)
         }
 
         return emailData
+    }
+
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
     }
 
     public func getConfirmationLink(from email: String,
@@ -93,13 +132,62 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                      shouldRunNextStep: shouldRunNextStep)
     }
 
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             extract: [String],
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s, extract: \(extract.joined(separator: ","), privacy: .public)")
+        let deadline = Date().addingTimeInterval(totalTimeout)
+        let pollingTimeInNanoseconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
+        let item = EmailDataRequestItemV1(email: email, attemptId: attemptId.uuidString)
+
+        while Date() < deadline {
+            let response = try await emailServiceV1.fetchEmailData(items: [item])
+
+            if !shouldRunNextStep() {
+                throw EmailError.cancelled
+            }
+
+            guard let responseItem = response.items.first else {
+                throw EmailError.unknownStatusReceived(email: email)
+            }
+
+            switch responseItem.status {
+            case .ready:
+                let returnedKeys = Set(responseItem.data.map(\.name))
+                guard extract.allSatisfy(returnedKeys.contains) else {
+                    Logger.service.log("✉️ [EmailConfirmationDataService] Ready but missing extract keys for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                    try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+                    continue
+                }
+                var emailData: ExtractedEmailData = [:]
+                for datum in responseItem.data where extract.contains(datum.name) {
+                    emailData[datum.name] = datum.value
+                }
+                return emailData
+            case .error, .unknown:
+                Logger.service.error("✉️ [EmailConfirmationDataService] Email-data returned status=\(responseItem.status.rawValue, privacy: .public), error=\(responseItem.errorCode?.rawValue ?? "", privacy: .public)")
+                throw responseItem.errorCode?.asEmailError ?? .unknownStatusReceived(email: email)
+            case .pending:
+                Logger.service.log("✉️ [EmailConfirmationDataService] Email-data pending for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+            }
+        }
+
+        Logger.service.error("✉️ [EmailConfirmationDataService] Email-data polling timed out for: \(email, privacy: .public)")
+        throw EmailError.linkExtractionTimedOut
+    }
+
     public func checkForEmailConfirmationData() async throws {
         guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
 
         Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
+        debugEventHandler?("Checking for email confirmation data...")
 
-        let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
-        let activeConfirmationIdentifiers = try database.fetchIdentifiersForActiveEmailConfirmations()
+        let recordsAwaitingLink = try emailConfirmationStore.fetchOptOutEmailConfirmationsAwaitingLink()
+        let activeConfirmationIdentifiers = try emailConfirmationStore.fetchIdentifiersForActiveEmailConfirmations()
 
         let filteredRecords = recordsAwaitingLink.filter { record in
             activeConfirmationIdentifiers.contains(where: {
@@ -123,13 +211,14 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 switch item.status {
                 case .ready:
                     if let record = records[email: item.email, attemptId: item.attemptId] {
-                        let broker = try? database.fetchBroker(with: record.brokerId)
+                        let broker = try? database?.fetchBroker(with: record.brokerId)
                         Logger.service.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(broker?.url ?? "unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
-                        try database.updateOptOutEmailConfirmationLink(item.confirmationLink,
-                                                                       emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
-                                                                       profileQueryId: record.profileQueryId,
-                                                                       brokerId: record.brokerId,
-                                                                       extractedProfileId: record.extractedProfileId)
+                        debugEventHandler?("Email confirmation link ready for \(item.email)")
+                        try emailConfirmationStore.updateOptOutEmailConfirmationLink(item.confirmationLink,
+                                                                                     emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
+                                                                                     profileQueryId: record.profileQueryId,
+                                                                                     brokerId: record.brokerId,
+                                                                                     extractedProfileId: record.extractedProfileId)
                         if let broker, let beDate = item.linkObtainedOnBEDate {
                             let ageMs = Date().timeIntervalSince(beDate) * 1000
                             pixelHandler?.fire(.serviceEmailConfirmationLinkClientReceived(dataBrokerURL: broker.url,
@@ -139,25 +228,28 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                     }
                 case .pending:
                     Logger.service.log("✉️ [EmailConfirmationDataService] Email still pending for: \(item.email, privacy: .public), attemptId: \(item.attemptId, privacy: .public)")
+                    debugEventHandler?("Email confirmation pending for \(item.email)")
                     continue
                 case .unknown, .error:
                     // These are unrecoverable errors and we'll need to set it up for future retry
                     Logger.service.error("✉️ [EmailConfirmationDataService] Email confirmation failed for \(item.email, privacy: .public): status=\(item.status.rawValue, privacy: .public), error=\(item.errorCode?.rawValue ?? "", privacy: .public)")
+                    debugEventHandler?("Email confirmation failed for \(item.email): status=\(item.status.rawValue), error=\(item.errorCode?.rawValue ?? "")")
                     if let record = records[email: item.email, attemptId: item.attemptId] {
-                        if let broker = try? database.fetchBroker(with: record.brokerId) {
+                        if let broker = try? database?.fetchBroker(with: record.brokerId) {
                             pixelHandler?.fire(.serviceEmailConfirmationLinkBackendStatusError(dataBrokerURL: broker.url,
                                                                                                brokerVersion: broker.version,
                                                                                                status: item.status.rawValue,
                                                                                                errorCode: item.errorCode?.rawValue))
                         }
-                        try database.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
-                                                                   brokerId: record.brokerId,
-                                                                   extractedProfileId: record.extractedProfileId)
-                        try database.add(.init(extractedProfileId: record.extractedProfileId,
-                                               brokerId: record.brokerId,
-                                               profileQueryId: record.profileQueryId,
-                                               type: .error(error: .emailError(item.errorCode?.asEmailError))))
-                        if let broker = try database.fetchBroker(with: record.brokerId) {
+                        try emailConfirmationStore.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
+                                                                                 brokerId: record.brokerId,
+                                                                                 extractedProfileId: record.extractedProfileId)
+                        try database?.add(.init(extractedProfileId: record.extractedProfileId,
+                                                brokerId: record.brokerId,
+                                                profileQueryId: record.profileQueryId,
+                                                type: .error(error: .emailError(item.errorCode?.asEmailError))))
+                        if let database,
+                           let broker = try database.fetchBroker(with: record.brokerId) {
                             try updateOperationDataDates(origin: .emailConfirmation,
                                                          brokerId: record.brokerId,
                                                          profileQueryId: record.profileQueryId,
@@ -172,6 +264,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
 
         try await emailServiceV1.deleteEmailData(items: itemsToDelete)
         Logger.service.log("✉️ [EmailConfirmationDataService] Deleted \(itemsToDelete.count, privacy: .public) processed email data items from backend")
+        debugEventHandler?("Deleted \(itemsToDelete.count) processed email data items from backend")
     }
 
     private func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,

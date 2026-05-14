@@ -17,12 +17,11 @@
 //
 
 import AIChat
-import BrowserServicesKit
-import UserScript
 import Common
+import PrivacyConfig
+import UserScript
 
 enum AIChatMessageType {
-    case nativeConfigValues
     case nativeHandoffData
     case nativePrompt
     case chatRestorationData
@@ -30,6 +29,7 @@ enum AIChatMessageType {
 }
 
 protocol AIChatMessageHandling {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
     func setData(_ data: Any?, forMessageType type: AIChatMessageType)
 }
@@ -40,23 +40,24 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
     private let pageContextHandler: AIChatPageContextHandler
+    private let isNativeStorageBridgeAvailable: Bool
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
-         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler()) {
+         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler(),
+         isNativeStorageBridgeAvailable: Bool = false) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
         self.pageContextHandler = pageContextHandler
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
         switch type {
-        case .nativeConfigValues:
-            return getNativeConfigValues()
         case .nativeHandoffData:
             return getNativeHandoffData()
         case .nativePrompt:
@@ -84,32 +85,29 @@ final class AIChatMessageHandler: AIChatMessageHandling {
 
 // MARK: - Messages
 extension AIChatMessageHandler {
-    private func getNativeConfigValues() -> Encodable? {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         let appVersion = AppVersion.shared.versionAndBuildNumber
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                            supportsClosingAIChat: true,
-                                            supportsOpeningSettings: true,
-                                            supportsNativePrompt: true,
-                                            supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
-                                            supportsNativeChatInput: false,
-                                            supportsURLChatIDRestoration: true,
-                                            supportsFullChatRestoration: true,
-                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
-                                            appVersion: appVersion)
-        } else {
-            let defaults = AIChatNativeConfigValues.defaultValues
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
-                                            supportsClosingAIChat: defaults.supportsClosingAIChat,
-                                            supportsOpeningSettings: defaults.supportsOpeningSettings,
-                                            supportsNativePrompt: defaults.supportsNativePrompt,
-                                            supportsStandaloneMigration: defaults.supportsStandaloneMigration,
-                                            supportsNativeChatInput: defaults.supportsNativeChatInput,
-                                            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
-                                            supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-                                            supportsPageContext: defaults.supportsPageContext,
-                                            appVersion: appVersion)
-        }
+        let defaults = AIChatNativeConfigValues.defaultValues
+        return AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: true,
+            supportsClosingAIChat: true,
+            supportsOpeningSettings: true,
+            supportsNativePrompt: true,
+            supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
+            supportsNativeChatInput: false,
+            supportsURLChatIDRestoration: true,
+            supportsFullChatRestoration: true,
+            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
+            supportsAIChatFullMode: false,
+            supportsAIChatContextualMode: false,
+            appVersion: appVersion,
+            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
+            supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
+            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
+        )
     }
 
     private func getNativeHandoffData() -> Encodable? {

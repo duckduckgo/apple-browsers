@@ -23,6 +23,7 @@ enum PinnableView: String {
     case autofill
     case bookmarks
     case downloads
+    case feedback
     case homeButton
     case networkProtection
     case share
@@ -39,8 +40,6 @@ protocol PinningManager {
 }
 
 final class LocalPinningManager: PinningManager {
-
-    static let shared = LocalPinningManager()
 
     static let pinnedViewChangedNotificationViewTypeKey = "pinning.pinnedViewChanged.viewType"
 
@@ -106,6 +105,7 @@ final class LocalPinningManager: PinningManager {
         case .autofill: return isPinned(.autofill) ? UserText.hideAutofillShortcut : UserText.showAutofillShortcut
         case .bookmarks: return isPinned(.bookmarks) ? UserText.hideBookmarksShortcut : UserText.showBookmarksShortcut
         case .downloads: return isPinned(.downloads) ? UserText.hideDownloadsShortcut : UserText.showDownloadsShortcut
+        case .feedback: return isPinned(.feedback) ? UserText.hideFeedbackShortcut : UserText.showFeedbackShortcut
         case .homeButton: return ""
         case .networkProtection:
             return isPinned(.networkProtection) ? UserText.hideNetworkProtectionShortcut : UserText.showNetworkProtectionShortcut
@@ -141,3 +141,37 @@ extension NSNotification.Name {
     static let PinnedViewsChanged = NSNotification.Name("pinning.pinnedViewsChanged")
 
 }
+
+#if DEBUG
+final class MockPinningManager: PinningManager {
+    var pinnedViews: Set<PinnableView> = []
+
+    func togglePinning(for view: PinnableView) {
+        if pinnedViews.contains(view) {
+            pinnedViews.remove(view)
+        } else {
+            pinnedViews.insert(view)
+        }
+    }
+
+    func isPinned(_ view: PinnableView) -> Bool {
+        pinnedViews.contains(view)
+    }
+
+    func wasManuallyToggled(_ view: PinnableView) -> Bool {
+        false
+    }
+
+    func pin(_ view: PinnableView) {
+        pinnedViews.insert(view)
+    }
+
+    func unpin(_ view: PinnableView) {
+        pinnedViews.remove(view)
+    }
+
+    func shortcutTitle(for view: PinnableView) -> String {
+        ""
+    }
+}
+#endif

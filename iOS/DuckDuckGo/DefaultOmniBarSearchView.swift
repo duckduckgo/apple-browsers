@@ -24,9 +24,16 @@ import DesignResourcesKitIcons
 final class DefaultOmniBarSearchView: UIView {
 
     let privacyInfoContainer: PrivacyInfoContainerView! = {
-        return PrivacyInfoContainerView.load(nibName: "PrivacyInfoContainer")
+        let container = PrivacyInfoContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        return container
     }()
-    let notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
+    let notificationContainer: OmniBarNotificationContainerView! = {
+        let container = OmniBarNotificationContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.isUserInteractionEnabled = false  // Start disabled, only enable when showing notification
+        return container
+    }()
 
     let loupeIconView = UIImageView()
     let customIconView = UIImageView()
@@ -47,8 +54,19 @@ final class DefaultOmniBarSearchView: UIView {
     let cancelButton = BrowserChromeButton(.secondary)
     let voiceSearchButton = BrowserChromeButton()
     let aiChatButton = BrowserChromeButton()
+    let modeToggleView = PadOmnibarToggleView()
+    private let modeToggleContainer = UIView()
+    
+    var isModeToggleHidden: Bool {
+        get { modeToggleContainer.isHidden }
+        set {
+            modeToggleContainer.isHidden = newValue
+            modeToggleView.isHidden = newValue
+        }
+    }
 
     private let mainStackView = UIStackView()
+    private var mainStackLeadingConstraint: NSLayoutConstraint?
 
     init() {
         super.init(frame: .zero)
@@ -80,19 +98,25 @@ final class DefaultOmniBarSearchView: UIView {
 
         textField.alpha = 1
     }
+    
+    func updateFireModeAppearance(fireMode: Bool) {
+        textField.tintColor = fireMode
+        ? UIColor(singleUseColor: .fireModeAccent)
+        : UIColor(designSystemColor: .accent)
+    }
 
     private func setUpSubviews() {
         addSubview(mainStackView)
 
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
-        mainStackView.addSubview(notificationContainer)
-
         mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
         mainStackView.addSubview(privacyInfoContainer)
+
+        mainStackView.addSubview(notificationContainer)
 
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
@@ -101,6 +125,8 @@ final class DefaultOmniBarSearchView: UIView {
         trailingItemsContainer.addArrangedSubview(customizableButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(aiChatButton)
+        trailingItemsContainer.addArrangedSubview(modeToggleContainer)
+        modeToggleContainer.addSubview(modeToggleView)
 
         leftIconContainer.addSubview(loupeIconView)
         leftIconContainer.addSubview(dismissButtonView)
@@ -108,11 +134,15 @@ final class DefaultOmniBarSearchView: UIView {
 
     private func setUpConstraints() {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
-        notificationContainer.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
+        modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
+        modeToggleView.translatesAutoresizingMaskIntoConstraints = false
+
+        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        mainStackLeadingConstraint = leadingConstraint
 
         NSLayoutConstraint.activate([
-            mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             mainStackView.topAnchor.constraint(equalTo: topAnchor),
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -128,7 +158,14 @@ final class DefaultOmniBarSearchView: UIView {
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
             privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
-            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor)
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
+            privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),
+
+            modeToggleContainer.heightAnchor.constraint(equalToConstant: 44),
+            modeToggleView.leadingAnchor.constraint(equalTo: modeToggleContainer.leadingAnchor, constant: 8),
+            modeToggleView.trailingAnchor.constraint(equalTo: modeToggleContainer.trailingAnchor, constant: -6),
+            modeToggleView.centerYAnchor.constraint(equalTo: modeToggleContainer.centerYAnchor)
         ])
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
@@ -139,11 +176,18 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
 
-        // Use autoresizing mask here so it's less code
-        loupeIconView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        dismissButtonView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        loupeIconView.frame = leftIconContainer.bounds
-        dismissButtonView.frame = leftIconContainer.bounds
+        loupeIconView.translatesAutoresizingMaskIntoConstraints = false
+        dismissButtonView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            loupeIconView.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
+            loupeIconView.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
+            loupeIconView.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
+            loupeIconView.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
+            dismissButtonView.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
+            dismissButtonView.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
+            dismissButtonView.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
+            dismissButtonView.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
+        ])
     }
 
     private func setUpProperties() {
@@ -163,6 +207,12 @@ final class DefaultOmniBarSearchView: UIView {
 
         aiChatButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
         DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
+
+        isModeToggleHidden = true
+
+        if UnifiedToggleInputFeature().isAvailable {
+            separatorView.lineColor = UIColor(designSystemColor: .decorationPrimary)
+        }
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         DefaultOmniBarView.setUpCommonProperties(for: reloadButton)
@@ -190,5 +240,10 @@ final class DefaultOmniBarSearchView: UIView {
         customIconView.contentMode = .center
         customIconView.isHidden = true
         customIconView.image = nil
+    }
+
+    func setLeftIconAreaHidden(_ hidden: Bool) {
+        leftIconContainerPlaceholder.isHidden = hidden
+        mainStackLeadingConstraint?.constant = hidden ? 16 : 0
     }
 }

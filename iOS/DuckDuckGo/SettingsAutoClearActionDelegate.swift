@@ -20,5 +20,5 @@
 import Foundation
 
 protocol SettingsAutoClearActionDelegate: AnyObject {
-    func performDataClearing()
+    func performDataClearing(for request: FireRequest)
 }

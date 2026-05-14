@@ -22,6 +22,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 /// A generalised view for picking items from a list with a static header image.
 struct ListBasedPickerWithHeaderImage<T: Hashable>: View {
@@ -69,16 +70,15 @@ struct ListBasedPickerWithHeaderImage<T: Hashable>: View {
                         iconProvider?(option)
 
                         Text(verbatim: descriptionForOption(option))
+                            .daxBodyRegular()
                             .lineLimit(2)
                             .layoutPriority(1)
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                        if selectedOption == option {
-                            Spacer()
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
-                                .foregroundStyle(Color(designSystemColor: .accent))
-                        } else {
-                            Spacer(minLength: 24)
-                        }
+                        Spacer()
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
+                            .foregroundStyle(Color(designSystemColor: .accent))
+                            .opacity(selectedOption == option ? 1 : 0)
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
                 }

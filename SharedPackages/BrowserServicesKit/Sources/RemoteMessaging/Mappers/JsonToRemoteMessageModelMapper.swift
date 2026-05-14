@@ -54,6 +54,10 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case isFreemiumPIREligible
+    case freemiumPIRDidActivate
+    case freemiumPIRFirstScanResult
+    case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
     case shouldShowWinBackOfferUrgencyMessage
@@ -96,6 +100,10 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isFreemiumPIREligible: return FreemiumPIREligibleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRDidActivate: return FreemiumPIRDidActivateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRFirstScanResult: return FreemiumPIRFirstScanResultMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
@@ -118,13 +126,22 @@ struct JsonToRemoteMessageModelMapper {
                 return
             }
 
+            let displayConditions: DisplayConditions?
+            do {
+                displayConditions = try mapToDisplayConditions(message: message)
+            } catch {
+                Logger.remoteMessaging.debug("Invalid display conditions for message \(message.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return
+            }
+
             var remoteMessage = RemoteMessageModel(
                 id: message.id,
                 surfaces: surfaces,
                 content: content,
                 matchingRules: message.matchingRules ?? [],
                 exclusionRules: message.exclusionRules ?? [],
-                isMetricsEnabled: message.isMetricsEnabled
+                isMetricsEnabled: message.isMetricsEnabled,
+                displayConditions: displayConditions
             )
 
             if let translation = getTranslation(from: message.translations, for: Locale.current) {
@@ -134,6 +151,15 @@ struct JsonToRemoteMessageModelMapper {
             remoteMessages.append(remoteMessage)
         }
         return remoteMessages
+    }
+
+    static func mapToDisplayConditions(message: RemoteMessageResponse.JsonRemoteMessage) throws -> DisplayConditions? {
+        try message.displayConditions.flatMap { conditions in
+            let validator = MappingValidator(root: conditions)
+            let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
+            let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+        }
     }
 
     static func mapToSurfaces(jsonSurfaces: [String]?, supportedSurfacesForMessage: RemoteMessageSurfaceType, messageId: String) -> RemoteMessageSurfaceType? {
@@ -146,6 +172,8 @@ struct JsonToRemoteMessageModelMapper {
                     .modal
             case .dedicatedTab:
                     .dedicatedTab
+            case .tabBar:
+                    .tabBar
             }
         }
 
@@ -173,9 +201,13 @@ struct JsonToRemoteMessageModelMapper {
             }
         }
 
-        // If surface is not defined set to supportedSurfacesForMessage for backward compatibility (e.g. `.small` -> `newTabPage`, `promoList` -> `[.modal, .dedicatedTab]`)
+        // If surface is not defined then set to supportedSurfacesForMessage for backward compatibility (e.g. `.small` -> `newTabPage`, `promoList` -> `[.modal, .dedicatedTab]`)
+        // If the supported surfaces contains `newTabPage` then we return ONLY that, otherwise messages could appear on the tab bar unexpectedly.
         guard let jsonSurfaces else {
             Logger.remoteMessaging.debug("No surfaces declared for message \(messageId, privacy: .public)")
+            if supportedSurfacesForMessage.contains(.newTabPage) {
+                return .newTabPage
+            }
             return supportedSurfacesForMessage
         }
 
@@ -194,6 +226,8 @@ struct JsonToRemoteMessageModelMapper {
 
     static func mapToContent(content: RemoteMessageResponse.JsonContent,
                              surveyActionMapper: RemoteMessagingSurveyActionMapping) -> RemoteMessageModelType? {
+        let imageUrl = content.imageUrl.flatMap(URL.init(string:))
+
         switch RemoteMessageResponse.JsonMessageType(rawValue: content.messageType) {
         case .small:
             guard !content.titleText.isEmpty, !content.descriptionText.isEmpty else {
@@ -209,7 +243,8 @@ struct JsonToRemoteMessageModelMapper {
 
             return .medium(titleText: content.titleText,
                            descriptionText: content.descriptionText,
-                           placeholder: mapToPlaceholder(content.placeholder))
+                           placeholder: mapToPlaceholder(content.placeholder),
+                           imageUrl: imageUrl)
         case .bigSingleAction:
             guard let primaryActionText = content.primaryActionText,
                   !primaryActionText.isEmpty,
@@ -221,6 +256,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigSingleAction(titleText: content.titleText,
                                     descriptionText: content.descriptionText,
                                     placeholder: mapToPlaceholder(content.placeholder),
+                                    imageUrl: imageUrl,
                                     primaryActionText: primaryActionText,
                                     primaryAction: action)
         case .bigTwoAction:
@@ -237,6 +273,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigTwoAction(titleText: content.titleText,
                                  descriptionText: content.descriptionText,
                                  placeholder: mapToPlaceholder(content.placeholder),
+                                 imageUrl: imageUrl,
                                  primaryActionText: primaryActionText,
                                  primaryAction: primaryAction,
                                  secondaryActionText: secondaryActionText,
@@ -252,6 +289,7 @@ struct JsonToRemoteMessageModelMapper {
             return .promoSingleAction(titleText: content.titleText,
                                       descriptionText: content.descriptionText,
                                       placeholder: mapToPlaceholder(content.placeholder),
+                                      imageUrl: imageUrl,
                                       actionText: actionText,
                                       action: action)
 
@@ -330,8 +368,10 @@ struct JsonToRemoteMessageModelMapper {
             return .macComputer
         case .newForMacAndWindows:
             return .newForMacAndWindows
+        case .macAndWindows:
+            return .macAndWindows
         case .privacyShield:
-            return .privacyShield
+            return .subscription
         case .aiChat:
             return .aiChat
         case .visualDesignUpdate:
@@ -340,8 +380,24 @@ struct JsonToRemoteMessageModelMapper {
             return .imageAI
         case .radar:
             return .radar
+        case .radarCheckGreen:
+            return .radarCheckGreen
+        case .radarCheckPurple:
+            return .radarCheckPurple
         case .keyImport:
             return .keyImport
+        case .mobileCustomization:
+            return .mobileCustomization
+        case .newTabOptions:
+            return .newTabOptions
+        case .splitBarMobile:
+            return .splitBarMobile
+        case .pir:
+            return .pir
+        case .subscription:
+            return .subscription
+        case .veryCriticalUpdate:
+            return .veryCriticalUpdate
         case .none:
             return .announce
         }
@@ -403,15 +459,16 @@ private extension JsonToRemoteMessageModelMapper {
         } else {
             nil
         }
-        let listItems = try validator.compactMap(\.listItems) { items throws(MappingError) in
+        let imageUrl = jsonContent.imageUrl.flatMap(URL.init(string:))
+        let listItems = try validator.mapRequired(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
         }
         let primaryActionText = try validator.notNilOrEmpty(\.primaryActionText)
-        let primaryAction = try validator.compactMap(\.primaryAction) { action in
+        let primaryAction = try validator.mapRequired(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
-        return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        return .cardsList(titleText: titleText, placeholder: placeHolderImage, imageUrl: imageUrl, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
     }
 
     static func mapToListItems(_ jsonListItems: [RemoteMessageResponse.JsonListItem], surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> [RemoteMessageModelType.ListItem] {
@@ -420,23 +477,45 @@ private extension JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: jsonListItem)
 
             let id = try validator.notEmpty(\.id)
-            let titleText = try validator.notEmpty(\.titleText)
             let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
-            let descriptionText = jsonListItem.descriptionText ?? ""
-            let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-            let remoteAction = try validator.compactMap(\.primaryAction) { action in
-                mapToAction(action, surveyActionMapper: surveyActionMapper)
+
+            let matchingRules: [Int]
+            let exclusionRules: [Int]
+
+            let listItemType: RemoteMessageModelType.ListItem.ListItemType
+            switch jsonType {
+            case .featuredTwoLinesSingleActionItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let primaryRemoteAction = jsonListItem.primaryAction.flatMap { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
+            case .twoLinesItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = jsonListItem.descriptionText ?? ""
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let remoteAction = jsonListItem.primaryAction.flatMap { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
+            case .titledSection:
+                let titleText = try validator.notEmpty(\.titleText)
+                let itemIDs = try validator.notNilOrEmpty(\.itemIDs)
+                listItemType = .titledSection(titleText: titleText, itemIDs: itemIDs)
+                // Sections don't support matching/exclusion rules
+                matchingRules = []
+                exclusionRules = []
             }
-            let matchingRules = jsonListItem.matchingRules ?? []
-            let exclusionRules = jsonListItem.exclusionRules ?? []
 
             return RemoteMessageModelType.ListItem(
                 id: id,
-                type: RemoteMessageModelType.ListItem.ListItemType(from: jsonType),
-                titleText: titleText,
-                descriptionText: descriptionText,
-                placeholderImage: placeHolderImage,
-                action: remoteAction,
+                type: listItemType,
                 matchingRules: matchingRules,
                 exclusionRules: exclusionRules
             )
@@ -450,6 +529,10 @@ private extension JsonToRemoteMessageModelMapper {
                 // Check we have not mapped already an item with the same id and discard it
                 guard !mappedIDs.contains(jsonListItem.id) else { throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.id) }
                 let item = try mapToListItem(jsonListItem, surveyActionMapper: surveyActionMapper)
+                // Check we have not mapped already a featured card (Only one can exist per list).
+                if item.type.isFeaturedItem, items.contains(where: \.type.isFeaturedItem) {
+                    throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.type)
+                }
                 // Only insert ID after successful parsing
                 mappedIDs.insert(jsonListItem.id)
                 items.append(item)
@@ -469,22 +552,9 @@ private extension JsonToRemoteMessageModelMapper {
     static func supportedSurfaces(for messageType: RemoteMessageModelType) -> Set<RemoteMessageResponse.JsonSurface> {
         switch messageType {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
-            return [.newTabPage]
+            return [.newTabPage, .tabBar]
         case .cardsList:
             return [.modal, .dedicatedTab]
-        }
-    }
-
-}
-
-// MARK: - Item Helpers
-
-extension RemoteMessageModelType.ListItem.ListItemType {
-
-    init(from jsonType: RemoteMessageResponse.JsonListItemType) {
-        switch jsonType {
-        case .twoLinesItem:
-            self = .twoLinesItem
         }
     }
 

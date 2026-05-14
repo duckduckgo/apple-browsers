@@ -18,6 +18,10 @@
 
 import AppKit
 import Combine
+import Common
+import DesignResourcesKitIcons
+import FeatureFlags
+import PrivacyConfig
 import WebKit
 
 struct OtherTabBarViewItemsState {
@@ -31,8 +35,9 @@ protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
     var isPinned: Bool { get }
     var title: String { get }
-    var titlePublisher: Published<String>.Publisher { get }
+    var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> { get }
     var url: URL? { get }
+    var favicon: NSImage? { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
@@ -41,27 +46,38 @@ protocol TabBarViewModel {
     var canKillWebContentProcess: Bool { get }
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
+    var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
+    var isSuspended: Bool { get }
+    var canBeSuspended: Bool { get }
 }
 
 extension TabViewModel: TabBarViewModel {
     var isPinned: Bool {
         tab.isPinned
     }
-
-    var titlePublisher: Published<String>.Publisher { $title }
+    var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
+        $title
+            .combineLatest($isLoading)
+            .eraseToAnyPublisher()
+    }
     var url: URL? { tab.content.urlForWebView }
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { tab.$content.eraseToAnyPublisher() }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var canBeSuspended: Bool { tab.tabSuspension?.canBeSuspended ?? false }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
         tab.$isLoading
-            .eraseToAnyPublisher()
             .combineLatest(tab.$error)
             .eraseToAnyPublisher()
+    }
+    var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
+
+    var isSuspended: Bool {
+        false
     }
 }
 
@@ -83,6 +99,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCloseOtherAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem)
+    @MainActor func tabBarViewItemNewToTheRightAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDuplicateAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemPinAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemBookmarkThisPageAction(_: TabBarViewItem)
@@ -92,6 +109,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemMoveToNewBurnerWindowAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemFireproofSite(_: TabBarViewItem)
     @MainActor func tabBarViewItemMuteUnmuteSite(_: TabBarViewItem)
+    @MainActor func tabBarViewItemSuspendAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemRemoveFireproofing(_: TabBarViewItem)
     @MainActor func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue: String)
 
@@ -132,28 +150,30 @@ final class TabBarItemCellView: NSView {
     }
 
     private enum TextFieldMaskGradientSize {
-        static let width: CGFloat = 6
+        static let width: CGFloat = 32
         static let trailingSpace: CGFloat = 0
         static let trailingSpaceWithButton: CGFloat = 20
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
+    private enum Metrics {
+        static let audioAndCrashButtonSide: CGFloat = 16
+        static let closeButtonDimension: CGFloat = 20
+        static let faviconImageSide: CGFloat = 20
+        static let permissionButtonSideMin: CGFloat = 16
+        static let titleHeight: CGFloat = 16
+        static let titlePaddingOnCompact: CGFloat = 16
+    }
+
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
-    fileprivate let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.displaysTabsProgressIndicator
+    private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
+
+    private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
-
-    /// Will be removed in favor of `faviconView`
-    fileprivate lazy var faviconImageView = {
-        let faviconImageView = NSImageView()
-        faviconImageView.imageScaling = .scaleProportionallyDown
-        return faviconImageView
-    }()
-
-    /// Will be removed in favor of `faviconView`
-    fileprivate let faviconPlaceholderView = LetterView()
 
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
@@ -179,19 +199,6 @@ final class TabBarItemCellView: NSView {
         return audioButton
     }()
 
-    /// Will be removed in favor of `titleView`
-    fileprivate let titleTextField = {
-        let titleTextField = NSTextField()
-        titleTextField.wantsLayer = true
-        titleTextField.isEditable = false
-        titleTextField.alignment = .left
-        titleTextField.drawsBackground = false
-        titleTextField.isBordered = false
-        titleTextField.font = NSFont.systemFont(ofSize: 13)
-        titleTextField.lineBreakMode = .byClipping
-        return titleTextField
-    }()
-
     fileprivate lazy var permissionButton = {
         let permissionButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.permissionButtonAction))
         permissionButton.bezelStyle = .shadowlessSquare
@@ -205,6 +212,7 @@ final class TabBarItemCellView: NSView {
 
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
+        closeButton.frame.size = NSSize(width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
         closeButton.bezelStyle = .shadowlessSquare
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
@@ -232,6 +240,7 @@ final class TabBarItemCellView: NSView {
         return mouseOverView
     }()
 
+    /// Deprecated: Replaced by `TabBackgroundView`
     fileprivate let roundedBackgroundColorView = {
         let view = ColorView(frame: .zero)
         view.alphaValue = 0.8
@@ -240,12 +249,14 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
+    /// Deprecated: Replaced by `TabBackgroundView`
     fileprivate lazy var rightRampView: RampView = {
         let view = RampView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
 
+    /// Deprecated: Replaced by `TabBackgroundView`
     fileprivate lazy var leftRampView: RampView = {
         let view = RampView()
         view.isFlippedHorizontally = true
@@ -304,70 +315,54 @@ final class TabBarItemCellView: NSView {
             .layerMaxXMaxYCorner
         ]
 
-        if theme.tabStyleProvider.shouldShowSShapedTab {
+        if displaysTabsAnimations {
+            addSubview(backgroundView)
+        } else if theme.tabStyleProvider.shouldShowSShapedTab {
             addSubview(leftRampView)
             addSubview(rightRampView)
         } else {
             mouseOverView.layer?.addSublayer(borderLayer)
         }
 
-        if !displaysTabsProgressIndicator {
-            titleTextField.textColor = .labelColor
-        }
-
         addSubview(mouseOverView)
-        if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+        if !displaysTabsAnimations, theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
             addSubview(roundedBackgroundColorView)
         }
 
-        if displaysTabsProgressIndicator {
-            faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
-            titleView.setAccessibilityIdentifier("TabBarViewItem.title")
-        } else {
-            faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
-            faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
-            titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
-        }
+        faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        titleView.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
         closeButton.setAccessibilityLabel(UserText.closeTab)
         closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
-        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
+        closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
 
         permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
         // Accessibility label and toolTip are updated in `updateUsedPermissions`
-        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
-        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         crashIndicatorButton.setAccessibilityIdentifier("TabBarViewItem.crashButton")
         crashIndicatorButton.toolTip = UserText.tabCrashPopoverTitle
         crashIndicatorButton.setAccessibilityTitle(UserText.tabCrashPopoverTitle)
         crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
-        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
-        if displaysTabsProgressIndicator {
-            addSubview(faviconView)
-        } else {
-            addSubview(faviconImageView)
-            addSubview(faviconPlaceholderView)
-        }
-
+        addSubview(faviconView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
-
-        if displaysTabsProgressIndicator {
-            addSubview(titleView)
-        } else {
-            addSubview(titleTextField)
-        }
-
+        addSubview(titleView)
         addSubview(permissionButton)
         addSubview(closeButton)
-        addSubview(rightSeparatorView)
+
+        if theme.tabStyleProvider.shouldShowTabSeparators {
+            addSubview(rightSeparatorView)
+        }
 
         subscribeToThemeChanges()
         applyThemeStyle()
@@ -379,6 +374,13 @@ final class TabBarItemCellView: NSView {
 
     override func layout() {
         super.layout()
+
+        withoutAnimation {
+            layout(widthStage: widthStage)
+        }
+    }
+
+    private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
         if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             let padding: CGFloat = 4
@@ -390,7 +392,18 @@ final class TabBarItemCellView: NSView {
                                                       height: height)
         }
 
-        if theme.tabStyleProvider.shouldShowSShapedTab {
+        if displaysTabsAnimations, backgroundView.frame != bounds {
+            withoutAnimation {
+                backgroundView.frame = bounds
+            }
+
+            withoutAnimation {
+                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
+            }
+
+        } else if theme.tabStyleProvider.shouldShowSShapedTab {
             withoutAnimation {
                 rightRampView.frame = CGRect(x: bounds.width, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
                 leftRampView.frame = CGRect(x: -RampView.Consts.rampWidth, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
@@ -416,20 +429,20 @@ final class TabBarItemCellView: NSView {
             layoutForPinnedMode()
         }
 
-        let separatorHeight = theme.tabStyleProvider.separatorHeight
-        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (separatorHeight / 2), width: 1, height: separatorHeight)
+        if theme.tabStyleProvider.shouldShowTabSeparators {
+            let separatorHeight = theme.tabStyleProvider.separatorHeight
+            rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (separatorHeight / 2), width: 1, height: separatorHeight)
+        }
     }
 
     private func layoutForNormalMode() {
         var minX: CGFloat = 12
 
-        if displaysTabsProgressIndicator && faviconView.isShown {
+        if faviconView.isShown {
             faviconView.frame = NSRect(x: minX, y: bounds.midY - 10, width: 20, height: 20)
             minX = faviconView.frame.maxX + 4
-        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
-            faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
-            minX = faviconImageView.frame.maxX + 4
         }
+
         if crashIndicatorButton.isShown {
             crashIndicatorButton.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = crashIndicatorButton.frame.maxX
@@ -439,7 +452,7 @@ final class TabBarItemCellView: NSView {
         }
         var maxX = bounds.maxX - 9
         if closeButton.isShown {
-            closeButton.frame = NSRect(x: maxX - 16, y: bounds.midY - 8, width: 16, height: 16)
+            closeButton.frame = NSRect(x: maxX - Metrics.closeButtonDimension, y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             maxX = closeButton.frame.minX - 4
         } else {
             maxX = max(maxX - 1 /* 28 title offset with favicon */, 12 /* without favicon */)
@@ -449,12 +462,7 @@ final class TabBarItemCellView: NSView {
         }
 
         minX += theme.tabStyleProvider.tabSpacing
-
-        if displaysTabsProgressIndicator {
-            titleView.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
-        } else {
-            titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
-        }
+        titleView.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
 
         updateTitleTextFieldMask()
     }
@@ -470,59 +478,55 @@ final class TabBarItemCellView: NSView {
             gradientPadding = TextFieldMaskGradientSize.trailingSpaceWithPermissionAndButton
         }
 
-        guard displaysTabsProgressIndicator else {
-            titleTextField.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
-            return
-        }
-
         titleView.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
     }
 
     private func layoutForCompactMode() {
-        let isFaviconShown = displaysTabsProgressIndicator ? faviconView.isShown : faviconImageView.isShown
-        let isTitleShown = displaysTabsProgressIndicator ? titleView.isShown : titleTextField.isShown
-        let numberOfElements: CGFloat = (isFaviconShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (isTitleShown ? 1 : 0)
-        let elementWidth: CGFloat = 16
-        var totalWidth = numberOfElements * elementWidth
+        let isAudioOrCrashShown = crashIndicatorButton.isShown || audioButton.isShown
+        let numberOfElements: CGFloat =
+            (faviconView.isShown        ? 1 : 0) +
+            (isAudioOrCrashShown        ? 1 : 0) +
+            (permissionButton.isShown   ? 1 : 0) +
+            (closeButton.isShown        ? 1 : 0)
+
+        var totalWidth =
+            (faviconView.isShown        ? Metrics.faviconImageSide : 0) +
+            (isAudioOrCrashShown        ? Metrics.audioAndCrashButtonSide : 0) +
+            (permissionButton.isShown   ? Metrics.permissionButtonSideMin : 0) +
+            (closeButton.isShown        ? Metrics.closeButtonDimension : 0)
+
         // tighten elements to fit all
         let spacing = min(4, bounds.width - 4 - totalWidth)
         totalWidth += (numberOfElements - 1) * spacing
+
         // shift all shown elements from center
         var x = (bounds.width - totalWidth) / 2
 
-        if displaysTabsProgressIndicator && faviconView.isShown {
+        if faviconView.isShown {
             assert(closeButton.isHidden)
-            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 10, width: 20, height: 20)
+            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 10, width: Metrics.faviconImageSide, height: Metrics.faviconImageSide)
             x = faviconView.frame.maxX + spacing
-        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
+        } else if titleView.isShown {
             assert(closeButton.isHidden)
-            faviconImageView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
-            x = faviconImageView.frame.maxX + spacing
-        } else if displaysTabsProgressIndicator && titleView.isShown {
-            assert(closeButton.isHidden)
-            titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
-            updateTitleTextFieldMask()
-        } else if !displaysTabsProgressIndicator && titleTextField.isShown {
-            assert(closeButton.isHidden)
-            titleTextField.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
+            titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: Metrics.titleHeight)
             updateTitleTextFieldMask()
         }
 
         if crashIndicatorButton.isShown {
-            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = crashIndicatorButton.frame.maxX + spacing
         } else if audioButton.isShown {
-            audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = audioButton.frame.maxX + spacing
         }
         if permissionButton.isShown {
             // make permission button from 16 to 24pt wide depending of available space
-            permissionButton.frame = NSRect(x: x.rounded() - spacing.rounded(), y: bounds.midY - 12, width: 16 + spacing.rounded() * 2, height: 24)
+            permissionButton.frame = NSRect(x: x.rounded() - spacing.rounded(), y: bounds.midY - 12, width: Metrics.permissionButtonSideMin + spacing.rounded() * 2, height: 24)
             x = permissionButton.frame.maxX
         }
         if closeButton.isShown {
             // close button appears in place of favicon in compact mode
-            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             x = closeButton.frame.maxX + spacing
         }
     }
@@ -530,24 +534,14 @@ final class TabBarItemCellView: NSView {
     private func layoutForPinnedMode() {
         assert(closeButton.isHidden)
         assert(permissionButton.isHidden)
+        assert(titleView.isHidden)
 
-        if displaysTabsProgressIndicator {
-            assert(titleView.isHidden)
-        } else {
-            assert(titleTextField.isHidden)
-        }
-
-        let elementWidth: CGFloat = displaysTabsProgressIndicator ? 20 : 16
+        let elementWidth: CGFloat = 20
         let x = (bounds.width - elementWidth) / 2
         let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - elementWidth * 0.5, width: elementWidth, height: elementWidth)
 
-        if displaysTabsProgressIndicator {
-            faviconView.frame = faviconFrame
-        } else if faviconImageView.isShown {
-            faviconImageView.frame = faviconFrame
-        } else if faviconPlaceholderView.isShown {
-            faviconPlaceholderView.frame = faviconFrame
-        }
+        faviconView.frame = faviconFrame
+
         if crashIndicatorButton.isShown {
             crashIndicatorButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
             crashIndicatorButton.cornerRadius = faviconFrame.height/2
@@ -570,28 +564,32 @@ final class TabBarItemCellView: NSView {
     }
 
     func clear() {
-        guard displaysTabsProgressIndicator else {
-            faviconImageView.image = nil
-            titleTextField.stringValue = ""
-            return
-        }
-
         faviconView.reset()
         titleView.reset()
     }
 
     var displaysBurnerHomeTitle: Bool {
-        let title = displaysTabsProgressIndicator ? titleView.title : titleTextField.stringValue
-        return title == UserText.burnerTabHomeTitle
+        titleView.title == UserText.burnerTabHomeTitle
     }
 
-    func displayTabTitleIfNeeded(title: String, url: URL?) {
-        guard displaysTabsProgressIndicator else {
-            titleTextField.stringValue = title
+    func displayTabTitleIfNeeded(title: String, url: URL?, isLoading: Bool) {
+        titleView.displayTitleIfNeeded(title: title, url: url, isLoading: isLoading)
+    }
+
+    func refreshProgressColors(rendered: Bool, url: URL?) {
+        faviconView.refreshSpinnerColorsIfNeeded(rendered: rendered)
+    }
+
+    func startSpinnerIfNeeded(isLoading: Bool, error: WKError?, url: URL?) {
+        faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
+    }
+
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
+        guard displaysTabsAnimations else {
             return
         }
 
-        titleView.displayTitleIfNeeded(title: title, url: url)
+        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
     }
 }
 
@@ -601,14 +599,19 @@ extension TabBarItemCellView: ThemeUpdateListening {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        leftRampView.rampColor = colorsProvider.navigationBackgroundColor
-        rightRampView.rampColor = colorsProvider.navigationBackgroundColor
-
-        mouseOverView.mouseOverColor = tabStyleProvider.hoverTabColor
-        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
+        if displaysTabsAnimations {
+            backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
+            backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
+        } else {
+            leftRampView.rampColor = colorsProvider.navigationBackgroundColor
+            rightRampView.rampColor = colorsProvider.navigationBackgroundColor
+            mouseOverView.mouseOverColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
+        }
     }
 }
-
+// MARK: NSAccessibilityRadioButton
 extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
 
     @objc func isAccessibilityElement() -> Bool {
@@ -711,7 +714,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
     enum Width {
-        static let minimum: CGFloat = 52
+        static let minimum: CGFloat = 54
         static let minimumSelected: CGFloat = 120
         static let maximum: CGFloat = 240
     }
@@ -756,6 +759,14 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Active Permission Icons (replaces favicon when permissions are in use)
+    private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    private var activePermissionIconTimer: Timer?
+    private var activePermissionTypes: [PermissionType] = []
+    private var currentActivePermissionIndex = 0
+
+    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
+
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
@@ -773,6 +784,17 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private var cell: TabBarItemCellView {
         view as! TabBarItemCellView // swiftlint:disable:this force_cast
+    }
+
+    /// Preferred popover anchor rect in this item's view coordinates.
+    /// Uses the favicon position when available.
+    func aiChatCloseWarningAnchorRect() -> NSRect {
+        if cell.faviconView.isShown {
+            return cell.faviconView.frame
+        }
+
+        // Fallback for compact states where favicon may be hidden.
+        return NSRect(x: view.bounds.midX - 1, y: view.bounds.minY, width: 2, height: view.bounds.height)
     }
 
     override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
@@ -813,6 +835,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
         }
+        activePermissionIconTimer?.invalidate()
     }
 
     override var isSelected: Bool {
@@ -838,6 +861,8 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
 
             updateSubviews()
+
+            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
             updateUsedPermissions()
         }
     }
@@ -848,12 +873,16 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     override func mouseDown(with event: NSEvent) {
-        if let menu = view.menu, NSEvent.isContextClick(event) {
+        if let menu = view.menu, event.isContextClick {
             NSMenu.popUpContextMenu(menu, with: event, for: view)
             return
         }
 
         super.mouseDown(with: event)
+    }
+
+    @objc private func newToTheRightAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemNewToTheRightAction(self)
     }
 
     @objc private func duplicateAction(_ sender: NSButton) {
@@ -891,11 +920,13 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var lastKnownIndexPath: IndexPath?
 
     @objc fileprivate func closeButtonAction(_ sender: Any) {
-        // due to async nature of NSCollectionView views removal
-        // leaving window._lastLeftHit set to the button will prevent
-        // continuous clicks on the Close button
-        // this should be removed when the Tab Bar is redone without NSCollectionView
-        (sender as? NSButton)?.window?.evilHackToClearLastLeftHitInWindow()
+        // If the close button is clicked multiple times, we need to reset the click count to 1
+        // for the next incoming mouse event of the given type to consequently close tabs.
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+        // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+        if let event = NSApp.currentEvent, [.leftMouseDown, .leftMouseUp].contains(event.type) {
+            (NSApp as? Application)?.shouldResetClickCountForNextEventOfTypes = [.leftMouseDown, .leftMouseUp]
+        }
 
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
@@ -950,8 +981,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         clearSubscriptions()
 
         representedObject = tabViewModel
-        tabViewModel.titlePublisher.sink { [weak self] title in
-            self?.displayTabTitle(title)
+        tabViewModel.titleAndLoadingStatusPublisher.sink { [weak self] title, isLoading in
+            self?.displayTabTitle(title, isLoading: isLoading)
         }.store(in: &cancellables)
 
         tabViewModel.faviconPublisher.sink { [weak self] favicon in
@@ -992,22 +1023,32 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
             .store(in: &cancellables)
 
-        if cell.displaysTabsProgressIndicator {
-            tabViewModel.isLoadingPublisher
-                .removeDuplicates(by: { lhs, rhs in
-                    lhs.0 == rhs.0 && lhs.1 == rhs.1
-                })
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] isLoading, error in
-                    self?.startSpinnerIfNeeded(isLoading: isLoading, error: error)
-                }
-                .store(in: &cancellables)
-        }
+        tabViewModel.isLoadingPublisher
+            .removeDuplicates(by: { lhs, rhs in
+                lhs.0 == rhs.0 && lhs.1 == rhs.1
+            })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading, error in
+                self?.startSpinnerIfNeeded(isLoading: isLoading, error: error)
+            }
+            .store(in: &cancellables)
+
+        tabViewModel.renderingProgressDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshProgressColors(rendered: true)
+            }
+            .store(in: &cancellables)
     }
 
     func clear() {
         clearSubscriptions()
+        stopActivePermissionIconTimer()
+        // Set usedPermissions first to trigger updateActivePermissionIcons() with correct wasShowingPermissionIcon
         usedPermissions = Permissions()
+        // Then clear activePermissionTypes after the didSet has processed
+        activePermissionTypes = []
+        currentActivePermissionIndex = 0
         isLeftToSelected = false
         cell.clear()
     }
@@ -1034,8 +1075,25 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateSubviews() {
+        /// Ensure  `updateSubviews` does not trigger any unexpected animations
+        CATransaction.begin()
+        defer {
+            CATransaction.commit()
+        }
+
+        let tabStyleProvider = theme.tabStyleProvider
+
         withoutAnimation {
-            if isSelected || isDragged {
+            let alpha = (tabViewModel?.isSuspended == true && featureFlagger.isFeatureOn(.tabSuspensionDebugging)) ? 0.5 : 1.0
+            cell.faviconView.alphaValue = alpha
+            cell.titleView.alphaValue = alpha
+
+            if displaysTabsAnimations {
+                cell.mouseOverView.backgroundColor = nil
+                cell.mouseOverView.mouseOverColor = nil
+                cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
+
+            } else if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
                 cell.mouseOverView.backgroundColor = theme.colorsProvider.navigationBackgroundColor
                 cell.roundedBackgroundColorView.isHidden = true
@@ -1052,52 +1110,42 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             }
 
-            if theme.tabStyleProvider.shouldShowSShapedTab {
-                cell.rightRampView.isHidden = !(isSelected || isDragged)
-                cell.leftRampView.isHidden = !(isSelected || isDragged)
-            } else {
-                cell.borderLayer.isHidden = !isSelected
+            if !displaysTabsAnimations {
+                if theme.tabStyleProvider.shouldShowSShapedTab {
+                    cell.rightRampView.isHidden = !(isSelected || isDragged)
+                    cell.leftRampView.isHidden = !(isSelected || isDragged)
+                } else {
+                    cell.borderLayer.isHidden = !isSelected
+                }
             }
         }
 
-        if cell.displaysTabsProgressIndicator && isPinned {
+        if isPinned {
             cell.closeButton.isShown = false
             cell.faviconView.isShown = true
             cell.titleView.isShown = false
-        } else if cell.displaysTabsProgressIndicator {
-            let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
-            cell.closeButton.isShown = showCloseButton
-            cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
-            cell.titleView.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
-        } else if isPinned {
-            cell.closeButton.isShown = false
-            cell.faviconImageView.isShown = cell.faviconImageView.image != nil
-            cell.faviconPlaceholderView.isShown = !cell.faviconImageView.isShown
-            cell.titleTextField.isShown = false
         } else {
             let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
             cell.closeButton.isShown = showCloseButton
-            cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
-            cell.faviconPlaceholderView.isShown = false
-            cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
+            cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
+            cell.titleView.isShown = !widthStage.isTitleHidden
         }
 
         updateSeparatorView()
 
-        // Adjust colors for burner window
+        // Don't override active permission icon color
+        guard !isShowingActivePermissionIcon else { return }
+
         let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
-        if cell.displaysTabsProgressIndicator {
-            cell.faviconView.imageTintColor = tintColor
-        } else {
-            cell.faviconImageView.contentTintColor = tintColor
-        }
+        cell.faviconView.imageTintColor = tintColor
     }
 
     private var usedPermissions = Permissions() {
         didSet {
             updateUsedPermissions()
+            updateActivePermissionIcons()
         }
     }
     private func updateUsedPermissions() {
@@ -1137,8 +1185,95 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.permissionButton.isHidden = false
     }
 
+    // MARK: - Active Permission Icons in Favicon
+
+    private var isShowingActivePermissionIcon: Bool {
+        !activePermissionTypes.isEmpty
+    }
+
+    private func updateActivePermissionIcons() {
+        // Collect all active permissions (camera, microphone, geolocation)
+        var activeTypes: [PermissionType] = []
+        if usedPermissions.camera.isActive {
+            activeTypes.append(.camera)
+        }
+        if usedPermissions.microphone.isActive {
+            activeTypes.append(.microphone)
+        }
+        if usedPermissions.geolocation.isActive {
+            activeTypes.append(.geolocation)
+        }
+
+        let wasShowingPermissionIcon = !activePermissionTypes.isEmpty
+        activePermissionTypes = activeTypes
+
+        if activeTypes.isEmpty {
+            stopActivePermissionIconTimer()
+            if wasShowingPermissionIcon {
+                // Was showing permission icons, refresh to restore normal favicon
+                refreshFavicon()
+            }
+        } else if activeTypes.count == 1 {
+            stopActivePermissionIconTimer()
+            currentActivePermissionIndex = 0
+            displayActivePermissionIcon()
+        } else {
+            currentActivePermissionIndex = 0
+            displayActivePermissionIcon()
+            startActivePermissionIconTimer()
+        }
+    }
+
+    private func startActivePermissionIconTimer() {
+        guard activePermissionIconTimer == nil else { return }
+        activePermissionIconTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
+            self?.rotateActivePermissionIcon()
+        }
+    }
+
+    private func stopActivePermissionIconTimer() {
+        activePermissionIconTimer?.invalidate()
+        activePermissionIconTimer = nil
+    }
+
+    private func rotateActivePermissionIcon() {
+        guard !activePermissionTypes.isEmpty else { return }
+        currentActivePermissionIndex = (currentActivePermissionIndex + 1) % activePermissionTypes.count
+        displayActivePermissionIcon()
+    }
+
+    private func displayActivePermissionIcon() {
+        guard currentActivePermissionIndex < activePermissionTypes.count else { return }
+
+        let permissionType = activePermissionTypes[currentActivePermissionIndex]
+        let icon = activePermissionIcon(for: permissionType)
+
+        cell.needsLayout = true
+        cell.faviconView.displayFavicon(favicon: icon, url: nil)
+        cell.faviconView.imageTintColor = .systemRed
+    }
+
+    private func refreshFavicon() {
+        // Re-apply the current favicon through normal flow (tint color is reset in updateFavicon)
+        updateFavicon(tabViewModel?.favicon)
+    }
+
+    private func activePermissionIcon(for permissionType: PermissionType) -> NSImage {
+        guard let solidIcon = permissionType.solidIcon else {
+            assertionFailure("Unexpected permission type for active icon: \(permissionType)")
+            return permissionType.icon
+        }
+        return solidIcon
+    }
+
     private func updateSeparatorView() {
-        let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
+        let tabStyleProvider = theme.tabStyleProvider
+        guard tabStyleProvider.shouldShowTabSeparators else {
+            cell.rightSeparatorView.isHidden = true
+            return
+        }
+
+        let shouldHideForHover = tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
         let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
 
         let newIsHidden = shouldHideForHover || rightItemIsHighlighted || isSelected || isDragged || isLeftToSelected
@@ -1155,40 +1290,32 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateFavicon(_ favicon: NSImage?) {
+        // Skip favicon update when showing active permission icons
+        guard !isShowingActivePermissionIcon else { return }
+
         cell.needsLayout = true
 
-        /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
-        if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(favicon: favicon, placeholderStyle: faviconPlaceholderStyle)
-            return
-        }
+        // Reset tint color to appropriate value for normal favicon display
+        let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
+        let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
-        cell.faviconImageView.isHidden = (favicon == nil)
-        cell.faviconImageView.image = favicon
-        if isPinned && cell.faviconImageView.isHidden {
-            cell.faviconPlaceholderView.isHidden = false
-            cell.faviconPlaceholderView.displayURL(tabViewModel?.tabContent.urlForWebView)
-        } else {
-            cell.faviconPlaceholderView.isHidden = true
-        }
+        cell.faviconView.displayFavicon(favicon: favicon, url: tabViewModel?.url)
+        cell.faviconView.imageTintColor = tintColor
     }
 
-    private var faviconPlaceholderStyle: FaviconPlaceholderStyle {
-        guard isPinned else {
-            return .dot
-        }
-
-        return .domainPrefix(tabViewModel?.url)
-    }
-
-    private func displayTabTitle(_ title: String) {
+    private func displayTabTitle(_ title: String, isLoading: Bool) {
         let url = tabViewModel?.url
-        cell.displayTabTitleIfNeeded(title: title, url: url)
+        cell.displayTabTitleIfNeeded(title: title, url: url, isLoading: isLoading)
     }
 
     private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
         let url = tabViewModel?.url
-        cell.faviconView.startSpinnerIfNeeded(url: url, isLoading: isLoading, error: error)
+        cell.startSpinnerIfNeeded(isLoading: isLoading, error: error, url: url)
+    }
+
+    private func refreshProgressColors(rendered: Bool) {
+        let url = tabViewModel?.url
+        cell.refreshProgressColors(rendered: rendered, url: url)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {
@@ -1237,8 +1364,10 @@ extension TabBarViewItem: NSMenuDelegate {
         let areThereOtherTabs = otherItemsState.hasItemsToTheLeft || otherItemsState.hasItemsToTheRight
 
         // Menu Items
-        // Duplicate, Pin, Mute Section
+        // New, Duplicate, Pin, Mute Section
+        addNewToTheRightMenuItem(to: menu)
         addDuplicateMenuItem(to: menu)
+
         if !isBurner {
             addPinMenuItem(to: menu)
         }
@@ -1269,6 +1398,8 @@ extension TabBarViewItem: NSMenuDelegate {
             }
         }
 
+        addSuspendResumeMenuItem(to: menu)
+
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
             addCrashMenuItem(to: menu)
@@ -1286,6 +1417,12 @@ extension TabBarViewItem: NSMenuDelegate {
         let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitleMultipleTimes, action: #selector(crashMultipleTimesMenuItemAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self
         menu.addItem(crashMenuItem)
+    }
+
+    private func addNewToTheRightMenuItem(to menu: NSMenu) {
+        let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
+        newTabMenuItem.target = self
+        menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
@@ -1359,6 +1496,41 @@ extension TabBarViewItem: NSMenuDelegate {
         menu.addItem(muteUnmuteMenuItem)
     }
 
+    private func addSuspendResumeMenuItem(to menu: NSMenu) {
+        guard
+            featureFlagger.isFeatureOn(.tabSuspension),
+            featureFlagger.isFeatureOn(.tabSuspensionDebugging),
+            let tabViewModel
+        else {
+            return
+        }
+
+        // These menu items are only ever visible to internal users so we don't need translations.
+
+        let isSuspended = tabViewModel.isSuspended
+        let statusMenuItem = NSMenuItem(title: "isSuspended: \(isSuspended)", action: nil, keyEquivalent: "")
+        statusMenuItem.isEnabled = false
+        menu.addItem(.separator())
+        menu.addItem(statusMenuItem)
+
+        guard !isBurner, case .url = tabViewModel.tabContent else {
+            return
+        }
+
+        let title = isSuspended ? "Resume Tab" : "Suspend Tab"
+        let canToggleSuspension = isSuspended || tabViewModel.canBeSuspended
+        let isEnabled = !isSelected && canToggleSuspension
+
+        let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
+        menuItem.target = self
+        menuItem.isEnabled = isEnabled
+        menu.addItem(menuItem)
+    }
+
+    @objc private func suspendTabAction(_ sender: NSMenuItem) {
+        delegate?.tabBarViewItemSuspendAction(self)
+    }
+
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
         closeMenuItem.target = self
@@ -1417,6 +1589,9 @@ extension TabBarViewItem: MouseClickViewDelegate {
     func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
+
+        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             if let self, widthStage.isCloseButtonHidden {
@@ -1439,6 +1614,11 @@ extension TabBarViewItem: MouseClickViewDelegate {
         // close on middle-click
         guard case .middle = otherMouseDownEvent.button else { return }
 
+        // If the middle button is clicked multiple times, we need to reset the click count to 1
+        // for the next incoming mouse event of the given type to consequently close tabs.
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+        // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+        (NSApp as? Application)?.shouldResetClickCountForNextEventOfTypes = [otherMouseDownEvent.type]
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
             // pass the closeButton action to the next TabBarViewItem
@@ -1578,13 +1758,18 @@ extension TabBarViewItem {
     static let mediumWidth = (TabBarViewItem.Width.maximum + TabBarViewItem.Width.minimum) / 2
     @MainActor
     final class PreviewViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, TabBarViewItemDelegate {
+        func tabBarViewItemSuspendAction(_: TabBarViewItem) {}
 
         final class TabBarViewModelMock: TabBarViewModel {
             var url: URL?
             var width: CGFloat
             var isSelected: Bool
             @Published var title: String = ""
-            var titlePublisher: Published<String>.Publisher { $title }
+            var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
+                $title
+                    .combineLatest($isLoading)
+                    .eraseToAnyPublisher()
+            }
             @Published var favicon: NSImage?
             var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
             var isPinned: Bool
@@ -1603,10 +1788,18 @@ extension TabBarViewItem {
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
                 $isLoading
-                    .eraseToAnyPublisher()
                     .combineLatest($error)
                     .eraseToAnyPublisher()
             }
+            @Published var progress: Double = 0
+            var progressPublisher: Published<Double>.Publisher {
+                $progress
+            }
+
+            var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
+
+            @Published var isSuspended: Bool = false
+            var canBeSuspended: Bool = true
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width
@@ -1620,6 +1813,7 @@ extension TabBarViewItem {
                 self.isSelected = selected
                 self.isLoading = isLoading
                 self.error = error
+                self.renderingProgressDidChangePublisher = .init()
             }
         }
 
@@ -1737,6 +1931,7 @@ extension TabBarViewItem {
         func tabBarViewItemCloseOtherAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem) {}
+        func tabBarViewItemNewToTheRightAction(_: TabBarViewItem) {}
         func tabBarViewItemDuplicateAction(_: TabBarViewItem) {}
         func tabBarViewItemPinAction(_: TabBarViewItem) {}
         func tabBarViewItemBookmarkThisPageAction(_: TabBarViewItem) {}

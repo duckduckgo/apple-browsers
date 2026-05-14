@@ -25,8 +25,10 @@ final class PasswordManagementPopover: NSPopover {
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
+    private let pinningManager: PinningManager
 
-    override init() {
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         super.init()
 
         self.animates = false
@@ -64,7 +66,7 @@ final class PasswordManagementPopover: NSPopover {
     }
 
     private func setupContentController() {
-        let controller = PasswordManagementViewController.create()
+        let controller = PasswordManagementViewController.create(pinningManager: pinningManager)
         contentViewController = controller
     }
 }

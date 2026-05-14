@@ -150,7 +150,13 @@ final class WideEventRecorderTests: XCTestCase {
 }
 
 private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
-    static let pixelName = "test-wide-event"
+    static let metadata = WideEventMetadata(
+        pixelName: "test-wide-event",
+        featureName: "test-wide-event",
+        mobileMetaType: "ios-test-wide-event",
+        desktopMetaType: "macos-test-wide-event",
+        version: "1.0.0"
+    )
 
     var globalData: WideEventGlobalData
     var contextData: WideEventContextData
@@ -166,5 +172,5 @@ private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
         self.measuredInterval = measuredInterval
     }
 
-    func pixelParameters() -> [String: String] { [:] }
+    func jsonParameters() -> [String: Encodable] { [:] }
 }

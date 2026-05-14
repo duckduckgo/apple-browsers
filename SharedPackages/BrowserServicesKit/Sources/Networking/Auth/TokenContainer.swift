@@ -152,7 +152,7 @@ public struct JWTRefreshToken: JWTPayload, Equatable {
     }
 }
 
-public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable {
+public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable, CaseIterable {
     case networkProtection = "Network Protection"
     case dataBrokerProtection = "Data Broker Protection"
     case identityTheftRestoration = "Identity Theft Restoration"
@@ -175,7 +175,7 @@ public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStri
 
 public struct EntitlementPayload: Codable, Equatable {
     public let product: SubscriptionEntitlement // Can expand in future
-    public let name: String // always `subscriber`
+    public let name: String
 }
 
 public extension JWTAccessToken {

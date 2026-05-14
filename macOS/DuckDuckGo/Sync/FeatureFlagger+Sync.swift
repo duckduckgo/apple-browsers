@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import FeatureFlags
+import PrivacyConfig
 
 extension FeatureFlagger {
     var isNewSyncEntryPointsFeatureOn: Bool {

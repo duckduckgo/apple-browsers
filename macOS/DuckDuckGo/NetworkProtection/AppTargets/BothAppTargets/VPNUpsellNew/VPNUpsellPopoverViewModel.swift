@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Subscription
 
 extension VPNUpsellPopoverViewModel {
@@ -77,7 +77,7 @@ extension VPNUpsellPopoverViewModel {
 final class VPNUpsellPopoverViewModel: ObservableObject {
     @Published private(set) var featureSet: FeatureSet = FeatureSet(core: [], plus: [], isEligibleForFreeTrial: false)
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let urlOpener: @MainActor (URL) -> Void
@@ -90,7 +90,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
         .blockHarmfulSites
     ]
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in

@@ -35,6 +35,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -55,6 +56,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -75,6 +77,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -95,6 +98,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -113,6 +117,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -129,6 +134,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -156,6 +162,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -175,6 +182,7 @@ final class PreferencesSectionTests: XCTestCase {
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
                                                           subscriptionState: subscriptionState)
 
         // Then

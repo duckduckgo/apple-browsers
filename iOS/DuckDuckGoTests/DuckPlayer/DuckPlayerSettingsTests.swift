@@ -23,6 +23,7 @@ import XCTest
 import BrowserServicesKit
 import Combine
 import UIKit
+import PrivacyConfig
 
 // Mock UIDevice to control userInterfaceIdiom
 class MockUIDevice: UIDevice {

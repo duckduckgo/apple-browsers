@@ -32,18 +32,22 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var tab: Tab!
     private var window: NSWindow!
 
+    private var firedPixels: [String] = []
+
     @MainActor
     override func setUp() {
         autoreleasepool {
+            firedPixels = []
             promptHandler = AIChatPromptHandler.shared
             windowControllersManager = Application.appDelegate.windowControllersManager
-            tabsPreferences = TabsPreferences()
+            tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
             handler = NewTabPageOmnibarActionsHandler(
                 promptHandler: promptHandler,
                 windowControllersManager: windowControllersManager,
                 tabsPreferences: tabsPreferences,
                 isShiftPressed: { false },
-                isCommandPressed: { false }
+                isCommandPressed: { false },
+                firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
             )
             tab = Tab(content: .newtab)
             window = WindowsManager.openNewWindow(with: tab)!
@@ -52,6 +56,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
+            firedPixels = []
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
@@ -95,7 +100,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -105,7 +110,61 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
+
+        XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithReasoningEffort_ThenPromptUsesTypedReasoningEffort() {
+        handler.submitChat("duckduckgo",
+                           target: .sameTab,
+                           modelId: "gpt-5.2",
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: "low")
+
+        let prompt = promptHandler.consumeData()
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
+                                                           autoSubmit: true,
+                                                           modelId: "gpt-5.2",
+                                                           reasoningEffort: .low)
+        XCTAssertEqual(prompt, expectedPrompt)
+    }
+
+    // MARK: - openAiChat pixels
+
+    @MainActor
+    func testOpenAiChatPinnedMouseFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: true, trigger: .mouse, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_mouse"])
+    }
+
+    @MainActor
+    func testOpenAiChatPinnedKeyboardFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: true, trigger: .keyboard, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_keyboard"])
+    }
+
+    @MainActor
+    func testOpenAiChatUnpinnedMouseFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: false, trigger: .mouse, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_mouse"])
+    }
+
+    @MainActor
+    func testOpenAiChatUnpinnedKeyboardFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: false, trigger: .keyboard, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_keyboard"])
+    }
+
+    // MARK: - viewAllAiChats
+
+    @MainActor
+    func testViewAllAiChats_opensNewAIChatTab() {
+        handler.viewAllAiChats(target: .newTab)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)

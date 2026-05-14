@@ -21,5 +21,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var pixels = { Logger(subsystem: "Pixels", category: "") }()
+    static let pixels = Logger(subsystem: "Pixels", category: "")
 }

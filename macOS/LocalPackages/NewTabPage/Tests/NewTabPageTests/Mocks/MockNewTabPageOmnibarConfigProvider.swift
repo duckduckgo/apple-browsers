@@ -22,7 +22,14 @@ import NewTabPage
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode = .search
+    var mode: NewTabPageDataModel.OmnibarMode = .search {
+        didSet { modeSubject.send(mode) }
+    }
+
+    private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> {
+        modeSubject.eraseToAnyPublisher()
+    }
 
     @Published var isAIChatShortcutEnabled: Bool = true
 
@@ -36,11 +43,41 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
     }
 
-    @Published  var showCustomizePopover: Bool = true
+    @Published  var showCustomizePopover: Bool = false
 
-    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> {
-        $showCustomizePopover.dropFirst().eraseToAnyPublisher()
+    var isAIChatRecentChatsEnabled: Bool = false
+
+    var showViewAllAiChats: Bool = false
+    var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+
+    var isAIChatToolsEnabled: Bool = false
+
+    var isImageGenerationEnabled: Bool = false
+
+    var isWebSearchEnabled: Bool = false
+
+    @Published var isVoiceChatAccessEnabled: Bool = false
+
+    /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
+    /// shape — emits the current value on subscribe (so `NewTabPageOmnibarClient.notifyConfigUpdated`
+    /// fires on init) and then de-duplicates subsequent flag flips.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
     }
 
-    var customizePopoverPresentationCount: Int = 0
+    @Published var selectedModelId: String?
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        $selectedModelId.dropFirst().eraseToAnyPublisher()
+    }
+
+    var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
 }

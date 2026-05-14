@@ -86,10 +86,21 @@ public final class FileStoreMock: NSObject {
     }
 
     public func directoryContents(at path: String) throws -> [String] {
+        if let failWithError {
+            throw failWithError
+        }
+
         return directoryStorage[path] ?? []
     }
 
     public func remove(fileAtURL url: URL) {
+        storage[url.lastPathComponent] = nil
+    }
+
+    public func removeOrThrow(fileAtURL url: URL) throws {
+        if let failWithError {
+            throw failWithError
+        }
         storage[url.lastPathComponent] = nil
     }
 

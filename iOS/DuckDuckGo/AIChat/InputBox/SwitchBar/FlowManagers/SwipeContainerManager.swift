@@ -17,63 +17,177 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import UIKit
-
+import PrivacyConfig
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {
-    
+
     // MARK: - Properties
 
     private let switchBarHandler: SwitchBarHandling
+    private let featureFlagger: FeatureFlagger
 
-    var searchPageContainer: UIView { swipeContainerViewController.searchPageContainer }
+    var searchPageContainer: UIView {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            return fadeOutContainerViewController.searchPageContainer
+        } else {
+            return swipeContainerViewController.searchPageContainer
+        }
+    }
 
-    lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
+    var chatPageContainer: UIView {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            return fadeOutContainerViewController.chatPageContainer
+        } else {
+            return swipeContainerViewController.chatPageContainer
+        }
+    }
+
+    private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
+    private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
+
+    var containerViewController: UIViewController {
+        switchBarHandler.isUsingFadeOutAnimation ? fadeOutContainerViewController : swipeContainerViewController
+    }
 
     var delegate: SwipeContainerViewControllerDelegate? {
         get { swipeContainerViewController.delegate }
         set { swipeContainerViewController.delegate = newValue }
     }
 
+    var animateProgrammaticModeChanges: Bool {
+        get { swipeContainerViewController.animateProgrammaticModeChanges }
+        set { swipeContainerViewController.animateProgrammaticModeChanges = newValue }
+    }
+
+    var isSwipeEnabled: Bool {
+        get { swipeContainerViewController.isSwipeEnabled }
+        set { swipeContainerViewController.isSwipeEnabled = newValue }
+    }
+
+    var fadeOutDelegate: FadeOutContainerViewControllerDelegate? {
+        get { fadeOutContainerViewController.delegate }
+        set { fadeOutContainerViewController.delegate = newValue }
+    }
+
     // MARK: - Initialization
     
-    init(switchBarHandler: SwitchBarHandling) {
+    init(switchBarHandler: SwitchBarHandling,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
+        self.featureFlagger = featureFlagger
         super.init()
     }
     
     // MARK: - Public Methods
 
 
+    /// Installs the chat history manager in the chat page container.
+    /// Used by the legacy `OmniBarEditingStateViewController` (non-UTI path).
+    @MainActor
+    func installChatHistory(using manager: AIChatHistoryManager) {
+        manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
+    }
+
+    /// Installs the Duck.ai multi-section suggestions coordinator in the chat page container.
+    /// Used by `UnifiedInputContentContainerViewController` (UTI path).
+    @MainActor
+    func installDuckAISuggestions<P: Publisher>(using coordinator: DuckAISuggestionsCoordinator,
+                                                textPublisher: P) where P.Output == String, P.Failure == Never {
+        coordinator.start(in: chatPageContainer,
+                          parentViewController: containerViewController,
+                          textPublisher: textPublisher)
+    }
+
+    /// Overlays the search page on the visible area, or returns it to its natural position.
+    func setSearchPageVisible(_ visible: Bool, animated: Bool) {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            applySearchPageFade(visible, animated: animated)
+        } else {
+            applySearchPageSlide(visible, animated: animated)
+        }
+    }
+
+    /// Pages already overlap — control visibility with alpha.
+    private func applySearchPageFade(_ visible: Bool, animated: Bool) {
+        let alpha: CGFloat = visible ? 1.0 : 0.0
+        if visible {
+            searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
+        }
+        if animated {
+            UIView.animate(withDuration: 0.2) { self.searchPageContainer.alpha = alpha }
+        } else {
+            searchPageContainer.alpha = alpha
+        }
+    }
+
+    /// Pages are side-by-side — translate the search page over the chat page.
+    private func applySearchPageSlide(_ visible: Bool, animated: Bool) {
+        if visible {
+            let pageWidth = swipeContainerViewController.swipeScrollView.frame.width
+            searchPageContainer.transform = CGAffineTransform(translationX: pageWidth, y: 0)
+            searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
+            searchPageContainer.alpha = 1.0
+        } else {
+            let fadeOut = {
+                self.searchPageContainer.alpha = 0.0
+            }
+            let resetTransform = { (_: Bool) in
+                self.searchPageContainer.transform = .identity
+                self.searchPageContainer.alpha = 1.0
+            }
+            if animated {
+                UIView.animate(withDuration: 0.2, animations: fadeOut, completion: resetTransform)
+            } else {
+                fadeOut()
+                resetTransform(true)
+            }
+        }
+    }
+
+    /// Restores the chat page container visibility after URL fallback hides.
+    func restoreChatPageVisibility() {
+        chatPageContainer.alpha = 1.0
+    }
+
+    func syncVisibleMode(animated: Bool) {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState)
+        } else {
+            swipeContainerViewController.syncToCurrentMode(animated: animated)
+        }
+    }
+
     /// Installs the swipe container in the provided parent view
     func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, barView: UIView, isTopBarPosition: Bool) {
-        parentController.addChild(swipeContainerViewController)
+        parentController.addChild(containerViewController)
 
-        view.insertSubview(swipeContainerViewController.view, belowSubview: barView)
+        view.insertSubview(containerViewController.view, belowSubview: barView)
 
-        swipeContainerViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        containerViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            swipeContainerViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            swipeContainerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            containerViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            containerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
         if isTopBarPosition {
-            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            containerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
             // Allow scroll to flow under
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: barView.bottomAnchor,
-                                                                   constant: -Metrics.contentUnderflowOffset).isActive = true
+            containerViewController.view.topAnchor.constraint(equalTo: barView.bottomAnchor,
+                                                              constant: -Metrics.contentUnderflowOffset).isActive = true
 
             // Compensate for the underflow + margin
-            swipeContainerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
+            containerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
         } else {
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            containerViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            containerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         }
 
-        swipeContainerViewController.didMove(toParent: parentController)
+        containerViewController.didMove(toParent: parentController)
     }
 
     private struct Metrics {

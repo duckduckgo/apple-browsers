@@ -48,6 +48,9 @@ protocol SubscriptionUserScriptHandling {
     // Notification message, Subscription purchase flow should be open
     func openSubscriptionPurchase(params: Any, message: any UserScriptMessage) async throws -> Encodable?
 
+    // Notification message, Subscription upgrade flow should be open
+    func openSubscriptionUpgrade(params: Any, message: any UserScriptMessage) async throws -> Encodable?
+
     func setBroker(_ broker: UserScriptMessagePushing)
     func setWebView(_ webView: WKWebView?)
     func setUserScript(_ userScript: SubscriptionUserScript)
@@ -60,6 +63,16 @@ public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSettings()
     @MainActor func navigateToSubscriptionActivation()
     @MainActor func navigateToSubscriptionPurchase(origin: String?, featurePage: String?)
+    @MainActor func navigateToSubscriptionPlans(origin: String?, featurePage: String?)
+}
+
+///
+/// Feature flag provider for SubscriptionUserScript
+/// Implemented by apps/BSK to provide feature flag values without creating module dependencies
+///
+public protocol SubscriptionUserScriptFeatureFlagProviding {
+    var usePaidDuckAi: Bool { get }
+    var useProTier: Bool { get }
 }
 
 protocol UserScriptMessagePushing: AnyObject {
@@ -71,9 +84,13 @@ extension UserScriptMessageBroker: UserScriptMessagePushing {}
 final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     typealias DataModel = SubscriptionUserScript.DataModel
 
+    private enum FeaturePage {
+        static let duckai = "duckai"
+    }
+
     let platform: DataModel.Platform
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private var paidAIChatFlagStatusProvider: () -> Bool
+    let subscriptionManager: any SubscriptionManager
+    private let featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding
     weak var navigationDelegate: SubscriptionUserScriptNavigationDelegate?
     weak private var webView: WKWebView?
     weak private var broker: UserScriptMessagePushing?
@@ -81,12 +98,12 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     private var cancellables = Set<AnyCancellable>()
 
     init(platform: DataModel.Platform,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         paidAIChatFlagStatusProvider: @escaping () -> Bool,
+         subscriptionManager: any SubscriptionManager,
+         featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
          navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
         self.platform = platform
         self.subscriptionManager = subscriptionManager
-        self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
+        self.featureFlagProvider = featureFlagProvider
         self.navigationDelegate = navigationDelegate
 
         setupSubscriptionEventObservers()
@@ -105,7 +122,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
-        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate], platform: platform)
+        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate], platform: platform)
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
@@ -122,7 +139,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        return .init(usePaidDuckAi: paidAIChatFlagStatusProvider())
+        return .init(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
     }
 
     @MainActor
@@ -152,7 +169,27 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
-        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: "duckai")
+        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: FeaturePage.duckai)
+        return nil
+    }
+
+    @MainActor
+    func openSubscriptionUpgrade(params: Any, message: any UserScriptMessage) async throws -> Encodable? {
+        struct UpgradeParams: Decodable {
+            let origin: String?
+        }
+
+        let upgradeParams: UpgradeParams? = {
+            if let paramsDict = params as? [String: Any] {
+                if let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+                    return try? JSONDecoder().decode(UpgradeParams.self, from: jsonData)
+                }
+            }
+            return nil
+        }()
+
+        navigationDelegate?.navigateToSubscriptionPlans(origin: upgradeParams?.origin, featurePage: FeaturePage.duckai)
+
         return nil
     }
 
@@ -202,6 +239,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         case backToSettings
         case openSubscriptionActivation
         case openSubscriptionPurchase
+        case openSubscriptionUpgrade
         case authUpdate
     }
 
@@ -242,6 +280,8 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
             return handler.openSubscriptionActivation
         case .openSubscriptionPurchase:
             return handler.openSubscriptionPurchase
+        case .openSubscriptionUpgrade:
+            return handler.openSubscriptionUpgrade
         default:
             return nil
         }
@@ -250,13 +290,13 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     private let debugHost: String?
 
     public convenience init(platform: DataModel.Platform,
-                            subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-                            paidAIChatFlagStatusProvider: @escaping () -> Bool,
+                            subscriptionManager: any SubscriptionManager,
+                            featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
                             navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
                             debugHost: String?) {
         self.init(handler: SubscriptionUserScriptHandler(platform: platform,
                                                          subscriptionManager: subscriptionManager,
-                                                         paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
+                                                         featureFlagProvider: featureFlagProvider,
                                                          navigationDelegate: navigationDelegate),
                   debugHost: debugHost)
     }
@@ -318,6 +358,7 @@ extension SubscriptionUserScript {
 
         struct GetFeatureConfigurationResponse: Encodable {
             let usePaidDuckAi: Bool
+            let useProTier: Bool
         }
 
         struct GetAuthAccessTokenResponse: Encodable {

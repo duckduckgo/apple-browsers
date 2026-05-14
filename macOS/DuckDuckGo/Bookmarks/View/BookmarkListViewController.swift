@@ -64,17 +64,18 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
     }()
-    private lazy var searchBar = NSSearchField()
+    private lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkListViewController.searchBar")
     private var boxDividerTopConstraint = NSLayoutConstraint()
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
+    private let pinningManager: PinningManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
     private let treeControllerSearchDataSource: BookmarkListTreeControllerSearchDataSource
     private let sortBookmarksViewModel: SortBookmarksViewModel
@@ -155,11 +156,13 @@ final class BookmarkListViewController: NSViewController {
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
+         pinningManager: PinningManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeControllerSearchDataSource = BookmarkListTreeControllerSearchDataSource(bookmarkManager: bookmarkManager)
         self.bookmarkMetrics = metrics
@@ -337,7 +340,7 @@ final class BookmarkListViewController: NSViewController {
         titleTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
 
         NSLayoutConstraint.activate([
-            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
             titleTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 28),
@@ -364,10 +367,10 @@ final class BookmarkListViewController: NSViewController {
             }()),
 
             stackView.centerYAnchor.constraint(equalTo: titleTextField.centerYAnchor),
-            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 20),
+            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 16),
 
             {
-                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 12)
+                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 13)
                 return boxDividerTopConstraint
             }(),
             boxDivider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -392,6 +395,7 @@ final class BookmarkListViewController: NSViewController {
         outlineView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -569,7 +573,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView
@@ -701,7 +705,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func onImportClicked() {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     private func showManageBookmarks() {
@@ -770,7 +774,11 @@ extension BookmarkListViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceSecondary
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 
@@ -1032,14 +1040,14 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
 #Preview("Test Bookmark data",
          traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
     let bkman = _mockPreviewBookmarkManager(previewEmptyState: false)
-    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
         ._preview_hidingWindowControlsOnAppear()
 }
 
 @available(macOS 14.0, *)
 #Preview("Empty Scope", traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
     let bkman = _mockPreviewBookmarkManager(previewEmptyState: true)
-    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

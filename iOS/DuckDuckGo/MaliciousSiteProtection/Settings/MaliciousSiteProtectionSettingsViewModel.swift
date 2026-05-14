@@ -22,7 +22,7 @@ import Combine
 import Core
 import SwiftUI
 import MaliciousSiteProtection
-import BrowserServicesKit
+import PrivacyConfig
 
 final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     @Published var shouldShowMaliciousSiteProtectionSection: Bool

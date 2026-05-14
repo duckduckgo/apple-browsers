@@ -17,6 +17,7 @@
 //
 
 import Navigation
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebKit
 import XCTest
@@ -61,7 +62,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 

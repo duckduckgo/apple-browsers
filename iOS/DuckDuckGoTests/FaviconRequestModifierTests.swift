@@ -17,22 +17,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 
 @testable import Core
 @testable import DuckDuckGo
-
-class MockEmbeddedDataProvider: EmbeddedDataProvider {
-    var embeddedDataEtag: String
-
-    var embeddedData: Data
-
-    init(data: Data, etag: String) {
-        embeddedData = data
-        embeddedDataEtag = etag
-    }
-}
 
 class FaviconRequestModifierTests: XCTestCase {
     

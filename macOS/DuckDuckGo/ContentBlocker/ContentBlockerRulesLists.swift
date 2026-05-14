@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import TrackerRadarKit
 import BrowserServicesKit
 import CryptoKit
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
 
 final class ContentBlockerRulesLists: DefaultContentBlockerRulesListsSource {
 

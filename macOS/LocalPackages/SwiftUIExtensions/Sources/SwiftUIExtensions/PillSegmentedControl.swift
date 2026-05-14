@@ -300,11 +300,12 @@ private struct PillSegmentItemView: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
+                // Hovering Background is rendered by `PillSegmentedControl` itself (`hoveredIndex` property)
+                // Purpose of this Rectangle View is to define the clickable area
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(hoverBackground)
+                    .fill(Color.clear)
                     .padding(2)
-                    .opacity((isHovering && !isSelected && !isPressed) ? 1 : 0)
-                    .animation(.easeOut(duration: 0.12), value: isHovering)
+                    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 // Material-like gradient that follows pointer (appears for both selected and unselected)
                 GeometryReader { proxy in

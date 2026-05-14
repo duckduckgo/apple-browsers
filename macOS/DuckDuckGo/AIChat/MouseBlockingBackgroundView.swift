@@ -24,6 +24,10 @@ import Cocoa
 final class MouseBlockingBackgroundView: ColorView {
     private var localMonitor: Any?
 
+    /// Height from bottom of view that should pass events through (not intercept).
+    /// Used to allow clicks to reach views behind this one in a specific region.
+    var passthroughBottomHeight: CGFloat = 0
+
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
     }
@@ -73,6 +77,12 @@ final class MouseBlockingBackgroundView: ColorView {
 
             guard self.bounds.contains(locationInView) else { return event }
 
+            // Check if click is in passthrough region (bottom of view)
+            // In AppKit, y=0 is at the bottom, so we check if y < passthroughBottomHeight
+            if self.passthroughBottomHeight > 0 && locationInView.y < self.passthroughBottomHeight {
+                return event
+            }
+
             if let contentView = window.contentView {
                 let locationInContentView = contentView.convert(locationInWindow, from: nil)
                 if let topHitView = contentView.hitTest(locationInContentView) {
@@ -82,7 +92,9 @@ final class MouseBlockingBackgroundView: ColorView {
                 }
             }
 
-            if let hitView = self.hitTest(locationInView), hitView != self {
+            let hitView = self.hitTest(locationInView)
+
+            if let hitView = hitView, hitView != self {
                 switch event.type {
                 case .leftMouseDown:
                     if hitView.acceptsFirstResponder {
@@ -156,17 +168,29 @@ final class MouseBlockingBackgroundView: ColorView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
+        // Note: When called from our event monitor, point is already in our coordinate system.
+        // When called normally (e.g., from contentView.hitTest), point is in superview's coords.
+        // Since this view fills its superview at origin (0,0), both are equivalent.
+
+        // Check if point is in passthrough region (bottom of view)
+        // In AppKit, y=0 is at the bottom, so we check if y < passthroughBottomHeight
+        if passthroughBottomHeight > 0 && point.y < passthroughBottomHeight {
+            return nil
+        }
+
+        guard bounds.contains(point) else {
+            return nil
+        }
+
+        // Iterate subviews in reverse order (front to back)
         for subview in subviews.reversed() where !subview.isHidden {
-            let pointInSubview = subview.convert(point, from: self)
-            if let hitView = subview.hitTest(pointInSubview) {
-                return hitView
+            if subview.frame.contains(point) {
+                if let hitView = subview.hitTest(point) {
+                    return hitView
+                }
             }
         }
 
-        if bounds.contains(point) {
-            return self
-        }
-
-        return nil
+        return self
     }
 }

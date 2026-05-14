@@ -130,13 +130,15 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
     public func sendFirstScanCompletedNotification() {
         guard areNotificationsEnabled else { return }
 
-        // If the user is not authenticated, this is a Freemium scan
-        if !authenticationManager.isUserAuthenticated {
-            sendNotification(.firstFreemiumScanComplete)
-            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationSent)
-        } else {
-            sendNotification(.firstScanComplete)
-            pixelHandler.fire(.dataBrokerProtectionNotificationSentFirstScanComplete)
+        Task {
+            // If the user is not authenticated, this is a Freemium scan
+            if !(await authenticationManager.isUserAuthenticated) {
+                sendNotification(.firstFreemiumScanComplete)
+                dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationSent)
+            } else {
+                sendNotification(.firstScanComplete)
+                pixelHandler.fire(.dataBrokerProtectionNotificationSentFirstScanComplete)
+            }
         }
     }
 

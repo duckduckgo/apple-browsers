@@ -73,7 +73,7 @@ final class MockSubscriptionDataReporter: SubscriptionDataReporting {
 
     func injectSyncService(_ service: DDGSync) {}
 
-    func injectTabsModel(_ model: DuckDuckGo.TabsModel) {}
+    func injectTabsModel(_ model: DuckDuckGo.TabsModelReading) {}
 
     func saveFireCount() {}
 

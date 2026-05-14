@@ -91,9 +91,14 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var sessionTimerInMinutes: Int = 30
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool = false
     var isAIChatVoiceSearchUserSettingsEnabled: Bool = false
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false
+    var isAIChatFullModeEnabled: Bool = false
+    var isAutomaticContextAttachmentEnabled: Bool = false
+    var isChatSuggestionsEnabled: Bool = true
+    var defaultOmnibarMode: DefaultOmnibarMode = .search
 
     func enableAIChat(enable: Bool) {
         isAIChatEnabled = enable
@@ -103,6 +108,12 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
+    func enableAIChatFullModeSetting(enable: Bool) {}
+    func enableAutomaticContextAttachment(enable: Bool) {}
+    func enableChatSuggestions(enable: Bool) {}
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        defaultOmnibarMode = mode
+    }
 }
 #endif
 
@@ -159,6 +170,10 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
     }
 
+    var userDidSeeToggleOnboarding: Bool = false
+    var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
+
     func reset() {
         isAIFeaturesEnabled = false
         showShortcutOnNewTabPage = false
@@ -168,6 +183,9 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false
         showSearchAndDuckAIToggle = true
+        userDidSeeToggleOnboarding = false
+        lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
     }
 }
 #endif

@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-import WebKit
 import Persistence
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 import UserScript
+import WebKit
+import XCTest
+
 @testable import SERPSettings
 
 @MainActor
@@ -34,7 +36,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
-        mockKeyValueStore = try MockKeyValueFileStore()
+        mockKeyValueStore = MockKeyValueFileStore()
         mockProvider = MockSERPSettingsProvider(keyValueStore: mockKeyValueStore)
         mockDelegate = MockSERPSettingsDelegate()
         userScript = SERPSettingsUserScript(serpSettingsProviding: mockProvider)
@@ -66,7 +68,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
         // Then - Should return nil because feature flag is off
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
@@ -83,9 +85,13 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
-        XCTAssertTrue(result is EmptyPayload, "Result should be an empty payload, not any other object.")
+        if let result = result as? EmptyPayload {
+            XCTAssertTrue(result.noNativeSettings)
+        } else {
+            XCTFail("Result should be an EmptyPayload object")
+        }
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {
@@ -101,7 +107,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
         // Then - Should return the stored settings
         XCTAssertNotNil(result, "Should return settings when feature is on and data exists")
@@ -134,7 +140,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
         // Then - Should return nil and storeSERPSettings should have not been called
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
@@ -153,7 +159,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         }
 
         let parameters = ["theme": "dark", "layout": "compact"]
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should return nil and storeSERPSettings should have been called
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
@@ -184,7 +190,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
         if let result = result as? NativeDuckAIState {
             XCTAssertTrue(result.enabled)
@@ -201,7 +207,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler([:], WKScriptMessage())
+        let result = try await handler([:], WKScriptMessage.mock())
 
         if let result = result as? NativeDuckAIState {
             XCTAssertFalse(result.enabled)
@@ -222,7 +228,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
@@ -240,7 +246,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
@@ -258,7 +264,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
@@ -276,7 +282,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
@@ -294,7 +300,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
@@ -312,7 +318,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should return nil and not call any delegate methods
         XCTAssertNil(result, "Should return nil for invalid parameters")
@@ -331,7 +337,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
             return
         }
 
-        let result = try await handler(parameters, WKScriptMessage())
+        let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should not crash and return nil
         XCTAssertNil(result, "Should return nil")

@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import PrivacyConfig
 import BrowserServicesKit
 import PixelKit
 
@@ -36,7 +37,10 @@ public protocol BrokerProfileJobDependencyProviding {
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
     var featureFlagger: DBPFeatureFlagging { get }
+    var applicationNameForUserAgent: String? { get }
     var wideEvent: WideEventManaging? { get }
+
+    func isAuthenticatedUser() async -> Bool
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
@@ -61,7 +65,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgent: String?
     public let wideEvent: WideEventManaging?
+    public let isAuthenticatedUserProvider: () async -> Bool
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -74,9 +80,11 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgent: String?,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
-                wideEvent: WideEventManaging? = nil
+                wideEvent: WideEventManaging? = nil,
+                isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
     ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -91,7 +99,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
         self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgent = applicationNameForUserAgent
         self.wideEvent = wideEvent
+        self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,
@@ -104,6 +114,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
+            applicationNameForUserAgent: self.applicationNameForUserAgent,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
@@ -121,11 +132,16 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
+            applicationNameForUserAgent: self.applicationNameForUserAgent,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
             actionsHandlerMode: .optOut,
             shouldRunNextStep: shouldRunNextStep
         )
+    }
+
+    public func isAuthenticatedUser() async -> Bool {
+        await isAuthenticatedUserProvider()
     }
 }

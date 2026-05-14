@@ -88,18 +88,7 @@ final class BrokerProfileJobQueueModeTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testWhenModeIsIdle_thenPriorityDateIsNil() throws {
-        // Given
-        let sut = BrokerProfileJobQueueMode.idle
-
-        // When
-        let result = sut.priorityDate
-
-        // Then
-        XCTAssertNil(result)
-    }
-
-    func testWhenModeIsImmediate_thenPriorityDateIsNil() throws {
+    func testWhenModeIsImmediate_thenPriorityDateIsNotNil() throws {
         // Given
         let sut = BrokerProfileJobQueueMode.immediate(errorHandler: nil, completion: nil)
 
@@ -107,7 +96,7 @@ final class BrokerProfileJobQueueModeTests: XCTestCase {
         let result = sut.priorityDate
 
         // Then
-        XCTAssertNil(result)
+        XCTAssertNotNil(result)
     }
 
     func testWhenModeIsScheduled_thenPriorityDateIsNotNil() throws {

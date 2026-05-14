@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Для работы с функцией синхронизации и резервного копирования Sync & Backup необходим пароль от устройства.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Автоматическое восстановление данных на устройстве в случае переустановки приложения.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Восстановите закладки, пароли и другие данные из резервной копии либо начните с нуля.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Восстановить";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Продолжить настройку";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "У вас есть резервная копия";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "В случае переустановки приложение DuckDuckGo предложит вам восстановить свои данные на этом устройстве.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Восстановить при переустановке приложения";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Восстановить при переустановке приложения";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Выключено";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Включено";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "При переустановке приложения функция Sync & Backup восстанавливает данные автоматически. Содержимое резервных копий утрачивается после 18 месяцев бездействия.";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Восстановить при переустановке приложения";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Назад";
@@ -36,6 +69,9 @@
 
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "DuckDuckGo создаст зашифрованную резервную копию ваших сохраненных закладок, паролей, реквизитов платежных карт и чатов Duck.ai на надежном сервере. Копию можно синхронизировать с другими устройствами.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Ключ шифрования хранится только на вашем устройстве. У DuckDuckGo нет к нему доступа.";
@@ -98,9 +134,6 @@
 "fetch.favicons.option.title" = "Автоматическая загрузка значков";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Открыть «Настройки»";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Остаться на стадии разработки";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -142,6 +175,9 @@
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Закладки и данные автозаполнения готовятся к синхронизации. Это не займет много времени.";
 
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Ваши закладки, пароли и чаты Duck.ai готовятся к синхронизации. Это не займет много времени.";
+
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Выполняется подключение...";
 
@@ -152,13 +188,22 @@
 "recover.synced.data.link" = "Восстановить синхронизированные данные";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Приступим!";
+"recover.synced.data.sheet.button" = "Восстановление синхронизованных данных";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Чтобы восстановить синхронизированные данные, потребуется код восстановления, который вы сохранили при первой настройке синхронизации. Возможно, он сохранен в файле PDF на устройстве, где изначально настраивалась синхронизация.";
+"recover.synced.data.sheet.description" = "Вам потребуется код восстановления, полученный при настройке синхронизации и резервного копирования. Возможно, вы сохранили его в виде PDF на устройстве, где выполнялась настройка.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Восстановление синхронизованных данных";
+"recover.synced.data.sheet.title" = "Восстановление синхронизированных данных";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Выполняется подключение для синхронизации закладок, логинов и данных других устройств.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Выполняется подключение...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Восстановление данных";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Удалить устройство";
@@ -169,6 +214,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Удалить устройство?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Код восстановления";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Код восстановления скопирован в буфер обмена";
 
@@ -176,22 +224,22 @@
 "save.recovery.code.copy.code.button" = "Копировать код";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Сохранить в PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Если вы утратите доступ к своим устройствам, этот код позволит вам восстановить синхронизированные данные.";
+"save.recovery.code.save.as.pdf.button" = "Скачать в формате PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Этот код позволяет получить доступ к вашим синхронизированным данным, поэтому храните его в надежном месте.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Сохранение кода восстановления";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Сохраните этот код в надежном месте. Он позволит восстановить данные, если вы утратите доступ к устройству.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Удобное восстановление данных";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Сохранить код в PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Если вы потеряете свое устройство, этот код позволит вам восстановить синхронизированные данные.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Код поможет восстановить данные, если вы утратите доступ к этому устройству. Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ввести текстовый код вручную";
@@ -239,9 +287,6 @@
 "scan.or.see.code.title" = "Сканирование QR-кода";
 
 /* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Защитите устройство для работы функции Sync & Backup";
-
-/* No comment provided by engineer. */
 "Switch to Production" = "Переключиться на производство";
 
 /* Link label for syncing and backing up the device */
@@ -268,6 +313,120 @@
 /* Sync Menu Path */
 "sync.menu.path" = "Настройки > Синхронизация и резервное копирование > Синхронизировать с другим устройством";
 
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Открыть «Настройки»";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Для работы с функцией синхронизации и резервного копирования Sync & Backup необходим пароль от устройства.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Защитите устройство для работы функции Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Восстановление данных";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Уже настроил на другом устройстве?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Ваши закладки, данные автозаполнения и чаты Duck.ai безопасно сохранены в резервной копии. Теперь вы можете синхронизировать их со своим компьютером или планшетом.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Синхронизировать другое устройство";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Не сейчас";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Синхронизировать данные с другим устройством?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Загружает значки с сайтов, которые вы добавили в закладки. Загрузки значков будут отображаться в вашей сети.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Закладки";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Использовать одни и те же избранные закладки на мобильном и ПК.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Выполняется подключение...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Копировать код восстановления";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Отключить синхронизацию и удалить данные с сервера";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Скачать код восстановления";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo для Mac и Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Скачать настольный браузер";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Сохраняй закладки, данные автозаполнения и чаты Duck.ai и синхронизируй их между устройствами со сквозным шифрованием.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Сохраняйте закладки и данные автозаполнения и синхронизируйте их между устройствами с использованием сквозного шифрования.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Код поможет восстановить данные, если вы утратите доступ к этому устройству. Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия. [Подробнее](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "приложения DuckDuckGo";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Наведите камеру на QR-код, чтобы отсканировать его";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Выполняется подключение...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Откройте DuckDuckGo на обоих устройствах";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Ввести код вручную";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Перейдите в **Настройки > Sync & Backup > Синхронизация с другим устройством** и нажмите **Показать текстовый код** в приложении DuckDuckGo на другом синхронизированном устройстве. Вставьте код здесь, чтобы синхронизировать это устройство.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Идет проверка кода";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Откройте приложение DuckDuckGo на другом устройстве.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Найдите QR-код (Настройки > Sync & Backup > Синхронизация с другим устройством).";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Код для обмена";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Сканирование QR-кода";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Показать код";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Синхронизация устройств";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Отсканируйте или вставьте этот код на другом устройстве";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Синхронизация и резервное копирование";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Использовать код восстановления";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Синхронизировать с другим устройством";
+
 /* Sync & Backup Title */
 "sync.title" = "Синхронизация и резервное копирование";
 
@@ -287,7 +446,10 @@
 "sync.with.another.device.footer" = "Ваши данные защищены сквозным шифрованием. У DuckDuckGo нет доступа к ключу шифрования.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Безопасная синхронизация закладок и данных автозаполнения между устройствами.";
+"sync.with.another.device.message" = "Безопасная синхронизация закладок и паролей на ваших устройствах.";
+
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Безопасная синхронизация закладок, данных автозаполнения и чатов Duck.ai между устройствами.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Начало синхронизации";
@@ -303,6 +465,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Отключить синхронизацию и копирование...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Закладки, данные автозаполнения и чаты Duck.ai синхронизируются на всех ваших устройствах.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Синхронизация включена";

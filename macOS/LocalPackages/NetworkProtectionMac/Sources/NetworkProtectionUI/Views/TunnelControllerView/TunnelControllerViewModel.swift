@@ -531,6 +531,7 @@ public final class TunnelControllerViewModel: ObservableObject {
             defer { toggleTransition = .idle }
 
             await tunnelController.start()
+            uiActionHandler.didStartVPN()
         }
     }
 
@@ -554,13 +555,11 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
-#if !APPSTORE && !DEBUG
     func moveToApplications() {
         Task { @MainActor in
             await uiActionHandler.moveAppToApplications()
         }
     }
-#endif
 }
 
 extension DataVolume {

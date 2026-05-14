@@ -16,7 +16,11 @@
 //  limitations under the License.
 //
 
+import Onboarding
 import Persistence
+import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SwiftUI
 import XCTest
@@ -36,13 +40,18 @@ class OnboardingManagerTests: XCTestCase {
     var dataClearingPreferences: DataClearingPreferences!
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
+    var applicationBuildType: MockApplicationBuildType!
+    private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
 
     @MainActor override func setUp() {
         navigationDelegate = CapturingOnboardingNavigation()
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: MockFeatureFlagger(),
+                                                      aiChatMenuConfig: MockAIChatConfig())
         startupPersistor = StartupPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
@@ -53,9 +62,21 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
-        startupPreferences = StartupPreferences(persistor: startupPersistor, windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
-        manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)
+        applicationBuildType = MockApplicationBuildType()
+        onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
+        manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: MockFeatureFlagger(),
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
     }
 
     override func tearDown() {
@@ -69,16 +90,134 @@ class OnboardingManagerTests: XCTestCase {
         dataClearingPreferences = nil
         fireButtonPreferencesPersistor = nil
         importProvider = nil
+        applicationBuildType = nil
+        onboardingSharedPixelHandler = nil
     }
 
-    func testReturnsExpectedOnboardingConfig() {
+    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
         // Given
-        var systemSettings: SystemSettings
-#if APPSTORE
-        systemSettings = SystemSettings(rows: ["import"])
-#else
-        systemSettings = SystemSettings(rows: ["dock", "import"])
-#endif
+        let systemSettings = SystemSettings(rows: ["dock", "import"])
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(manager.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_DoesNotShowDockRow() {
+        // Given
+        applicationBuildType.isAppStoreBuild = true
+        let appStoreManager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: MockFeatureFlagger(),
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(appStoreManager.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarToggleIsOn_ExcludesAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        let systemSettings = SystemSettings(rows: ["dock", "import"])
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarOnboardingIsOn_ExcludesAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        let systemSettings = SystemSettings(rows: ["dock", "import"])
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOn_DoesNotExcludeAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
+        let managerWithFlagsOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -90,7 +229,7 @@ class OnboardingManagerTests: XCTestCase {
         )
 
         // Then
-        XCTAssertEqual(manager.configuration, expectedConfig)
+        XCTAssertEqual(managerWithFlagsOn.configuration, expectedConfig)
     }
 
     func testOnOnboardingStarted_UserInteractionIsPrevented() {
@@ -254,16 +393,197 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
-}
+    // MARK: Shared pixels
 
-private final class MockKeyValueStore: ThrowingKeyValueStoring {
-    func object(forKey defaultName: String) throws -> Any? {
-        return nil
+    func testWelcomeShownPixelFired_WhenOnboardingStarted() {
+        // When
+        manager.onboardingStarted()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.welcome(.shown)])
     }
 
-    func set(_ value: Any?, forKey defaultName: String) throws {
+    func testExpectedShownPixelsFired_WhenStepShown() {
+        // When
+        manager.stepShown(step: .welcome)
+        manager.stepShown(step: .getStarted)
+        manager.stepShown(step: .makeDefaultSingle)
+        manager.stepShown(step: .systemSettings)
+        manager.stepShown(step: .duckPlayerSingle)
+        manager.stepShown(step: .customize)
+        manager.stepShown(step: .addressBarMode)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .welcome(.shown),
+            .setDefault(.shown),
+            .duckPlayer(.shown),
+            .customization(.shown),
+            .searchExperience(.shown)
+        ])
     }
 
-    func removeObject(forKey defaultName: String) throws {
+    func testExpectedShownPixelsFired_WhenRowShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowShown(.dock))
+        manager.reportTelemetryEvent(.rowShown(.dockInstructions))
+        manager.reportTelemetryEvent(.rowShown(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.shown),
+            .addToDock(.shown),
+            .importData(.shown)
+        ])
     }
+
+    func testExpectedDismissPixelsFired_WhenRowSkippedTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowSkipped(.dock))
+        manager.reportTelemetryEvent(.rowSkipped(.dockInstructions))
+        manager.reportTelemetryEvent(.rowSkipped(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.clicked(.dismiss)),
+            .addToDock(.clicked(.dismiss)),
+            .importData(.clicked(.dismiss))
+        ])
+    }
+
+    func testOnlySetDefaultEngagePixelFired_WhenDefaultBrowserRequested() {
+        // When
+        manager.setAsDefault()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+    }
+
+    func testSetDefaultDismissPixelFired_WhenDefaultBrowserStepCompleted_AndDefaultBrowserNotRequested() {
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.dismiss))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenAddedToDock() {
+        // When
+        manager.addToDock()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenDockInstructionsShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.dockInstructionsShown)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testImportEngageAndConfirmedPixelsFired_WhenImportSuccessfullyCompleted() async {
+        // When
+        importProvider.didImport = true
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage)), .importData(.confirmed)])
+    }
+
+    func testOnlyImportEngagePixelFired_WhenImportNotSuccessfullyCompleted() async {
+        // When
+        importProvider.didImport = false
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage))])
+    }
+
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerToggledTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.duckPlayerToggled)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
+
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerStepCompleted() {
+        // When
+        manager.stepCompleted(step: .duckPlayerSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
+
+    func testCustomizationClickedPixelFired_WithEnabledSettings_WhenCustomizeStepCompleted() {
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: false)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.stepCompleted(step: .customize)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .homeButton]))])
+    }
+
+    @MainActor
+    func testCustomizationSharedPixelFired_WhenCustomizeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = []
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: true)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .restoreSession, .homeButton]))])
+    }
+
+    @MainActor
+    func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        // When
+        manager.setDuckAiInAddressBar(enabled: false)
+        manager.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
+    }
+
 }

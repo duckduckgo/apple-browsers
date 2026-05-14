@@ -21,6 +21,7 @@ import Foundation
 import Core
 import BrowserServicesKit
 import DDGSync
+import PrivacyConfig
 
 /// The additional parameters being collected only apply to a single promotion about a DuckDuckGo product.
 /// The parameters are temporary, collected in aggregate, and anonymous.
@@ -66,7 +67,7 @@ protocol SubscriptionDataReporting {
     func isSearchUser() -> Bool
 
     func injectSyncService(_ service: DDGSync)
-    func injectTabsModel(_ model: TabsModel)
+    func injectTabsModel(_ model: TabsModelReading)
     func saveFireCount()
     func saveWidgetAdded() async
     func saveApplicationLastSessionEnded()
@@ -111,7 +112,7 @@ final class SubscriptionDataReporter: SubscriptionDataReporting {
     private let autofillCheck: () -> Bool
     private let secureVaultMaker: () -> (any AutofillSecureVault)?
     private var syncService: DDGSyncing?
-    private var tabsModel: TabsModel?
+    private var tabsModel: TabsModelReading?
     private let fireproofing: Fireproofing
     private let dateGenerator: () -> Date
 
@@ -151,7 +152,7 @@ final class SubscriptionDataReporter: SubscriptionDataReporting {
         syncService = service
     }
 
-    func injectTabsModel(_ model: TabsModel) {
+    func injectTabsModel(_ model: TabsModelReading) {
         tabsModel = model
     }
 

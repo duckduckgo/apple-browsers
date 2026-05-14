@@ -18,41 +18,50 @@
 
 import BrowserServicesKit
 import Combine
+import CombineSchedulers
 import NewTabPage
+import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
-    var provider: NewTabPageNextStepsCardsProvider!
+    private var provider: NewTabPageNextStepsCardsProvider!
+    private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
 
     @MainActor
     override func setUp() async throws {
-        let privacyConfigManager = MockPrivacyConfigurationManager()
-        let config = MockPrivacyConfiguration()
-        privacyConfigManager.mockPrivacyConfig = config
+        pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
 
         let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),
             dockCustomizer: DockCustomizerMock(),
             dataImportProvider: CapturingDataImportProvider(),
-            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: EmailManager(storage: MockEmailStorage()),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            privacyConfigurationManager: privacyConfigManager
+            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
+            persistor: MockHomePageContinueSetUpModelPersisting(),
+            pixelHandler: pixelHandler,
+            cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler()
         )
-
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,
             appearancePreferences: AppearancePreferences(
                 persistor: MockAppearancePreferencesPersistor(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
-            )
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            pixelHandler: pixelHandler,
+            scheduler: .immediate
         )
     }
 
     override func tearDown() {
         provider = nil
+        pixelHandler = nil
     }
 
     func testWhenCardsViewIsNotOutdatedThenCardsAreReportedByModel() {
@@ -125,5 +134,57 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
 
         cancellable.cancel()
         XCTAssertEqual(cardsEvents, [[.addAppToDockMac], [.addAppToDockMac, .duckplayer], [], []])
+    }
+
+    // MARK: - Pixel Tests (Card Shown)
+
+    @MainActor
+    func testWhenWillDisplayCardsWithAddToDockThenCardPresentedAndShownPixelsAreFired() {
+        provider.willDisplayCards([.addAppToDockMac])
+
+        XCTAssertEqual(pixelHandler.fireAddToDockPresentedPixelIfNeededCalledWith, [.addAppToDockMac])
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.addAppToDockMac])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithDuckplayerThenShownPixelIsFired() {
+        provider.willDisplayCards([.duckplayer])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.duckplayer])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithSubscriptionThenShownPixelIsFired() {
+        provider.willDisplayCards([.subscription])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.subscription])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithDefaultAppThenShownPixelIsFired() {
+        provider.willDisplayCards([.defaultApp])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.defaultApp])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithBringStuffThenShownPixelIsFired() {
+        provider.willDisplayCards([.bringStuff])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.bringStuff])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithEmailProtectionThenShownPixelIsFired() {
+        provider.willDisplayCards([.emailProtection])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.emailProtection])
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithMultipleCardsThenShownPixelIsFiredForEach() {
+        provider.willDisplayCards([.duckplayer, .emailProtection, .bringStuff])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.duckplayer, .emailProtection, .bringStuff])
     }
 }

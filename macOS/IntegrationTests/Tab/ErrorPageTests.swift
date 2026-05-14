@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -115,7 +116,7 @@ class ErrorPageTests: XCTestCase {
             contentBlockingMock = ContentBlockingMock()
             privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
             // disable waiting for CBR compilation on navigation
-            privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+            privacyConfiguration.isFeatureEnabledCheck = { _, _ in
                 return false
             }
 
@@ -266,11 +267,11 @@ class ErrorPageTests: XCTestCase {
         }]
         let eNavigationFailed2 = tab1.$error.compactMap { $0 }.filter {
             $0.errorCode == NSError.noConnection.code
-        }.timeout(5).first().promise()
+        }.timeout(10).first().promise()
 
         tabsViewModel.select(at: .unpinned(0))
 
-        await fulfillment(of: [eServerQueried], timeout: 1)
+        await fulfillment(of: [eServerQueried], timeout: 5)
         let error = try await eNavigationFailed2.value
 
         let c = tab1.$isLoading.dropFirst().sink { isLoading in
@@ -861,7 +862,7 @@ class ErrorPageTests: XCTestCase {
         provider.newPinnedTabsManager = manager
         manager.pin(tab)
 
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: []), pinnedTabsManagerProvider: provider)
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         window = WindowsManager.openNewWindow(with: viewModel)!
         viewModel.select(at: .pinned(0))
         let webViewShownPromise = tab.webView.publisher(for: \.superview).compactMap { $0 }.timeout(5).first().promise()

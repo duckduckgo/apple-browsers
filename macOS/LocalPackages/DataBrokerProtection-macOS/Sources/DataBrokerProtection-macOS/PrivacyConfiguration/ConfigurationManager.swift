@@ -25,16 +25,17 @@ import Common
 import Networking
 import PixelKit
 import DataBrokerProtectionCore
+import PrivacyConfig
 
 public extension Logger {
-    static var config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
+    static let config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
 }
 
 public final class ConfigurationManager: DefaultConfigurationManager {
 
-    private let privacyConfigManager: DBPPrivacyConfigurationManager
+    private let privacyConfigManager: PrivacyConfigurationManaging
 
-    public init(privacyConfigManager: DBPPrivacyConfigurationManager,
+    public init(privacyConfigManager: PrivacyConfigurationManaging,
                 fetcher: ConfigurationFetching,
                 store: ConfigurationStoring = ConfigurationStore(),
                 defaults: KeyValueStoring = UserDefaults.config) {

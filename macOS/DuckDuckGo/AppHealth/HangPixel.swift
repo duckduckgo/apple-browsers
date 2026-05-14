@@ -82,4 +82,13 @@ enum HangPixel: PixelKitEvent {
             return params
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .uiHangRecovered,
+                .uiHangNotRecovered,
+                .uiHangDeadlock:
+            return [.pixelSource]
+        }
+    }
 }

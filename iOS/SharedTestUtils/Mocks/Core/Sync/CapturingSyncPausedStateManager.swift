@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Combine
+@testable import DuckDuckGo
 
 class CapturingSyncPausedStateManager: SyncPausedStateManaging {
     var currentSyncAllPausedError: String?

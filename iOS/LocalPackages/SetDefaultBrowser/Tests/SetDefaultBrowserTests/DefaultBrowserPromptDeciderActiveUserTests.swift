@@ -41,21 +41,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         )
     }
 
-    @Test("Check No Modal Is Presented When Feature Is Disabled")
-    func checkPromptIsNilWhenFeatureFlagIsDisabled() {
-        // GIVEN
-        featureFlaggerMock.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = false
-        makeSUT()
-        #expect(!userTypeProviderMock.didCallCurrentUserType)
-
-        // WHEN
-        let result = sut.promptType()
-
-        // THEN
-        #expect(result == nil)
-        #expect(!userTypeProviderMock.didCallCurrentUserType)
-    }
-
     @Test(
         "Check First Modal is Presented When No Modal Have Shown And Installation Date Is >= 1 day",
         arguments: [

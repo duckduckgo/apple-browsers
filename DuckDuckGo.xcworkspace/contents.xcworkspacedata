@@ -5,13 +5,19 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
-         location = "group:SERPSettings">
+         location = "group:ICSParser">
+      </FileRef>
+      <FileRef
+         location = "group:DebugServer">
+      </FileRef>
+      <FileRef
+         location = "group:AIChat">
       </FileRef>
       <FileRef
          location = "group:AttributedMetric">
       </FileRef>
       <FileRef
-         location = "group:AIChat">
+         location = "group:AutomationServer">
       </FileRef>
       <FileRef
          location = "group:BrowserServicesKit">
@@ -19,11 +25,18 @@
       <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
-      <FileRef
-         location = "group:DesignResourcesKitIcons">
-      </FileRef>
+      <FileSystemSynchronizedGroup
+         location = "group:Infrastructure"
+         name = "Infrastructure">
+      </FileSystemSynchronizedGroup>
       <FileRef
          location = "group:Onboarding">
+      </FileRef>
+      <FileRef
+         location = "group:ScreenTimeDataCleaner">
+      </FileRef>
+      <FileRef
+         location = "group:SERPSettings">
       </FileRef>
       <FileRef
          location = "group:UIComponents">
@@ -32,10 +45,7 @@
          location = "group:VPN">
       </FileRef>
       <FileRef
-         location = "group:DesignResourcesKit">
-      </FileRef>
-      <FileRef
-         location = "group:SystemFrameworksExtensions">
+         location = "group:WebExtensions">
       </FileRef>
    </Group>
    <FileRef

@@ -8,9 +8,14 @@
         },
         "feature": {
             "name": "duckai_prompt_submission",
-            "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {
+                    "failing_step": {
+                        "type": "string",
+                        "description": "Identifies which phase of the journey failed. Present only on FAILURE.",
+                        "enum": ["response_state_error", "response_state_blocked"]
+                    },
                     "model_id": {
                         "type": "string",
                         "description": "Identifier of the Duck.ai model selected at submit time (e.g. 'gpt-4o', 'claude-sonnet-4-5'). Absent if the user has not selected a specific model."

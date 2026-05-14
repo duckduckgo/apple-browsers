@@ -34,7 +34,8 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
-    /// after at least one non-`.ready` value during the flow's lifetime.
+    /// after at least one non-`.ready` value during the flow's lifetime. A page-
+    /// reported `.error` or `.blocked` status completes the flow as FAILURE.
     func chatStatusChanged(_ status: AIChatStatusValue)
 
     /// User tapped the stop-generating button. Completes the active flow as
@@ -95,6 +96,13 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             return
         }
 
+        if let failingStep = Self.failingStep(for: status) {
+            activeFlow.failingStep = failingStep
+            wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
+            self.activeFlow = nil
+            return
+        }
+
         let now = dateProvider()
         hasObservedNonReady = true
         if activeFlow.startThinkingInterval.end == nil {
@@ -102,6 +110,14 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         }
         if status == .streaming, activeFlow.startGeneratingInterval.end == nil {
             activeFlow.startGeneratingInterval.end = now
+        }
+    }
+
+    private static func failingStep(for status: AIChatStatusValue) -> DuckAIPromptSubmissionWideEventData.FailingStep? {
+        switch status {
+        case .error: return .responseStateError
+        case .blocked: return .responseStateBlocked
+        default: return nil
         }
     }
 

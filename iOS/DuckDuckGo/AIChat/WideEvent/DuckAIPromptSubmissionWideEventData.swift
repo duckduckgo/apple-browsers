@@ -40,6 +40,9 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     var modelId: String?
     var userTier: String
+    /// Set on FAILURE to identify which phase of the journey broke. Mirrors
+    /// the `failing_step` taxonomy in the journey design doc.
+    var failingStep: FailingStep?
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -67,6 +70,11 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.globalData = globalData
     }
 
+    enum FailingStep: String, Codable {
+        case responseStateError = "response_state_error"
+        case responseStateBlocked = "response_state_blocked"
+    }
+
     /// Orphaned flows are cleaned up by `submissionStarted()` which runs
     /// synchronously before creating a new flow. This avoids a race with
     /// `WideEventService.resume()` where the cleanup task would complete a
@@ -84,6 +92,7 @@ extension DuckAIPromptSubmissionWideEventData {
         Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
@@ -96,6 +105,7 @@ extension WideEventParameter {
     enum DuckAIPromptSubmissionFeature {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
+        static let failingStep = "feature.data.ext.failing_step"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"

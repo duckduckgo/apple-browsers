@@ -190,6 +190,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
     }
 
+    func test_unbind_preservesVoiceSessionActive() {
+        sut.isVoiceSessionActive = true
+        sut.unbind()
+        XCTAssertTrue(sut.isVoiceSessionActive)
+    }
+
     // MARK: - VC Delegate: Collapsed Tap
 
     func test_collapsedTap_setsExpandedState() {
@@ -693,6 +699,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_updateToggleEnabled_false_forcesAIChatModeWhenAITab() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateToggleEnabled(false)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_updateInputMode_toggleDisabled_forcesAIChatInAITabSession() {
+        sut.showExpanded()
+        sut.updateToggleEnabled(false)
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession() {
+        sut.showExpanded()
+        sut.updateToggleEnabled(false)
+        sut.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
     func test_updateToggleEnabled_false_clearsAttachmentErrorBannerWhenOmnibar() {
         let validationMessage = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
         sut.activateFromOmnibar(inputMode: .aiChat)
@@ -825,16 +851,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.showCollapsed()
         XCTAssertEqual(sut.inputMode, .aiChat)
-    }
-
-    // MARK: - VC Delegate: SearchGoTo
-
-    func test_searchGoToTap_expandsInSearchMode() {
-        sut.showCollapsed()
-        sut.unifiedToggleInputVCDidTapSearchGoTo(sut.viewController)
-
-        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
-        XCTAssertEqual(sut.inputMode, .search)
     }
 
     // MARK: - AI Tab Search Inactive State
@@ -1619,6 +1635,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    func test_startNewChat_resetsVoiceSessionActive() {
+        sut.showExpanded()
+        sut.isVoiceSessionActive = true
+        sut.startNewChat()
+        XCTAssertFalse(sut.isVoiceSessionActive)
+    }
+
     // MARK: - Toggle State Persistence
 
     func test_submitSearch_commitsInputModeToStorage() {
@@ -2059,6 +2082,17 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.setText("typed")
         sut.activateForTab("tab-B")
         XCTAssertEqual(store.states["tab-A"]?.text, "typed")
+    }
+
+    func test_activateForTab_roundTripsVoiceSessionActive() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.isVoiceSessionActive = true
+        sut.activateForTab("tab-B")
+        XCTAssertFalse(sut.isVoiceSessionActive)
+        sut.activateForTab("tab-A")
+        XCTAssertTrue(sut.isVoiceSessionActive)
     }
 
     func test_endToEnd_twoTabSwitches_preserveIndependentState() {

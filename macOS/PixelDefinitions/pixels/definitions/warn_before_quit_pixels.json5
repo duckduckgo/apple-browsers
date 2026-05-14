@@ -28,13 +28,13 @@
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_settings_warn-before-quit_disabled": {
         "description": "Fired when the user disables 'Show confirmation before quitting with ⌘Q' setting in preferences",
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

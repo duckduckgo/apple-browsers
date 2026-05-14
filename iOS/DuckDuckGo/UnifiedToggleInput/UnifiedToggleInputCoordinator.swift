@@ -1315,9 +1315,22 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 case .invalidFile: counts.invalid += 1
                 }
             }
+            let entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint
+            switch host {
+            case .contextualChat:
+                entryPoint = .contextualChat
+            case .omnibar:
+                // `host == .omnibar` is the MainViewController surface, which
+                // covers both the address-bar composer and the dedicated
+                // Duck.ai tab. `isOmnibarSession` disambiguates: true while the
+                // user is composing in the address bar, false on the Duck.ai
+                // tab itself.
+                entryPoint = isOmnibarSession ? .omnibar : .aiTab
+            }
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
+                entryPoint: entryPoint,
                 userScriptBound: userScript != nil,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
                 selectedTools: tools?.map(\.rawValue) ?? [],

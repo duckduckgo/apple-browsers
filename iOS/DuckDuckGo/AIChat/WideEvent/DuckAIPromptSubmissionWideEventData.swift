@@ -40,6 +40,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     var modelId: String?
     var userTier: String
+    /// Where the user was when they composed and submitted the prompt.
+    var entryPoint: EntryPoint
     /// Set on FAILURE to identify which phase of the journey broke. Mirrors
     /// the `failing_step` taxonomy in the journey design doc.
     var failingStep: FailingStep?
@@ -74,6 +76,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     init(modelId: String?,
          userTier: String,
+         entryPoint: EntryPoint,
          userScriptBound: Bool,
          hasPageContext: Bool,
          selectedTools: [String],
@@ -86,6 +89,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.modelId = modelId
         self.userTier = userTier
+        self.entryPoint = entryPoint
         self.userScriptBound = userScriptBound
         self.hasPageContext = hasPageContext
         self.selectedTools = selectedTools
@@ -106,6 +110,16 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         case navigationFailed = "navigation_failed"
     }
 
+    enum EntryPoint: String, Codable {
+        /// User composed the prompt in the browser address bar.
+        case omnibar
+        /// User composed the prompt on the dedicated Duck.ai tab.
+        case aiTab = "ai_tab"
+        /// User composed the prompt in the contextual chat sheet that opens
+        /// from a regular web tab.
+        case contextualChat = "contextual_chat"
+    }
+
     /// Orphaned flows are cleaned up by `submissionStarted()` which runs
     /// synchronously before creating a new flow. This avoids a race with
     /// `WideEventService.resume()` where the cleanup task would complete a
@@ -123,6 +137,7 @@ extension DuckAIPromptSubmissionWideEventData {
         var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
@@ -143,6 +158,7 @@ extension WideEventParameter {
     enum DuckAIPromptSubmissionFeature {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
+        static let entryPoint = "feature.data.ext.entry_point"
         static let failingStep = "feature.data.ext.failing_step"
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"

@@ -32,6 +32,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
     func submissionStarted(modelId: String?,
                            userTier: AIChatUserTier,
+                           entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                            userScriptBound: Bool,
                            hasPageContext: Bool,
                            selectedTools: [String],
@@ -81,6 +82,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
     func submissionStarted(modelId: String?,
                            userTier: AIChatUserTier,
+                           entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                            userScriptBound: Bool,
                            hasPageContext: Bool,
                            selectedTools: [String],
@@ -98,6 +100,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         let data = DuckAIPromptSubmissionWideEventData(
             modelId: modelId,
             userTier: userTier.rawValue,
+            entryPoint: entryPoint,
             userScriptBound: userScriptBound,
             hasPageContext: hasPageContext,
             selectedTools: selectedTools,

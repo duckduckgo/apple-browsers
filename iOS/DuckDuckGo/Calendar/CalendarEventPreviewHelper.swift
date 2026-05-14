@@ -23,14 +23,9 @@ import EventKitUI
 import ICSParser
 import UIKit
 
-/// Presents a single-VEVENT `.ics` file via `EKEventEditViewController` on iOS 17+; falls back
-/// to `QuickLookPreviewHelper` for parse failures, multi-VEVENT files, and older iOS.
-///
 /// Owner must keep a strong reference until `onDismiss` fires — the editor's delegate is weak.
 final class CalendarEventPreviewHelper: NSObject, FilePreview {
 
-    /// Reason the helper couldn't auto-add the event. Surfaced via `onFailure` so the caller
-    /// can show a toast in the appropriate location.
     enum Failure {
         case multipleEvents
         case unrecognizedTimeZone
@@ -93,7 +88,6 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         presenter.present(editor, animated: true)
     }
 
-    /// Bridges `ICSEvent` to `EKEvent`. Shared by the UIKit and SwiftUI presentation paths.
     @available(iOS 17.0, *)
     static func makeEKEvent(from icsEvent: ICSEvent, in store: EKEventStore) -> EKEvent {
         let event = EKEvent(eventStore: store)

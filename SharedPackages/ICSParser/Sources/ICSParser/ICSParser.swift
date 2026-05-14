@@ -41,8 +41,7 @@ public enum ICSParser {
         case unsupportedRRulePart
     }
 
-    /// Successful parse outcome: every VEVENT in document order, plus any warnings raised
-    /// across the whole file (deduplicated).
+    /// Events in document order; `warnings` deduplicated across the whole file.
     public struct ParseResult {
         public let events: [ICSEvent]
         public let warnings: [Warning]

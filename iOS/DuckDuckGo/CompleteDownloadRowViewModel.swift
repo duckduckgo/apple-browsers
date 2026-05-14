@@ -36,9 +36,6 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
         super.init(filename: fileURL.filename)
     }
 
-    /// Returns the editor-ready event when the file should open in `EKEventEditViewController`;
-    /// nil when the feature is off, the OS is < 17, the file isn't `.ics`, or it's not a
-    /// single-VEVENT calendar.
     func preparePreviewEvent() -> PreparedCalendarEvent? {
         guard #available(iOS 17, *),
               featureFlagger.isFeatureOn(.icsCalendarLinks),

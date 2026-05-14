@@ -182,7 +182,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultFeatures: [SubscriptionEntitlement] = []
     public var resultFeaturesError: Error?
+    public var currentSubscriptionFeaturesCallCount: Int = 0
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
+        currentSubscriptionFeaturesCallCount += 1
         if let resultFeaturesError {
             throw resultFeaturesError
         }

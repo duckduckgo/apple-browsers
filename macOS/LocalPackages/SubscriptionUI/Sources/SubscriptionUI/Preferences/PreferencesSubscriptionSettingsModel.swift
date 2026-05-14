@@ -549,11 +549,13 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     private var dateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .long
+#if DEBUG || ALPHA
+        dateFormatter.timeStyle = .medium
+#else
         dateFormatter.timeStyle = .none
-
+#endif
         return dateFormatter
     }()
-
 }
 
 enum ManageSubscriptionSheet: Identifiable {

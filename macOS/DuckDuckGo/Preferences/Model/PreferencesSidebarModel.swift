@@ -412,7 +412,7 @@ final class PreferencesSidebarModel: ObservableObject {
             let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
 
             var updatedState: PreferencesSidebarSubscriptionState
-            if subscriptionManager.isSubscriptionPresent() {
+            if subscriptionManager.isUserAuthenticated {
                 do {
                     let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
                     let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)

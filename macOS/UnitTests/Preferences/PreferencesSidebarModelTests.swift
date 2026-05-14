@@ -317,6 +317,34 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.currentSubscriptionState.hasAnyEntitlement)
     }
 
+    func testExpiredSubscriptionCacheDoesNotSkipRemoteFetch() async throws {
+        // Regression: the outer gate in refreshSubscriptionStateAndSectionsIfNeeded must use
+        // isUserAuthenticated, not isSubscriptionPresent(). isSubscriptionPresent() is backed by
+        // a TTL cache — when the cache expires, isPresent returns false even for active
+        // subscribers. The old code treated an expired cache as "no subscription" and returned
+        // immediately without ever calling currentSubscriptionFeatures / hitting the backend.
+        // The fix: gate on isUserAuthenticated (token-based, TTL-independent) so an expired cache
+        // triggers a remote fetch rather than an immediate signed-out state.
+
+        // Given: authenticated user whose subscription cache has expired (isSubscriptionPresent = false)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+        // resultSubscription = nil → isSubscriptionPresent() returns false (simulates expired TTL)
+        mockSubscriptionManager.resultSubscription = nil
+        XCTAssertFalse(mockSubscriptionManager.isSubscriptionPresent())
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
+
+        // When
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then: currentSubscriptionFeatures must have been called — the backend fetch was attempted.
+        // (With the old isSubscriptionPresent gate it would have been skipped entirely.)
+        XCTAssertEqual(mockSubscriptionManager.currentSubscriptionFeaturesCallCount, 1,
+                       "Backend fetch must be attempted even when the subscription cache is expired")
+    }
+
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]

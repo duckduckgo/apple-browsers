@@ -509,8 +509,16 @@ class MainViewCoordinator {
         case safeArea
     }
 
+    /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
+    /// (voice / FE-hidden chat input), in which case the UTI's frame still sits at the bottom of
+    /// the screen and anchoring there would leave a gap below the webview. Falls through to
+    /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
     func anchorContentContainerToInputTop() {
-        setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        if navigationBarContainer.isHidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        }
     }
 
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {

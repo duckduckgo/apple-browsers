@@ -31,6 +31,11 @@ import WebKit
 extension MainViewController {
 
     enum Constants {
+        static let floatingReturnKeyKeyboardBottomConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.KeyboardBottom"
+        static let floatingReturnKeyInputTopConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.InputTop"
+        static let floatingReturnKeyActiveAnchorPriority = UILayoutPriority(999)
+        static let floatingReturnKeyInactiveAnchorPriority = UILayoutPriority(250)
+
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
@@ -84,7 +89,7 @@ extension MainViewController {
 
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
-        installFloatingSubmitViewController()
+        installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -95,6 +100,7 @@ extension MainViewController {
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
         unifiedToggleInputCoordinator?.updateOmnibarInputVisibility(keyboardVisible)
+        updateFloatingReturnKeyVisibility()
     }
 
     var isCurrentTabUsingUnifiedInputAIChrome: Bool {
@@ -102,18 +108,42 @@ extension MainViewController {
     }
 
     /// True when FE has asked us to hide the native chat input for the current AI tab via
-    /// `hideChatInput` (voice mode, sidebar open, etc.). Persisted per tab in `TabInputState`.
+    /// `hideChatInput`. Persisted per tab in `TabInputState`.
     var isAIChatInputHiddenForCurrentTab: Bool {
         guard currentTab?.isAITab == true else { return false }
         return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
     }
 
-    /// Hides the AI-tab chrome (left pill + bottom UTI bar) when FE asks to hide the chat input.
-    /// Idempotent; call from every refresh.
+    /// True when FE has signalled a voice session is in progress on the current AI tab via
+    /// `voiceSessionStarted`. Persisted per tab in `TabInputState`.
+    var isVoiceSessionActiveForCurrentTab: Bool {
+        guard currentTab?.isAITab == true else { return false }
+        return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
+    }
+
+    /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
     func reconcileAIChatInputChromeForCurrentTab() {
-        let hidden = isAIChatInputHiddenForCurrentTab
-        aiChatTabChatHeaderView?.setAIChatInputHidden(hidden)
-        viewCoordinator.setAITabBottomChromeHidden(hidden)
+        viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
+    }
+
+    /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
+    func reconcileVoiceSessionChromeForCurrentTab() {
+        aiChatTabChatHeaderView?.setVoiceSessionActive(isVoiceSessionActiveForCurrentTab)
+    }
+
+    /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
+    /// per-tab signal doesn't require remembering all three call sites.
+    func reconcileAIChromeForCurrentTab() {
+        reconcileAIChatInputChromeForCurrentTab()
+        reconcileVoiceSessionChromeForCurrentTab()
+    }
+
+    /// Force-shows the header back arrow when the toggle UI is unavailable so the user always
+    /// has an exit. Wraps the onboarding-aware lookup so both callers (refreshControls + the
+    /// settings sink) stay in sync — keeps the raw setting and the onboarding-deferred value
+    /// from racing during onboarding hand-off.
+    func reconcileBackArrowForceVisibility() {
+        aiChatTabChatHeaderView?.setForceBackButtonVisible(!isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
     }
 
     /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
@@ -293,6 +323,13 @@ private extension MainViewController {
                 if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
+                updateFloatingReturnKeyVisibility()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -328,6 +365,7 @@ private extension MainViewController {
         } else if coordinator.isAITabState && mode == .aiChat {
             coordinator.showExpanded(inputMode: .aiChat)
         }
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -335,7 +373,7 @@ private extension MainViewController {
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        updateFloatingSubmitVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -375,6 +413,14 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        unifiedToggleInputCoordinator?.isVoiceSessionActivePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reconcileVoiceSessionChromeForCurrentTab()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -386,34 +432,43 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // FE does not emit `showChatInput`, so `voiceSessionEnded` is the recovery signal that
-        // unhides the AI-tab chrome once the user leaves voice. The notification carries the
-        // source webView (matching macOS), so we route per-tab — back-grounded voice tabs are
-        // restored too, without disturbing tabs hidden for unrelated reasons.
+        // Per-tab so background voice tabs persist their state until re-activated.
+        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.updateVoiceSessionActive(true, for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.handleVoiceSessionEnded(for: webView)
+                self?.updateVoiceSessionActive(false, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    private func handleVoiceSessionEnded(for webView: WKWebView) {
+    private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
-        if controller === currentTab,
-           let coordinator = unifiedToggleInputCoordinator,
-           coordinator.aiChatInputBoxVisibility == .hidden {
-            // Coordinator setter persists via `didSet`, and the publisher subscription
-            // reconciles the chrome — no manual reconcile needed.
-            coordinator.aiChatInputBoxVisibility = .visible
+        if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
+            applyVoiceSessionTransition(active: active, to: coordinator)
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
-        var state = stateStore.state(for: controller.tabModel.uid)
-        guard state.aiChatInputBoxVisibility == .hidden else { return }
-        state.aiChatInputBoxVisibility = .visible
-        stateStore.update(state, for: controller.tabModel.uid)
+        let current = stateStore.state(for: controller.tabModel.uid)
+        let updated = current.applyingVoiceSessionTransition(active: active)
+        if updated != current {
+            stateStore.update(updated, for: controller.tabModel.uid)
+        }
+    }
+
+    private func applyVoiceSessionTransition(active: Bool, to coordinator: UnifiedToggleInputCoordinator) {
+        coordinator.isVoiceSessionActive = active
+        if !active, coordinator.aiChatInputBoxVisibility == .hidden {
+            coordinator.aiChatInputBoxVisibility = .visible
+        }
     }
 
     func subscribeToToggleSettings() {
@@ -422,6 +477,7 @@ private extension MainViewController {
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+                self.reconcileBackArrowForceVisibility()
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -470,7 +526,7 @@ private extension MainViewController {
         // `refreshNonAITab`) — at app launch this runs before `SwipeTabsCoordinator`'s
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
     }
 
     func refreshAITab(
@@ -481,7 +537,7 @@ private extension MainViewController {
         let hasExistingChat = (tab.url ?? tab.link?.url)?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
@@ -511,6 +567,12 @@ private extension MainViewController {
     func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
         if let userScript = tab.userScripts?.aiChatUserScript {
             coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
+            if hasExistingChat, let chatID = tab.webView.url?.duckAIChatID {
+                coordinator.restoreLastUsedModel(forChatID: chatID)
+            }
+            if let chatUpdatesPublisher = tab.userScripts?.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
+                coordinator.observeChatUpdates(chatUpdatesPublisher)
+            }
         }
     }
 
@@ -559,7 +621,7 @@ private extension MainViewController {
         tab.borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         tab.borderView.isBottomVisible = true
         reconcileToolbarVisibilityForCurrentTab()
-        reconcileAIChatInputChromeForCurrentTab()
+        reconcileAIChromeForCurrentTab()
         showBars()
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
@@ -677,28 +739,46 @@ extension MainViewController {
         contentVC.didMove(toParent: self)
     }
 
-    func installFloatingSubmitViewController() {
+    func installFloatingReturnKeyViewController() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        let floatingVC = coordinator.floatingSubmitViewController
+        let floatingVC = coordinator.floatingReturnKeyViewController
         floatingVC.delegate = self
 
         addChild(floatingVC)
         floatingVC.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(floatingVC.view)
+        let keyboardBottomConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8)
+        keyboardBottomConstraint.identifier = Constants.floatingReturnKeyKeyboardBottomConstraintIdentifier
+        keyboardBottomConstraint.priority = Constants.floatingReturnKeyActiveAnchorPriority
+        let inputTopConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.topAnchor, constant: -8)
+        inputTopConstraint.identifier = Constants.floatingReturnKeyInputTopConstraintIdentifier
+        inputTopConstraint.priority = Constants.floatingReturnKeyInactiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint = keyboardBottomConstraint
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint = inputTopConstraint
         NSLayoutConstraint.activate([
-            floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8),
+            keyboardBottomConstraint,
+            inputTopConstraint,
             floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
         floatingVC.didMove(toParent: self)
-        floatingVC.subscribe(to: coordinator.floatingSubmitStatePublisher)
         floatingVC.view.isHidden = true
     }
 
-    func updateFloatingSubmitVisibility() {
+    func updateFloatingReturnKeyVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
-        coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
+        updateFloatingReturnKeyAnchor(aboveUnifiedInput: renderState.isFloatingReturnKeyVisible && renderState.cardPosition == .bottom)
+        coordinator.floatingReturnKeyViewController.view.isHidden = !renderState.isFloatingReturnKeyVisible
+    }
+
+    func updateFloatingReturnKeyAnchor(aboveUnifiedInput: Bool) {
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyInactiveAnchorPriority
+            : Constants.floatingReturnKeyActiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyActiveAnchorPriority
+            : Constants.floatingReturnKeyInactiveAnchorPriority
     }
 }
 
@@ -912,7 +992,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapBack() {
-        onBackPressed()
+        if currentTab?.canGoBack == true {
+            onBackPressed()
+        } else {
+            showTabSwitcher()
+        }
     }
 
     func aiChatTabChatHeaderDidTapForward() {
@@ -920,16 +1004,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 }
 
-// MARK: - UnifiedToggleInputFloatingSubmitDelegate
+// MARK: - UnifiedToggleInputFloatingReturnKeyDelegate
 
-extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
+extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
 
-    func floatingSubmitDidTapSubmit() {
+    func floatingReturnKeyDidTap() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.submitCurrentInputFromFloatingSubmit()
+        coordinator.insertNewlineFromFloatingReturnKey()
     }
 
-    func floatingSubmitDidTapVoice() {
-        onDuckAIVoiceModeRequested()
-    }
 }

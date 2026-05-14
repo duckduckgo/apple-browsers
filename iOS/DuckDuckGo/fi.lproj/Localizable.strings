@@ -3465,7 +3465,10 @@
 "settings.address.trackers.animation" = "Näytä osoitekentässä";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
+"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat DuckDuckGoon %@ passiivisuuden jälkeen.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Valitse, mitä näet, kun palaat DuckDuckGoon.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 tunti";
@@ -3479,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Ei mitään";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekunti";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Passiivisuusajastin";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
+"settings.afterInactivity.label" = "Aloitusnäyttö";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";

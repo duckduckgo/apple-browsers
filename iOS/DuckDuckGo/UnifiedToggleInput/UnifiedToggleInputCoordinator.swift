@@ -391,6 +391,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
         subscribeToAttachmentUsageChanges()
+        subscribeToSubscriptionChanges()
         viewController.isToolsButtonHidden = true
 
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
@@ -1170,6 +1171,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func fetchModels() {
         modelStore.fetchModels()
+    }
+
+    func refreshModelsAfterSubscriptionChange() {
+        fetchModels()
     }
 
     func startNewChat() {
@@ -2077,6 +2082,15 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToSubscriptionChanges() {
+        NotificationCenter.default.publisher(for: .subscriptionDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)
     }

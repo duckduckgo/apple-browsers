@@ -209,10 +209,25 @@ final class AIChatAttachmentsCarouselView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        NSCursor.arrow.set()
+        setCursorIfInGapRegion(event: event)
     }
 
     override func mouseMoved(with event: NSEvent) {
+        setCursorIfInGapRegion(event: event)
+    }
+
+    /// Only push `.arrow` when the cursor is in a true gap region (not over any rendered card).
+    /// If a card subview is under the cursor, it will set its own cursor (arrow on the card body,
+    /// pointing-hand on its × button) — the carousel must not race those.
+    private func setCursorIfInGapRegion(event: NSEvent) {
+        let pointInWindow = event.locationInWindow
+        let pointInSelf = convert(pointInWindow, from: nil)
+        // `hitTest` returns the deepest subview at the point, or self if no subview was hit.
+        // Inside the scroll view's documentView/cards we'll get a non-self hit; in the gap or
+        // shadow-margin band we get self (or the scrollView itself, which has no cursor logic).
+        if let hit = hitTest(pointInSelf), hit !== self, hit !== scrollView {
+            return
+        }
         NSCursor.arrow.set()
     }
 

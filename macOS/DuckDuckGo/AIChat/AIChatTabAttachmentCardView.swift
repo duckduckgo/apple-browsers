@@ -198,15 +198,29 @@ final class AIChatTabAttachmentCardView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        NSCursor.arrow.set()
+        setCursorIfNotOverRemoveButton(event: event)
     }
 
     override func mouseMoved(with event: NSEvent) {
+        setCursorIfNotOverRemoveButton(event: event)
+    }
+
+    /// Only push `.arrow` when the cursor isn't over the remove button — otherwise the card's
+    /// per-tick `mouseMoved` events would race the button's own `.pointingHand` set and produce
+    /// a brief flicker as the cursor approaches the ×.
+    private func setCursorIfNotOverRemoveButton(event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        guard !removeButton.frame.contains(location) else { return }
         NSCursor.arrow.set()
     }
 
     override func resetCursorRects() {
+        // Arrow rect for the card area, then explicitly carve out the remove button's frame
+        // with a pointing-hand rect. AppKit picks the most recently added rect for a given
+        // point, so the button rect wins inside its bounds even though the parent rect
+        // already covers it.
         addCursorRect(bounds, cursor: .arrow)
+        addCursorRect(removeButton.frame, cursor: .pointingHand)
     }
 
     // MARK: - Appearance

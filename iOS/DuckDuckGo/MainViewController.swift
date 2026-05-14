@@ -4489,7 +4489,13 @@ extension MainViewController: TabDelegate {
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
         let view = YouTubeAdBlockPickerView { [weak self, weak tab] mode in
             guard let self else { return }
-            if mode == .alwaysOff {
+            switch mode {
+            case .alwaysOn:
+                break
+            case .disableUntilRelaunch:
+                // TODO: Disable YouTube ad blocking for the current session only (until the next app launch).
+                break
+            case .alwaysOff:
                 self.setYouTubeAdBlockingEnabled(false)
             }
             self.dismiss(animated: true) { [weak self, weak tab] in

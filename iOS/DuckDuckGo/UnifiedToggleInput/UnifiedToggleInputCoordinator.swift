@@ -279,7 +279,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
-    private var lastUsedModelCache: [String: String] = [:]
+    private let lastUsedModelCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 64
+        return cache
+    }()
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
@@ -431,7 +435,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     return
                 }
                 // Storage changed for this chat; drop the cached model so the next read reflects it.
-                self.lastUsedModelCache.removeValue(forKey: activeChatID)
+                self.lastUsedModelCache.removeObject(forKey: activeChatID as NSString)
                 self.restoreLastUsedModel(forChatID: activeChatID)
             }
     }
@@ -446,12 +450,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         let modelID: String?
-        if let cached = lastUsedModelCache[chatID] {
-            modelID = cached
+        if let cached = lastUsedModelCache.object(forKey: chatID as NSString) {
+            modelID = cached as String
         } else {
             modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID)
             if let modelID {
-                lastUsedModelCache[chatID] = modelID
+                lastUsedModelCache.setObject(modelID as NSString, forKey: chatID as NSString)
             }
         }
         guard let modelID else {

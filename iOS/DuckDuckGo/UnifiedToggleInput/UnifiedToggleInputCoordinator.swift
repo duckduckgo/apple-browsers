@@ -177,6 +177,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+    var isVoiceSessionActivePublisher: Published<Bool>.Publisher { $isVoiceSessionActive }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
     var persistedReasoningEffort: AIChatReasoningEffort? {
         guard let selectedModel else { return nil }
@@ -201,6 +202,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            persistDraftToStore()
+        }
+    }
+    @Published var isVoiceSessionActive: Bool = false {
+        didSet {
+            guard oldValue != isVoiceSessionActive else { return }
             persistDraftToStore()
         }
     }
@@ -232,6 +239,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
+    private var isContentOverlaySuppressed = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -438,6 +446,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
+        isVoiceSessionActive = state.isVoiceSessionActive
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -476,7 +485,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
-            aiChatInputBoxVisibility: aiChatInputBoxVisibility
+            aiChatInputBoxVisibility: aiChatInputBoxVisibility,
+            isVoiceSessionActive: isVoiceSessionActive
         )
     }
 
@@ -587,11 +597,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
-        let effectiveInputMode = isToggleEnabled ? inputMode : .search
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
-        setInitialInputMode(effectiveInputMode)
+        // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
+        setInitialInputMode(isToggleEnabled ? inputMode : .search)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
@@ -673,14 +683,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
-        if !enabled, isOmnibarSession {
-            inputMode = .search
-            viewController.apply(computeRenderState().viewConfig, animated: false)
-            refreshToolsPresentation()
-            modeChangeSubject.send(.search)
-            syncAttachmentValidationErrorForCurrentMode()
-            updateFloatingSubmitState()
-        }
+        let effective = effectiveInputMode(for: inputMode)
+        guard effective != inputMode else { return }
+        inputMode = effective
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        refreshToolsPresentation()
+        modeChangeSubject.send(effective)
+        syncAttachmentValidationErrorForCurrentMode()
+        updateFloatingSubmitState()
+    }
+
+    /// Without a toggle UI the user can't switch mode, so omnibar locks to `.search` and
+    /// AI tabs to `.aiChat`.
+    private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
+        guard !isToggleEnabled else { return requestedMode }
+        if isOmnibarSession { return .search }
+        if isAITabState { return .aiChat }
+        return requestedMode
     }
 
     func editingHeight() -> CGFloat {
@@ -706,7 +725,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Input Management
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
@@ -747,7 +766,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
@@ -975,6 +994,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.setInputMode(mode, animated: animated)
     }
 
+    func setContentOverlaySuppressed(_ suppressed: Bool) {
+        isContentOverlaySuppressed = suppressed
+    }
+
     // MARK: - Render State
 
     func computeRenderState() -> UTIRenderState {
@@ -1001,9 +1024,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
             let isSearchOnAITab = isAITabState && inputMode == .search
-            // Toggling to search on a chat tab without text is a *mode switch*; keep the chat
-            // web view visible. Suggestions take over once the user starts typing.
-            let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
+            // Toggling to Search on a chat tab without visible text is a mode switch — keep the
+            // chat web view; `textState` (not `currentText`) excludes preserved drafts from
+            // dismiss-cleanup.
+            let isSearchOnAITabWithoutText = isSearchOnAITab && textState == .empty
             isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
             inactiveAppearance = isSearchKeyboardHidden
@@ -1024,10 +1048,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isFloatingSubmitVisible = displayState == .omnibar(.active)
             && cardPosition == .top
             && inputMode == .aiChat
+        let shouldSuppressContentOverlay = isOmnibarSession && isContentOverlaySuppressed && textState != .userTyped
+        let effectiveContentVisible = isContentVisible && !shouldSuppressContentOverlay
 
         return UTIRenderState(
             isInputVisible: isInputVisible,
-            isContentVisible: isContentVisible,
+            isContentVisible: effectiveContentVisible,
             cardLayout: cardLayout(forIsExpanded: isExpanded),
             cardPosition: cardPosition,
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
@@ -1036,7 +1062,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
-            inputMode: inputMode
+            inputMode: inputMode,
+            isAITab: isAITabState
         )
     }
 
@@ -1088,6 +1115,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setText("")
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
+        isVoiceSessionActive = false
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -1345,10 +1373,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateInputMode(mode, animated: true)
     }
 
-    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
-        showExpanded(inputMode: .search)
-    }
-
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
         clearSelectedTool()
     }
@@ -1376,7 +1400,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestAIChat()
+        delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: viewController.handler.currentText)
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {

@@ -42,14 +42,17 @@ extension OnboardingRebranding.OnboardingView {
         @State private var shouldStartTypingTitle = false
         @State private var showContent = false
         @Binding var isVisible: Bool
+        private let content: OnboardingAddToDockContent
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
+            content: OnboardingAddToDockContent,
             isVisible: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
+            self.content = content
             self._isVisible = isVisible
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
@@ -57,8 +60,10 @@ extension OnboardingRebranding.OnboardingView {
 
         var body: some View {
             if showAddToDockTutorial {
-                RebrandedOnboardingView.AddToDockTutorialContent(isVisible: $isVisible,
-                                                                 cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                RebrandedOnboardingView.AddToDockTutorialContent(
+                    content: content.tutorialStepContent,
+                    isVisible: $isVisible
+                ) {
                     dismissAction(true)
                 }
             } else {
@@ -75,7 +80,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UserText.AddToDockOnboarding.Promo.introMessage)
+                    Text(content.message)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.body)
                     .multilineTextAlignment(.center)
@@ -86,28 +91,29 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(UserText.AddToDockOnboarding.Promo.title,
-                               startAnimating: $shouldStartTypingTitle,
-                               onTypingFinished: { [reduceMotion] in
-                                   if reduceMotion {
-                                       showContent = true
-                                   } else {
-                                       withAnimation { showContent = true }
-                                   }
-                               })
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    TypingText(
+                        content.title,
+                        startAnimating: $shouldStartTypingTitle,
+                        onTypingFinished: { [reduceMotion] in
+                            if reduceMotion {
+                                showContent = true
+                            } else {
+                                withAnimation { showContent = true }
+                            }
+                        })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: showTutorial) {
-                            Text(UserText.AddToDockOnboarding.Buttons.tutorial)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: { dismissAction(false) }) {
-                            Text(UserText.AddToDockOnboarding.Buttons.skip)
+                            Text(content.secondaryCTA)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
@@ -151,21 +157,21 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-27033
     struct AddToDockTutorialContent: View {
         @Binding var isVisible: Bool
-        let cta: String
+        let content: OnboardingAddToDockContent.TutorialStepContent
         let dismissAction: () -> Void
 
-        init(isVisible: Binding<Bool>, cta: String, dismissAction: @escaping () -> Void) {
+        init(content: OnboardingAddToDockContent.TutorialStepContent, isVisible: Binding<Bool>, dismissAction: @escaping () -> Void) {
+            self.content = content
             self._isVisible = isVisible
-            self.cta = cta
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             RebrandedOnboardingView.AddToDockTutorialView(
-                title: UserText.AddToDockOnboarding.Tutorial.title,
-                message: UserText.AddToDockOnboarding.Tutorial.message,
+                title: content.title,
+                message: content.message,
                 isVisible: $isVisible,
-                cta: cta,
+                cta: content.primaryCTA,
                 action: dismissAction
             )
         }

@@ -29,6 +29,7 @@ struct SettingsYouTubeAdBlockingView: View {
     @State private var hasFiredSettingsDisplayedPixel = false
 
     @EnvironmentObject var viewModel: SettingsViewModel
+
     var body: some View {
         List {
             if viewModel.shouldDisplayDuckPlayerContingencyMessage {
@@ -66,11 +67,20 @@ struct SettingsYouTubeAdBlockingView: View {
                     .padding(.vertical, 8)
                 }
 
-                Section {
-                    SettingsCellView(
-                        label: UserText.youTubeAdBlockingToggle,
-                        accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                    )
+                if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                    Section {
+                        SettingsCellView(
+                            label: UserText.youTubeAdBlockingToggle,
+                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+                        )
+                    }
+                } else {
+                    Section(footer: Text(footerAttributedString)) {
+                        SettingsCellView(
+                            label: UserText.youTubeAdBlockingToggle,
+                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+                        )
+                    }
                 }
             }
 
@@ -86,9 +96,22 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
+            viewModel.markYouTubeAdBlockingDisclosureHiddenIfExistingUser()
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }
+    }
+
+    private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
+
+    private var footerAttributedString: AttributedString {
+        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
+        base.append(AttributedString(" "))
+        var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
+        link.foregroundColor = Color(designSystemColor: .accent)
+        link.link = Self.learnMoreURL
+        base.append(link)
+        return base
     }
 }
 

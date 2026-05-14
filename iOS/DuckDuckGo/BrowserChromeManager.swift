@@ -24,6 +24,7 @@ protocol BrowserChromeDelegate: AnyObject {
     func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?)
     func setNavigationBarHidden(_ hidden: Bool)
     func setRefreshControlEnabled(_ isEnabled: Bool)
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool)
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?)
     

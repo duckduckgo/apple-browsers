@@ -32,33 +32,45 @@ extension OnboardingRebranding.OnboardingView {
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding private var isVisible: Bool
+        private let content: OnboardingAddressBarPositionContent
         private let action: () -> Void
 
-        init(isVisible: Binding<Bool>, action: @escaping () -> Void) {
+        init(
+            content: OnboardingAddressBarPositionContent,
+            isVisible: Binding<Bool>,
+            action: @escaping () -> Void
+        ) {
+            self.content = content
             self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                TypingText(UserText.Onboarding.AddressBarPosition.title,
-                           startAnimating: $shouldStartTyping,
-                           onTypingFinished: { [reduceMotion] in
-                               if reduceMotion {
-                                   showContent = true
-                               } else {
-                                   withAnimation { showContent = true }
-                               }
-                           })
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedOnboardingView.OnboardingAddressBarPositionPicker()
+                    RebrandedOnboardingView.OnboardingAddressBarPositionPicker(
+                        topOption: content.topOption,
+                        bottomOption: content.bottomOption,
+                        defaultIndicator: content.defaultIndicator
+                    )
 
                     Button(action: action) {
-                        Text(verbatim: UserText.Onboarding.AddressBarPosition.cta)
+                        Text(verbatim: content.primaryCTA)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }

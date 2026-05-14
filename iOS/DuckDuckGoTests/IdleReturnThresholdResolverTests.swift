@@ -64,10 +64,10 @@ struct IdleReturnThresholdResolverTests {
     }
 
     @available(iOS 16, *)
-    @Test("When user has selected Always (0) then resolver returns 0", .timeLimit(.minutes(1)))
-    func userStoredAlwaysReturnsZero() throws {
+    @Test("When user has selected None (0) then resolver returns 0", .timeLimit(.minutes(1)))
+    func userStoredNoneReturnsZero() throws {
         let (_, userStorage) = try makeUserStorage()
-        try userStorage.set(AfterInactivityIdleInterval.always.seconds,
+        try userStorage.set(AfterInactivityIdleInterval.none.seconds,
                             for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
 
         let resolver = IdleReturnThresholdResolver(

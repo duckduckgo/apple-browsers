@@ -84,6 +84,18 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertTrue(state.isContentVisible)
     }
 
+    func test_aiTabExpanded_search_afterDismissCleanupWithDraft_hidesContent() {
+        // Dismiss-cleanup scrubs the visible input (`textState = .empty`) but keeps `currentText`
+        // as a per-tab draft. Toggling to Search on a Duck.ai tab afterwards must still hide
+        // content — the field is visually empty even though the draft persists.
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.setText("draft")
+        sut.clearText()
+        sut.showExpanded(inputMode: .search)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isContentVisible)
+    }
+
     func test_aiTabExpanded_search_keyboardHidden_showsInactive() {
         sut.showExpanded(inputMode: .search)
         sut.updateOmnibarInputVisibility(false)

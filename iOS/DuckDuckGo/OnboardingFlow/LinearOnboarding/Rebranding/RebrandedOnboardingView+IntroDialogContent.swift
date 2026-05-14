@@ -66,8 +66,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        private let title: String
-        private let message: String
+        private let content: OnboardingIntroStepContent
         private let skipOnboardingView: AnyView?
         private let continueAction: () -> Void
         private let skipAction: () -> Void
@@ -82,16 +81,14 @@ extension OnboardingRebranding.OnboardingView {
         @Binding var isVisible: Bool
 
         init(
-            title: String,
-            message: String,
+            content: OnboardingIntroStepContent,
             skipOnboardingView: AnyView?,
             isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
         ) {
-            self.title = title
-            self.message = message
+            self.content = content
             self.skipOnboardingView = skipOnboardingView
             self._isVisible = isVisible
             self.continueAction = continueAction
@@ -104,7 +101,7 @@ extension OnboardingRebranding.OnboardingView {
                 if showSkipOnboarding {
                     skipOnboardingView
                 } else {
-                    content
+                    introContent
                 }
             }
             .onChange(of: showSkipOnboarding) { newValue in
@@ -114,7 +111,7 @@ extension OnboardingRebranding.OnboardingView {
             }
         }
 
-        private var content: some View {
+        private var introContent: some View {
             LinearDialogContentContainer(
                 metrics: .init(
                     outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
@@ -123,14 +120,14 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(message)
+                    Text(content.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
                         if reduceMotion {
                             showContent = true
                         } else {
@@ -144,13 +141,13 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: continueAction) {
-                            Text(UserText.Onboarding.Intro.continueCTA)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
                             Button(action: showSkipOnboardingDialog) {
-                                Text(UserText.Onboarding.Intro.skipCTA)
+                                Text(content.secondaryCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }

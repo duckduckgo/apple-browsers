@@ -415,10 +415,10 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
     }
 
-    func test_isGenerating_collapsed_toggleDisabled_showsStopGeneratingAndSearchGoTo() {
+    func test_isGenerating_collapsed_toggleDisabled_stillShowsStopGeneratingOnly() {
         sut.isToggleEnabled = false
         sut.isGenerating = true
-        XCTAssertEqual(sut.buttonState, .stopGeneratingAndSearchGoTo)
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
     }
 
     func test_isGenerating_expanded_doesNotShowStopInCollapsedBar() {
@@ -526,14 +526,15 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
-    func test_toggleOff_aiChatMode_empty_aiShortcutAvailable_keepsVoiceAndSearchGoToBranch() {
+    func test_toggleOff_aiChatMode_empty_voiceOn_fallsBackToVoiceOnly() {
         sut = UnifiedToggleInputHandler(
             isVoiceSearchEnabled: true,
             isToggleEnabled: false,
             isAIChatShortcutAvailable: true
         )
-        // Default state is .aiChat; toggle-off + .aiChat hits the existing voice/searchGoTo branch.
-        XCTAssertEqual(sut.buttonState, .voiceAndSearchGoTo)
+        // Default state is .aiChat; with the search-go-to escape hatch removed, toggle-off + .aiChat
+        // falls through to the voice-only branch (or .noButtons when voice is unavailable).
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
     func test_isAIChatShortcutAvailable_setterRefreshesButtonState() {

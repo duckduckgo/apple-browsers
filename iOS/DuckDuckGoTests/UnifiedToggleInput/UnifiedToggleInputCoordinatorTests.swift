@@ -190,6 +190,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
     }
 
+    func test_unbind_preservesVoiceSessionActive() {
+        sut.isVoiceSessionActive = true
+        sut.unbind()
+        XCTAssertTrue(sut.isVoiceSessionActive)
+    }
+
     // MARK: - VC Delegate: Collapsed Tap
 
     func test_collapsedTap_setsExpandedState() {
@@ -382,6 +388,44 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_activateFromOmnibar_setsExpandedTrue() {
         sut.activateFromOmnibar()
         XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_computeRenderState_whenContentOverlayNotSuppressed_keepsContentVisibleForPrefilledText() {
+        sut.activateFromOmnibar(prefilledText: "example.com")
+
+        XCTAssertTrue(sut.computeRenderState().isContentVisible)
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActive_hidesContentButKeepsInputVisible() {
+        sut.activateFromOmnibar()
+
+        sut.setContentOverlaySuppressed(true)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertFalse(renderState.isContentVisible)
+        XCTAssertTrue(sut.isOmnibarSession)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActiveWithPrefilledText_hidesContentButKeepsInputVisible() {
+        sut.activateFromOmnibar(prefilledText: "example.com")
+
+        sut.setContentOverlaySuppressed(true)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertFalse(renderState.isContentVisible)
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_setContentOverlaySuppressed_whenOmnibarActiveAndTextEntered_keepsContentVisible() {
+        sut.activateFromOmnibar()
+        sut.setContentOverlaySuppressed(true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "duck")
+
+        XCTAssertTrue(sut.computeRenderState().isContentVisible)
     }
 
     func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
@@ -655,6 +699,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_updateToggleEnabled_false_forcesAIChatModeWhenAITab() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateToggleEnabled(false)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_updateInputMode_toggleDisabled_forcesAIChatInAITabSession() {
+        sut.showExpanded()
+        sut.updateToggleEnabled(false)
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession() {
+        sut.showExpanded()
+        sut.updateToggleEnabled(false)
+        sut.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
     func test_updateToggleEnabled_false_clearsAttachmentErrorBannerWhenOmnibar() {
         let validationMessage = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
         sut.activateFromOmnibar(inputMode: .aiChat)
@@ -787,16 +851,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.showCollapsed()
         XCTAssertEqual(sut.inputMode, .aiChat)
-    }
-
-    // MARK: - VC Delegate: SearchGoTo
-
-    func test_searchGoToTap_expandsInSearchMode() {
-        sut.showCollapsed()
-        sut.unifiedToggleInputVCDidTapSearchGoTo(sut.viewController)
-
-        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
-        XCTAssertEqual(sut.inputMode, .search)
     }
 
     // MARK: - AI Tab Search Inactive State
@@ -1581,6 +1635,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    func test_startNewChat_resetsVoiceSessionActive() {
+        sut.showExpanded()
+        sut.isVoiceSessionActive = true
+        sut.startNewChat()
+        XCTAssertFalse(sut.isVoiceSessionActive)
+    }
+
     // MARK: - Toggle State Persistence
 
     func test_submitSearch_commitsInputModeToStorage() {
@@ -1733,6 +1794,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
 
         XCTAssertEqual(mockDelegate.didRequestAIChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_forwardsCurrentText() {
+        sut.viewController.handler.updateCurrentText("hello")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "hello")
     }
 
     // MARK: - Helpers
@@ -1918,7 +1988,11 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
     func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
-    func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
+    var didRequestAIChatPrefilledText: String?
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
+        didRequestAIChatCount += 1
+        didRequestAIChatPrefilledText = prefilledText
+    }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode
@@ -2008,6 +2082,17 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.setText("typed")
         sut.activateForTab("tab-B")
         XCTAssertEqual(store.states["tab-A"]?.text, "typed")
+    }
+
+    func test_activateForTab_roundTripsVoiceSessionActive() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.isVoiceSessionActive = true
+        sut.activateForTab("tab-B")
+        XCTAssertFalse(sut.isVoiceSessionActive)
+        sut.activateForTab("tab-A")
+        XCTAssertTrue(sut.isVoiceSessionActive)
     }
 
     func test_endToEnd_twoTabSwitches_preserveIndependentState() {

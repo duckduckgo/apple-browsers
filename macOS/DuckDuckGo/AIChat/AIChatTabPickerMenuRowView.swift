@@ -35,7 +35,10 @@ final class AIChatTabPickerMenuRowView: NSView {
     private enum Layout {
         static let height: CGFloat = 22
         static let width: CGFloat = 280
-        static let leadingPadding: CGFloat = 4
+        /// Distance from the row's left edge to the checkmark. Sized so the checkmark sits a
+        /// couple of points *inside* the selection background's left rounded edge
+        /// (`selectionInset = 5` in `draw`) rather than clipping against it.
+        static let leadingPadding: CGFloat = 8
         static let trailingPadding: CGFloat = 14
         static let checkmarkSize: CGFloat = 12
         static let iconSize: CGFloat = 16

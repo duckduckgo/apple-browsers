@@ -469,7 +469,7 @@ final class UnifiedToggleInputView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        guard isExpanded else { return }
+        guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
         expandedShadowView.layer.maskedCorners = cardView.layer.maskedCorners

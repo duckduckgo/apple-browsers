@@ -89,6 +89,14 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames.isEmpty)
     }
 
+    @available(iOS 16, *)
+    @Test("When not eligible then escapeHatchTabSwitcherTapped fires no pixel", .timeLimit(.minutes(1)))
+    func whenNotEligibleThenEscapeHatchTabSwitcherTappedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.escapeHatchTabSwitcherTapped()
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
     @Test("When not eligible then tabSwitcherSelectedFromNTP fires no pixel")
     func whenNotEligibleThenTabSwitcherFiresNothing() {
         let (sut, collector) = makeSUT(eligible: false)
@@ -207,6 +215,16 @@ struct NTPAfterIdleInstrumentationTests {
         let (sut, collector) = makeSUT()
         sut.tabSwitcherSelectedFromNTP(afterIdle: false)
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleTabSwitcherSelectedUserInitiated.name])
+    }
+
+    // MARK: - escapeHatchTabSwitcherTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch tab switcher tapped then fires the after_idle pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchTabSwitcherTappedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchTabSwitcherTapped()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle.name])
     }
 
     // MARK: - Multiple calls accumulate

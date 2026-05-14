@@ -12912,6 +12912,7 @@
 			buildConfigurationList = 3706FCFA293F65D500E42796 /* Build configuration list for PBXNativeTarget "DuckDuckGo Privacy Browser App Store" */;
 			buildPhases = (
 				CBCCF59F2996681700C02DFE /* Assert Xcode version */,
+				DD60CACE2026051300017A06 /* Common Build Checks */,
 				378E2798296F6D1D00FCADA2 /* Validate PRODUCT_NAME */,
 				3706FA79293F65D500E42796 /* Check Embedded Config URLs */,
 				6A8856B31B2BC5078B61ED81 /* SwiftLint */,
@@ -13501,6 +13502,7 @@
 			buildConfigurationList = AA585DA4248FD31500E9A3E2 /* Build configuration list for PBXNativeTarget "DuckDuckGo Privacy Browser" */;
 			buildPhases = (
 				CBCCF59E299667B700C02DFE /* Assert Xcode version */,
+				DD60CACE2026051300017A05 /* Common Build Checks */,
 				3705272528992C8A000C06A2 /* Check Embedded Config URLs */,
 				28003FDBDB96625F1630CFF2 /* SwiftLint */,
 				AA585D7A248FD31100E9A3E2 /* Sources */,
@@ -14541,6 +14543,44 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then exit 0; fi\n\"${SRCROOT}/scripts/assert_xcode_version.sh\"\n";
+		};
+		DD60CACE2026051300017A05 /* Common Build Checks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Common Build Checks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/../scripts/common-checks.sh\"\n";
+		};
+		DD60CACE2026051300017A06 /* Common Build Checks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Common Build Checks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/../scripts/common-checks.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -155,7 +155,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { textSubmissionSubject.eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { microphoneButtonTappedSubject.eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { clearButtonTappedSubject.eraseToAnyPublisher() }
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { searchGoToButtonTappedSubject.eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { hasUserInteractedWithTextSubject.eraseToAnyPublisher() }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { isCurrentTextValidURLSubject.eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { currentButtonStateSubject.eraseToAnyPublisher() }
@@ -165,7 +164,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
-    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let hasUserInteractedWithTextSubject = PassthroughSubject<Bool, Never>()
     private let isCurrentTextValidURLSubject = PassthroughSubject<Bool, Never>()
     private let currentButtonStateSubject = PassthroughSubject<SwitchBarButtonState, Never>()
@@ -182,6 +180,5 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     func microphoneButtonTapped() {}
     func markUserInteraction() {}
     func clearButtonTapped() {}
-    func searchGoToButtonTapped() {}
     func updateBarPosition(isTop: Bool) { isTopBarPosition = isTop }
 }

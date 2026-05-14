@@ -395,8 +395,8 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var afterInactivityFooterText: String {
-        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .always {
-            return UserText.settingsAfterInactivityFooterAlways
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .none {
+            return UserText.settingsAfterInactivityFooterNone
         }
         return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
     }
@@ -421,6 +421,10 @@ final class SettingsViewModel: ObservableObject {
             set: { newValue in
                 self.afterInactivityIdleInterval = newValue
                 try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
+                DailyPixel.fireDailyAndCount(
+                    pixel: .ntpAfterIdleSettingIdleIntervalChanged,
+                    withAdditionalParameters: ["idle_interval_seconds": String(newValue.seconds)]
+                )
             }
         )
     }

@@ -179,6 +179,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+    var isVoiceSessionActivePublisher: Published<Bool>.Publisher { $isVoiceSessionActive }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
     var persistedReasoningEffort: AIChatReasoningEffort? {
         guard let selectedModel else { return nil }
@@ -203,6 +204,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            persistDraftToStore()
+        }
+    }
+    @Published var isVoiceSessionActive: Bool = false {
+        didSet {
+            guard oldValue != isVoiceSessionActive else { return }
             persistDraftToStore()
         }
     }
@@ -280,6 +287,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
+    private let lastUsedModelCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 64
+        return cache
+    }()
+    private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
@@ -317,6 +331,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
@@ -335,6 +351,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )
+        self.lastUsedModelProvider = lastUsedModelProvider
+            ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
@@ -413,6 +431,55 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetSessionState()
     }
 
+    /// Subscribes to bridge-side chat-update events so the UTI's model/tools reflect any
+    /// model change the FE makes on the active chat (e.g. user picks a different model
+    /// mid-conversation). Replaces any previous subscription.
+    func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
+        chatUpdatesCancellable = publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] updatedChatID in
+                guard let self else { return }
+                guard let activeChatID = self.boundUserScript?.webView?.url?.duckAIChatID,
+                      activeChatID == updatedChatID else {
+                    return
+                }
+                // Storage changed for this chat; drop the cached model so the next read reflects it.
+                self.lastUsedModelCache[activeChatID] = nil
+                self.restoreLastUsedModel(forChatID: activeChatID)
+            }
+    }
+
+    /// Reads the last-used model from native storage for `chatID` and applies it to the
+    /// model store so the toolbar (model chip + tools) reflects the model the chat last
+    /// used. No-op when the provider is unavailable or the chat has no recorded model.
+    /// Safe to call before models have loaded — `handleModelsUpdated()` will reconcile.
+    func restoreLastUsedModel(forChatID chatID: String) {
+        guard let lastUsedModelProvider else {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no provider configured")
+            return
+        }
+        let modelID: String?
+        if let cached = lastUsedModelCache[chatID] {
+            modelID = cached
+        } else {
+            modelID = lastUsedModelProvider.lastUsedModel(forChatId: chatID)
+            if let modelID {
+                lastUsedModelCache[chatID] = modelID
+            }
+        }
+        guard let modelID else {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no last-used model recorded")
+            return
+        }
+        if modelStore.currentModelId == modelID {
+            Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: model '\(modelID, privacy: .public)' already current, skipping")
+            return
+        }
+        Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
+        modelStore.updateSelectedModel(modelID)
+        handleModelsUpdated()
+    }
+
     // MARK: - Per-Tab State
 
     func activateForTab(_ uid: TabUID) {
@@ -441,6 +508,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
+        isVoiceSessionActive = state.isVoiceSessionActive
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -479,7 +547,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
-            aiChatInputBoxVisibility: aiChatInputBoxVisibility
+            aiChatInputBoxVisibility: aiChatInputBoxVisibility,
+            isVoiceSessionActive: isVoiceSessionActive
         )
     }
 
@@ -590,11 +659,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
-        let effectiveInputMode = isToggleEnabled ? inputMode : .search
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
-        setInitialInputMode(effectiveInputMode)
+        // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
+        setInitialInputMode(isToggleEnabled ? inputMode : .search)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
@@ -676,14 +745,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
-        if !enabled, isOmnibarSession {
-            inputMode = .search
-            viewController.apply(computeRenderState().viewConfig, animated: false)
-            refreshToolsPresentation()
-            modeChangeSubject.send(.search)
-            syncAttachmentValidationErrorForCurrentMode()
-            updateFloatingSubmitState()
-        }
+        let effective = effectiveInputMode(for: inputMode)
+        guard effective != inputMode else { return }
+        inputMode = effective
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        refreshToolsPresentation()
+        modeChangeSubject.send(effective)
+        syncAttachmentValidationErrorForCurrentMode()
+        updateFloatingSubmitState()
+    }
+
+    /// Without a toggle UI the user can't switch mode, so omnibar locks to `.search` and
+    /// AI tabs to `.aiChat`.
+    private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
+        guard !isToggleEnabled else { return requestedMode }
+        if isOmnibarSession { return .search }
+        if isAITabState { return .aiChat }
+        return requestedMode
     }
 
     func editingHeight() -> CGFloat {
@@ -709,7 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Input Management
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
@@ -750,7 +828,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
-        let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
@@ -1008,9 +1086,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
             let isSearchOnAITab = isAITabState && inputMode == .search
-            // Toggling to search on a chat tab without text is a *mode switch*; keep the chat
-            // web view visible. Suggestions take over once the user starts typing.
-            let isSearchOnAITabWithoutText = isSearchOnAITab && currentText.isEmpty
+            // Toggling to Search on a chat tab without visible text is a mode switch — keep the
+            // chat web view; `textState` (not `currentText`) excludes preserved drafts from
+            // dismiss-cleanup.
+            let isSearchOnAITabWithoutText = isSearchOnAITab && textState == .empty
             isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
             let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
             inactiveAppearance = isSearchKeyboardHidden
@@ -1045,7 +1124,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
-            inputMode: inputMode
+            inputMode: inputMode,
+            isAITab: isAITabState
         )
     }
 
@@ -1097,6 +1177,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setText("")
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
+        isVoiceSessionActive = false
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -1414,10 +1495,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
         updateInputMode(mode, animated: true)
-    }
-
-    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
-        showExpanded(inputMode: .search)
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
@@ -1901,5 +1978,18 @@ private extension UnifiedToggleInputCoordinator {
                 self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
+    }
+}
+
+private extension NSCache where KeyType == NSString, ObjectType == NSString {
+    subscript(key: String) -> String? {
+        get { object(forKey: key as NSString) as String? }
+        set {
+            if let newValue {
+                setObject(newValue as NSString, forKey: key as NSString)
+            } else {
+                removeObject(forKey: key as NSString)
+            }
+        }
     }
 }

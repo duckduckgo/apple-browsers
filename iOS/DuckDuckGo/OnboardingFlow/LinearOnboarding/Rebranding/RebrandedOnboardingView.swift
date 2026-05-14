@@ -408,6 +408,18 @@ extension OnboardingRebranding {
             )
         }
 
+        private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
+            AIComparisonContent(
+                content: content,
+                showContent: $showBubbleContent,
+                continueAction: {
+                    animateContentTransition {
+                        model.aiComparisonAction()
+                    }
+                }
+            )
+        }
+
         private func bubbleBackedDialogView(
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
@@ -475,6 +487,8 @@ extension OnboardingRebranding {
                 introView(content: content, dialogType: dialogType)
             case let .browsersComparisonDialog(content):
                 browsersComparisonView(content: content)
+            case let .aiComparisonDialog(content):
+                aiComparisonView(content: content)
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):
@@ -500,14 +514,7 @@ extension OnboardingRebranding {
                     isVisible: model.introState.showIntroViewContent,
                     showsStepCounter: false
                 )
-            case .chooseAppIconDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .trailing,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .browsersComparisonDialog:
+            case .browsersComparisonDialog, .aiComparisonDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
@@ -518,6 +525,13 @@ extension OnboardingRebranding {
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAppIconDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: tailLeadingOffset,
+                    tailDirection: .trailing,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -633,7 +647,7 @@ extension OnboardingRebranding {
             // `lockedIntroBubbleHeight` (not the live value) keeps Dax stable across intro
             // bubble content swaps.
             case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: lockedIntroBubbleHeight)
-            case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
+            case .browsersComparisonDialog, .aiComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
             case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
@@ -643,7 +657,7 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 content: content,
                 defaultMode: defaultMode,

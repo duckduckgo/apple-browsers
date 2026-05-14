@@ -1080,8 +1080,8 @@ final class NavigationBarViewController: NSViewController {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
             downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton,
-            networkProtectionButton
-        ]
+            networkProtectionButton, feedbackButton
+        ].compactMap { $0 }
 
         let colorsProvider = theme.colorsProvider
 
@@ -1840,11 +1840,9 @@ final class NavigationBarViewController: NSViewController {
                 .targetting(self)
                 .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
         case .feedback:
-            let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
-            icon.isTemplate = false
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
-                .withImage(icon)
+                .withImage(DesignSystemImages.Glyphs.Size16.feedback)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
@@ -2054,9 +2052,10 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
-        let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
-        icon.isTemplate = false
-        button.image = icon
+        button.image = DesignSystemImages.Glyphs.Size16.feedback
+        let iconsColor = theme.colorsProvider.iconsColor
+        button.contentTintColor = iconsColor
+        button.normalTintColor = iconsColor
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.setCornerRadius(theme.toolbarButtonsCornerRadius)
 

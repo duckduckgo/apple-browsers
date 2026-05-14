@@ -33,7 +33,6 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
-    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
@@ -145,6 +144,15 @@ final class UnifiedToggleInputView: UIView {
             refreshInlineDismissPresentation()
             guard isExpanded else { return }
             cardView.layer.maskedCorners = Constants.allCorners
+        }
+    }
+
+    /// When true, the inline dismiss (back chevron) and its reserved layout slot are
+    /// suppressed regardless of which layout the view is in.
+    var isInlineDismissHidden: Bool = false {
+        didSet {
+            guard isInlineDismissHidden != oldValue else { return }
+            refreshInlineDismissPresentation()
         }
     }
 
@@ -394,6 +402,7 @@ final class UnifiedToggleInputView: UIView {
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
+    private var toggleLeadingConstraint: NSLayoutConstraint!
     private var toggleHeightConstraint: NSLayoutConstraint!
     private var inlineDismissTopConstraint: NSLayoutConstraint!
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
@@ -680,6 +689,7 @@ final class UnifiedToggleInputView: UIView {
             self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)
             self.applyInlineDismissVisibility(showInlineDismiss || showFieldRowInlineDismiss)
             self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowInlineDismiss)
+            self.applyToggleLeadingInset()
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
@@ -893,6 +903,7 @@ private extension UnifiedToggleInputView {
         applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowDismiss)
         applyInlineDismissVisibility(showToggleRowDismiss || showFieldRowDismiss)
         applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowDismiss)
+        applyToggleLeadingInset()
         layoutIfNeeded()
     }
 
@@ -901,8 +912,9 @@ private extension UnifiedToggleInputView {
     /// The button is laid out at its full size at all times — only opacity is toggled — so
     /// the chevron icon never renders into a partially-collapsed frame mid-animation.
     func applyInlineDismissVisibility(_ visible: Bool) {
-        inlineDismissButton.alpha = visible ? 1 : 0
-        inlineDismissButton.isUserInteractionEnabled = visible
+        let effective = visible && !isInlineDismissHidden
+        inlineDismissButton.alpha = effective ? 1 : 0
+        inlineDismissButton.isUserInteractionEnabled = effective
     }
 
     /// Switches the inline dismiss button between the toggle-row anchor (top of card) and the
@@ -921,9 +933,18 @@ private extension UnifiedToggleInputView {
     /// Pushes the text entry field's leading edge in to leave room for the inline dismiss
     /// when it shares the field row, otherwise lets the field span the card's full width.
     func applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: Bool) {
-        textEntryViewLeadingConstraint.constant = showFieldRowInlineDismiss
+        let effective = showFieldRowInlineDismiss && !isInlineDismissHidden
+        textEntryViewLeadingConstraint.constant = effective
             ? Constants.textEntryViewLeadingWithInlineDismiss
             : 0
+    }
+
+    /// Pulls the toggle flush to the card's leading edge when the inline dismiss is suppressed;
+    /// otherwise reserves the slot for the back-chevron button.
+    func applyToggleLeadingInset() {
+        toggleLeadingConstraint.constant = isInlineDismissHidden
+            ? Constants.toggleHorizontalPadding
+            : Constants.toggleLeadingWithInlineDismiss
     }
 
     @objc func handleInlineDismissTap() {
@@ -1115,6 +1136,7 @@ private extension UnifiedToggleInputView {
         cardPinnedHeightConstraint.priority = .defaultHigh
         cardPinnedHeightConstraint.isActive = true
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
+        toggleLeadingConstraint = toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleLeadingWithInlineDismiss)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
@@ -1132,7 +1154,7 @@ private extension UnifiedToggleInputView {
             cardBottomConstraint,
 
             toggleTopConstraint,
-            toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleLeadingWithInlineDismiss),
+            toggleLeadingConstraint,
             toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding),
             toggleHeightConstraint,
 
@@ -1197,14 +1219,6 @@ private extension UnifiedToggleInputView {
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
                 updateSubmitButtonAvailability()
-            }
-            .store(in: &cancellables)
-
-        handler.searchGoToButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                delegate?.unifiedToggleInputViewDidTapSearchGoTo(self)
             }
             .store(in: &cancellables)
 

@@ -156,7 +156,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private enum Constants {
         static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
-        static let modelPickerFeaturePage = "duckai"
+        static let subscriptionFeaturePage = "duckai"
+    }
+
+    private enum SubscriptionFlowSource {
+        case modelPicker
+        case reasoningPicker
     }
 
     private var attachmentPolicy: UTIAttachmentPolicy {
@@ -1233,16 +1238,33 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func makeModelPickerRedirectURLComponents() -> URLComponents {
+        makeSubscriptionRedirectURLComponents(source: .modelPicker)
+    }
+
+    private func makeReasoningPickerRedirectURLComponents() -> URLComponents {
+        makeSubscriptionRedirectURLComponents(source: .reasoningPicker)
+    }
+
+    private func makeSubscriptionRedirectURLComponents(source: SubscriptionFlowSource) -> URLComponents {
         var components = URLComponents()
         components.queryItems = [
-            URLQueryItem(name: "featurePage", value: Constants.modelPickerFeaturePage),
-            URLQueryItem(name: AttributionParameter.origin, value: modelPickerSubscriptionOrigin.rawValue)
+            URLQueryItem(name: "featurePage", value: Constants.subscriptionFeaturePage),
+            URLQueryItem(name: AttributionParameter.origin, value: subscriptionOrigin(for: source).rawValue)
         ]
         return components
     }
 
-    private var modelPickerSubscriptionOrigin: SubscriptionFunnelOrigin {
-        isAITabState ? .duckAIModelPicker : .addressBarModelPicker
+    private func subscriptionOrigin(for source: SubscriptionFlowSource) -> SubscriptionFunnelOrigin {
+        switch (isAITabState, source) {
+        case (true, .modelPicker):
+            return .duckAIModelPicker
+        case (true, .reasoningPicker):
+            return .duckAIReasoningPicker
+        case (false, .modelPicker):
+            return .addressBarModelPicker
+        case (false, .reasoningPicker):
+            return .addressBarReasoningPicker
+        }
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {
@@ -1251,10 +1273,85 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    private func refreshReasoningPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateReasoningPicker()
+        }
+    }
+
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
         recordUserChoiceToStore()
+    }
+
+    func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
+        guard let selectedModel else { return }
+        guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
+            updateSelectedReasoningMode(mode)
+            return
+        }
+
+        if canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            updateSelectedReasoningMode(mode)
+        } else {
+            routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier)
+            refreshReasoningPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access
+    // after `/models` exposes approved metadata for reasoning mode access.
+    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> UnifiedToggleInputModelMenu.AccessTier? {
+        if model.id == "gpt-5.2", mode == .extendedReasoning {
+            return .pro
+        }
+        return nil
+    }
+
+    private func canSelectReasoningModeRequiringTier(_ requiredTier: UnifiedToggleInputModelMenu.AccessTier) -> Bool {
+        switch requiredTier {
+        case .free:
+            return true
+        case .plus:
+            return subscriptionState.userTier != .free
+        case .pro:
+            return subscriptionState.userTier == .pro || subscriptionState.userTier == .internal
+        }
+    }
+
+    private func routeGatedReasoningModeSelection(requiredPublicTier: UnifiedToggleInputModelMenu.AccessTier) {
+        let userTier = subscriptionState.userTier
+
+        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            presentReasoningPickerPurchaseFlow()
+            return
+        }
+
+        if userTier == .plus, requiredPublicTier == .pro {
+            presentReasoningPickerUpgradeFlow()
+            return
+        }
+
+        Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
+    }
+
+    private func presentReasoningPickerPurchaseFlow() {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
+                redirectURLComponents: makeReasoningPickerRedirectURLComponents()
+            )
+        )
+    }
+
+    private func presentReasoningPickerUpgradeFlow() {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
+                redirectURLComponents: makeReasoningPickerRedirectURLComponents()
+            )
+        )
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -1296,7 +1393,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 image: mode.unifiedToggleInputMenuImage,
                 state: mode == selectedMode ? .on : .off
             ) { [weak self] _ in
-                self?.updateSelectedReasoningMode(mode)
+                self?.handleReasoningModeSelection(mode)
             }
         }
 

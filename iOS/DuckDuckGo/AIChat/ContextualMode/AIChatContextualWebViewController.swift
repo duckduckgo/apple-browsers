@@ -222,6 +222,10 @@ final class AIChatContextualWebViewController: UIViewController {
         utiHost?.sheetDismissed()
     }
 
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+
     func pushPageContext(_ context: AIChatPageContextData?) {
         if isPageReady && isContentHandlerReady {
             hasPendingChipContext = false

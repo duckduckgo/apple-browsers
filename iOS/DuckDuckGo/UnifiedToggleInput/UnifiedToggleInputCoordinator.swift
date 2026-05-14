@@ -1011,6 +1011,30 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript != nil
     }
 
+    /// Starts a wide-event flow for a prompt submitted outside the UTI (e.g. the contextual
+    /// sheet's native input, which dispatches its initial prompt directly to the web view's
+    /// content handler before the UTI is bound). The UTI's `chatStatusChanged` /
+    /// `stopGeneratingTapped` subscriptions drive the flow to completion once the user
+    /// script binds, since the underlying chat reaches the same web view.
+    func recordExternalPromptSubmitted(entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
+                                       inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+                                       hasPageContext: Bool) {
+        duckAIWideEventInstrumentation?.submissionStarted(
+            modelId: persistedModelId,
+            userTier: subscriptionState.userTier,
+            reasoningEffort: persistedReasoningEffort,
+            entryPoint: entryPoint,
+            inputMode: inputMode,
+            fireMode: viewController.handler.isFireTab,
+            userScriptBound: boundUserScript != nil,
+            hasPageContext: hasPageContext,
+            selectedTools: [],
+            imageAttachmentCount: 0,
+            fileAttachmentCount: 0,
+            invalidAttachmentCount: 0
+        )
+    }
+
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
@@ -1631,7 +1655,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 userTier: subscriptionState.userTier,
                 reasoningEffort: persistedReasoningEffort,
                 entryPoint: entryPoint,
-                inputMode: .typed,
+                inputMode: .keyboard,
                 fireMode: viewController.handler.isFireTab,
                 userScriptBound: userScript != nil,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,

@@ -189,6 +189,17 @@ final class AIChatContextualUTIHost {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
     }
 
+    /// Called when the contextual sheet's native input submits the initial prompt of a chat,
+    /// which bypasses the UTI. Routes the wide-event start through the shared UTI coordinator
+    /// so the in-flight flow receives the JS status updates that follow.
+    func initialNativePromptSubmitted(hasPageContext: Bool) {
+        coordinator.recordExternalPromptSubmitted(
+            entryPoint: .contextualChat,
+            inputMode: .keyboard,
+            hasPageContext: hasPageContext
+        )
+    }
+
     func install(in contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
         coordinator.attachmentPresentingViewController = contextualChatViewController

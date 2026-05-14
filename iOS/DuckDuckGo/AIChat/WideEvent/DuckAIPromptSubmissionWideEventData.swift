@@ -27,7 +27,6 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         pixelName: "duckai_prompt_submission",
         featureName: "duckai_prompt_submission",
         mobileMetaType: "ios-duckai-prompt-submission",
-        // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-duckai-prompt-submission",
         version: "1.0.0"
     )
@@ -145,7 +144,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     enum InputMode: String, Codable {
         /// User typed (or pasted) the prompt into the composer.
-        case typed
+        case keyboard
         /// User dictated the prompt via voice search and the transcription
         /// was submitted directly without a typed edit step.
         case voice

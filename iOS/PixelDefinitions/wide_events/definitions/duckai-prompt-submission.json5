@@ -63,8 +63,8 @@
                     },
                     "input_mode": {
                         "type": "string",
-                        "description": "How the user produced the prompt text. `typed` = keyboard/paste in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",
-                        "enum": ["typed", "voice"]
+                        "description": "How the user produced the prompt text. `keyboard` = typed/pasted in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",
+                        "enum": ["keyboard", "voice"]
                     },
                     "fire_mode": {
                         "type": "boolean",

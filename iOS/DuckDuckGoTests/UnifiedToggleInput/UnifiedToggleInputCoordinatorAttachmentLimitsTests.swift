@@ -621,11 +621,13 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
+    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),
+                                 duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil) -> UnifiedToggleInputCoordinator {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
-            preferences: preferences)
+            preferences: preferences,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation)
         coordinator.modelStore.attachmentLimits = makeLimits()
         return coordinator
     }
@@ -731,4 +733,29 @@ private final class StubAIChatPreferences: AIChatPreferencesPersisting {
     var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class SpyDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
+    var submissionStartedCallCount = 0
+
+    func submissionStarted(modelId: String?,
+                           userTier: AIChatUserTier,
+                           reasoningEffort: AIChatReasoningEffort?,
+                           entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
+                           inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+                           fireMode: Bool,
+                           userScriptBound: Bool,
+                           hasPageContext: Bool,
+                           selectedTools: [String],
+                           imageAttachmentCount: Int,
+                           fileAttachmentCount: Int,
+                           invalidAttachmentCount: Int) {
+        submissionStartedCallCount += 1
+    }
+
+    func chatStatusChanged(_ status: AIChatStatusValue) {}
+    func stopGeneratingTapped() {}
+    func tabClosedDuringGeneration() {}
+    func sheetDismissedDuringGeneration() {}
+    func pageLoadFailed(error: Error) {}
 }

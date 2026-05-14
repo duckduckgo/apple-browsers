@@ -393,6 +393,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         webViewController?.notifySheetDismissed()
     }
 
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+
     @objc private func recentChatsButtonTapped() {
         if recentChatsPopup != nil {
             dismissRecentChatsPopup()

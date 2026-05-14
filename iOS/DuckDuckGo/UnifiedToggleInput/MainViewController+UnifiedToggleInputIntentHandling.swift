@@ -183,6 +183,7 @@ private extension MainViewController {
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
         let ntpStartCenterY = ntpLogoWindowCenterY()
+        let isBottom = coordinator.cardPosition.isBottom
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
@@ -197,23 +198,28 @@ private extension MainViewController {
         }
 
         // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
-        // in one frame, then animate the UTI Logo back to its natural position.
+        // in one frame, then let the animation drive the UTI Logo to its final position.
         if isLogoToLogo,
            let ntpY = ntpStartCenterY,
            let utiY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY {
-            let offset = ntpY - utiY
-            let currentConstant = coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant ?? 0
-            coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant = currentConstant + offset
+            let bottomLogoOffset = isBottom ? Constants.bottomDaxLogoTransitionYOffset : 0
+            let offset = ntpY - utiY + bottomLogoOffset
+            let naturalOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
+            coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset + offset)
             coordinator.contentViewController.view.layoutIfNeeded()
 
             coordinator.contentViewController.setLogoHidden(false)
+
+            // Reset top-bar handoff so the animation drives the logo to its natural position.
+            // Bottom bar keeps the half-omnibar compensation while the keyboard guide settles.
+            if !isBottom {
+                coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset)
+            }
             newTabPageViewController?.setLogoHidden(true)
             viewCoordinator.unifiedInputContentContainer.alpha = 1
-
-            coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant = currentConstant
         }
 
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)
         UIView.animate(
             withDuration: duration,
             delay: 0,

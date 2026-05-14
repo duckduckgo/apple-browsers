@@ -40,6 +40,8 @@ extension MainViewController {
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
         }
+
+        static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -809,29 +811,27 @@ private extension MainViewController {
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
         let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
         let ntpStartCenterY = ntpLogoWindowCenterY()
+        let isBottom = coordinator.cardPosition.isBottom
 
         // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
-        // natural (post-dismiss) position. The NTP Logo's current Y is shifted by the
-        // expanded nav bar — compensate using the nav bar height delta so we target
-        // the final resting position.
+        // natural (post-dismiss) position.
         if isLogoToLogo,
            let utiY = utiStartCenterY {
-            // How much taller the nav bar is right now vs. its post-dismiss standard height.
-            let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
-                - viewCoordinator.standardNavigationBarContainerHeight
-
-            // The NTP Logo center after the nav bar shrinks back: the contentContainer grows
-            // by navHeightDelta and its top moves up by the same amount, so the center shifts
-            // up by half the delta.
-            let ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2
+            let ntpNaturalY: CGFloat
+            if isBottom {
+                // The bottom UTI logo is centered against a guide ending one omnibar-height
+                // below the keyboard; compensate by half that height to match the NTP logo.
+                ntpNaturalY = (ntpStartCenterY ?? utiY) + Constants.bottomDaxLogoTransitionYOffset
+            } else {
+                // Top bar: the nav bar shrinks back to standard height, making the
+                // contentContainer taller and shifting the NTP Logo center up by half the delta.
+                let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
+                    - viewCoordinator.standardNavigationBarContainerHeight
+                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2
+            }
 
             // How far the UTI Logo needs to move to land at the NTP Logo's final position.
             let offset = ntpNaturalY - utiY
-
-            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
-            // to the NTP Logo's post-dismiss position.
-            let currentConstant = coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant ?? 0
-            coordinator.contentViewController.daxLogoManager.containerYCenterConstraint?.constant = currentConstant + offset
 
             // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
             newTabPageViewController?.setLogoHidden(true)
@@ -841,6 +841,11 @@ private extension MainViewController {
             if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
                 coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
             }
+
+            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
+            // to the NTP Logo's post-dismiss position.
+            let currentOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
+            coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
         }
 
         UIView.animate(
@@ -868,6 +873,7 @@ private extension MainViewController {
                 self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
                 coordinator.contentViewController.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)

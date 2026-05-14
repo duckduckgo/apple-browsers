@@ -54,6 +54,7 @@ final class DaxLogoManager {
     private var isAnimatingLogoTransition = false
     private var isSwipeInProgress = false
     private var escapeHatchBaseOffset: CGFloat = 0
+    private(set) var logoYOffset: CGFloat = 0
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
 
@@ -163,6 +164,12 @@ final class DaxLogoManager {
         guard escapeHatchBaseOffset != offset else { return }
         escapeHatchBaseOffset = offset
         updateState()
+    }
+
+    func setLogoYOffset(_ offset: CGFloat) {
+        guard logoYOffset != offset else { return }
+        logoYOffset = offset
+        updateLogoYOffset()
     }
 
     func updateSwipeProgress(_ progress: CGFloat) {
@@ -353,7 +360,11 @@ final class DaxLogoManager {
             logoContainerView.isUserInteractionEnabled = resolvedAlpha > 0
         }
 
-        containerYCenterConstraint?.constant = escapeHatchBaseOffset
+        updateLogoYOffset()
+    }
+
+    private func updateLogoYOffset() {
+        containerYCenterConstraint?.constant = escapeHatchBaseOffset + logoYOffset
     }
 }
 

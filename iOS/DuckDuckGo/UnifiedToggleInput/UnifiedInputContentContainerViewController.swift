@@ -171,7 +171,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.containerYCenterConstraint?.constant = offset
+        daxLogoManager.setLogoYOffset(offset)
     }
 
     func setLogoHidden(_ hidden: Bool) {

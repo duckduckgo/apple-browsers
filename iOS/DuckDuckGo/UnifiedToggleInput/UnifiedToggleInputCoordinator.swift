@@ -1311,14 +1311,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access
     // after `/models` exposes approved metadata for reasoning mode access.
-    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> UnifiedToggleInputModelMenu.AccessTier? {
+    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
         if model.id == "gpt-5.2", mode == .extendedReasoning {
             return .pro
         }
         return nil
     }
 
-    private func canSelectReasoningModeRequiringTier(_ requiredTier: UnifiedToggleInputModelMenu.AccessTier) -> Bool {
+    private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {
         switch requiredTier {
         case .free:
             return true
@@ -1329,7 +1329,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    private func routeGatedReasoningModeSelection(requiredPublicTier: UnifiedToggleInputModelMenu.AccessTier) {
+    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {

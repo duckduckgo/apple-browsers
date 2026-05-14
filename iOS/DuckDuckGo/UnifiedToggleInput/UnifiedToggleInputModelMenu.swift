@@ -19,14 +19,13 @@
 
 import AIChat
 
+enum AIChatModelPublicAccessTier: Hashable {
+    case free
+    case plus
+    case pro
+}
+
 struct UnifiedToggleInputModelMenu: Equatable {
-
-    enum AccessTier: Hashable {
-        case free
-        case plus
-        case pro
-    }
-
     struct Section: Equatable {
         let title: String
         let items: [Item]
@@ -37,7 +36,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
         let name: String
         let provider: AIChatModel.ModelProvider
         let isSelected: Bool
-        let accessTier: AccessTier
+        let accessTier: AIChatModelPublicAccessTier
     }
 
     let sections: [Section]
@@ -64,7 +63,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
         plusSectionTitle: String,
         proSectionTitle: String
     ) -> [Section] {
-        let groupedModels = models.reduce(into: [AccessTier: [AIChatModel]]()) { groups, model in
+        let groupedModels = models.reduce(into: [AIChatModelPublicAccessTier: [AIChatModel]]()) { groups, model in
             guard let tier = model.lowestPublicAccessTier else { return }
             groups[tier, default: []].append(model)
         }
@@ -96,7 +95,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
 }
 
 extension UnifiedToggleInputModelMenu.Item {
-    init(model: AIChatModel, selectedId: String?, accessTier: UnifiedToggleInputModelMenu.AccessTier) {
+    init(model: AIChatModel, selectedId: String?, accessTier: AIChatModelPublicAccessTier) {
         self.modelId = model.id
         self.name = model.name
         self.provider = model.provider
@@ -106,7 +105,7 @@ extension UnifiedToggleInputModelMenu.Item {
 }
 
 extension AIChatModel {
-    var lowestPublicAccessTier: UnifiedToggleInputModelMenu.AccessTier? {
+    var lowestPublicAccessTier: AIChatModelPublicAccessTier? {
         if accessTier.contains(AIChatUserTier.free.rawValue) {
             return .free
         }

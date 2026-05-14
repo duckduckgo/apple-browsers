@@ -276,9 +276,11 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatOmnibarVoiceChatAccess
 
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
+    /// https://app.asana.com/1/137249556945/task/1214804748957572?focus=true
     case aiChatSidebarAttachMoreTabs
 
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
+    /// https://app.asana.com/1/137249556945/task/1214804748957575?focus=true
     case aiChatOmnibarAttachMoreTabs
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797

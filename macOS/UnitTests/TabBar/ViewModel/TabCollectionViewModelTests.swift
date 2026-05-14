@@ -337,13 +337,14 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
-    // Regression tests for APPLE-MACOS-BD7: setting `selectionIndex` from inside
-    // `insert`/`append` publishes `selectedTabViewModel`, which can synchronously
-    // re-enter and call `reloadItems` on the collection view. The delegate must
-    // be notified before that publication so the collection view's item count
-    // stays in sync with the data source.
+    // Selection is published BEFORE the delegate notification on insert/append
+    // paths, so cell sizing in the tab bar (which reads `selectionIndex`) sees
+    // the correct value when `sizeForItemAt` runs from `insertItems`. The
+    // materialize-on-select crash this used to guard against is now prevented
+    // structurally by pre-materializing at the API boundary, and the
+    // lazy-loader re-entry is prevented by deferring its sink.
     @MainActor
-    func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenInsertWithSelected_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -358,12 +359,12 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
 
-        XCTAssertEqual(didInsertCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didInsertCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 
     @MainActor
-    func testWhenAppendWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendWithSelected_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -378,12 +379,12 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tab: Tab(), selected: true)
 
-        XCTAssertEqual(didAppendCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didAppendCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 
     @MainActor
-    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendTabsWithSelectLast_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -398,7 +399,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
 
-        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 

@@ -54,6 +54,9 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case isFreemiumPIREligible
+    case freemiumPIRDidActivate
+    case freemiumPIRFirstScanResult
     case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
@@ -97,6 +100,9 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isFreemiumPIREligible: return FreemiumPIREligibleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRDidActivate: return FreemiumPIRDidActivateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .freemiumPIRFirstScanResult: return FreemiumPIRFirstScanResultMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
@@ -120,13 +126,22 @@ struct JsonToRemoteMessageModelMapper {
                 return
             }
 
+            let displayConditions: DisplayConditions?
+            do {
+                displayConditions = try mapToDisplayConditions(message: message)
+            } catch {
+                Logger.remoteMessaging.debug("Invalid display conditions for message \(message.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return
+            }
+
             var remoteMessage = RemoteMessageModel(
                 id: message.id,
                 surfaces: surfaces,
                 content: content,
                 matchingRules: message.matchingRules ?? [],
                 exclusionRules: message.exclusionRules ?? [],
-                isMetricsEnabled: message.isMetricsEnabled
+                isMetricsEnabled: message.isMetricsEnabled,
+                displayConditions: displayConditions
             )
 
             if let translation = getTranslation(from: message.translations, for: Locale.current) {
@@ -136,6 +151,15 @@ struct JsonToRemoteMessageModelMapper {
             remoteMessages.append(remoteMessage)
         }
         return remoteMessages
+    }
+
+    static func mapToDisplayConditions(message: RemoteMessageResponse.JsonRemoteMessage) throws -> DisplayConditions? {
+        try message.displayConditions.flatMap { conditions in
+            let validator = MappingValidator(root: conditions)
+            let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
+            let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+        }
     }
 
     static func mapToSurfaces(jsonSurfaces: [String]?, supportedSurfacesForMessage: RemoteMessageSurfaceType, messageId: String) -> RemoteMessageSurfaceType? {

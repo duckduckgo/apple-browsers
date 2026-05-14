@@ -70,7 +70,7 @@ final class VoiceSessionTracker: NSObject {
             return nil
         } ?? []
 
-        for case let candidate as Tab in activeTabs.allObjects {
+        for candidate in activeTabs.allObjects {
             if unpinned.contains(where: { $0 === candidate }) || pinned.contains(where: { $0 === candidate }) {
                 return candidate
             }

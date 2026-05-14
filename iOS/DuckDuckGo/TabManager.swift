@@ -296,9 +296,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
-        if featureFlagger.isFeatureOn(.autoplayBlocking) {
-            configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
-        }
+        configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller
@@ -375,6 +373,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+
+    func controller(forWebView webView: WKWebView) -> TabViewController? {
+        return tabControllerCache.first { $0.webView === webView }
     }
 
     @MainActor
@@ -471,6 +473,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return controller
     }
 
+    @MainActor
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
@@ -622,6 +625,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
+    @MainActor
     func save() -> Result<Void, Error> {
         return tabsModelProvider.save()
     }

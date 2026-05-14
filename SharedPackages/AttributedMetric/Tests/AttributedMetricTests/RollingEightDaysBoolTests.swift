@@ -266,7 +266,7 @@ final class RollingEightDaysBoolTests: XCTestCase {
 
         // First cycle
         var data = try encoder.encode(rollingBool)
-        var decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+        let decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
         XCTAssertEqual(decoded.lastDay, rollingBool.lastDay)
 
         // Second cycle

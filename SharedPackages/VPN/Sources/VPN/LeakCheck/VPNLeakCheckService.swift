@@ -22,22 +22,44 @@ import Network
 import os.log
 import PixelKit
 
+private enum LeakCheckIPError: Error, CustomNSError {
+    case malformedObservedIP
+    case malformedEgressIP
+
+    static var errorDomain: String { "VPNLeakCheckIPError" }
+
+    var errorCode: Int {
+        switch self {
+        case .malformedObservedIP: return 1
+        case .malformedEgressIP: return 2
+        }
+    }
+}
+
+private enum LeakCheckStatusReason {
+    static let checkInterrupted = "check_interrupted"
+}
+
 public actor VPNLeakCheckService {
 
     public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
     public typealias EgressInfoProvider = @Sendable () async -> LeakCheckEgressInfo?
+    public typealias TunnelPathGenerationProvider = @Sendable () async -> UInt64
 
     private let configuration: LeakCheckConfiguration
     private let egressInfo: EgressInfoProvider
     private let tunnelInterface: TunnelInterfaceProvider
+    private let tunnelPathGeneration: TunnelPathGenerationProvider
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
 
     private var currentCheck: Task<Void, Never>?
+    private var currentCheckID: UInt64 = 0
     private var lastCompletionDate: Date?
     private var periodicTask: Task<Void, Never>?
     private var scheduledCheck: Task<Void, Never>?
+    private var scheduledCheckID: UInt64 = 0
     private var isStopped = false
 
     /// The service resolves both the tunnel `NWInterface` and the egress info live at the start of
@@ -54,6 +76,7 @@ public actor VPNLeakCheckService {
         configuration: LeakCheckConfiguration = .default,
         egressInfo: @escaping EgressInfoProvider,
         tunnelInterface: @escaping TunnelInterfaceProvider,
+        tunnelPathGeneration: @escaping TunnelPathGenerationProvider = { 0 },
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging
@@ -61,6 +84,7 @@ public actor VPNLeakCheckService {
         self.configuration = configuration
         self.egressInfo = egressInfo
         self.tunnelInterface = tunnelInterface
+        self.tunnelPathGeneration = tunnelPathGeneration
         self.httpClient = httpClient
         self.stunClient = stunClient
         self.wideEvent = wideEvent
@@ -87,8 +111,8 @@ public actor VPNLeakCheckService {
         }
     }
 
-    /// Schedules a leak check that runs after the trigger's natural delay
-    /// (`tunnelStartDelay` for `.tunnelStart`, immediate for `.reassert`/`.periodic`/`.rekey`).
+    /// Schedules a leak check that runs after the trigger's natural delay:
+    /// `debounceDelay` for tunnel path changes, immediate for `.periodic`.
     ///
     /// The latest schedule wins: a pending scheduled check is cancelled and replaced. This collapses
     /// rapid bursts (e.g. manual start → reconnect) into a single check using the freshest trigger,
@@ -99,16 +123,37 @@ public actor VPNLeakCheckService {
             return
         }
 
-        scheduledCheck?.cancel()
+        guard trigger != .periodic else {
+            guard scheduledCheck == nil else {
+                Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
+                return
+            }
+            Task { [weak self] in
+                await self?.runCheck(trigger: trigger)
+            }
+            return
+        }
 
-        let delay: TimeInterval = trigger == .tunnelStart ? configuration.tunnelStartDelay : 0
+        scheduledCheck?.cancel()
+        currentCheck?.cancel()
+        currentCheck = nil
+        scheduledCheckID &+= 1
+        let checkID = scheduledCheckID
+
+        let delay = configuration.debounceDelay
         scheduledCheck = Task { [weak self] in
             if delay > 0 {
                 try? await Task.sleep(interval: delay)
             }
             guard !Task.isCancelled else { return }
             await self?.runCheck(trigger: trigger)
+            await self?.clearScheduledCheck(id: checkID)
         }
+    }
+
+    private func clearScheduledCheck(id: UInt64) {
+        guard scheduledCheckID == id else { return }
+        scheduledCheck = nil
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -119,7 +164,7 @@ public actor VPNLeakCheckService {
         for data in pending {
             wideEvent.completeFlow(
                 data,
-                status: .unknown(reason: "check_interrupted"),
+                status: .unknown(reason: LeakCheckStatusReason.checkInterrupted),
                 onComplete: { _, _ in }
             )
         }
@@ -130,13 +175,18 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
+        guard trigger != .periodic || bypassCooldown || scheduledCheck == nil else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
+            return
+        }
         guard currentCheck == nil else {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
         // `.reassert` and `.rekey` both signal a tunnel path change (failure recovery /
-        // reconfiguration in the first case, server reselection in the second), so they bypass
-        // cooldown and always run — we want to validate the new path immediately.
+        // reconfiguration in the first case, server reselection in the second). They bypass
+        // cooldown so the new path always gets validated once the debounce window elapses,
+        // even if a recent check just completed.
         if !bypassCooldown,
            trigger != .reassert,
            trigger != .rekey,
@@ -145,16 +195,20 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        let task = Task { await executeCheck(trigger: trigger) }
+        currentCheckID &+= 1
+        let checkID = currentCheckID
+        let task = Task { await executeCheck(trigger: trigger, id: checkID) }
         currentCheck = task
         await task.value
     }
 
-    private func executeCheck(trigger: LeakCheckTrigger) async {
+    private func executeCheck(trigger: LeakCheckTrigger, id: UInt64) async {
         defer {
-            currentCheck = nil
-            if !Task.isCancelled {
-                lastCompletionDate = Date()
+            if currentCheckID == id {
+                currentCheck = nil
+                if !Task.isCancelled {
+                    lastCompletionDate = Date()
+                }
             }
         }
 
@@ -164,6 +218,7 @@ public actor VPNLeakCheckService {
 
         Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
+        let pathGenerationSnapshot = await tunnelPathGeneration()
         guard let egressInfoSnapshot = await egressInfo() else {
             Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — egress info unavailable (trigger: \(trigger.rawValue, privacy: .public))")
             return
@@ -182,6 +237,21 @@ public actor VPNLeakCheckService {
         let startDate = Date()
         let results = await runAllLeakTests(tunnelInterface: tunnelInterfaceSnapshot)
 
+        data.latencyMsBucketed = bucketedLatency(Date().timeIntervalSince(startDate))
+
+        if Task.isCancelled {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check cancelled — discarding flow (trigger: \(trigger.rawValue, privacy: .public))")
+            wideEvent.discardFlow(data)
+            return
+        }
+
+        guard await tunnelPathGeneration() == pathGenerationSnapshot else {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check interrupted by tunnel path change (trigger: \(trigger.rawValue, privacy: .public))")
+            data.statusReason = LeakCheckStatusReason.checkInterrupted
+            wideEvent.completeFlow(data, status: .unknown(reason: LeakCheckStatusReason.checkInterrupted), onComplete: { _, _ in })
+            return
+        }
+
         Logger.networkProtectionIPLeakCheck.debug(
             "IP comparison — expected: \(egressIPSnapshot, privacy: .public), got ipv4[http: \(Self.describeIP(results.ipv4Http), privacy: .public), https: \(Self.describeIP(results.ipv4Https), privacy: .public), stun: \(Self.describeIP(results.ipv4Stun), privacy: .public)], ipv6[http: \(Self.describeIP(results.ipv6Http), privacy: .public), https: \(Self.describeIP(results.ipv6Https), privacy: .public), stun: \(Self.describeIP(results.ipv6Stun), privacy: .public)]"
         )
@@ -195,27 +265,20 @@ public actor VPNLeakCheckService {
 
         let ipv4Tests: [LeakCheckPerTestResult?] = [data.ipv4Http, data.ipv4Https, data.ipv4Stun]
         if ipv4Tests.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
+           let leakedIP = firstLeakedIPv4(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
             data.ipv4LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
         let ipv6Tests: [LeakCheckPerTestResult?] = [data.ipv6Http, data.ipv6Https, data.ipv6Stun]
         if ipv6Tests.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun], egressIP: egressIPSnapshot) {
+           let leakedIP = firstSuccessfulIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun]) {
             data.ipv6LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
-
-        data.latencyMsBucketed = bucketedLatency(Date().timeIntervalSince(startDate))
 
         let status = determineStatus(data: data)
         if case .unknown(let reason) = status {
             data.statusReason = reason
         }
 
-        if Task.isCancelled {
-            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check cancelled — discarding flow (trigger: \(trigger.rawValue, privacy: .public))")
-            wideEvent.discardFlow(data)
-            return
-        }
         Logger.networkProtectionIPLeakCheck.log(
             "🟢 Leak check complete (trigger: \(trigger.rawValue, privacy: .public), status: \(Self.describeStatus(status), privacy: .public), latency: \(data.latencyMsBucketed ?? 0, privacy: .public)ms, \(Self.describeResults(data), privacy: .public))"
         )
@@ -287,10 +350,36 @@ public actor VPNLeakCheckService {
     private func classifyIPv4(_ result: Result<String, Error>, egressIP: String) -> LeakCheckPerTestResult {
         switch result {
         case .success(let ip):
-            return ip == egressIP ? .success : .leak
+            guard let matches = Self.ipv4OctetMatches(ip, egressIP) else {
+                let error: LeakCheckIPError = IPv4Address(ip) == nil ? .malformedObservedIP : .malformedEgressIP
+                return .error(error)
+            }
+            if matches.octet1 && matches.octet2 && matches.octet3 {
+                return .success
+            }
+            return .leak(
+                octet1Matched: matches.octet1,
+                octet2Matched: matches.octet2,
+                octet3Matched: matches.octet3,
+                octet4Matched: matches.octet4
+            )
         case .failure(let error):
             return .error(error)
         }
+    }
+
+    /// Returns `nil` if either string is not a parseable IPv4 address; otherwise reports per-octet equality.
+    private static func ipv4OctetMatches(_ lhs: String, _ rhs: String) -> (octet1: Bool, octet2: Bool, octet3: Bool, octet4: Bool)? {
+        guard let lhsAddr = IPv4Address(lhs), let rhsAddr = IPv4Address(rhs) else { return nil }
+        let lhsBytes = [UInt8](lhsAddr.rawValue)
+        let rhsBytes = [UInt8](rhsAddr.rawValue)
+        guard lhsBytes.count == 4, rhsBytes.count == 4 else { return nil }
+        return (
+            lhsBytes[0] == rhsBytes[0],
+            lhsBytes[1] == rhsBytes[1],
+            lhsBytes[2] == rhsBytes[2],
+            lhsBytes[3] == rhsBytes[3]
+        )
     }
 
     private func classifyIPv6(_ result: Result<String, Error>) -> LeakCheckPerTestResult {
@@ -314,6 +403,8 @@ public actor VPNLeakCheckService {
                 return true
             case .tls:
                 return false
+            case .wifiAware:
+                return false
             @unknown default:
                 return false
             }
@@ -336,9 +427,20 @@ public actor VPNLeakCheckService {
         return false
     }
 
-    private func firstLeakedIP(from results: [Result<String, Error>], egressIP: String) -> String? {
+    private func firstLeakedIPv4(from results: [Result<String, Error>], egressIP: String) -> String? {
         for result in results {
-            if case .success(let ip) = result, ip != egressIP { return ip }
+            if case .success(let ip) = result,
+               let matches = Self.ipv4OctetMatches(ip, egressIP),
+               !(matches.octet1 && matches.octet2 && matches.octet3) {
+                return ip
+            }
+        }
+        return nil
+    }
+
+    private func firstSuccessfulIP(from results: [Result<String, Error>]) -> String? {
+        for result in results {
+            if case .success(let ip) = result { return ip }
         }
         return nil
     }

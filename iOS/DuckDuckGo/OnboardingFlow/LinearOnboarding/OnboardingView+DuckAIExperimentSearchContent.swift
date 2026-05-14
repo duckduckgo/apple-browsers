@@ -82,6 +82,8 @@ extension OnboardingView {
 
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        private let content: OnboardingDuckAIQueryContent
         private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
@@ -103,6 +105,9 @@ extension OnboardingView {
         @State private var hasStartedEntranceSequence = false
         @State private var hasPassedInitialFocusDelay = false
         @State private var shouldFocusWhenInitialDelayPasses = false
+        /// Local typing-start trigger for the rebranded `TypingText` (the rebranded call site
+        /// doesn't pass an `animateTitle` binding).
+        @State private var rebrandedAnimateTitle = false
 
         // MARK: Constants
         private static let pickerItems: [ImageSegmentedPickerItem] = [
@@ -119,6 +124,12 @@ extension OnboardingView {
         ]
 
         init(
+            content: OnboardingDuckAIQueryContent = .init(
+                title: UserText.Onboarding.DuckAIQueryExperiment.title,
+                searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
+                isToggleVisible: true
+            ),
             defaultMode: DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
@@ -128,6 +139,7 @@ extension OnboardingView {
             measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
+            self.content = content
             self.onModeConfirmed = onModeConfirmed
             self.openAIChatAction = openAIChatAction
             self.openSearchAction = openSearchAction
@@ -152,10 +164,14 @@ extension OnboardingView {
                 // Header text inside the onboarding bubble.
                 Group {
                     if visualStyle == .rebranded {
-                        Text(UserText.Onboarding.DuckAIQueryExperiment.title)
+                        TypingText(
+                            content.title,
+                            startAnimating: $rebrandedAnimateTitle,
+                            onTypingFinished: handleTitleAnimationFinished
+                        )
                     } else {
                         AnimatableTypingText(
-                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            content.title,
                             startAnimating: animateTitle,
                             onTypingFinished: handleTitleAnimationFinished
                         )
@@ -168,31 +184,41 @@ extension OnboardingView {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Group {
-                    // Search / Duck.ai segmented control.
-                    ImageSegmentedPickerView(viewModel: pickerViewModel)
-                        .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
-                        .padding(.vertical, Metrics.pickerVerticalPadding)
-                        .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
+                    if content.isToggleVisible {
+                        // Search / Duck.ai segmented control.
+                        ImageSegmentedPickerView(viewModel: pickerViewModel)
+                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
+                            .padding(.vertical, Metrics.pickerVerticalPadding)
+                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
-                        .onChange(of: pickerViewModel.selectedItem) { selectedItem in
-                            SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                                selectedMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                            .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
+                                let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                                if reduceMotion {
+                                    selectedMode = newMode
+                                } else {
+                                    SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
+                                        selectedMode = newMode
+                                    }
+                                }
                             }
-                        }
                         // Keep picker model + visual progress in sync for programmatic/default mode changes.
-                        .onChange(of: selectedMode) { selection in
-                            let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
-                            if pickerViewModel.selectedItem != pickerItem {
-                                pickerViewModel.selectItem(pickerItem)
+                            .onChange(of: selectedMode) { selection in
+                                let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
+                                if pickerViewModel.selectedItem != pickerItem {
+                                    pickerViewModel.selectItem(pickerItem)
+                                }
+                                pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
                             }
-                            pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
-                        }
-                        .padding(.top, titleToPickerTopPadding)
-                        .padding(.bottom, Metrics.pickerBottomPadding)
+                            .padding(.top, titleToPickerTopPadding)
+                            .padding(.bottom, Metrics.pickerBottomPadding)
+                    }
+
+                    // If toggle is not visible set a different padding to avoid text area to be too close to the title
+                    let queryFieldTopPadding = content.isToggleVisible ? Metrics.queryFieldTopPadding : nil
 
                     // Query field + trailing action icon.
                     queryField
-                        .padding(.top, Metrics.queryFieldTopPadding)
+                        .padding(.top, queryFieldTopPadding)
                         .padding(.bottom, Metrics.queryFieldBottomPadding)
                 }
                 .opacity(showInteractiveControls ? 1 : 0)
@@ -218,15 +244,16 @@ extension OnboardingView {
                 shouldFocusWhenInitialDelayPasses = false
                 suggestionSequenceStarted = false
                 scheduleInitialFocusGate()
+                // Both styles end up in `handleTitleAnimationFinished`; only the start binding differs.
                 if visualStyle == .rebranded {
-                    startStaticTitleEntranceSequence()
+                    rebrandedAnimateTitle = true
                 } else {
                     animateTitle.wrappedValue = true
                 }
             }
             // Fade out this content while transitioning to the selected destination.
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
         }
 
         // MARK: Style
@@ -259,6 +286,16 @@ extension OnboardingView {
             guard !hasStartedEntranceSequence else { return }
             hasStartedEntranceSequence = true
 
+            // Reduce Motion: skip the staggered entrance — show controls + suggestions and
+            // focus the input immediately.
+            if reduceMotion {
+                guard !isTransitioningOut else { return }
+                showInteractiveControls = true
+                requestInputFocus()
+                startSuggestionSequenceIfNeeded()
+                return
+            }
+
             DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
                 guard hasStartedEntranceSequence, !isTransitioningOut else { return }
                 showInteractiveControls = true
@@ -266,18 +303,6 @@ extension OnboardingView {
                     guard hasStartedEntranceSequence, showInteractiveControls, !isTransitioningOut else { return }
                     requestInputFocus()
                 }
-                startSuggestionSequenceIfNeeded()
-            }
-        }
-
-        private func startStaticTitleEntranceSequence() {
-            guard !hasStartedEntranceSequence else { return }
-            hasStartedEntranceSequence = true
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
-                guard hasStartedEntranceSequence, !isTransitioningOut else { return }
-                showInteractiveControls = true
-                requestInputFocus()
                 startSuggestionSequenceIfNeeded()
             }
         }
@@ -307,8 +332,8 @@ extension OnboardingView {
                 OnboardingQueryField(
                     text: $query,
                     placeholder: selectedMode == .duckAI
-                    ? UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
-                    : UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                    ? content.aiPlaceholder
+                    : content.searchPlaceholder,
                     isFocused: $isInputFocused,
                     isSingleLine: selectedMode != .duckAI,
                     onSubmit: handlePrimaryAction
@@ -352,7 +377,7 @@ extension OnboardingView {
             )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 
         private var suggestionChips: some View {
@@ -410,9 +435,7 @@ extension OnboardingView {
             dismissKeyboard()
             startExitTransitionAction()
 
-            withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
-                isTransitioningOut = true
-            } completion: {
+            let completion = {
                 if selectedMode == .duckAI {
                     openAIChatAction(prompt, autoSend)
                     onModeConfirmed(.duckAI)
@@ -422,12 +445,29 @@ extension OnboardingView {
                     isTransitioningOut = false
                 }
             }
+
+            if reduceMotion {
+                isTransitioningOut = true
+                completion()
+            } else {
+                withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
+                    isTransitioningOut = true
+                } completion: {
+                    completion()
+                }
+            }
         }
 
         // MARK: Suggestion Sequencing
         private func startSuggestionSequenceIfNeeded() {
             guard !suggestionSequenceStarted, showInteractiveControls else { return }
             suggestionSequenceStarted = true
+            // Reduce Motion: show all suggestions at once, no staggered reveal.
+            guard !reduceMotion else {
+                guard !isTransitioningOut else { return }
+                visibleSuggestionCount = Metrics.maxSuggestionCount
+                return
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.suggestionInitialRevealDelay) {
                 guard suggestionSequenceStarted, showInteractiveControls, !isTransitioningOut else { return }
                 startSuggestionRevealSequence()
@@ -697,6 +737,7 @@ private enum OnboardingSuggestionsChipsMetrics {
 
 private struct OnboardingSuggestionChips: View {
     @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualOnboardingMetrics
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let viewModel: OnboardingDuckAIExperimentSuggestionsViewModel
     let isDuckAIMode: Bool
@@ -710,7 +751,10 @@ private struct OnboardingSuggestionChips: View {
     }
 
     private var suggestionTransition: AnyTransition {
-        .asymmetric(
+        if reduceMotion {
+            return .identity
+        }
+        return .asymmetric(
             insertion: .scale(scale: OnboardingSuggestionsChipsMetrics.suggestionTransitionScale, anchor: .top).combined(with: .opacity),
             removal: .opacity
         )

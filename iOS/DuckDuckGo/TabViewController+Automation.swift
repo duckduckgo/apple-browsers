@@ -23,7 +23,7 @@ extension TabViewController {
     public func executeScript(_ javaScriptString: String,
                               args: [String: Any] = [:]) async -> Result<Any?, any Error> {
         do {
-            var result = try await webView.callAsyncJavaScript(
+            let result = try await webView.callAsyncJavaScript(
                 javaScriptString,
                 arguments: args,
                 in: nil,

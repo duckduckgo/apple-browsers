@@ -354,4 +354,67 @@ class TabsModelTests: XCTestCase {
         XCTAssertNil(model.currentIndex)
     }
 
+    // MARK: - NSCopying
+
+    func testWhenTabSnapshotTakenThenAllPersistedFieldsArePreserved() {
+        let link = Link(title: "Example", url: URL(string: "https://example.com")!, localPath: URL(string: "file:///tmp/local")!)
+        let date = Date(timeIntervalSince1970: 1_000_000)
+        let unifiedState = UnifiedInputTabState(preferredTextEntryMode: .aiChat,
+                                                selectedModelID: "gpt-4",
+                                                selectedReasoningMode: nil,
+                                                selectedTool: nil)
+        let tab = Tab(uid: "test-uid",
+                      link: link,
+                      viewed: true,
+                      desktop: true,
+                      lastViewedDate: date,
+                      daxEasterEggLogoURL: "https://logo.example.com",
+                      contextualChatURL: "https://chat.example.com",
+                      supportsTabHistory: true,
+                      fireTab: false,
+                      unifiedInputState: unifiedState)
+
+        let snapshot = tab.archivalSnapshot()
+
+        XCTAssertFalse(snapshot === tab)
+        XCTAssertEqual(snapshot.uid, "test-uid")
+        XCTAssertEqual(snapshot.link?.title, "Example")
+        XCTAssertEqual(snapshot.link?.url, URL(string: "https://example.com")!)
+        XCTAssertEqual(snapshot.link?.localFileURL, URL(string: "file:///tmp/local")!)
+        XCTAssertFalse(snapshot.link === tab.link)
+        XCTAssertEqual(snapshot.viewed, true)
+        XCTAssertEqual(snapshot.isDesktop, true)
+        XCTAssertEqual(snapshot.lastViewedDate, date)
+        XCTAssertEqual(snapshot.daxEasterEggLogoURL, "https://logo.example.com")
+        XCTAssertEqual(snapshot.contextualChatURL, "https://chat.example.com")
+        XCTAssertEqual(snapshot.supportsTabHistory, true)
+        XCTAssertEqual(snapshot.fireTab, false)
+        XCTAssertEqual(snapshot.unifiedInputState, unifiedState)
+    }
+
+    func testWhenModelSnapshotTakenThenMutatingSourceDoesNotAffectSnapshot() {
+        let link1 = Link(title: "Page 1", url: URL(string: "https://one.example.com")!)
+        let link2 = Link(title: "Page 2", url: URL(string: "https://two.example.com")!)
+        let tab1 = Tab(link: link1, fireTab: false)
+        let tab2 = Tab(link: link2, fireTab: false)
+        let model = TabsModel(tabs: [tab1, tab2], currentIndex: 1, desktop: false)
+
+        let snapshot = model.archivalSnapshot()
+
+        XCTAssertEqual(snapshot.count, 2)
+        XCTAssertEqual(snapshot.currentIndex, 1)
+        XCTAssertEqual(snapshot.tabs[0].link?.url, URL(string: "https://one.example.com")!)
+        XCTAssertEqual(snapshot.tabs[1].link?.url, URL(string: "https://two.example.com")!)
+
+        // Mutate the source model
+        tab1.link = Link(title: "Mutated", url: URL(string: "https://mutated.example.com")!)
+        model.remove(tab: tab2)
+
+        // Snapshot must be unaffected
+        XCTAssertEqual(snapshot.count, 2)
+        XCTAssertEqual(snapshot.tabs[0].link?.url, URL(string: "https://one.example.com")!)
+        XCTAssertEqual(snapshot.tabs[0].link?.title, "Page 1")
+        XCTAssertEqual(snapshot.tabs[1].link?.url, URL(string: "https://two.example.com")!)
+    }
+
 }

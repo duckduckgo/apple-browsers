@@ -51,7 +51,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let horizontalInset: CGFloat = 16
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
-        static let escapeHatchCardHeight: CGFloat = 72
+        static let escapeHatchCardHeight: CGFloat = 56
         static let escapeHatchTopPadding: CGFloat = 16
         /// 24pt gap below the hatch — matches Search-side breathing room around section title.
         static let escapeHatchBottomPadding: CGFloat = 24
@@ -60,11 +60,34 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let recentChatsHeaderBottomPadding: CGFloat = 24
     }
 
+    struct LayoutConfiguration {
+        let tableHorizontalInset: CGFloat
+        let escapeHatchHorizontalInset: CGFloat
+        let escapeHatchMaxWidth: CGFloat?
+
+        static let standard = LayoutConfiguration(
+            tableHorizontalInset: 0,
+            escapeHatchHorizontalInset: Constants.horizontalInset,
+            escapeHatchMaxWidth: HomeMessageCollectionViewCell.maximumWidth
+        )
+
+        static let unifiedToggleInput = LayoutConfiguration(
+            tableHorizontalInset: 10,
+            escapeHatchHorizontalInset: Constants.horizontalInset,
+            escapeHatchMaxWidth: nil
+        )
+    }
+
+    /// Suppresses the "Recent Chats" section header per the unified-input redesign.
+    /// Flip to `true` to restore the header; rendering logic below is preserved.
+    private static let areSectionHeadersEnabled = false
+
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
 
     private let chatViewModel: AIChatSuggestionsViewModel
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
+    private let layoutConfiguration: LayoutConfiguration
 
     /// Absorbs the gap between the two fetcher debounces so a single reload renders both. Coupled to
     /// `AIChatHistoryManager.Constants.debounceMilliseconds` (150ms) and `DuckAIURLSuggestionsLoader.debounceMilliseconds` (100ms).
@@ -85,7 +108,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         // Without this, iPad readable-width pulls cells narrower than the UTI input above.
         tableView.cellLayoutMarginsFollowReadableWidth = false
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        // Pin section / cell horizontal insets to 16pt so they line up with the unified input
+        // bar's `cardHorizontalMargin` and the escape-hatch card hosted in the table header.
+        tableView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         return tableView
     }()
 
@@ -95,11 +120,15 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private struct EscapeHatch: Equatable {
         let model: EscapeHatchModel
+        let openTabCount: Int
         let onTapped: () -> Void
-        static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool { lhs.model == rhs.model }
+        let onTabSwitcherTapped: () -> Void
+        static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool {
+            lhs.model == rhs.model && lhs.openTabCount == rhs.openTabCount
+        }
     }
 
-    private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
     private var currentEscapeHatch: EscapeHatch?
     private var additionalTopInset: CGFloat = 0
     /// Hatch is hidden while typing — mirrors Search-side, where the autocomplete view covers the NTP+hatch.
@@ -107,10 +136,12 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
-         queryProvider: @escaping () -> String) {
+         queryProvider: @escaping () -> String,
+         layoutConfiguration: LayoutConfiguration = .standard) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
+        self.layoutConfiguration = layoutConfiguration
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -123,8 +154,8 @@ final class DuckAISuggestionsViewController: UIViewController {
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: layoutConfiguration.tableHorizontalInset),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -layoutConfiguration.tableHorizontalInset),
             tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         ])
 
@@ -179,8 +210,21 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Escape hatch
 
     /// No-op on identical model — called repeatedly from container layout/refresh paths.
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        let next: EscapeHatch? = (model.flatMap { m in onTapped.map { EscapeHatch(model: m, onTapped: $0) } })
+    func setEscapeHatch(_ model: EscapeHatchModel?,
+                        openTabCount: Int,
+                        onTapped: (() -> Void)?,
+                        onTabSwitcherTapped: (() -> Void)?) {
+        let next: EscapeHatch?
+        if let model, let onTapped, let onTabSwitcherTapped {
+            next = EscapeHatch(
+                model: model,
+                openTabCount: openTabCount,
+                onTapped: onTapped,
+                onTabSwitcherTapped: onTabSwitcherTapped
+            )
+        } else {
+            next = nil
+        }
         guard next != currentEscapeHatch else { return }
         currentEscapeHatch = next
         rebuildHatch()
@@ -208,7 +252,13 @@ final class DuckAISuggestionsViewController: UIViewController {
             escapeHatchHostingController = nil
         }
         if let hatch = currentEscapeHatch, !isQueryActive {
-            let hosting = UIHostingController(rootView: ReturnToTabCard(model: hatch.model, onTap: hatch.onTapped))
+            let view = EscapeHatchView(
+                model: hatch.model,
+                openTabCount: hatch.openTabCount,
+                onCardTap: hatch.onTapped,
+                onTabSwitcherTap: hatch.onTabSwitcherTapped
+            )
+            let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             addChild(hosting)
             escapeHatchHostingController = hosting
@@ -240,22 +290,45 @@ final class DuckAISuggestionsViewController: UIViewController {
 
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(hosting.view)
-            let maxWidth = HomeMessageCollectionViewCell.maximumWidth
-            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
-            preferredWidth.priority = .defaultHigh
-            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
-            minimumLeading.priority = .required - 1
-            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
-            minimumTrailing.priority = .required - 1
-            NSLayoutConstraint.activate([
-                hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-                preferredWidth,
-                minimumLeading,
-                minimumTrailing,
+            var constraints = [
                 hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
-            ])
+            ]
+
+            if let maxWidth = layoutConfiguration.escapeHatchMaxWidth {
+                let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+                preferredWidth.priority = .defaultHigh
+                let minimumLeading = hosting.view.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: container.leadingAnchor,
+                    constant: layoutConfiguration.escapeHatchHorizontalInset
+                )
+                minimumLeading.priority = .required - 1
+                let minimumTrailing = hosting.view.trailingAnchor.constraint(
+                    lessThanOrEqualTo: container.trailingAnchor,
+                    constant: -layoutConfiguration.escapeHatchHorizontalInset
+                )
+                minimumTrailing.priority = .required - 1
+                constraints.append(contentsOf: [
+                    hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                    hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                    preferredWidth,
+                    minimumLeading,
+                    minimumTrailing
+                ])
+            } else {
+                constraints.append(contentsOf: [
+                    hosting.view.leadingAnchor.constraint(
+                        equalTo: container.leadingAnchor,
+                        constant: layoutConfiguration.escapeHatchHorizontalInset
+                    ),
+                    hosting.view.trailingAnchor.constraint(
+                        equalTo: container.trailingAnchor,
+                        constant: -layoutConfiguration.escapeHatchHorizontalInset
+                    )
+                ])
+            }
+
+            NSLayoutConstraint.activate(constraints)
             container.layoutIfNeeded()
             tableView.tableHeaderView = container
         }
@@ -414,11 +487,13 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard Self.areSectionHeadersEnabled else { return 0 }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return 0 }
         return Constants.recentChatsHeaderHeight
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard Self.areSectionHeadersEnabled else { return nil }
         guard resolvedSection(at: section) == .chats, !hasSearchRow else { return nil }
         return makeRecentChatsHeaderView()
     }

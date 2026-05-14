@@ -8,42 +8,42 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_chats_count": {
         "description": "Count of Duck.ai chats migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_files_u": {
         "description": "Fires once per install when Duck.ai migration from web to native storage completes for files",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_files_count": {
         "description": "Count of Duck.ai files migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_entries_u": {
         "description": "Fires once per install when Duck.ai migration from web to native storage completes for entries (general-purpose key-value store)",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_entries_count": {
         "description": "Count of Duck.ai entries migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_done_blank_count": {
         "description": "Count of Duck.ai markMigrationDone messages received with a missing or blank key, indicating a protocol error from the frontend",
@@ -57,7 +57,7 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_init_error": {
         "description": "Fires when DuckAiNativeStorageProvider init fails (DB or directory creation)",
@@ -71,14 +71,14 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_already-done": {
         "description": "Fires when isMigrationDone returns true (page load found migration already complete)",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_error": {
         "description": "Fires when isMigrationDone or markMigrationDone throws",

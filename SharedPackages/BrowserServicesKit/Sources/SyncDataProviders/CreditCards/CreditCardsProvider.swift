@@ -22,12 +22,21 @@ import Combine
 import Common
 import DDGSync
 import GRDB
+import Persistence
 import SecureStorage
 import os.log
 
 public struct CreditCardsInput {
     public var modifiedCreditCards: [SecureVaultModels.CreditCard]
     public var deletedCreditCards: [SecureVaultModels.CreditCard]
+}
+
+private enum CreditCardsProviderSettingsKeyNames: String, StorageKeyDescribing {
+    case staleCardSuffixRefreshCompleted = "sync-credit-cards-stale-card-suffix-refresh-completed"
+}
+
+private struct CreditCardsProviderSettings: StoringKeys {
+    let staleCardSuffixRefreshCompleted = StorageKey<Bool>(CreditCardsProviderSettingsKeyNames.staleCardSuffixRefreshCompleted)
 }
 
 public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider {
@@ -52,6 +61,7 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
     public init(
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         secureVaultErrorReporter: SecureVaultReporting,
+        keyValueStore: ThrowingKeyValueStoring,
         metadataStore: SyncMetadataStore,
         metricsEvents: EventMapping<MetricsEvent>? = nil,
         syncDidUpdateData: @escaping () -> Void,
@@ -59,6 +69,7 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
     ) throws {
         self.secureVaultFactory = secureVaultFactory
         self.secureVaultErrorReporter = secureVaultErrorReporter
+        self.settings = keyValueStore.throwingKeyedStoring()
         self.metricsEvents = metricsEvents
         super.init(feature: .init(name: "credit_cards"), metadataStore: metadataStore, syncDidUpdateData: syncDidUpdateData)
         self.syncDidFinish = { [weak self] in
@@ -225,6 +236,8 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
             throw saveError
         }
 
+        try? refreshCardSuffixesIfNeeded(secureVault: secureVault)
+
         if let serverTimestamp {
             updateSyncTimestamps(server: serverTimestamp, local: clientTimestamp)
             syncDidUpdateData()
@@ -266,6 +279,58 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
         return idsOfItemsToClearModifiedAt
     }
 
+    private func refreshCardSuffixesIfNeeded(secureVault: any AutofillSecureVault) throws {
+        guard try settings.value(for: \.staleCardSuffixRefreshCompleted) != true else {
+            return
+        }
+
+        let encryptionKey = try secureVault.getEncryptionKey()
+        try secureVault.inDatabaseTransaction { database in
+            try self.refreshStaleCardSuffixes(in: database, secureVault: secureVault, using: encryptionKey)
+        }
+        try? settings.set(true, for: \.staleCardSuffixRefreshCompleted)
+    }
+
+    private func refreshStaleCardSuffixes(
+        in database: Database,
+        secureVault: any AutofillSecureVault,
+        using encryptionKey: Data
+    ) throws {
+        let syncableCreditCards = try SecureVaultModels.SyncableCreditCard.query.fetchAll(database)
+
+        for syncableCreditCard in syncableCreditCards {
+            guard let creditCard = syncableCreditCard.creditCard,
+                  let creditCardId = creditCard.id else {
+                continue
+            }
+
+            let refreshedCardSuffix: String
+            do {
+                let decryptedCardNumberData = try secureVault.decrypt(creditCard.cardNumberData, using: encryptionKey)
+                guard let decryptedCardNumber = String(data: decryptedCardNumberData, encoding: .utf8) else {
+                    continue
+                }
+
+                refreshedCardSuffix = SecureVaultModels.CreditCard.suffix(from: decryptedCardNumber)
+            } catch {
+                continue
+            }
+
+            if refreshedCardSuffix == creditCard.cardSuffix {
+                continue
+            }
+
+            try database.execute(
+                sql: """
+                UPDATE \(SecureVaultModels.CreditCard.databaseTableName)
+                SET \(SecureVaultModels.CreditCard.Columns.cardSuffix.name) = ?
+                WHERE \(SecureVaultModels.CreditCard.Columns.id.name) = ?
+                """,
+                arguments: [refreshedCardSuffix, creditCardId]
+            )
+        }
+    }
+
     private func clearModifiedAt(uuids: Set<String>, clientTimestamp: Date, in database: Database) throws {
 
         let request = SecureVaultModels.SyncableCreditCardsRecord
@@ -285,6 +350,7 @@ public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider 
 
     private let secureVaultFactory: AutofillVaultFactory
     private let secureVaultErrorReporter: SecureVaultReporting
+    private let settings: any ThrowingKeyedStoring<CreditCardsProviderSettings>
     private let metricsEvents: EventMapping<MetricsEvent>?
 
     enum Const {

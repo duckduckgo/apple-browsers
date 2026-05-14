@@ -227,9 +227,9 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                // Paint the chrome around the chat content (nav bar header + footer + safe areas)
-                // with the same tone the AI chat header uses, so top and bottom read as one surface.
-                rootBackgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
+                // is the same tone as the card. The card defines itself via its halo rim shadow.
+                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
                 navigationBarContainerColor = .clear
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = .clear

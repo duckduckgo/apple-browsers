@@ -336,7 +336,7 @@ final class UnifiedToggleInputView: UIView {
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid, traitCollection: traitCollection)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionForgetAll
         button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
@@ -344,7 +344,7 @@ final class UnifiedToggleInputView: UIView {
     }()
 
     private lazy var aiTabCollapsedVoiceButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice, traitCollection: traitCollection)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionDuckAIVoice
         button.addTarget(self, action: #selector(voiceTapped), for: .touchUpInside)
@@ -391,6 +391,29 @@ final class UnifiedToggleInputView: UIView {
                   radius: 16,
                   offset: CGSize(width: 0, height: 2)),
         ]
+    }
+
+    /// Mirrors Figma's flanked-input card effects: a softer outer drop shadow + a soft
+    /// white-tone halo that gives the pill its glowing rim against the same-tone chrome.
+    /// The halo uses a downward offset so it weights toward the bottom and sides, leaving
+    /// the top edge barely lit — matching the Figma render.
+    private var flankedShadows: [CompositeShadowView.Shadow] {
+        [
+            .init(color: UIColor(designSystemColor: .shadowSecondary),
+                  radius: 12,
+                  offset: CGSize(width: 0, height: 4)),
+            .init(color: flankedHaloColor,
+                  radius: 6,
+                  offset: CGSize(width: 0, height: 2)),
+        ]
+    }
+
+    private var flankedHaloColor: UIColor {
+        UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor.white.withAlphaComponent(0.18)
+                : UIColor.black.withAlphaComponent(0.10)
+        }
     }
 
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
@@ -452,6 +475,18 @@ final class UnifiedToggleInputView: UIView {
             if isExpanded {
                 cardView.layer.borderColor = expandedBorderColor
             }
+            refreshGlassAITabAccessoryConfigurations()
+        }
+    }
+
+    private func refreshGlassAITabAccessoryConfigurations() {
+        guard #available(iOS 26, *) else { return }
+        for button in [aiTabCollapsedFireButton, aiTabCollapsedVoiceButton] {
+            guard let currentImage = button.configuration?.image else { continue }
+            var config = Self.glassAccessoryConfiguration(for: traitCollection)
+            config.image = currentImage
+            config.cornerStyle = .capsule
+            button.configuration = config
         }
     }
 
@@ -668,8 +703,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isExpandable = expanded
 
         if updateShadow {
-            expandedShadowView.isHidden = !expanded
-            cardView.layer.shadowOpacity = expanded ? 0 : 1.0
+            let useCompositeShadow = expanded || layout == .flanked
+            expandedShadowView.shadows = layout == .flanked ? flankedShadows : expandedShadows
+            expandedShadowView.isHidden = !useCompositeShadow
+            cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         }
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
@@ -989,9 +1026,9 @@ private extension UnifiedToggleInputView {
 
     /// Liquid Glass on iOS 26+, raised fill on legacy. Used for the fire / voice
     /// accessories flanking the collapsed input pill on Duck.ai tabs.
-    static func makeAITabAccessoryButton(image: UIImage?) -> UIButton {
+    static func makeAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
         if #available(iOS 26, *) {
-            return makeGlassAITabAccessoryButton(image: image)
+            return makeGlassAITabAccessoryButton(image: image, traitCollection: traitCollection)
         }
 
         let button = makeLegacyAITabAccessoryButton(image: image)
@@ -1000,8 +1037,8 @@ private extension UnifiedToggleInputView {
     }
 
     @available(iOS 26, *)
-    private static func makeGlassAITabAccessoryButton(image: UIImage?) -> UIButton {
-        var config = UIButton.Configuration.glass()
+    private static func makeGlassAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
+        var config = glassAccessoryConfiguration(for: traitCollection)
         config.image = image
         config.cornerStyle = .capsule
 
@@ -1009,6 +1046,13 @@ private extension UnifiedToggleInputView {
         configureAITabAccessoryButton(button)
         applyAITabAccessoryShadow(to: button)
         return button
+    }
+
+    /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
+    /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
+    @available(iOS 26, *)
+    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+        traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
     private static func makeLegacyAITabAccessoryButton(image: UIImage?) -> UIButton {

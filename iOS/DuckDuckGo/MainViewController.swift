@@ -4517,7 +4517,11 @@ extension MainViewController: TabDelegate {
 
     private func presentYouTubeAdBlockBreakageReport() {
         let view = YouTubeAdBlockBreakageReportView(
-            onSend: { [weak self] in self?.dismiss(animated: true) },
+            onSend: { [weak self] in
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToReportBrokenSite()
+                }
+            },
             onCancel: { [weak self] in self?.dismiss(animated: true) }
         )
         let controller = UIHostingController(rootView: view)

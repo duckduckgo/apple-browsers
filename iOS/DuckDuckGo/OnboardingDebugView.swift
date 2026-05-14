@@ -150,21 +150,22 @@ final class OnboardingDebugViewModel: ObservableObject {
     private var settings: DaxDialogsSettings
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsUserDefaults
-    private let searchExperience: OnboardingSearchExperience
     private let userDefaults: UserDefaults
     private var appSettings: OnboardingDebugAppSettings
 
-    /// Key used by `OnboardingPixelReporter` to flag the second-site-visit pixel.
-    /// Duplicated here (rather than exposed publicly) to avoid widening the reporter's API
-    /// for a debug-only reset path.
+    /// Keys duplicated here (rather than exposed publicly) so production types don't grow
+    /// a debug-only reset surface. Keep in sync with the originals:
+    /// - `OnboardingPixelReporter.siteVisitedUserDefaultsKey`
+    /// - `OnboardingSearchExperienceProvider` private `String` constants
     private static let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
+    private static let didEnableAIChatSearchInputDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didEnableAIChatSearchInputDuringOnboarding"
+    private static let didApplyOnboardingChoiceSettingsKey = "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings"
 
     init(
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
         settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
-        searchExperience: OnboardingSearchExperience = OnboardingSearchExperience(),
         userDefaults: UserDefaults = .app,
         appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings
     ) {
@@ -172,7 +173,6 @@ final class OnboardingDebugViewModel: ObservableObject {
         self.settings = settings
         self.tutorialSettings = tutorialSettings
         self.statisticsStore = statisticsStore
-        self.searchExperience = searchExperience
         self.userDefaults = userDefaults
         self.appSettings = appSettings
         onboardingUserType = manager.onboardingUserTypeDebugValue
@@ -194,7 +194,9 @@ final class OnboardingDebugViewModel: ObservableObject {
         sharedPixelsStorage.onboardingFlow = nil
         sharedPixelsStorage.onboardingVariant = nil
         // Forget the Search-vs-Duck.ai choice and the post-onboarding settings flag.
-        searchExperience.resetForDebug()
+        // `OnboardingSearchExperience` uses `UserDefaults.standard` for these keys.
+        UserDefaults.standard.removeObject(forKey: Self.didEnableAIChatSearchInputDuringOnboardingKey)
+        UserDefaults.standard.removeObject(forKey: Self.didApplyOnboardingChoiceSettingsKey)
         // Reset the "user already visited a second site" flag used by pixel reporting.
         userDefaults.removeObject(forKey: Self.siteVisitedUserDefaultsKey)
         // Clear the debug override that forces the restore prompt to be eligible.

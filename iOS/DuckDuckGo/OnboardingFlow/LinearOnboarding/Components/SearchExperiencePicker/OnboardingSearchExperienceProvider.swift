@@ -54,14 +54,6 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
         storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
     }
-
-    /// Debug-only: clears persisted onboarding choices so the search experience picker
-    /// behaves as it would for a fresh user. Used by the Onboarding Debug menu's
-    /// "Reset All Onboarding" action.
-    func resetForDebug() {
-        storage.removeObject(forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
-        storage.removeObject(forKey: .didApplyOnboardingChoiceSettings)
-    }
 }
 
 private extension String {

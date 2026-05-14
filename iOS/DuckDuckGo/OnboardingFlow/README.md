@@ -1,5 +1,7 @@
 # How do I reach page X? — Rebranded Onboarding
 
+**Onboarding flow chart**: https://app.asana.com/1/137249556945/project/1202500774821704/task/1214772318026756?focus=true
+
 | Page | Required state (in order) |
 |---|---|
 | ① Landing | `hasSeenOnboarding = false` + FF `onboardingRebranding = ON` + launch app |

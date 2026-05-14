@@ -3465,7 +3465,10 @@
 "settings.address.trackers.animation" = "Mostra nella barra degli indirizzi";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Scegli cosa vedi quando torni dopo %@ di inattività.";
+"settings.afterInactivity.footer.format" = "Scegli cosa visualizzare al tuo ritorno su DuckDuckGo dopo %@ di inattività.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Scegli cosa visualizzare al tuo ritorno su DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 ora";
@@ -3479,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuti";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Niente";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 secondo";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d secondi";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Timer di inattività";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Dopo l'inattività";
+"settings.afterInactivity.label" = "Schermata di apertura";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima scheda usata";

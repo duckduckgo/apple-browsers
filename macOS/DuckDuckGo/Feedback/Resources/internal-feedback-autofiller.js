@@ -1,8 +1,8 @@
 var quickMode = %QUICK_MODE%;
-var diagnosticsText = '%DIAGNOSTICS%';
-var screenshotBase64 = '%SCREENSHOT_BASE64%';
-var osVersion = '%OS_VERSION%';
-var appVersion = '%APP_VERSION%';
+var diagnosticsText = %DIAGNOSTICS%;
+var screenshotBase64 = %SCREENSHOT_BASE64%;
+var osVersion = %OS_VERSION%;
+var appVersion = %APP_VERSION%;
 
 function openDropdown(label) {
     const dropdown = document.querySelector(`[aria-label^="${label}"]`);
@@ -228,7 +228,7 @@ function injectDiagnosticsSection() {
     details.appendChild(summary);
 
     var pre = document.createElement('pre');
-    pre.textContent = diagnosticsText.replace(/\\n/g, '\n');
+    pre.textContent = diagnosticsText;
     pre.style.cssText = 'font-size: 11px; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 6px 0 0; overflow-x: auto; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;';
     details.appendChild(pre);
 
@@ -365,10 +365,9 @@ function hookSubmitForDiagnostics() {
 
         var diagsCb = document.getElementById('ddg-include-diagnostics');
         if (diagsCb && diagsCb.checked && diagnosticsText) {
-            var decodedDiags = diagnosticsText.replace(/\\n/g, '\n');
             var combined = userText
-                ? userText + '\n\n' + decodedDiags
-                : decodedDiags;
+                ? userText + '\n\n' + diagnosticsText
+                : diagnosticsText;
 
             var setter = Object.getOwnPropertyDescriptor(
                 window.HTMLTextAreaElement.prototype, 'value'
@@ -422,19 +421,6 @@ function handleNativeAppsDropdown() {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
-window.__ddgQuickFeedbackAutofill = function(data) {
-    quickMode = data.quickMode;
-    diagnosticsText = data.diagnostics || '';
-    screenshotBase64 = data.screenshotBase64 || '';
-    osVersion = data.osVersion || '';
-    appVersion = data.appVersion || '';
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(function() { handleNativeAppsDropdown(); })
-        .catch(function() { console.error('Internal Product Feedback Form is not loaded after 5s'); });
-};
-
-if (quickMode !== null) {
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(_ => handleNativeAppsDropdown())
-        .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));
-}
+waitForElement('h1', 'Internal Product Feedback Form')
+    .then(_ => handleNativeAppsDropdown())
+    .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));

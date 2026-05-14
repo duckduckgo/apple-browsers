@@ -1728,6 +1728,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 installDate: AppDelegate.firstLaunchDate,
                 persistor: persistor,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                isAppRelaunchingForUpdate: { [weak self] in
+                    self?.stateRestorationManager?.isRelaunchingAutomatically ?? false
+                },
+                isSystemQuitting: {
+                    NSAppleEventManager.shared().isQuittingForSystemEvent
+                },
+                resetRelaunchFlagOnCancel: { [weak self] in
+                    guard let stateRestorationManager = self?.stateRestorationManager,
+                          stateRestorationManager.isRelaunchingAutomatically else { return }
+                    stateRestorationManager.resetRelaunchFlag()
+                },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
                     let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
@@ -2410,6 +2421,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
         case .fileDeleteError(let error):
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+        case .lastUsedModelParseError:
+            break
         }
     }
 }

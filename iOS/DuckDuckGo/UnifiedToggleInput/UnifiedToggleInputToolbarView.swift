@@ -58,7 +58,12 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonState() }
     }
 
+    var usesNewPromptSubmitStyle: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     private var isFireTab: Bool = false
+    private var preservesSubmitStyleDuringDismissal = false
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
@@ -70,12 +75,23 @@ final class UnifiedToggleInputToolbarView: UIView {
         updateSubmitButtonAppearance()
     }
 
-    var isSubmitButtonHidden: Bool = false {
+    var isGenerating: Bool = false {
         didSet { updateGeneratingVisibility() }
     }
 
-    var isGenerating: Bool = false {
-        didSet { updateGeneratingVisibility() }
+    func prepareForToolbarVisibilityChange(showToolbar: Bool) {
+        if showToolbar {
+            preservesSubmitStyleDuringDismissal = false
+        } else {
+            preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
+        }
+        updateSubmitButtonAppearance()
+    }
+
+    func finalizeToolbarShown() {
+        guard preservesSubmitStyleDuringDismissal else { return }
+        preservesSubmitStyleDuringDismissal = false
+        updateSubmitButtonAppearance()
     }
 
     var modelName: String = "4o-mini" {
@@ -415,12 +431,23 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
-        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
+        let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
+        let icon: UIImage? = {
+            if showVoice {
+                return DesignSystemImages.Glyphs.Size24.voice
+            } else if usesReturnKeyStyle {
+                return DesignSystemImages.Glyphs.Size24.arrowRight
+            } else {
+                return DesignSystemImages.Glyphs.Size24.arrowUp
+            }
+        }()
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
         if showVoice {
             submitButton.applyAIVoiceChatStyle()
+        } else if usesReturnKeyStyle {
+            submitButton.applyReturnKeyStyle()
         } else {
             submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
         }
@@ -432,7 +459,7 @@ private extension UnifiedToggleInputToolbarView {
             stopButton.isHidden = false
         } else {
             stopButton.isHidden = true
-            submitButton.isHidden = isSubmitButtonHidden
+            submitButton.isHidden = false
         }
     }
 

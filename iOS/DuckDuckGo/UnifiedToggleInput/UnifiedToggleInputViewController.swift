@@ -32,7 +32,6 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
-    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
@@ -95,6 +94,14 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.inputMode
     }
 
+    func insertNewlineAtCursor() {
+        inputBarView.insertNewlineAtCursor()
+    }
+
+    func prepareToolbarSubmitStyleForDismissal() {
+        inputBarView.prepareToolbarSubmitStyleForDismissal()
+    }
+
     var isVoiceSearchAvailable: Bool {
         get { handler.isVoiceSearchEnabled }
         set {
@@ -119,11 +126,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isTopBarPosition: Bool {
         get { inputBarView.handlerIsTopBarPosition }
         set { inputBarView.handlerIsTopBarPosition = newValue }
-    }
-
-    var isToolbarSubmitHidden: Bool {
-        get { inputBarView.isToolbarSubmitHidden }
-        set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
     var isToolbarAIVoiceChatActive: Bool {
@@ -241,8 +243,9 @@ final class UnifiedToggleInputViewController: UIViewController {
     func apply(_ config: UTIViewConfig, animated: Bool) {
         cardPosition = config.cardPosition
         usesOmnibarMargins = config.usesOmnibarMargins
-        isToolbarSubmitHidden = config.isToolbarSubmitHidden
         isTopBarPosition = config.isTopBarPosition
+        // Set before `applyCardLayout` reads the flag.
+        inputBarView.isInlineDismissHidden = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)
@@ -400,10 +403,6 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode) {
         delegate?.unifiedToggleInputVC(self, didChangeMode: mode)
-    }
-
-    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
     }
 
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {

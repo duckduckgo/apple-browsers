@@ -43,7 +43,7 @@ public final class LocalSuggestionsReader: SuggestionsReading {
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
         do {
             let records = try storageHandler.getAllChats()
-            let decoded = records.compactMap { DuckAiChat.decode(from: $0.data) }
+            let decoded = records.compactMap { try? DuckAiChat.decode(from: $0.data) }
 
             let trimmedQuery = query?.trimmingCharacters(in: .whitespaces)
             let filtered: [(chat: DuckAiChat, firstUserMessageContent: String?)]

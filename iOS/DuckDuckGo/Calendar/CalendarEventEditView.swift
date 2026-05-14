@@ -66,8 +66,9 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
             @unknown default:
                 break
             }
-            controller.dismiss(animated: true)
-            onDismiss()
+            controller.dismiss(animated: true) { [onDismiss] in
+                onDismiss()
+            }
         }
     }
 }

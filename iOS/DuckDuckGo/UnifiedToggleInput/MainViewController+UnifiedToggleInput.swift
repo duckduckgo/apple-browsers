@@ -791,6 +791,7 @@ private extension MainViewController {
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        let shouldCrossfadeOmnibar = !viewCoordinator.isNavigationChromeHidden
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -800,6 +801,10 @@ private extension MainViewController {
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                if shouldCrossfadeOmnibar {
+                    self.viewCoordinator.navigationBarCollectionView.alpha = 1
+                    self.viewCoordinator.unifiedToggleInputContainer.alpha = 0
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
                 }

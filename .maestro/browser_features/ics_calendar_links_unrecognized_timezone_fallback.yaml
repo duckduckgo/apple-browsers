@@ -1,8 +1,6 @@
 # ics_calendar_links_unrecognized_timezone_fallback.yaml
 # .ics file with an unresolvable TZID should show the unsupported-timezone toast and fall
-# back to QuickLook. URL points at the local fixture server during development; swap to
-# https://privacy-test-pages.site/features/download/calendar-unrecognized-timezone.ics
-# once the eduardo/ics-download-fixtures branch lands on privacy-test-pages.
+# back to QuickLook.
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
@@ -17,7 +15,7 @@ tags:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
-- inputText: "http://localhost:8000/calendar-unrecognized-timezone.ics"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-unrecognized-timezone.ics"
 - pressKey: Enter
 
 - extendedWaitUntil:

@@ -1,8 +1,6 @@
 # ics_calendar_links_happy_path.yaml
 # Single-VEVENT .ics file should present EKEventEditViewController without a fallback toast.
-# Requires iOS 17+. URL points at the local fixture server during development; swap to
-# https://privacy-test-pages.site/features/download/calendar-single.ics once the
-# eduardo/ics-download-fixtures branch lands on privacy-test-pages.
+# Requires iOS 17+.
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
@@ -17,7 +15,7 @@ tags:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
-- inputText: "http://localhost:8000/single-event.ics"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-single.ics"
 - pressKey: Enter
 
 # EKEventEditViewController's nav bar shows "Cancel" and "Add" buttons. Asserting on those

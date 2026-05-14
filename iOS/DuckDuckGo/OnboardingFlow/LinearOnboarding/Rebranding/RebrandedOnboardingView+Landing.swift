@@ -152,22 +152,24 @@ extension OnboardingRebranding.OnboardingView {
             static let duckAILottiePlaybackDuration: TimeInterval = (duckAILottieEndFrame - duckAILottieStartFrame) / duckAILottieFPS
 
             /// Time from `.onAppear` until every entrance animation (SwiftUI + Lottie) has finished.
-            static var entranceDuration: TimeInterval {
-                max(
+            static func entranceDuration(includingDuckAI showsDuckAI: Bool) -> TimeInterval {
+                let defaultAnimationsEntranceMaxDuration = max(
                     groupScaleDelay + groupScaleDuration,
                     groupOffsetDelay + groupOffsetDuration,
                     logoScaleDelay + logoScaleDuration,
                     textOffsetDelay + textOffsetDuration,
                     textOpacityDelay + textOpacityDuration,
                     logoLottieDuration,
-                    illustrationLottiePlaybackDuration,
-                    duckAIAnimationDelay + duckAILottiePlaybackDuration
+                    illustrationLottiePlaybackDuration
                 )
+                let duckAIAnimationEntranceDuration = showsDuckAI ? duckAIAnimationDelay + duckAILottiePlaybackDuration : 0
+
+                return max(defaultAnimationsEntranceMaxDuration, duckAIAnimationEntranceDuration)
             }
 
             /// Time from `.onAppear` until all animations (entrance + exit) have finished.
-            static var totalDuration: TimeInterval {
-                entranceDuration + exitFadeDuration
+            static func totalDuration(includingDuckAI showsDuckAI: Bool) -> TimeInterval {
+                entranceDuration(includingDuckAI: showsDuckAI) + exitFadeDuration
             }
 
             // MARK: SwiftUI Animations
@@ -206,6 +208,9 @@ extension OnboardingRebranding.OnboardingView {
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
+            // Restart the entire landing screen (state + animations + theme-dependent Lotties)
+            // when the appearance switches mid-flight, rather than some animations restarting and some not.
+            .id(colorScheme)
             .onAppear {
                 animateEntrance()
             }
@@ -251,7 +256,6 @@ extension OnboardingRebranding.OnboardingView {
                         .font(onboardingTheme.typography.largeTitle)
                         .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
-                        .scaleEffect(textScale)
 
                     if content.shouldShowDuckAIAnimation {
                         let fileName = colorScheme == .dark ? Assets.duckAIAnimationDarkFileName : Assets.duckAIAnimationFileName
@@ -265,8 +269,10 @@ extension OnboardingRebranding.OnboardingView {
                         .scaledToFit()
                         .padding(.top, -Metrics.duckAITopOffset)
                         .offset(x: -Metrics.duckAIXOffset)
+                        .id(fileName)
                     }
                 }
+                .scaleEffect(textScale)
                 .offset(textOffset)
                 .opacity(text.opacity)
             }
@@ -355,13 +361,15 @@ extension OnboardingRebranding.OnboardingView {
                 }
             }
 
+            let showsDuckAI = content.shouldShowDuckAIAnimation
+
             // After entrance animations complete, fade out logo and text
-            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.entranceDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.entranceDuration(includingDuckAI: showsDuckAI)) {
                 animateExit()
             }
 
             // Notify parent when all animations (entrance + exit) have finished
-            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration(includingDuckAI: showsDuckAI)) {
                 onAnimationComplete()
             }
         }

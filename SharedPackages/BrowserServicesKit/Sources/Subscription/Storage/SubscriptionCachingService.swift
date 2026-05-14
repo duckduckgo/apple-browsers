@@ -38,9 +38,12 @@ public protocol SubscriptionCachingService {
 
 /// Default implementation backed by `UserDefaultsCache<DuckDuckGoSubscription>`.
 ///
-/// Actor isolation provides mutual exclusion for all mutations. Reads and the synchronous
-/// `isPresent` property are `nonisolated` because `UserDefaultsCache` (backed by
-/// `UserDefaults`) is documented as thread-safe by Apple.
+/// `set()` and `get()` are actor-isolated and serialized with each other.
+/// `reset()` is intentionally `nonisolated` to preserve the synchronous-clearing contract
+/// required by callers that cannot `await`. Because `UserDefaults` individual operations are
+/// atomic, concurrent `reset()` / `set()` calls produce a consistent (if arbitrarily ordered)
+/// result — the worst outcome is a stale clear removing data a concurrent set just wrote,
+/// leaving the cache empty until the next fetch.
 ///
 /// Expiration is determined by:
 /// - In DEBUG builds: default 20-minute expiration (avoids immediate invalidation of short-lived test subscriptions)
@@ -48,7 +51,8 @@ public protocol SubscriptionCachingService {
 public actor DefaultSubscriptionCachingService: SubscriptionCachingService {
 
     // nonisolated(unsafe): UserDefaultsCache is backed by UserDefaults which is thread-safe.
-    // All mutations go through actor-isolated methods; concurrent reads via isPresent/get() are safe.
+    // set() and get() are actor-isolated and serialized; reset() is nonisolated and may run
+    // concurrently with them (see class comment above).
     nonisolated(unsafe) private let subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription>
 
     public nonisolated var isPresent: Bool { subscriptionCache.get() != nil }
@@ -81,8 +85,8 @@ public actor DefaultSubscriptionCachingService: SubscriptionCachingService {
         }
     }
 
-    // nonisolated: subscriptionCache is nonisolated(unsafe) and UserDefaults is thread-safe,
-    // so no actor isolation is needed. This preserves the synchronous clearing guarantee.
+    // nonisolated to preserve the synchronous-clearing contract for callers that cannot await.
+    // Callers that need strict ordering with set() must coordinate at a higher level.
     public nonisolated func reset() {
         subscriptionCache.reset()
     }

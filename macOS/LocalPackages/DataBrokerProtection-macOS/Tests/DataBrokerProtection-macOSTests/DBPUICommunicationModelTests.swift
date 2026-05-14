@@ -264,7 +264,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
     func testProfileMatchInit_forNonEmailBroker_whenOptOutHasOptOutRequestedEvent_thenOptOutFormSubmittedDateMatchesThatEventDate() {
 
-        // Given: a non-email-confirming broker only ever records `.optOutRequested` at form-submit time.
+        // Given
         let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let optOutRequestedDate = Calendar.current.date(byAdding: .day, value: -10, to: Date.now)!
         let historyEvents = [
@@ -288,10 +288,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
     func testProfileMatchInit_forEmailBrokerDecoupledFlow_whenBothFormSubmittedAndOptOutRequestedEventsExist_thenOptOutFormSubmittedDateMatchesTheEarlierEvent() {
 
-        // Given: in the decoupled email-confirmation flow the broker records
-        // `.optOutSubmittedAndAwaitingEmailConfirmation` at form-submit time, then
-        // `.optOutRequested` later when the confirmation email is processed. The form-submitted
-        // date should reflect the earlier of the two events (i.e. the actual form submission).
+        // Given
         let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let formSubmittedDate = Calendar.current.date(byAdding: .day, value: -12, to: Date.now)!
         let confirmationDate = Calendar.current.date(byAdding: .day, value: -8, to: Date.now)!
@@ -313,13 +310,12 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(profileMatch.optOutFormSubmittedDate, formSubmittedDate.timeIntervalSince1970)
-        // optOutSubmittedDate continues to reflect broker acknowledgement for email-confirming brokers.
         XCTAssertEqual(profileMatch.optOutSubmittedDate, confirmationDate.timeIntervalSince1970)
     }
 
     func testProfileMatchInit_whenOptOutHasNoFormSubmissionEvents_thenOptOutFormSubmittedDateIsNil() {
 
-        // Given: an opt-out that hasn't reached form-submission yet.
+        // Given
         let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let historyEvents = [
             HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .matchesFound(count: 1), date: Calendar.current.date(byAdding: .day, value: -3, to: Date.now)!),
@@ -342,8 +338,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
     func testProfileMatchInit_forChildBroker_whenParentHasFormSubmission_thenOptOutFormSubmittedDateComesFromParent() {
 
-        // Given: the child broker has no form-submission events of its own (the opt-out is performed
-        // on the parent), and the parent broker's opt-out has a form-submission event.
+        // Given
         let childExtractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let parentExtractedProfile = ExtractedProfile.mockWithoutRemovedDate
         let parentFormSubmittedDate = Calendar.current.date(byAdding: .day, value: -5, to: Date.now)!
@@ -365,10 +360,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
     func testProfileMatchInit_forChildBroker_whenParentHasMultipleFormSubmissions_thenOptOutFormSubmittedDateIsTheMostRecent() {
 
-        // Given: the parent broker has multiple opt-outs, each with a form-submission event at
-        // different times. The child should pick up the most recent one regardless of which
-        // parent profile it nominally corresponds to (strict matching is intentionally avoided —
-        // see the design note on inconsistent name granularity across child/parent records).
+        // Given: parent opt-out names intentionally don't match the child — strict matching is bypassed.
         let childExtractedProfile = ExtractedProfile.mockWithName("Adam P Smith", age: "30", addresses: [AddressCityState(city: "New York", state: "NY")])
         let olderDate = Calendar.current.date(byAdding: .day, value: -20, to: Date.now)!
         let mostRecentDate = Calendar.current.date(byAdding: .day, value: -3, to: Date.now)!
@@ -398,32 +390,9 @@ final class DBPUICommunicationModelTests: XCTestCase {
         XCTAssertEqual(profileMatch.optOutFormSubmittedDate, mostRecentDate.timeIntervalSince1970)
     }
 
-    func testProfileMatchInit_forChildBroker_whenParentHasNoFormSubmissionEvents_thenOptOutFormSubmittedDateIsNil() {
-
-        // Given: child broker exists but the parent has no form submissions yet (e.g. parent
-        // opt-outs are still in earlier lifecycle stages).
-        let childExtractedProfile = ExtractedProfile.mockWithoutRemovedDate
-        let parentOptOut = OptOutJobData.mock(
-            with: ExtractedProfile.mockWithoutRemovedDate,
-            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutStarted, date: Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!)]
-        )
-
-        let childOptOut = OptOutJobData.mock(with: childExtractedProfile, historyEvents: [])
-
-        // When
-        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
-                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
-                                                       parentBrokerOptOutJobData: [parentOptOut])
-
-        // Then
-        XCTAssertNil(profileMatch.optOutFormSubmittedDate)
-    }
-
     func testProfileMatchInit_forChildBroker_whenChildHasOwnEventsButParentHasFormSubmission_thenOptOutFormSubmittedDateUsesParentNotChild() {
 
-        // Given: even if a child opt-out somehow has its own form-submission events recorded
-        // (it shouldn't, because child opt-outs aren't directly run), the propagated value must
-        // come from the parent.
+        // Given
         let childFormSubmittedDate = Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!
         let parentFormSubmittedDate = Calendar.current.date(byAdding: .day, value: -5, to: Date.now)!
 

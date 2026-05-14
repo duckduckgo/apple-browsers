@@ -259,10 +259,8 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     /// form submission completed for brokers that don't email-confirm. For a value that consistently
     /// represents form submission across both broker types, see `optOutFormSubmittedDate`.
     public let optOutSubmittedDate: Double?
-    /// The moment our form-submission action against the broker successfully completed. Set on every
-    /// match regardless of broker type; not overwritten on retries. For child brokers (whose opt-out
-    /// is performed by their parent broker), this is the most recent form-submission date from any
-    /// opt-out on the parent broker, since child brokers never run their own form submission.
+    /// The moment our form submission to the broker successfully completed, regardless of broker
+    /// type. For child brokers, propagated from the parent broker's most recent opt-out.
     public let optOutFormSubmittedDate: Double?
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
@@ -317,6 +315,10 @@ extension DBPUIDataBrokerProfileMatch {
         }
         let estimatedRemovalDate = Calendar.current.date(byAdding: .day, value: 14, to: optOutSubmittedDate ?? foundDate)
 
+        // For child brokers, propagate the parent's most recent form submission. Strict profile
+        // matching is intentionally avoided: brokers scrape name granularity inconsistently
+        // (e.g. "Adam Joseph Smith" vs "Adam P Smith") so matching rejects nearly every
+        // real-world child↔parent pairing.
         let optOutFormSubmittedDate: Date?
         if let parentBrokerOptOutJobData {
             optOutFormSubmittedDate = parentBrokerOptOutJobData

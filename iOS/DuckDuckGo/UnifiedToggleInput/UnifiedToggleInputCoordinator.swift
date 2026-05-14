@@ -911,6 +911,29 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
+        let entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint
+        switch host {
+        case .contextualChat:
+            entryPoint = .contextualChat
+        case .omnibar:
+            entryPoint = isOmnibarSession ? .omnibar : .aiTab
+        }
+        // Voice submissions skip the composer, so they never carry tools or
+        // attachments - hardcode the zero-shaped fields.
+        duckAIWideEventInstrumentation?.submissionStarted(
+            modelId: configuration.modelId,
+            userTier: subscriptionState.userTier,
+            reasoningEffort: configuration.reasoningEffort,
+            entryPoint: entryPoint,
+            inputMode: .voice,
+            fireMode: viewController.handler.isFireTab,
+            userScriptBound: true,
+            hasPageContext: userScript.attachedPageContextProvider?() != nil,
+            selectedTools: [],
+            imageAttachmentCount: 0,
+            fileAttachmentCount: 0,
+            invalidAttachmentCount: 0
+        )
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1332,6 +1355,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 userTier: subscriptionState.userTier,
                 reasoningEffort: persistedReasoningEffort,
                 entryPoint: entryPoint,
+                inputMode: .typed,
                 fireMode: viewController.handler.isFireTab,
                 userScriptBound: userScript != nil,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,

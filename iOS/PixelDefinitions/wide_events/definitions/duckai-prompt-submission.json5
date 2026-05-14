@@ -46,6 +46,11 @@
                         "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",
                         "enum": ["omnibar", "ai_tab", "contextual_chat"]
                     },
+                    "input_mode": {
+                        "type": "string",
+                        "description": "How the user produced the prompt text. `typed` = keyboard/paste in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",
+                        "enum": ["typed", "voice"]
+                    },
                     "fire_mode": {
                         "type": "boolean",
                         "description": "Whether the submitting tab was a fire tab at submit time."

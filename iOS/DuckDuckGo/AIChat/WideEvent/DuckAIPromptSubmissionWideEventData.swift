@@ -46,6 +46,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var reasoningEffort: String?
     /// Where the user was when they composed and submitted the prompt.
     var entryPoint: EntryPoint
+    /// How the user produced the prompt text. Additional values (suggestion
+    /// tap, address-bar shortcut, URL scheme, etc.) will be added as those
+    /// entry paths are instrumented.
+    var inputMode: InputMode
     /// Whether the submitting tab was in fire mode at submit time.
     var fireMode: Bool
     /// Set on FAILURE to identify which phase of the journey broke. Mirrors
@@ -84,6 +88,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          userTier: String,
          reasoningEffort: String?,
          entryPoint: EntryPoint,
+         inputMode: InputMode,
          fireMode: Bool,
          userScriptBound: Bool,
          hasPageContext: Bool,
@@ -99,6 +104,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.userTier = userTier
         self.reasoningEffort = reasoningEffort
         self.entryPoint = entryPoint
+        self.inputMode = inputMode
         self.fireMode = fireMode
         self.userScriptBound = userScriptBound
         self.hasPageContext = hasPageContext
@@ -130,6 +136,14 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         case contextualChat = "contextual_chat"
     }
 
+    enum InputMode: String, Codable {
+        /// User typed (or pasted) the prompt into the composer.
+        case typed
+        /// User dictated the prompt via voice search and the transcription
+        /// was submitted directly without a typed edit step.
+        case voice
+    }
+
     /// Orphaned flows are cleaned up by `submissionStarted()` which runs
     /// synchronously before creating a new flow. This avoids a race with
     /// `WideEventService.resume()` where the cleanup task would complete a
@@ -149,6 +163,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
             (WideEventParameter.DuckAIPromptSubmissionFeature.reasoningEffort, reasoningEffort),
             (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.inputMode, inputMode.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
@@ -172,6 +187,7 @@ extension WideEventParameter {
         static let userTier = "feature.data.ext.user_tier"
         static let reasoningEffort = "feature.data.ext.reasoning_effort"
         static let entryPoint = "feature.data.ext.entry_point"
+        static let inputMode = "feature.data.ext.input_mode"
         static let fireMode = "feature.data.ext.fire_mode"
         static let failingStep = "feature.data.ext.failing_step"
         static let userScriptBound = "feature.data.ext.user_script_bound"

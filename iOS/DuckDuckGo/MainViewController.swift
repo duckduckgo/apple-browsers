@@ -4481,17 +4481,21 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {
         setYouTubeAdBlockingEnabled(enabled)
+        if enabled {
+            tab.reload()
+        }
     }
 
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
-        let view = YouTubeAdBlockPickerView { [weak self] mode in
+        let view = YouTubeAdBlockPickerView { [weak self, weak tab] mode in
             guard let self else { return }
             if mode == .alwaysOff {
                 self.setYouTubeAdBlockingEnabled(false)
             }
-            self.dismiss(animated: true) { [weak self] in
+            self.dismiss(animated: true) { [weak self, weak tab] in
                 switch mode {
                 case .disableUntilRelaunch, .alwaysOff:
+                    tab?.reload()
                     self?.presentYouTubeAdBlockBreakageReport()
                 case .alwaysOn:
                     break

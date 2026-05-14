@@ -1311,6 +1311,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access
     // after `/models` exposes approved metadata for reasoning mode access.
+    // https://app.asana.com/1/137249556945/project/1210947754188321/task/1214802703019277?focus=true
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
         if model.id == "gpt-5.2", mode == .extendedReasoning {
             return .pro

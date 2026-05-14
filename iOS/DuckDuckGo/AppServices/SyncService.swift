@@ -69,6 +69,7 @@ final class SyncService {
             privacyConfigurationManager: privacyConfigurationManager,
             bookmarksDatabase: bookmarksDatabase,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: keyValueStore,
             settingHandlers: [FavoritesDisplayModeSyncHandler()],
             favoritesDisplayModeStorage: FavoritesDisplayModeStorage(),
             syncErrorHandler: syncErrorHandler,

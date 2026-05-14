@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Функции ИИ";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Выбрать фото";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Сделать фото";
@@ -233,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Создавайте изображения по текстовому описанию";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Создать изображение";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Найдите актуальную информацию";
@@ -2848,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Не сейчас";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно.\nИх можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Поиск и Duck.ai";
 
@@ -3014,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
+"onboarding.rebranding.intro.message" = "Нужен быстрый браузер, где все контролируете вы?\n\nЗдесь ИИ — всегда лишь дополнительная опция, а защита конфиденциальности всегда включена.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
@@ -3454,7 +3465,10 @@
 "settings.address.trackers.animation" = "Показывать в адресной строке";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Выберите, что вы увидите, когда вернетесь после %@ бездействия.";
+"settings.afterInactivity.footer.format" = "Выберите, что будет отображаться в DuckDuckGo после %@ бездействия.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Выберите, что будет отображаться при возвращении в DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 ч.";
@@ -3468,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d минут";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Каждый раз";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 секунда";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d секунд";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Таймер бездействия";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "После бездействия";
+"settings.afterInactivity.label" = "Начальный экран";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Последняя использованная вкладка";
@@ -4871,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Блокировать рекламу на YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Если функция включена, DuckDuckGo будет анонимно выявлять проблемы при блокировке рекламы и ошибки YouTube, чтобы улучшить работу сервиса для всех. DuckDuckGo не получает данные о просмотренных вами видео или ваши персональные данные.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Подробнее";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Закладки";

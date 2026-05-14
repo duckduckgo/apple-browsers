@@ -98,6 +98,13 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle": {
+        "description": "Fires when the user taps the tab switcher pill next to the escape hatch card. The escape hatch is only shown after idle return.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_ntp_after_idle_setting_changed_to_new_tab": {
         "description": "Fires when the user changes the after-inactivity setting to New Tab.",
         "owners": ["SabrinaTardio"],
@@ -111,5 +118,20 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_setting_idle_interval_changed": {
+        "description": "Fires when the user changes the inactivity-timer interval. The selected interval is reported via the idle_interval_seconds parameter.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "idle_interval_seconds",
+                "type": "string",
+                "description": "Selected inactivity-timer threshold in seconds. 0 means None (NTP is shown every time the user returns).",
+                "enum": ["0", "60", "300", "600", "1800", "3600", "43200"]
+            }
+        ]
     }
 }

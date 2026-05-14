@@ -31,9 +31,9 @@ enum PromoTestHelpers {
         coexistingPromoIDs: Set<String> = [],
         respectsGlobalCooldown: Bool = true,
         setsGlobalCooldown: Bool = true,
-        delegate: (any AnyPromoDelegate)? = nil
+        delegate: InternalPromoDelegate? = nil
     ) -> Promo {
-        Promo(
+        InternalPromo(
             id: id,
             triggers: triggers,
             initiated: initiated,
@@ -41,6 +41,26 @@ enum PromoTestHelpers {
             context: context,
             coexistingPromoIDs: coexistingPromoIDs,
             respectsGlobalCooldown: respectsGlobalCooldown,
+            setsGlobalCooldown: setsGlobalCooldown,
+            delegate: delegate
+        )
+    }
+
+    static func makePromo(
+        id: String = "test-promo",
+        initiated: PromoInitiated = .app,
+        promoType: PromoType = PromoType(.banner),
+        context: PromoContext = .global,
+        coexistingPromoIDs: Set<String> = [],
+        setsGlobalCooldown: Bool = true,
+        delegate: ExternalPromoDelegate
+    ) -> Promo {
+        ExternalPromo(
+            id: id,
+            initiated: initiated,
+            promoType: promoType,
+            context: context,
+            coexistingPromoIDs: coexistingPromoIDs,
             setsGlobalCooldown: setsGlobalCooldown,
             delegate: delegate
         )

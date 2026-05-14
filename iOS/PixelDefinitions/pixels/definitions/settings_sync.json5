@@ -1,0 +1,30 @@
+{
+    "m_settings_sync_back_up_this_device_tapped": {
+        "description": "Fired when the user taps the 'Sync And Back Up This Device' action from the sync settings screen.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_sync_recover_synced_data_tapped": {
+        "description": "Fired when the user taps the entry point to the Recover Synced Data flow from the sync settings screen.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_sync_signup_confirmed_tapped": {
+        "description": "Fired when the user taps the primary 'Turn On Sync and Backup' button on the Sync With Server confirmation sheet (SyncWithServerView), confirming intent to set up sync on this device.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_sync_recovery_confirmed_tapped": {
+        "description": "Fired when the user taps the primary 'Recover Synced Data' button on the Recover Synced Data sheet (RecoverSyncedDataView), confirming intent to begin recovery.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

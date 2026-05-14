@@ -110,6 +110,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
+    /// Address-bar render-performance instrumentation kill switch.
+    case addressBarPerformanceInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 
@@ -147,6 +150,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
+
+    /// Suppresses the first-time quit survey when termination wasn't initiated by the user
+    /// (Sparkle update relaunch, or system logout/restart/shutdown).
+    case firstTimeQuitSurveySkipNonUserQuit
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -186,6 +193,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
+    case onboardingRebranding
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -230,8 +240,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
-    case autoplayBlocking
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214749215529034?focus=true
+    case escapeHatchActions
 
     case crashReportOptInStatusResetting
 
@@ -249,9 +259,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
-
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
-    case filterAddressBarUpdates
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

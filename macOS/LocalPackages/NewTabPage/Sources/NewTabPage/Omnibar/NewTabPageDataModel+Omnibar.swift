@@ -281,13 +281,15 @@ public extension NewTabPageDataModel {
         let pinned: Bool?
         let lastEdit: String?
         let firstUserMessageContent: String?
+        let model: String?
 
-        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil, model: String? = nil) {
             self.chatId = chatId
             self.title = title
             self.pinned = pinned
             self.lastEdit = lastEdit
             self.firstUserMessageContent = firstUserMessageContent
+            self.model = model
         }
     }
 

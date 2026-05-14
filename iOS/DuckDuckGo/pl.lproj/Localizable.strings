@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Funkcje AI";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Wybierz zdjęcie";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Zrób zdjęcie";
@@ -233,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Dostosuj odpowiedzi";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Przekształć tekst w obrazy";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Utwórz obraz";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Znajdź aktualne informacje";
@@ -2848,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Nie teraz";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkcje sztucznej inteligencji są prywatne i opcjonalne.\nMożesz dokonać zmian w obszarze Ustawienia > Funkcje AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chcesz mieć łatwy dostęp do prywatnego czatu AI na pasku adresu?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Wyszukiwanie i Duck.ai";
 
@@ -3014,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "To DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Chcesz korzystać z szybszej przeglądarki, która chroni Cię i pozwala zdecydować, kiedy i jak korzystać z AI?";
+"onboarding.rebranding.intro.message" = "Chcesz skorzystać z szybszej przeglądarki, która daje Ci kontrolę?\n\nFunkcje AI są zawsze opcjonalne, a ochrona prywatności jest zawsze aktywna.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Cześć!";
@@ -3454,7 +3465,10 @@
 "settings.address.trackers.animation" = "Pokaż na pasku adresu";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz, gdy wrócisz po %@ braku aktywności.";
+"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz po powrocie do DuckDuckGo po %@ braku aktywności.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Wybierz, co zobaczysz po powrocie do DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 godzina";
@@ -3468,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d min";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Brak";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 s";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d s";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Timer bezczynności";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po braku aktywności";
+"settings.afterInactivity.label" = "Ekran startowy";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
@@ -4871,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokuj reklamy na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Po włączeniu DuckDuckGo anonimowo wykrywa zakłócenia blokowania reklam lub błędy YouTube, aby poprawić wrażenia dla wszystkich. DuckDuckGo nigdy nie widzi filmów, jakie oglądasz, ani żadnych danych osobowych.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Dowiedz się więcej";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zakładki";

@@ -372,7 +372,7 @@
                 "description": "Purchase funnel entry point",
                 "enum": [
                     "funnel_onboarding_ios",
-                    "funnel_skippedonboarding_ios",
+                    "funnel_modal_ios__skippedonboardingupsell",
                     "funnel_appsettings_ios",
                     "funnel_appmenu_ios",
                     "funnel_applaunch_ios_winback",

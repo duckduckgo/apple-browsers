@@ -17,33 +17,65 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12192-50600
     struct SearchExperienceContent: View {
-        @Environment(\.onboardingTheme) private var onboardingTheme
 
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingLeft",
+                size: CGSize(width: 116, height: 208.33),
+                position: .left(bottomPadding: 70.0),
+                twoStagesAnimation: 0.5
+            )
+        }
+
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding private var isVisible: Bool
+        private let content: OnboardingSearchExperienceContent
         private let action: () -> Void
 
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(action: @escaping () -> Void) {
+        init(
+            content: OnboardingSearchExperienceContent,
+            isVisible: Binding<Bool>,
+            action: @escaping () -> Void
+        ) {
+            self.content = content
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                Text(UserText.Onboarding.SearchExperience.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedOnboardingView.OnboardingSearchExperiencePicker(viewModel: viewModel)
+                    RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
 
-                    Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
+                    Text(content.footer)
                         .foregroundColor(onboardingTheme.colorPalette.textSecondary)
                         .font(onboardingTheme.typography.small)
                         .fixedSize(horizontal: false, vertical: true)
@@ -52,11 +84,14 @@ extension OnboardingRebranding.OnboardingView {
                         viewModel.confirmChoice()
                         action()
                     }) {
-                        Text(UserText.Onboarding.SearchExperience.cta)
+                        Text(content.primaryCTA)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 

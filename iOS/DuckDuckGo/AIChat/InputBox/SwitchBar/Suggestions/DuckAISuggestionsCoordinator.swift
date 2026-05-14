@@ -40,6 +40,7 @@ final class DuckAISuggestionsCoordinator {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let chatViewModel: AIChatSuggestionsViewModel
     private let queryProvider: () -> String
+    private let layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration
 
     private var viewController: DuckAISuggestionsViewController?
     private var cancellables = Set<AnyCancellable>()
@@ -64,11 +65,13 @@ final class DuckAISuggestionsCoordinator {
     init(chatManager: AIChatHistoryManager,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatViewModel: AIChatSuggestionsViewModel,
-         queryProvider: @escaping () -> String) {
+         queryProvider: @escaping () -> String,
+         layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) {
         self.chatManager = chatManager
         self.urlLoader = urlLoader
         self.chatViewModel = chatViewModel
         self.queryProvider = queryProvider
+        self.layoutConfiguration = layoutConfiguration
     }
 
     func start<P: Publisher>(in containerView: UIView,
@@ -95,7 +98,8 @@ final class DuckAISuggestionsCoordinator {
         let vc = DuckAISuggestionsViewController(
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
-            queryProvider: queryProvider
+            queryProvider: queryProvider,
+            layoutConfiguration: layoutConfiguration
         )
         vc.delegate = self
 
@@ -128,8 +132,16 @@ final class DuckAISuggestionsCoordinator {
         viewController = vc
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        viewController?.setEscapeHatch(model, onTapped: onTapped)
+    func setEscapeHatch(_ model: EscapeHatchModel?,
+                        openTabCount: Int,
+                        onTapped: (() -> Void)?,
+                        onTabSwitcherTapped: (() -> Void)?) {
+        viewController?.setEscapeHatch(
+            model,
+            openTabCount: openTabCount,
+            onTapped: onTapped,
+            onTabSwitcherTapped: onTabSwitcherTapped
+        )
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {

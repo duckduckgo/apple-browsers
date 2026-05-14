@@ -28,6 +28,7 @@ extension OnboardingRebranding {
 
     public struct ContextualDaxDialogContent<Content: View>: View {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private let orientation: ContextualDaxDialogOrientation
         private let title: NSAttributedString?
@@ -150,8 +151,12 @@ extension OnboardingRebranding {
         }
 
         private func animateContentIn() {
-            withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
+            if reduceMotion {
                 shouldShowContent = true
+            } else {
+                withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
+                    shouldShowContent = true
+                }
             }
         }
     }
@@ -214,6 +219,7 @@ private extension OnboardingRebranding {
 
     struct TypingTitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -227,6 +233,12 @@ private extension OnboardingRebranding {
         @Binding var startTypingMessage: Bool
         let onTypingFinished: () -> Void
 
+        #if os(iOS)
+        /// Drives the static message's fade-in after the title finishes typing (or after the
+        /// no-title path triggers it).
+        @State private var showStaticMessage = false
+        #endif
+
         var body: some View {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
                 if let title {
@@ -237,18 +249,22 @@ private extension OnboardingRebranding {
                 messageTypingView(alignment: messageAlignment)
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
-            // In horizontal layouts (text + button side-by-side), SwiftUI will
-            // truncate the text to a single line unless we tell it to size to
-            // its content vertically — wrap instead of truncate.
+            // Horizontal layouts otherwise truncate to a single line; force vertical sizing.
             .fixedSize(horizontal: false, vertical: true)
         }
 
         #if os(iOS)
+        // iOS: only the title types; message is static and fades in once typing completes.
+        // No-title path: the parent flips `startTypingMessage` directly — handled in
+        // `messageTypingView` below.
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
-            AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
-                startTypingMessage = true
-            })
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { revealStaticMessageAndFinish() }
+            )
             .font(theme.typography.contextual.title)
             .multilineTextAlignment(alignment)
             .frame(maxWidth: .infinity, alignment: Alignment(alignment))
@@ -256,17 +272,40 @@ private extension OnboardingRebranding {
 
         @ViewBuilder
         private func messageTypingView(alignment: TextAlignment) -> some View {
-            AnimatableTypingText(message, startAnimating: $startTypingMessage, onTypingFinished: onTypingFinished)
+            Text(attributedStringWithAttachments: message)
                 .font(theme.typography.contextual.body)
                 .multilineTextAlignment(alignment)
                 .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+                .opacity(showStaticMessage ? 1 : 0)
+                .onChange(of: startTypingMessage) { shouldStart in
+                    // No-title path: parent flips this directly; reveal + forward completion here.
+                    if shouldStart { revealStaticMessageAndFinish() }
+                }
+        }
+
+        private func revealStaticMessageAndFinish() {
+            guard !reduceMotion else {
+                showStaticMessage = true
+                onTypingFinished()
+                return
+            }
+            let duration = theme.contextualOnboardingMetrics.contentFadeInDuration
+            withAnimation(.easeIn(duration: duration)) {
+                showStaticMessage = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                onTypingFinished()
+            }
         }
         #else
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
-            AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
-                startTypingMessage = true
-            })
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { startTypingMessage = true }
+            )
             .font(theme.typography.contextual.title)
             .multilineTextAlignment(alignment)
             .frame(maxWidth: .infinity, alignment: Alignment(alignment))
@@ -274,10 +313,15 @@ private extension OnboardingRebranding {
 
         @ViewBuilder
         private func messageTypingView(alignment: TextAlignment) -> some View {
-            AnimatableTypingText(message, startAnimating: $startTypingMessage, onTypingFinished: onTypingFinished)
-                .font(theme.typography.contextual.body)
-                .multilineTextAlignment(alignment)
-                .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+            AnimatableTypingText(
+                message,
+                startAnimating: $startTypingMessage,
+                alignment: Alignment(alignment),
+                onTypingFinished: onTypingFinished
+            )
+            .font(theme.typography.contextual.body)
+            .multilineTextAlignment(alignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(alignment))
         }
         #endif
     }

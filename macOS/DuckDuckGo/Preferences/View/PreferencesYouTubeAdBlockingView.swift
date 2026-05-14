@@ -36,6 +36,19 @@ extension Preferences {
             return current != .disabled ? current : .alwaysAsk
         }
 
+        var youTubeAdBlockingEnabledBinding: Binding<Bool> {
+            .init {
+                model.youTubeAdBlockingEnabled
+            } set: { newValue in
+                let isTurningOn = newValue && !model.youTubeAdBlockingEnabled
+                let disclosureVisibleAtToggle = !model.isDisclosureHidden
+                model.youTubeAdBlockingEnabled = newValue
+                if isTurningOn, disclosureVisibleAtToggle {
+                    model.youTubeAnalyticsEnabled = true
+                }
+            }
+        }
+
         var isDuckPlayerEnabledBinding: Binding<Bool> {
             .init {
                 model.duckPlayerMode != .disabled
@@ -97,7 +110,17 @@ extension Preferences {
 
                     Spacer().frame(height: 4)
 
-                    ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: $model.youTubeAdBlockingEnabled)
+                    ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
+
+                    if !model.isDisclosureHidden {
+                        VStack(alignment: .leading, spacing: 1) {
+                            TextMenuItemCaption(UserText.youTubeAdBlockingToggleFooter)
+                            TextButton(UserText.youTubeAdBlockingLearnMoreButton) {
+                                model.openLearnMoreURL()
+                            }
+                        }
+                        .padding(.leading, 19)
+                    }
                 }
 
                 // Duck Player Section
@@ -139,6 +162,9 @@ extension Preferences {
                         }
                     }
                 }.disabled(model.shouldDisplayContingencyMessage)
+            }
+            .onAppear {
+                model.markDisclosureHiddenIfExistingUser()
             }
         }
     }

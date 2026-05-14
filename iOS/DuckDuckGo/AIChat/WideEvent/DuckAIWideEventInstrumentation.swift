@@ -34,7 +34,10 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            userTier: AIChatUserTier,
                            userScriptBound: Bool,
                            hasPageContext: Bool,
-                           selectedTools: [String])
+                           selectedTools: [String],
+                           imageAttachmentCount: Int,
+                           fileAttachmentCount: Int,
+                           invalidAttachmentCount: Int)
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
@@ -80,7 +83,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            userTier: AIChatUserTier,
                            userScriptBound: Bool,
                            hasPageContext: Bool,
-                           selectedTools: [String]) {
+                           selectedTools: [String],
+                           imageAttachmentCount: Int,
+                           fileAttachmentCount: Int,
+                           invalidAttachmentCount: Int) {
         if let activeFlow {
             // A previous submission in this app session never completed (a
             // completion-path gap, not app termination). Discard it silently
@@ -95,6 +101,9 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             userScriptBound: userScriptBound,
             hasPageContext: hasPageContext,
             selectedTools: selectedTools,
+            imageAttachmentCount: imageAttachmentCount,
+            fileAttachmentCount: fileAttachmentCount,
+            invalidAttachmentCount: invalidAttachmentCount,
             startedAt: dateProvider()
         )
         activeFlow = data

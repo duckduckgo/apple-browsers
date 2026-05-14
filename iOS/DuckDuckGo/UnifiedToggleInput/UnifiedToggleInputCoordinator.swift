@@ -1308,12 +1308,22 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         case .aiChat:
             let userScript = boundUserScript
             let tools = toolsController.selectedToolsForSubmission()
+            let attachmentCounts = viewController.currentAttachments.reduce(into: (image: 0, file: 0, invalid: 0)) { counts, attachment in
+                switch attachment {
+                case .image: counts.image += 1
+                case .file: counts.file += 1
+                case .invalidFile: counts.invalid += 1
+                }
+            }
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
                 userScriptBound: userScript != nil,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
-                selectedTools: tools?.map(\.rawValue) ?? []
+                selectedTools: tools?.map(\.rawValue) ?? [],
+                imageAttachmentCount: attachmentCounts.image,
+                fileAttachmentCount: attachmentCounts.file,
+                invalidAttachmentCount: attachmentCounts.invalid
             )
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)

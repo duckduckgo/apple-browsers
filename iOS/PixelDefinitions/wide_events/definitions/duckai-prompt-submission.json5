@@ -52,6 +52,24 @@
                             "enum": ["WebSearch", "NewsSearch", "VideosSearch", "LocalSearch", "RelatedSearchTerms", "WeatherForecast", "GenerateImage"]
                         }
                     },
+                    "attachments": {
+                        "type": "object",
+                        "description": "Counts of attachments present in the composer at submit time, bucketed by kind. No filenames, sizes, MIME types, or content - just counts.",
+                        "properties": {
+                            "image_count": {
+                                "type": "integer",
+                                "description": "Number of image attachments."
+                            },
+                            "file_count": {
+                                "type": "integer",
+                                "description": "Number of valid file attachments (excludes ones rejected by validation)."
+                            },
+                            "invalid_count": {
+                                "type": "integer",
+                                "description": "Number of attachments that failed validation and remained in the composer as error rows. Non-zero suggests UX friction at submit time."
+                            }
+                        }
+                    },
                     "latency": {
                         "type": "object",
                         "description": "Latency milestones measured in milliseconds from prompt submission.",

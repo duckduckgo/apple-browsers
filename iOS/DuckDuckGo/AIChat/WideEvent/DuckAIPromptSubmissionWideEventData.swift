@@ -53,6 +53,14 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     /// `AIChatRAGTool.rawValue` form (e.g. `"WebSearch"`, `"GenerateImage"`).
     /// Empty when no tool was selected.
     var selectedTools: [String]
+    /// Number of image attachments present at submit time.
+    var imageAttachmentCount: Int
+    /// Number of valid file attachments present at submit time (excludes ones
+    /// rejected by `UTIAttachmentPolicy` validation).
+    var fileAttachmentCount: Int
+    /// Number of attachments that failed validation and were left in the
+    /// composer as error rows. Non-zero suggests UX friction.
+    var invalidAttachmentCount: Int
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -69,6 +77,9 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          userScriptBound: Bool,
          hasPageContext: Bool,
          selectedTools: [String],
+         imageAttachmentCount: Int,
+         fileAttachmentCount: Int,
+         invalidAttachmentCount: Int,
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
@@ -78,6 +89,9 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.userScriptBound = userScriptBound
         self.hasPageContext = hasPageContext
         self.selectedTools = selectedTools
+        self.imageAttachmentCount = imageAttachmentCount
+        self.fileAttachmentCount = fileAttachmentCount
+        self.invalidAttachmentCount = invalidAttachmentCount
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
@@ -117,6 +131,9 @@ extension DuckAIPromptSubmissionWideEventData {
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.imageAttachmentCount] = imageAttachmentCount
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fileAttachmentCount] = fileAttachmentCount
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.invalidAttachmentCount] = invalidAttachmentCount
         return parameters
     }
 }
@@ -130,6 +147,9 @@ extension WideEventParameter {
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"
         static let selectedTools = "feature.data.ext.selected_tools"
+        static let imageAttachmentCount = "feature.data.ext.attachments.image_count"
+        static let fileAttachmentCount = "feature.data.ext.attachments.file_count"
+        static let invalidAttachmentCount = "feature.data.ext.attachments.invalid_count"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"

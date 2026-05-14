@@ -4625,7 +4625,7 @@ https://duckduckgo.com/windows";
 "youtube.ad.blocking.mode.disable-until-relaunch" = "Disable Until Relaunch";
 
 /* Title of the YouTube ad-block mode picker bottom sheet */
-"youtube.ad.blocking.picker.title" = "YouTube Ad Blocking";
+"youtube.ad.blocking.picker.title" = "YouTube Ad Block";
 
 /* Settings screen title for Ad Blocking */
 "youtube.ad.blocking.title" = "Ad Blocking";

@@ -2029,7 +2029,7 @@ public struct UserText {
     // YouTube Ad Blocking — browsing menu picker
     public static let youTubeAdBlockingMenuToggle = NSLocalizedString("youtube.ad.blocking.menu.toggle", value: "Disable YouTube Ad Block", comment: "Browsing menu row that opens the YouTube ad-block mode picker")
     public static let youTubeAdBlockingMenuEnable = NSLocalizedString("youtube.ad.blocking.menu.enable", value: "Enable YouTube Ad Blocking", comment: "Browsing menu row that turns YouTube ad blocking back on after the user has disabled it")
-    public static let youTubeAdBlockingPickerTitle = NSLocalizedString("youtube.ad.blocking.picker.title", value: "YouTube Ad Blocking", comment: "Title of the YouTube ad-block mode picker bottom sheet")
+    public static let youTubeAdBlockingPickerTitle = NSLocalizedString("youtube.ad.blocking.picker.title", value: "YouTube Ad Block", comment: "Title of the YouTube ad-block mode picker bottom sheet")
     public static let youTubeAdBlockingModeAlwaysOn = NSLocalizedString("youtube.ad.blocking.mode.always-on", value: "Always On", comment: "Picker option keeping YouTube ad blocking always on")
     public static let youTubeAdBlockingModeDisableUntilRelaunch = NSLocalizedString("youtube.ad.blocking.mode.disable-until-relaunch", value: "Disable Until Relaunch", comment: "Picker option disabling YouTube ad blocking until the next app launch")
     public static let youTubeAdBlockingModeAlwaysOff = NSLocalizedString("youtube.ad.blocking.mode.always-off", value: "Always Off", comment: "Picker option keeping YouTube ad blocking always off")

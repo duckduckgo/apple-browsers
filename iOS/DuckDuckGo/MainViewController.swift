@@ -4503,10 +4503,16 @@ extension MainViewController: TabDelegate {
             }
         }
         let controller = UIHostingController(rootView: view)
-        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
         controller.modalPresentationStyle = .pageSheet
         if let sheet = controller.sheetPresentationController {
-            sheet.detents = [.medium()]
+            if #available(iOS 16.0, *) {
+                let fittingWidth = self.view.bounds.width
+                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                sheet.detents = [.custom { _ in contentHeight }]
+            } else {
+                sheet.detents = [.medium()]
+            }
             sheet.prefersGrabberVisible = true
             if #unavailable(iOS 26) {
                 sheet.preferredCornerRadius = 24
@@ -4528,7 +4534,13 @@ extension MainViewController: TabDelegate {
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         controller.modalPresentationStyle = .pageSheet
         if let sheet = controller.sheetPresentationController {
-            sheet.detents = [.medium()]
+            if #available(iOS 16.0, *) {
+                let fittingWidth = self.view.bounds.width
+                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                sheet.detents = [.custom { _ in contentHeight }]
+            } else {
+                sheet.detents = [.medium()]
+            }
             sheet.prefersGrabberVisible = false
             if #unavailable(iOS 26) {
                 sheet.preferredCornerRadius = 24

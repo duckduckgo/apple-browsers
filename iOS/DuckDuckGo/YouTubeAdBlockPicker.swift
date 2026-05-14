@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 
 enum YouTubeAdBlockMode: String, CaseIterable {
     case alwaysOn
@@ -48,24 +49,22 @@ struct YouTubeAdBlockPickerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 16) {
             header
-            Divider()
-            ForEach(Array(YouTubeAdBlockMode.allCases.enumerated()), id: \.element) { index, mode in
-                row(for: mode)
-                if index < YouTubeAdBlockMode.allCases.count - 1 {
-                    Divider().padding(.leading, 56)
-                }
-            }
-            Spacer(minLength: 0)
+            rows
+                .background(Color(designSystemColor: .backgroundTertiary))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 16)
         }
-        .background(Color(designSystemColor: .backgroundTertiary))
+        .padding(.top, 24)
+        .padding(.bottom, 8)
+        .background(Color(designSystemColor: .surface))
     }
 
     private var header: some View {
         HStack {
             Text(UserText.youTubeAdBlockingPickerTitle)
-                .font(.headline)
+                .daxTitle3()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Spacer()
             Button {
@@ -76,9 +75,18 @@ struct YouTubeAdBlockPickerView: View {
             .buttonStyle(CloseButtonStyle())
             .accessibilityLabel(UserText.keyCommandClose)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 28)
-        .padding(.bottom, 24)
+        .padding(.horizontal, 24)
+    }
+
+    private var rows: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(YouTubeAdBlockMode.allCases.enumerated()), id: \.element) { index, mode in
+                row(for: mode)
+                if index < YouTubeAdBlockMode.allCases.count - 1 {
+                    Divider().padding(.leading, 68)
+                }
+            }
+        }
     }
 
     private func row(for mode: YouTubeAdBlockMode) -> some View {
@@ -86,17 +94,18 @@ struct YouTubeAdBlockPickerView: View {
             selection = mode
             onSelection(mode)
         } label: {
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .accent))
                     .opacity(mode == selection ? 1 : 0)
                 Text(mode.title)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

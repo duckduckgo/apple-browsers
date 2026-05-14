@@ -21,6 +21,7 @@ import Combine
 import AIChat
 import FeatureFlags
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -680,8 +681,9 @@ final class AIChatOmnibarController {
     }
 
     /// UUID of the tab the omnibar is currently overlaid on, or `nil` when no tab is selected.
-    /// Surfaced for tab pickers so they can pin the current tab at the top and render its row
-    /// with a "(Current Tab)" trailing badge.
+    /// Surfaced for tab pickers (both the "Attach Page Content" menu and the `@`-mention
+    /// picker) so they can pin the current tab at the top and render its row with a
+    /// "(Current Tab)" trailing badge.
     var currentTabUUID: String? {
         tabCollectionViewModel.selectedTabViewModel?.tab.uuid
     }
@@ -694,7 +696,10 @@ final class AIChatOmnibarController {
     /// is intentionally restricted to **this window's** tabs — other browser windows aren't
     /// surfaced. Non-URL tabs (settings, new-tab page, etc.) are filtered out, as are URLs the
     /// sidebar's shared `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` rules out
-    /// (DDG homepage, `about:blank`, duck.ai itself).
+    /// (DDG homepage, `about:blank`, duck.ai itself). Internal testers who set a custom AI Chat
+    /// URL via Debug → AI Chat → Set custom URL also get tabs at that host filtered out — the
+    /// shared helper only knows about the hardcoded `duck.ai` host, so the omnibar checks the
+    /// debug override here to keep the picker meta-attachment-free for them too.
     ///
     /// The current tab (if it survives the filters) is hoisted to the front of the returned list
     /// so menus that pin "Current Tab" at the top get the right ordering for free.
@@ -703,9 +708,16 @@ final class AIChatOmnibarController {
         let regularTabs = tabCollectionViewModel.tabCollection.tabs
         let allTabs = pinnedTabs + regularTabs
         let faviconManager = NSApp.delegateTyped.faviconManager
+        // Resolve the custom-URL host once per pick — `keyedStoring` reads from UserDefaults
+        // every access, so caching avoids hitting it per-tab.
+        let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
+        let customAIChatURLHost = debugURLSettings.customURLHostname
         let candidates = allTabs.compactMap { tab -> AIChatTabAttachment? in
             guard case .url(let url, _, _) = tab.content else { return nil }
             guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
+            if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
+                return nil
+            }
             let title = tab.title ?? url.host ?? ""
             let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
             return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)

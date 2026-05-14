@@ -1022,6 +1022,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             inputMode: inputMode,
             fireMode: viewController.handler.isFireTab,
             userScriptBound: boundUserScript != nil,
+            frontendDeliveryPath: entryPoint == .contextualChat ? .contextualNativeInput : .urlAutoSubmit,
             hasPageContext: hasPageContext,
             selectedTools: [],
             imageAttachmentCount: 0,
@@ -1049,6 +1050,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             inputMode: .voice,
             fireMode: viewController.handler.isFireTab,
             userScriptBound: true,
+            frontendDeliveryPath: .userScript,
             hasPageContext: userScript.attachedPageContextProvider?() != nil,
             selectedTools: [],
             imageAttachmentCount: 0,
@@ -1062,7 +1064,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         showCollapsed()
-        userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+        let nativeBridgePushed = userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+        duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, nativeBridgePushed: nativeBridgePushed)
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -1658,6 +1661,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 inputMode: .keyboard,
                 fireMode: viewController.handler.isFireTab,
                 userScriptBound: userScript != nil,
+                frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
                 selectedTools: tools?.map(\.rawValue) ?? [],
                 imageAttachmentCount: attachmentCounts.image,
@@ -1690,9 +1694,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 showCollapsed()
             }
             if let userScript {
-                userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+                let nativeBridgePushed = userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, nativeBridgePushed: nativeBridgePushed)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
+                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, nativeBridgePushed: nil)
             }
         }
     }

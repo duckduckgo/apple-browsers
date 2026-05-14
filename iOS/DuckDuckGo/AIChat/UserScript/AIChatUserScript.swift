@@ -278,20 +278,24 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - AI Chat Actions
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) -> Bool {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext, reasoningEffort: reasoningEffort)
-        push(.submitPrompt(promptPayload))
+        return push(.submitPrompt(promptPayload))
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
@@ -302,8 +306,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             pageContext: attachedPageContextProvider?(),
             reasoningEffort: reasoningEffort
         )
-        push(.submitPrompt(promptPayload))
+        let didPush = push(.submitPrompt(promptPayload))
         onPromptSubmitted?()
+        return didPush
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -342,10 +347,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
-    private func push(_ message: AIChatPushMessage) {
-        guard let webView = webView else { return }
+    @discardableResult
+    private func push(_ message: AIChatPushMessage) -> Bool {
+        guard let webView = webView else { return false }
         let params: Encodable? = message.params
         broker?.push(method: message.methodName, params: params, for: self, into: webView)
+        return broker != nil
     }
 }
 

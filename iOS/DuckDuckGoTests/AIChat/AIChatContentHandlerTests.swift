@@ -581,10 +581,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         lastDisplayModeSet = displayMode
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
+        return true
     }
 
     func submitStartChatAction() {

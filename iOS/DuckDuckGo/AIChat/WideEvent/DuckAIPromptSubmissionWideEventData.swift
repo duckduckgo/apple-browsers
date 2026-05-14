@@ -45,6 +45,9 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var lastStep: LastStep?
     var cancellationReason: CancellationReason?
     var userScriptBound: Bool
+    var frontendDeliveryPath: FrontendDeliveryPath
+    var frontendDeliveryQueued: Bool
+    var nativeBridgePushed: Bool?
 
     var hasPageContext: Bool
     var selectedTools: [String]
@@ -68,6 +71,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     /// observed duration for failures and cancellations where `.ready` is never reached.
     var terminalInterval: WideEvent.MeasuredInterval
 
+    /// Time to the frontend `userDidSubmitPrompt` metric after native submission.
+    /// Nil if the frontend never acknowledged the prompt before the flow ended.
+    var frontendSubmissionAckInterval: WideEvent.MeasuredInterval
+
     init(modelId: String?,
          userTier: String,
          reasoningEffort: String?,
@@ -75,6 +82,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          inputMode: InputMode,
          fireMode: Bool,
          userScriptBound: Bool,
+         frontendDeliveryPath: FrontendDeliveryPath,
          hasPageContext: Bool,
          selectedTools: [String],
          imageAttachmentCount: Int,
@@ -91,6 +99,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.inputMode = inputMode
         self.fireMode = fireMode
         self.userScriptBound = userScriptBound
+        self.frontendDeliveryPath = frontendDeliveryPath
+        self.frontendDeliveryQueued = false
         self.hasPageContext = hasPageContext
         self.selectedTools = selectedTools
         self.imageAttachmentCount = imageAttachmentCount
@@ -100,6 +110,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.terminalInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.frontendSubmissionAckInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -155,6 +166,15 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         case voice
     }
 
+    enum FrontendDeliveryPath: String, Codable {
+        /// Native UTI pushed the prompt directly into an already-bound AIChatUserScript.
+        case userScript = "user_script"
+        /// Native UTI delegated to the host, which opened Duck.ai with URL autosubmit/prompt handoff.
+        case urlAutoSubmit = "url_autosubmit"
+        /// Contextual sheet native input handed the prompt to the contextual web view.
+        case contextualNativeInput = "contextual_native_input"
+    }
+
     /// Orphaned flows are cleaned up by `submissionStarted()` which runs
     /// synchronously before creating a new flow. This avoids a race with
     /// `WideEventService.resume()` where the cleanup task would complete a
@@ -177,14 +197,18 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.inputMode, inputMode.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.nativeBridgePushed, nativeBridgePushed),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.terminalMs, terminalInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(.noBucketing)),
         ])
 
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryQueued] = frontendDeliveryQueued
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.imageAttachmentCount] = imageAttachmentCount
@@ -207,6 +231,9 @@ extension WideEventParameter {
         static let lastStep = "feature.data.ext.last_step"
         static let cancellationReason = "feature.data.ext.cancellation_reason"
         static let userScriptBound = "feature.data.ext.user_script_bound"
+        static let frontendDeliveryPath = "feature.data.ext.delivery.path"
+        static let frontendDeliveryQueued = "feature.data.ext.delivery.queued"
+        static let nativeBridgePushed = "feature.data.ext.delivery.native_bridge_pushed"
         static let hasPageContext = "feature.data.ext.has_page_context"
         static let selectedTools = "feature.data.ext.selected_tools"
         static let imageAttachmentCount = "feature.data.ext.attachments.image_count"
@@ -216,5 +243,6 @@ extension WideEventParameter {
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"
         static let terminalMs = "feature.data.ext.latency.terminal_ms"
+        static let frontendSubmissionAckMs = "feature.data.ext.latency.frontend_submission_ack_ms"
     }
 }

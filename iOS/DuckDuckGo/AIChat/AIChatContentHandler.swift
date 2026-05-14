@@ -35,7 +35,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -43,7 +44,8 @@ protocol AIChatUserScriptProviding: AnyObject {
 }
 
 extension AIChatUserScriptProviding {
-    func submitPrompt(_ prompt: String) {
+    @discardableResult
+    func submitPrompt(_ prompt: String) -> Bool {
         submitPrompt(prompt, pageContext: nil)
     }
 }
@@ -86,7 +88,8 @@ protocol AIChatContentHandling: AnyObject {
     func buildVoiceModeURL() -> URL
 
     /// Submits a prompt to the AI Chat with optional page context.
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool
 
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -106,7 +109,8 @@ protocol AIChatContentHandling: AnyObject {
 }
 
 extension AIChatContentHandling {
-    func submitPrompt(_ prompt: String) {
+    @discardableResult
+    func submitPrompt(_ prompt: String) -> Bool {
         submitPrompt(prompt, pageContext: nil)
     }
 }
@@ -207,13 +211,14 @@ final class AIChatContentHandler: AIChatContentHandling {
         AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+    @discardableResult
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) -> Bool {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
         } else {
             Logger.aiChat.debug("[PageContext] Prompt submitted without context")
         }
-        userScript?.submitPrompt(prompt, pageContext: pageContext)
+        return userScript?.submitPrompt(prompt, pageContext: pageContext) ?? false
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

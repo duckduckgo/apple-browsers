@@ -189,6 +189,18 @@ final class AIChatContextualUTIHost {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
     }
 
+    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?) {
+        duckAIWideEventInstrumentation.promptDeliveryUpdated(wasQueued: wasQueued, nativeBridgePushed: nativeBridgePushed)
+    }
+
+    func frontendSubmissionAcknowledged() {
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+    }
+
+    func pageLoadFailed(error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(error: error)
+    }
+
     /// Called when the contextual sheet's native input submits the initial prompt of a chat,
     /// which bypasses the UTI. Routes the wide-event start through the shared UTI coordinator
     /// so the in-flight flow receives the JS status updates that follow.

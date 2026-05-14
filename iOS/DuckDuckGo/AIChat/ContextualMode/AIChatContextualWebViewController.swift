@@ -199,9 +199,11 @@ final class AIChatContextualWebViewController: UIViewController {
         }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
-            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+            let nativeBridgePushed = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+            utiHost?.promptDeliveryUpdated(wasQueued: false, nativeBridgePushed: nativeBridgePushed)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
+            utiHost?.promptDeliveryUpdated(wasQueued: true, nativeBridgePushed: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -224,6 +226,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
         utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+
+    func notifyFrontendPromptSubmissionAcknowledged() {
+        utiHost?.frontendSubmissionAcknowledged()
     }
 
     func pushPageContext(_ context: AIChatPageContextData?) {
@@ -347,7 +353,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
-        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        let nativeBridgePushed = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        utiHost?.promptDeliveryUpdated(wasQueued: nil, nativeBridgePushed: nativeBridgePushed)
     }
 
     // MARK: - URL Observation
@@ -437,10 +444,18 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        handleNavigationFailure(error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleNavigationFailure(error)
+    }
+
+    private func handleNavigationFailure(_ error: Error) {
         loadingView.stopAnimating()
+        let nsError = error as NSError
+        guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
+
+        utiHost?.pageLoadFailed(error: error)
     }
 }

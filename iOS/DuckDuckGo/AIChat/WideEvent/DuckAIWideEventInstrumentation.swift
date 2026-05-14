@@ -31,11 +31,19 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
                            fireMode: Bool,
                            userScriptBound: Bool,
+                           frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            selectedTools: [String],
                            imageAttachmentCount: Int,
                            fileAttachmentCount: Int,
                            invalidAttachmentCount: Int)
+
+    /// Native attempted to hand the prompt to the frontend. Records whether
+    /// contextual delivery was queued and whether a user-script bridge push was possible.
+    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?)
+
+    /// The Duck.ai frontend reported its prompt-submitted metric for the active flow.
+    func frontendSubmissionAcknowledged()
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
@@ -92,6 +100,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
                            fireMode: Bool,
                            userScriptBound: Bool,
+                           frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            selectedTools: [String],
                            imageAttachmentCount: Int,
@@ -110,6 +119,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             inputMode: inputMode,
             fireMode: fireMode,
             userScriptBound: userScriptBound,
+            frontendDeliveryPath: frontendDeliveryPath,
             hasPageContext: hasPageContext,
             selectedTools: selectedTools,
             imageAttachmentCount: imageAttachmentCount,
@@ -121,6 +131,27 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         hasObservedNonReady = false
         data.lastStep = .submitted
         wideEvent.startFlow(data)
+    }
+
+    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?) {
+        guard let activeFlow else { return }
+
+        if let wasQueued {
+            activeFlow.frontendDeliveryQueued = wasQueued
+        }
+        if let nativeBridgePushed {
+            activeFlow.nativeBridgePushed = nativeBridgePushed
+        }
+
+        wideEvent.updateFlow(activeFlow)
+    }
+
+    func frontendSubmissionAcknowledged() {
+        guard let activeFlow,
+              activeFlow.frontendSubmissionAckInterval.end == nil else { return }
+
+        activeFlow.frontendSubmissionAckInterval.end = dateProvider()
+        wideEvent.updateFlow(activeFlow)
     }
 
     func chatStatusChanged(_ status: AIChatStatusValue) {

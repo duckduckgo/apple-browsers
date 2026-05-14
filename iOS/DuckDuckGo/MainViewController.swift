@@ -5853,6 +5853,10 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
         segueToSettingsSync()
     }
+
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+    }
 }
 
 // MARK: - AIChatContentHandlingDelegate
@@ -5880,7 +5884,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // No action needed for full mode - notification handles metrics
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
     }
 
 }

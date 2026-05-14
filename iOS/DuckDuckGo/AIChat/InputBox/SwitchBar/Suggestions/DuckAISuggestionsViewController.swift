@@ -234,6 +234,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         guard inset != additionalTopInset else { return }
         additionalTopInset = inset
         updateContentInset()
+        updateTableHeader()
     }
 
     /// Force-reloads so the "Recent Chats" header (gated on `hasSearchRow`) toggles immediately, ahead of the fetcher-settle reload-coalesce.
@@ -283,7 +284,8 @@ final class DuckAISuggestionsViewController: UIViewController {
 
         // Without this, the SwiftUI hosting view's first layout animates from a default position when the hatch reappears.
         UIView.performWithoutAnimation {
-            let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
+            let effectiveTopPadding = Constants.escapeHatchTopPadding + additionalTopInset
+            let totalHeight = effectiveTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
             let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
             let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
             container.backgroundColor = UIColor(designSystemColor: .background)
@@ -291,7 +293,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(hosting.view)
             var constraints = [
-                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
+                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: effectiveTopPadding),
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
             ]
 

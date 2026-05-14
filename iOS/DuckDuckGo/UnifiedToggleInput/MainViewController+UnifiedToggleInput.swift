@@ -856,6 +856,9 @@ private extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
+                // Mirror the focus path: push updated content insets so the suggestion
+                // tray content (including the escape hatch) animates with the bar collapse.
+                coordinator.pushContentInsets()
                 if !isLogoToLogo {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 0
                 }

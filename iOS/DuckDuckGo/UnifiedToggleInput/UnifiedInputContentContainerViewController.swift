@@ -277,9 +277,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool,
                                                       isBottomBar: Bool) -> CGFloat {
-        // Top-bar tightening when the hatch is present; both surfaces handle their own
-        // breathing room around the hatch card internally, so no bottom-bar inset is needed.
-        return hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
+        // Pulls the suggestion tray content up so the UTI hatch lines up with the NTP hatch.
+        // The vertical offset accumulated by the suggestion tray container chain leaves the
+        // UTI hatch ~10pt below the NTP hatch in both bar positions; this counters that.
+        return hasEscapeHatch ? Metrics.escapeHatchTopBarTrayPullUp : 0
     }
 
     func setText(_ text: String) {
@@ -696,10 +697,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isAIDaxVisible = !hasContent && !isShowingDuckAISuggestions && !isDuckAISuggestionsPending
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
         // The toolbar is still in the hierarchy under the unified input, so the keyboard-relative
         // centering sits visually too high — shift the dax down by this constant to compensate.
-        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset + Metrics.toolbarCompensationOffset)
+        // The escape hatch sits in the suggestion tray above the logo and doesn't push it down.
+        daxLogoManager.setEscapeHatchBaseOffset(Metrics.toolbarCompensationOffset)
         updateSectionTitle()
     }
 

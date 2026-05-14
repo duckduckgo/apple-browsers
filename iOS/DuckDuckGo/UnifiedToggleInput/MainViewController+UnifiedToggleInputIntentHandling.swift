@@ -209,12 +209,6 @@ private extension MainViewController {
             coordinator.contentViewController.view.layoutIfNeeded()
 
             coordinator.contentViewController.setLogoHidden(false)
-
-            // Reset top-bar handoff so the animation drives the logo to its natural position.
-            // Bottom bar keeps the half-omnibar compensation while the keyboard guide settles.
-            if !isBottom {
-                coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset)
-            }
             newTabPageViewController?.setLogoHidden(true)
             viewCoordinator.unifiedInputContentContainer.alpha = 1
         }
@@ -232,6 +226,12 @@ private extension MainViewController {
                 }
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
+                }
+                // Reset top-bar handoff so the animation interpolates the logo from its
+                // SWAP position to its natural position. Bottom bar keeps the offset and
+                // lets the keyboard guide handle final positioning.
+                if isLogoToLogo, !isBottom {
+                    coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
                 }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()

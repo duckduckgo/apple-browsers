@@ -140,7 +140,8 @@ final class DaxLogoManager {
 
         isAnimatingLogoTransition = true
         daxLogoView.updateProgress(previousProgress)
-        daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in
+        daxLogoView.animateProgress(to: targetProgress) { [weak self] finished in
+            guard finished else { return }
             self?.isAnimatingLogoTransition = false
         }
     }

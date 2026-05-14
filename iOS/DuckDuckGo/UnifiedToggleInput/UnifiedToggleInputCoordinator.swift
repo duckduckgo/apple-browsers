@@ -1645,6 +1645,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             case .omnibar: entryPoint = isOmnibarSession ? .omnibar : .aiTab
             }
 
+            if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
@@ -1660,10 +1665,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 invalidAttachmentCount: attachmentCounts.invalid
             )
 
-            if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
-                presentAttachmentValidationError(validationMessage)
-                return
-            }
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil

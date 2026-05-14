@@ -75,11 +75,14 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     private var hasObservedNonReady = false
 
     init(wideEvent: WideEventManaging,
+         completeOrphanedFlowsOnInit: Bool = false,
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
 
-        completeOrphanedFlowsFromPreviousAppSession()
+        if completeOrphanedFlowsOnInit {
+            completeOrphanedFlowsFromPreviousAppSession()
+        }
     }
 
     func submissionStarted(modelId: String?,

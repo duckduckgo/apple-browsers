@@ -4489,6 +4489,14 @@ extension MainViewController: TabDelegate {
             if mode == .alwaysOff {
                 self.setYouTubeAdBlockingEnabled(false)
             }
+            self.dismiss(animated: true) { [weak self] in
+                switch mode {
+                case .disableUntilRelaunch, .alwaysOff:
+                    self?.presentYouTubeAdBlockBreakageReport()
+                case .alwaysOn:
+                    break
+                }
+            }
         }
         let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
@@ -4496,6 +4504,24 @@ extension MainViewController: TabDelegate {
         if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium()]
             sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(controller, animated: true)
+    }
+
+    private func presentYouTubeAdBlockBreakageReport() {
+        let view = YouTubeAdBlockBreakageReportView(
+            onSend: { [weak self] in self?.dismiss(animated: true) },
+            onCancel: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        controller.modalPresentationStyle = .pageSheet
+        if let sheet = controller.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = false
             if #unavailable(iOS 26) {
                 sheet.preferredCornerRadius = 24
             }

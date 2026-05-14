@@ -2034,6 +2034,11 @@ public struct UserText {
     public static let youTubeAdBlockingModeDisableUntilRelaunch = NSLocalizedString("youtube.ad.blocking.mode.disable-until-relaunch", value: "Disable Until Relaunch", comment: "Picker option disabling YouTube ad blocking until the next app launch")
     public static let youTubeAdBlockingModeAlwaysOff = NSLocalizedString("youtube.ad.blocking.mode.always-off", value: "Always Off", comment: "Picker option keeping YouTube ad blocking always off")
 
+    // YouTube Ad Blocking — breakage report prompt
+    public static let youTubeAdBlockingBreakageReportTitle = NSLocalizedString("youtube.ad.blocking.breakage-report.title", value: "YouTube Ad Blocking not working?", comment: "Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking")
+    public static let youTubeAdBlockingBreakageReportMessage = NSLocalizedString("youtube.ad.blocking.breakage-report.message", value: "Send an anonymous breakage report to DuckDuckGo. Help make ad blocking better for everyone!", comment: "Body text of the bottom sheet asking the user to send an anonymous breakage report")
+    public static let youTubeAdBlockingBreakageReportSend = NSLocalizedString("youtube.ad.blocking.breakage-report.send", value: "Send Breakage Report", comment: "Primary action sending an anonymous YouTube ad-blocking breakage report")
+
     // Duck Player View
     public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
     public static let duckPlayerResumeInDuckPlayer = NSLocalizedString("duckplayer.resume.in.duck.player", value: "Resume in Duck Player", comment: "Button text to resume video in Duck Player")

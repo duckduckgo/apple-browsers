@@ -85,7 +85,6 @@ struct YouTubeAdBlockPickerView: View {
         Button {
             selection = mode
             onSelection(mode)
-            dismiss()
         } label: {
             HStack(spacing: 16) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.check)

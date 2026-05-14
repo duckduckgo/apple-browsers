@@ -4597,6 +4597,15 @@ https://duckduckgo.com/windows";
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Get DuckDuckGo for Windows!";
 
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Send an anonymous breakage report to DuckDuckGo. Help make ad blocking better for everyone!";
+
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Send Breakage Report";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "YouTube Ad Blocking not working?";
+
 /* Explanation text for YouTube Ad Blocking feature */
 "youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
 

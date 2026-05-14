@@ -458,10 +458,6 @@ class SwitchBarTextEntryView: UIView {
             heightConstraint?.constant = currentMinHeight
             textView.isScrollEnabled = true
             textView.showsVerticalScrollIndicator = true
-            // Match the omnibar's single-line truncated presentation so that on collapse the
-            // UTI text reads like the omnibar text it's handing off to, instead of staying
-            // wrapped across multiple lines as the height shrinks.
-            textView.textContainer.lineBreakMode = .byTruncatingTail
             return
         }
 

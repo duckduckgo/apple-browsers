@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI značajke";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Odaberi fotografiju";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Snimi fotografiju";
@@ -233,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odgovore";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pretvori tekst u slike";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Izradi sliku";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Pronađi aktualne informacije";
@@ -2848,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne sada";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Značajke umjetne inteligencije privatne su i neobavezne.\nIzmjene možeš napraviti u izborniku Postavke > AI značajke.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Želiš li jednostavan pristup privatnom AI čavrljanju u adresnoj traci?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Pretraživanje i Duck.ai";
 
@@ -3014,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Jesi li spreman za brži preglednik koji te štiti i omogućuje ti da odlučiš kada i kako koristiti AI?";
+"onboarding.rebranding.intro.message" = "Jesi li spreman za brži preglednik koji ti daje kontrolu?\n\nUmjetna inteligencija uvijek je neobavezna, a zaštita privatnosti uvijek aktivna.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Bok!";
@@ -3454,7 +3465,10 @@
 "settings.address.trackers.animation" = "Prikaži u adresnoj traci";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Odaberi što ćeš vidjeti kada se vratiš nakon %@ neaktivnosti.";
+"settings.afterInactivity.footer.format" = "Odaberi što ćeš vidjeti kada se vratiš na DuckDuckGo nakon %@ neaktivnosti.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Odaberi što ćeš vidjeti kada se vratiš na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 sat";
@@ -3468,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minute/a";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nijedno";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekundu";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekunde/i";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Mjerač vremena neaktivnosti";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Nakon neaktivnosti";
+"settings.afterInactivity.label" = "Početni zaslon";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Posljednja korištena kartica";
@@ -4380,6 +4400,9 @@
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kôd je kopiran";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Uređaj je uspješno sinkroniziran!";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup je uključen";
 
@@ -4868,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTubeu";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kad je uključen, DuckDuckGo će anonimno otkriti smetnje u blokiranju oglasa ili pogreške na YouTubeu kako bi poboljšao iskustvo za sve. DuckDuckGo nikad ne vidi koje videozapise gledaš niti bilo kakve osobne podatke.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Saznaj više";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Knjižne oznake";

@@ -671,6 +671,7 @@ struct UserText {
 
 
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
+    static let aiChatVoiceChatButtonTooltip = NSLocalizedString("aichat.voice-chat-button.tooltip", value: "Start a voice chat", comment: "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Attach image", comment: "Tooltip for the image upload button in AI chat omnibar")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
@@ -1242,6 +1243,8 @@ struct UserText {
     static let youTubeAdBlocking = NSLocalizedString("preferences.youtube-ad-blocking", value: "YouTube Ad Blocking", comment: "Title of the option to show the YouTube Ad Blocking preferences")
     static let youTubeAdBlockingExplanation = NSLocalizedString("preferences.youtube-ad-blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation of the YouTube Ad Blocking feature")
     static let youTubeAdBlockingToggle = NSLocalizedString("preferences.youtube-ad-blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling YouTube ad blocking")
+    static let youTubeAdBlockingToggleFooter = NSLocalizedString("preferences.youtube-ad-blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
+    static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("preferences.youtube-ad-blocking.learn-more", value: "Learn More", comment: "Learn more button shown below the YouTube ad blocking toggle description")
     static let about = NSLocalizedString("preferences.about", value: "About", comment: "Title of the option to show the About screen")
     static let aiFeatures = NSLocalizedString("preferences.aiFeatures", value: "AI Features", comment: "Title of the option to show AI features in preferences")
     static let duckAIShortcuts = NSLocalizedString("preferences.duck-ai-shortcuts", value: "Duck.ai Shortcuts", comment: "Title of a subsection in preferences containing shortcut preferences")
@@ -2152,6 +2155,7 @@ struct UserText {
         static let onboardingTryFireButtonTitle = NSLocalizedString("contextual.onboarding.try-fire-button.title", value: "Instantly clear your browsing activity with the *Fire Button*.\n\n%1$@", comment: "Message of a popover on the browser that invites the user to try visiting the browser Fire Button, the parameter is another string (do not remove * and \n\n%1$@")
         static let onboardingTryFireButtonMessage = NSLocalizedString("contextual.onboarding.try-fire-button.message", value: "Give it a try! 🔥", comment: "Message of a popover on the browser that invites the user to try visiting the browser Fire Button.")
         static let onboardingTryFireButtonButton = NSLocalizedString("contextual.onboarding.try-fire-button.button", value: "Try it", comment: "Button on the browser that invites the user to try the Fire Button.")
+        static let onboardingTryFireButtonSkip = NSLocalizedString("contextual.onboarding.try-fire-button.skip", value: "Skip", comment: "Skip button on the Fire Button contextual onboarding dialog that dismisses without firing.")
         static let onboardingGotItButton = NSLocalizedString("contextual.onboarding.got-it.button", value: "Got it", comment: "During onboarding steps this button is shown and takes either to the next steps or closes the onboarding.")
         static let onboardingFirstSearchDoneTitle = NSLocalizedString("contextual.onboarding.first-search-done.title", value: "That’s DuckDuckGo Search!", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")
         static let onboardingFirstSearchDoneMessage = NSLocalizedString("contextual.onboarding.first-search-done.message", value: "Private. Fast. Fewer ads.", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")

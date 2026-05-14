@@ -20,7 +20,7 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId", "channel"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -36,7 +36,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-parse": {
@@ -53,7 +54,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-send": {
@@ -70,7 +72,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-solve": {
@@ -87,7 +90,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_submit": {
@@ -141,6 +145,23 @@
             "dbpActionId"
         ]
     },
+    "m_mac_dbp_optout_stage_email-get-data": {
+        "description": "Fired at the email get-data stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
+        ]
+    },
     "m_mac_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
@@ -155,7 +176,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_fill-form": {
@@ -172,7 +194,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_finish": {
@@ -190,7 +213,8 @@
                 "key": "duration",
                 "description": "Duration of the final stage in milliseconds",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_submit-success": {
@@ -225,7 +249,8 @@
                 "description": "VPN bypass status when the submission succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_success": {
@@ -256,7 +281,8 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_failure": {
@@ -309,7 +335,8 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optoutjob_at-42-days_confirmed": {
@@ -324,7 +351,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_optout_stage_condition-found": {
         "description": "Fired at the condition-found stage of an opt-out attempt.",
@@ -439,7 +466,8 @@
                 "key": "link_age_ms",
                 "description": "Time from when the link is received on BE till it's retrieved on the client (in milliseconds)",
                 "type": "number"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation-link_backend-status_error": {
@@ -479,7 +507,8 @@
             "dbpAttemptId",
             "dbpActionId",
             "dbpActionDuration",
-            "dbpActionTries"
+            "dbpActionTries",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-start": {
@@ -494,7 +523,8 @@
             "dbpBrokerVersion",
             "dbpConfirmationAttemptNumber",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-success": {
@@ -510,7 +540,8 @@
             "dbpConfirmationAttemptNumber",
             "dbpAttemptDuration",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-failure": {
@@ -551,7 +582,8 @@
                 "enum": ["true", "false"]
             },
             "dbpDataBroker",
-            "dbpBrokerVersion"
+            "dbpBrokerVersion",
+            "channel"
         ]
     },
     "m_mac_dbp_update_databrokers_success": {
@@ -572,7 +604,8 @@
                 "key": "removed_at",
                 "description": "Timestamp, in milliseconds, when the broker was removed at (contained on the JSON)",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_update_databrokers_failure": {
@@ -597,7 +630,13 @@
                 "key": "removed_at",
                 "description": "Timestamp, in milliseconds, when the broker was removed at (contained on the JSON)",
                 "type": "string"
-            }
+            },
+            {
+                "key": "keystoreField",
+                "description": "Present only when the underlying failure is a SecureVault keystore read error. Identifies the keychain account that failed to read (free-form string set by the secure storage layer).",
+                "type": "string"
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_opt_out_submission": {
@@ -642,7 +681,8 @@
                 "key": "feature.data.ext.submission_latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and submission completing"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_scan_attempt": {
@@ -704,7 +744,8 @@
                 "key": "feature.data.ext.scan.latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the scan attempt start and completion"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_opt_out_confirmation": {
@@ -749,7 +790,8 @@
                 "key": "feature.data.ext.confirmation_latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_success": {
@@ -791,7 +833,8 @@
             },
             "dbpParentBroker",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_no_results": {
@@ -831,7 +874,8 @@
             "dbpActionId",
             "dbpActionType",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_error": {
@@ -881,7 +925,8 @@
             "dbpActionId",
             "dbpActionType",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_action-failed_error": {
@@ -913,7 +958,8 @@
                 "enum": ["scan", "optOut", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_http_error": {
@@ -933,7 +979,8 @@
                 "description": "The HTTP status code returned by the failing operation",
                 "type": "string"
             },
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_other_error": {
@@ -953,26 +1000,27 @@
                 "description": "The normalized data broker protection error kind",
                 "type": "string"
             },
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_engagement_dau": {
         "description": "Fired daily for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
     "m_mac_dbp_engagement_wau": {
         "description": "Fired weekly for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
     "m_mac_dbp_engagement_mau": {
         "description": "Fired monthly for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
@@ -992,7 +1040,8 @@
                 "description": "Number of calculated orphaned records",
                 "type": "number"
             },
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "channel"
         ]
     },
     "m_mac_dbp_event_scanning-events_new-match": {
@@ -1000,14 +1049,14 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_event_scanning-events_re-appearance": {
         "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_databroker_custom_stats_optoutsubmit": {
         "description": "Fired daily with per-broker opt-out submission success rate stats.",
@@ -1037,7 +1086,8 @@
                 "key": "optout_submit_success_rate",
                 "description": "The global opt-out submission success rate",
                 "type": "number"
-            }
+            },
+            "channel"
         ]
     }
 }

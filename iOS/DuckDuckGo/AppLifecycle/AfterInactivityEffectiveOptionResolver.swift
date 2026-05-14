@@ -37,19 +37,19 @@ final class AfterInactivityEffectiveOptionResolver: AfterInactivityEffectiveOpti
         self.isPad = isPad
     }
 
-    /// Returns the effective option and, when it is .newTab for a new user with no stored value,
-    /// persists that choice and clears `idleReturnNewUser`.
-    /// iPad always defaults to `.lastUsedTab` when no preference is stored.
+    /// Returns the user's explicit preference when stored, otherwise defaults to
+    /// `.newTab` on iPhone (both new and existing users) or `.lastUsedTab` on iPad.
+    /// Users who manually selected "Last Used Tab" in Settings keep that choice.
     func resolveEffectiveOption() -> AfterInactivityOption {
         if let raw = try? storage.afterInactivityOption,
            let option = AfterInactivityOption(rawValue: raw) {
             return option
-        } else if !isPad, (try? storage.idleReturnNewUser) == true {
+        } else if isPad {
+            return .lastUsedTab
+        } else {
             try? storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
             try? storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
             return .newTab
-        } else {
-            return .lastUsedTab
         }
     }
 }

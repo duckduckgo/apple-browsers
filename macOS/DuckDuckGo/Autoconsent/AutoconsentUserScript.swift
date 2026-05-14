@@ -437,7 +437,7 @@ extension AutoconsentUserScript {
     func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: PopupFoundMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url),
-              let host = url.host else {
+              url.host != nil else {
             assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return

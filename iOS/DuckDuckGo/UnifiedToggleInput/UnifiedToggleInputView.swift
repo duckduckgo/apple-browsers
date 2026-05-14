@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIComponents
 import UIKit
 
@@ -28,11 +29,13 @@ import UIKit
 /// Delegate protocol for handling interactions with the unified toggle input composite view.
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
-    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -56,39 +59,72 @@ enum UnifiedToggleInputCardPosition {
 /// Supports collapsed (single-line) and expanded (text + tools toolbar) layout states.
 final class UnifiedToggleInputView: UIView {
 
+    /// Exposed so external chrome (e.g. the top-edge separator anchored outside the animating
+    /// UTI hierarchy) can pin to the same Y this footer occupies. The `.aiTab(.collapsed)`
+    /// display state renders the `.flanked` card layout, hence the flanked metrics in the body.
+    static let aiTabCollapsedFooterHeight: CGFloat =
+        Constants.flankedCardHeight
+        + Constants.flankedCardTopMargin
+        + Constants.flankedCardBottomMargin
+
     // MARK: - Constants
 
     private enum Constants {
+        // `.collapsed` layout — UTI mimics the regular omnibar pill so the snap between the two
+        // surfaces reads as one continuous element.
         static let collapsedCardHeight: CGFloat = 44
+        static let cardCornerRadiusCollapsed: CGFloat = 16
+        static let collapsedCardTopMargin: CGFloat = 10
+        static let collapsedCardBottomMargin: CGFloat = 6
+        // `.flanked` layout — 48pt capsule sized to match the fire/voice accessory height.
+        static let flankedCardHeight: CGFloat = 48
+        static let cardCornerRadiusFlanked: CGFloat = flankedCardHeight / 2
+        // 6/6 symmetric margins keep the 48pt card vertically centred in the 60pt navigation
+        // container regardless of cardPosition; the previous 10/6 split would have forced
+        // auto-layout to break the bottom margin (10+48+6 = 64 > 60) and the card would render
+        // shorter than the 48pt fire/voice buttons that flank it.
+        static let flankedCardTopMargin: CGFloat = 6
+        static let flankedCardBottomMargin: CGFloat = 6
         static let cardHorizontalMargin: CGFloat = 16
         static let cardVerticalMargin: CGFloat = 8
         static let cardHorizontalMarginBottom: CGFloat = 12
         static let cardVerticalMarginBottom: CGFloat = 8
-        // Match the omnibar's small-top spacing so the dismiss snap lands on identical pill frames.
-        static let collapsedCardTopMarginBottom: CGFloat = 10
-        static let collapsedCardBottomMarginBottom: CGFloat = 6
-        static let cardCornerRadiusExpanded: CGFloat = 24
-        static let cardCornerRadiusCollapsed: CGFloat = 16
+        static let cardCornerRadiusExpanded: CGFloat = 28
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 4
+        /// Bottom padding between the input content and the card edge when the AI tools
+        /// toolbar is hidden, mirroring `toggleBottomPadding` so the input sits centered
+        /// inside its 64pt row per the Figma spec.
+        static let inputBottomPadding: CGFloat = 4
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
-        static let toggleDisabledSearchTopPadding: CGFloat = 10
+        static let toggleDisabledSearchTopPadding: CGFloat = 6
         static let toolbarHeight: CGFloat = 56
         static let expandedBorderWidth: CGFloat = 0.5
         static let inlineDismissSize: CGFloat = 40
-        static let inlineDismissTrailingPadding: CGFloat = 8
-        static let toggleInlineDismissSpacing: CGFloat = 6
-        /// Carves room for the floating X at `.top` when the toggle is disabled.
-        static let cardTrailingMarginWithFloatingDismiss: CGFloat = 68
+        static let inlineDismissLeadingPadding: CGFloat = 8
+        static let toggleInlineDismissSpacing: CGFloat = 8
+        static let aiTabCollapsedAccessorySize: CGFloat = 48
+        /// Spacing between the inline dismiss button and the field's leading content when the
+        /// dismiss shares the field row (toggle disabled, top position).
+        static let fieldRowInlineDismissSpacing: CGFloat = 4
 
-        /// Trailing constant for the toggle when the inline dismiss button shares the top row.
-        static var toggleTrailingWithInlineDismiss: CGFloat {
-            -(inlineDismissTrailingPadding + inlineDismissSize + toggleInlineDismissSpacing)
+        /// Leading constant for the toggle when the inline dismiss button shares the top row.
+        static var toggleLeadingWithInlineDismiss: CGFloat {
+            inlineDismissLeadingPadding + inlineDismissSize + toggleInlineDismissSpacing
+        }
+
+        /// Leading constant for the text entry field when the inline dismiss shares the field row.
+        static var textEntryViewLeadingWithInlineDismiss: CGFloat {
+            inlineDismissLeadingPadding + inlineDismissSize + fieldRowInlineDismissSpacing
         }
 
         static let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        static let aiTabCollapsedAccessorySpacing: CGFloat = 8
+        // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
+        static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
+        static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
     }
 
     // MARK: - Hit Testing
@@ -111,6 +147,15 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
+    /// When true, the inline dismiss (back chevron) and its reserved layout slot are
+    /// suppressed regardless of which layout the view is in.
+    var isInlineDismissHidden: Bool = false {
+        didSet {
+            guard isInlineDismissHidden != oldValue else { return }
+            refreshInlineDismissPresentation()
+        }
+    }
+
     var text: String {
         get { handler.currentText }
         set { textEntryView.setQueryText(newValue) }
@@ -120,11 +165,16 @@ final class UnifiedToggleInputView: UIView {
         handler.currentToggleState
     }
 
-    private(set) var isExpanded = false
-
-    var isToolbarSubmitHidden: Bool = false {
-        didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
+    func insertNewlineAtCursor() {
+        textEntryView.insertNewlineAtCursor()
     }
+
+    func prepareToolbarSubmitStyleForDismissal() {
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: false)
+    }
+
+    private(set) var isExpanded = false
+    private var currentLayout: UnifiedToggleInputCardLayout = .collapsed
 
     var isToolbarAIVoiceChatActive: Bool = false {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
@@ -147,6 +197,11 @@ final class UnifiedToggleInputView: UIView {
     var toolsMenu: UIMenu? {
         get { toolsToolbar.toolsMenu }
         set { toolsToolbar.toolsMenu = newValue }
+    }
+
+    var attachmentMenu: UIMenu? {
+        get { toolsToolbar.attachmentMenu }
+        set { toolsToolbar.attachmentMenu = newValue }
     }
 
     var reasoningPickerMenu: UIMenu? {
@@ -192,16 +247,6 @@ final class UnifiedToggleInputView: UIView {
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 
-    var modelSupportsImageAttachments: Bool = true {
-        didSet {
-            guard modelSupportsImageAttachments != oldValue else { return }
-            updateAttachmentsStripLayout()
-            layoutIfNeeded()
-            onNeedsHierarchyLayout?()
-            onAttachmentsLayoutDidChange?()
-        }
-    }
-
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
         set { handler.isTopBarPosition = newValue }
@@ -209,13 +254,11 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Attachment Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     // MARK: - Attachment API
-
-    var attachButtonView: UIView { toolsToolbar.imageButton }
 
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
@@ -227,16 +270,20 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
-    var isAttachmentsFull: Bool {
-        attachmentsStrip.isFull
-    }
-
-    var currentAttachments: [AIChatImageAttachment] {
+    var currentAttachments: [UnifiedToggleInputAttachment] {
         attachmentsStrip.attachments
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
+    var isToolbarSubmitEnabled: Bool {
+        toolsToolbar.isSubmitEnabled
+    }
+
+    func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         attachmentsStrip.addAttachment(attachment)
+    }
+
+    func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment) {
+        attachmentsStrip.replaceAttachment(id: id, with: attachment)
     }
 
     func removeAttachment(id: UUID) {
@@ -245,6 +292,30 @@ final class UnifiedToggleInputView: UIView {
 
     func removeAllAttachments() {
         attachmentsStrip.removeAllAttachments()
+    }
+
+    // MARK: - Page-Context Chip
+
+    func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
+        pageContextChipCancellables.removeAll()
+        pageContextChip.onTapToAttach = { [weak viewModel] in viewModel?.tapToAttach() }
+        pageContextChip.onRemove = { [weak viewModel] in viewModel?.tapToRemove() }
+        viewModel.$state
+            .sink { [weak self] state in self?.pageContextChip.configure(state: state) }
+            .store(in: &pageContextChipCancellables)
+        viewModel.$isVisible
+            .sink { [weak self] isVisible in self?.isPageContextChipPresent = isVisible }
+            .store(in: &pageContextChipCancellables)
+    }
+
+    private var isPageContextChipPresent: Bool = false {
+        didSet {
+            guard oldValue != isPageContextChipPresent else { return }
+            pageContextChip.isHidden = !isPageContextChipPresent
+            pageContextChipHeightConstraint.isActive = !isPageContextChipPresent
+            layoutIfNeeded()
+            onNeedsHierarchyLayout?()
+        }
     }
 
     // MARK: - Components
@@ -260,6 +331,33 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
+    private let pageContextChip = AIChatContextChipView()
+    private var pageContextChipCancellables = Set<AnyCancellable>()
+
+    private lazy var aiTabCollapsedFireButton: UIButton = {
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.isHidden = true
+        button.accessibilityLabel = UserText.actionForgetAll
+        button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var aiTabCollapsedVoiceButton: UIButton = {
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice)
+        button.isHidden = true
+        button.accessibilityLabel = UserText.actionDuckAIVoice
+        button.addTarget(self, action: #selector(voiceTapped), for: .touchUpInside)
+        return button
+    }()
+
+    @objc private func fireTapped() {
+        delegate?.unifiedToggleInputViewDidTapFire(self)
+    }
+
+    @objc private func voiceTapped() {
+        delegate?.unifiedToggleInputViewDidTapVoice(self)
+    }
+
     // MARK: - Shadow
 
     // Pinned to cardView via Auto Layout; CompositeShadowView forwards cornerRadius/backgroundColor to its shadow sub-layers.
@@ -302,16 +400,21 @@ final class UnifiedToggleInputView: UIView {
 
     private var cardTopConstraint: NSLayoutConstraint!
     private var cardLeadingConstraint: NSLayoutConstraint!
+    private var cardLeadingFlankedConstraint: NSLayoutConstraint!
     private var cardTrailingConstraint: NSLayoutConstraint!
+    private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
-    private var cardCollapsedHeightConstraint: NSLayoutConstraint!
+    private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
-    private var toggleTrailingConstraint: NSLayoutConstraint!
+    private var toggleLeadingConstraint: NSLayoutConstraint!
     private var toggleHeightConstraint: NSLayoutConstraint!
-    private var inlineDismissHeightConstraint: NSLayoutConstraint!
+    private var inlineDismissTopConstraint: NSLayoutConstraint!
+    private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
+    private var textEntryViewLeadingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
+    private var pageContextChipHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Initialization
@@ -319,7 +422,7 @@ final class UnifiedToggleInputView: UIView {
     init(handler: UnifiedToggleInputHandler, isToggleEnabled: Bool = true) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
-        self.textEntryView = SwitchBarTextEntryView(handler: handler)
+        self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         setupUI()
         setupSubscriptions()
@@ -415,12 +518,12 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
-    func updateToggleEnabled(_ enabled: Bool) {
+    func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
         if isExpanded {
-            setExpanded(false, animated: false)
-            setExpanded(true, animated: false)
+            applyCardLayout(.collapsed, animated: false)
+            applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
         }
     }
 
@@ -437,32 +540,91 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
-        
+
+        let showToolbar = mode == .aiChat
         if isToggleEnabled {
             inputTopConstraint.constant = Constants.toggleBottomPadding
-            toolbarBottomConstraint.constant = 0
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
-            let usePadding = mode == .search && cardPosition == .bottom
-            let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
+            let padding = Constants.toggleDisabledSearchTopPadding
             inputTopConstraint.constant = padding
-            toolbarBottomConstraint.constant = -padding
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -padding
         }
     }
 
-    func setExpanded(_ expanded: Bool, showToggle: Bool = true, animated: Bool, updateShadow: Bool = true) {
-        guard expanded != isExpanded else { return }
+    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
+        guard aiTabCollapsedFireButton.isHidden == active else { return }
+
+        if active {
+            // alpha-0 before unhide avoids a 1-frame flash on top of the still-wide pill.
+            aiTabCollapsedFireButton.alpha = 0
+            aiTabCollapsedVoiceButton.alpha = 0
+        }
+        aiTabCollapsedFireButton.isHidden = !active
+        aiTabCollapsedVoiceButton.isHidden = !active
+        textEntryView.placeholderTextAlignment = active ? .center : .natural
+
+        guard active else { return }
+        // Reset color: the omnibar dismiss crossfade leaves it on `.textSecondary`.
+        textEntryView.placeholderTextColor = textEntryView.defaultPlaceholderColor
+        UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
+                       delay: Constants.aiTabCollapsedAccessoryFadeDelay,
+                       options: .curveEaseOut) {
+            self.aiTabCollapsedFireButton.alpha = 1
+            self.aiTabCollapsedVoiceButton.alpha = 1
+        }
+    }
+
+    private func setCardFlanked(_ flanked: Bool) {
+        cardLeadingConstraint.isActive = !flanked
+        cardLeadingFlankedConstraint.isActive = flanked
+        cardTrailingConstraint.isActive = !flanked
+        cardTrailingFlankedConstraint.isActive = flanked
+    }
+
+    private struct CardDimensions {
+        /// nil = content-driven height (the multi-row `.expanded` card).
+        let pinnedHeight: CGFloat?
+        let cornerRadius: CGFloat
+    }
+
+    private static func cardDimensions(for layout: UnifiedToggleInputCardLayout) -> CardDimensions {
+        switch layout {
+        case .collapsed:
+            return CardDimensions(pinnedHeight: Constants.collapsedCardHeight,
+                                  cornerRadius: Constants.cardCornerRadiusCollapsed)
+        case .flanked:
+            return CardDimensions(pinnedHeight: Constants.flankedCardHeight,
+                                  cornerRadius: Constants.cardCornerRadiusFlanked)
+        case .expanded:
+            return CardDimensions(pinnedHeight: nil,
+                                  cornerRadius: Constants.cardCornerRadiusExpanded)
+        }
+    }
+
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
+        let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        // Flanked layout has its own external voice flank — suppress the in-pill duplicate.
+        textEntryView.voiceButtonAppearance = layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain)
+        guard layout != currentLayout else { return }
+        currentLayout = layout
 
-        let effectiveToggleEnabled = isToggleEnabled && showToggle
-        let toggleHeight: CGFloat = (expanded && effectiveToggleEnabled) ? Constants.toggleHeight : 0
-        let showToolbar = expanded && effectiveToggleEnabled && toggleView.selectedMode == .aiChat
-        // The card reserves space for the inline X whenever it's expanded at `.top`, so the
-        // toggle's width is stable across the toggle-hidden transient. Visibility of the X
-        // itself is gated on the toggle actually being shown, so the X can fade in together
+        let showsToggle = layout.showsToggle
+        let showToolbar = layout.showsToolbar
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
+        let toggleHeight: CGFloat = showsToggle ? Constants.toggleHeight : 0
+        // The toggle's leading slot is permanently reserved for the back button so the
+        // toggle doesn't slide right as it fades in. Visibility of the dismiss itself is
+        // gated on the toggle actually being shown, so the back button can fade in together
         // with the toggle via `applyToggleRevealChanges` rather than snapping in on activation.
-        let reservesInlineDismissSpace = expanded && cardPosition == .top
-        let showInlineDismiss = reservesInlineDismissSpace && effectiveToggleEnabled
+        let showInlineDismiss = expanded && showsToggle
+        // When the toggle is disabled by the user, the dismiss moves into the field row
+        // alongside the inline buttons. Keyed on `isToggleEnabled` (not `showsToggle`)
+        // so the dismiss stays hidden during the toggle-on activation transient where
+        // `showsToggle` is briefly `false`.
+        let showFieldRowInlineDismiss = expanded && !isToggleEnabled
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
@@ -476,14 +638,18 @@ final class UnifiedToggleInputView: UIView {
 
         let topMargin: CGFloat
         let bottomMargin: CGFloat
-        if expanded && !usesOmnibarMargins {
+        switch layout {
+        case .expanded where !usesOmnibarMargins:
             let expandedMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : Constants.cardVerticalMargin
             topMargin = expandedMargin
             bottomMargin = expandedMargin
-        } else if !expanded && cardPosition == .bottom {
-            topMargin = Constants.collapsedCardTopMarginBottom
-            bottomMargin = Constants.collapsedCardBottomMarginBottom
-        } else {
+        case .flanked:
+            topMargin = Constants.flankedCardTopMargin
+            bottomMargin = Constants.flankedCardBottomMargin
+        case .collapsed:
+            topMargin = Constants.collapsedCardTopMargin
+            bottomMargin = Constants.collapsedCardBottomMargin
+        case .expanded:
             topMargin = Constants.cardVerticalMargin
             bottomMargin = Constants.cardVerticalMargin
         }
@@ -494,32 +660,41 @@ final class UnifiedToggleInputView: UIView {
             expandedShadowView.isHidden = !expanded
             cardView.layer.shadowOpacity = expanded ? 0 : 1.0
         }
-        cardCollapsedHeightConstraint.constant = Constants.collapsedCardHeight
-        cardCollapsedHeightConstraint.isActive = !expanded
+        let dimensions = Self.cardDimensions(for: layout)
+        if let pinned = dimensions.pinnedHeight {
+            cardPinnedHeightConstraint.constant = pinned
+            cardPinnedHeightConstraint.isActive = true
+        } else {
+            cardPinnedHeightConstraint.isActive = false
+        }
 
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
-
-        let expandedCornerRadius = effectiveToggleEnabled ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
         let changes = {
-            self.cardView.layer.cornerRadius = expanded ? expandedCornerRadius : Constants.cardCornerRadiusCollapsed
+            self.setCardFlanked(layout == .flanked)
+            self.cardView.layer.cornerRadius = dimensions.cornerRadius
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
             self.cardBottomConstraint.constant = -bottomMargin
-            self.toggleTopConstraint.constant = (expanded && effectiveToggleEnabled) ? Constants.toggleTopPadding : 0
+            self.toggleTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            self.toggleTrailingConstraint.constant = reservesInlineDismissSpace
-                ? Constants.toggleTrailingWithInlineDismiss
-                : -Constants.toggleHorizontalPadding
-            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && showToggle && self.handler.currentToggleState == .search && self.cardPosition == .bottom
-            self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
-            self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
-            self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0
-            self.applyInlineDismissVisibility(showInlineDismiss)
+            // No toggle row → balance the card with matching top/bottom inset so content
+            // doesn't sit flush against the edges.
+            let toggleDisabledPadding = expanded && !self.isToggleEnabled
+            let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
+            self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+            self.toolbarBottomConstraint.constant = toggleDisabledPadding
+                ? (showToolbar ? 0 : -Constants.toggleDisabledSearchTopPadding)
+                : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
+            self.toggleView.alpha = (expanded && showsToggle) ? 1 : 0
+            self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)
+            self.applyInlineDismissVisibility(showInlineDismiss || showFieldRowInlineDismiss)
+            self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowInlineDismiss)
+            self.applyToggleLeadingInset()
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
@@ -535,38 +710,42 @@ final class UnifiedToggleInputView: UIView {
                     self.layoutIfNeeded()
                 },
                 completion: { _ in
+                    if showToolbar {
+                        self.toolsToolbar.finalizeToolbarShown()
+                    }
                 }
             )
         } else {
             changes()
             layoutIfNeeded()
+            if showToolbar {
+                toolsToolbar.finalizeToolbarShown()
+            }
         }
     }
 
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        setExpanded(expanded, showToggle: false, animated: false)
-    }
-
-    /// Top: slim card with toggle hidden. Bottom: collapsed bar.
+    /// Top + toggle-on: slim card with toggle hidden so the toggle can fade in alongside
+    /// the bar's grow animation. Top + toggle-off and bottom: collapsed bar — there's no
+    /// toggle-reveal transient to stage, so the show pose animates straight from collapsed
+    /// to expanded inside the surrounding `UIView.animate`.
     func prepareForOmnibarEditingShow() {
-        switch cardPosition {
-        case .top:
-            setExpanded(false, animated: false)
-            setExpandedWithToggleHidden(true)
-        case .bottom:
-            setExpanded(false, animated: false)
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
+            applyCardLayout(.collapsed, animated: false)
+            applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+        case (_, _):
+            applyCardLayout(.collapsed, animated: false)
         }
     }
 
     /// Active editing pose. Call inside a UIView.animate block.
     func applyOmnibarEditingShowPose() {
-        switch cardPosition {
-        case .top:
-            guard isToggleEnabled else { return }
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
             applyToggleRevealChanges()
             layoutIfNeeded()
-        case .bottom:
-            setExpanded(true, animated: false)
+        case (_, _):
+            applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
     }
 
@@ -574,20 +753,22 @@ final class UnifiedToggleInputView: UIView {
     /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
-        switch cardPosition {
-        case .top:
-            guard isToggleEnabled else { return }
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
             applyToggleHideChanges()
             layoutIfNeeded()
-        case .bottom:
-            setExpanded(false, animated: false, updateShadow: false)
+        case (_, _):
+            applyCardLayout(.collapsed, animated: false, updateShadow: false)
         }
     }
 
-    /// Snap the shadow to its collapsed-pose state. Only bottom needs this — top dismiss never
-    /// alters the shadow during animation. Call after the UTI is hidden.
+    /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the
+    /// shadow swap during dismiss to keep the dominant expanded shadow visible across the
+    /// animation; this restores the collapsed shadow once the UTI is hidden. Top + toggle-on
+    /// never alters the shadow during animation, so it doesn't need finalizing here.
     func finalizeOmnibarEditingDismiss() {
-        guard cardPosition.isBottom else { return }
+        let needsShadowFinalize = cardPosition.isBottom || (cardPosition == .top && !isToggleEnabled)
+        guard needsShadowFinalize else { return }
         expandedShadowView.isHidden = true
         cardView.layer.shadowOpacity = 1.0
     }
@@ -600,8 +781,9 @@ final class UnifiedToggleInputView: UIView {
         toggleTopConstraint.constant = Constants.toggleTopPadding
         toggleHeightConstraint.constant = Constants.toggleHeight
         toggleView.alpha = 1
-        applyInlineDismissVisibility(cardPosition == .top)
+        applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
+        toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
@@ -618,6 +800,7 @@ final class UnifiedToggleInputView: UIView {
         toggleView.alpha = 0
         applyInlineDismissVisibility(false)
         inputTopConstraint.constant = 0
+        toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
     }
@@ -648,7 +831,9 @@ final class UnifiedToggleInputView: UIView {
                 let verticalMargin: CGFloat = (!self.usesOmnibarMargins && self.cardPosition == .bottom)
                     ? Constants.cardVerticalMarginBottom
                     : Constants.cardVerticalMargin
-                let showToolbar = self.isToggleEnabled && self.toggleView.selectedMode == .aiChat
+                // Use handler's currentToggleState — toggleView.selectedMode is only updated when
+                // isToggleEnabled, so it goes stale in toggle-off omnibar (search-only).
+                let showToolbar = self.handler.currentToggleState == .aiChat
                 self.cardTopConstraint.constant = verticalMargin
                 self.cardLeadingConstraint.constant = leadingMargin
                 self.cardTrailingConstraint.constant = -trailingMargin
@@ -663,21 +848,22 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Private
 
-    /// Card trailing margin for the current state. Carves out room for the floating X in
-    /// the content container when the toggle is disabled at `.top`; otherwise the card
-    /// spans the full width to host the inline X.
+    /// Card trailing margin for the current state. The card spans the full width since the
+    /// inline X is hosted inside the card (in the toggle row when the toggle is shown, or in
+    /// the field row alongside the inline buttons when the toggle is hidden at `.top`).
     private var cardTrailingMargin: CGFloat {
-        let needsFloatingDismissCarveOut = isExpanded && cardPosition == .top && !isToggleEnabled
-        return needsFloatingDismissCarveOut
-            ? Constants.cardTrailingMarginWithFloatingDismiss
-            : Constants.cardHorizontalMargin
+        Constants.cardHorizontalMargin
     }
 
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+        if isToggleEnabled {
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
+        }
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         updateAttachmentsStripLayout()
@@ -686,6 +872,9 @@ final class UnifiedToggleInputView: UIView {
             toolsToolbar.alpha = showToolbar ? 1 : 0
             attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             layoutIfNeeded()
+            if showToolbar {
+                toolsToolbar.finalizeToolbarShown()
+            }
             return
         }
 
@@ -694,14 +883,36 @@ final class UnifiedToggleInputView: UIView {
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
             self.onNeedsHierarchyLayout?()
+        } completion: { _ in
+            if showToolbar {
+                self.toolsToolbar.finalizeToolbarShown()
+            }
         }
     }
 
     private func updateAttachmentsStripLayout() {
-        let hasImages = !attachmentsStrip.attachments.isEmpty
-        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat && modelSupportsImageAttachments
+        let hasAttachments = !attachmentsStrip.attachments.isEmpty
+        let showStrip = hasAttachments && isExpanded && handler.currentToggleState == .aiChat
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
+    }
+
+    private func updateSubmitButtonAvailability() {
+        let isAIChatMode = handler.currentToggleState == .aiChat
+        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasValidAttachment = isAIChatMode && attachmentsStrip.attachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
+
+        toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
+        updateNewPromptSubmitStyle()
+    }
+
+    private func updateNewPromptSubmitStyle() {
+        toolsToolbar.usesNewPromptSubmitStyle = handler.submitsAIChatOnKeyboardReturn
+    }
+
+    private func submitCurrentInput() {
+        delegate?.unifiedToggleInputViewDidRequestSubmitCurrentInput(self)
     }
 }
 
@@ -709,48 +920,123 @@ final class UnifiedToggleInputView: UIView {
 
 private extension UnifiedToggleInputView {
 
-    /// Updates layout and opacity so the toggle either reserves space for the inline dismiss
-    /// button or expands to fill the card's top row. Safe to call outside of animation blocks.
+    /// Refreshes the inline dismiss button's row anchor, opacity, and the field's leading
+    /// inset. Safe to call outside of animation blocks.
     func refreshInlineDismissPresentation() {
-        let shouldShow = isExpanded && cardPosition == .top && isToggleEnabled
-        toggleTrailingConstraint.constant = shouldShow
-            ? Constants.toggleTrailingWithInlineDismiss
-            : -Constants.toggleHorizontalPadding
-        applyInlineDismissVisibility(shouldShow)
+        let showToggleRowDismiss = isExpanded && isToggleEnabled
+        let showFieldRowDismiss = isExpanded && !isToggleEnabled
+        applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowDismiss)
+        applyInlineDismissVisibility(showToggleRowDismiss || showFieldRowDismiss)
+        applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowDismiss)
+        applyToggleLeadingInset()
         layoutIfNeeded()
     }
 
-    /// Apply visibility without touching the toggle trailing constraint. Intended for use
-    /// inside existing animation blocks so that opacity and layout animate together.
-    /// The height collapses to 0 when hidden so the button grows/shrinks alongside the
-    /// toggle's own height animation, mirroring its reveal behaviour.
+    /// Apply visibility without touching the toggle's leading constraint. Intended for use
+    /// inside existing animation blocks so that opacity animates with the surrounding layout.
+    /// The button is laid out at its full size at all times — only opacity is toggled — so
+    /// the chevron icon never renders into a partially-collapsed frame mid-animation.
     func applyInlineDismissVisibility(_ visible: Bool) {
-        inlineDismissButton.alpha = visible ? 1 : 0
-        inlineDismissButton.isUserInteractionEnabled = visible
-        inlineDismissHeightConstraint.constant = visible ? Constants.inlineDismissSize : 0
+        let effective = visible && !isInlineDismissHidden
+        inlineDismissButton.alpha = effective ? 1 : 0
+        inlineDismissButton.isUserInteractionEnabled = effective
+    }
+
+    /// Switches the inline dismiss button between the toggle-row anchor (top of card) and the
+    /// field-row anchor (vertically centered with `textEntryView`). The latter is used when
+    /// the toggle is hidden so the X visually shares a row with the inline trailing buttons.
+    func applyInlineDismissVerticalAnchor(useFieldRowAnchor: Bool) {
+        if useFieldRowAnchor {
+            inlineDismissTopConstraint.isActive = false
+            inlineDismissCenterYConstraint.isActive = true
+        } else {
+            inlineDismissCenterYConstraint.isActive = false
+            inlineDismissTopConstraint.isActive = true
+        }
+    }
+
+    /// Pushes the text entry field's leading edge in to leave room for the inline dismiss
+    /// when it shares the field row, otherwise lets the field span the card's full width.
+    func applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: Bool) {
+        let effective = showFieldRowInlineDismiss && !isInlineDismissHidden
+        textEntryViewLeadingConstraint.constant = effective
+            ? Constants.textEntryViewLeadingWithInlineDismiss
+            : 0
+    }
+
+    /// Pulls the toggle flush to the card's leading edge when the inline dismiss is suppressed;
+    /// otherwise reserves the slot for the back-chevron button.
+    func applyToggleLeadingInset() {
+        toggleLeadingConstraint.constant = isInlineDismissHidden
+            ? Constants.toggleHorizontalPadding
+            : Constants.toggleLeadingWithInlineDismiss
     }
 
     @objc func handleInlineDismissTap() {
         onInlineDismissTapped?()
     }
 
-    /// Flat, circular button styled to sit inside the card's top row. The floating dismiss
-    /// button in the content container uses Liquid Glass on iOS 26, but inside the card the
-    /// design calls for a flat control.
+    /// Flat, circular back-chevron button hosted inside the card on the leading edge.
+    /// Used as the dismiss control across all card positions and toggle states.
     static func makeInlineDismissButton() -> UIButton {
         let button = UIButton(type: .system)
-        let image = UIImage(systemName: "xmark")?
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-        button.setImage(image, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft, for: .normal)
         button.tintColor = UIColor(designSystemColor: .icons)
         button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.accessibilityLabel = UserText.keyCommandClose
+        button.accessibilityLabel = UserText.backButtonTitle
         button.alpha = 0
         button.isUserInteractionEnabled = false
         return button
     }
+
+    /// Liquid Glass on iOS 26+, raised fill on legacy. Used for the fire / voice
+    /// accessories flanking the collapsed input pill on Duck.ai tabs.
+    static func makeAITabAccessoryButton(image: UIImage?) -> UIButton {
+        if #available(iOS 26, *) {
+            return makeGlassAITabAccessoryButton(image: image)
+        }
+
+        let button = makeLegacyAITabAccessoryButton(image: image)
+        applyAITabAccessoryShadow(to: button)
+        return button
+    }
+
+    @available(iOS 26, *)
+    private static func makeGlassAITabAccessoryButton(image: UIImage?) -> UIButton {
+        var config = UIButton.Configuration.prominentClearGlass()
+        config.image = image
+        config.cornerStyle = .capsule
+
+        let button = UIButton(configuration: config)
+        configureAITabAccessoryButton(button)
+        applyAITabAccessoryShadow(to: button)
+        return button
+    }
+
+    private static func makeLegacyAITabAccessoryButton(image: UIImage?) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(image, for: .normal)
+        button.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        button.layer.cornerRadius = Constants.aiTabCollapsedAccessorySize / 2
+        configureAITabAccessoryButton(button)
+        return button
+    }
+
+    private static func configureAITabAccessoryButton(_ button: UIButton) {
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = UIColor(designSystemColor: .icons)
+        button.clipsToBounds = false
+    }
+
+    private static func applyAITabAccessoryShadow(to button: UIButton) {
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOffset = CGSize(width: 0, height: 8)
+        button.layer.shadowRadius = 16
+    }
+
 }
 
 // MARK: - Setup
@@ -766,6 +1052,8 @@ private extension UnifiedToggleInputView {
         addSubview(expandedShadowView)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
+        // Init matches `currentLayout = .collapsed`; AI-tab callers transition to `.flanked`
+        // via `applyCardLayout` and pick up the capsule radius then.
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
         cardView.layer.shadowOpacity = 1.0
@@ -773,6 +1061,8 @@ private extension UnifiedToggleInputView {
         cardView.layer.shadowRadius = 12
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
+        addSubview(aiTabCollapsedFireButton)
+        addSubview(aiTabCollapsedVoiceButton)
 
         NSLayoutConstraint.activate([
             expandedShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
@@ -801,12 +1091,17 @@ private extension UnifiedToggleInputView {
         textEntryView.placeholderTextColor = UIColor(designSystemColor: .textTertiary)
         addSubview(textEntryView)
 
+        pageContextChip.translatesAutoresizingMaskIntoConstraints = false
+        pageContextChip.isHidden = true
+        addSubview(pageContextChip)
+
         attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
         attachmentsStrip.clipsToBounds = false
         attachmentsStrip.alpha = 0
         attachmentsStrip.onAttachmentsChanged = { [weak self] in
             guard let self else { return }
             updateAttachmentsStripLayout()
+            updateSubmitButtonAvailability()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()
             onAttachmentsLayoutDidChange?()
@@ -821,16 +1116,13 @@ private extension UnifiedToggleInputView {
         toolsToolbar.alpha = 0
         toolsToolbar.onSubmitTapped = { [weak self] in
             guard let self else { return }
-            handler.submitText(handler.currentText)
+            submitCurrentInput()
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }
-        toolsToolbar.onAttachTapped = { [weak self] in
-            self?.onAttachTapped?()
-        }
         toolsToolbar.onVoiceTapped = { [weak self] in
-            self?.handler.microphoneButtonTapped()
+            self?.handler.aiVoiceChatButtonTapped()
         }
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }
@@ -844,25 +1136,40 @@ private extension UnifiedToggleInputView {
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
         }
 
+        textEntryView.onAIChatShortcutTapped = { [weak self] in
+            self?.onAIChatShortcutTapped?()
+        }
+
         setupConstraints()
         applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 
     func setupConstraints() {
-        cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.cardVerticalMargin)
+        // Initialise with collapsed-pose values to match the default `currentLayout = .collapsed`.
+        // `applyCardLayout` early-returns when called with the same layout, so the init values
+        // need to match that initial layout exactly. AI-tab callers transition into `.flanked`
+        // explicitly; `applyCardLayout(.flanked)` then writes the AI-tab-pose values.
+        cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.collapsedCardTopMargin)
         cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin)
+        cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: aiTabCollapsedFireButton.trailingAnchor, constant: Constants.aiTabCollapsedAccessorySpacing)
+        cardLeadingFlankedConstraint.isActive = false
         cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
-        cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMargin)
-        cardCollapsedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
-        cardCollapsedHeightConstraint.priority = .defaultHigh
-        cardCollapsedHeightConstraint.isActive = true
+        cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: aiTabCollapsedVoiceButton.leadingAnchor, constant: -Constants.aiTabCollapsedAccessorySpacing)
+        cardTrailingFlankedConstraint.isActive = false
+        cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
+        cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
+        cardPinnedHeightConstraint.priority = .defaultHigh
+        cardPinnedHeightConstraint.isActive = true
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
+        toggleLeadingConstraint = toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleLeadingWithInlineDismiss)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
-        toggleTrailingConstraint = toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding)
-        inlineDismissHeightConstraint = inlineDismissButton.heightAnchor.constraint(equalToConstant: 0)
+        inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
+        inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+        textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
+        pageContextChipHeightConstraint = pageContextChip.heightAnchor.constraint(equalToConstant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -872,20 +1179,24 @@ private extension UnifiedToggleInputView {
             cardBottomConstraint,
 
             toggleTopConstraint,
-            toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleHorizontalPadding),
-            toggleTrailingConstraint,
+            toggleLeadingConstraint,
+            toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding),
             toggleHeightConstraint,
 
-            inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding),
-            inlineDismissButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.inlineDismissTrailingPadding),
+            inlineDismissTopConstraint,
+            inlineDismissButton.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.inlineDismissLeadingPadding),
             inlineDismissButton.widthAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
-            inlineDismissHeightConstraint,
+            inlineDismissButton.heightAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
 
             inputTopConstraint,
-            textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            textEntryViewLeadingConstraint,
             textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
-            attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
+            pageContextChipHeightConstraint,
+
+            attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),
             attachmentsStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             attachmentsStripHeightConstraint,
@@ -895,6 +1206,16 @@ private extension UnifiedToggleInputView {
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolbarBottomConstraint,
             toolbarHeightConstraint,
+
+            aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin),
+            aiTabCollapsedFireButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            aiTabCollapsedFireButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+            aiTabCollapsedFireButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+
+            aiTabCollapsedVoiceButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin),
+            aiTabCollapsedVoiceButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            aiTabCollapsedVoiceButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+            aiTabCollapsedVoiceButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
         ])
     }
 
@@ -911,8 +1232,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self else { return }
-                let hasSubmittableText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                toolsToolbar.isSubmitEnabled = hasSubmittableText
+                updateSubmitButtonAvailability()
                 delegate?.unifiedToggleInputViewDidChangeText(self, text: text)
             }
             .store(in: &cancellables)
@@ -923,14 +1243,14 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
+                updateSubmitButtonAvailability()
             }
             .store(in: &cancellables)
 
-        handler.searchGoToButtonTappedPublisher
+        handler.submitsAIChatOnKeyboardReturnPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                delegate?.unifiedToggleInputViewDidTapSearchGoTo(self)
+            .sink { [weak self] _ in
+                self?.updateNewPromptSubmitStyle()
             }
             .store(in: &cancellables)
 

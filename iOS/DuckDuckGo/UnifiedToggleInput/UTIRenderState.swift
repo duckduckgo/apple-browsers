@@ -22,38 +22,29 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
-    var isFloatingSubmitVisible: Bool
+    var isFloatingReturnKeyVisible: Bool
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    /// True when the UTI is hosted by a Duck.ai tab.
+    var isAITab: Bool
+
+    var isExpanded: Bool { cardLayout.isExpanded }
 
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
-            isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isAITab: isAITab
         )
-    }
-
-    /// The inline dismiss (X inside the card's top row) takes over when the expanded card is
-    /// anchored at the top with the Search/Duck.ai toggle enabled. When the toggle setting is
-    /// disabled, the card has no top row to host the X, so the floating dismiss in the content
-    /// container is used instead.
-    var isInlineDismissActive: Bool {
-        cardPosition == .top && isExpanded && isToggleEnabled
-    }
-
-    var isFloatingDismissVisible: Bool {
-        isContentVisible && !isInlineDismissActive
     }
 
 }

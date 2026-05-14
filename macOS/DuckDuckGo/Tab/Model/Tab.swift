@@ -689,7 +689,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = webView.title?.trimmingWhitespace()
 
         if let wkBackForwardListItem = webView.backForwardList.currentItem,
-           content.urlForWebView == wkBackForwardListItem.url,
+           let itemURL = wkBackForwardListItem.safeURL,
+           content.urlForWebView == itemURL,
            !webView.isLoading,
            title?.isEmpty == false {
             wkBackForwardListItem.tabTitle = title
@@ -1306,7 +1307,6 @@ extension Tab: UserContentControllerDelegate {
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView

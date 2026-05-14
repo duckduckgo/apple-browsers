@@ -66,7 +66,10 @@ private extension RebrandedNewTabDaxDialogFactory {
     func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSearchSuggestionsViewModel(
             suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
-            delegate: delegate
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.onboardingPixelReporter.measureTrySearchDialogSuggestedSearchTapped()
+            }
         )
 
         let manualDismissAction = { [weak self] in
@@ -81,6 +84,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.search(.shown))
         }
     }
 
@@ -89,12 +93,21 @@ private extension RebrandedNewTabDaxDialogFactory {
 extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
+        let onDismiss = { [weak self] in
+            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            onDismiss()
+        }
+
+        return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
+                    // The Duck.ai experiment completion dialog reuses `OnboardingEndOfJourneyDialog`
+                    // but is presented over the active address bar with the keyboard up — no room
+                    // for the screen-bottom Dax animation, so suppress it explicitly here.
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(
                         message: message,
                         cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                        showsDaxAnimation: false,
                         dismissAction: onDismiss
                     )
                 }
@@ -118,7 +131,10 @@ private extension RebrandedNewTabDaxDialogFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-            delegate: delegate
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.onboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
+            }
         )
 
         let manualDismissAction = { [weak self] in
@@ -133,6 +149,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -156,9 +173,11 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+        // Dax placement is owned by the dialog's `ScreenBottomDaxOverlay` (keyboard-aware).
+        // The previous large-screen `DaxAnimationOverlay` here didn't track the keyboard.
         return FadeInView {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey
                     message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                     cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                     dismissAction: { [weak self] in
@@ -177,6 +196,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
     
@@ -219,6 +239,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 proceedText: proceedButtonText,
                 dismissText: dismissText,
                 proceedAction: { [weak self] in
+                    self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
                     NotificationCenter.default.post(
@@ -228,7 +249,9 @@ private extension RebrandedNewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
-                dismissAction: {
+                dismissAction: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 },
                 onManualDismiss: { [weak self] in
@@ -241,6 +264,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         .applyNewTabOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
+            self?.onboardingPixelReporter.measureSubscriptionPromoDialogShown()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true
         }
     }

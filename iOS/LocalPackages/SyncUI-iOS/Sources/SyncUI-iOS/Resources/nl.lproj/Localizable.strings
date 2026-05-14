@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Synchroniseer een ander apparaat";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Niet nu";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Synchroniseer je je data met een ander apparaat?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Laadt pictogrammen van websites die je als bladwijzer hebt opgeslagen. Pictogramdownloads worden weergegeven in je netwerk.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Bladwijzers";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Gebruik dezelfde favoriete bladwijzers op mobiel en desktop.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Er wordt verbinding gemaakt ...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Sla je bladwijzers en autofillgegevens op en synchroniseer ze tussen je apparaten met end-to-end versleuteling.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Gebruik deze code om je gegevens te herstellen als je de toegang tot dit apparaat verliest. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-app";

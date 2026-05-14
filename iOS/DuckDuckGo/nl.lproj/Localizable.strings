@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI-functies";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Foto kiezen";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Maak een foto";
@@ -233,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antwoorden aanpassen";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Tekst omzetten in afbeeldingen";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Afbeelding maken";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Actuele informatie zoeken";
@@ -2848,6 +2853,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Niet nu";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "AI-functies zijn privé en optioneel.\nJe kunt wijzigingen aanbrengen in Instellingen > AI-functies.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Wil je eenvoudig toegang tot privé AI-chat in de adresbalk?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Zoeken en Duck.ai";
 
@@ -3014,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Dat is DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Klaar voor een snellere browser die je beschermt en je zelf laat bepalen wanneer en hoe je AI gebruikt?";
+"onboarding.rebranding.intro.message" = "Ben je klaar voor een snellere browser waarmee jij de controle hebt?\n\nAI is altijd optioneel en privacybescherming staat altijd aan.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hoi.";
@@ -3454,7 +3465,10 @@
 "settings.address.trackers.animation" = "In adresbalk weergeven";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Kies wat je ziet als je terugkeert na %@ inactiviteit.";
+"settings.afterInactivity.footer.format" = "Kies wat je wilt zien als je terugkeert naar DuckDuckGo na %@ inactiviteit.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Kies wat je wilt zien als je terugkeert naar DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 uur";
@@ -3468,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuten";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Geen";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 seconde";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d seconden";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inactiviteitstimer";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Na inactiviteit";
+"settings.afterInactivity.label" = "Openingsscherm";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Laatst gebruikte tabblad";
@@ -4380,6 +4400,9 @@
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Code gekopieerd";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Apparaat is gesynchroniseerd!";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Synchronisatie en back-up ingeschakeld";
 
@@ -4868,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Advertenties op YouTube blokkeren";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Als deze optie is ingeschakeld, detecteert DuckDuckGo anoniem verstoring van advertentieblokkeringen of YouTube-fouten, om de ervaring voor iedereen te verbeteren. DuckDuckGo ziet niet welke video's je bekijkt en heeft geen toegang tot je persoonlijk identificeerbare informatie.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Meer informatie";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bladwijzers";

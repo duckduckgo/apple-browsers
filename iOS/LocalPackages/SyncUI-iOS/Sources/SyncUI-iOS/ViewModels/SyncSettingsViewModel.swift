@@ -46,6 +46,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showOtherPlatformLinks()
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
+    func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -120,6 +121,14 @@ public class SyncSettingsViewModel: ObservableObject {
         case readySkipRestoreTapped
     }
 
+    public enum SyncSetupPixelEvent {
+        case backUpThisDeviceTapped
+        case signupConfirmedTapped
+        case signupAbandoned
+        case recoverSyncedDataTapped
+        case recoveryConfirmedTapped
+    }
+
     public enum SyncSetupEntryPoint: Equatable {
         case backup
         case pairing
@@ -179,6 +188,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var shouldFireSignupAbandonedOnSheetDismissal = false
     private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
@@ -335,7 +345,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case .setup(let entryPoint):
             switch entryPoint {
             case .backup:
-                isSyncWithSetUpSheetVisible = true
+                showSyncWithSetUpSheet()
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
@@ -364,7 +374,24 @@ public class SyncSettingsViewModel: ObservableObject {
         self.recoveryCode = recoveryCode
     }
 
+    public func showSyncWithSetUpSheet() {
+        shouldFireSignupAbandonedOnSheetDismissal = true
+        isSyncWithSetUpSheetVisible = true
+    }
+
+    public func dismissSyncWithSetUpSheet() {
+        isSyncWithSetUpSheetVisible = false
+    }
+
+    public func syncWithSetUpSheetDidDismiss() {
+        guard shouldFireSignupAbandonedOnSheetDismissal else { return }
+
+        shouldFireSignupAbandonedOnSheetDismissal = false
+        delegate?.fireSyncSetupPixel(event: .signupAbandoned)
+    }
+
     public func startSyncPressed() {
+        shouldFireSignupAbandonedOnSheetDismissal = false
         isBusy = true
         delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }
@@ -539,6 +566,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
+    func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
     func showSimplifiedSyncEnabledToast() {}
 }

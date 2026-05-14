@@ -77,6 +77,10 @@ protocol AIChatPageContextHandling: AnyObject {
 
     /// Resubscribes to the current script's publisher after content blocking assets are reinstalled.
     func resubscribe()
+
+    /// Clears the buffered attached context (emits nil) without cancelling active subscriptions.
+    /// Used when the user manually detaches a page from within the contextual chat session.
+    func clearAttachedContext()
 }
 
 // MARK: - Implementation
@@ -142,6 +146,11 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         if let script = userScriptProvider() {
             script.webView = nil
         }
+    }
+
+    func clearAttachedContext() {
+        Logger.aiChat.debug("[PageContext] Clearing attached context (preserving subscriptions)")
+        contextSubject.send(nil)
     }
 
     /// Resubscribes to the current PageContextUserScript's publisher.

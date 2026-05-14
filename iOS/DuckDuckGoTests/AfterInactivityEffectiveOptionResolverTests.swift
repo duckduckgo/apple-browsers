@@ -68,21 +68,31 @@ struct AfterInactivityEffectiveOptionResolverTests {
         #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
     }
 
-    @Test("When no stored value and idleReturnNewUser is false then returns Last Used Tab")
-    func whenReturningUserThenReturnsLastUsedTab() throws {
+    @Test("When no stored value and idleReturnNewUser is false on iPhone then returns New Tab")
+    func whenReturningUserOnPhoneThenReturnsNewTab() throws {
         let (_, storage) = try makeStorage()
         try storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
 
         let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
 
-        #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
+        #expect(resolver.resolveEffectiveOption() == .newTab)
     }
 
-    @Test("When no stored value and idleReturnNewUser not set then returns Last Used Tab")
-    func whenNoStoredValueAndNewUserNotSetThenReturnsLastUsedTab() throws {
+    @Test("When no stored value and idleReturnNewUser not set on iPhone then returns New Tab")
+    func whenNoStoredValueAndNewUserNotSetOnPhoneThenReturnsNewTab() throws {
         let (_, storage) = try makeStorage()
 
         let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
+
+        #expect(resolver.resolveEffectiveOption() == .newTab)
+    }
+
+    @Test("When no stored value and idleReturnNewUser is false on iPad then returns Last Used Tab")
+    func whenReturningUserOnPadThenReturnsLastUsedTab() throws {
+        let (_, storage) = try makeStorage()
+        try storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
+
+        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: true)
 
         #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
     }

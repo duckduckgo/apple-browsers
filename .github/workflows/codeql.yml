@@ -173,7 +173,8 @@ jobs:
             -skipPackagePluginValidation \
             -skipMacroValidation \
             -disableAutomaticPackageResolution \
-            ONLY_ACTIVE_ARCH=YES
+            ONLY_ACTIVE_ARCH=YES \
+            OTHER_CODE_SIGN_FLAGS=--timestamp=none
 
       - name: Build macOS for CodeQL
         if: matrix.destination != 'ios-simulator'
@@ -187,7 +188,8 @@ jobs:
             -skipPackagePluginValidation \
             -skipMacroValidation \
             -disableAutomaticPackageResolution \
-            ONLY_ACTIVE_ARCH=YES
+            ONLY_ACTIVE_ARCH=YES \
+            OTHER_CODE_SIGN_FLAGS=--timestamp=none
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

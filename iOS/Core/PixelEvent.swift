@@ -221,6 +221,8 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
+        case widgetMediumLaunch
+
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -1355,6 +1357,10 @@ extension Pixel {
         case settingsEmailProtectionEnable
         case settingsGeneralOpen
         case settingsSyncOpen
+        case settingsSyncBackUpThisDeviceTapped
+        case settingsSyncRecoverSyncedDataTapped
+        case settingsSyncSignupConfirmedTapped
+        case settingsSyncRecoveryConfirmedTapped
         case settingsAppearanceOpen
         case settingsThemeSelectorPressed
         case settingsAddressBarTopSelected
@@ -1436,8 +1442,10 @@ extension Pixel {
         case ntpAfterIdleAppBackgroundedUserInitiated
         case ntpAfterIdleTabSwitcherSelectedAfterIdle
         case ntpAfterIdleTabSwitcherSelectedUserInitiated
+        case ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
+        case ntpAfterIdleSettingIdleIntervalChanged
 
         // MARK: DuckPlayer
 
@@ -1509,10 +1517,7 @@ extension Pixel {
         case webViewErrorPageShown
 
         // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationXSafariHTTPSStay
-        case webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari
         case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
-        case webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari
 
         // MARK: Browsing
         case stopPageLoad
@@ -1584,6 +1589,7 @@ extension Pixel {
         case duckAiNativeStorageFileGetError
         case duckAiNativeStorageFileListError
         case duckAiNativeStorageFileDeleteError
+        case duckAiNativeStorageLastUsedModelParseError
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -1609,6 +1615,8 @@ extension Pixel {
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
         case aiChatNewAddressBarPickerNotNow
+        case aiChatNewAddressBarPickerV2Displayed
+        case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
         case aiChatExperimentalOmnibarShown
@@ -1750,6 +1758,9 @@ extension Pixel {
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
 
+        // MARK: - Freemium Personal Information Removal
+        case freemiumPIRSettingsEntryPointClicked
+
         // MARK: - Data Broker Protection Notifications
         case dbpNotificationOpenedFirstScanComplete
         case dbpNotificationOpenedFirstFreemiumScanComplete
@@ -1827,6 +1838,12 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
+        case webExtensionAdBlockingDetectedAdBlockerDaily
+        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
+        case webExtensionAdBlockingDetectedVideoAdDaily
+        case webExtensionAdBlockingDetectedStaticAdDaily
+        case webExtensionAdBlockingDetectedBufferingDaily
+
         // MARK: - Fire Mode
         case fireModeNTPPromotionShown
         case fireModeNTPPromotionDismissed
@@ -1852,7 +1869,22 @@ extension Pixel {
 extension Pixel.Event: Equatable {}
 
 extension Pixel.Event {
-    
+    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
+    /// Returns `nil` for unknown types so the caller can no-op.
+    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
+        switch type {
+        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
+        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
+        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
+        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
+        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
+        default: return nil
+        }
+    }
+}
+
+extension Pixel.Event {
+
     public var name: String {
         switch self {
         case .appInstall: return "m_install"
@@ -1934,6 +1966,10 @@ extension Pixel.Event {
         case .settingsEmailProtectionEnable: return "m_settings_email_protection_enable"
         case .settingsGeneralOpen: return "m_settings_general_open"
         case .settingsSyncOpen: return "m_settings_sync_open"
+        case .settingsSyncBackUpThisDeviceTapped: return "m_settings_sync_back_up_this_device_tapped"
+        case .settingsSyncRecoverSyncedDataTapped: return "m_settings_sync_recover_synced_data_tapped"
+        case .settingsSyncSignupConfirmedTapped: return "m_settings_sync_signup_confirmed_tapped"
+        case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"
@@ -2036,6 +2072,8 @@ extension Pixel.Event {
         case .favoriteLaunchedNTP: return "m_favorite_launched_ntp"
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
+
+        case .widgetMediumLaunch: return "m_widget_medium_launch"
 
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
@@ -3139,8 +3177,10 @@ extension Pixel.Event {
         case .ntpAfterIdleAppBackgroundedUserInitiated: return "m_ntp_after_idle_app_backgrounded_from_ntp_user_initiated"
         case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
         case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
+        case .ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle: return "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
+        case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
@@ -3209,10 +3249,7 @@ extension Pixel.Event {
         case .webViewErrorPageShown: return "m_errorpageshown"
 
         // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationXSafariHTTPSStay: return "m_webview_external-scheme-navigation_x-safari-https_stay_daily"
-        case .webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_open-in-safari_daily"
         case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
-        case .webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_loop-open-in-safari_daily"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
@@ -3288,6 +3325,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageFileGetError: return "m_duck-ai_native-storage_file-get_error"
         case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
+        case .duckAiNativeStorageLastUsedModelParseError: return "m_duck-ai_native-storage_last-used-model-parse_error"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -3304,6 +3342,8 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
         case .aiChatNewAddressBarPickerConfirmed: return "m_aichat_new_address_bar_picker_confirmed"
         case .aiChatNewAddressBarPickerNotNow: return "m_aichat_new_address_bar_picker_not_now"
+        case .aiChatNewAddressBarPickerV2Displayed: return "m_aichat_new_address_bar_picker_v2_displayed"
+        case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
         case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
@@ -3500,6 +3540,9 @@ extension Pixel.Event {
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
 
+        // MARK: Freemium Personal Information Removal
+        case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
+
         // MARK: Data Broker Protection Notifications
         case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"
         case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_dbp_freemium_notification_opened_first_scan_complete"
@@ -3581,6 +3624,12 @@ extension Pixel.Event {
         case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
         case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
         case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
+        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
+        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
+        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
+        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"

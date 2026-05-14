@@ -48,10 +48,14 @@ final class AIChatContextualWebViewController: UIViewController {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let isFireTab: Bool
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
+    private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
+    private var utiHost: AIChatContextualUTIHost?
+    private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -125,21 +129,25 @@ final class AIChatContextualWebViewController: UIViewController {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          isFireTab: Bool = false,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.isFireTab = isFireTab
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
         self.userAgentManager = userAgentManager
+        self.utiHostInstaller = utiHostInstaller
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -162,6 +170,9 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
+        if isUTIEnabled, let utiHostInstaller {
+            utiHost = utiHostInstaller(self)
+        }
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -183,6 +194,9 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        if pageContext != nil {
+            utiHost?.markPromptSubmitted()
+        }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
@@ -222,6 +236,14 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.reload()
     }
 
+    /// Re-anchors the web view's bottom edge so it doesn't render under any subview installed below it (e.g. native UTI).
+    func anchorWebViewBottom(to anchor: NSLayoutYAxisAnchor) {
+        webViewBottomConstraint?.isActive = false
+        let newConstraint = webView.bottomAnchor.constraint(equalTo: anchor)
+        newConstraint.isActive = true
+        webViewBottomConstraint = newConstraint
+    }
+
     func loadChatURL(_ url: URL) {
         Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
         isPageReady = false
@@ -242,11 +264,14 @@ final class AIChatContextualWebViewController: UIViewController {
         view.addSubview(webView)
         view.addSubview(loadingView)
 
+        let webViewBottom = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        webViewBottomConstraint = webViewBottom
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webViewBottom,
 
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -268,8 +293,11 @@ final class AIChatContextualWebViewController: UIViewController {
         loadingView.startAnimating()
         let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
         Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
-        let request = URLRequest(url: contextualURL)
-        webView.load(request)
+        webView.load(URLRequest(url: contextualURL))
+    }
+
+    private var isUTIEnabled: Bool {
+        featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
     }
 
     private func setupDownloadHandler() {
@@ -349,8 +377,14 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireTab,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
+        utiHost?.bindToUserScript(userScripts.aiChatUserScript)
 
         isContentHandlerReady = true
         submitPendingIfReady()

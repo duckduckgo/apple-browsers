@@ -138,7 +138,7 @@ final class OnboardingUITests: UITestCase {
         let bundleID = try XCTUnwrap(XCUIApplication().bundleID)
         let commands = [
             "/usr/bin/defaults delete \(bundleID)",
-            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data",
+            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data/* || true",
             "/usr/bin/defaults write \(bundleID) moveToApplicationsFolderAlertSuppress 1"
         ]
 

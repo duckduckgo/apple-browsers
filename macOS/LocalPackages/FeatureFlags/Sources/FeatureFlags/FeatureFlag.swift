@@ -166,6 +166,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
+    /// Address-bar render-performance instrumentation kill switch.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214767817210667?focus=true
+    case addressBarPerformanceInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720972159
     case winBackOffer
 
@@ -234,8 +238,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
-    /// Autoconsent heuristic action experiment
-    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    /// Autoconsent heuristic action
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
     /// Enables Next Steps List widget with a single card displayed at a time on New Tab page
@@ -267,6 +271,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
+    case aiChatOmnibarVoiceChatAccess
 
     /// Enables attaching content from multiple open tabs to Duck.ai chat
     case aiChatAttachMoreTabs
@@ -404,7 +411,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(ContextualOnboardingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .onboardingRebranding:
-            Config(source: .disabled)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.onboardingRebranding)))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization)), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:
@@ -426,7 +433,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .webExtensions)
+            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -491,6 +498,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly)), category: .updates)
         case .unifiedURLPredictor:
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor)))
+        case .addressBarPerformanceInstrumentation:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addressBarPerformanceInstrumentation)))
         case .winBackOffer:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer)), category: .vpn)
         case .blackFridayCampaign:
@@ -542,7 +551,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth)), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
-            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .aiChatMultiplePageContexts:
@@ -553,6 +562,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarWebSearch)), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarReasoningEffort)), category: .duckAI)
+        case .aiChatOmnibarVoiceChatAccess:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarVoiceChatAccess)), category: .duckAI)
         case .aiChatAttachMoreTabs:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:

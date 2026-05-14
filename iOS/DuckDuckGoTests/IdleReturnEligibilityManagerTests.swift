@@ -161,7 +161,7 @@ struct IdleReturnEligibilityManagerTests {
     @available(iOS 16, *)
     @Test("idleThresholdSeconds returns value from threshold resolver", .timeLimit(.minutes(1)))
     func idleThresholdSecondsReturnsValueFromThresholdResolver() {
-        let manager = makeManager(thresholdSeconds: 120)
-        #expect(manager.idleThresholdSeconds() == 120)
+        let manager = makeManager(thresholdSeconds: AfterInactivityIdleInterval.tenMinutes.seconds)
+        #expect(manager.idleThresholdSeconds() == AfterInactivityIdleInterval.tenMinutes.seconds)
     }
 }

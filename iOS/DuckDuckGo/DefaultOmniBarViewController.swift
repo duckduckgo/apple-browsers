@@ -157,9 +157,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private func extractCurrentTextForEditing(_ textField: UITextField) -> String? {
-        guard let text = textField.text, !text.isEmpty else { return nil }
-        if let url = URL(string: text), url.host != nil {
-            return url.absoluteString
+        guard let text = textField.text?.trimmingWhitespace(), !text.isEmpty else { return nil }
+        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUsingUnifiedPredictor) != nil,
+           let url = omniDelegate?.didRequestCurrentURL() {
+            return AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true).string
         }
         return text
     }
@@ -552,6 +553,13 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
 
     func onSwitchToTab(_ tab: Tab) {
         omniDelegate?.onSwitchToTab(tab)
+    }
+
+    func onTabSwitcherRequested() {
+        // Pure forwarder — MVC's handler calls `performCancel()`, which already invokes
+        // `endEditing()` -> `dismissAnimated()` on the editing state. Dismissing here too
+        // would cause UIKit's "presentation/dismissal in progress" error.
+        omniDelegate?.onTabSwitcherRequested()
     }
 
     func onTryFireModeRequested() {

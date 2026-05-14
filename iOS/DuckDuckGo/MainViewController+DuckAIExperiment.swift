@@ -21,16 +21,6 @@ import AIChat
 import Core
 import UIKit
 
-// MARK: - Duck.ai Query Experiment — resume step
-
-/// Persisted checkpoint allowing the experiment onboarding flow to resume after an app relaunch.
-enum OnboardingResumeStep: String {
-    /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
-    case duckAIQueryExperimentSelection
-    /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
-    case duckAIAnswerStep
-}
-
 // MARK: - Duck.ai Query Experiment — onboarding fire flow types
 
 /// Tracks the one-time Duck.ai Fire onboarding sequence:
@@ -116,7 +106,7 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
-        duckAIOnboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+        onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         showFireButtonPulse()
@@ -203,7 +193,7 @@ extension MainViewController {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
-        DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
         ensureExperimentCompletionDialogPresentationPrerequisites()
     }
 
@@ -242,10 +232,13 @@ extension MainViewController {
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
+            if [.duckAIAnswerStep, .duckAIQuerySelection].contains(onboardingResumeStepStore.resumeStep) {
+                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+            }
             return
         }
-        guard duckAIOnboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
+        guard onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
               currentTab?.isAITab == true else {
             return
         }
@@ -265,7 +258,7 @@ extension MainViewController {
     }
 
     func recreateAIChatTabForResumeIfNeeded() {
-        let query = duckAIOnboardingResumeStepStore.resumeExperimentPrompt
+        let query = onboardingResumeStepStore.resumeExperimentPrompt
         if query == nil || query?.isEmpty == true {
             Logger.general.error("DuckAI onboarding resume missing stored prompt; opening AI Chat without a prompt")
         }
@@ -294,6 +287,7 @@ extension MainViewController {
             fireContext: .duckAIOnboarding,
             browsingMode: tabManager.currentBrowsingMode,
             onConfirm: { [weak self] fireRequest in
+                self?.contextualOnboardingPixelReporter.measureFireButtonOnboardingDeleteConfirmed()
                 self?.forgetAllWithAnimation(request: fireRequest) {
                     self?.experimentDuckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -360,8 +354,8 @@ extension MainViewController {
 
         if shouldArmExperimentFireOnboarding {
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            duckAIOnboardingResumeStepStore.resumeStep = .duckAIAnswerStep
-            duckAIOnboardingResumeStepStore.resumeExperimentPrompt = query
+            onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            onboardingResumeStepStore.resumeExperimentPrompt = query
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {
             experimentDuckAIFireOnboardingFlow.state = .idle
@@ -374,7 +368,7 @@ extension MainViewController {
     func clearDuckAIOnboardingResumeStepIfNeeded() {
         if experimentDuckAIFireOnboardingFlow.state != .awaitingFirstResponse,
            experimentDuckAIFireOnboardingFlow.state != .active {
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
         }
     }
 

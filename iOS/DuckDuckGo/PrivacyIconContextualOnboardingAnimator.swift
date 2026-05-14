@@ -36,6 +36,22 @@ final class PrivacyIconContextualOnboardingAnimator {
         }
     }
 
+    /// Force-dismiss the privacy-icon pulse regardless of the `isPrivacyIconHighlighted` gate.
+    /// `dismissPrivacyIconAnimation(_:)` only checks for a highlight whose anchor view is exactly
+    /// the outer `PrivacyIconView`, but `showPrivacyIconAnimation(in:)` actually anchors the
+    /// highlight to the inner `shieldAnimationView` whenever it's available — so the gated
+    /// path silently misses the highlight in practice. This variant removes both anchors via
+    /// the per-view `ViewHighlighter.hide(focussedOnView:)`, leaving any other concurrent
+    /// highlight (e.g. the fire-button pulse) intact. It's intended for explicit user actions
+    /// — taps that should make the pulse go away regardless of state — and is *not* called
+    /// from `cancelAllAnimations`, so the existing show timing is preserved.
+    func forceDismissPrivacyIconAnimation(_ view: PrivacyIconView) {
+        ViewHighlighter.hide(focussedOnView: view)
+        if let shieldAnimationView = view.shieldAnimationView {
+            ViewHighlighter.hide(focussedOnView: shieldAnimationView)
+        }
+    }
+
     func isPrivacyIconHighlighted(_ view: PrivacyIconView) -> Bool {
         ViewHighlighter.highlightedViews.contains(where: { $0.view == view })
     }

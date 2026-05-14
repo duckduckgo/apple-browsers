@@ -28,6 +28,7 @@ extension OnboardingRebranding {
 
     public struct ContextualDaxDialogContent<Content: View>: View {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private let orientation: ContextualDaxDialogOrientation
         private let title: NSAttributedString?
@@ -38,6 +39,8 @@ extension OnboardingRebranding {
         private let titleBodyVerticalSpacingOverride: CGFloat?
         private let content: Content
 
+        @State private var startTypingTitle = false
+        @State private var startTypingMessage = false
         @State private var shouldShowContent = false
 
         #if os(iOS)
@@ -104,36 +107,55 @@ extension OnboardingRebranding {
                 switch orientation {
                 case .verticalStack:
                     VStack(alignment: .leading, spacing: theme.contentSpacing) {
-                        TitleMessageStack(
+                        TypingTitleMessageStack(
                             title: title,
                             message: message,
                             titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingVerticalLayout,
                             titleTextAlignment: titleTextAlignment,
-                            messageTextAlignment: messageTextAlignment
+                            messageTextAlignment: messageTextAlignment,
+                            startTypingTitle: $startTypingTitle,
+                            startTypingMessage: $startTypingMessage,
+                            onTypingFinished: animateContentIn
                         )
                         content
+                            .visibility(shouldShowContent ? .visible : .invisible)
                     }
                 case let .horizontalStack(alignment):
                     HStack(alignment: alignment) {
-                        TitleMessageStack(
+                        TypingTitleMessageStack(
                             title: title,
                             message: message,
                             titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingHorizontalLayout,
                             titleTextAlignment: titleTextAlignment,
-                            messageTextAlignment: messageTextAlignment
+                            messageTextAlignment: messageTextAlignment,
+                            startTypingTitle: $startTypingTitle,
+                            startTypingMessage: $startTypingMessage,
+                            onTypingFinished: animateContentIn
                         )
                         Spacer(minLength: theme.contentSpacing)
                         content
+                            .visibility(shouldShowContent ? .visible : .invisible)
                     }
                 }
             }
-            .opacity(shouldShowContent ? 1 : 0)
             .onAppear {
                 Task { @MainActor in
                     try await Task.sleep(interval: theme.contentFadeInDelay)
-                    withAnimation(.easeIn(duration: theme.contentFadeInDuration)) {
-                        shouldShowContent = true
+                    if title != nil {
+                        startTypingTitle = true
+                    } else {
+                        startTypingMessage = true
                     }
+                }
+            }
+        }
+
+        private func animateContentIn() {
+            if reduceMotion {
+                shouldShowContent = true
+            } else {
+                withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
+                    shouldShowContent = true
                 }
             }
         }
@@ -195,8 +217,9 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
 
 private extension OnboardingRebranding {
 
-    struct TitleMessageStack: View {
+    struct TypingTitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -206,24 +229,101 @@ private extension OnboardingRebranding {
         var titleTextAlignment: TextAlignment?
         var messageTextAlignment: TextAlignment?
 
+        @Binding var startTypingTitle: Bool
+        @Binding var startTypingMessage: Bool
+        let onTypingFinished: () -> Void
+
+        #if os(iOS)
+        /// Drives the static message's fade-in after the title finishes typing (or after the
+        /// no-title path triggers it).
+        @State private var showStaticMessage = false
+        #endif
+
         var body: some View {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    Text(attributedStringWithAttachments: title)
-                        .font(theme.typography.contextual.title)
-                        .multilineTextAlignment(titleAlignment)
-                        .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
+                    titleTypingView(title, alignment: titleAlignment)
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
-                Text(attributedStringWithAttachments: message)
-                    .font(theme.typography.contextual.body)
-                    .multilineTextAlignment(messageAlignment)
-                    .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
+                messageTypingView(alignment: messageAlignment)
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
-
+            // Horizontal layouts otherwise truncate to a single line; force vertical sizing.
+            .fixedSize(horizontal: false, vertical: true)
         }
+
+        #if os(iOS)
+        // iOS: only the title types; message is static and fades in once typing completes.
+        // No-title path: the parent flips `startTypingMessage` directly — handled in
+        // `messageTypingView` below.
+        @ViewBuilder
+        private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { revealStaticMessageAndFinish() }
+            )
+            .font(theme.typography.contextual.title)
+            .multilineTextAlignment(alignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+        }
+
+        @ViewBuilder
+        private func messageTypingView(alignment: TextAlignment) -> some View {
+            Text(attributedStringWithAttachments: message)
+                .font(theme.typography.contextual.body)
+                .multilineTextAlignment(alignment)
+                .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+                .opacity(showStaticMessage ? 1 : 0)
+                .onChange(of: startTypingMessage) { shouldStart in
+                    // No-title path: parent flips this directly; reveal + forward completion here.
+                    if shouldStart { revealStaticMessageAndFinish() }
+                }
+        }
+
+        private func revealStaticMessageAndFinish() {
+            guard !reduceMotion else {
+                showStaticMessage = true
+                onTypingFinished()
+                return
+            }
+            let duration = theme.contextualOnboardingMetrics.contentFadeInDuration
+            withAnimation(.easeIn(duration: duration)) {
+                showStaticMessage = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                onTypingFinished()
+            }
+        }
+        #else
+        @ViewBuilder
+        private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
+            AnimatableTypingText(
+                title,
+                startAnimating: $startTypingTitle,
+                alignment: Alignment(alignment),
+                onTypingFinished: { startTypingMessage = true }
+            )
+            .font(theme.typography.contextual.title)
+            .multilineTextAlignment(alignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+        }
+
+        @ViewBuilder
+        private func messageTypingView(alignment: TextAlignment) -> some View {
+            AnimatableTypingText(
+                message,
+                startAnimating: $startTypingMessage,
+                alignment: Alignment(alignment),
+                onTypingFinished: onTypingFinished
+            )
+            .font(theme.typography.contextual.body)
+            .multilineTextAlignment(alignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(alignment))
+        }
+        #endif
     }
 
 }

@@ -225,6 +225,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a reasoning effort from the native omnibar picker
     case aiChatAddressBarReasoningEffortSelected
 
+    /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
+    case aiChatNewVoiceChatOmnibarNative
+
     // MARK: - Image Generation Mode
 
     /// Event Trigger: User activates image generation mode via the Tools menu
@@ -258,6 +261,9 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
+
+    /// Event Trigger: User opens a new voice Duck.ai chat from the New Tab Page omnibar
+    case aiChatNewVoiceChatOmnibarNtp
 
     // MARK: - NTP Image Generation Mode
 
@@ -489,6 +495,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
             return "aichat_addressbar_reasoning_effort_selected"
+        case .aiChatNewVoiceChatOmnibarNative:
+            return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
             return "aichat_addressbar_image_generation_activated"
         case .aiChatAddressBarImageGenerationDeactivated:
@@ -509,6 +517,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_reasoning_effort_selected"
         case .aiChatNtpViewAllChatsClicked:
             return "aichat_ntp_view_all_chats_clicked"
+        case .aiChatNewVoiceChatOmnibarNtp:
+            return "aichat_new_voice_chat_omnibar_ntp"
         case .aiChatNtpImageGenerationSubmitted:
             return "aichat_ntp_image_generation_submitted"
         case .aiChatNtpWebSearchSubmitted:
@@ -617,6 +627,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
                 .aiChatNtpImageGenerationSubmitted,
                 .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
@@ -628,6 +639,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
                 .aiChatNewImageChatMainMenu,
                 .aiChatRecentChatSelectedMainMenu,
                 .aiChatDeleteAllChatsMainMenu,
@@ -742,6 +754,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
                 .aiChatNtpImageGenerationSubmitted,
                 .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
@@ -753,6 +766,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
                 .aiChatNewImageChatMainMenu,
                 .aiChatRecentChatSelectedMainMenu,
                 .aiChatDeleteAllChatsMainMenu,

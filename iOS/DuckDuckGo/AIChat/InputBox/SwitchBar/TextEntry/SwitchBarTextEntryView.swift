@@ -25,6 +25,14 @@ import Core
 
 class SwitchBarTextEntryView: UIView {
 
+    enum VoiceButtonAppearance {
+        case automatic
+        case microphone
+        case aiVoicePlain
+        /// Suppress the in-pill voice button (e.g. when an external flank already provides it).
+        case hidden
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -49,6 +57,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let handler: SwitchBarHandling
+    var voiceButtonAppearance: VoiceButtonAppearance {
+        didSet {
+            guard voiceButtonAppearance != oldValue else { return }
+            updateButtonState()
+        }
+    }
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -106,10 +120,19 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     var isExpandable: Bool = false {
         didSet {
             updateTextViewHeight()
+        }
+    }
+
+    /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
+    /// value, so the placeholder doesn't sit lopsided under the icon.
+    var placeholderTextAlignment: NSTextAlignment = .natural {
+        didSet {
+            updatePlaceholderAlignment()
         }
     }
 
@@ -134,8 +157,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling, voiceButtonAppearance: VoiceButtonAppearance = .automatic) {
         self.handler = handler
+        self.voiceButtonAppearance = voiceButtonAppearance
         super.init(frame: .zero)
 
         setupView()
@@ -169,6 +193,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
+        placeholderLabel.lineBreakMode = .byTruncatingTail
 
         setupButtonsView()
 
@@ -223,12 +248,12 @@ class SwitchBarTextEntryView: UIView {
             self?.handler.microphoneButtonTapped()
         }
 
-        buttonsView.onSearchGoToTapped = { [weak self] in
-            self?.handler.searchGoToButtonTapped()
-        }
-
         buttonsView.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
+        }
+
+        buttonsView.onAIChatShortcutTapped = { [weak self] in
+            self?.onAIChatShortcutTapped?()
         }
     }
 
@@ -247,9 +272,11 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
+            placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
-            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
+            // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
+            // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
+            placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])
@@ -292,8 +319,8 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = .default
+            textView.returnKeyType = aiChatReturnKeyType
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -309,8 +336,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
+        // Update handler-side flags first so `handler.buttonState` reflects the new appearance.
+        updateVoiceButtonStyle()
         let newButtonState = handler.buttonState
-        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
             // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
@@ -320,9 +348,29 @@ class SwitchBarTextEntryView: UIView {
                 UIView.performWithoutAnimation {
                     self.currentButtonState = newButtonState
                     self.adjustTextViewContentInset()
+                    self.updatePlaceholderAlignment()
                     self.layoutIfNeeded()
                 }
             }
+        }
+    }
+
+    private func updatePlaceholderAlignment() {
+        placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
+    private func updateVoiceButtonStyle() {
+        handler.hidesVoiceButton = voiceButtonAppearance == .hidden
+        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        switch voiceButtonAppearance {
+        case .automatic:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
+        case .microphone:
+            buttonsView.voiceButtonStyle = .microphone
+        case .aiVoicePlain:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
+        case .hidden:
+            break
         }
     }
 
@@ -526,6 +574,16 @@ class SwitchBarTextEntryView: UIView {
                 self.placeholderLabel.text = self.handler.hasSubmittedPrompt
                     ? UserText.aiChatFollowUpPlaceholder
                     : UserText.searchInputFieldPlaceholderDuckAI
+                self.updateKeyboardConfiguration()
+            }
+            .store(in: &cancellables)
+
+        handler.submitsAIChatOnKeyboardReturnPublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, self.currentMode == .aiChat else { return }
+                self.updateKeyboardConfiguration()
             }
             .store(in: &cancellables)
     }
@@ -542,8 +600,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
+            textView.returnKeyType = currentMode == .aiChat ? aiChatReturnKeyType : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -561,6 +619,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }
@@ -573,6 +635,17 @@ class SwitchBarTextEntryView: UIView {
         handler.updateCurrentText(text)
     }
 
+    func insertNewlineAtCursor() {
+        let selectedRange = textView.selectedTextRange
+            ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
+        if let selectedRange {
+            textView.replace(selectedRange, withText: "\n")
+        } else {
+            textView.text.append("\n")
+        }
+        textViewDidChange(textView)
+    }
+
     /// Reflects the current transform; reset the shift to zero before reading the natural x.
     var placeholderWindowX: CGFloat? {
         guard placeholderLabel.window != nil else { return nil }
@@ -580,7 +653,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
-    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    /// `.textTertiary` matches the spec ("Text/Placeholder, Labels/Tertiary, System/System Text Tertiary").
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textTertiary) }
 
     // Two transient overlays composite directly over the parent background (the original label is
     // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which
@@ -650,6 +724,10 @@ class SwitchBarTextEntryView: UIView {
         textView.autocorrectionType = .default
         textView.spellCheckingType = .default
     }
+
+    private var aiChatReturnKeyType: UIReturnKeyType {
+        handler.submitsAIChatOnKeyboardReturn ? .go : .default
+    }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
@@ -685,7 +763,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat && handler.isToggleEnabled {
+            if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
             }
             fireKeyboardGoPressedPixel()

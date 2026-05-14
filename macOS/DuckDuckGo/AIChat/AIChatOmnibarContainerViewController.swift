@@ -1443,12 +1443,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func updateAttachmentsCarouselLayout() {
-        // Row collapses when both image and tab attachments are empty; expanded row otherwise.
-        // Just the carousel's `expandedHeight` — the visible 8pt gap to the tools row is split
-        // between the carousel's lower shadow-margin band and the bottomAnchor offset.
-        let hasAnyAttachment = !attachmentsCarouselView.attachments.isEmpty
-            || !omnibarController.activeImageAttachments.isEmpty
-        attachmentsCarouselHeightConstraint?.constant = hasAnyAttachment
+        // Row collapses when there are no rendered cards in the carousel; expanded row otherwise.
+        // The carousel's own attachment list is the post-filter view of shared state (e.g.
+        // `applyPanelAttachmentsFromSharedState` drops image attachments when the selected
+        // model doesn't support image upload), so reading from it is the right "what will the
+        // user actually see" signal — checking `activeImageAttachments` here as well would
+        // reserve the expanded height for zero visible cards in that filtered-out scenario.
+        let hasAnyVisibleAttachment = !attachmentsCarouselView.attachments.isEmpty
+        attachmentsCarouselHeightConstraint?.constant = hasAnyVisibleAttachment
             ? Constants.attachmentsCarouselRowHeight
             : 0
         // Adding/removing a tab attachment changes whether suggestions should be visible —

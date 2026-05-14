@@ -19,6 +19,7 @@
 import Foundation
 import AttributedMetric
 import BrowserServicesKit
+import Common
 import PrivacyConfig
 import Subscription
 import AppKit
@@ -80,12 +81,23 @@ struct AttributedMetricATBInstallDateProvider: AttributedMetricInstallDateProvid
 
     private let installDateLoader: () -> Date?
 
-    init(installDateLoader: @escaping () -> Date? = { LocalStatisticsStore().installDate }) {
+    init(installDateLoader: @escaping () -> Date? = Self.defaultInstallDate) {
         self.installDateLoader = installDateLoader
     }
 
     var installDate: Date? {
         installDateLoader()
+    }
+
+    private static func defaultInstallDate() -> Date? {
+#if DEBUG
+        // LocalStatisticsStore() force-unwraps `Application.appDelegate.database.db`,
+        // which is nil in unit tests where `requiresEnvironment` is false.
+        if [.unitTests, .xcPreviews].contains(AppVersion.runType) {
+            return nil
+        }
+#endif
+        return LocalStatisticsStore().installDate
     }
 }
 

@@ -135,10 +135,8 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
     /// The number of whole ET calendar days elapsed since the app was first installed.
     ///
-    /// Uses Eastern Time calendar day boundaries (matching ATB and RollingEightDays)
-    /// rather than rolling 24-hour windows. Returns `0` if the install date has not
-    /// been recorded yet, or if the current date is still within the same ET calendar
-    /// day as installation.
+    /// Uses Eastern Time calendar day boundaries (matching ATB and RollingEightDays).
+    /// Returns `0` if the install date has not been recorded yet, or if the current date is still within the same ET calendar day as installation.
     var daysSinceInstalled: Int {
         guard let installDate = installDate else {
             return 0
@@ -250,6 +248,13 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
     public func process(trigger: Trigger) {
         Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
+
+        guard let installDate = installDateProvider.installDate else {
+            Logger.attributedMetric.error("Install date is nil")
+            assertionFailure("Install date is nil")
+            return
+        }
+
         guard isEnabled else {
             Logger.attributedMetric.log("Feature disabled")
             return

@@ -120,15 +120,8 @@ protocol TabDelegate: AnyObject {
 
     func tabContentProcessDidTerminate(tab: TabViewController)
 
-    /// The Duck.ai webview's main-frame navigation failed (e.g. network error,
-    /// DNS failure, server unreachable). Fired from `didFail` /
-    /// `didFailProvisionalNavigation` when the failing URL is a Duck.ai URL.
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
 
-    /// A Duck.ai tab is being dismissed. Fired from `TabViewController.dismiss()`
-    /// when the current URL is a Duck.ai URL, so the wide-event instrumentation
-    /// can complete any in-flight prompt-submission flow as CANCELLED with
-    /// `cancellation_reason = tab_closed`.
     func tabWillCloseDuringDuckAIChat(_ tab: TabViewController)
 
     /// User activated an in-page link in this tab.

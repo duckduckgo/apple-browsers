@@ -2268,15 +2268,11 @@ extension TabViewController: WKNavigationDelegate {
 
     private func notifyDelegateIfDuckAINavigationFailed(error: Error) {
         let nsError = error as NSError
-        // For provisional navigation failures, the navigation never committed,
-        // so `self.url` and `webView.url` still hold the previous URL. The URL
-        // that actually failed lives in `NSURLErrorFailingURLErrorKey` on
-        // NSURLError-domain errors. Fall back to the tab's URL for the rare
-        // path where a non-NSURLError error doesn't carry the failing URL.
         let failingURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
             ?? (nsError.userInfo[NSURLErrorFailingURLStringErrorKey] as? String).flatMap(URL.init(string:))
             ?? webView.url
             ?? url
+
         guard let failingURL, failingURL.isDuckAIURL else { return }
         delegate?.tab(self, didFailDuckAINavigationFor: failingURL, error: error)
     }

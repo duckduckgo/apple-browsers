@@ -21,12 +21,6 @@ import Foundation
 import AIChat
 import PixelKit
 
-/// Submission-scoped hooks for the Duck.ai prompt-submission wide event.
-///
-/// The instrumentation owns the wide-event state machine so callers only need
-/// to forward observable events (submit, chat status change). Only one
-/// submission may be in flight at a time; a new `submissionStarted()` while
-/// another is active discards the previous flow.
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
@@ -78,20 +72,13 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
     private var activeFlow: DuckAIPromptSubmissionWideEventData?
-    /// Gates completion so a `.ready` replayed by the publisher at submit time
-    /// can't auto-complete the freshly started flow. Flips true on the first
-    /// non-`.ready` status observed after `submissionStarted()`.
     private var hasObservedNonReady = false
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
-        // Complete any orphaned flows left in storage from a previous app
-        // lifecycle (e.g., the app was killed mid-stream). Runs once, at
-        // instrumentation construction time, so `app_terminated` only labels
-        // truly cross-session orphans. Mid-session lost flows are handled
-        // in-memory below.
+
         completeOrphanedFlowsFromPreviousAppSession()
     }
 
@@ -108,9 +95,6 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            fileAttachmentCount: Int,
                            invalidAttachmentCount: Int) {
         if let activeFlow {
-            // A previous submission in this app session never completed (a
-            // completion-path gap, not app termination). Discard it silently
-            // rather than emit a misleading `app_terminated` UNKNOWN.
             wideEvent.discardFlow(activeFlow)
             self.activeFlow = nil
         }

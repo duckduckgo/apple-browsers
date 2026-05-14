@@ -1011,11 +1011,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript != nil
     }
 
-    /// Starts a wide-event flow for a prompt submitted outside the UTI (e.g. the contextual
-    /// sheet's native input, which dispatches its initial prompt directly to the web view's
-    /// content handler before the UTI is bound). The UTI's `chatStatusChanged` /
-    /// `stopGeneratingTapped` subscriptions drive the flow to completion once the user
-    /// script binds, since the underlying chat reaches the same web view.
     func recordExternalPromptSubmitted(entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                                        inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
                                        hasPageContext: Bool) {
@@ -1045,8 +1040,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .omnibar:
             entryPoint = isOmnibarSession ? .omnibar : .aiTab
         }
-        // Voice submissions skip the composer, so they never carry tools or
-        // attachments - hardcode the zero-shaped fields.
+
         duckAIWideEventInstrumentation?.submissionStarted(
             modelId: configuration.modelId,
             userTier: subscriptionState.userTier,
@@ -1061,6 +1055,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             fileAttachmentCount: 0,
             invalidAttachmentCount: 0
         )
+
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()

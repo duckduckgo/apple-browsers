@@ -37,7 +37,6 @@ struct UnifiedToggleInputModelMenu: Equatable {
         let name: String
         let provider: AIChatModel.ModelProvider
         let isSelected: Bool
-        let isDisabled: Bool
         let accessTier: AccessTier
     }
 
@@ -102,7 +101,6 @@ extension UnifiedToggleInputModelMenu.Item {
         self.name = model.name
         self.provider = model.provider
         self.isSelected = model.id == selectedId
-        self.isDisabled = false
         self.accessTier = accessTier
     }
 }

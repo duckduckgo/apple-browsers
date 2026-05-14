@@ -50,12 +50,7 @@ struct UnifiedToggleInputModelMenuFactory {
                 }
             }
 
-            var options: UIMenu.Options = .displayInline
-            if !section.items.contains(where: { $0.isDisabled }) {
-                options.insert(.singleSelection)
-            }
-
-            return UIMenu(title: section.title, options: options, children: actions)
+            return UIMenu(title: section.title, options: [.displayInline, .singleSelection], children: actions)
         }
 
         return UIMenu(children: sections)

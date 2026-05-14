@@ -91,16 +91,6 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertTrue(menu.sections[1].items[0].isSelected)
     }
 
-    func testWhenTierModelsAreNotAccessibleThenTheyAreNotMarkedDisabledByGrouping() {
-        let menu = buildMenu(models: [
-            makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true),
-            makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false),
-            makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
-        ])
-
-        XCTAssertTrue(menu.sections.flatMap(\.items).allSatisfy { !$0.isDisabled })
-    }
-
     func testWhenFactoryBuildsMenuThenTierActionsAreNotDisabled() {
         let menu = UnifiedToggleInputModelMenuFactory().makeMenu(
             models: [

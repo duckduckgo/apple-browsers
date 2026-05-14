@@ -1216,42 +1216,34 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            presentModelPickerPurchaseFlow()
+            presentPurchaseFlow(source: .modelPicker)
             return
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
-            presentModelPickerUpgradeFlow()
+            presentUpgradeFlow(source: .modelPicker)
             return
         }
 
         Logger.unifiedInputState.debug("No native subscription flow for gated model")
     }
 
-    private func presentModelPickerPurchaseFlow() {
+    private func presentPurchaseFlow(source: SubscriptionFlowSource) {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
-                redirectURLComponents: makeModelPickerRedirectURLComponents()
+                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
             )
         )
     }
 
-    private func presentModelPickerUpgradeFlow() {
+    private func presentUpgradeFlow(source: SubscriptionFlowSource) {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
-                redirectURLComponents: makeModelPickerRedirectURLComponents()
+                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
             )
         )
-    }
-
-    private func makeModelPickerRedirectURLComponents() -> URLComponents {
-        makeSubscriptionRedirectURLComponents(source: .modelPicker)
-    }
-
-    private func makeReasoningPickerRedirectURLComponents() -> URLComponents {
-        makeSubscriptionRedirectURLComponents(source: .reasoningPicker)
     }
 
     private func makeSubscriptionRedirectURLComponents(source: SubscriptionFlowSource) -> URLComponents {
@@ -1334,34 +1326,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            presentReasoningPickerPurchaseFlow()
+            presentPurchaseFlow(source: .reasoningPicker)
             return
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
-            presentReasoningPickerUpgradeFlow()
+            presentUpgradeFlow(source: .reasoningPicker)
             return
         }
 
         Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
-    }
-
-    private func presentReasoningPickerPurchaseFlow() {
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
-                redirectURLComponents: makeReasoningPickerRedirectURLComponents()
-            )
-        )
-    }
-
-    private func presentReasoningPickerUpgradeFlow() {
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
-                redirectURLComponents: makeReasoningPickerRedirectURLComponents()
-            )
-        )
     }
 
     func selectTool(_ tool: AIChatRAGTool) {

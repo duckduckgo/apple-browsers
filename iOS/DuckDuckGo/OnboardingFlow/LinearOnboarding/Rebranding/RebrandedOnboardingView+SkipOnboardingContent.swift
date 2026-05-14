@@ -25,7 +25,6 @@ extension OnboardingRebranding.OnboardingView {
 
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-44303
     struct SkipOnboardingContent: View {
-        private static let fireButtonCopy = "Fire Button"
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

@@ -285,6 +285,12 @@
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
     },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
+    },
     "locale": {
         "key": "locale",
         "type": "string",

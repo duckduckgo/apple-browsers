@@ -24,11 +24,12 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
     var browserComparisonContent: OnboardingBrowserComparisonContent = .mock
+    var aiComparisonContent: OnboardingAIComparisonContent = .mock
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
-    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent = .mock
+    var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
 }
 
 // MARK: - Helpers
@@ -65,10 +66,21 @@ extension OnboardingBrowserComparisonContent {
     static let mock = OnboardingBrowserComparisonContent(
         title: "Browser Comparison Title",
         features: [
-            .init(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available)
+            .init(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary"
+    )
+}
+
+extension OnboardingAIComparisonContent {
+    static let mock = OnboardingAIComparisonContent(
+        title: "AI Comparison Title",
+        subHeader: "AI Comparison SubHeader",
+        features: [
+            .init(type: RebrandedComparisonTableModel.Feature.AIFeatureType.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available)
+        ],
+        primaryCTA: "AI Comparison Primary"
     )
 }
 
@@ -112,10 +124,11 @@ extension OnboardingSearchExperienceContent {
     )
 }
 
-extension OnboardingDuckAIQueryExperimentContent {
-    static let mock = OnboardingDuckAIQueryExperimentContent(
-        title: "Duck.ai Query Experiment Title",
+extension OnboardingDuckAIQueryContent {
+    static let mock = OnboardingDuckAIQueryContent(
+        title: "Duck.ai Query Title",
         searchPlaceholder: "Search Placeholder",
-        aiPlaceholder: "AI Placeholder"
+        aiPlaceholder: "AI Placeholder",
+        isToggleVisible: true
     )
 }

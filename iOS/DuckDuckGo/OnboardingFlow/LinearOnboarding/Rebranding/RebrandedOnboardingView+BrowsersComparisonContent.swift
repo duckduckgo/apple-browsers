@@ -80,7 +80,11 @@ extension OnboardingRebranding.OnboardingView {
                 .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedBrowsersComparisonTable(
+                    RebrandedOnboardingComparisonTableView(
+                        header: .icons(
+                            leftIcon: OnboardingRebrandingImages.Comparison.safariIcon,
+                            rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
+                        ),
                         features: content.features,
                         availableFeatureAnimation: .animated(startAnimation: showContent)
                     )

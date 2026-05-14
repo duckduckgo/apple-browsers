@@ -57,4 +57,6 @@ struct UTIViewConfig: Equatable {
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
     var isTopBarPosition: Bool
+    /// True when the UTI is hosted by a Duck.ai tab.
+    var isAITab: Bool
 }

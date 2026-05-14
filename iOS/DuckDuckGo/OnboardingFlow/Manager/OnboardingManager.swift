@@ -63,6 +63,7 @@ final class OnboardingManager {
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
@@ -97,7 +98,8 @@ final class OnboardingManager {
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
+        onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
@@ -106,6 +108,7 @@ final class OnboardingManager {
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
+        self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
     }
 }
 
@@ -132,6 +135,7 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 enum OnboardingIntroStep: Equatable {
     case introDialog(isReturningUser: Bool)
     case browserComparison
+    case aiComparison
     case appIconSelection
     case addToDockPromo
     case addressBarPositionSelection
@@ -145,6 +149,7 @@ extension OnboardingIntroStep {
         switch self {
         case .introDialog: return nil
         case .browserComparison: return .browserComparison
+        case .aiComparison: return .aiComparison
         case .addToDockPromo: return .addToDockPromo
         case .appIconSelection: return .appIconSelection
         case .addressBarPositionSelection: return .addressBarPositionSelection
@@ -157,6 +162,7 @@ extension OnboardingIntroStep {
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
     case browserComparison
+    case aiComparison
     case addToDockPromo
     case appIconSelection
     case addressBarPositionSelection
@@ -225,9 +231,17 @@ extension OnboardingManager: OnboardingFlowManaging {
         case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
             Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
             resolvedFlow = .default
+        case .duckAI where !isIphone:
+            Logger.onboarding.debug("Duck.ai onboarding not available for iPad. Reverting to default onboarding")
+            resolvedFlow = .default
         default:
             resolvedFlow = evaluatedOnboarding.flow
         }
+
+        // Clear any stale resume checkpoint persisted before the flow was configured
+        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
+        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
         persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)
@@ -250,15 +264,18 @@ private extension OnboardingManager {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
         switch tutorialSettings.onboardingFlowType {
         case .none, .default:
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + defaultFlowSteps(isIphone: isIphone)
         case .duckAI:
-            // Temporarily return steps for default flow
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + duckAITailoredFlowSteps()
         }
     }
 
-    func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+    func defaultFlowSteps(isIphone: Bool) -> [OnboardingIntroStep] {
         isIphone ? iPhoneFlow : iPadFlow
+    }
+
+    func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
+        [.aiComparison, .duckAIQuerySelection, .addToDockPromo, .browserComparison, .addressBarPositionSelection]
     }
 
 }

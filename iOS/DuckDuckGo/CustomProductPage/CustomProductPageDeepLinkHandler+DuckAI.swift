@@ -19,6 +19,7 @@
 
 import Foundation
 import AIChat
+import Core
 
 protocol AIChatDeepLinkHandling {
     func handleDeepLink(_ url: URL, on presenter: AIChatDeepLinkPresenting, voiceMode: Bool)
@@ -35,12 +36,18 @@ extension AIChatDeepLinkHandler: AIChatDeepLinkHandling {}
 /// Wrapper for AI Chat deep link handler
 struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     private let aiChatDeepLinkHandler: AIChatDeepLinkHandling
+    private let pixelFiring: DailyPixelFiring.Type
 
-    init(aiChatDeepLinkHandler: AIChatDeepLinkHandling = AIChatDeepLinkHandler()) {
+    init(
+        aiChatDeepLinkHandler: AIChatDeepLinkHandling = AIChatDeepLinkHandler(),
+        pixelFiring: DailyPixelFiring.Type = DailyPixel.self
+    ) {
         self.aiChatDeepLinkHandler = aiChatDeepLinkHandler
+        self.pixelFiring = pixelFiring
     }
 
     func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
+        pixelFiring.fireDailyAndCount(.customProductPageDuckAIOpenedAIChat, error: nil, withAdditionalParameters: [:])
         aiChatDeepLinkHandler.handleDeepLink(url, on: presenter)
     }
 }

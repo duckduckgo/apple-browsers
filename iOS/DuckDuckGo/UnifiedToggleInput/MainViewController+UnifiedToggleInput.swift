@@ -42,6 +42,7 @@ extension MainViewController {
         }
 
         static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
+        static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -827,7 +828,7 @@ private extension MainViewController {
                 // contentContainer taller and shifting the NTP Logo center up by half the delta.
                 let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
                     - viewCoordinator.standardNavigationBarContainerHeight
-                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2
+                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2 + Constants.topDaxLogoTransitionYOffset
             }
 
             // How far the UTI Logo needs to move to land at the NTP Logo's final position.

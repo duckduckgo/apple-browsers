@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Combine
 import os.log
 import Subscription
@@ -155,6 +156,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private enum Constants {
         static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
+        static let modelPickerFeaturePage = "duckai"
     }
 
     private var attachmentPolicy: UTIAttachmentPolicy {
@@ -282,7 +284,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
     private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
-    var onModelAccessUpgradeRequired: ((AIChatModel) -> Void)?
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -1105,15 +1106,67 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func handleModelSelection(_ modelId: String) {
-        print("🚧 [\(String(describing: Self.self))] handleModelSelection")
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
 
         if model.entityHasAccess {
-            print("🚧 [\(String(describing: Self.self))] has access")
             updateSelectedModel(modelId)
         } else {
-            Logger.unifiedInputState.debug("🚧 decide on purchase or upgrade")
-            onModelAccessUpgradeRequired?(model)
+            routeGatedModelSelection(model)
+            refreshModelPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    private func routeGatedModelSelection(_ model: AIChatModel) {
+        let requiredPublicTier = model.lowestPublicAccessTier
+        let userTier = subscriptionState.userTier
+
+        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            presentModelPickerPurchaseFlow()
+            return
+        }
+
+        if userTier == .plus, requiredPublicTier == .pro {
+            presentModelPickerUpgradeFlow()
+            return
+        }
+
+        Logger.unifiedInputState.debug("No native subscription flow for gated model")
+    }
+
+    private func presentModelPickerPurchaseFlow() {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
+                redirectURLComponents: makeModelPickerRedirectURLComponents()
+            )
+        )
+    }
+
+    private func presentModelPickerUpgradeFlow() {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
+                redirectURLComponents: makeModelPickerRedirectURLComponents()
+            )
+        )
+    }
+
+    private func makeModelPickerRedirectURLComponents() -> URLComponents {
+        var components = URLComponents()
+        components.queryItems = [
+            URLQueryItem(name: "featurePage", value: Constants.modelPickerFeaturePage),
+            URLQueryItem(name: AttributionParameter.origin, value: modelPickerSubscriptionOrigin.rawValue)
+        ]
+        return components
+    }
+
+    private var modelPickerSubscriptionOrigin: SubscriptionFunnelOrigin {
+        isAITabState ? .duckAIModelPicker : .addressBarModelPicker
+    }
+
+    private func refreshModelPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateModelChipLabel()
         }
     }
 

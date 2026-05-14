@@ -4893,6 +4893,18 @@
         }
       }
     },
+    "aichat.tab-picker.current-tab-suffix" : {
+      "comment" : "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Current Tab)"
+          }
+        }
+      }
+    },
     "aichat.toggle.ask.label" : {
       "comment" : "Label for the ask AI segment in the address bar toggle control",
       "extractionState" : "extracted_with_value",

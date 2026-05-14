@@ -1364,7 +1364,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateAttachmentsLayout() {
         let hasAttachments = !omnibarController.activeImageAttachments.isEmpty
-        let hasExcess = omnibarController.hasExcessActiveTabImageAttachments
         let isFull = omnibarController.isActiveTabImageAttachmentsFull
 
         omnibarController.hasImageAttachments = hasAttachments
@@ -1373,11 +1372,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
         updateAttachmentsCarouselLayout()
 
-        let fileExcess = hasExcessFileAttachments
+        // Gate the error label on model support — same `hasVisibleImageExcess` /
+        // `hasVisibleFileExcess` predicates that `attachmentRowReservation` already uses for
+        // the height reservation. Using the raw `hasExcess*` checks here would leave the label
+        // shown when the current model doesn't accept the kind of attachment in excess (cards
+        // get filtered out of the carousel but the excess persists in shared state from a
+        // prior model), and because no row height is reserved in that case the label would
+        // overlap the tools row below. Keeping the two decisions in sync prevents that.
+        let visibleImageExcess = hasVisibleImageExcess
+        let visibleFileExcess = hasVisibleFileExcess
         // File excess takes priority — the file copy is more recently introduced and the more
         // likely thing a user has just done; image copy fires when only images are over.
-        attachmentsErrorLabel.isHidden = !(hasExcess || fileExcess)
-        attachmentsErrorLabel.stringValue = fileExcess
+        attachmentsErrorLabel.isHidden = !(visibleImageExcess || visibleFileExcess)
+        attachmentsErrorLabel.stringValue = visibleFileExcess
             ? UserText.aiChatFileAttachmentsLimitError
             : UserText.aiChatAttachmentsLimitError
 
@@ -1615,7 +1622,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Image side disappearing — recompute the shared row height; if tabs/files are
             // present the carousel stays at row height, otherwise it collapses.
             updateAttachmentsCarouselLayout()
-            attachmentsErrorLabel.isHidden = true
+            // No explicit `attachmentsErrorLabel.isHidden = true` here — the call to
+            // `refreshCarouselForCurrentModelSupport()` below routes through
+            // `applyPanelAttachmentsFromSharedState` → `updateAttachmentsLayout`, which now
+            // evaluates the label visibility against `hasVisibleImageExcess` /
+            // `hasVisibleFileExcess` and will correctly hide the label when the new model
+            // doesn't support the kind of attachment in excess. Setting `isHidden = true`
+            // here would just be undone by that re-invocation a few lines down.
         } else {
             updateAttachmentsLayout()
         }

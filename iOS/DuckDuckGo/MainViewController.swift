@@ -3313,7 +3313,10 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
-        if currentTab.tabModel.link != nil {
+        let hasContent = currentTab.tabModel.link != nil
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+
+        if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
             if fromDeepLink {

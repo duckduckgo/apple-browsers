@@ -64,6 +64,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     /// flow was cancelled or orphaned before reaching ready.
     var completeInterval: WideEvent.MeasuredInterval
 
+    /// Time to the terminal outcome, regardless of status. Provides the total
+    /// observed duration for failures and cancellations where `.ready` is never reached.
+    var terminalInterval: WideEvent.MeasuredInterval
+
     init(modelId: String?,
          userTier: String,
          reasoningEffort: String?,
@@ -95,6 +99,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.terminalInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -175,6 +180,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.terminalMs, terminalInterval.intValue(.noBucketing)),
         ])
 
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
@@ -209,5 +215,6 @@ extension WideEventParameter {
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"
+        static let terminalMs = "feature.data.ext.latency.terminal_ms"
     }
 }

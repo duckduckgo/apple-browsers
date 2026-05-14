@@ -18,7 +18,7 @@
                     },
                     "last_step": {
                         "type": "string",
-                        "description": "Where in the journey the flow was when it ended. Emitted only on FAILURE and UNKNOWN outcomes (absent on SUCCESS / CANCELLED). For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",
+                        "description": "Where in the journey the flow was when it ended. Emitted on FAILURE, CANCELLED, and UNKNOWN outcomes (absent on SUCCESS). For CANCELLED outcomes, this is the latest observed page status before the user/system cancelled the flow. For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",
                         "enum": [
                             "submitted",
                             "loading",
@@ -39,7 +39,10 @@
                             "code": { "type": "integer", "description": "NSError code." },
                             "underlying_domain": { "type": "string", "description": "Domain of the wrapped NSError, when present." },
                             "underlying_code": { "type": "integer", "description": "Code of the wrapped NSError, when present." },
-                            "error_description": { "type": "string", "description": "Optional human-readable description attached at capture time." }
+                            "error_description": {
+                                "type": "string",
+                                "description": "Optional human-readable description attached at capture time."
+                            }
                         }
                     },
                     "model_id": {
@@ -83,7 +86,15 @@
                         "description": "Identifiers of the tools the user had selected at submit time, as `AIChatRAGTool` raw values. Empty array when no tool was selected. The iOS UI currently only exposes `WebSearch` and `GenerateImage`; other values are reserved for cross-platform parity.",
                         "items": {
                             "type": "string",
-                            "enum": ["WebSearch", "NewsSearch", "VideosSearch", "LocalSearch", "RelatedSearchTerms", "WeatherForecast", "GenerateImage"]
+                            "enum": [
+                                "WebSearch",
+                                "NewsSearch",
+                                "VideosSearch",
+                                "LocalSearch",
+                                "RelatedSearchTerms",
+                                "WeatherForecast",
+                                "GenerateImage"
+                            ]
                         }
                     },
                     "attachments": {
@@ -118,7 +129,11 @@
                             },
                             "complete_ms": {
                                 "type": "integer",
-                                "description": "Milliseconds from prompt submission to the `ready` chat status that completed the flow (time to last token). Absent on CANCELLED or UNKNOWN outcomes."
+                                "description": "Milliseconds from prompt submission to the `ready` chat status that completed the flow (time to last token). Present only on SUCCESS outcomes."
+                            },
+                            "terminal_ms": {
+                                "type": "integer",
+                                "description": "Milliseconds from prompt submission to the terminal outcome, regardless of status. Present on SUCCESS, FAILURE, and CANCELLED outcomes; absent on UNKNOWN outcomes where the terminal time is not observed."
                             }
                         }
                     }

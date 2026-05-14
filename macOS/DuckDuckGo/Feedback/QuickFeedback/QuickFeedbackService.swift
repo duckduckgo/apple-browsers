@@ -223,8 +223,12 @@ extension QuickFeedbackService: TabDelegate {
             WindowsManager.openPopUpWindow(with: childTab, origin: origin, contentSize: contentSize)
         case .window(active: let active, _):
             WindowsManager.openNewWindow(with: childTab, showWindow: active)
-        case .tab:
-            WindowsManager.openNewWindow(with: childTab, showWindow: true)
+        case .tab(selected: let selected, _, _):
+            if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
+                parentWindowController.mainViewController.tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
+            } else {
+                WindowsManager.openNewWindow(with: childTab, showWindow: true)
+            }
         }
     }
 

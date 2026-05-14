@@ -283,7 +283,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext, reasoningEffort: reasoningEffort)
+        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
+        // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
+        // matches the duck.ai sidebar's existing current-page semantics.
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
         push(.submitPrompt(promptPayload))
     }
 
@@ -292,6 +295,8 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
+        // in the `.single` variant of the union the schema now accepts.
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
@@ -299,7 +304,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             images: images,
             files: files,
             modelId: modelId,
-            pageContext: attachedPageContextProvider?(),
+            pageContext: attachedPageContextProvider?().map(AIChatPageContextPayload.single),
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))

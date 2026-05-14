@@ -279,8 +279,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
     case aiChatOmnibarVoiceChatAccess
 
-    /// Enables attaching content from multiple open tabs to Duck.ai chat
-    case aiChatAttachMoreTabs
+    /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
+    /// https://app.asana.com/1/137249556945/task/1214804748957572?focus=true
+    case aiChatSidebarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
+    /// https://app.asana.com/1/137249556945/task/1214804748957575?focus=true
+    case aiChatOmnibarAttachMoreTabs
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
@@ -570,8 +575,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarReasoningEffort)), category: .duckAI)
         case .aiChatOmnibarVoiceChatAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarVoiceChatAccess)), category: .duckAI)
-        case .aiChatAttachMoreTabs:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
+        case .aiChatSidebarAttachMoreTabs:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarAttachMoreTabs)), category: .duckAI)
+        case .aiChatOmnibarAttachMoreTabs:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarAttachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable)), category: .duckAI)
         case .aiChatNtpRecentChats:

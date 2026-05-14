@@ -1,0 +1,25 @@
+# ics_calendar_links_multi_event_fallback.yaml
+# Multi-VEVENT .ics file should show the "multiple events" toast and fall back to QuickLook.
+# URL points at the local fixture server during development; swap to
+# https://privacy-test-pages.site/features/download/calendar-multi.ics once the
+# eduardo/ics-download-fixtures branch lands on privacy-test-pages.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "http://localhost:8000/multi-vevent.ics"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: "Multiple events aren't supported. Try opening the downloaded file instead."
+    timeout: 10000

@@ -20,8 +20,7 @@
 import Foundation
 import ICSParser
 
-/// Pure classifier that reads a `.ics` file URL and decides which downstream path applies.
-/// Free of side effects so callers (UIKit helper, SwiftUI view model) can decide what to do
+/// Pure classifier for a `.ics` file URL. No side effects — callers decide what to do
 /// with the outcome (present editor, show toast, fire pixel, …).
 enum ICSFileReader {
 

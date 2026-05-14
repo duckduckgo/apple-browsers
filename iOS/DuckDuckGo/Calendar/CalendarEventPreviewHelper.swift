@@ -40,8 +40,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
     /// Fires after the editor dismisses, or immediately when we fall back to QuickLook.
     var onDismiss: (() -> Void)?
 
-    /// Fires before falling back to QuickLook when we can't auto-add the event. Not fired for
-    /// pre-iOS-17 devices, since the feature simply isn't supported there.
+    /// Fires after QuickLook is presented for the fallback cases; never on iOS <17.
     var onFailure: ((Failure) -> Void)?
 
     private let filePath: URL
@@ -57,7 +56,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         // No EKEventEditViewController flow on iOS <17, so skip classification — failure
         // toasts would wrongly imply the file is the problem.
         guard #available(iOS 17.0, *) else {
-            fallbackToQuickLook()
+            fallbackToQuickLook(reporting: nil)
             return
         }
         let result = ICSFileReader.read(at: filePath)
@@ -69,16 +68,13 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
             presentEventEditor(for: event)
         case .multipleEvents:
             Pixel.fire(pixel: .icsCalendarFallbackMultipleEvents)
-            onFailure?(.multipleEvents)
-            fallbackToQuickLook()
+            fallbackToQuickLook(reporting: .multipleEvents)
         case .unrecognizedTimeZone:
             Pixel.fire(pixel: .icsCalendarFallbackUnrecognizedTimeZone)
-            onFailure?(.unrecognizedTimeZone)
-            fallbackToQuickLook()
+            fallbackToQuickLook(reporting: .unrecognizedTimeZone)
         case .parseFailure:
             Pixel.fire(pixel: .icsCalendarFallbackParseFailure)
-            onFailure?(.parseFailure)
-            fallbackToQuickLook()
+            fallbackToQuickLook(reporting: .parseFailure)
         }
     }
 
@@ -114,10 +110,18 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         return event
     }
 
-    private func fallbackToQuickLook() {
+    /// Presents QuickLook and, when `reporting` is non-nil, fires the toast in QL's
+    /// completion so it stacks above QL.
+    private func fallbackToQuickLook(reporting failure: Failure?) {
+        let reportFailure = onFailure
         defer { onDismiss?() }
-        guard let viewController else { return }
-        QuickLookPreviewHelper(filePath, viewController: viewController).preview()
+        guard let viewController else {
+            if let failure { reportFailure?(failure) }
+            return
+        }
+        QuickLookPreviewHelper(filePath, viewController: viewController).preview {
+            if let failure { reportFailure?(failure) }
+        }
     }
 }
 

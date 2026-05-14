@@ -41,14 +41,19 @@ class QuickLookPreviewHelper: NSObject, FilePreview {
     }
 
     func preview() {
+        preview(completion: nil)
+    }
+
+    /// Fires `completion` after QL animates in. Used to stack a toast on top of QL.
+    func preview(completion: (() -> Void)?) {
         guard let viewController else { return }
         selfRetain = self
         // Front-of-stack modals (address-bar editing, etc.) make UIKit drop our present silently.
-        let present = { [qlPreview] in viewController.present(qlPreview, animated: true) }
+        let doPresent = { [qlPreview] in viewController.present(qlPreview, animated: true, completion: completion) }
         if let presented = viewController.presentedViewController {
-            presented.dismiss(animated: false, completion: present)
+            presented.dismiss(animated: false, completion: doPresent)
         } else {
-            present()
+            doPresent()
         }
     }
 

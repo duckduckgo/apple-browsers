@@ -50,8 +50,20 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     func chatStatusChanged(_ status: AIChatStatusValue)
 
     /// User tapped the stop-generating button. Completes the active flow as
-    /// CANCELLED. After this, any subsequent `.ready` status is ignored.
+    /// CANCELLED with `cancellation_reason = stop_button`. After this, any
+    /// subsequent `.ready` status is ignored.
     func stopGeneratingTapped()
+
+    /// User closed a Duck.ai tab while a response was still in flight.
+    /// Completes the active flow as CANCELLED with
+    /// `cancellation_reason = tab_closed`. No-op if no flow is active.
+    func tabClosedDuringGeneration()
+
+    /// The contextual chat sheet was explicitly dismissed (user tapped
+    /// delete-chat, or the fire-button workflow cleared it) while a response
+    /// was still in flight. Completes the active flow as CANCELLED with
+    /// `cancellation_reason = sheet_dismissed`. No-op if no flow is active.
+    func sheetDismissedDuringGeneration()
 
     /// The Duck.ai webview's navigation failed (e.g. network error, DNS
     /// failure). If a submission is in flight, completes the active flow as
@@ -178,6 +190,23 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         guard let activeFlow else { return }
         // CANCELLED doesn't carry last_step.
         activeFlow.lastStep = nil
+        activeFlow.cancellationReason = .stopButton
+        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
+        self.activeFlow = nil
+    }
+
+    func tabClosedDuringGeneration() {
+        guard let activeFlow else { return }
+        activeFlow.lastStep = nil
+        activeFlow.cancellationReason = .tabClosed
+        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
+        self.activeFlow = nil
+    }
+
+    func sheetDismissedDuringGeneration() {
+        guard let activeFlow else { return }
+        activeFlow.lastStep = nil
+        activeFlow.cancellationReason = .sheetDismissed
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
     }

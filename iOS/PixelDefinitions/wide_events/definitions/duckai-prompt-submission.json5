@@ -11,6 +11,11 @@
             "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {
+                    "cancellation_reason": {
+                        "type": "string",
+                        "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight.",
+                        "enum": ["stop_button", "tab_closed", "sheet_dismissed"]
+                    },
                     "last_step": {
                         "type": "string",
                         "description": "Where in the journey the flow was when it ended. Emitted only on FAILURE and UNKNOWN outcomes (absent on SUCCESS / CANCELLED). For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",

@@ -28,6 +28,7 @@ import os.log
 final class AIChatContextualUTIHost {
 
     private let coordinator: UnifiedToggleInputCoordinator
+    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let pageContextHandler: AIChatPageContextHandling
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let isAutoAttachEnabled: () -> Bool
@@ -51,13 +52,15 @@ final class AIChatContextualUTIHost {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent
+        )
+        self.duckAIWideEventInstrumentation = wideEventInstrumentation
         self.coordinator = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
             isFireTab: isFireTab,
-            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(
-                wideEvent: AppDependencyProvider.shared.wideEvent
-            )
+            duckAIWideEventInstrumentation: wideEventInstrumentation
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -180,6 +183,14 @@ final class AIChatContextualUTIHost {
         // These states can differ during preload/restore: the user script may be bound before
         // `sessionState` records an active chat, while restored chats may be active before bind.
         isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
+    }
+
+    /// Called by the contextual sheet coordinator when the chat session is
+    /// being explicitly ended (delete-chat tap, fire-button clear). Forwards
+    /// to the wide-event instrumentation so an in-flight prompt-submission
+    /// flow completes as CANCELLED with `cancellation_reason = sheet_dismissed`.
+    func sheetDismissed() {
+        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
     }
 
     func install(in contextualChatViewController: AIChatContextualWebViewController) {

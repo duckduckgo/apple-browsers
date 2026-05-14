@@ -56,6 +56,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     /// FAILURE and UNKNOWN outcomes - cleared by the instrumentation before
     /// SUCCESS / CANCELLED so the field is absent on those payloads.
     var lastStep: LastStep?
+    /// Why the flow was cancelled. Only surfaced on CANCELLED outcomes;
+    /// instrumentation sets it on the cancellation path and leaves nil
+    /// otherwise.
+    var cancellationReason: CancellationReason?
     /// Whether an `AIChatUserScript` was bound to the input coordinator at
     /// submit time. Unbound means the prompt was forwarded via the delegate
     /// fallback rather than directly into a live chat session.
@@ -152,6 +156,17 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         case contextualChat = "contextual_chat"
     }
 
+    enum CancellationReason: String, Codable {
+        /// User tapped the stop-generating button on the composer.
+        case stopButton = "stop_button"
+        /// User closed the Duck.ai tab while the response was still in flight.
+        case tabClosed = "tab_closed"
+        /// The contextual chat sheet's session was explicitly ended (user
+        /// tapped delete-chat, or the fire-button workflow cleared it) while
+        /// the response was still in flight.
+        case sheetDismissed = "sheet_dismissed"
+    }
+
     enum InputMode: String, Codable {
         /// User typed (or pasted) the prompt into the composer.
         case typed
@@ -181,6 +196,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.inputMode, inputMode.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
@@ -206,6 +222,7 @@ extension WideEventParameter {
         static let inputMode = "feature.data.ext.input_mode"
         static let fireMode = "feature.data.ext.fire_mode"
         static let lastStep = "feature.data.ext.last_step"
+        static let cancellationReason = "feature.data.ext.cancellation_reason"
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"
         static let selectedTools = "feature.data.ext.selected_tools"

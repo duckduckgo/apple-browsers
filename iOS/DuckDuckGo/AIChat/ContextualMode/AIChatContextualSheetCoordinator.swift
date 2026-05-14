@@ -173,6 +173,7 @@ final class AIChatContextualSheetCoordinator {
     }
     
     func clearActiveChat() {
+        sheetViewController?.notifySheetDismissed()
         sheetViewController = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()

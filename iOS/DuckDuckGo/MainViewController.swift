@@ -4633,6 +4633,10 @@ extension MainViewController: TabDelegate {
         duckAIWideEventInstrumentation.pageLoadFailed(error: error)
     }
 
+    func tabWillCloseDuringDuckAIChat(_ tab: TabViewController) {
+        duckAIWideEventInstrumentation.tabClosedDuringGeneration()
+    }
+
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
     }

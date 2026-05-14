@@ -1006,7 +1006,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             if isEnabled {
                 self.delegate?.tabDidRequestYouTubeAdBlockPicker(tab: self)
             } else {
-                self.delegate?.tabDidRequestEnableYouTubeAdBlocking(tab: self)
+                self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })
     }

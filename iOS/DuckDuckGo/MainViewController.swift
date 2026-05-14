@@ -4479,18 +4479,18 @@ extension MainViewController: TabDelegate {
         navigateToFireMode(source: .menuPromotion)
     }
 
-    func tabDidRequestEnableYouTubeAdBlocking(tab: TabViewController) {
-        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
-        DailyPixel.fireDailyAndCount(
-            pixel: .webExtensionAdBlockingEnabled,
-            pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-        )
-        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {
+        setYouTubeAdBlockingEnabled(enabled)
     }
 
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
-        let controller = UIHostingController(rootView: YouTubeAdBlockPickerView())
+        let view = YouTubeAdBlockPickerView { [weak self] mode in
+            guard let self else { return }
+            if mode == .alwaysOff {
+                self.setYouTubeAdBlockingEnabled(false)
+            }
+        }
+        let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         controller.modalPresentationStyle = .pageSheet
         if let sheet = controller.sheetPresentationController {
@@ -4501,6 +4501,16 @@ extension MainViewController: TabDelegate {
             }
         }
         present(controller, animated: true)
+    }
+
+    private func setYouTubeAdBlockingEnabled(_ enabled: Bool) {
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        DailyPixel.fireDailyAndCount(
+            pixel: enabled ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+            pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+        )
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
     }
 
     func tabDidEngageWithPage(_ tab: TabViewController) {

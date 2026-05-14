@@ -41,6 +41,12 @@ struct YouTubeAdBlockPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selection: YouTubeAdBlockMode = .alwaysOn
 
+    let onSelection: (YouTubeAdBlockMode) -> Void
+
+    init(onSelection: @escaping (YouTubeAdBlockMode) -> Void = { _ in }) {
+        self.onSelection = onSelection
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -78,6 +84,7 @@ struct YouTubeAdBlockPickerView: View {
     private func row(for mode: YouTubeAdBlockMode) -> some View {
         Button {
             selection = mode
+            onSelection(mode)
             dismiss()
         } label: {
             HStack(spacing: 16) {

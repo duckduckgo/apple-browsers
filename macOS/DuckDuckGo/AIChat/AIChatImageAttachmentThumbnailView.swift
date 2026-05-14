@@ -77,8 +77,8 @@ final class AIChatImageAttachmentThumbnailView: NSView {
         return layer
     }()
 
-    private let removeButton: NSButton = {
-        let button = NSButton()
+    private let removeButton: PointingHandButton = {
+        let button = PointingHandButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.bezelStyle = .shadowlessSquare
         button.isBordered = false

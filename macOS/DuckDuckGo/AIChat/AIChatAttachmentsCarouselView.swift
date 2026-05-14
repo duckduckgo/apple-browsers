@@ -183,6 +183,43 @@ final class AIChatAttachmentsCarouselView: NSView {
         onAttachmentsChanged?()
     }
 
+    // MARK: - Cursor management
+    //
+    // The carousel sits in the same panel area as the omnibar's `NSTextView`. Without explicit
+    // cursor handling here, hovering over the empty space *between* cards (or on the carousel
+    // before any cards render) can show the text view's I-beam cursor flickering through. The
+    // individual cards each register their own `.arrow` rect, but the carousel-level fallback
+    // covers the gaps and the rounded-corner regions outside any card's bounds.
+
+    private var trackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
+    }
+
     private func makeView(for entry: AIChatPanelAttachment) -> NSView {
         switch entry {
         case .image(let imageAttachment):

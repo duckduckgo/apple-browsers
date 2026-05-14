@@ -2223,6 +2223,9 @@
 		7BAB1A0100000000A0000015 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
 		7BAB1A0100000000A0000016 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
 		7BAB1A0100000000A0000017 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
+		7BAB1A0100000000A0000021 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000020 /* PointingHandButton.swift */; };
+		7BAB1A0100000000A0000022 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000020 /* PointingHandButton.swift */; };
+		7BAB1A0100000000A0000023 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000020 /* PointingHandButton.swift */; };
 		7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */; };
 		7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7BAF9E4C2A8A3CCA002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
@@ -5619,6 +5622,7 @@
 		7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachmentsCarouselView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPanelAttachment.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFileAttachmentCardView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000020 /* PointingHandButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingHandButton.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
 		7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSiteInfoPublisher.swift; sourceTree = "<group>"; };
 		7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveDomainPublisher.swift; sourceTree = "<group>"; };
@@ -7631,6 +7635,7 @@
 				7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */,
 				7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */,
 				7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */,
+				7BAB1A0100000000A0000020 /* PointingHandButton.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -15450,6 +15455,7 @@
 				7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000015 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A0000021 /* PointingHandButton.swift in Sources */,
 				31267C6B2B640C5200FEF811 /* DataBrokerProtectionAppEvents.swift in Sources */,
 				1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */,
 				BBF667FD2EE33E74003B9401 /* HomePageSetUpDependencies.swift in Sources */,
@@ -15885,6 +15891,7 @@
 				7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000016 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A0000022 /* PointingHandButton.swift in Sources */,
 				B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */,
 				B602E8172A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
 				C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
@@ -17806,6 +17813,7 @@
 				7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */,
 				7BAB1A0100000000A0000017 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A0000023 /* PointingHandButton.swift in Sources */,
 				B6DA06E62913F39400225DE2 /* MenuItemSelectors.swift in Sources */,
 				3712092C2C23383C003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */,
 				85589E9A27BFE3C30038AD11 /* FaviconView.swift in Sources */,

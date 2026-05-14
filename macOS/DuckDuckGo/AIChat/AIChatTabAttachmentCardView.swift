@@ -93,8 +93,8 @@ final class AIChatTabAttachmentCardView: NSView {
         return label
     }()
 
-    private let removeButton: NSButton = {
-        let button = NSButton()
+    private let removeButton: PointingHandButton = {
+        let button = PointingHandButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.bezelStyle = .shadowlessSquare
         button.isBordered = false
@@ -171,6 +171,42 @@ final class AIChatTabAttachmentCardView: NSView {
 
     @objc private func removeButtonClicked() {
         onRemove?(attachmentId)
+    }
+
+    // MARK: - Cursor management
+    //
+    // The carousel lives in the same panel area as the omnibar's `NSTextView`, whose I-beam
+    // cursor would otherwise bleed across the card on hover. We register a static `.arrow` cursor
+    // rect AND actively set it on `mouseEntered`/`mouseMoved` — the same dual approach used by
+    // `AIChatImageAttachmentThumbnailView`. The `PointingHandButton` overrides this for the × icon.
+
+    private var trackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
     }
 
     // MARK: - Appearance

@@ -75,8 +75,8 @@ final class AIChatFileAttachmentCardView: NSView {
 
     private let pagePreviewView = AIChatFilePagePreviewView()
 
-    private let removeButton: NSButton = {
-        let button = NSButton()
+    private let removeButton: PointingHandButton = {
+        let button = PointingHandButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.bezelStyle = .shadowlessSquare
         button.isBordered = false
@@ -149,6 +149,41 @@ final class AIChatFileAttachmentCardView: NSView {
 
     @objc private func removeButtonClicked() {
         onRemove?(attachmentId)
+    }
+
+    // MARK: - Cursor management
+    //
+    // Mirrors the tab and image card behaviour: register `.arrow` as a static cursor rect AND
+    // actively set it on hover so the omnibar text view's I-beam doesn't bleed through. The
+    // `PointingHandButton` overrides this on the × icon itself.
+
+    private var trackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
     }
 
     /// Short uppercased label shown on the file pill — derived from the mime type.

@@ -164,7 +164,7 @@ final class UTIModelStore {
         do {
             guard let subscription = try await subscriptionManager.getSubscription(),
                   subscription.isActive,
-                    let tier = subscription.tier else {
+                  let tier = subscription.tier else {
                 return .free
             }
             let userTier: AIChatUserTier

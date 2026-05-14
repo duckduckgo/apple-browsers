@@ -11,10 +11,20 @@
             "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {
-                    "failing_step": {
+                    "last_step": {
                         "type": "string",
-                        "description": "Identifies which phase of the journey failed. Present only on FAILURE.",
-                        "enum": ["response_state_error", "response_state_blocked", "navigation_failed"]
+                        "description": "Where in the journey the flow was when it ended. Emitted only on FAILURE and UNKNOWN outcomes (absent on SUCCESS / CANCELLED). For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",
+                        "enum": [
+                            "submitted",
+                            "loading",
+                            "start_stream_new_prompt",
+                            "start_stream_restart_stream",
+                            "streaming",
+                            "unknown_status",
+                            "navigation_failed",
+                            "response_state_error",
+                            "response_state_blocked"
+                        ]
                     },
                     "error": {
                         "type": "object",

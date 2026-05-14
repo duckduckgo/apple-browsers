@@ -52,9 +52,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var inputMode: InputMode
     /// Whether the submitting tab was in fire mode at submit time.
     var fireMode: Bool
-    /// Set on FAILURE to identify which phase of the journey broke. Mirrors
-    /// the `failing_step` taxonomy in the journey design doc.
-    var failingStep: FailingStep?
+    /// Where in the journey the flow was when it ended. Only surfaced on
+    /// FAILURE and UNKNOWN outcomes - cleared by the instrumentation before
+    /// SUCCESS / CANCELLED so the field is absent on those payloads.
+    var lastStep: LastStep?
     /// Whether an `AIChatUserScript` was bound to the input coordinator at
     /// submit time. Unbound means the prompt was forwarded via the delegate
     /// fallback rather than directly into a live chat session.
@@ -120,10 +121,25 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    enum FailingStep: String, Codable {
-        case responseStateError = "response_state_error"
-        case responseStateBlocked = "response_state_blocked"
+    enum LastStep: String, Codable {
+        /// Flow started; no chat status or page event observed yet.
+        case submitted
+        /// Page reported `loading` - response is preparing.
+        case loading
+        /// Page reported `start_stream:new_prompt` - a fresh stream is starting.
+        case startStreamNewPrompt = "start_stream_new_prompt"
+        /// Page reported `start_stream:restart_stream` - a stream is being restarted.
+        case startStreamRestartStream = "start_stream_restart_stream"
+        /// Page reported `streaming` - tokens are flowing.
+        case streaming
+        /// Page reported `unknown` - a non-`ready` status of unknown kind.
+        case unknownStatus = "unknown_status"
+        /// WKWebView navigation failed before the page could respond. Terminal FAILURE.
         case navigationFailed = "navigation_failed"
+        /// Page reported `error` - response state failed. Terminal FAILURE.
+        case responseStateError = "response_state_error"
+        /// Page reported `blocked` - response was blocked. Terminal FAILURE.
+        case responseStateBlocked = "response_state_blocked"
     }
 
     enum EntryPoint: String, Codable {
@@ -164,7 +180,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.reasoningEffort, reasoningEffort),
             (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.inputMode, inputMode.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
@@ -189,7 +205,7 @@ extension WideEventParameter {
         static let entryPoint = "feature.data.ext.entry_point"
         static let inputMode = "feature.data.ext.input_mode"
         static let fireMode = "feature.data.ext.fire_mode"
-        static let failingStep = "feature.data.ext.failing_step"
+        static let lastStep = "feature.data.ext.last_step"
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"
         static let selectedTools = "feature.data.ext.selected_tools"

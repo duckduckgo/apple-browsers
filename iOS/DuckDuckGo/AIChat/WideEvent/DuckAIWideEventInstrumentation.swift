@@ -120,6 +120,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         )
         activeFlow = data
         hasObservedNonReady = false
+        data.lastStep = .submitted
         wideEvent.startFlow(data)
     }
 
@@ -129,13 +130,19 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         if status == .ready {
             guard hasObservedNonReady else { return }
             activeFlow.completeInterval.end = dateProvider()
+            // SUCCESS doesn't carry last_step.
+            activeFlow.lastStep = nil
             wideEvent.completeFlow(activeFlow, status: .success(), onComplete: { _, _ in })
             self.activeFlow = nil
             return
         }
 
-        if let failingStep = Self.failingStep(for: status) {
-            activeFlow.failingStep = failingStep
+        // Map every non-`ready` status to a journey step so UNKNOWN orphans
+        // (recovered from storage on next launch) report where the flow was
+        // when the app died.
+        activeFlow.lastStep = Self.lastStep(for: status)
+
+        if status == .error || status == .blocked {
             wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
             self.activeFlow = nil
             return
@@ -149,25 +156,35 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         if status == .streaming, activeFlow.startGeneratingInterval.end == nil {
             activeFlow.startGeneratingInterval.end = now
         }
+        // Persist the new step + intervals so orphan recovery sees the
+        // latest progression after an app kill.
+        wideEvent.updateFlow(activeFlow)
     }
 
-    private static func failingStep(for status: AIChatStatusValue) -> DuckAIPromptSubmissionWideEventData.FailingStep? {
+    private static func lastStep(for status: AIChatStatusValue) -> DuckAIPromptSubmissionWideEventData.LastStep {
         switch status {
+        case .loading: return .loading
+        case .streaming: return .streaming
+        case .startStreamNewPrompt: return .startStreamNewPrompt
+        case .startStreamRestartStream: return .startStreamRestartStream
+        case .unknown: return .unknownStatus
         case .error: return .responseStateError
         case .blocked: return .responseStateBlocked
-        default: return nil
+        case .ready: return .submitted // unreachable; .ready is handled above.
         }
     }
 
     func stopGeneratingTapped() {
         guard let activeFlow else { return }
+        // CANCELLED doesn't carry last_step.
+        activeFlow.lastStep = nil
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
     }
 
     func pageLoadFailed(error: Error) {
         guard let activeFlow else { return }
-        activeFlow.failingStep = .navigationFailed
+        activeFlow.lastStep = .navigationFailed
         activeFlow.errorData = WideEventErrorData(error: error)
         wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
         self.activeFlow = nil

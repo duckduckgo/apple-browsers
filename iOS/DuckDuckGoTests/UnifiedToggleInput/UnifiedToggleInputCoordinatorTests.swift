@@ -952,17 +952,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Web Search Tools
 
-    func test_toolsButton_visibleOnAITab() {
+    func test_toolsButton_visibleOnAITabWhenModelSupportsTools() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
         sut.showExpanded()
 
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
 
-    func test_toolsButton_visibleInOmnibarWhenModelDoesNotSupportWebSearch() {
+    func test_toolsButton_hiddenWhenModelDoesNotSupportAnyTool() {
+        mockPreferences.selectedModelId = "mistral"
+        sut.modelStore.models = [makeModel(id: "mistral", access: true, supportedTools: [])]
+
         sut.activateFromOmnibar(inputMode: .aiChat)
         sut.updateInputMode(.aiChat, animated: false)
 
-        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden)
     }
 
     func test_toolsButton_visibleInOmnibarAIChatWhenModelSupportsWebSearch() {
@@ -976,6 +982,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_toolsButton_staysUnhiddenAcrossSwitchToSearchMode_soItFadesWithTheToolbar() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
         sut.showExpanded()
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
 
@@ -986,7 +995,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_toolsMenu_disablesWebSearchActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
-        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
 
         sut.showExpanded()
 
@@ -1080,6 +1089,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Image Generation Tool
 
     func test_toolsMenu_containsImageGenerationAction() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+
         sut.showExpanded()
 
         let actionTitles = toolsMenuActions().map(\.title)
@@ -1089,7 +1101,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_toolsMenu_disablesImageGenerationActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
-        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
         sut.showExpanded()
 
@@ -1590,11 +1602,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
     }
 
-    func test_handlerHasSubmittedPrompt_syncedAfterBindWithNewChat() {
+    func test_handlerHasSubmittedPrompt_resetAfterBindWithNewChat() {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         let userScript = makeTestUserScript()
         sut.bindToTab(userScript, hasExistingChat: false)
-        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
     }
 
     func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {

@@ -68,7 +68,8 @@ final class UTIToolsController {
         displayState: UnifiedToggleInputDisplayState,
         modelStore: UTIModelStore
     ) -> Presentation {
-        guard canShowTools(displayState: displayState) else {
+        guard canShowTools(displayState: displayState),
+              modelStore.selectedModelSupportsAnyTool else {
             return .hidden
         }
 

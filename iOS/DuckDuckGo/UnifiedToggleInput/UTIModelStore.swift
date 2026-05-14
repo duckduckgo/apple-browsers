@@ -86,6 +86,10 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
     }
 
+    var selectedModelSupportsAnyTool: Bool {
+        selectedModelSupports(tool: .imageGeneration) || selectedModelSupports(tool: .webSearch)
+    }
+
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
     }

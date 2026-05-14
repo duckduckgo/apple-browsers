@@ -42,6 +42,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var userTier: String
     /// Where the user was when they composed and submitted the prompt.
     var entryPoint: EntryPoint
+    /// Whether the submitting tab was in fire mode at submit time.
+    var fireMode: Bool
     /// Set on FAILURE to identify which phase of the journey broke. Mirrors
     /// the `failing_step` taxonomy in the journey design doc.
     var failingStep: FailingStep?
@@ -77,6 +79,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     init(modelId: String?,
          userTier: String,
          entryPoint: EntryPoint,
+         fireMode: Bool,
          userScriptBound: Bool,
          hasPageContext: Bool,
          selectedTools: [String],
@@ -90,6 +93,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.modelId = modelId
         self.userTier = userTier
         self.entryPoint = entryPoint
+        self.fireMode = fireMode
         self.userScriptBound = userScriptBound
         self.hasPageContext = hasPageContext
         self.selectedTools = selectedTools
@@ -143,6 +147,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
         ])
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
@@ -159,6 +164,7 @@ extension WideEventParameter {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
         static let entryPoint = "feature.data.ext.entry_point"
+        static let fireMode = "feature.data.ext.fire_mode"
         static let failingStep = "feature.data.ext.failing_step"
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"

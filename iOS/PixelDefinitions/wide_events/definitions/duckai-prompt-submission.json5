@@ -41,6 +41,10 @@
                         "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",
                         "enum": ["omnibar", "ai_tab", "contextual_chat"]
                     },
+                    "fire_mode": {
+                        "type": "boolean",
+                        "description": "Whether the submitting tab was a fire tab at submit time."
+                    },
                     "user_script_bound": {
                         "type": "boolean",
                         "description": "Whether an `AIChatUserScript` was bound to the input coordinator at submit time. False means the prompt was forwarded via the delegate fallback rather than into a live chat session."

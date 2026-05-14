@@ -1331,6 +1331,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
                 entryPoint: entryPoint,
+                fireMode: viewController.handler.isFireTab,
                 userScriptBound: userScript != nil,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
                 selectedTools: tools?.map(\.rawValue) ?? [],

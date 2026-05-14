@@ -28,6 +28,7 @@ import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckPlayer
 import UIComponents
 
 extension TabViewController {
@@ -989,5 +990,12 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             guard let self else { return }
             self.delegate?.tabDidRequestFireMode(tab: self)
         }
+    }
+
+    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {
+        guard validLink?.url.isYoutube == true else { return nil }
+        return .regular(name: "Disable YouTube Ad Block",
+                        image: DesignSystemImages.Glyphs.Size24.shieldBlocked,
+                        action: {})
     }
 }

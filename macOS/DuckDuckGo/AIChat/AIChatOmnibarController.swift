@@ -663,10 +663,14 @@ final class AIChatOmnibarController {
         sharedTextState?.setAIChatFileAttachments(attachments)
     }
 
-    /// Adds a file attachment to the active tab. No-op if a file with the same id is already
-    /// attached.
+    /// Adds a file attachment to the active tab. No-op if at displayCap or if an attachment
+    /// with the same id is already present. Mirrors `addImageAttachmentToActiveTab`'s
+    /// defense-in-depth posture — the picker is the only caller today and gates on the cap
+    /// before this runs, but a second guard here keeps every future caller (drag-and-drop,
+    /// paste, restore paths, tests) safe from overshooting `fileAttachmentsDisplayCap`.
     func addFileAttachmentToActiveTab(_ attachment: AIChatFileAttachment) {
         var current = activeFileAttachments
+        guard current.count < Self.fileAttachmentsDisplayCap else { return }
         guard !current.contains(where: { $0.id == attachment.id }) else { return }
         current.append(attachment)
         persistFileAttachmentsToActiveTab(current)

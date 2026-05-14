@@ -38,7 +38,7 @@ extension MainViewController {
         case .hide:
             handleHideIntent()
         }
-        updateFloatingSubmitVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {

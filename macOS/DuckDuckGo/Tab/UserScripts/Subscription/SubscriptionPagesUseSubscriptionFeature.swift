@@ -74,6 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let notificationCenter: NotificationCenter
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
+    private let dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let aiChatURL: URL
     private let requestValidator: any ScriptRequestValidator
 
@@ -95,6 +96,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
+                dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = PixelKit.shared.map { DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS) },
                 aiChatURL: URL,
                 wideEvent: WideEventManaging,
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
@@ -110,6 +112,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
+        self.dataBrokerProtectionSharedPixelHandler = dataBrokerProtectionSharedPixelHandler
         self.wideEvent = wideEvent
         self.subscriptionEventReporter = subscriptionEventReporter
         self.pendingTransactionHandler = pendingTransactionHandler
@@ -897,6 +900,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
+            dataBrokerProtectionSharedPixelHandler?.fire(.freemiumUpsell)
         }
     }
 

@@ -88,10 +88,13 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check intro message is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check intro message is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.Onboarding.Rebranding.Intro.message, UserText.Onboarding.DuckAICPP.Intro.message]
+            )
         )
-        func checkIntroMessage(flow: OnboardingFlowType) {
+        func checkIntroMessage(flow: OnboardingFlowType, expectedMessage: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -99,7 +102,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.introStepContent
 
             // THEN
-            #expect(result.message == UserText.Onboarding.Rebranding.Intro.message)
+            #expect(result.message == expectedMessage)
         }
 
         @Test(
@@ -216,10 +219,13 @@ struct OnboardingIntroContentProviderTests {
             }
 
             @Test(
-                "Check skip flow message is correct",
-                arguments: [.default, .duckAI] as [OnboardingFlowType]
+                "Check skip flow message is correct per flow",
+                arguments: zip(
+                    [OnboardingFlowType.default, .duckAI],
+                    [UserText.Onboarding.Skip.message, UserText.Onboarding.DuckAICPP.Skip.message]
+                )
             )
-            func checkSkipFlowMessage(flow: OnboardingFlowType) {
+            func checkSkipFlowMessage(flow: OnboardingFlowType, expectedMessage: String) {
                 // GIVEN
                 let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -227,14 +233,17 @@ struct OnboardingIntroContentProviderTests {
                 let result = sut.introStepContent.skipFlowStepContent
 
                 // THEN
-                #expect(result.message == UserText.Onboarding.Skip.message)
+                #expect(result.message == expectedMessage)
             }
 
             @Test(
-                "Check skip flow primary CTA is start browsing",
-                arguments: [.default, .duckAI] as [OnboardingFlowType]
+                "Check skip flow primary CTA is correct per flow",
+                arguments: zip(
+                    [OnboardingFlowType.default, .duckAI],
+                    [UserText.Onboarding.Skip.confirmSkipOnboardingCTA, UserText.Onboarding.DuckAICPP.Skip.confirmSkipOnboardingCTA]
+                )
             )
-            func checkSkipFlowPrimaryCTA(flow: OnboardingFlowType) {
+            func checkSkipFlowPrimaryCTA(flow: OnboardingFlowType, expectedPrimaryCTA: String) {
                 // GIVEN
                 let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -242,7 +251,31 @@ struct OnboardingIntroContentProviderTests {
                 let result = sut.introStepContent.skipFlowStepContent
 
                 // THEN
-                #expect(result.primaryCTA == UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
+                #expect(result.primaryCTA == expectedPrimaryCTA)
+            }
+
+            @Test("Check Duck.ai skip flow message contains the chat icon token")
+            func duckAISkipFlowMessageContainsChatIconToken() {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: .duckAI, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.introStepContent.skipFlowStepContent
+
+                // THEN
+                #expect(result.message.contains(UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken))
+            }
+
+            @Test("Check default skip flow message does not contain the chat icon token")
+            func defaultSkipFlowMessageDoesNotContainChatIconToken() {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.introStepContent.skipFlowStepContent
+
+                // THEN
+                #expect(!result.message.contains(UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken))
             }
 
             @Test(
@@ -268,10 +301,13 @@ struct OnboardingIntroContentProviderTests {
     struct BrowserComparisonContent {
 
         @Test(
-            "Check browser comparison title is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check browser comparison title is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.Onboarding.BrowsersComparison.title, UserText.Onboarding.DuckAICPP.BrowserComparison.title]
+            )
         )
-        func checkBrowserComparisonTitle(flow: OnboardingFlowType) {
+        func checkBrowserComparisonTitle(flow: OnboardingFlowType, expectedTitle: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -279,7 +315,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.browserComparisonContent
 
             // THEN
-            #expect(result.title == UserText.Onboarding.BrowsersComparison.title)
+            #expect(result.title == expectedTitle)
         }
 
         @Test(
@@ -324,7 +360,72 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.browserComparisonContent
 
             // THEN
-            #expect(result.features == RebrandedBrowsersComparisonModel.defaultFeatures)
+            #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
+        }
+
+    }
+
+    @Suite("AI Comparison Content")
+    struct AIComparisonContent {
+
+        @Test(
+            "Check AI comparison title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.AIComparison.title)
+        }
+
+        @Test(
+            "Check AI comparison sub-header is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonSubHeader(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+        }
+
+        @Test(
+            "Check AI comparison primary CTA is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.DuckAICPP.AIComparison.cta)
+        }
+
+        @Test(
+            "Check AI comparison features default to the model's default AI list",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonFeatures(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiComparisonContent
+
+            // THEN
+            #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
         }
 
     }
@@ -348,10 +449,13 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check add to dock message is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check add to dock message is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.AddToDockOnboarding.Promo.introMessage, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
+            )
         )
-        func checkAddToDockMessage(flow: OnboardingFlowType) {
+        func checkAddToDockMessage(flow: OnboardingFlowType, expectedMessage: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
@@ -359,7 +463,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.addToDockContent
 
             // THEN
-            #expect(result.message == UserText.AddToDockOnboarding.Promo.introMessage)
+            #expect(result.message == expectedMessage)
         }
 
         @Test(
@@ -664,52 +768,73 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
-    @Suite("Duck.ai Query Experiment Content")
-    struct DuckAIQueryExperimentContent {
+    @Suite("Duck.ai Query Content")
+    struct DuckAIQueryContent {
 
         @Test(
-            "Check duck.ai query experiment title is correct",
-            arguments: [.default, .duckAI] as [OnboardingFlowType]
+            "Check duck.ai query title is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [UserText.Onboarding.DuckAIQueryExperiment.title, UserText.Onboarding.DuckAICPP.DuckAIQuery.title]
+            )
         )
-        func checkDuckAIQueryExperimentTitle(flow: OnboardingFlowType) {
+        func checkDuckAIQueryTitle(flow: OnboardingFlowType, expectedTitle: String) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.duckAIQueryExperimentContent
+            let result = sut.duckAIQueryContent
 
             // THEN
-            #expect(result.title == UserText.Onboarding.DuckAIQueryExperiment.title)
+            #expect(result.title == expectedTitle)
         }
 
         @Test(
-            "Check duck.ai query experiment search placeholder is correct",
+            "Check duck.ai query search placeholder is correct",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )
-        func checkDuckAIQueryExperimentSearchPlaceholder(flow: OnboardingFlowType) {
+        func checkDuckAIQuerySearchPlaceholder(flow: OnboardingFlowType) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.duckAIQueryExperimentContent
+            let result = sut.duckAIQueryContent
 
             // THEN
             #expect(result.searchPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder)
         }
 
         @Test(
-            "Check duck.ai query experiment AI placeholder is correct",
+            "Check duck.ai query AI placeholder is correct",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )
-        func checkDuckAIQueryExperimentAIPlaceholder(flow: OnboardingFlowType) {
+        func checkDuckAIQueryAIPlaceholder(flow: OnboardingFlowType) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.duckAIQueryExperimentContent
+            let result = sut.duckAIQueryContent
 
             // THEN
             #expect(result.aiPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder)
+        }
+
+        @Test(
+            "Check toggle visibility is correct per flow",
+            arguments: zip(
+                [OnboardingFlowType.default, .duckAI],
+                [true, false]
+            )
+        )
+        func checkIsToggleVisible(flow: OnboardingFlowType, expectedVisibility: Bool) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.duckAIQueryContent
+
+            // THEN
+            #expect(result.isToggleVisible == expectedVisibility)
         }
 
     }

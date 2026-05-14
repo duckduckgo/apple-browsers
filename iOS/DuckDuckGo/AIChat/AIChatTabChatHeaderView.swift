@@ -53,14 +53,17 @@ final class AIChatTabChatHeaderView: UIView {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
-        var isChatInputHidden: Bool = false
+        var isVoiceSessionActive: Bool = false
         var canGoBack: Bool = false
         var canGoForward: Bool = false
+        /// Renders the back arrow even when there's no web history, so the user always has an exit.
+        var forceBackButtonVisible: Bool = false
 
-        var showsNavPair: Bool { canGoBack && canGoForward }
-        var showsStandaloneBack: Bool { canGoBack && !canGoForward }
-        var showsStandaloneForward: Bool { canGoForward && !canGoBack }
-        var isNavigationVisible: Bool { canGoBack || canGoForward }
+        var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }
+        var showsNavPair: Bool { effectiveCanGoBack && canGoForward }
+        var showsStandaloneBack: Bool { effectiveCanGoBack && !canGoForward }
+        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack }
+        var isNavigationVisible: Bool { effectiveCanGoBack || canGoForward }
     }
 
     private var state = ViewState() {
@@ -124,6 +127,8 @@ final class AIChatTabChatHeaderView: UIView {
     private lazy var forwardPill: UIView = makePillContainer()
     private lazy var navPairPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
+
+    private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
     private lazy var leftPairStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [chatListButton, newChatButton])
@@ -303,23 +308,33 @@ final class AIChatTabChatHeaderView: UIView {
         state = newState
     }
 
-    /// Hides the chats / new-chat pill while FE has hidden the native chat input (voice mode,
-    /// sidebar open, etc.). Back/forward arrows remain so the user can exit.
-    func setAIChatInputHidden(_ hidden: Bool) {
-        state.isChatInputHidden = hidden
+    func setForceBackButtonVisible(_ visible: Bool) {
+        state.forceBackButtonVisible = visible
+    }
+
+    /// Hides the chats / new-chat pill while a voice session is in progress for this tab.
+    /// Back/forward arrows remain so the user can exit.
+    func setVoiceSessionActive(_ active: Bool) {
+        state.isVoiceSessionActive = active
     }
 
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
         titleLabel.isHidden = state.isSubscriptionActive != true
+        // Voice session locks the user in — hide every left-side pill so they can only exit via
+        // the in-page mic dismiss (which triggers FE → voiceSessionEnded → chrome restores).
+        let hideLeft = state.isVoiceSessionActive
         // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
-        titleHolder.isHidden = state.showsNavPair
-        backPill.isHidden = !state.showsStandaloneBack
-        forwardPill.isHidden = !state.showsStandaloneForward
-        navPairPill.isHidden = !state.showsNavPair
-        leftPairPill.isHidden = state.isChatInputHidden
+        titleHolder.isHidden = state.showsNavPair || hideLeft
+        backPill.isHidden = hideLeft || !state.showsStandaloneBack
+        forwardPill.isHidden = hideLeft || !state.showsStandaloneForward
+        navPairPill.isHidden = hideLeft || !state.showsNavPair
+        leftPairPill.isHidden = hideLeft
         // Compose suppressed when nav arrows are visible — the row gets cluttered.
         newChatButton.isHidden = state.isNavigationVisible
+        // When the title slot is hidden the left stack needs the freed width — otherwise the
+        // greater/less-than inequalities keep reserving the center and squeeze the nav-pair pill.
+        titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -366,8 +381,6 @@ final class AIChatTabChatHeaderView: UIView {
 
             titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor),
             titleHolder.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleHolder.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
-            titleHolder.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
 
             titleContainer.topAnchor.constraint(equalTo: titleHolder.topAnchor),
             titleContainer.leadingAnchor.constraint(equalTo: titleHolder.leadingAnchor),
@@ -450,6 +463,11 @@ final class AIChatTabChatHeaderView: UIView {
                 self?.upgradeTapped()
                 return true
             }
+        ]
+
+        titleSpacingConstraints = [
+            titleHolder.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
+            titleHolder.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
         ]
 
         applyState()

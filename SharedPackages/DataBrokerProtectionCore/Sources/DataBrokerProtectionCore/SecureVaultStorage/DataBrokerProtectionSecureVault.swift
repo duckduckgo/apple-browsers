@@ -104,6 +104,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
 
     func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws
     func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
+    func hasScanHistoryEvents() throws -> Bool
     func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
 
     func save(extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64
@@ -504,6 +505,10 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
 
     public func hasMatches() throws -> Bool {
         try self.providers.database.hasMatches()
+    }
+
+    public func hasScanHistoryEvents() throws -> Bool {
+        try self.providers.database.hasScanHistoryEvents()
     }
 
     public func fetchAllAttempts() throws -> [AttemptInformation] {

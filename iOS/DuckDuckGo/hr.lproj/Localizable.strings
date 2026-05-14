@@ -3465,7 +3465,10 @@
 "settings.address.trackers.animation" = "Prikaži u adresnoj traci";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Odaberi što ćeš vidjeti kada se vratiš nakon %@ neaktivnosti.";
+"settings.afterInactivity.footer.format" = "Odaberi što ćeš vidjeti kada se vratiš na DuckDuckGo nakon %@ neaktivnosti.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Odaberi što ćeš vidjeti kada se vratiš na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 sat";
@@ -3479,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minute/a";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nijedno";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekundu";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekunde/i";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Mjerač vremena neaktivnosti";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Nakon neaktivnosti";
+"settings.afterInactivity.label" = "Početni zaslon";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Posljednja korištena kartica";

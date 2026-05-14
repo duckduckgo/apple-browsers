@@ -1442,8 +1442,10 @@ extension Pixel {
         case ntpAfterIdleAppBackgroundedUserInitiated
         case ntpAfterIdleTabSwitcherSelectedAfterIdle
         case ntpAfterIdleTabSwitcherSelectedUserInitiated
+        case ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
+        case ntpAfterIdleSettingIdleIntervalChanged
 
         // MARK: DuckPlayer
 
@@ -1587,6 +1589,7 @@ extension Pixel {
         case duckAiNativeStorageFileGetError
         case duckAiNativeStorageFileListError
         case duckAiNativeStorageFileDeleteError
+        case duckAiNativeStorageLastUsedModelParseError
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -3174,8 +3177,10 @@ extension Pixel.Event {
         case .ntpAfterIdleAppBackgroundedUserInitiated: return "m_ntp_after_idle_app_backgrounded_from_ntp_user_initiated"
         case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
         case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
+        case .ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle: return "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
+        case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
@@ -3320,6 +3325,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageFileGetError: return "m_duck-ai_native-storage_file-get_error"
         case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
+        case .duckAiNativeStorageLastUsedModelParseError: return "m_duck-ai_native-storage_last-used-model-parse_error"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"

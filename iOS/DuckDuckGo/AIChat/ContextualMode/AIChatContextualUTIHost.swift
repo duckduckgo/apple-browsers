@@ -54,7 +54,10 @@ final class AIChatContextualUTIHost {
         self.coordinator = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
-            isFireTab: isFireTab
+            isFireTab: isFireTab,
+            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(
+                wideEvent: AppDependencyProvider.shared.wideEvent
+            )
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,

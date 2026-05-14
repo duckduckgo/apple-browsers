@@ -36,6 +36,11 @@
                         "description": "The submitting user's Duck.ai subscription tier at the moment of submission.",
                         "enum": ["free", "plus", "pro", "internal"]
                     },
+                    "reasoning_effort": {
+                        "type": "string",
+                        "description": "The reasoning effort selected for this submission, derived from the user's reasoning-mode preference resolved against the model's supported efforts. Absent when the selected model does not support a reasoning picker.",
+                        "enum": ["none", "minimal", "low", "medium", "high"]
+                    },
                     "entry_point": {
                         "type": "string",
                         "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",

@@ -40,6 +40,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     var modelId: String?
     var userTier: String
+    /// `AIChatReasoningEffort.rawValue` selected for this submission. Nil when
+    /// the selected model does not support a reasoning picker (distinguishes
+    /// "no reasoning support" from the `.none` effort value).
+    var reasoningEffort: String?
     /// Where the user was when they composed and submitted the prompt.
     var entryPoint: EntryPoint
     /// Whether the submitting tab was in fire mode at submit time.
@@ -78,6 +82,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     init(modelId: String?,
          userTier: String,
+         reasoningEffort: String?,
          entryPoint: EntryPoint,
          fireMode: Bool,
          userScriptBound: Bool,
@@ -92,6 +97,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.modelId = modelId
         self.userTier = userTier
+        self.reasoningEffort = reasoningEffort
         self.entryPoint = entryPoint
         self.fireMode = fireMode
         self.userScriptBound = userScriptBound
@@ -141,6 +147,7 @@ extension DuckAIPromptSubmissionWideEventData {
         var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.reasoningEffort, reasoningEffort),
             (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
@@ -163,6 +170,7 @@ extension WideEventParameter {
     enum DuckAIPromptSubmissionFeature {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
+        static let reasoningEffort = "feature.data.ext.reasoning_effort"
         static let entryPoint = "feature.data.ext.entry_point"
         static let fireMode = "feature.data.ext.fire_mode"
         static let failingStep = "feature.data.ext.failing_step"

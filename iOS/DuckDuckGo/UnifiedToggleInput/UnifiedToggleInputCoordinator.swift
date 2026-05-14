@@ -1330,6 +1330,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
+                reasoningEffort: persistedReasoningEffort,
                 entryPoint: entryPoint,
                 fireMode: viewController.handler.isFireTab,
                 userScriptBound: userScript != nil,

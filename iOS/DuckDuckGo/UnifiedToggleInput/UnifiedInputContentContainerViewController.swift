@@ -700,7 +700,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
-        static let escapeHatchLogoOffset: CGFloat = 120
         // Pulls both the search and duck.ai suggestion trays up so the UTI escape
         // hatch lines up with the NTP escape hatch. The suggestion tray container
         // chain positions the UTI hatch ~10pt below the NTP equivalent.

@@ -20,6 +20,7 @@
 import Foundation
 import AIChat
 import Core
+import PrivacyConfig
 
 protocol AIChatDeepLinkHandling {
     func handleDeepLink(_ url: URL, on presenter: AIChatDeepLinkPresenting, voiceMode: Bool)
@@ -37,16 +38,21 @@ extension AIChatDeepLinkHandler: AIChatDeepLinkHandling {}
 struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     private let aiChatDeepLinkHandler: AIChatDeepLinkHandling
     private let pixelFiring: DailyPixelFiring.Type
+    private let featureFlagger: FeatureFlagger
 
     init(
         aiChatDeepLinkHandler: AIChatDeepLinkHandling = AIChatDeepLinkHandler(),
-        pixelFiring: DailyPixelFiring.Type = DailyPixel.self
+        pixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.aiChatDeepLinkHandler = aiChatDeepLinkHandler
         self.pixelFiring = pixelFiring
+        self.featureFlagger = featureFlagger
     }
 
     func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
+        guard featureFlagger.isFeatureOn(.customProductPageDuckAiChat) else { return }
+        
         pixelFiring.fireDailyAndCount(.customProductPageDuckAIOpenedAIChat, error: nil, withAdditionalParameters: [:])
         aiChatDeepLinkHandler.handleDeepLink(url, on: presenter)
     }

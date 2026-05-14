@@ -394,6 +394,9 @@ public enum FeatureFlag: String {
     /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
     case filterAddressBarUpdates
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -689,6 +692,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)))
         case .filterAddressBarUpdates:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
+        case .customProductPageDuckAiChat:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customProductPageDuckAiChat)), supportsLocalOverriding: true)
         }
     }
 

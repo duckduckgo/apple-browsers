@@ -45,14 +45,17 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
 
     private let wideEvent: WideEventManaging
+    private let dateProvider: () -> Date
     private var activeFlow: DuckAIPromptSubmissionWideEventData?
     /// Gates completion so a `.ready` replayed by the publisher at submit time
     /// can't auto-complete the freshly started flow. Flips true on the first
     /// non-`.ready` status observed after `submissionStarted()`.
     private var hasObservedNonReady = false
 
-    init(wideEvent: WideEventManaging) {
+    init(wideEvent: WideEventManaging,
+         dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
+        self.dateProvider = dateProvider
     }
 
     func submissionStarted(modelId: String?, userTier: AIChatUserTier) {
@@ -73,7 +76,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
         let data = DuckAIPromptSubmissionWideEventData(
             modelId: modelId,
-            userTier: userTier.rawValue
+            userTier: userTier.rawValue,
+            startedAt: dateProvider()
         )
         activeFlow = data
         hasObservedNonReady = false
@@ -85,10 +89,19 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
         if status == .ready {
             guard hasObservedNonReady else { return }
+            activeFlow.completeInterval.end = dateProvider()
             wideEvent.completeFlow(activeFlow, status: .success(), onComplete: { _, _ in })
             self.activeFlow = nil
-        } else {
-            hasObservedNonReady = true
+            return
+        }
+
+        let now = dateProvider()
+        hasObservedNonReady = true
+        if activeFlow.startThinkingInterval.end == nil {
+            activeFlow.startThinkingInterval.end = now
+        }
+        if status == .streaming, activeFlow.startGeneratingInterval.end == nil {
+            activeFlow.startGeneratingInterval.end = now
         }
     }
 

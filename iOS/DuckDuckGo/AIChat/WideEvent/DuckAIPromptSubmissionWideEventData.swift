@@ -41,13 +41,27 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var modelId: String?
     var userTier: String
 
+    /// Time to the first non-`.ready` status observed after submission. Marks
+    /// when the page transitioned out of idle and began processing the prompt.
+    var startThinkingInterval: WideEvent.MeasuredInterval
+    /// Time to the first `.streaming` status (TTFT). Nil if the journey never
+    /// reached a streaming state (e.g., cancelled or errored before tokens).
+    var startGeneratingInterval: WideEvent.MeasuredInterval
+    /// Time to the `.ready` status that completed the flow (TTLT). Nil if the
+    /// flow was cancelled or orphaned before reaching ready.
+    var completeInterval: WideEvent.MeasuredInterval
+
     init(modelId: String?,
          userTier: String,
+         startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.modelId = modelId
         self.userTier = userTier
+        self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -70,6 +84,9 @@ extension DuckAIPromptSubmissionWideEventData {
         Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
             (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
         ])
     }
 }
@@ -79,5 +96,8 @@ extension WideEventParameter {
     enum DuckAIPromptSubmissionFeature {
         static let modelId = "feature.data.ext.model_id"
         static let userTier = "feature.data.ext.user_tier"
+        static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
+        static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
+        static let completeMs = "feature.data.ext.latency.complete_ms"
     }
 }

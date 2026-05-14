@@ -19,6 +19,24 @@
                         "type": "string",
                         "description": "The submitting user's Duck.ai subscription tier at the moment of submission.",
                         "enum": ["free", "plus", "pro", "internal"]
+                    },
+                    "latency": {
+                        "type": "object",
+                        "description": "Latency milestones measured in milliseconds from prompt submission.",
+                        "properties": {
+                            "start_thinking_ms": {
+                                "type": "integer",
+                                "description": "Milliseconds from prompt submission to the first non-`ready` chat status observed (page began processing the prompt). Absent if no non-ready status was observed before the flow ended."
+                            },
+                            "start_generating_ms": {
+                                "type": "integer",
+                                "description": "Milliseconds from prompt submission to the first `streaming` chat status (time to first token). Absent if the journey never reached a streaming state."
+                            },
+                            "complete_ms": {
+                                "type": "integer",
+                                "description": "Milliseconds from prompt submission to the `ready` chat status that completed the flow (time to last token). Absent on CANCELLED or UNKNOWN outcomes."
+                            }
+                        }
                     }
                 }
             }

@@ -1295,7 +1295,21 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
-            addressBarTextField.moveCursorToEnd()
+            /// Mirror of the capture in the `if isAIChatMode` branch: restore the selection that
+            /// Duck.ai's `textViewDidChangeSelection` persisted, so toggling back doesn't drop the
+            /// user's highlight. UTF-16 bounds check matches `focusTextViewRestoringCursorPosition`.
+            if let saved = sharedTextState?.selectionRange,
+               let editor = addressBarTextField.currentEditor() {
+                let utf16Length = (editor.string as NSString).length
+                if saved.location <= utf16Length {
+                    let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
+                    editor.selectedRange = NSRange(location: saved.location, length: clampedLength)
+                } else {
+                    addressBarTextField.moveCursorToEnd()
+                }
+            } else {
+                addressBarTextField.moveCursorToEnd()
+            }
 
             /// Force layout update after becoming first responder to update in case the window was resized
             layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)

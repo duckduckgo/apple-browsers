@@ -49,6 +49,10 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var userScriptBound: Bool
     /// Whether a page-context attachment was present at submit time.
     var hasPageContext: Bool
+    /// Identifiers of the tools the user had selected at submit time, in
+    /// `AIChatRAGTool.rawValue` form (e.g. `"WebSearch"`, `"GenerateImage"`).
+    /// Empty when no tool was selected.
+    var selectedTools: [String]
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -64,6 +68,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          userTier: String,
          userScriptBound: Bool,
          hasPageContext: Bool,
+         selectedTools: [String],
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
@@ -72,6 +77,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.userTier = userTier
         self.userScriptBound = userScriptBound
         self.hasPageContext = hasPageContext
+        self.selectedTools = selectedTools
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
@@ -110,6 +116,7 @@ extension DuckAIPromptSubmissionWideEventData {
         ])
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
         return parameters
     }
 }
@@ -122,6 +129,7 @@ extension WideEventParameter {
         static let failingStep = "feature.data.ext.failing_step"
         static let userScriptBound = "feature.data.ext.user_script_bound"
         static let hasPageContext = "feature.data.ext.has_page_context"
+        static let selectedTools = "feature.data.ext.selected_tools"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let completeMs = "feature.data.ext.latency.complete_ms"

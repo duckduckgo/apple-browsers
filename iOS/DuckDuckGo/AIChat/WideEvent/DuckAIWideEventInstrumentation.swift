@@ -33,7 +33,8 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     func submissionStarted(modelId: String?,
                            userTier: AIChatUserTier,
                            userScriptBound: Bool,
-                           hasPageContext: Bool)
+                           hasPageContext: Bool,
+                           selectedTools: [String])
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
@@ -78,7 +79,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     func submissionStarted(modelId: String?,
                            userTier: AIChatUserTier,
                            userScriptBound: Bool,
-                           hasPageContext: Bool) {
+                           hasPageContext: Bool,
+                           selectedTools: [String]) {
         if let activeFlow {
             // A previous submission in this app session never completed (a
             // completion-path gap, not app termination). Discard it silently
@@ -92,6 +94,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             userTier: userTier.rawValue,
             userScriptBound: userScriptBound,
             hasPageContext: hasPageContext,
+            selectedTools: selectedTools,
             startedAt: dateProvider()
         )
         activeFlow = data

@@ -44,6 +44,14 @@
                         "type": "boolean",
                         "description": "Whether a page-context attachment was present at submit time (i.e. the user attached the current page's content to the prompt)."
                     },
+                    "selected_tools": {
+                        "type": "array",
+                        "description": "Identifiers of the tools the user had selected at submit time, as `AIChatRAGTool` raw values. Empty array when no tool was selected. The iOS UI currently only exposes `WebSearch` and `GenerateImage`; other values are reserved for cross-platform parity.",
+                        "items": {
+                            "type": "string",
+                            "enum": ["WebSearch", "NewsSearch", "VideosSearch", "LocalSearch", "RelatedSearchTerms", "WeatherForecast", "GenerateImage"]
+                        }
+                    },
                     "latency": {
                         "type": "object",
                         "description": "Latency milestones measured in milliseconds from prompt submission.",

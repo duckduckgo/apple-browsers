@@ -91,22 +91,6 @@ The codebase uses a fluent builder pattern (`NSMenu.buildItems {}`) for declarat
 
 Actions route through the responder chain using selectors. The action is sent to the first responder and travels up the chain until handled.
 
-### Keyboard Shortcuts
-
-Assign keyboard shortcuts using `keyEquivalent` and `withModifierMask()`. Common modifiers: `.command` (⌘), `.shift` (⇧), `.option` (⌥), `.control` (⌃).
-
-### Separators
-
-Use `NSMenuItem.separator()` for horizontal lines between menu item groups.
-
-### Hidden vs. Nil Items
-
-Use `nil` when a feature is not available at all. Use `isHidden` when temporarily unavailable.
-
-### Menu Item State
-
-Control menu item state with `isEnabled`, `state` (.on/.off for checkmarks), and `title` properties.
-
 ### Bookmark and History Menus
 
 These menus rebuild dynamically by subscribing to data-change publishers from ``BookmarkManager`` and ``HistoryCoordinator``. The bookmarks menu is built inline within ``MainMenu``; the history menu lives in ``HistoryMenu``.
@@ -162,10 +146,6 @@ These menus rebuild dynamically by subscribing to data-change publishers from ``
 - Various debug options
 - Feature flags
 - Testing tools
-
-## Testing
-
-Test menu structure and feature-flagged items using mock dependencies. Use `NSMenu.item(withTitle:)` to verify menu item presence and properties.
 
 ## Related Topics
 

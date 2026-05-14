@@ -81,12 +81,6 @@ The system extension provides the actual VPN functionality:
 - Uninstall via `deactivateSystemExtension()`
 - Status monitoring via `SystemExtensions` framework
 
-### Entitlements
-
-Required for the system extension:
-- `com.apple.security.application-groups` - Share data between processes
-- `com.apple.developer.networking.networkextension` - `packet-tunnel-provider`
-
 ## VPN Features
 
 ### Site-Specific Exclusions
@@ -116,14 +110,6 @@ State is synchronized across processes and persists across launches.
 - ``DuckDuckGoVPNAppDelegate`` — The VPN agent's delegate; owns IPC server setup and the tunnel controller lifecycle inside the agent process.
 
 ## Common Tasks
-
-### Starting/Stopping VPN
-
-From the main app, use `TunnelControllerProvider` to access the tunnel controller. The `NetworkProtectionIPCClient` handles IPC communication with the VPN agent transparently.
-
-### Monitoring Connection Status
-
-Subscribe to status updates via `NetworkProtectionStatusReporter` to receive connection state changes and handle them in your UI.
 
 ### Excluding a Domain
 

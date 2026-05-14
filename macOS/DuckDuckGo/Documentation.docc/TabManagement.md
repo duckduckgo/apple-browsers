@@ -103,23 +103,6 @@ The ``Tab`` class exposes state through its public interface: `title`, `isLoadin
 4. **Weak References**: Extensions hold weak references to Tab to avoid retain cycles
 5. **Combine Integration**: Use publishers for event-driven communication
 
-### Memory Management
-
-- **Always use `weak self`** in closures capturing the extension
-- **Store `AnyCancellable`** subscriptions in a Set for proper cleanup
-- Extensions are deallocated when the tab closes
-
-### Testing Extensions
-
-Test extensions using mock `Tab` and `TabExtensionDependencies` implementations to verify extension behavior in isolation.
-
-### Common Pitfalls
-
-- **Don't access WKWebView directly** - Use Tab's public interface
-- **Don't create strong reference cycles** - Always use `[weak self]` in closures
-- **Don't perform heavy work synchronously** - Use async/await or background queues
-- **Don't forget state restoration** - Implement `NSCodingExtension` if needed
-
 ## Related Topics
 
 - ``MainViewController`` - Tab coordination and UI integration

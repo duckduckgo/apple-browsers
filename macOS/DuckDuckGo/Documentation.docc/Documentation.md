@@ -48,22 +48,6 @@ For reusable package APIs, see the respective package documentation:
 - **VPN Package** - `TunnelController` protocol for VPN control
 - **Other Shared Packages** - See package-specific documentation
 
-## Getting Started
-
-### Build Requirements
-
-- Xcode 15+
-- macOS 14+ (Sonoma) for development
-- Swift 5.9+
-
-### Key Dependencies
-
-- **WebKit**: Core web rendering engine
-- **SwiftUI + AppKit**: UI framework (hybrid approach)
-- **Core Data**: Local persistence (bookmarks, history)
-- **Combine**: Reactive programming
-- **Network Extension**: VPN functionality
-
 ## Development Patterns
 
 ### Dependency Injection
@@ -83,12 +67,6 @@ UI follows Model-View-ViewModel pattern with Coordinators managing navigation an
 
 New features are protected behind feature flags using `FeatureFlagger`. See `FeatureFlagger.swift` for implementation.
 
-### Testing Strategy
-
-- **Unit Tests**: Test business logic and view models
-- **Integration Tests**: Test component interaction
-- **UI Tests**: Test end-to-end user flows
-
 ## Common Tasks
 
 ### Adding a New Feature
@@ -100,20 +78,6 @@ New features are protected behind feature flags using `FeatureFlagger`. See `Fea
 5. Integrate with existing systems (tabs, preferences, etc.)
 6. Add tests
 7. Update documentation
-
-### Debugging
-
-- **Console Logging**: Use `os.log` with appropriate subsystems
-- **Breakpoints**: Xcode breakpoints work well with Swift
-- **View Debugging**: Xcode's view hierarchy debugger
-- **Network Inspector**: Safari Web Inspector for WKWebView
-- **VPN Debugging**: System extension logs in Console.app
-
-### Performance Profiling
-
-- **Instruments**: Time Profiler, Allocations, Leaks
-- **PixelKit**: Custom performance metrics
-- **WebKit Inspector**: JavaScript profiling
 
 ## Privacy Features
 

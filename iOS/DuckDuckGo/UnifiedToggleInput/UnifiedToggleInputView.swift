@@ -803,6 +803,7 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        textEntryView.isExpandable = false
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {

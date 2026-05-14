@@ -50,7 +50,7 @@ Device Setup:
 ### Package Architecture
 
 ```
-App Layer (macOS/DuckDuckGo/Sync/)
+App Layer (Sync feature module)
     ↓
 DDGSync Package (core engine)
     ├── Account Management

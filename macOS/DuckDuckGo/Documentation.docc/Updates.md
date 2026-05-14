@@ -22,36 +22,14 @@ The Updates system manages checking for, downloading, and installing app updates
 
 ### Core Protocol
 
-The `UpdateController` protocol defines the unified interface for update management:
-
-```
-UpdateController (Protocol)
-├── latestUpdate: Update?
-├── hasPendingUpdate: Bool
-├── needsNotificationDot: Bool
-├── updateProgress: UpdateCycleProgress
-├── areAutomaticUpdatesEnabled: Bool
-├── checkForUpdateSkippingRollout()
-├── runUpdate()
-└── openUpdatesPage()
-```
+The ``UpdateController`` protocol exposes the published state the UI binds to (`latestUpdate`, `hasPendingUpdate`, `needsNotificationDot`, `updateProgress`, `areAutomaticUpdatesEnabled`) and the actions callers invoke (`checkForUpdateSkippingRollout()`, `runUpdate()`, `openUpdatesPage()`). The rest of the app depends on this protocol, not on a specific distribution.
 
 ### Distribution Implementations
 
-```
-Sparkle Build:
-    UpdateController ← SparkleUpdateController
-        ├── Sparkle Framework (SUUpdater)
-        ├── ApplicationUpdateDetector
-        ├── UpdateUserDriver
-        └── ReleaseNotesParser
+Two implementations conform to ``UpdateController``:
 
-App Store Build:
-    UpdateController ← AppStoreUpdateController
-        ├── LatestReleaseChecker (Cloud API)
-        ├── AppStoreOpener
-        └── Feature Flag Gating
-```
+- ``SparkleUpdateController`` — Drives Sparkle's `SUUpdater`, the `ApplicationUpdateDetector`, the `UpdateUserDriver`, and `ReleaseNotesParser`. Owns the full check → download → extract → install flow.
+- ``AppStoreUpdateController`` — Calls `LatestReleaseChecker` against DuckDuckGo's release metadata API, gated by feature flags, and uses `AppStoreOpener` to hand off to the Mac App Store.
 
 ## Key Components
 
@@ -155,39 +133,11 @@ The Settings > About section displays update information and controls:
 
 ### Sparkle Build Flow
 
-```
-1. Background Check (automatic or manual)
-    ↓
-2. Appcast Download & Parsing
-    ↓
-3. Version Comparison & Rollout Check
-    ↓
-4. Download Update Package (if automatic updates on)
-    ↓
-5. Extract & Validate
-    ↓
-6. Notify User (notification + menu dot)
-    ↓
-7. User Action: "Update DuckDuckGo" or "Install & Restart"
-    ↓
-8. Install & Relaunch App
-```
+A check (automatic or manual) downloads and parses the appcast, compares versions and applies the rollout filter, downloads the update package if automatic updates are on, extracts and validates the package, and notifies the user via a banner and menu dot. When the user picks "Update DuckDuckGo" or "Install & Restart", Sparkle installs the update and relaunches the app.
 
 ### App Store Build Flow
 
-```
-1. Background Check (automatic or manual)
-    ↓
-2. Cloud API Call (release metadata)
-    ↓
-3. Semantic Version Comparison
-    ↓
-4. Notify User (notification + menu dot)
-    ↓
-5. User Action: "Update DuckDuckGo"
-    ↓
-6. Open Mac App Store Page
-```
+A check calls the release-metadata cloud API, runs a semantic version comparison, and notifies the user. The "Update DuckDuckGo" action opens the Mac App Store page; the App Store itself handles the actual install.
 
 ## Update Types
 

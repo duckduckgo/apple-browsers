@@ -1,14 +1,11 @@
 ---
-title: macOS App Documentation Rules
-description: File-specific rules for macOS/DuckDuckGo/Documentation.docc/** - app-level documentation guidelines
-keywords: [documentation, macOS, app docs, integration, DocC]
+description: Guidelines for app-level documentation under macOS/DuckDuckGo/Documentation.docc/
 alwaysApply: false
-filePath: "macOS/DuckDuckGo/Documentation.docc/**"
 ---
 
 # macOS App Documentation Rules
 
-**Applies to**: `macOS/DuckDuckGo/Documentation.docc/**`
+**Applies to**: macOS app articles under `macOS/DuckDuckGo/Documentation.docc/`
 
 ## Focus
 
@@ -71,7 +68,7 @@ macOS-specific architecture:
 
 ## Key Components
 
-- Component descriptions with file paths
+- Component descriptions with DocC type references (e.g. ``ClassName``) or bare filenames — not full folder paths
 - macOS-specific implementations
 - File references, not code blocks
 

@@ -10,51 +10,19 @@ For the VPN package API documentation, see `TunnelController` in the VPN package
 
 ## Architecture
 
-### Process Architecture
-
-```
-┌─────────────────────┐
-│   DuckDuckGo.app    │
-│   (Main Browser)    │
-└──────────┬──────────┘
-           │ IPC (XPC/UDS)
-           ↓
-┌─────────────────────┐
-│ DuckDuckGoVPN.app   │
-│   (VPN Agent)       │
-└──────────┬──────────┘
-           │ NE Messages
-           ↓
-┌─────────────────────┐
-│  System Extension   │
-│ (Packet Tunnel)     │
-└─────────────────────┘
-```
+The VPN runs across three processes: the main browser (`DuckDuckGo.app`), a dedicated VPN agent (`DuckDuckGoVPN.app`), and a packet-tunnel system extension. The browser talks to the agent over IPC (XPC primary, Unix Domain Sockets fallback). The agent talks to the system extension via Network Extension provider messages. The extension does the actual packet forwarding.
 
 ### Key Components
 
-- **`NetworkProtectionIPCClient`** - NetworkProtection module
-  - IPC client in main app
-  - Communicates with VPN agent via XPC or Unix Domain Sockets
-  - Implements `TunnelController` protocol
+- ``NetworkProtectionIPCClient`` — IPC client used by the main app. Communicates with the VPN agent via XPC or Unix Domain Sockets and implements the ``TunnelController`` protocol so callers can drive the tunnel without knowing where it lives.
 
-- **`NetworkProtectionTunnelController`** - NetworkProtection module
-  - Full VPN controller implementation in VPN agent
-  - Manages `NETunnelProviderManager`
-  - Handles system extension lifecycle
+- ``NetworkProtectionTunnelController`` — Shared tunnel controller built into both the main app and the VPN agent targets. Manages `NETunnelProviderManager` and the system extension lifecycle.
 
-- **`DuckDuckGoVPN.app`** - VPN agent application
-  - Standalone VPN agent application
-  - Runs as login item for persistent VPN
-  - Hosts IPC servers (XPC + UDS)
+- ``DuckDuckGoVPN.app`` — Standalone VPN agent application. Runs as a login item for persistent VPN and hosts the IPC servers (XPC + UDS).
 
-- **`PacketTunnelProvider`** - VPN package
-  - System extension that routes network traffic
-  - WireGuard-based VPN implementation
+- ``PacketTunnelProvider`` — System extension that routes network traffic. WireGuard-based.
 
-- **`SystemExtensionManager`** - SystemExtensionManager package
-  - Wrapper around macOS SystemExtensions framework
-  - Handles installation, uninstallation, and upgrades
+- ``SystemExtensionManager`` — Wrapper around macOS `SystemExtensions` that handles installation, uninstallation, and upgrades.
 
 ## IPC Communication
 
@@ -127,10 +95,10 @@ The `NetworkProtectionControllerTabExtension` allows excluding specific domains 
 
 ### Connection Monitoring
 
-- `NetworkProtectionStatusReporter` - Publishes connection status changes
-- `NetworkProtectionLatencyMonitor` - Tracks connection latency
-- `NetworkProtectionBandwidthAnalyzer` - Monitors data usage
-- `NetworkProtectionTunnelFailureMonitor` - Detects and reports failures
+- ``NetworkProtectionStatusReporter`` — Publishes connection status changes
+- ``NetworkProtectionLatencyMonitor`` — Tracks connection latency
+- ``NetworkProtectionConnectionBandwidthAnalyzer`` — Monitors data usage
+- ``NetworkProtectionTunnelFailureMonitor`` — Detects and reports failures
 
 ### State Management
 
@@ -141,36 +109,11 @@ The `NetworkProtectionControllerTabExtension` allows excluding specific domains 
 
 State is synchronized across processes and persists across launches.
 
-## Key Files
+## Entry Points
 
-### Main App Integration
-
-- **`TunnelControllerProvider`**
-  - Provides `NetworkProtectionIPCClient` instance
-  - Main app's entry point for VPN control
-
-- **`NetworkProtectionControllerTabExtension`**
-  - Per-tab VPN exclusion management
-  - Integrated into Tab architecture
-
-### VPN Agent
-
-- **`DuckDuckGoVPNAppDelegate`**
-  - VPN agent application delegate
-  - IPC server setup
-  - Tunnel controller lifecycle
-
-- **`NetworkProtectionTunnelController`**
-  - Full controller implementation
-  - System extension management
-  - Connection state machine
-
-### System Extension Manager
-
-- **`SystemExtensionManager`**
-  - System extension lifecycle
-  - Installation/uninstallation
-  - Status reporting
+- ``TunnelControllerProvider`` — Vends a ``NetworkProtectionIPCClient`` to the main app; the app's entry point for VPN control.
+- ``NetworkProtectionControllerTabExtension`` — Per-tab VPN exclusion management, integrated into the Tab architecture.
+- ``DuckDuckGoVPNAppDelegate`` — The VPN agent's delegate; owns IPC server setup and the tunnel controller lifecycle inside the agent process.
 
 ## Common Tasks
 

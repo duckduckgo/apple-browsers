@@ -28,15 +28,16 @@ let isConnected = await tunnelController.isConnected
 
 The ``VPNCommand`` enum defines commands that can be sent to the tunnel:
 
-- `.expireRegistrationKey` - Expire the current registration key
-- `.removeSystemExtension` - Remove the system extension
-- `.removeVPNConfiguration` - Remove VPN configuration
-- `.restartAdapter` - Restart the VPN adapter
-- `.sendTestNotification` - Send a test notification
-- `.uninstallVPN(showNotification:)` - Uninstall VPN with optional notification
-- `.simulateSubscriptionExpirationInTunnel` - Test subscription expiration handling
-- `.quitAgent` - Quit the VPN agent
-- `.createLogSnapshot` - Create a snapshot of logs for debugging
+- `.expireRegistrationKey` — Expire the current registration key
+- `.removeSystemExtension` — Remove the system extension
+- `.removeVPNConfiguration` — Remove the VPN configuration
+- `.restartAdapter` — Restart the VPN adapter
+- `.sendTestNotification` — Send a test notification
+- `.uninstallVPN(showNotification:)` — Uninstall the VPN, optionally surfacing a notification
+- `.simulateSubscriptionExpirationInTunnel` — Test subscription-expiration handling in the tunnel
+- `.quitAgent` — Quit the VPN agent
+- `.createLogSnapshot` — Snapshot logs for debugging
+- `.triggerLeakCheck` — Run a leak check against the active tunnel
 
 ## Connection Status
 

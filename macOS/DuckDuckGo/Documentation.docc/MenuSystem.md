@@ -17,7 +17,7 @@ MainMenu (NSMenu)
 ├── Edit Menu
 ├── View Menu
 ├── History Menu (HistoryMenu)
-├── Bookmarks Menu (BookmarksMenu)
+├── Bookmarks Menu (built inline in MainMenu)
 ├── Window Menu
 ├── Debug Menu (feature-flagged)
 └── Help Menu
@@ -37,66 +37,49 @@ MainMenuActions (Action Handlers)
 - **Responder Chain**: Actions route through first responder
 - **Feature Flags**: Conditional menu items based on feature flags
 
-## Key Files
+## Key Components
 
 ### Core Implementation
 
-- **`MainMenu.swift`** (`macOS/DuckDuckGo/Menus/MainMenu.swift`)
-  - Main menu construction and management
-  - Menu item lifecycle and updates
-  - Feature flag integration
-
-- **`MainMenuActions.swift`** (`macOS/DuckDuckGo/MainWindow/MainMenuActions.swift`)
-  - Action method implementations
-  - Responder chain integration
-  - Coordinates with FireCoordinator, TabCollection, etc.
+- ``MainMenu`` — main menu construction and management; menu item lifecycle, updates, and feature flag integration. The bookmarks menu is constructed inside ``MainMenu`` via a `buildBookmarksMenu` method rather than a separate type, and the resulting `NSMenu` is updated in place as bookmarks change.
+- ``MainMenuActions`` — action method implementations; responder chain integration and coordination with ``FireCoordinator``, ``TabCollectionViewModel``, and other app components.
 
 ### Dynamic Menus
 
-- **`HistoryMenu.swift`** (`macOS/DuckDuckGo/Menus/HistoryMenu.swift`)
-  - History menu construction from HistoryCoordinator data
-  - Grouped by date with submenus
-  - Clear history options
-
-- **`BookmarksMenu.swift`** (`macOS/DuckDuckGo/Menus/BookmarksMenu.swift`)
-  - Bookmark menu tree from BookmarkManager
-  - Folders as submenus
-  - Favorites section
+- ``HistoryMenu`` — history menu construction from ``HistoryCoordinator`` data; grouped by date with submenus and clear-history options.
+- Bookmarks menu — constructed within ``MainMenu`` from ``BookmarkManager``; folders become submenus and favorites appear in a dedicated section. The menu rebuilds itself in response to bookmark store changes.
 
 ### Menu Item Extensions
 
-- **`NSMenuItem+Common.swift`** (`macOS/DuckDuckGo/Menus/NSMenuItem+Common.swift`)
-  - Builder pattern extensions
-  - Fluent API for menu construction
-  - Keyboard shortcut helpers
+- `NSMenuItem+Common` — builder pattern extensions providing a fluent API for menu construction and keyboard shortcut helpers.
 
 ## Common Tasks
 
 ### Adding a New Menu Item
 
-Add menu items in `MainMenu.swift` within the appropriate menu building method (`buildFileMenu`, `buildEditMenu`, etc.). Use the builder pattern with `NSMenuItem` and assign actions with selectors targeting `MainMenuActions`.
+Add menu items in ``MainMenu`` within the appropriate menu-building method (such as `buildFileMenu` or `buildEditMenu`). Use the builder pattern with `NSMenuItem` and assign actions with selectors targeting ``MainMenuActions``.
 
 ### Implementing Menu Actions
 
-Implement action methods in `MainMenuActions.swift` using `@objc func` with `_ sender: Any?` parameter. Access the window controller and tab collection through the responder chain.
+Implement action methods in ``MainMenuActions`` as `@objc` functions taking an `Any?` sender. Access the window controller and tab collection through the responder chain.
 
 ### Adding Submenus
 
-Create submenus using `NSMenuItem.submenu()` with nested `buildItems` blocks. Use `NSMenuItem.separator()` for dividers.
+Create submenus by attaching an `NSMenu` to a parent `NSMenuItem`, building its items with the same fluent builder used in ``MainMenu``. Use `NSMenuItem.separator()` for dividers.
 
 ### Feature-Flagged Menu Items
 
-Check `featureFlagger.isFeatureOn()` and return the menu item or `nil` to conditionally include items.
+Check the relevant feature flag through ``FeatureFlagger`` and return the menu item or `nil` to conditionally include items in the menu structure.
 
 ### Dynamic Menu Updates
 
-Override `update()` in `MainMenu` to refresh menu item states (hidden, enabled, title) based on application state.
+Override ``MainMenu``'s `update()` to refresh menu-item state (hidden, enabled, title) based on application state.
 
 ### Menu Validation
 
-Implement `validateMenuItem(_:)` in your view controller or action handler to enable/disable menu items based on current state.
+Implement `validateMenuItem(_:)` in your view controller or action handler to enable or disable menu items based on current state.
 
-Refer to `MainMenu.swift` and `MainMenuActions.swift` for implementation patterns.
+Refer to ``MainMenu`` and ``MainMenuActions`` for implementation patterns.
 
 ## Patterns & Best Practices
 
@@ -126,7 +109,7 @@ Control menu item state with `isEnabled`, `state` (.on/.off for checkmarks), and
 
 ### Bookmark and History Menus
 
-These menus rebuild dynamically by subscribing to data change publishers from `BookmarkManager` and `HistoryCoordinator`. See `MainMenu.swift` for implementation.
+These menus rebuild dynamically by subscribing to data-change publishers from ``BookmarkManager`` and ``HistoryCoordinator``. The bookmarks menu is built inline within ``MainMenu``; the history menu lives in ``HistoryMenu``.
 
 ## Common Menu Structure
 
@@ -188,7 +171,7 @@ Test menu structure and feature-flagged items using mock dependencies. Use `NSMe
 
 - ``MainMenuActions`` - Action implementations
 - ``HistoryMenu`` - Dynamic history menu
-- ``BookmarksMenu`` - Dynamic bookmarks menu
+- ``MainMenu`` - Hosts the inline bookmarks menu construction
 - ``NSMenuItem`` - AppKit menu item class
 - ``NSMenu`` - AppKit menu class
 

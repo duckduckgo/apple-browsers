@@ -4,237 +4,94 @@ Content blocking, tracker detection, and privacy protections are core to DuckDuc
 
 ## Overview
 
-The DuckDuckGo macOS browser implements comprehensive privacy protections through multiple coordinated systems. At the heart of these features is a sophisticated content blocking pipeline that compiles tracker blocking rules and applies them to web content using WebKit's content blocking API. This system works in conjunction with privacy reporting, the Privacy Dashboard, and various other privacy features to provide transparent, effective protection without impacting browsing performance.
+The DuckDuckGo macOS browser implements comprehensive privacy protections through multiple coordinated systems. At the heart of these features is a content blocking pipeline that compiles tracker blocking rules and applies them to web content using WebKit's content blocking API. This system works in conjunction with privacy reporting, the Privacy Dashboard, and various other privacy features to provide transparent, effective protection.
 
 The privacy architecture is designed for flexibility and extensibility, allowing new protections to be added while maintaining clear separation of concerns. Configuration is managed remotely, allowing real-time updates to protection rules without requiring app updates.
+
+For the underlying protocol APIs (``ContentBlockerRulesManager``, ``TrackerDataManager``, ``PrivacyConfigurationManager``), see the BrowserServicesKit package documentation.
 
 ## Architecture
 
 ### Content Blocking Pipeline
 
-```
-Remote Configuration (Privacy Config + TDS)
-    ↓
-TrackerDataManager + PrivacyConfigurationManager
-    ↓
-ContentBlockerRulesManager
-    ↓ (compilation)
-ContentBlockingRulesCache
-    ↓
-WKContentRuleListStore (WebKit)
-    ↓
-Per-Tab ContentBlockingTabExtension
-    ↓
-Content Blocked / Surrogate Injected
-```
+Remote configuration (privacy config and the Tracker Data Set) feeds the package-level managers, which orchestrate rule compilation through WebKit's content rule list store. Compiled rules are cached, then applied per-tab via a content blocking tab extension that records blocked trackers for the Privacy Dashboard.
 
 ### Key Components
 
-- **AppContentBlocking** (`macOS/DuckDuckGo/ContentBlocker/ContentBlocking.swift`)
-  - Central coordinator for all privacy features
-  - Initializes and wires together managers
-  - Publishes content blocking updates
+- ``AppContentBlocking`` — central app-side coordinator that wires the package-level managers together, initializes the rules pipeline, and publishes content blocking updates.
+- ``ContentBlockerRulesManager`` (BrowserServicesKit) — orchestrates rule compilation, manages compilation state and queuing, and coordinates with WebKit's content rule store.
+- ``TrackerDataManager`` (BrowserServicesKit) — manages the Tracker Data Set, handles remote updates and etags, and provides tracker information for blocking decisions.
+- ``PrivacyConfigurationManager`` (BrowserServicesKit) — manages privacy feature configuration, determines which features are enabled per-site, and handles unprotected domains.
+- ``ContentBlockingTabExtension`` — per-tab privacy protection state. Tracks blocked trackers and feeds the Privacy Dashboard with data.
 
-- **ContentBlockerRulesManager** (`BrowserServicesKit`)
-  - Orchestrates rule compilation process
-  - Manages compilation state and queuing
-  - Coordinates with WebKit's content rule store
+## How Compilation Works
 
-- **TrackerDataManager** (`BrowserServicesKit`)
-  - Manages Tracker Data Set (TDS)
-  - Handles remote updates and etags
-  - Provides tracker information for blocking decisions
+Content blocking rule compilation is a multi-stage process triggered when the Tracker Data Set or privacy configuration updates.
 
-- **PrivacyConfigurationManager** (`BrowserServicesKit`)
-  - Manages privacy feature configuration
-  - Determines which features are enabled per-site
-  - Handles unprotected domains
+1. The rules manager schedules compilation, returning a completion token. Concurrent requests are queued rather than run in parallel.
+2. Per-list source managers are prepared — the main Tracker Data Set rules, ad click attribution rules extracted from the TDS, and any additional rules lists.
+3. Each rules list is converted to JSON and compiled via WebKit's content rule list store. Compiled rules are cached by identifier.
+4. After all compilations finish, the current rules set is updated and an update event is published through Combine.
+5. Each tab observes the update, removes old rule lists from its `WKWebView`, adds the new compiled lists, and reloads if necessary.
 
-- **ContentBlockingTabExtension** (`macOS/DuckDuckGo`)
-  - Per-tab privacy protection state
-  - Tracks blocked trackers and requests
-  - Feeds Privacy Dashboard with data
+Compilation is expensive — WebKit compilation can take 1–2 seconds for large rule sets — so caching and queuing matter. See ``ContentBlockerRulesManager`` in BrowserServicesKit for the state machine details.
 
-## Key Files
+## Adding a New Privacy Protection Feature
 
-### Core Implementation
+1. Define the feature in the remote privacy configuration with feature flags and site-specific exceptions.
+2. Check feature state through ``PrivacyConfigurationManager``.
+3. Implement a rules source conforming to ``ContentBlockerRulesListsSource`` (see the BrowserServicesKit package docs for the protocol contract).
+4. Register the rules source with ``ContentBlockerRulesManager`` during initialization. ``AppContentBlocking`` is the wiring point in the macOS app.
+5. Optionally add a `TabExtension` to track per-tab state. ``ContentBlockingTabExtension`` is the canonical example.
 
-- **`ContentBlocking.swift`** (`macOS/DuckDuckGo/ContentBlocker/ContentBlocking.swift`)
-  - AppContentBlocking class initialization
-  - Dependency injection and coordinator setup
+## Accessing Privacy Information for a Tab
 
-- **`ContentBlockerRulesManager.swift`** (`SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/ContentBlocking/ContentBlockerRulesManager.swift`)
-  - Rules compilation orchestration
-  - State machine for compilation process
-  - Cache management and updates
+Privacy state is exposed through the ``Tab`` public interface: `tab.contentBlocking` for blocking state and `tab.privacyInfo` for dashboard data. See ``ContentBlockingTabExtension`` and ``PrivacyDashboardTabExtension`` for the properties they publish.
 
-- **`ContentBlockingTabExtension.swift`** (`macOS/DuckDuckGo/Tab/TabExtensions/ContentBlockingTabExtension.swift`)
-  - Per-tab tracking and blocking state
-  - Integration with WebKit content rules
-  - Privacy Dashboard data provider
+## Debugging Content Blocking
 
-### Privacy Dashboard
+**Tracker not blocked**: check whether the domain is in the unprotected list, that the tracker is in the Tracker Data Set with the expected rules, and that no privacy configuration feature toggle disables it. Compiled rules JSON can be inspected for confirmation.
 
-- **`PrivacyDashboardViewController.swift`** (`macOS/DuckDuckGo/PrivacyDashboard/PrivacyDashboardViewController.swift`)
-  - UI for displaying privacy information
-  - Shows blocked trackers, protections status
-  - Toggle for site-specific protections
+**Compilation failing**: check logs for WebKit compilation errors and verify JSON rule syntax. WebKit enforces rule count limits, and conflicting rules can also break compilation.
 
-- **`PrivacyDashboardTabExtension.swift`** (`macOS/DuckDuckGo/Tab/TabExtensions/PrivacyDashboardTabExtension.swift`)
-  - Tab extension providing privacy data
-  - Coordinates between ContentBlocking and Dashboard UI
+**Performance issues**: monitor compilation time via the Content Blocking Assets Time Reporter, check rule counts (fewer, more targeted rules perform better), and verify the rules cache is being used.
 
-### Configuration & Data
+## Patterns and Best Practices
 
-- **`PrivacyConfigurationManager.swift`** (`BrowserServicesKit`)
-  - Remote configuration handling
-  - Feature toggles and exceptions
-  - Unprotected domain management
-
-- **`TrackerDataManager.swift`** (`BrowserServicesKit`)
-  - Tracker Data Set (TDS) management
-  - Entity and tracker information
-  - Surrogate script management
-
-## Common Tasks
-
-### Understanding the Compilation Process
-
-The content blocking rules compilation is a multi-stage process:
-
-1. **Schedule Compilation**: Called when TDS or privacy config updates
-   - Returns a completion token for tracking
-   - Queues compilation if one is already in progress
-
-2. **Prepare Source Managers**: Create managers for each rules list
-   - Main TDS rules (trackers, entities, domains)
-   - Ad Click Attribution rules (extracted from TDS)
-   - Additional rules lists as needed
-
-3. **Compile Rules**: For each rules list
-   - Generate JSON rule list from TrackerData
-   - Call `WKContentRuleListStore.compile()` (WebKit API)
-   - Cache compiled rules with identifier
-
-4. **Apply Rules**: After all compilations complete
-   - Update `currentRules` with new compiled lists
-   - Publish update event through Combine
-   - Notify tabs to reload content blocking
-
-5. **Tab Application**: Each tab receives update
-   - Removes old content rule lists
-   - Adds new compiled rule lists to WKWebView
-   - Reloads page if necessary
-
-### Adding a New Privacy Protection Feature
-
-To add a new privacy protection feature:
-
-1. Define the feature in the remote privacy configuration with feature flags and site-specific exceptions
-2. Check feature state using `PrivacyConfigurationManager.privacyConfig.isFeature(_:enabledForDomain:)`
-3. Implement protection logic by creating a rules source conforming to `ContentBlockerRulesListsSource`:
-
-```swift
-final class NewFeatureRulesSource: ContentBlockerRulesListsSource {
-    func contentBlockerRules() -> ContentBlockerRulesManager.Rules {
-        // Generate your rules here
-    }
-}
-```
-
-4. Register your rules source with `ContentBlockerRulesManager` during initialization
-5. Optionally create a `TabExtension` to track per-tab state
-
-See `ContentBlocking.swift` for initialization patterns and existing `TabExtension` implementations for reference.
-
-### Accessing Privacy Information for a Tab
-
-Access privacy information through the `Tab` public interface: `tab.contentBlocking` for blocking state and `tab.privacyInfo` for dashboard data. Refer to `ContentBlockingTabExtension` and `PrivacyDashboardTabExtension` for available properties.
-
-### Debugging Content Blocking
-
-Common debugging scenarios:
-
-**Tracker Not Blocked:**
-1. Check if domain is in unprotected domains list
-2. Verify tracker is in TDS with correct rules
-3. Check privacy configuration for feature toggles
-4. Inspect compiled rules JSON
-
-**Rules Compilation Failing:**
-1. Check logs for WebKit compilation errors
-2. Verify JSON rule syntax
-3. Check for rule count limits (WebKit has limits)
-4. Look for conflicting rules
-
-**Performance Issues:**
-1. Monitor compilation time via Content Blocking Assets Time Reporter
-2. Check rules count (fewer, more targeted rules are better)
-3. Verify cache is working (check ContentBlockingRulesCache)
-
-## Patterns & Best Practices
-
-### Remote Configuration
-
-- **Always respect privacy configuration**: Check `PrivacyConfigurationManager` before applying protections
-- **Handle unprotected domains**: Sites can be temporarily or permanently unprotected
-- **Test with embedded and remote configs**: Ensure fallback to embedded config works
-
-### Compilation Management
-
-- **Compilation is expensive**: WebKit compilation can take 1-2 seconds for large rule sets
-- **Use completion tokens**: Track compilation requests to avoid redundant work
-- **Cache aggressively**: Leverage `ContentBlockingRulesCache` to skip unnecessary recompilation
-- **Queue intelligently**: `ContentBlockerRulesManager` queues requests if compilation is in progress
-
-### Tab Integration
-
-- **Lazy initialization**: Don't compile rules until actually needed
-- **Update gracefully**: Allow users to continue browsing while rules update
-- **Coordinate with navigation**: Apply new rules at appropriate navigation boundaries
+- Always respect privacy configuration — check ``PrivacyConfigurationManager`` before applying protections. Sites can be temporarily or permanently unprotected.
+- Test with both embedded and remote configs to ensure fallback works.
+- Use completion tokens from the rules manager to avoid redundant compilation work.
+- Don't compile rules until they're actually needed; allow users to keep browsing while rules update; apply new rules at navigation boundaries.
 
 ### Testing
 
-Test privacy features using mock implementations of `PrivacyConfigurationManager` and `TrackerDataManager` to verify content blocking behavior in isolation.
+Test privacy features using mock implementations of ``PrivacyConfigurationManager`` and ``TrackerDataManager`` to verify content blocking behavior in isolation.
 
 ## Privacy Dashboard Integration
 
-The Privacy Dashboard provides transparency into privacy protections:
+The Privacy Dashboard surfaces tracker blocking and protection state to the user.
 
-### Architecture
+``PrivacyDashboardViewController`` hosts the dashboard UI. It receives aggregated data from ``PrivacyDashboardTabExtension``, which in turn reads blocking state from ``ContentBlockingTabExtension`` and the per-tab ``PrivacyInfo`` model.
 
-```
-PrivacyDashboardViewController (UI)
-    ↓
-PrivacyDashboardTabExtension (Data)
-    ↓
-ContentBlockingTabExtension (Blocking State)
-    ↓
-PrivacyInfo (Aggregated Data)
-```
+The dashboard displays:
 
-### Key Information Displayed
-
-- **Protection Status**: Whether protections are active
-- **Blocked Trackers**: List of trackers blocked on current page
-- **Tracker Networks**: Entities owning blocked trackers
-- **Site Grade**: Privacy grade before/after protections
-- **Unprotected Toggle**: User control to disable protections per-site
+- **Protection status** — whether protections are active for the current site.
+- **Blocked trackers** — list of trackers blocked on the current page.
+- **Tracker networks** — entities owning the blocked trackers.
+- **Site grade** — privacy grade before and after protections.
+- **Unprotected toggle** — user control to disable protections per-site.
 
 ### Extending the Dashboard
 
-To add new information to the Privacy Dashboard:
-
-1. Update `PrivacyInfo` model with new data
-2. Modify `PrivacyDashboardTabExtension` to provide data
-3. Update `PrivacyDashboardViewController` UI if needed
-4. Consider adding to site grade calculation if relevant
+1. Update the ``PrivacyInfo`` model with the new data.
+2. Modify ``PrivacyDashboardTabExtension`` to provide the data.
+3. Update ``PrivacyDashboardViewController`` UI if needed.
+4. Consider whether the data should influence site grade.
 
 ## Related Topics
 
-- <doc:TabManagement> - Tab architecture and extensions
-- <doc:UserScripts> - JavaScript injection for privacy features
-- ``ContentBlockerRulesManager`` - Rules compilation engine
-- ``PrivacyConfigurationManager`` - Feature configuration
-- ``TrackerDataManager`` - Tracker data management
-
+- <doc:TabManagement> — tab architecture and extensions
+- <doc:UserScripts> — JavaScript injection for privacy features
+- ``ContentBlockerRulesManager`` — rules compilation engine
+- ``PrivacyConfigurationManager`` — feature configuration
+- ``TrackerDataManager`` — tracker data management

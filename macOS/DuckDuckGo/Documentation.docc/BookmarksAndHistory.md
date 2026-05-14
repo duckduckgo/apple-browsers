@@ -6,7 +6,7 @@ Persistent storage, sync coordination, and cross-platform data models for browsi
 
 Bookmarks and history are fundamental features of the DuckDuckGo browser, providing users with ways to save and revisit their favorite sites and track their browsing activity. Both systems are built on Core Data, support cross-platform synchronization via Sync, and implement encryption for privacy protection.
 
-The architecture separates concerns between the macOS-specific UI and interaction layers (`BookmarkManager`, `HistoryCoordinator`) and the shared cross-platform data models and sync logic (in `SharedPackages`). This design enables code reuse between macOS and iOS while allowing platform-specific optimizations and UI patterns.
+The architecture separates concerns between the macOS-specific UI and interaction layers (``BookmarkManager``, ``HistoryCoordinating``) and shared cross-platform data models and sync logic that live in packages. This design enables code reuse between macOS and iOS while allowing platform-specific optimizations and UI patterns.
 
 ## Architecture
 
@@ -18,12 +18,12 @@ macOS UI Layer
 ├── BookmarkListViewController
 └── BookmarkDragDropManager
     ↓
-Storage Layer (SharedPackages/Bookmarks)
+Storage Layer (Bookmarks package)
 ├── LocalBookmarkStore
 ├── BookmarkDatabase (CoreData)
 └── Bookmark/BookmarkFolder models
     ↓
-Sync Layer (SharedPackages/BrowserServicesKit)
+Sync Layer (BrowserServicesKit)
 ├── BookmarksProvider (SyncDataProvider)
 ├── BookmarksResponseHandler
 └── Sync encryption & conflict resolution
@@ -36,147 +36,72 @@ macOS UI Layer
 ├── HistoryCoordinator (coordinator protocol)
 └── History views & controllers
     ↓
-Coordinator Layer (SharedPackages/BrowserServicesKit)
+Coordinator Layer (BrowserServicesKit)
 └── HistoryCoordinator
     ├── historyDictionary (in-memory cache)
     └── BrowsingHistory (structured output)
         ↓
-Storage Layer (SharedPackages/BrowserServicesKit or macOS)
-├── HistoryStoring protocol
-├── EncryptedHistoryStore (macOS) or HistoryStore (iOS)
+Storage Layer
+├── HistoryStoring protocol (BrowserServicesKit)
+├── EncryptedHistoryStore (macOS)
 └── BrowsingHistoryEntryManagedObject (CoreData)
 ```
 
 ### Cross-Platform Data Models
 
-Both bookmarks and history use shared data models defined in `SharedPackages`:
+Both bookmarks and history use shared data models defined in packages:
 
 - **Bookmark**: Core bookmark entity with URL, title, favorite status
 - **BookmarkFolder**: Hierarchical folder structure
 - **HistoryEntry**: URL visit with metadata and tracking info
 - **Visit**: Individual page visit with timestamp
 
-## Key Files
+## Key Components
 
 ### Bookmarks - macOS Implementation
 
-- **`BookmarkManager.swift`** (`macOS/DuckDuckGo/Bookmarks/Model/BookmarkManager.swift`)
-  - `BookmarkManager` protocol defining CRUD operations
-  - `LocalBookmarkManager` concrete implementation
-  - Sync request coordination
-  - Search and query operations
-
-- **`BookmarkListViewController.swift`** (`macOS/DuckDuckGo/Bookmarks/View/BookmarkListViewController.swift`)
-  - Main bookmarks sidebar UI
-  - Drag & drop support
-  - Context menu actions
-
-- **`BookmarkDragDropManager.swift`** (`macOS/DuckDuckGo/Bookmarks/Services/BookmarkDragDropManager.swift`)
-  - Drag and drop coordination
-  - Pasteboard integration
+- ``BookmarkManager`` / ``LocalBookmarkManager`` — protocol defining CRUD operations and its concrete implementation, plus sync request coordination and search.
+- ``BookmarkListViewController`` — main bookmarks sidebar UI with drag & drop and context menu actions.
+- ``BookmarkDragDropManager`` — drag and drop coordination and pasteboard integration.
 
 ### Bookmarks - Shared Components
 
-- **`LocalBookmarkStore.swift`** (`SharedPackages/Bookmarks/Sources/Bookmarks/LocalBookmarkStore.swift`)
-  - Core Data operations
-  - Transaction management
-  - Validation and constraints
-
-- **`BookmarkDatabase.swift`** (`SharedPackages/Bookmarks/Sources/Bookmarks/BookmarkDatabase.swift`)
-  - Core Data stack setup
-  - Migration management
-
-- **`BookmarksProvider.swift`** (`SharedPackages/BrowserServicesKit/Sources/SyncDataProviders/Bookmarks/BookmarksProvider.swift`)
-  - Sync integration
-  - Conflict resolution
-  - Response handling
+- ``LocalBookmarkStore`` — Core Data operations, transaction management, validation, and constraints.
+- ``BookmarkDatabase`` — Core Data stack setup and migration management.
+- ``BookmarksProvider`` — sync integration, conflict resolution, and response handling (in BrowserServicesKit).
 
 ### History - macOS Implementation
 
-- **`HistoryCoordinator.swift`** (`macOS/DuckDuckGo/History/Model/HistoryCoordinator.swift` or `SharedPackages/BrowserServicesKit/Sources/History/HistoryCoordinator.swift`)
-  - In-memory history dictionary management
-  - Visit tracking and updating
-  - Periodic cleaning of old entries
-  - Published history updates via Combine
-
-- **`EncryptedHistoryStore.swift`** (`macOS/DuckDuckGo/History/Services/EncryptedHistoryStore.swift`)
-  - macOS-specific encrypted storage
-  - Core Data context management
-  - Encryption/decryption of URLs and titles
+- ``HistoryCoordinator`` — in-memory history dictionary management, visit tracking, periodic cleaning, and published updates via Combine. Defined in BrowserServicesKit and used by the macOS app.
+- ``EncryptedHistoryStore`` — macOS-specific encrypted storage with Core Data context management and encryption/decryption of URLs and titles.
 
 ### History - Shared Components
 
-- **`HistoryStoring.swift`** (`SharedPackages/BrowserServicesKit/Sources/History/HistoryStore.swift`)
-  - History storage protocol
-  - Core Data operations
-  - Visit persistence
-
-- **`HistoryEntry.swift`** (`SharedPackages/BrowserServicesKit/Sources/History/HistoryEntry.swift`)
-  - History entry model
-  - Visit tracking
-  - Tracker statistics
+- ``HistoryStoring`` — history storage protocol covering Core Data operations and visit persistence.
+- ``HistoryEntry`` — history entry model with visit tracking and tracker statistics.
 
 ### Tab Extensions
 
-- **`HistoryTabExtension.swift`** (`macOS/DuckDuckGo/Tab/TabExtensions/HistoryTabExtension.swift`)
-  - Per-tab history tracking
-  - Integration with HistoryCoordinator
-  - Navigation event handling
+- ``HistoryTabExtension`` — per-tab history tracking that integrates with ``HistoryCoordinator`` and handles navigation events.
 
 ## Common Tasks
 
-### Using BookmarkManager (Package API)
+### Using BookmarkManager
 
-The `BookmarkManager` protocol provides bookmark management operations:
+The ``BookmarkManager`` protocol provides CRUD operations (`makeBookmark`, `makeFolder`, `move`, `search`, `isUrlBookmarked`) and triggers sync after mutations. Refer to the protocol in the Bookmarks package for the complete API and parameter shapes.
 
-```swift
-// Add a bookmark
-bookmarkManager.makeBookmark(
-    for: url,
-    title: "Title",
-    isFavorite: false,
-    index: nil,
-    parent: nil
-) { error in
-    // Handle result
-}
+### Using HistoryCoordinator
 
-// Other operations
-let isBookmarked = bookmarkManager.isUrlBookmarked(url: url)
-bookmarkManager.makeFolder(named: "Folder", parent: nil) { result in }
-bookmarkManager.move(objectUUIDs: uuids, toIndex: 0, withinParentFolder: .root) { error in }
-let results = bookmarkManager.search(by: "query")
-```
-
-Refer to the `BookmarkManager` protocol for the complete API.
-
-### Using HistoryCoordinator (Package API)
-
-The `HistoryCoordinator` protocol provides history tracking operations:
-
-```swift
-// Add a visit
-let visit = historyCoordinator.addVisit(of: url, at: Date())
-
-// Track privacy information
-historyCoordinator.addBlockedTracker(entityName: "Tracker", on: url)
-historyCoordinator.updateTitleIfNeeded(title: "Title", url: url)
-
-// Query history
-let history = historyCoordinator.history
-let allVisits = historyCoordinator.allHistoryVisits
-```
-
-Refer to the `HistoryCoordinating` protocol for the complete API.
+The ``HistoryCoordinating`` protocol provides visit tracking (`addVisit`), privacy data (`addBlockedTracker`, `updateTitleIfNeeded`), and history queries (`history`, `allHistoryVisits`). Refer to the protocol in BrowserServicesKit for the complete API.
 
 ## Patterns & Best Practices
 
 ### Sync Integration
 
-Both bookmarks and history trigger sync after modifications. The `BookmarkManager` calls `requestSync()` after successful operations, which notifies the sync service. Best practices:
+Both bookmarks and history trigger sync after modifications. ``BookmarkManager`` calls `requestSync()` after successful operations, which notifies the sync service. Best practices:
 - Always call sync after successful data modifications
 - Let the sync scheduler decide when to actually sync
-- Handle sync conflicts at the data provider level (`BookmarksProvider`)
+- Handle sync conflicts at the data provider level (``BookmarksProvider``)
 - Use timestamps to resolve conflicts (last-write-wins for most fields)
 
 ### Undo Support
@@ -188,41 +113,41 @@ Bookmarks support undo/redo operations. Pass an `UndoManager` to mutation method
 Both systems use Core Data with proper concurrency:
 - Use `.privateQueueConcurrencyType` for background operations
 - Always call `context.perform()` or `context.performAndWait()`
-- Don't pass managed objects between threads - use object IDs
+- Don't pass managed objects between threads — use object IDs
 
-See `LocalBookmarkStore` and `HistoryStore` for implementation patterns.
+See ``LocalBookmarkStore`` and ``HistoryStoring`` implementations for patterns.
 
 ### History Memory Management
 
-`HistoryCoordinator` maintains an in-memory dictionary for performance (O(1) lookup) and reactive updates via Combine. Subscribe to `historyDictionaryPublisher` for change notifications. The coordinator handles periodic persistence to Core Data and regular cleaning.
+``HistoryCoordinator`` maintains an in-memory dictionary for performance (O(1) lookup) and reactive updates via Combine. Subscribe to `historyDictionaryPublisher` for change notifications. The coordinator handles periodic persistence to Core Data and regular cleaning.
 
 ### Encryption (macOS History)
 
-History is encrypted at rest on macOS via `EncryptedHistoryStore`. Encryption happens transparently in the store layer using system keychain-managed keys and Core Data transformers.
+History is encrypted at rest on macOS via ``EncryptedHistoryStore``. Encryption happens transparently in the store layer using system keychain-managed keys and Core Data transformers.
 
 ## Data Models
 
-Data models are defined in SharedPackages:
+Data models are defined in packages:
 
-- **`Bookmark`** - URL, title, favorite status (inherits from `BaseBookmarkEntity`)
-- **`BookmarkFolder`** - Hierarchical folder with children array
-- **`HistoryEntry`** - URL visit with metadata, tracker statistics, and visits array
-- **`Visit`** - Individual page visit with timestamp
+- ``Bookmark`` — URL, title, favorite status (inherits from `BaseBookmarkEntity`)
+- ``BookmarkFolder`` — hierarchical folder with children array
+- ``HistoryEntry`` — URL visit with metadata, tracker statistics, and visits array
+- ``Visit`` — individual page visit with timestamp
 
-Refer to `Bookmark.swift`, `BookmarkFolder.swift`, `HistoryEntry.swift`, and `Visit.swift` in SharedPackages for complete definitions.
+Refer to the Bookmarks and BrowserServicesKit package documentation for the complete definitions.
 
 ## Sync Coordination
 
 ### Bookmark Sync Flow
 
 1. **Local Change**: User adds/modifies/deletes bookmark
-2. **Persist to Core Data**: `LocalBookmarkStore` saves change
-3. **Request Sync**: `BookmarkManager.requestSync()` notifies sync service
+2. **Persist to Core Data**: ``LocalBookmarkStore`` saves change
+3. **Request Sync**: ``BookmarkManager`` notifies sync service via `requestSync()`
 4. **Sync Scheduler**: Determines when to sync (debounces rapid changes)
 5. **BookmarksProvider**: Prepares syncable entities
 6. **Encryption**: Sensitive data encrypted before transmission
 7. **Server Communication**: Sync engine sends/receives data
-8. **Response Handling**: `BookmarksResponseHandler` processes server response
+8. **Response Handling**: ``BookmarksResponseHandler`` processes server response
 9. **Conflict Resolution**: Merge conflicts using timestamps and rules
 10. **Apply Changes**: Update local Core Data with merged state
 
@@ -235,14 +160,13 @@ Refer to `Bookmark.swift`, `BookmarkFolder.swift`, `HistoryEntry.swift`, and `Vi
 
 ## Testing
 
-Test bookmarks and history using mock implementations of `BookmarkStore` and `HistoryStoring` to verify data persistence and retrieval.
+Test bookmarks and history using mock implementations of ``BookmarkStore`` and ``HistoryStoring`` to verify data persistence and retrieval.
 
 ## Related Topics
 
 - <doc:TabManagement> - How tabs track history via HistoryTabExtension
+- <doc:Sync> - Cross-platform sync architecture
 - ``BookmarkManager`` - Bookmark management protocol
 - ``HistoryCoordinating`` - History coordination protocol
 - ``LocalBookmarkStore`` - Bookmark persistence
 - ``EncryptedHistoryStore`` - Encrypted history storage
-- **Sync Documentation** - Cross-platform sync architecture
-

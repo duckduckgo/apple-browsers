@@ -42,42 +42,25 @@ Fire (Data Clearing Engine)
 - **Chat History**: AI Chat conversations
 - **Visited Links**: WebKit visited links tracking
 
-## Key Files
+## Key Components
 
 ### UI Components
 
-- **`FireViewController.swift`** (`macOS/DuckDuckGo/Fire/View/FireViewController.swift`)
-  - Fire button UI and popover presentation
-  - Delegates to FireCoordinator for actual clearing
-
-- **`FirePopoverViewController.swift`** (`macOS/DuckDuckGo/Fire/View/FirePopoverViewController.swift`)
-  - Legacy fire popover UI
-  - Options for what to clear
-
-- **`FireDialogViewModel.swift`** (`macOS/DuckDuckGo/Fire/ViewModel/FireDialogViewModel.swift`)
-  - New Fire Dialog state management
-  - Clearing options enum (currentTab, currentWindow, allData)
-  - Toggle states for different data types
+- ``FireViewController`` — fire button UI and popover presentation; delegates to ``FireCoordinator`` for the actual clearing.
+- ``FirePopoverViewController`` — legacy fire popover UI with options for what to clear.
+- ``FireDialogViewModel`` — new Fire Dialog state management; carries the clearing-options enum (current tab, current window, all data) and the toggle states for individual data categories.
 
 ### Coordination
 
-- **`FireCoordinator.swift`** (`macOS/DuckDuckGo/Fire/View/FireCoordinator.swift`)
-  - Coordinates Fire Dialog UI and clearing actions
-  - Handles user selections and delegates to Fire engine
+- ``FireCoordinator`` — coordinates the Fire Dialog UI and the clearing actions; translates user selections into ``Fire`` engine calls.
 
 ### Core Engine
 
-- **`Fire.swift`** (`macOS/DuckDuckGo/Fire/Model/Fire.swift`)
-  - Main data clearing engine
-  - Coordinates clearing across all managers
-  - Handles fireproofing exceptions
-  - Dispatch group coordination for async operations
+- ``Fire`` — main data clearing engine; orchestrates clearing across all managers, handles fireproofing exceptions, and uses dispatch groups to coordinate async operations.
 
 ### Supporting Models
 
-- **`FireproofDomains.swift`** (`macOS/DuckDuckGo/Fire/Model/FireproofDomains.swift`)
-  - Manages fireproofed (trusted) domains
-  - Domains excluded from Fire clearing
+- ``FireproofDomains`` — manages fireproofed (trusted) domains that are excluded from Fire clearing.
 
 ## Common Tasks
 
@@ -89,27 +72,27 @@ The Fire system supports multiple clearing scopes:
 - Clear current window
 - Clear specific history visits by date range
 
-Use `Fire.BurningEntity` to define the scope (`.singleTab`, `.window`, `.allWindows`, `.none`) and call `fire.burnEntity()` with options for what to include (history, cookies, chat history).
+Use ``Fire/BurningEntity`` to define the scope — its cases are `.tab(tabViewModel:selectedDomains:parentTabCollectionViewModel:close:)`, `.window(tabCollectionViewModel:selectedDomains:close:)`, `.allWindows(mainWindowControllers:selectedDomains:customURLToOpen:close:)`, and `.none(selectedDomains:)` — then call `burnEntity` on ``Fire`` with options for what to include (history, cookies, chat history).
 
 ### Fireproofing
 
-Fireproof domains to exclude them from Fire clearing. Use `FireproofDomains.addDomain()`, `removeDomain()`, and `isFireproof(fireproofDomain:)` to manage fireproofed sites.
+Fireproof domains are excluded from Fire clearing. ``FireproofDomains`` exposes the add, remove, and lookup operations used by settings and the Fire engine to manage these trusted sites.
 
 ### Showing Fire Dialog
 
-Access Fire UI through `FireCoordinator.showFireDialog(window:)`.
+Access the Fire UI through ``FireCoordinator`` — it owns the presentation of the dialog from the main window.
 
-Refer to `Fire.swift`, `FireCoordinator.swift`, and `FireproofDomains.swift` for implementation details.
+Refer to ``Fire``, ``FireCoordinator``, and ``FireproofDomains`` for implementation details.
 
 ## Patterns & Best Practices
 
 ### Burning Entities
 
-The `BurningEntity` enum defines the scope of clearing (`.singleTab`, `.window`, `.allWindows`, `.none`). Use `.allWindows` with empty `selectedDomains` for full Fire, or `.none` to clear data without closing UI.
+The ``Fire/BurningEntity`` enum defines the scope of clearing — `.tab`, `.window`, `.allWindows`, and `.none`. Each case carries the relevant view models and a `selectedDomains` set; the closing variants also carry a `close` flag controlling whether the UI is dismissed or only the underlying state is cleared. Use `.allWindows` with an empty `selectedDomains` set for a full Fire, or `.none` to clear data without closing any UI.
 
 ### Domain Handling
 
-Always convert domains to eTLD+1 format using `convertedToETLDPlus1(tld:)` to ensure subdomain variants are handled consistently.
+Always convert domains to eTLD+1 form before passing them to the Fire engine — this ensures subdomain variants are handled consistently across cookies, storage, and history.
 
 ### Fireproofing
 
@@ -117,7 +100,7 @@ Fireproofed domains are completely excluded from clearing. The Fire engine autom
 
 ### Async Coordination
 
-Fire uses `DispatchGroup` to coordinate multiple async operations across different managers (web cache, history, permissions, etc.).
+Fire uses a dispatch group to coordinate multiple async operations across different managers (web cache, history, permissions, etc.) and only signals completion once every manager finishes.
 
 ### Data Clearing Order
 
@@ -125,17 +108,17 @@ Operations happen in a specific order: prepare tabs → burn tabs → web cache 
 
 ### Fire Animation
 
-Fire animation is controlled by user preferences via `VisualizeFireSettingsDecider`.
+Fire animation is controlled by user preferences via ``VisualizeFireSettingsDecider``.
 
 ### Testing
 
-Test Fire functionality using mock implementations of dependencies like `HistoryCoordinating` and `WebCacheManager` to verify clearing behavior.
+Test Fire functionality using mock implementations of dependencies like ``HistoryCoordinating`` and ``WebCacheManager`` to verify clearing behavior.
 
 ## Fire Dialog (Feature-Flagged)
 
 The new Fire Dialog provides enhanced UX with visual options (clear current tab, window, or all data), granular toggles for what gets cleared, persistent settings, and time range selection.
 
-See `FireDialogViewModel.swift` for the clearing options enum and result structure.
+See ``FireDialogViewModel`` for the clearing options enum and result structure.
 
 ## Related Topics
 

@@ -14,7 +14,7 @@ The architecture integrates with the browser's suggestion system, providing real
 NavigationBarViewController
 ├── AddressBarViewController
 │   ├── AddressBarTextField (URL Input)
-│   ├── PrivacyEntryPointButton
+│   ├── PrivacyIconViewModel (Privacy state)
 │   └── Address Bar Buttons (refresh, settings, etc.)
 ├── SuggestionViewController (Dropdown)
 │   └── SuggestionContainerViewModel
@@ -37,42 +37,22 @@ AddressBarTextField
 - **Context Menu**: Paste & Go, Copy, custom actions
 - **Autocomplete**: Inline completion for URLs
 
-## Key Files
+## Key Components
 
 ### Navigation Bar Controllers
 
-- **`NavigationBarViewController.swift`** (`macOS/DuckDuckGo/NavigationBar/View/NavigationBarViewController.swift`)
-  - Main navigation bar container
-  - Coordinates child view controllers
-  - Layout and appearance management
-
-- **`AddressBarViewController.swift`** (`macOS/DuckDuckGo/NavigationBar/View/AddressBarViewController.swift`)
-  - Address bar section controller
-  - Privacy entry point integration
-  - Button management
+- ``NavigationBarViewController`` — main navigation bar container; coordinates child view controllers and manages layout and appearance.
+- ``AddressBarViewController`` — address bar section controller; integrates the privacy icon and manages the surrounding buttons.
 
 ### Address Bar Input
 
-- **`AddressBarTextField.swift`** (`macOS/DuckDuckGo/NavigationBar/View/AddressBarTextField.swift`)
-  - Core URL/search input field
-  - Suggestion integration
-  - Navigation logic
-
-- **`AddressBarTextFieldViewModel.swift`** (`macOS/DuckDuckGo/NavigationBar/ViewModel/AddressBarTextFieldViewModel.swift`)
-  - Text field state management
-  - Value parsing and validation
+- ``AddressBarTextField`` — core URL/search input field; handles suggestion integration and navigation logic.
+- ``AddressBarTextFieldViewModel`` — text field state management, value parsing, and validation.
 
 ### Suggestions
 
-- **`SuggestionViewController.swift`** (`macOS/DuckDuckGo/Suggestions/SuggestionViewController.swift`)
-  - Suggestion dropdown UI
-  - Keyboard navigation
-  - Selection handling
-
-- **`SuggestionContainerViewModel.swift`** (`macOS/DuckDuckGo/Suggestions/SuggestionContainerViewModel.swift`)
-  - Suggestion data source
-  - Filtering and ranking
-  - Integration with bookmarks/history/tabs
+- ``SuggestionViewController`` — suggestion dropdown UI; handles keyboard navigation and selection.
+- ``SuggestionContainerViewModel`` — suggestion data source; filtering and ranking against bookmarks, history, and open tabs.
 
 ## Common Tasks
 
@@ -102,9 +82,9 @@ The address bar provides a custom context menu with paste-and-go functionality p
 
 ### Privacy Indicators
 
-The privacy entry point button updates based on `tab.hasOnlySecureContent` and `tab.privacyInfo.protectionStatus`.
+The privacy icon is driven by ``PrivacyIconViewModel``, which derives its state from the current tab's privacy info (connection security, tracker protection status, and any per-site exceptions). The view model exposes the icon to display and any badge animation; the address bar binds to it and updates as the tab's privacy state changes during navigation.
 
-Refer to `AddressBarTextField.swift`, `AddressBarNavigationController.swift`, and `SuggestionContainerViewModel.swift` for implementation details.
+Refer to ``AddressBarTextField``, ``AddressBarViewController``, ``PrivacyIconViewModel``, and ``SuggestionContainerViewModel`` for implementation details.
 
 ## Patterns & Best Practices
 
@@ -122,7 +102,7 @@ Suggestions ranked by source: 1) Open tabs, 2) Bookmarks, 3) History, 4) Search 
 
 ### Navigation Tracking
 
-Navigation events fire engagement pixels based on the source (suggestion, address bar, etc.). See `AddressBarTextField` for pixel integration.
+Navigation events fire engagement pixels based on the source (suggestion, address bar, etc.). See ``AddressBarTextField`` for pixel integration.
 
 ### Keyboard Navigation
 
@@ -141,6 +121,6 @@ Test address bar functionality using unit tests to verify URL detection, search 
 - ``NavigationBarViewController`` - Navigation bar container
 - ``AddressBarTextField`` - URL input field
 - ``SuggestionViewController`` - Suggestion dropdown
-- ``PrivacyEntryPointButton`` - Privacy grade indicator
+- ``PrivacyIconViewModel`` - Privacy grade indicator
 - <doc:TabManagement> - Tab navigation integration
 

@@ -1,297 +1,140 @@
 # Personal Information Removal
 
-Automated scanning and removal of personal information from data broker sites through a background agent architecture.
+Automated scanning and removal of personal information from data broker sites through a background agent.
 
 ## Overview
 
-Personal Information Removal (PIR) is a Privacy Pro subscription feature that automatically finds and removes users' personal information from data broker websites. The system uses a background agent to scan data broker sites for user profiles, submit opt-out requests, and monitor for re-appearances of information.
+Personal Information Removal (PIR) is a Privacy Pro subscription feature that automatically finds and removes a user's personal information from data broker websites. A background agent scans data broker sites for user profiles, submits opt-out requests, and monitors for re-appearances.
 
-**Privacy Pro Required**: This feature requires an active Privacy Pro subscription and handles sensitive user information (names, addresses, birthdates) with secure storage and privacy-first design.
+**Privacy Pro required**: this feature requires an active Privacy Pro subscription and handles sensitive user information (names, addresses, birthdates) with secure storage and a privacy-first design.
+
+### Naming
+
+"Personal Information Removal" (PIR) is the **user-facing** feature name and is used in UI, settings, and prose throughout this document. The **code identifiers** still use the original "DataBrokerProtection" / "DBP" naming — `DataBrokerProtectionAgentManager`, `DBPUICommunicator`, the `dataBrokerProtection` tab case, and so on. Both names refer to the same feature; expect to see the code names when grepping the codebase.
 
 ## Architecture
 
-### Process Architecture
+### Process Layout
 
-```
-DuckDuckGo.app (Main Browser)
-    ↓ IPC (XPC)
-DataBrokerProtection Agent (Login Item)
-    ├── Background Scheduler
-    ├── Job Queue Manager
-    ├── Web Operations (Scan/Opt-Out)
-    └── Database & Secure Storage
-```
+PIR splits across two processes that communicate via XPC:
 
-**Main App Integration:**
-- Preferences pane for setup and status
-- Browser tab for detailed dashboard (web UI)
-- Status bar menu for quick access
-- IPC client for agent communication
-
-**Background Agent:**
-- Runs as login item (persistent across sessions)
-- Performs automated scans and opt-outs
-- Schedules operations based on broker requirements
-- Communicates results back to main app
+- **DuckDuckGo.app (main browser)** — preferences pane for setup and status, a special browser tab for the detailed dashboard, status bar menu for quick access, and the IPC client that talks to the agent.
+- **DataBrokerProtection background agent** — a persistent login item that runs the background scheduler, job queue, web operations (scan/opt-out), and the secure database.
 
 ### Key Components
 
-- **`DataBrokerProtectionAgentManager`** - DataBrokerProtection-macOS package
-  - Orchestrates background agent lifecycle
-  - Manages scheduling, operations, and IPC server
-  - Coordinates database, authentication, and notifications
-
-- **`DataBrokerProtectionIPCClient`** - DataBrokerProtection-macOS package
-  - IPC client in main browser app
-  - Communicates with background agent via XPC
-  - Provides status updates and control interface
-
-- **`DataBrokerProtectionIPCServer`** - DataBrokerProtection-macOS package
-  - IPC server in background agent
-  - Receives commands from main app
-  - Sends progress updates and notifications
-
-- **`BrokerProfileJob`** - DataBrokerProtectionCore package
-  - Core operation unit for scan/opt-out tasks
-  - Manages job execution with timeouts
-  - Handles cancellation and error reporting
-
-- **`DataBrokerProtectionDataManager`** - DataBrokerProtection-macOS package
-  - Manages data flow between agent, database, and UI
-  - Coordinates profile storage and retrieval
-  - Handles VPN bypass settings
+- ``DataBrokerProtectionAgentManager`` (DataBrokerProtection-macOS package) — orchestrates the background agent lifecycle, manages scheduling, operations, and the IPC server, and coordinates database, authentication, and notifications.
+- ``DataBrokerProtectionIPCClient`` (DataBrokerProtection-macOS package) — IPC client in the main browser app. Communicates with the background agent via XPC.
+- ``DataBrokerProtectionIPCServer`` (DataBrokerProtection-macOS package) — the IPC server **protocol**. The concrete implementation is ``DefaultDataBrokerProtectionIPCServer``, which runs in the background agent, receives commands from the main app, and sends back progress updates.
+- ``BrokerProfileJob`` (DataBrokerProtectionCore package) — core operation unit for scan and opt-out tasks, including timeout, cancellation, and error reporting.
+- ``DataBrokerProtectionDataManager`` (DataBrokerProtection-macOS package) — manages data flow between agent, database, and UI; coordinates profile storage and retrieval; handles VPN bypass settings.
 
 ## Core Operations
 
 ### Scanning
 
-**Purpose**: Find user's personal information on data broker websites.
+Scans find a user's personal information on data broker websites.
 
-**Process**:
-1. Queue scan jobs for each broker × profile query combination
-2. Navigate to broker website with user's search parameters
-3. Extract matching profiles from search results
-4. Compare with previously found profiles
-5. Schedule opt-out jobs for new matches
-6. Record scan results and timing metrics
+The agent queues a scan job for each broker × profile-query combination, navigates to the broker with the user's search parameters, extracts matching profiles, compares them against previously found profiles, schedules opt-out jobs for new matches, and records results and timing metrics.
 
-**Scan Types**:
-- **Scheduled Scans**: Automatic background scans based on broker refresh rates
-- **Manual Scans**: User-triggered scans from dashboard
-
-**Timing**: Scans respect broker-specific timing requirements (some brokers require waiting periods between operations).
+There are two scan types: **scheduled scans** run automatically based on per-broker refresh rates, and **manual scans** can be triggered by the user from the dashboard. Scans respect broker-specific timing requirements — some brokers require waiting periods between operations.
 
 ### Opt-Out
 
-**Purpose**: Remove user's information from data broker sites.
+Opt-out removes the user's information from a data broker site.
 
-**Process**:
-1. Validate opt-out preconditions (profile not already removed, eligible for opt-out)
-2. Navigate to broker's opt-out page
-3. Fill out opt-out form with profile information
-4. Submit opt-out request
-5. Handle email confirmation if required
-6. Record opt-out attempt and wait for confirmation
-7. Verify removal on subsequent scans
+The agent validates preconditions (profile not already removed, eligible for opt-out), navigates to the broker's opt-out page, fills out the form, submits the request, handles email confirmation if required, records the attempt, and verifies removal on subsequent scans.
 
-**Edge Cases**:
-- **Parent Opt-Out**: Some brokers perform opt-outs through parent company sites
-- **Manual Removal**: Users can mark profiles as "This isn't me" to skip opt-outs
-- **Reappearances**: Profiles may reappear after removal, triggering new opt-outs
+Edge cases include parent opt-outs (some brokers perform opt-outs through parent company sites), manual exclusions (users can mark profiles as "This isn't me" to skip opt-outs), and reappearances (profiles may reappear after removal, triggering new opt-outs).
 
 ### Email Confirmation
 
-Some data brokers require email confirmation for opt-out requests:
-
-1. Broker sends confirmation email to user
-2. Agent monitors for confirmation link
-3. User clicks link in email or dashboard
-4. Agent completes opt-out process
+Some brokers require email confirmation: the broker sends a confirmation email, the agent monitors for the link, the user clicks it (from the email or dashboard), and the agent completes the opt-out.
 
 ## Data Storage
 
-### Secure Vault
+User profile information (names, addresses, birthdates) is stored in an encrypted secure vault — ``DataBrokerProtectionSecureVault`` in the DataBrokerProtectionCore package — with key management via the macOS Keychain. The PIR vault is isolated from the browser's main secure vault.
 
-User profile information (names, addresses, birthdates) is stored in secure vault using encryption:
+Persistent storage holds:
 
-- **`DataBrokerProtectionSecureVault`** - DataBrokerProtectionCore package
-  - Encrypted storage for sensitive user data
-  - Key management via macOS Keychain
-  - Isolated from browser's main secure vault
-
-### Database Schema
-
-Persistent storage for operations, results, and history:
-
-- **Broker Definitions**: Data broker metadata and opt-out procedures (JSON-based)
-- **Profile Queries**: User's search parameters (name variations, addresses)
-- **Extracted Profiles**: Found matches on broker sites with timestamps
-- **Opt-Out Jobs**: Scheduled and completed opt-out operations
-- **History Events**: Timeline of scans, opt-outs, and profile changes
+- **Broker definitions** — data broker metadata and opt-out procedures (JSON-based).
+- **Profile queries** — user's search parameters (name variations, addresses).
+- **Extracted profiles** — found matches on broker sites with timestamps.
+- **Opt-out jobs** — scheduled and completed opt-out operations.
+- **History events** — timeline of scans, opt-outs, and profile changes.
 
 ## Integration Points
 
 ### Preferences
 
-The Settings > Privacy Pro > Personal Information Removal section provides:
-
-- **Setup Flow**: Initial profile creation and consent
-- **Status Indicator**: Active/inactive state with progress
-- **Dashboard Link**: Opens detailed dashboard in browser tab
-- **FAQ Access**: Link to help documentation
+Settings → Privacy Pro → Personal Information Removal provides the setup flow, status indicator, a link to the detailed dashboard, and FAQ access.
 
 ### Browser Tab Integration
 
-Special tab (`.dataBrokerProtection`) displays web-based dashboard:
+PIR uses a dedicated tab content case (`.dataBrokerProtection` in ``TabContent``) to display the web-based dashboard inside a browser tab. The UI is a React-based hosted web application with a JavaScript ↔ Swift messaging bridge. From it the user manages profiles, views found profiles and opt-out status, triggers manual scans, and marks profiles as incorrect.
 
-- **React-based UI**: Hosted web application
-- **Native Communication**: JavaScript ↔ Swift messaging bridge
-- **Profile Management**: Add/edit names, addresses, birthdates
-- **Results Display**: Found profiles, opt-out status, broker coverage
-- **Manual Actions**: Trigger scans, mark profiles as incorrect
-
-Communication uses `DBPUICommunicator` for bidirectional messaging between web UI and native agent.
+Bidirectional messaging between the web UI and native agent goes through ``DBPUICommunicator``.
 
 ### Status Bar Menu
 
-macOS menu bar item provides quick access:
-
-- Status indicator (active/scanning/idle)
-- Quick access to dashboard
-- Agent version information (for debugging)
+A macOS menu bar item provides quick access — status indicator (active/scanning/idle), quick link to the dashboard, and agent version for debugging.
 
 ### Background Scheduling
 
-Automated operations run on configured schedules:
-
-- **Initial Scan**: First complete scan after profile setup
-- **Opt-Outs**: Execute scheduled opt-out attempts
-- **Re-Scans**: Periodic checks for reappearing profiles (broker-specific intervals)
-- **Confirmations**: Monitor for pending email confirmations
-
-Scheduling respects broker-specific timing requirements and avoids excessive requests.
+Automated operations run on configured schedules: the initial scan after profile setup, scheduled opt-outs, periodic re-scans for reappearing profiles (broker-specific intervals), and monitoring for pending email confirmations. Scheduling respects broker-specific timing requirements and avoids excessive requests.
 
 ## VPN Bypass
 
-Personal Information Removal operations can bypass VPN:
+PIR operations can bypass the VPN tunnel, because some data broker sites block or rate-limit VPN traffic.
 
-**Why**: Some data broker sites may block or rate-limit VPN traffic, preventing successful scans and opt-outs.
-
-**How**: The `VPNBypassService` in DataBrokerProtection-macOS package coordinates with VPN to exclude PIR traffic from the VPN tunnel on a per-operation basis.
-
-**User Control**: Users can toggle VPN bypass in PIR settings.
+``VPNBypassService`` (DataBrokerProtection-macOS package) implements the ``VPNBypassServiceProvider`` protocol from DataBrokerProtectionCore and coordinates with the VPN to exclude PIR traffic from the tunnel on a per-operation basis. Users can toggle VPN bypass in PIR settings.
 
 ## Authentication and Entitlements
 
-### Privacy Pro Subscription
+PIR requires an active Privacy Pro subscription with the PIR entitlement.
 
-PIR requires active Privacy Pro subscription with PIR entitlement:
+- ``DataBrokerProtectionAuthenticationManaging`` (DataBrokerProtectionCore package) — verifies subscription status, provides access tokens for backend services, and monitors entitlement changes.
+- ``DataBrokerProtectionEntitlementMonitoring`` (DataBrokerProtectionCore package) — tracks subscription state changes, disables features when subscription lapses, and handles renewals.
 
-- **`DataBrokerProtectionAuthenticationManaging`** - DataBrokerProtectionCore package
-  - Verifies subscription status
-  - Provides access tokens for backend services
-  - Monitors entitlement changes
-
-- **`DataBrokerProtectionEntitlementMonitoring`** - DataBrokerProtectionCore package
-  - Tracks subscription state changes
-  - Disables features when subscription lapses
-  - Handles subscription renewals
-
-### Backend Services
-
-PIR communicates with backend services for:
-
-- **Broker Updates**: Remote delivery of broker definition updates
-- **Email Confirmation**: Opt-out confirmation email handling
-- **Captcha Solving**: Automated captcha solving for opt-out forms
+PIR talks to backend services for broker definition updates, opt-out email confirmation handling, and automated captcha solving for opt-out forms.
 
 ## Notifications
 
-User notifications for important events:
-
-- **Scans Complete**: First scan completion with found profiles count
-- **Removals Complete**: Opt-outs successfully confirmed
-- **Reappearances**: Profiles found again after removal
-- **Action Required**: Email confirmation needed
-
-Notifications are throttled to avoid spam and respect user preferences.
+User notifications cover the events that need attention — first scan complete (with found profiles count), successful opt-out confirmations, profile reappearances, and email confirmations the user needs to action. Notifications are throttled to avoid spam and respect user preferences.
 
 ## Package Architecture
 
-### DataBrokerProtectionCore (Shared Package)
+**DataBrokerProtectionCore** (shared package) holds the cross-platform business logic: scan/opt-out operation execution, broker/profile/job models, the content capture framework used for web automation, secure storage (database and vault), and authentication/entitlement management.
 
-Core business logic shared across platforms:
-
-- **Operations**: Scan and opt-out job execution
-- **Model**: Data structures for brokers, profiles, jobs
-- **CCF (Content Capture Framework)**: Web automation for broker interactions
-- **Secure Storage**: Database and secure vault management
-- **Authentication**: Subscription and entitlement management
-
-### DataBrokerProtection-macOS (Local Package)
-
-macOS-specific integration and UI:
-
-- **Background Agent**: Agent lifecycle and scheduling
-- **IPC**: XPC communication between app and agent
-- **UI Native**: Native SwiftUI views for preferences
-- **UI Web**: Web UI hosting and communication bridge
-- **Status Bar**: Menu bar integration
-- **VPN Bypass**: VPN integration
+**DataBrokerProtection-macOS** (local package) holds macOS-specific integration: background agent lifecycle and scheduling, XPC IPC between app and agent, native SwiftUI preferences views, web UI hosting and the communication bridge, status bar menu, and VPN bypass integration.
 
 ## Common Tasks
 
 ### Testing PIR Operations
 
-Use debug features for testing:
-
-- **Debug Menu**: Access via internal build flags
-- **Custom JSON**: Run operations with custom broker definitions
-- **Force Opt-Out**: Manually trigger opt-outs for testing
-- **Log Monitor**: Real-time operation logging
-- **Database Browser**: Inspect database state
+Internal builds expose a debug menu with custom JSON broker definitions, forced opt-outs for testing, real-time log monitoring, and a database browser.
 
 ### Monitoring Operations
 
-Check operation progress and status:
-
-- **Dashboard**: Web UI shows detailed scan/opt-out status
-- **Logs**: Filter Console.app for "PIR" subsystem
-- **Database**: Query operations, extracted profiles, history events
+The web dashboard shows detailed scan and opt-out status. Console.app can be filtered to the "PIR" subsystem for live logs. The database can be queried directly for operations, extracted profiles, and history events.
 
 ### Troubleshooting
 
-Common issues and resolutions:
-
-**Agent Not Running**: Check login item status and permissions
-**Operations Stalled**: Check for network issues, VPN bypass status
-**Email Confirmations Pending**: User action may be required
-**Subscription Issues**: Verify Privacy Pro subscription status
+- **Agent not running** — check login item status and permissions.
+- **Operations stalled** — check for network issues and VPN bypass status.
+- **Email confirmations pending** — user action may be required.
+- **Subscription issues** — verify Privacy Pro subscription status.
 
 ## Privacy and Security
 
-### Data Minimization
+PIR follows data minimization — only information necessary for operations is stored, extracted profiles are deleted after successful removal, and temporary data is cleared after operations complete.
 
-- Only stores information necessary for operations
-- Deletes extracted profiles after successful removal
-- Clears temporary data after operations complete
+User profile data is encrypted at rest in the secure vault. Communication with backend services is encrypted, and sensitive user information is not logged.
 
-### Encryption
-
-- User profile data encrypted at rest in secure vault
-- Secure communication with backend services
-- No logging of sensitive user information
-
-### User Control
-
-- Users control what information is scanned (name variations, addresses)
-- Can mark profiles as incorrect to prevent opt-outs
-- Can pause or disable PIR at any time
-- Can delete all stored data
+Users control which name variations and addresses are scanned, can mark profiles as incorrect to prevent opt-outs, can pause or disable PIR at any time, and can delete all stored data.
 
 ## Related Topics
 
-- <doc:VPNNetworkProtection> - VPN bypass integration
-- <doc:Preferences> - Settings UI integration
-- <doc:TabManagement> - Dashboard tab integration
-
+- <doc:VPNNetworkProtection> — VPN bypass integration
+- <doc:Preferences> — Settings UI integration
+- <doc:TabManagement> — Dashboard tab integration

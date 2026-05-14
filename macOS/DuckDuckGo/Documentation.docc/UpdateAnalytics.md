@@ -12,30 +12,10 @@ The Update Analytics system tracks the complete lifecycle of Sparkle update flow
 
 ## Architecture
 
-### Core Components
+``SparkleUpdateController`` emits lifecycle events into ``SparkleUpdateWideEvent``, which orchestrates a single active flow at a time, persists state via `WideEventManager`, and transmits the completed flow through PixelKit.
 
-```
-SparkleUpdateController
-    ↓ (lifecycle events)
-SparkleUpdateWideEvent (Orchestrator)
-    ↓ (persistence)
-WideEventManager
-    ↓ (transmission)
-PixelKit → Backend
-```
-
-**`SparkleUpdateWideEvent`** - Updates module
-- Orchestrates the complete lifecycle of update flow tracking
-- Manages a single active flow at a time
-- Handles edge cases: overlapping flows, app termination, abandoned sessions
-- Coordinates timing measurements for each phase
-
-**`UpdateWideEventData`** - Updates module
-- Data model containing all tracked information
-- Version/build information (from and to)
-- Timing measurements for each phase
-- Cancellation reasons and error data
-- System context (OS version, disk space, internal user flag)
+- ``SparkleUpdateWideEvent`` — Orchestrator. Drives one active flow, coordinates phase timing, and handles edge cases (overlapping flows, app termination, abandoned sessions).
+- ``UpdateWideEventData`` — Data model. Holds from/to version and build, timing measurements per phase, cancellation reasons, error data, and system context (OS version, disk space, internal-user flag).
 
 ## Tracked Metrics
 
@@ -88,62 +68,24 @@ All durations are measured in milliseconds:
 
 ### 1. Flow Start
 
-Triggered when an update check begins (automatic background or manual):
-
-```
-startFlow(initiationType: .automatic / .manual)
-    ↓
-Create UpdateWideEventData with:
-- Current version/build
-- Initiation type
-- User's update configuration
-- Internal user flag
-    ↓
-Start totalDuration timer
-Start updateCheckDuration timer
-```
+An update check (automatic or manual) calls `startFlow(initiationType:)`. The orchestrator builds a fresh ``UpdateWideEventData`` capturing the current version and build, the initiation type, the user's automatic-updates configuration, and the internal-user flag, then starts the `totalDuration` and `updateCheckDuration` timers.
 
 ### 2. Phase Tracking
 
-As the update progresses through phases:
+As the update progresses, the controller calls hooks on the orchestrator that mark the last-known step and bracket each phase timer:
 
-```
-Update Check:
-  didStartUpdateCheck() → mark step
-  didFindUpdate() / didFindNoUpdate() → complete updateCheckDuration
-
-Download (if update found):
-  didStartDownload() → start downloadDuration timer
-  didCompleteDownload() → complete downloadDuration timer
-
-Extraction:
-  didStartExtraction() → start extractionDuration timer
-  didCompleteExtraction() → complete extractionDuration timer
-
-Ready:
-  didBecomeReadyToInstall() → mark ready state
-```
+- Update check — `didStartUpdateCheck()`, then `didFindUpdate()` or `didFindNoUpdate()` closes `updateCheckDuration`.
+- Download — `didStartDownload()` opens `downloadDuration`; `didCompleteDownload()` closes it.
+- Extraction — `didStartExtraction()` opens `extractionDuration`; `didCompleteExtraction()` closes it.
+- Ready to install — `didBecomeReadyToInstall()` marks the terminal step before user install.
 
 ### 3. Flow Completion
 
 The flow ends in one of three ways:
 
-**Success**: Update installed and app restarted
-```
-completeFlow(status: .success)
-```
-
-**Failure**: Error occurred during update process
-```
-completeFlow(status: .failure, error: updateError)
-- Captures disk space at failure time
-- Includes error details
-```
-
-**Cancellation**: User or system cancelled update
-```
-cancelFlow(reason: .appQuit / .settingsChanged / etc.)
-```
+- **Success** — `completeFlow(status: .success)` after the app installs and restarts.
+- **Failure** — `completeFlow(status: .failure, error:)` captures disk space at failure time and includes error details.
+- **Cancellation** — `cancelFlow(reason:)` records `.appQuit`, `.settingsChanged`, `.buildExpired`, or `.newCheckStarted`.
 
 ## Edge Cases
 
@@ -196,16 +138,7 @@ All numeric values (durations, disk space, timestamps) are encoded as strings in
 
 ### SparkleUpdateController Integration
 
-The `SparkleUpdateController` creates and manages the `SparkleUpdateWideEvent` instance:
-
-```
-SparkleUpdateController
-    ├── Creates SparkleUpdateWideEvent on init
-    ├── Calls startFlow() when check begins
-    ├── Calls didStartDownload(), didCompleteDownload(), etc.
-    ├── Calls completeFlow() / cancelFlow() on completion
-    └── Calls handleAppTermination() on app quit
-```
+``SparkleUpdateController`` creates a ``SparkleUpdateWideEvent`` on init, calls `startFlow()` when a check begins, drives the per-phase hooks (`didStartDownload()`, `didCompleteDownload()`, and so on), calls `completeFlow()` or `cancelFlow()` on completion, and forwards `handleAppTermination()` when the agent quits.
 
 ### WideEventManager
 
@@ -222,14 +155,7 @@ The wide event pixel is identified as: `sparkle_update_cycle`
 
 ### Debug Logging
 
-Update wide events log to the `updates` subsystem:
-
-```
-Logger.updates.log("Update WideEvent completed successfully with status: \(status)")
-Logger.updates.error("Update WideEvent failed to send: \(error)")
-```
-
-Check Console.app filtering for "updates" subsystem to see wide event activity.
+Update wide events log to the `updates` subsystem via `Logger.updates`. Filter Console.app for the `updates` subsystem to see wide-event activity, including success completion and transmission failures.
 
 ### Manual Testing
 

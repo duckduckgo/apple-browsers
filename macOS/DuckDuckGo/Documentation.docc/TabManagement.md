@@ -91,7 +91,7 @@ Extensions can subscribe to tab publishers like `navigationDidEndPublisher` usin
 
 ### Accessing Tab State
 
-The `Tab` class exposes state through its public interface including: `url`, `title`, `isLoading`, `canGoBack`, `hasOnlySecureContent`, and extension state via dynamic member lookup.
+The ``Tab`` class exposes state through its public interface: `title`, `isLoading`, `canGoBack`, `canGoForward`, and other navigation flags as published properties. The current URL is read from the underlying web view (`tab.webView.url`) rather than as a direct stored property on Tab. Privacy-related state — such as the current ``PrivacyInfo`` — is exposed by the privacy dashboard extension and reached through dynamic member lookup on the Tab. Other per-feature state is similarly surfaced through extensions rather than stored directly on Tab itself.
 
 ## Patterns & Best Practices
 

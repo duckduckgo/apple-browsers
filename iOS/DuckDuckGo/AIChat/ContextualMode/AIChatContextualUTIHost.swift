@@ -185,10 +185,6 @@ final class AIChatContextualUTIHost {
         isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
     }
 
-    /// Called by the contextual sheet coordinator when the chat session is
-    /// being explicitly ended (delete-chat tap, fire-button clear). Forwards
-    /// to the wide-event instrumentation so an in-flight prompt-submission
-    /// flow completes as CANCELLED with `cancellation_reason = sheet_dismissed`.
     func sheetDismissed() {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
     }

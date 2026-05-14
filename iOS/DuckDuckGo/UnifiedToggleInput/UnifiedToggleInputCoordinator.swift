@@ -1619,18 +1619,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 case .invalidFile: counts.invalid += 1
                 }
             }
+
             let entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint
             switch host {
-            case .contextualChat:
-                entryPoint = .contextualChat
-            case .omnibar:
-                // `host == .omnibar` is the MainViewController surface, which
-                // covers both the address-bar composer and the dedicated
-                // Duck.ai tab. `isOmnibarSession` disambiguates: true while the
-                // user is composing in the address bar, false on the Duck.ai
-                // tab itself.
-                entryPoint = isOmnibarSession ? .omnibar : .aiTab
+            case .contextualChat: entryPoint = .contextualChat
+            case .omnibar: entryPoint = isOmnibarSession ? .omnibar : .aiTab
             }
+
             duckAIWideEventInstrumentation?.submissionStarted(
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
@@ -1645,6 +1640,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 fileAttachmentCount: attachmentCounts.file,
                 invalidAttachmentCount: attachmentCounts.invalid
             )
+
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
                 return

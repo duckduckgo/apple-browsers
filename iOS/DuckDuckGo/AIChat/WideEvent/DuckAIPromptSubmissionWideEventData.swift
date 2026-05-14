@@ -21,7 +21,6 @@ import Foundation
 import Common
 import PixelKit
 
-/// Wide-event payload for the Duck.ai prompt submission journey.
 final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
@@ -40,51 +39,28 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     var modelId: String?
     var userTier: String
-    /// `AIChatReasoningEffort.rawValue` selected for this submission. Nil when
-    /// the selected model does not support a reasoning picker (distinguishes
-    /// "no reasoning support" from the `.none` effort value).
     var reasoningEffort: String?
-    /// Where the user was when they composed and submitted the prompt.
     var entryPoint: EntryPoint
-    /// How the user produced the prompt text. Additional values (suggestion
-    /// tap, address-bar shortcut, URL scheme, etc.) will be added as those
-    /// entry paths are instrumented.
     var inputMode: InputMode
-    /// Whether the submitting tab was in fire mode at submit time.
     var fireMode: Bool
-    /// Where in the journey the flow was when it ended. Only surfaced on
-    /// FAILURE and UNKNOWN outcomes - cleared by the instrumentation before
-    /// SUCCESS / CANCELLED so the field is absent on those payloads.
     var lastStep: LastStep?
-    /// Why the flow was cancelled. Only surfaced on CANCELLED outcomes;
-    /// instrumentation sets it on the cancellation path and leaves nil
-    /// otherwise.
     var cancellationReason: CancellationReason?
-    /// Whether an `AIChatUserScript` was bound to the input coordinator at
-    /// submit time. Unbound means the prompt was forwarded via the delegate
-    /// fallback rather than directly into a live chat session.
     var userScriptBound: Bool
-    /// Whether a page-context attachment was present at submit time.
+
     var hasPageContext: Bool
-    /// Identifiers of the tools the user had selected at submit time, in
-    /// `AIChatRAGTool.rawValue` form (e.g. `"WebSearch"`, `"GenerateImage"`).
-    /// Empty when no tool was selected.
     var selectedTools: [String]
-    /// Number of image attachments present at submit time.
     var imageAttachmentCount: Int
-    /// Number of valid file attachments present at submit time (excludes ones
-    /// rejected by `UTIAttachmentPolicy` validation).
     var fileAttachmentCount: Int
-    /// Number of attachments that failed validation and were left in the
-    /// composer as error rows. Non-zero suggests UX friction.
     var invalidAttachmentCount: Int
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
     var startThinkingInterval: WideEvent.MeasuredInterval
+
     /// Time to the first `.streaming` status (TTFT). Nil if the journey never
     /// reached a streaming state (e.g., cancelled or errored before tokens).
     var startGeneratingInterval: WideEvent.MeasuredInterval
+
     /// Time to the `.ready` status that completed the flow (TTLT). Nil if the
     /// flow was cancelled or orphaned before reaching ready.
     var completeInterval: WideEvent.MeasuredInterval
@@ -201,6 +177,7 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
         ])
+
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
@@ -208,6 +185,7 @@ extension DuckAIPromptSubmissionWideEventData {
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.imageAttachmentCount] = imageAttachmentCount
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fileAttachmentCount] = fileAttachmentCount
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.invalidAttachmentCount] = invalidAttachmentCount
+
         return parameters
     }
 }

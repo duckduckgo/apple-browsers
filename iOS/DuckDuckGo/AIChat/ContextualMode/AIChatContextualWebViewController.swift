@@ -218,11 +218,6 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.submitStartChatAction()
     }
 
-    /// Notifies the wide-event instrumentation that the contextual chat
-    /// session is being explicitly ended (delete-chat tap, fire-button
-    /// clear). Called from the sheet coordinator before its teardown so any
-    /// in-flight prompt-submission flow completes as CANCELLED with
-    /// `cancellation_reason = sheet_dismissed`.
     func notifySheetDismissed() {
         utiHost?.sheetDismissed()
     }

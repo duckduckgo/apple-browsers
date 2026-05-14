@@ -389,9 +389,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
-    /// Forwards to the embedded web view controller so the wide-event
-    /// instrumentation can complete any in-flight prompt-submission flow as
-    /// CANCELLED when the sheet's chat session is being ended.
     func notifySheetDismissed() {
         webViewController?.notifySheetDismissed()
     }

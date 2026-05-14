@@ -157,6 +157,7 @@ extension MainViewController {
         let rootBackgroundColor: UIColor
         let navigationBarContainerColor: UIColor?
         let inputContentContainerColor: UIColor
+        let unifiedToggleInputContainerColor: UIColor
         let webViewBackgroundColor: UIColor?
 
         switch state {
@@ -165,6 +166,7 @@ extension MainViewController {
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
             navigationBarContainerColor = nil
             inputContentContainerColor = .clear
+            unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil
         case .aiTabSearchChromeHidden:
             // Match the top status background so the area around the input card — and the area
@@ -176,6 +178,7 @@ extension MainViewController {
             rootBackgroundColor = UIColor(designSystemColor: .panel)
             navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
+            unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = rootBackgroundColor
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
@@ -186,10 +189,14 @@ extension MainViewController {
             if unifiedToggleInputCoordinator?.isInputEditing == true {
                 rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
                 navigationBarContainerColor = rootBackgroundColor
+                unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+                // Paint the chrome around the chat content (nav bar header + footer + safe areas)
+                // with the same tone the AI chat header uses, so top and bottom read as one surface.
+                rootBackgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 navigationBarContainerColor = .clear
+                unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = .clear
             }
         }
@@ -202,7 +209,7 @@ extension MainViewController {
         view.backgroundColor = rootBackgroundColor
         viewCoordinator.navigationBarContainer.backgroundColor = navigationBarContainerColor
         viewCoordinator.unifiedInputContentContainer?.backgroundColor = inputContentContainerColor
-        viewCoordinator.unifiedToggleInputContainer.backgroundColor = .clear
+        viewCoordinator.unifiedToggleInputContainer.backgroundColor = unifiedToggleInputContainerColor
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
 
         guard updateWebView else { return }
@@ -790,6 +797,17 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestDuckAIVoiceMode() {
         onDuckAIVoiceModeRequested()
+    }
+
+    func unifiedToggleInputCommittedSnapshot() -> UTIDismissSnapshot {
+        let preferredMode = preferredTextEntryModeForCurrentTab() ?? .search
+        let tab = tabManager.currentTabsModel.currentTab
+        // AI tab reuses the same textView for the flanked input — text here bleeds past the
+        // collapse. AI-mode tabs likewise show a placeholder rather than the URL.
+        let isAIDestination = tab?.isAITab == true || preferredMode == .aiChat
+        let placeholderMode: TextEntryMode = isAIDestination ? .aiChat : preferredMode
+        let text = isAIDestination ? "" : AddressDisplayHelper.plainDisplayString(for: tab?.link?.url)
+        return UTIDismissSnapshot(text: text, placeholderMode: placeholderMode)
     }
 }
 

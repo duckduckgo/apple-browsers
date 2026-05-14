@@ -30,4 +30,11 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
     func unifiedToggleInputDidRequestFire()
     func unifiedToggleInputDidRequestDuckAIVoiceMode()
+    /// Visual snapshot the UTI should adopt at the start of an inline-dismiss animation, so the
+    /// collapse lands on the omnibar's destination text + placeholder without lingering edits.
+    func unifiedToggleInputCommittedSnapshot() -> UTIDismissSnapshot
+}
+
+extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputCommittedSnapshot() -> UTIDismissSnapshot { .empty }
 }

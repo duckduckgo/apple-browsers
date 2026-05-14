@@ -1368,8 +1368,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
-        // The inline X dismisses the same way the floating X does — forward to the
-        // content container's shared handler so both controls route through one path.
+        // Visual-only snap: matches the omnibar's destination so the collapse animation lands
+        // cleanly. Does not touch handler state, so the tab's draft is unaffected.
+        vc.applyDismissSnapshot(delegate?.unifiedToggleInputCommittedSnapshot() ?? .empty)
+        // Routes through the same dismiss handler as the floating X.
         contentViewController.onDismissRequested?()
     }
 

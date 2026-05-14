@@ -54,14 +54,21 @@ class SwitchBarTextEntryView: UIView {
 
         // Matches UnifiedToggleInputView.Constants.animationDuration so icons ride the focus animation.
         static let buttonStateAnimationDuration: TimeInterval = 0.25
+
+        /// Horizontal distance the duck.ai chip slides during the dismiss snapshot so it lands
+        /// at the unfocused omnibar's chat-icon position. Positive = right.
+        static let dismissedChipHorizontalOffset: CGFloat = 6
     }
 
     private let handler: SwitchBarHandling
-    var voiceButtonAppearance: VoiceButtonAppearance {
-        didSet {
-            guard voiceButtonAppearance != oldValue else { return }
-            updateButtonState()
-        }
+    private(set) var voiceButtonAppearance: VoiceButtonAppearance
+
+    /// Pass `animated: false` when the caller drives its own animation — the snapshot crossfade
+    /// would otherwise capture the old layout and drift as the parent moves.
+    func setVoiceButtonAppearance(_ appearance: VoiceButtonAppearance, animated: Bool = true) {
+        guard appearance != voiceButtonAppearance else { return }
+        voiceButtonAppearance = appearance
+        updateButtonState(animated: animated)
     }
 
     private let textView = SwitchBarTextView()
@@ -288,17 +295,54 @@ class SwitchBarTextEntryView: UIView {
 
     // MARK: - UI Updates
 
+    /// Visual-only override for the dismiss collapse: input text + placeholder match the omnibar
+    /// destination, and the in-pill buttons fade out. Paired with `clearDismissSnapshot()` on the
+    /// next layout pass so the override doesn't leak into the reused view.
+    /// Dismiss = abandon the typed input. Clears the handler draft synchronously (so the X
+    /// disappears via state, not crossfade) and overrides `textView` to the omnibar's
+    /// destination string for the collapse animation. The chip's backdrop fades to 0 over the
+    /// dismiss duration while the icon stays visible.
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        if !handler.currentText.isEmpty {
+            handler.updateCurrentText("")
+            updateButtonState(animated: false)
+        }
+        textView.text = snapshot.text
+        placeholderLabel.text = placeholderText(for: snapshot.placeholderMode)
+        updatePlaceholderVisibility()
+        buttonsView.fadeAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration,
+                                                horizontalOffset: Constants.dismissedChipHorizontalOffset)
+    }
+
+    /// Restore the override applied by `applyDismissSnapshot` so the reused view re-presents
+    /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
+    func clearDismissSnapshot() {
+        buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
+        if textView.text != handler.currentText {
+            textView.text = handler.currentText
+            updatePlaceholderVisibility()
+        }
+    }
+
+    private func placeholderText(for mode: TextEntryMode) -> String {
+        switch mode {
+        case .search:
+            return UserText.searchDuckDuckGo
+        case .aiChat:
+            return handler.hasSubmittedPrompt
+                ? UserText.aiChatFollowUpPlaceholder
+                : UserText.searchInputFieldPlaceholderDuckAI
+        }
+    }
+
     private func updateForCurrentMode() {
         wasTextEmptyForAutocorrection = textView.text.isEmpty
 
+        placeholderLabel.text = placeholderText(for: currentMode)
         switch currentMode {
         case .search:
-            placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
         case .aiChat:
-            placeholderLabel.text = handler.hasSubmittedPrompt
-                ? UserText.aiChatFollowUpPlaceholder
-                : UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
             /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
@@ -339,23 +383,29 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    private func updateButtonState() {
+    private func updateButtonState(animated: Bool = true) {
         // Update handler-side flags first so `handler.buttonState` reflects the new appearance.
         updateVoiceButtonStyle()
         let newButtonState = handler.buttonState
 
-        if newButtonState != currentButtonState {
-            // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
+        guard newButtonState != currentButtonState else { return }
+
+        let apply = {
+            UIView.performWithoutAnimation {
+                self.currentButtonState = newButtonState
+                self.adjustTextViewContentInset()
+                self.updatePlaceholderAlignment()
+                self.layoutIfNeeded()
+            }
+        }
+
+        if animated {
             UIView.transition(with: buttonsView,
                               duration: Constants.buttonStateAnimationDuration,
-                              options: .transitionCrossDissolve) {
-                UIView.performWithoutAnimation {
-                    self.currentButtonState = newButtonState
-                    self.adjustTextViewContentInset()
-                    self.updatePlaceholderAlignment()
-                    self.layoutIfNeeded()
-                }
-            }
+                              options: .transitionCrossDissolve,
+                              animations: apply)
+        } else {
+            apply()
         }
     }
 
@@ -575,9 +625,7 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, self.currentMode == .aiChat else { return }
-                self.placeholderLabel.text = self.handler.hasSubmittedPrompt
-                    ? UserText.aiChatFollowUpPlaceholder
-                    : UserText.searchInputFieldPlaceholderDuckAI
+                self.placeholderLabel.text = self.placeholderText(for: .aiChat)
             }
             .store(in: &cancellables)
     }
@@ -624,9 +672,10 @@ class SwitchBarTextEntryView: UIView {
     func setQueryText(_ text: String) {
         textView.text = text
         updatePlaceholderVisibility()
+        // Handler first so `updateButtonState` reads the fresh state synchronously.
+        handler.updateCurrentText(text)
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(text)
     }
 
     /// Reflects the current transform; reset the shift to zero before reading the natural x.

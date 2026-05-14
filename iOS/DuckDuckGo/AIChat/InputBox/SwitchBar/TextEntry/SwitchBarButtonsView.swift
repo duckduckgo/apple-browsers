@@ -66,10 +66,10 @@ enum SwitchBarButtonState {
 
     var showsSeparator: Bool {
         switch self {
-        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
+        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
             return true
         case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .stopGeneratingOnly,
-             .aiChatShortcutOnly:
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
     }
@@ -120,6 +120,13 @@ class SwitchBarButtonsView: UIView {
 
         static let stopButtonBackdropInset: CGFloat = 2
         static let stopButtonBackdropCornerRadius: CGFloat = (buttonSize - (stopButtonBackdropInset * 2)) / 2
+
+        /// Chip is laid out as a 40pt circle (Figma) — same diameter as the inline back button.
+        static let aiChatShortcutChipSize: CGFloat = 40
+        /// 8pt of trailing space inside the stack so the chip's right edge sits 8pt from the
+        /// buttonsView trailing — matches the back button's leading 8pt for symmetry.
+        static let stackTrailingInset: CGFloat = 8
+
         static let accessibilityPrefix = "Browser.OmniBar"
     }
 
@@ -161,6 +168,15 @@ class SwitchBarButtonsView: UIView {
     }()
     private let voiceButton = BrowserChromeButton(.primary)
     private let aiChatShortcutButton = BrowserChromeButton(.primary)
+    private let aiChatShortcutBackdrop: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.layer.cornerRadius = Constants.aiChatShortcutChipSize / 2
+        view.clipsToBounds = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
     private let separatorView = UIView()
     private let searchGoToButton = BrowserChromeButton(.primary)
 
@@ -186,6 +202,8 @@ class SwitchBarButtonsView: UIView {
     private func setUpSubviews() {
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.alignment = .center
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: Constants.stackTrailingInset)
 
         addSubview(stack)
 
@@ -194,6 +212,7 @@ class SwitchBarButtonsView: UIView {
         stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
         stack.addArrangedSubview(separatorView)
+        aiChatShortcutButton.insertSubview(aiChatShortcutBackdrop, at: 0)
         stack.addArrangedSubview(aiChatShortcutButton)
         stack.addArrangedSubview(searchGoToButton)
     }
@@ -219,8 +238,13 @@ class SwitchBarButtonsView: UIView {
             voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
+            aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
+
+            aiChatShortcutBackdrop.topAnchor.constraint(equalTo: aiChatShortcutButton.topAnchor),
+            aiChatShortcutBackdrop.leadingAnchor.constraint(equalTo: aiChatShortcutButton.leadingAnchor),
+            aiChatShortcutBackdrop.trailingAnchor.constraint(equalTo: aiChatShortcutButton.trailingAnchor),
+            aiChatShortcutBackdrop.bottomAnchor.constraint(equalTo: aiChatShortcutButton.bottomAnchor),
 
             separatorView.widthAnchor.constraint(equalToConstant: Constants.separatorWidth),
             separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
@@ -277,6 +301,26 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.isHidden = !buttonState.showsAIChatShortcutButton
         separatorView.isHidden = !buttonState.showsSeparator
         searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
+    }
+
+    /// Fades the duck.ai chip's circular fill and slides the chip horizontally so it lands at
+    /// the omnibar's chat-icon resting position. Icon stays at full alpha throughout the
+    /// surrounding dismiss/collapse animation.
+    func fadeAIChatShortcutBackdrop(duration: TimeInterval, horizontalOffset: CGFloat) {
+        UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+            self.aiChatShortcutBackdrop.alpha = 0
+            self.aiChatShortcutButton.transform = CGAffineTransform(translationX: horizontalOffset, y: 0)
+        }
+    }
+
+    /// Restore the override applied by `fadeAIChatShortcutBackdrop`. Eases the backdrop back
+    /// in and slides the chip from its dismissed offset to the resting position; mirrors the
+    /// dismiss fade so the chip transitions both ways.
+    func restoreAIChatShortcutBackdrop(duration: TimeInterval) {
+        UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+            self.aiChatShortcutBackdrop.alpha = 1
+            self.aiChatShortcutButton.transform = .identity
+        }
     }
 
     private func updateVoiceButtonAppearance() {

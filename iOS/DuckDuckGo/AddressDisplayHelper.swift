@@ -89,6 +89,13 @@ struct AddressDisplayHelper {
         return url.host?.droppingWwwPrefix()
     }
 
+    /// Plain-string variant of the unfocused-omnibar display: search query for SERP URLs,
+    /// otherwise the short host. Returns `""` when neither applies.
+    static func plainDisplayString(for url: URL?) -> String {
+        guard let url else { return "" }
+        return url.searchQuery ?? shortURLString(url) ?? ""
+    }
+
     private static func getDuckPlayerURL(url: URL, showsFullURL: Bool) -> NSAttributedString? {
         if !showsFullURL {
             return NSAttributedString(

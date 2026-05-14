@@ -384,28 +384,35 @@ final class UnifiedToggleInputView: UIView {
 
     private var expandedShadows: [CompositeShadowView.Shadow] {
         [
-            .init(color: UIColor(designSystemColor: .shadowSecondary),
+            .init(id: ShadowID.outer,
+                  color: UIColor(designSystemColor: .shadowSecondary),
                   radius: 32,
                   offset: CGSize(width: 0, height: 8)),
-            .init(color: UIColor(designSystemColor: .shadowTertiary),
+            .init(id: ShadowID.rim,
+                  color: UIColor(designSystemColor: .shadowTertiary),
                   radius: 16,
                   offset: CGSize(width: 0, height: 2)),
         ]
     }
 
-    /// Mirrors Figma's flanked-input card effects: a softer outer drop shadow + a soft
-    /// white-tone halo that gives the pill its glowing rim against the same-tone chrome.
-    /// The halo uses a downward offset so it weights toward the bottom and sides, leaving
-    /// the top edge barely lit — matching the Figma render.
     private var flankedShadows: [CompositeShadowView.Shadow] {
         [
-            .init(color: UIColor(designSystemColor: .shadowSecondary),
+            .init(id: ShadowID.outer,
+                  color: UIColor(designSystemColor: .shadowSecondary),
                   radius: 12,
                   offset: CGSize(width: 0, height: 4)),
-            .init(color: flankedHaloColor,
+            .init(id: ShadowID.rim,
+                  color: flankedHaloColor,
                   radius: 6,
                   offset: CGSize(width: 0, height: 2)),
         ]
+    }
+
+    /// Stable IDs so we can mutate shadows in place at runtime via `updateShadow(_:)`
+    /// instead of reassigning `.shadows` (which recreates sublayers mid-animation).
+    private enum ShadowID {
+        static let outer = "outer"
+        static let rim = "rim"
     }
 
     private var flankedHaloColor: UIColor {
@@ -472,6 +479,9 @@ final class UnifiedToggleInputView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             cardView.layer.shadowColor = cardShadowColor
+            // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
+            // revert dynamic colors to the init-time config.
+            expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
             if isExpanded {
                 cardView.layer.borderColor = expandedBorderColor
             }
@@ -704,7 +714,10 @@ final class UnifiedToggleInputView: UIView {
 
         if updateShadow {
             let useCompositeShadow = expanded || layout == .flanked
-            expandedShadowView.shadows = layout == .flanked ? flankedShadows : expandedShadows
+            // In-place mutation preserves the in-flight cornerRadius CAAnimation.
+            for shadow in (layout == .flanked ? flankedShadows : expandedShadows) {
+                expandedShadowView.updateShadow(shadow)
+            }
             expandedShadowView.isHidden = !useCompositeShadow
             cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         }

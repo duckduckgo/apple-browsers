@@ -122,8 +122,6 @@ Test extensions using mock `Tab` and `TabExtensionDependencies` implementations 
 
 ## Related Topics
 
-- <doc:UserScripts> - JavaScript injection framework used by tabs
-- <doc:PrivacyFeatures> - Content blocking integrated via TabExtensions
 - ``MainViewController`` - Tab coordination and UI integration
 - ``TabCollection`` - Managing multiple tabs
 - ``WKWebView`` - WebKit integration patterns

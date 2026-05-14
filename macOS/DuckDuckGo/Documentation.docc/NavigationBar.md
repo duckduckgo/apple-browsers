@@ -16,9 +16,8 @@ NavigationBarViewController
 │   ├── AddressBarTextField (URL Input)
 │   ├── PrivacyIconViewModel (Privacy state)
 │   └── Address Bar Buttons (refresh, settings, etc.)
-├── SuggestionViewController (Dropdown)
-│   └── SuggestionContainerViewModel
-└── NavigationButtonsViewController (Back/Forward/Home)
+└── SuggestionViewController (Dropdown)
+    └── SuggestionContainerViewModel
 
 AddressBarTextField
 ├── Value (text/url/suggestion state)

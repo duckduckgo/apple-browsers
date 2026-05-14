@@ -50,32 +50,6 @@ For reusable package APIs, see the respective package documentation:
 
 ## Getting Started
 
-### Project Structure
-
-```
-macOS/
-├── DuckDuckGo/              # Main application target
-│   ├── Tab/                 # Tab architecture
-│   ├── MainWindow/          # Main window and view controllers
-│   ├── Preferences/         # Settings UI
-│   ├── Bookmarks/           # Bookmarks management
-│   ├── History/             # History UI
-│   ├── NetworkProtection/   # VPN integration
-│   └── ...
-├── DuckDuckGoVPN/           # VPN agent application
-├── LocalPackages/           # macOS-specific packages
-│   ├── AppLauncher/
-│   ├── SystemExtensionManager/
-│   └── ...
-└── Configuration/           # Build configuration
-
-SharedPackages/              # Cross-platform packages
-├── BrowserServicesKit/      # Core browser services
-├── VPN/                     # VPN package
-├── Bookmarks/               # Bookmark data models
-└── ...
-```
-
 ### Build Requirements
 
 - Xcode 15+

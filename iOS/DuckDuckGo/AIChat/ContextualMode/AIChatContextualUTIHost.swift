@@ -69,8 +69,15 @@ final class AIChatContextualUTIHost {
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.handleChipRemoveRequest()
         }
+        coordinator.delegate = self
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
+
+        coordinator.intentPublisher
+            .sink { [weak self] _ in
+                self?.applyCurrentRenderState()
+            }
+            .store(in: &cancellables)
 
         // Out-of-band context (BEFORECHAT manual attach, FE-driven flows) reaches the chip
         // here; pick a delivery state from session timing — pre-chat = silent, active-chat =
@@ -197,8 +204,38 @@ final class AIChatContextualUTIHost {
             contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
             coordinator.viewController.didMove(toParent: contextualChatViewController)
             coordinator.showExpanded()
+            applyCurrentRenderState()
             contextualChatViewController.view.layoutIfNeeded()
         }
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
     }
+
+    private func applyCurrentRenderState() {
+        coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
+        contextualChatViewController?.view.layoutIfNeeded()
+    }
+}
+
+extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
+                                           modelId: String?,
+                                           tools: [AIChatRAGTool]?,
+                                           reasoningEffort: AIChatReasoningEffort?,
+                                           images: [AIChatNativePrompt.NativePromptImage]?,
+                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+        contextualChatViewController?.submitPrompt(prompt, pageContext: chipViewModel.attachedContext?.contextData)
+    }
+
+    func unifiedToggleInputDidChangeHeight() {
+        contextualChatViewController?.view.layoutIfNeeded()
+    }
+
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }

@@ -315,15 +315,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
-    private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = {
-        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        return AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? storage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
-    }()
+    var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -4641,10 +4633,9 @@ extension MainViewController: TabDelegate {
             guard let self else { return }
             switch mode {
             case .alwaysOn:
-                break
+                self.adBlockingAvailability.clearDisableUntilRelaunch()
             case .disableUntilRelaunch:
-                // TODO: Disable YouTube ad blocking for the current session only (until the next app launch).
-                break
+                self.adBlockingAvailability.disableUntilRelaunch()
             case .alwaysOff:
                 self.setYouTubeAdBlockingEnabled(false)
             }
@@ -4734,6 +4725,7 @@ extension MainViewController: TabDelegate {
     }
 
     private func setYouTubeAdBlockingEnabled(_ enabled: Bool) {
+        adBlockingAvailability.clearDisableUntilRelaunch()
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
         DailyPixel.fireDailyAndCount(

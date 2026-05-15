@@ -69,18 +69,12 @@ struct SettingsYouTubeAdBlockingView: View {
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(UserText.youTubeAdBlockingExplanation)) {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                        adBlockingToggleCell
                     }
                 } else {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(footerAttributedString)) {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                        adBlockingToggleCell
                     }
                 }
             }
@@ -112,6 +106,14 @@ struct SettingsYouTubeAdBlockingView: View {
                 }
             }
         }
+    }
+
+    private var adBlockingToggleCell: some View {
+        SettingsCellView(
+            label: UserText.youTubeAdBlockingToggle,
+            subtitle: viewModel.isYouTubeAdBlockingDisabledUntilRelaunch ? UserText.youTubeAdBlockingDisabledUntilRelaunch : nil,
+            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+        )
     }
 
     private var remotelyDisabledRow: some View {

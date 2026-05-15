@@ -460,7 +460,8 @@ class TabViewController: UIViewController {
                                    darkReaderFeatureSettings: DarkReaderFeatureSettings,
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                                   duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> TabViewController {
+                                   duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                   adBlockingAvailability: AdBlockingAvailabilityProviding) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -497,7 +498,8 @@ class TabViewController: UIViewController {
                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                               autoplaySettings: autoplaySettings,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                              adBlockingAvailability: adBlockingAvailability
             )
         })
         return controller
@@ -509,15 +511,7 @@ class TabViewController: UIViewController {
 
 
     let historyManager: HistoryManaging
-    private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = {
-        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        return AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? storage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
-    }()
+    let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     private(set) lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = {
         return AdBlockingNavigationHandler(
@@ -644,7 +638,8 @@ class TabViewController: UIViewController {
                    autoplaySettings: AutoplaySettings,
                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                   addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter()) {
+                   addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
+                   adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -691,6 +686,7 @@ class TabViewController: UIViewController {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.addressBarURLFilter = addressBarURLFilter
+        self.adBlockingAvailability = adBlockingAvailability
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 

@@ -998,7 +998,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
               !adBlockingAvailability.isRemotelyDisabled
         else { return nil }
 
-        let isEnabled = adBlockingAvailability.isEnabledByUser
+        let isEnabled = adBlockingAvailability.isEnabledByUser && !adBlockingAvailability.isDisabledUntilRelaunch
         let title = isEnabled ? UserText.youTubeAdBlockingMenuToggle : UserText.youTubeAdBlockingMenuEnable
 
         return .regular(name: title,

@@ -693,8 +693,11 @@ final class SettingsViewModel: ObservableObject {
 
     var youTubeAdBlockingEnabled: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.youTubeAdBlockingEnabled },
+            get: {
+                self.state.youTubeAdBlockingEnabled && !self.adBlockingAvailability.isDisabledUntilRelaunch
+            },
             set: {
+                self.adBlockingAvailability.clearDisableUntilRelaunch()
                 guard $0 != self.state.youTubeAdBlockingEnabled else { return }
                 let disclosureVisibleAtToggle = !self.state.youTubeAdBlockingDisclosureHidden
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
@@ -711,6 +714,10 @@ final class SettingsViewModel: ObservableObject {
                 NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
             }
         )
+    }
+
+    var isYouTubeAdBlockingDisabledUntilRelaunch: Bool {
+        state.youTubeAdBlockingEnabled && adBlockingAvailability.isDisabledUntilRelaunch
     }
 
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
@@ -1080,6 +1087,15 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateDuckPlayerState()
+            }
+            .store(in: &cancellables)
+
+        // Republish when YouTube Ad Block state changes (including the in-memory
+        // disable-until-relaunch override on `adBlockingAvailability`).
+        NotificationCenter.default.publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
 

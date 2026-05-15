@@ -313,6 +313,30 @@ struct OnboardingFlowConfiguration {
         #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
+    @Test("Check Duck.ai flow falls back to default on iPad")
+    func fallsBackToDefaultWhenDeviceIsIPad() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            isIphone: false,
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should fall back to .default since Duck.ai onboarding is iPhone-only
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
     @Test("Check Duck.ai flow is configured when feature flag is enabled")
     func configuresDuckAIFlowWhenFeatureFlagEnabled() {
         // GIVEN
@@ -356,6 +380,53 @@ struct OnboardingFlowConfiguration {
         #expect(tutorialSettings.onboardingFlowType == .default)
         #expect(sharedPixelStorage.onboardingSource == .default)
         #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
+    @Test("Check stale resume checkpoint is cleared when configuring the flow for the first time")
+    func clearsStaleResumeCheckpointWhenConfiguringFlowFirstTime() {
+        // GIVEN - resume step persisted by a prior build that never set onboardingFlowType
+        let sharedPixelStorage = makePixelStore()
+        let resumeStore: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        resumeStore.resumeStep = .appIconSelection
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage,
+            onboardingResumeStepStore: resumeStore
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        #expect(resumeStore.resumeStep == .appIconSelection)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: URL(string: "ddgCPP://duckAI"))
+
+        // THEN - resume checkpoint is wiped so we don't restore into a step that may not exist in the resolved flow
+        #expect(resumeStore.resumeStep == nil)
+    }
+
+    @Test("Check resume checkpoint is preserved when flow is already configured")
+    func preservesResumeCheckpointWhenFlowAlreadyConfigured() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let resumeStore: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        resumeStore.resumeStep = .appIconSelection
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .default
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage,
+            onboardingResumeStepStore: resumeStore
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: URL(string: "ddgCPP://duckAI"))
+
+        // THEN - flow was already set, no reconfiguration, no clear
+        #expect(resumeStore.resumeStep == .appIconSelection)
     }
 
     private func makePixelStore(source: OnboardingPixelParameter.Source? = nil,
@@ -441,7 +512,7 @@ struct OnboardingStepsForConfiguredFlow {
             isIphone: true,
             tutorialSettings: tutorialSettings
         )
-        let expectedSteps: [OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: isReturningUser)
+        let expectedSteps: [OnboardingIntroStep] = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: isReturningUser)
 
         // WHEN
         let result = sut.onboardingSteps

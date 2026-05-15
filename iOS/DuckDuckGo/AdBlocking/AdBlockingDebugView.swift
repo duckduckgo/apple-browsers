@@ -26,8 +26,8 @@ struct AdBlockingDebugView: View {
     private let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys>
 
     @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
-    @State private var youTubeAnalyticsEnabled: Bool?
-    @State private var shouldHideDisclosure: Bool?
+    @State private var youTubeAnalyticsEnabled: TriState = .unset
+    @State private var shouldHideDisclosure: TriState = .unset
     @State private var unavailableNoticeShown: Bool?
 
     init(keyValueStore: ThrowingKeyValueStoring) {
@@ -37,44 +37,25 @@ struct AdBlockingDebugView: View {
     var body: some View {
         List {
             Section {
+                triStatePicker(title: "youTubeAnalyticsEnabled",
+                               selection: $youTubeAnalyticsEnabled,
+                               key: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+                triStatePicker(title: "shouldHideDisclosure",
+                               selection: $shouldHideDisclosure,
+                               key: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+            } header: {
+                Text(verbatim: "Flags")
+            }
+
+            Section {
                 Toggle("Remotely Disabled", isOn: $isRemotelyDisabled)
-                row(title: "Unavailable notice shown", value: unavailableNoticeShown)
-                Button("Reset 'notice shown' state") {
-                    try? storage.removeValue(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
-                    refresh()
-                }
+                resettableStatusRow(title: "Unavailable notice shown",
+                                    value: unavailableNoticeShown,
+                                    key: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
             } header: {
                 Text("Remote Disable Override")
             } footer: {
                 Text("Simulates the YouTube Ad Block feature being remotely disabled. Placeholder — replace once the real derivation lands.")
-            }
-
-            Section {
-                row(title: "youTubeAnalyticsEnabled", value: youTubeAnalyticsEnabled)
-                Button("Reset (delete key)") {
-                    try? storage.removeValue(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
-                    refresh()
-                }
-            } header: {
-                Text(verbatim: "Analytics opt-in")
-            }
-
-            Section {
-                row(title: "shouldHideDisclosure", value: shouldHideDisclosure)
-                Button("Set to `true`") {
-                    try? storage.set(true, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-                    refresh()
-                }
-                Button("Set to `false`") {
-                    try? storage.set(false, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-                    refresh()
-                }
-                Button("Reset (delete key)") {
-                    try? storage.removeValue(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-                    refresh()
-                }
-            } header: {
-                Text(verbatim: "Disclosure visibility")
             }
 
             Section {
@@ -104,14 +85,48 @@ struct AdBlockingDebugView: View {
         }
     }
 
+    private func triStatePicker(title: String,
+                                selection: Binding<TriState>,
+                                key: KeyPath<YouTubeAdBlockingKeys, StorageKey<Bool>>) -> some View {
+        Picker(title, selection: Binding(
+            get: { selection.wrappedValue },
+            set: { newValue in
+                selection.wrappedValue = newValue
+                apply(newValue, to: key)
+            }
+        )) {
+            ForEach(TriState.allCases) { state in
+                Text(state.label).tag(state)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
     @ViewBuilder
-    private func row(title: String, value: Bool?) -> some View {
+    private func resettableStatusRow(title: String,
+                                     value: Bool?,
+                                     key: KeyPath<YouTubeAdBlockingKeys, StorageKey<Bool>>) -> some View {
         HStack {
             Text(title)
             Spacer()
             Text(string(for: value))
                 .foregroundColor(.secondary)
+            Button("Reset") {
+                try? storage.removeValue(for: key)
+                refresh()
+            }
+            .buttonStyle(.borderless)
         }
+    }
+
+    private func apply(_ state: TriState, to key: KeyPath<YouTubeAdBlockingKeys, StorageKey<Bool>>) {
+        switch state.value {
+        case nil:
+            try? storage.removeValue(for: key)
+        case let bool?:
+            try? storage.set(bool, for: key)
+        }
+        refresh()
     }
 
     private func string(for value: Bool?) -> String {
@@ -119,8 +134,39 @@ struct AdBlockingDebugView: View {
     }
 
     private func refresh() {
-        youTubeAnalyticsEnabled = try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
-        shouldHideDisclosure = try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        youTubeAnalyticsEnabled = TriState.from(try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled))
+        shouldHideDisclosure = TriState.from(try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure))
         unavailableNoticeShown = try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
+    }
+}
+
+private extension AdBlockingDebugView {
+    enum TriState: Int, CaseIterable, Identifiable {
+        case unset
+        case on
+        case off
+
+        var id: Int { rawValue }
+        var label: String {
+            switch self {
+            case .unset: return "nil"
+            case .on: return "true"
+            case .off: return "false"
+            }
+        }
+        var value: Bool? {
+            switch self {
+            case .unset: return nil
+            case .on: return true
+            case .off: return false
+            }
+        }
+        static func from(_ value: Bool?) -> TriState {
+            switch value {
+            case nil: return .unset
+            case true?: return .on
+            case false?: return .off
+            }
+        }
     }
 }

@@ -383,9 +383,13 @@ struct Launching: LaunchingHandling {
             DuckAiNativeStorageContainerMigration.migrateIfNeeded(
                 from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
                 to: containerURL,
-                migrationDoneKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup"
+                migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
+                label: .default,
+                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
             )
         }
+
+        DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL)
 
         let dbURL = containerURL.appendingPathComponent("chats.db")
         if !FileManager.default.fileExists(atPath: dbURL.path) {

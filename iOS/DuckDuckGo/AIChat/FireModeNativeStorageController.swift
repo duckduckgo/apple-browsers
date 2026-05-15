@@ -81,9 +81,13 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             DuckAiNativeStorageContainerMigration.migrateIfNeeded(
                 from: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
                 to: baseDirectoryURL,
-                migrationDoneKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup"
+                migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
+                label: .fireMode,
+                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
             )
         }
+
+        DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL)
 
         self.baseDirectoryURL = baseDirectoryURL
         self.dataStoreIDManager = dataStoreIDManager

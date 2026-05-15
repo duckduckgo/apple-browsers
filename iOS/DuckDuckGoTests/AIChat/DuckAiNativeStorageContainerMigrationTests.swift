@@ -24,8 +24,13 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
     private var sandbox: URL!
     private var userDefaults: UserDefaults!
-    private let migrationKey = "test.migrationDone"
+    private var pixelSpy: SpyContainerMigrationPixelFiring!
+    private let migrationKey = "test.migration"
+    private let label: DuckAiNativeStorageContainerMigrationLabel = .default
     private let suiteName = "DuckAiNativeStorageContainerMigrationTests"
+
+    private var doneKey: String { migrationKey + ".done" }
+    private var attemptsKey: String { migrationKey + ".attempts" }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -34,6 +39,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         try FileManager.default.createDirectory(at: sandbox, withIntermediateDirectories: true)
         UserDefaults().removePersistentDomain(forName: suiteName)
         userDefaults = UserDefaults(suiteName: suiteName)
+        pixelSpy = SpyContainerMigrationPixelFiring()
     }
 
     override func tearDownWithError() throws {
@@ -41,45 +47,40 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         userDefaults = nil
         sandbox = nil
+        pixelSpy = nil
         try super.tearDownWithError()
     }
 
-    func testWhenOldDirectoryDoesNotExistThenFlagIsSetAndNothingMoves() {
+    // MARK: - Happy paths
+
+    func testWhenOldDirectoryDoesNotExistThenFlagIsSetAndNotNeededPixelFires() {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
-        XCTAssertTrue(userDefaults.bool(forKey: migrationKey))
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
         XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["notNeeded"])
     }
 
-    func testWhenOldDirectoryExistsAndNewDoesNotThenContentsAreMovedAndFlagIsSet() throws {
+    func testWhenOldDirectoryExistsAndNewDoesNotThenContentsAreMovedAndSuccessPixelFires() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
         try Data("files".utf8).write(to: oldURL.appendingPathComponent("files.bin"))
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
-        XCTAssertTrue(userDefaults.bool(forKey: migrationKey))
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
         XCTAssertFalse(FileManager.default.fileExists(atPath: oldURL.path))
         XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("chats".utf8))
         XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("files.bin")), Data("files".utf8))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success"])
     }
 
-    func testWhenBothOldAndNewExistThenOldIsRemovedAndNewIsPreserved() throws {
+    func testWhenBothOldAndNewExistThenOldIsRemovedAndOrphanRemovedPixelFires() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
@@ -87,60 +88,148 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         try Data("old".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
         try Data("keep-me".utf8).write(to: newURL.appendingPathComponent("chats.db"))
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
-        XCTAssertTrue(userDefaults.bool(forKey: migrationKey))
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
         XCTAssertFalse(FileManager.default.fileExists(atPath: oldURL.path))
         XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("keep-me".utf8))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["orphanRemoved"])
     }
 
-    func testWhenFlagAlreadySetThenNoMigrationHappensEvenIfOldExists() throws {
+    func testWhenDoneFlagAlreadySetThenNoMigrationHappensAndNoPixelFires() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("untouched".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
-        userDefaults.set(true, forKey: migrationKey)
+        userDefaults.set(true, forKey: doneKey)
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.appendingPathComponent("chats.db").path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path))
+        XCTAssertTrue(pixelSpy.firedEventNames.isEmpty)
     }
 
-    func testWhenMigrationRunsTwiceThenSecondCallIsNoOp() throws {
+    func testWhenMigrationSucceedsThenSecondCallIsNoOp() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("first".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("reappeared".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
 
-        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-            from: oldURL,
-            to: newURL,
-            migrationDoneKey: migrationKey,
-            userDefaults: userDefaults
-        )
+        migrate(from: oldURL, to: newURL)
 
         XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("first".utf8))
         XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.appendingPathComponent("chats.db").path))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success"])
+    }
+
+    // MARK: - Retry behavior
+
+    func testWhenMoveFailsThenAttemptIsRecordedAndDoneFlagNotSet() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        let failingFM = FailingMoveFileManager()
+
+        migrate(from: oldURL, to: newURL, fileManager: failingFM, maxAttempts: 3)
+
+        XCTAssertFalse(userDefaults.bool(forKey: doneKey))
+        XCTAssertEqual(userDefaults.integer(forKey: attemptsKey), 1)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed"])
+    }
+
+    func testWhenMoveFailsRepeatedlyThenGivesUpAtMaxAttempts() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        let failingFM = FailingMoveFileManager()
+
+        for _ in 0..<3 {
+            migrate(from: oldURL, to: newURL, fileManager: failingFM, maxAttempts: 3)
+        }
+
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
+        XCTAssertEqual(userDefaults.integer(forKey: attemptsKey), 3)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
+    }
+
+    func testWhenMoveFailsThenSucceedsThenAttemptsAreClearedAndSuccessPixelFires() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("data".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: 3)
+        XCTAssertEqual(userDefaults.integer(forKey: attemptsKey), 1)
+        XCTAssertFalse(userDefaults.bool(forKey: doneKey))
+
+        migrate(from: oldURL, to: newURL, maxAttempts: 3)
+
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
+        XCTAssertEqual(userDefaults.integer(forKey: attemptsKey), 0)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "success"])
+    }
+
+    func testWhenGaveUpThenSubsequentCallsAreSkipped() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+
+        for _ in 0..<3 {
+            migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: 3)
+        }
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
+
+        // Even with a non-failing FM and old data still present, we don't retry.
+        migrate(from: oldURL, to: newURL, maxAttempts: 3)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
+    }
+
+    // MARK: - Helpers
+
+    private func migrate(from oldURL: URL,
+                         to newURL: URL,
+                         fileManager: FileManager = .default,
+                         maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts) {
+        DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+            from: oldURL,
+            to: newURL,
+            migrationKey: migrationKey,
+            label: label,
+            userDefaults: userDefaults,
+            fileManager: fileManager,
+            pixelFiring: pixelSpy,
+            maxAttempts: maxAttempts
+        )
+    }
+}
+
+// MARK: - Test doubles
+
+private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring {
+    private(set) var firedEventNames: [String] = []
+
+    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
+        switch event {
+        case .notNeeded: firedEventNames.append("notNeeded")
+        case .orphanRemoved: firedEventNames.append("orphanRemoved")
+        case .success: firedEventNames.append("success")
+        case .attemptFailed: firedEventNames.append("attemptFailed")
+        case .gaveUp: firedEventNames.append("gaveUp")
+        }
+    }
+}
+
+private final class FailingMoveFileManager: FileManager {
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        throw NSError(domain: "DuckAiNativeStorageContainerMigrationTests", code: -1)
     }
 }

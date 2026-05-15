@@ -25,9 +25,11 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     var daxDialogs: DaxDialogs!
     var settings: DaxDialogsSettings!
+    var mockSettings: MockDaxDialogsSettings!
 
     override func setUp() {
-        settings = MockDaxDialogsSettings()
+        mockSettings = MockDaxDialogsSettings()
+        settings = mockSettings
         let mockVariantManager = MockVariantManager(isSupportedReturns: true)
         daxDialogs = DaxDialogs(
             settings: settings,
@@ -38,6 +40,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
     }
 
     override func tearDown() {
+        mockSettings = nil
         settings = nil
         daxDialogs = nil
     }
@@ -126,9 +129,10 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     func testWhenFireShownAndNoBrowsingAndChatPathVisitSiteNotSeen_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
         // GIVEN – chat path: fire was seen before visiting any site
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = false
+        mockSettings.isChatFirstPath = true
+        mockSettings.fireMessageExperimentShown = true
+        mockSettings.chatPathVisitSiteSeen = false
+        mockSettings.chatPathPhase = .visitSite
         // nonDDGBrowsingMessageSeen = false by default
 
         // WHEN
@@ -155,19 +159,19 @@ final class DaxDialogsNewTabTests: XCTestCase {
     // MARK: - Chat Path – chatPathPhase
 
     func testWhenChatPathPhaseIsNone_DaxDialogsReturnsNone() {
-        settings.chatPathPhase = .none
+        mockSettings.chatPathPhase = .none
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .none)
     }
 
     func testWhenChatPathPhaseIsVisitSite_DaxDialogsReturnsVisitSite() {
-        settings.chatPathPhase = .visitSite
+        mockSettings.chatPathPhase = .visitSite
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .visitSite)
     }
 
     func testWhenChatPathPhaseIsTrackerToEOJ_DaxDialogsReturnsTrackerToEOJ() {
-        settings.chatPathPhase = .trackerToEOJ
+        mockSettings.chatPathPhase = .trackerToEOJ
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .trackerToEOJ)
     }

@@ -395,11 +395,24 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if peekNextHomeScreenMessageExperiment() != nil {
             return true
         }
+        // Chat-path users suppress the standard NTP spec while their EOJ is driven by
+        // presentChatPathOnboardingCompletionIfNeeded, so peekNextHomeScreenMessageExperiment
+        // returns nil during that window. Keep isStillOnboarding = true until the EOJ is seen
+        // to prevent unrelated NTP widgets (e.g. fire-mode promotion) from appearing.
+        if settings.isChatFirstPath && !finalDaxDialogSeen {
+            return true
+        }
         return false
     }
 
     func dismiss() {
         Logger.onboarding.debug("DaxDialogs.dismiss() called – ending onboarding, isDismissed will be set to true")
+        // Chat-path EOJ is dismissed via this method rather than via setFinalOnboardingDialogSeen()
+        // (which the standard path calls inside the factory's onCompletion). Ensure the flag is set
+        // so isStillOnboarding() resolves to false and finalDaxDialogSeen-gated paths work correctly.
+        if settings.isChatFirstPath {
+            settings.browsingFinalDialogShown = true
+        }
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)
@@ -641,14 +654,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return nil
         }
 
-        // Chat-first path: fire was seen before any site was visited (Duck.ai experiment flow).
-        // The visit-site and trackers-blocked steps come AFTER fire in this path.
-        // Once nonDDGBrowsingMessageSeen becomes true, the EOJ is shown via
-        // presentChatPathOnboardingCompletionIfNeeded; suppress the standard .final here
-        // to prevent a duplicate dialog and duplicate pixel fires.
-        // (Standard-path users never set isChatFirstPath, so they fall through to .final below.)
+        // Chat-first path: visit-site and trackers-blocked steps come after fire, so EOJ is
+        // delivered via presentChatPathOnboardingCompletionIfNeeded — suppress .final here.
+        // chatPathPhase (not chatPathVisitSiteSeen) is used because chatPathVisitSiteSeen is
+        // set on first appearance and would block re-presentation after an app relaunch.
         if settings.isChatFirstPath && settings.fireMessageExperimentShown {
-            if !nonDDGBrowsingMessageSeen && !settings.chatPathVisitSiteSeen {
+            if chatPathPhase == .visitSite {
                 return .subsequent
             }
             return nil

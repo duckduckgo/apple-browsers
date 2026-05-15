@@ -447,7 +447,9 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+        guard case .introDialog(isReturningUser: false) = introSteps.first,
+              !restorePromptHandler.isEligibleForRestorePrompt(),
+              let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
               let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
               !introSteps.contains(.duckAIQuerySelection) else {
             return
@@ -467,6 +469,8 @@ private extension OnboardingIntroViewModel {
     }
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
+        // TODO: Remove this before shipping
+        return .treatmentA
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
         return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }

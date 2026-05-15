@@ -48,48 +48,48 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed with openedAfterIdle true, trigger is afterIdle", .timeLimit(.minutes(1)))
+    @Test("When refreshed with openedAfterIdle true, triggerFilter is .specific(.afterIdle)", .timeLimit(.minutes(1)))
     func refreshWithOpenedAfterIdlePassesAfterIdleTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
         let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
-        storeMock.capturedTrigger = nil
+        storeMock.capturedTriggerFilter = nil
 
         // WHEN
         sut.refresh(openedAfterIdle: true)
 
         // THEN
-        #expect(storeMock.capturedTrigger == .afterIdle)
+        #expect(storeMock.capturedTriggerFilter == .specific(.afterIdle))
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed with openedAfterIdle false, trigger is nil", .timeLimit(.minutes(1)))
-    func refreshWithOpenedAfterIdleFalsePassesNilTrigger() {
+    @Test("When refreshed with openedAfterIdle false, triggerFilter is .noTrigger", .timeLimit(.minutes(1)))
+    func refreshWithOpenedAfterIdleFalsePassesNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
         let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
-        storeMock.capturedTrigger = nil
+        storeMock.capturedTriggerFilter = nil
 
         // WHEN
         sut.refresh(openedAfterIdle: false)
 
         // THEN
-        #expect(storeMock.capturedTrigger == nil)
+        #expect(storeMock.capturedTriggerFilter == .noTrigger)
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed without parameter, trigger is nil (backward compat)", .timeLimit(.minutes(1)))
-    func refreshWithoutParameterPassesNilTrigger() {
+    @Test("When refreshed without parameter, triggerFilter is .noTrigger (backward compat)", .timeLimit(.minutes(1)))
+    func refreshWithoutParameterPassesNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
         let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
-        storeMock.capturedTrigger = nil
+        storeMock.capturedTriggerFilter = nil
 
         // WHEN
         sut.refresh()
 
         // THEN
-        #expect(storeMock.capturedTrigger == nil)
+        #expect(storeMock.capturedTriggerFilter == .noTrigger)
     }
 
 }

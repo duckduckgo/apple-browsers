@@ -22,6 +22,12 @@ public enum MessageTrigger: String, Codable {
     case afterIdle = "after_idle"
 }
 
+public enum TriggerFilter: Equatable {
+    case any
+    case noTrigger
+    case specific(MessageTrigger)
+}
+
 public struct DisplayConditions: Codable, Equatable {
     public let trigger: MessageTrigger?
     public let dismissAfterDaysShown: Int?

@@ -95,13 +95,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
+        let viewModel = newTabPageViewModel
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: hasEscapeHatch)
+                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -134,6 +135,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             newTabPageViewModel.onEscapeHatchTap = nil
             newTabPageViewModel.onTabSwitcherTap = nil
         }
+
+        messagesModel.refresh()
+
         updateBorderView()
     }
 

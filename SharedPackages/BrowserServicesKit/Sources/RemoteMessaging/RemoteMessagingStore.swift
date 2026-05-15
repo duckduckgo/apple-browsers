@@ -213,7 +213,7 @@ extension RemoteMessagingStore {
 
 extension RemoteMessagingStore {
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, trigger: MessageTrigger? = nil) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .any) -> RemoteMessageModel? {
 
         func predicateForSurfaces(_ surfaces: RemoteMessageSurfaceType) -> NSPredicate {
             // Match any message whose surfaces bitmask overlaps with the requested surfaces
@@ -260,8 +260,13 @@ extension RemoteMessagingStore {
                     continue
                 }
 
-                if let messageTrigger = remoteMessage.displayConditions?.trigger, messageTrigger != trigger {
-                    continue
+                switch triggerFilter {
+                case .any:
+                    break
+                case .noTrigger:
+                    if remoteMessage.displayConditions?.trigger != nil { continue }
+                case .specific(let requiredTrigger):
+                    guard remoteMessage.displayConditions?.trigger == requiredTrigger else { continue }
                 }
 
                 scheduledRemoteMessage = RemoteMessageModel(

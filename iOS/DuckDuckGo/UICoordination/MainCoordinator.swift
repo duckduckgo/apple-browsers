@@ -209,7 +209,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,

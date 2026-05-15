@@ -211,7 +211,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -251,13 +252,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.fireModePromotionEligibility = fireModePromotionEligibility
-        let adBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        self.adBlockingAvailability = AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? adBlockingStorage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
+        self.adBlockingAvailability = adBlockingAvailability
         registerForNotifications()
     }
 

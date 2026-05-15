@@ -62,7 +62,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                           webExtensionAvailability: nil),
-                                           keyValueStore: UserDefaults(suiteName: "ContentBlockingUpdatingTests")!)
+                                           keyValueStore: UserDefaults(suiteName: "ContentBlockingUpdatingTests")!,
+                                           adBlockingAvailability: StubAdBlockingAvailability())
     }
 
     override static func setUp() {
@@ -349,4 +350,10 @@ extension WKContentRuleList {
     @objc
     func swizzled_dealloc() { }
 
+}
+
+private final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
+    var isFeatureAvailable: Bool { false }
+    var isEnabledByUser: Bool { false }
+    func shouldShowAnimation(for url: URL) -> Bool { false }
 }

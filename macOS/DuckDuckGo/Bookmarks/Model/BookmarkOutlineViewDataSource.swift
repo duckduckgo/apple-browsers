@@ -238,7 +238,8 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         let rowView = RoundedSelectionRowView()
 
         rowView.requiresAccentColors = contentMode != .foldersOnly
-        rowView.insets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        let horizontalInset: CGFloat = (contentMode == .bookmarksMenu && AppVersion.isLiquidGlassSupported) ? 10 : 8
+        rowView.insets = NSEdgeInsets(top: 0, left: horizontalInset, bottom: 0, right: horizontalInset)
 
         // observe row drag&drop target highlight state and update `targetRowForDropOperation`
         let cancellable = rowView.publisher(for: \.isTargetForDropOperation).sink { [weak self] isTargetForDropOperation in

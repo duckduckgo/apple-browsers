@@ -587,5 +587,5 @@ private extension Collection where Element == Watchdog.Event {
 }
 
 private extension WatchdogSettings {
-    static let quickIntervals = WatchdogSettings(checkInterval: 0.1, minimumHangDuration: 0.3, maximumHangDuration: 0.5, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 2.0)
+    static let quickIntervals = WatchdogSettings(checkInterval: 0.1, minimumHangDuration: 0.3, maximumHangDuration: 1.5, requiredRecoveryHeartbeats: 1, timeoutRepeatCooldown: 2.0)
 }

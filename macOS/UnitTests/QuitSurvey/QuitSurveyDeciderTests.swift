@@ -63,7 +63,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.firstTimeQuitSurvey]
+        featureFlagger.enabledFeatureFlags = [.firstTimeQuitSurvey, .firstTimeQuitSurveySkipNonUserQuit]
 
         dataClearingPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(persistor: dataClearingPersistor)
@@ -89,7 +89,10 @@ final class QuitSurveyDeciderTests: XCTestCase {
         super.tearDown()
     }
 
-    private func createDecider() {
+    private func createDecider(
+        isAppRelaunchingForUpdate: @escaping () -> Bool = { false },
+        isSystemQuitting: @escaping () -> Bool = { false }
+    ) {
         decider = QuitSurveyDecider(
             featureFlagger: featureFlagger,
             dataClearingPreferences: dataClearingPreferences,
@@ -97,6 +100,8 @@ final class QuitSurveyDeciderTests: XCTestCase {
             installDate: installDate,
             persistor: persistor,
             reinstallUserDetection: reinstallUserDetection,
+            isAppRelaunchingForUpdate: isAppRelaunchingForUpdate,
+            isSystemQuitting: isSystemQuitting,
             dateProvider: { [unowned self] in self.currentDate }
         )
     }
@@ -272,6 +277,107 @@ final class QuitSurveyDeciderTests: XCTestCase {
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)
+    }
+
+    // MARK: - Update Relaunch / System Quit Bypass Tests
+
+    func testWhenAppIsRelaunchingForUpdateThenShouldNotShowSurvey() {
+        createDecider(isAppRelaunchingForUpdate: { true })
+
+        XCTAssertFalse(decider.shouldShowQuitSurvey)
+    }
+
+    func testWhenSystemIsQuittingThenShouldNotShowSurvey() {
+        createDecider(isSystemQuitting: { true })
+
+        XCTAssertFalse(decider.shouldShowQuitSurvey)
+    }
+
+    func testWhenSkipNonUserQuitFlagIsOffThenUpdateRelaunchDoesNotBypassSurvey() {
+        featureFlagger.enabledFeatureFlags = [.firstTimeQuitSurvey]
+        createDecider(isAppRelaunchingForUpdate: { true })
+
+        XCTAssertTrue(decider.shouldShowQuitSurvey)
+    }
+
+    func testWhenSkipNonUserQuitFlagIsOffThenSystemQuitDoesNotBypassSurvey() {
+        featureFlagger.enabledFeatureFlags = [.firstTimeQuitSurvey]
+        createDecider(isSystemQuitting: { true })
+
+        XCTAssertTrue(decider.shouldShowQuitSurvey)
+    }
+}
+
+// MARK: - QuitSurveyAppTerminationDecider Tests
+
+@MainActor
+final class QuitSurveyAppTerminationDeciderTests: XCTestCase {
+
+    private var featureFlagger: MockFeatureFlagger!
+    private var dataClearingPreferences: DataClearingPreferences!
+    private var dataClearingPersistor: MockFireButtonPreferencesPersistor!
+    private var downloadManager: FileDownloadManagerMock!
+    private var persistor: MockQuitSurveyPersistor!
+    private var reinstallUserDetection: MockReinstallingUserDetecting!
+
+    override func setUp() {
+        super.setUp()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.firstTimeQuitSurvey]
+        dataClearingPersistor = MockFireButtonPreferencesPersistor()
+        dataClearingPreferences = DataClearingPreferences(persistor: dataClearingPersistor)
+        downloadManager = FileDownloadManagerMock()
+        persistor = MockQuitSurveyPersistor()
+        reinstallUserDetection = MockReinstallingUserDetecting()
+    }
+
+    override func tearDown() {
+        featureFlagger = nil
+        dataClearingPreferences = nil
+        dataClearingPersistor = nil
+        downloadManager = nil
+        persistor = nil
+        reinstallUserDetection = nil
+        super.tearDown()
+    }
+
+    private func makeDecider(
+        resetRelaunchFlagOnCancel: @escaping @MainActor () -> Void
+    ) -> QuitSurveyAppTerminationDecider {
+        QuitSurveyAppTerminationDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: Date(),
+            persistor: persistor,
+            reinstallUserDetection: reinstallUserDetection,
+            isAppRelaunchingForUpdate: { false },
+            isSystemQuitting: { false },
+            resetRelaunchFlagOnCancel: resetRelaunchFlagOnCancel,
+            showQuitSurvey: {}
+        )
+    }
+
+    // MARK: - resetRelaunchFlagOnCancel
+
+    func testWhenTerminationIsCancelledThenResetRelaunchFlagOnCancelIsCalled() {
+        var resetCalled = false
+        let decider = makeDecider(resetRelaunchFlagOnCancel: { resetCalled = true })
+
+        decider.deciderSequenceCompleted(shouldProceed: false)
+
+        XCTAssertTrue(resetCalled,
+                      "Cancellation must reset the persisted relaunch flag so a stale flag doesn't suppress the survey on a later legit quit")
+    }
+
+    func testWhenTerminationProceedsThenResetRelaunchFlagOnCancelIsNotCalled() {
+        var resetCalled = false
+        let decider = makeDecider(resetRelaunchFlagOnCancel: { resetCalled = true })
+
+        decider.deciderSequenceCompleted(shouldProceed: true)
+
+        XCTAssertFalse(resetCalled,
+                       "On a successful termination the flag must survive across the process boundary so applicationDidFinishLaunching can use it for tab restoration")
     }
 }
 

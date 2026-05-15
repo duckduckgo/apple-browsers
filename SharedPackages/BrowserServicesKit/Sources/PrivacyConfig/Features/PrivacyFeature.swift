@@ -151,6 +151,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
 
+    /// Suppresses the first-time quit survey when termination wasn't initiated by the user
+    /// (Sparkle update relaunch, or system logout/restart/shutdown).
+    case firstTimeQuitSurveySkipNonUserQuit
+
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
@@ -189,6 +193,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
+    case bookmarksBarMenusCustomWindow
 
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
@@ -255,6 +262,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
+
+    /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
+    case defaultExistingIPhoneUsersToNewTabAfterIdle
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -426,8 +440,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
-    /// Enables attaching content from multiple open tabs to Duck.ai chat
-    case attachMoreTabs
+    /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
+    case sidebarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
+    case omnibarAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext

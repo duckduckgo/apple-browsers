@@ -28,13 +28,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let verticalPadding: CGFloat = 6
+        static let topPadding: CGFloat = 4
+        static let bottomPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
         static let selectedToolClearButtonSize: CGFloat = 24
         static let leftGroupSpacing: CGFloat = 4
-        static let rightGroupSpacing: CGFloat = 8
+        static let rightGroupSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
@@ -368,8 +369,8 @@ private extension UnifiedToggleInputToolbarView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding),
-            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding),
+            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomPadding),
             modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 

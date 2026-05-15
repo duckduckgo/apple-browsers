@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Combine
 import Core
 import os.log
@@ -156,6 +157,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private enum Constants {
         static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
+        static let subscriptionFeaturePage = "duckai"
+    }
+
+    private enum SubscriptionFlowSource {
+        case modelPicker
+        case reasoningPicker
     }
 
     private var attachmentPolicy: UTIAttachmentPolicy {
@@ -241,11 +248,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
+    private var pendingGatedModelId: String?
+    private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
-    var onAnimatedDismissToOmnibar: (() -> Void)?
+    var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
     var isOmnibarSession: Bool {
         if case .omnibar = displayState { return true }
@@ -387,6 +396,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
         subscribeToAttachmentUsageChanges()
+        subscribeToSubscriptionChanges()
         viewController.isToolsButtonHidden = true
 
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
@@ -1179,6 +1189,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelStore.fetchModels()
     }
 
+    func refreshModelsAfterSubscriptionChange() {
+        fetchModels()
+    }
+
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
@@ -1198,10 +1212,185 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recordUserChoiceToStore()
     }
 
+    func handleModelSelection(_ modelId: String) {
+        guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
+
+        if model.entityHasAccess {
+            pendingGatedModelId = nil
+            updateSelectedModel(modelId)
+        } else {
+            if routeGatedModelSelection(model) {
+                pendingGatedModelId = modelId
+            }
+            refreshModelPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    @discardableResult
+    private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
+        guard let requiredPublicTier = model.lowestPublicAccessTier else {
+            Logger.unifiedInputState.debug("Gated model has no public access tier: \(model.id, privacy: .public)")
+            return false
+        }
+
+        let userTier = subscriptionState.userTier
+
+        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            presentPurchaseFlow(source: .modelPicker)
+            return true
+        }
+
+        if userTier == .plus, requiredPublicTier == .pro {
+            presentUpgradeFlow(source: .modelPicker)
+            return true
+        }
+
+        Logger.unifiedInputState.debug("No native subscription flow for gated model")
+        return false
+    }
+
+    private func presentPurchaseFlow(source: SubscriptionFlowSource) {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
+                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
+            )
+        )
+    }
+
+    private func presentUpgradeFlow(source: SubscriptionFlowSource) {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
+                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
+            )
+        )
+    }
+
+    private func makeSubscriptionRedirectURLComponents(source: SubscriptionFlowSource) -> URLComponents {
+        var components = URLComponents()
+        components.queryItems = [
+            URLQueryItem(name: "featurePage", value: Constants.subscriptionFeaturePage),
+            URLQueryItem(name: AttributionParameter.origin, value: subscriptionOrigin(for: source).rawValue)
+        ]
+        return components
+    }
+
+    private func subscriptionOrigin(for source: SubscriptionFlowSource) -> SubscriptionFunnelOrigin {
+        switch (isAITabState, source) {
+        case (true, .modelPicker):
+            return .duckAIModelPicker
+        case (true, .reasoningPicker):
+            return .duckAIReasoningPicker
+        case (false, .modelPicker):
+            return .addressBarModelPicker
+        case (false, .reasoningPicker):
+            return .addressBarReasoningPicker
+        }
+    }
+
+    private func refreshModelPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateModelChipLabel()
+        }
+    }
+
+    private func refreshReasoningPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateReasoningPicker()
+        }
+    }
+
+    @discardableResult
+    private func applyPendingGatedModelSelectionIfPossible() -> Bool {
+        guard let modelId = pendingGatedModelId,
+              modelStore.models.first(where: { $0.id == modelId })?.entityHasAccess == true else {
+            return false
+        }
+
+        pendingGatedModelId = nil
+        updateSelectedModel(modelId)
+        return true
+    }
+
+    private func applyPendingGatedReasoningSelectionIfPossible() {
+        guard let pendingSelection = pendingGatedReasoningSelection else { return }
+        guard let selectedModel, selectedModel.id == pendingSelection.modelId else {
+            pendingGatedReasoningSelection = nil
+            return
+        }
+
+        if let requiredPublicTier = requiredPublicTier(for: pendingSelection.mode, model: selectedModel),
+           !canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            return
+        }
+
+        pendingGatedReasoningSelection = nil
+        updateSelectedReasoningMode(pendingSelection.mode)
+    }
+
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
         recordUserChoiceToStore()
+    }
+
+    func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
+        guard let selectedModel else { return }
+        guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
+            pendingGatedReasoningSelection = nil
+            updateSelectedReasoningMode(mode)
+            return
+        }
+
+        if canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            pendingGatedReasoningSelection = nil
+            updateSelectedReasoningMode(mode)
+        } else {
+            if routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier) {
+                pendingGatedReasoningSelection = (selectedModel.id, mode)
+            }
+            refreshReasoningPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access
+    // after `/models` exposes approved metadata for reasoning mode access.
+    // https://app.asana.com/1/137249556945/project/1210947754188321/task/1214802703019277?focus=true
+    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
+        if model.id == "gpt-5.2", mode == .extendedReasoning {
+            return .pro
+        }
+        return nil
+    }
+
+    private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {
+        switch requiredTier {
+        case .free:
+            return true
+        case .plus:
+            return subscriptionState.userTier != .free
+        case .pro:
+            return subscriptionState.userTier == .pro || subscriptionState.userTier == .internal
+        }
+    }
+
+    @discardableResult
+    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
+        let userTier = subscriptionState.userTier
+
+        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            presentPurchaseFlow(source: .reasoningPicker)
+            return true
+        }
+
+        if userTier == .plus, requiredPublicTier == .pro {
+            presentUpgradeFlow(source: .reasoningPicker)
+            return true
+        }
+
+        Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
+        return false
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -1225,13 +1414,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
-            advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
-                ? UserText.aiChatAdvancedModelsSectionHeader
-                : UserText.aiChatAdvancedModelsMenuTitle,
-            basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
+            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
+            proSectionTitle: UserText.aiChatProModelsSectionHeader
         ) { [weak self] modelId in
-            self?.updateSelectedModel(modelId)
+            self?.handleModelSelection(modelId)
         }
     }
 
@@ -1246,7 +1432,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 image: mode.unifiedToggleInputMenuImage,
                 state: mode == selectedMode ? .on : .off
             ) { [weak self] _ in
-                self?.updateSelectedReasoningMode(mode)
+                self?.handleReasoningModeSelection(mode)
             }
         }
 
@@ -1469,13 +1655,25 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
-        // The inline X dismisses the same way the floating X does — forward to the
-        // content container's shared handler so both controls route through one path.
+        // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
+        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         contentViewController.onDismissRequested?()
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: viewController.handler.currentText)
+        let prefilledText = viewController.handler.currentText
+        // Outside omnibar editing the chip can't dismiss-to-omnibar; preserve the original
+        // straight-to-chat behavior to avoid wrong-destination collapses.
+        guard isOmnibarSession else {
+            delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
+            return
+        }
+        // Defer the chat request to the dismiss completion — its side-effects (omniBar.endEditing,
+        // sheet present, tab refresh) clobber the in-flight UTI mid-collapse otherwise.
+        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
+        onAnimatedDismissToOmnibar?({ [weak self] in
+            self?.delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
+        })
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {
@@ -1784,9 +1982,8 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        let shouldHide = hasExistingChat || hasSubmittedPrompt
-        guard hasSubmittedPrompt != shouldHide else { return }
-        hasSubmittedPrompt = shouldHide
+        guard hasSubmittedPrompt != hasExistingChat else { return }
+        hasSubmittedPrompt = hasExistingChat
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -1837,6 +2034,10 @@ private extension UnifiedToggleInputCoordinator {
         removeUnsupportedAttachmentsForSelectedModel()
         updateModelChipLabel()
         updateReasoningPicker()
+        if applyPendingGatedModelSelectionIfPossible() {
+            return
+        }
+        applyPendingGatedReasoningSelectionIfPossible()
         updateImageButtonVisibility()
         refreshToolsPresentation()
     }
@@ -1939,6 +2140,15 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToSubscriptionChanges() {
+        NotificationCenter.default.publisher(for: .subscriptionDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)
     }

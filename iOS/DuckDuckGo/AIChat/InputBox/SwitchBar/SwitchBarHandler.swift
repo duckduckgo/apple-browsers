@@ -107,7 +107,6 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
-    private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
@@ -207,7 +206,6 @@ final class SwitchBarHandler: SwitchBarHandling {
          initialToggleState: TextEntryMode? = nil,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
@@ -217,7 +215,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.toggleModeStorage = toggleModeStorage
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
-        self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
         self.voiceShortcutFeature = voiceShortcutFeature

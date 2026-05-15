@@ -5,9 +5,9 @@ tags:
 name: 06_delete_account
 ---
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# Set up
+- runFlow:
+    file: ../shared/sync_setup.yaml
 
 # Set Internal User
 - tapOn: Browsing menu

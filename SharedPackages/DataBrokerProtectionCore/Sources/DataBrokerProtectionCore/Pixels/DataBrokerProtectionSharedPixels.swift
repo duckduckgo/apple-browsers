@@ -146,12 +146,26 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutConditionNotFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
-    // KPIs - engagement
+    // engagement
     case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
     case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
     case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - events
+    // user interaction (PIR dashboard presentations)
+    case dailyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case weeklyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case monthlyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // dashboard opens
+    case dashboardOpen(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // first scan
+    case firstScan(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // freemium → paid upsell
+    case freemiumUpsell
+
+    // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
@@ -251,10 +265,24 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
         case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
-            // KPIs - engagement
+            // engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
         case .weeklyActiveUser: return "dbp_engagement_wau"
         case .monthlyActiveUser: return "dbp_engagement_mau"
+
+            // user interaction
+        case .dailyInteractedUser: return "dbp_interaction_dau"
+        case .weeklyInteractedUser: return "dbp_interaction_wau"
+        case .monthlyInteractedUser: return "dbp_interaction_mau"
+
+            // dashboard opens
+        case .dashboardOpen: return "dbp_dashboard_open"
+
+            // first scan
+        case .firstScan: return "dbp_first_scan_u"
+
+            // freemium upsell
+        case .freemiumUpsell: return "dbp_freemium_upsell_u"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
@@ -490,8 +518,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             }
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
-                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
+                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .dailyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .weeklyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .monthlyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .dashboardOpen(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .firstScan(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
             return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
+        case .freemiumUpsell:
+            return [:]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]
@@ -632,6 +667,12 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dailyActiveUser,
                 .weeklyActiveUser,
                 .monthlyActiveUser,
+                .dailyInteractedUser,
+                .weeklyInteractedUser,
+                .monthlyInteractedUser,
+                .dashboardOpen,
+                .firstScan,
+                .freemiumUpsell,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -755,6 +796,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
+                    .dailyInteractedUser,
+                    .weeklyInteractedUser,
+                    .monthlyInteractedUser,
+                    .dashboardOpen,
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
@@ -786,6 +831,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .firstScan, .freemiumUpsell:
+                self.pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
             case .updateDataBrokersFailure(_, _, _, let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)

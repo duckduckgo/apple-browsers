@@ -116,6 +116,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
 
     func save(_ scanEvent: ScanHistoryEventDB) throws
     func save(_ optOutEvent: OptOutHistoryEventDB) throws
+    func hasScanHistoryEvents() throws -> Bool
     func fetchScanEvents(brokerId: Int64, profileQueryId: Int64) throws -> [ScanHistoryEventDB]
     func fetchOptOutEvents(brokerId: Int64, profileQueryId: Int64) throws -> [OptOutHistoryEventDB]
     func fetchOptOutEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [OptOutHistoryEventDB]
@@ -732,6 +733,12 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     public func save(_ optOutEvent: OptOutHistoryEventDB) throws {
         try db.write { db in
             try optOutEvent.insert(db)
+        }
+    }
+
+    public func hasScanHistoryEvents() throws -> Bool {
+        try db.read { db in
+            return try ScanHistoryEventDB.fetchCount(db) > 0
         }
     }
 

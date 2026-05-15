@@ -41,6 +41,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
     func onTryFireModeRequested()
     func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
@@ -125,6 +126,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
+    /// Held in a dedicated property (not `cancellables`) so each new chat-history install
+    /// auto-cancels the previous subscription on assignment — avoids stale viewModels firing.
+    private var chatHistoryHasSuggestionsCancellable: AnyCancellable?
     private var isShowingURLFallback = false
 
     private var chatHasResults: Bool {
@@ -196,7 +200,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
+        if aiChatHistoryManager == nil {
             installChatHistoryList()
         }
 
@@ -302,6 +306,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
+        installChatHistoryList()
         installDaxLogoView()
         installNavigationActionBar()
 
@@ -361,18 +366,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
         let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch)
+        let openTabCount = dependencies.tabsModelProvider().count
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch, openTabCount: openTabCount)
         suggestionTrayManager = manager
     }
 
     private func installChatHistoryList() {
-        guard let swipeContainerManager else { return }
+        guard featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled,
+              let swipeContainerManager else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
         let manager = makeAIChatHistoryManager()
         
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
-        manager.hasSuggestionsPublisher
+        chatHistoryHasSuggestionsCancellable = manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasSuggestions in
                 guard let self else { return }
@@ -382,13 +392,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.view.layoutIfNeeded()
                 }
             }
-            .store(in: &cancellables)
         aiChatHistoryManager = manager
 
         if let escapeHatchModel {
-            manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
-                self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
-            })
+            let count = suggestionTrayDependencies?.tabsModelProvider().count ?? 0
+            manager.setEscapeHatch(
+                escapeHatchModel,
+                openTabCount: count,
+                onTapped: { [weak self] in
+                    self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
+                },
+                onTabSwitcherTapped: { [weak self] in
+                    self?.delegate?.onTabSwitcherRequested()
+                }
+            )
         }
     }
     
@@ -798,6 +815,10 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.onSwitchToTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager) {
+        delegate?.onTabSwitcherRequested()
     }
 
     func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {

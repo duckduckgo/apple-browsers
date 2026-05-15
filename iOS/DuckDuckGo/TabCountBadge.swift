@@ -60,6 +60,8 @@ struct TabCountBadge: View {
             }
         }
         .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(UserText.numberOfTabs(model.count))
     }
     
     private func textFont(_ isShowingSymbol: Bool) -> Font {

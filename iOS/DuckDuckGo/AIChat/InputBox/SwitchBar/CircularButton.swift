@@ -139,6 +139,11 @@ final class CircularButton: UIButton {
                   background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))
     }
 
+    func applyReturnKeyStyle() {
+        setColors(foreground: UIColor(designSystemColor: .textPrimary),
+                  background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
 

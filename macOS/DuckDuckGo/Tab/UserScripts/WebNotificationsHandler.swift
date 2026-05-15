@@ -46,7 +46,9 @@ protocol WebNotificationService {
 }
 
 extension UNUserNotificationCenter: WebNotificationService {
-    // UNUserNotificationCenter already provides the required methods
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await notificationSettings().authorizationStatus
+    }
 }
 
 /// Abstraction for permission model operations needed by WebNotificationsHandler.

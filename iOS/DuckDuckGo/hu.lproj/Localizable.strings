@@ -212,51 +212,6 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fénykép készítése";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
-"aichat.attachment.file.count.limit" = "Beszélgetésenként csak %d fájlt csatolhatsz.";
-
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.encrypted" = "Nem tudjuk olvasni a csatolt fájlokat, mert legalább az egyik titkosítva van.";
-
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
-"aichat.attachment.file.exceeds.conversation.limit" = "A csatolt fájlok összmérete meghaladja a maximálisan megengedett %d MB-ot.";
-
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
-"aichat.attachment.file.too.large" = "A fájl túl nagy. Maximális fájlméret: %d MB.";
-
-/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
-"aichat.attachment.file.too.many.pages" = "Az egyik csatolt fájlnak az általunk támogatottnál több oldala van. Legfeljebb %d oldalas fájlokat tölts fel.";
-
-/* Error message displayed when one or more attached files cannot be read */
-"aichat.attachment.file.unreadable" = "Nem tudjuk olvasni az egyik csatolt fájlt. Ellenőrizd, hogy nem sérült-e, és próbálkozz újra.";
-
-/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
-"aichat.attachment.image.count.limit" = "Beszélgetésenként csak %d képet csatolhatsz.";
-
-/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
-"aichat.attachment.image.turn.limit" = "Egyszerre csak %d képet csatolhatsz.";
-
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Fájl csatolása";
-
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Fénykép csatolása";
-
-/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
-"aichat.attachment.prompt.too.long" = "Az üzenet túl hosszú a mellékletekkel együtt való küldéshez.";
-
-/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
-"aichat.attachment.unavailable" = "A mellékletek átmenetileg nem érhetők el. Próbálkozz újra később.";
-
-/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
-"aichat.attachment.unsupported.file.type" = "A fájltípus nem támogatott.";
-
-/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
-"aichat.attachment.unsupported.file.type.multiple" = "A fájltípus nem támogatott, csatolj %1$@ vagy %2$@ fájlt.";
-
-/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "A fájltípus nem támogatott, csatolj %@ fájlt.";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Elemezési feladatokhoz";
 
@@ -277,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Válaszok testreszabása";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Szövegből képek létrehozása";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Kép létrehozása";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Aktuális információk keresése";
@@ -3064,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Készen állsz egy gyorsabb böngészőre, amely védelmet nyújt, és lehetővé teszi, hogy eldöntsd, mikor és hogyan használd az AI-t?";
+"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely saját kezedbe adja az irányítást?\n\nAz AI mindig opcionális, az adatvédelem pedig állandóan be van kapcsolva.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Szia!";
@@ -3504,7 +3465,10 @@
 "settings.address.trackers.animation" = "Megjelenítés a címsorban";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Válaszd ki, mit jelenjen meg, ha %@ inaktivitás után visszatérsz.";
+"settings.afterInactivity.footer.format" = "Válaszd ki, mi jelenjen meg, amikor %@ tétlenség után visszatérsz a DuckDuckGóba.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Válaszd ki, mi jelenjen meg, amikor visszatérsz a DuckDuckGóba.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 óra";
@@ -3518,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d perc";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nincs";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 másodperc";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d másodperc";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Tétlenségi időzítő";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Inaktivitás után";
+"settings.afterInactivity.label" = "Nyitóképernyő";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";
@@ -4921,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Hirdetések blokkolása a YouTube-on";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Amikor be van kapcsolva, a DuckDuckGo névtelenül észleli a hirdetésblokkolási interferenciát vagy a YouTube-hibákat, hogy mindenki számára jobb élményt nyújtson. A DuckDuckGo soha nem látja, hogy mely videókat nézed meg, és nem fér hozzá személyazonosításra alkalmas információkhoz sem.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "További részletek";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Könyvjelzők";

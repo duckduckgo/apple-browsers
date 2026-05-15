@@ -1599,16 +1599,19 @@ public struct UserText {
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
 
     // After Inactivity (NTP / Last Used Tab)
-    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "After Inactivity", comment: "Settings picker label for what to show when returning after inactivity")
+    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "Opening Screen", comment: "Settings picker label for what to show when returning after inactivity")
     public static let settingsAfterInactivityOptionNewTab = NSLocalizedString("settings.afterInactivity.option.newTab", value: "New Tab", comment: "Option: show New Tab when returning after inactivity")
     public static let settingsAfterInactivityOptionLastUsedTab = NSLocalizedString("settings.afterInactivity.option.lastUsedTab", value: "Last Used Tab", comment: "Option: show last used tab when returning after inactivity")
-    public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
+    public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return to DuckDuckGo after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
     public static let settingsAfterInactivityIdleIntervalSecondSingular = NSLocalizedString("settings.afterInactivity.idle.interval.second", value: "1 second", comment: "Idle interval 1 second for settings footer")
     public static let settingsAfterInactivityIdleIntervalMinuteSingular = NSLocalizedString("settings.afterInactivity.idle.interval.minute", value: "1 minute", comment: "Idle interval 1 minute for settings footer")
     public static let settingsAfterInactivityIdleIntervalSecondsFormat = NSLocalizedString("settings.afterInactivity.idle.interval.seconds", value: "%d seconds", comment: "Idle interval in seconds for settings footer (plural)")
     public static let settingsAfterInactivityIdleIntervalMinutesFormat = NSLocalizedString("settings.afterInactivity.idle.interval.minutes", value: "%d minutes", comment: "Idle interval in minutes for settings footer (plural)")
     public static let settingsAfterInactivityIdleIntervalHourSingular = NSLocalizedString("settings.afterInactivity.idle.interval.hour", value: "1 hour", comment: "Idle interval 1 hour for settings footer")
     public static let settingsAfterInactivityIdleIntervalHoursFormat = NSLocalizedString("settings.afterInactivity.idle.interval.hours", value: "%d hours", comment: "Idle interval in hours for settings footer (plural)")
+    public static let settingsAfterInactivityIntervalLabel = NSLocalizedString("settings.afterInactivity.interval.label", value: "Inactivity Timer", comment: "Settings picker label for the inactivity duration before showing New Tab")
+    public static let settingsAfterInactivityIdleIntervalNone = NSLocalizedString("settings.afterInactivity.idle.interval.none", value: "None", comment: "Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold)")
+    public static let settingsAfterInactivityFooterNone = NSLocalizedString("settings.afterInactivity.footer.none", value: "Choose what you see when you return to DuckDuckGo.", comment: "Section footer when no inactivity timer is set or the Last Used Tab option is selected")
 
     // Escape Hatch (Return to Tab Card)
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
@@ -2026,6 +2029,8 @@ public struct UserText {
     public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "YouTube Ad Blocking", comment: "Settings screen title for YouTube Ad Blocking")
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
+    public static let youTubeAdBlockingToggleFooter = NSLocalizedString("youtube.ad.blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
+    public static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("youtube.ad.blocking.toggle.footer.learn-more", value: "Learn More", comment: "Learn More link appended after the YouTube ad blocking toggle description")
 
     // Duck Player View
     public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
@@ -2058,8 +2063,8 @@ public struct UserText {
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
     public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
-    public static let aiChatToolbarImageGenerationToolTitle = NotLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
-    public static let aiChatToolbarImageGenerationToolSubtitle = NotLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
+    public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
+    public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
     public static let aiChatReasoningModeFastTitle = NSLocalizedString("aichat.reasoning.fast.title", value: "Fast", comment: "Title for the fast reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeFastSubtitle = NSLocalizedString("aichat.reasoning.fast.subtitle", value: "Answers quickly", comment: "Subtitle for the fast reasoning mode in the Duck.ai reasoning picker")
@@ -2133,6 +2138,8 @@ public struct UserText {
     public static let aiChatAdvancedModelsMenuTitle = NotLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     public static let aiChatAdvancedModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-advanced-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when the user has an active subscription")
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
+    public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
+    public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
@@ -2297,7 +2304,7 @@ public struct UserText {
                 public static var title: String {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
-                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that puts you in control?\n\nAI is always optional, and privacy protection is always on.", comment: "The message of the onboarding dialog popup")
             }
         }
 
@@ -2444,6 +2451,57 @@ public struct UserText {
                 value: "Use the address bar to search and visit sites or toggle to Duck.ai for private AI chat.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
                 comment: "Experiment-only completion onboarding message shown after finishing Fire onboarding in Duck.ai flow."
             )
+        }
+
+        enum DuckAICPP {
+            public enum Intro {
+                public static let message = NotLocalizedString("onboarding.duckai.intro.message", value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?", comment: "The message of the onboarding intro dialog popup")
+            }
+
+            public enum Skip {
+                public static let message = NotLocalizedString("onboarding.duckai.skip.message", value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]", comment: "The message of the onboarding skip dialog popup")
+
+                public static let confirmSkipOnboardingCTA = NotLocalizedString("onboarding.duckai.skip.cta.confirm", value: "Start AI Chat", comment: "The title of the button to skip the onboarding and start browsing.")
+            }
+
+            public enum AIComparison {
+                public static let title = NotLocalizedString("onboarding.duckai.aiComparison.title", value: "AI protections activated!", comment: "The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers")
+                public static let subHeader = NotLocalizedString("onboarding.duckai.aiComparison.subheader", value: "Popular AIs", comment: "The header to explain how Duck.ai compares to other AIs")
+                public static let cta = NotLocalizedString("onboarding.duckai.aiComparison.cta", value: "Give Duck.ai a try!", comment: "Button to continue the onboarding flow")
+
+                public enum Features {
+                    public static let anonymousChats = NotLocalizedString("onboarding.duckai.ai.features.anonymousChats.title", value: "All chats are anonymized", comment: "Message to highlight AI capability of anonymous chats")
+                    public static let noAccountsNeeded = NotLocalizedString("onboarding.duckai.ai.features.noAccountsNeeded.title", value: "No account needed to access all AI features", comment: "Message to highlight AI capability of no accounts needed to chat")
+                    public static let noTrainingData = NotLocalizedString("onboarding.duckai.ai.features.noTrainingData.title", value: "Never uses your chats to train AI", comment: "Message to highlight how users AI chat are not used to train AI models")
+                    public static let onePlaceAccess = NotLocalizedString("onboarding.duckai.ai.features.onePlaceAccess.title", value: "Access ChatGPT, Claude, and more, all in one place", comment: "Message to highlight AI capability of AI models all in one place")
+                }
+            }
+
+            public enum DuckAIQuery {
+                public static let title = NotLocalizedString(
+                    "onboarding.duckai.duckAIQuery.title",
+                    value: "Now, try a private AI chat!",
+                    comment: "Title for the onboarding Duck.ai query screen."
+                )
+            }
+
+            public enum AddToDock {
+                public enum Promo {
+                    static let message = NotLocalizedString(
+                        "onboarding.duckai.addToDock.promo.message",
+                        value: "I'll nest in easy reach for all your daily AI chats and browsing.",
+                        comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock."
+                    )
+                }
+            }
+
+            public enum BrowserComparison {
+                public static let title = NotLocalizedString(
+                    "onboarding.duckai.browser.title",
+                    value: "Want to make DuckDuckGo your default browser?",
+                    comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
+                )
+            }
         }
 
         enum ContextualOnboarding {

@@ -212,51 +212,6 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Posnemite fotografijo";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
-"aichat.attachment.file.count.limit" = "V enem pogovoru lahko priložite največ toliko datotek: %d.";
-
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.encrypted" = "Priloženih datotek ne moremo prebrati, ker je vsaj ena od njih šifrirana.";
-
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
-"aichat.attachment.file.exceeds.conversation.limit" = "Priložene datoteke presegajo skupno omejitev velikosti %d MB.";
-
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
-"aichat.attachment.file.too.large" = "Ta datoteka je prevelika. Največja velikost datoteke je %d MB.";
-
-/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
-"aichat.attachment.file.too.many.pages" = "Ena od priloženih datotek ima več strani, kot jih podpiramo. Naložite datoteke z največ toliko stranmi: %d.";
-
-/* Error message displayed when one or more attached files cannot be read */
-"aichat.attachment.file.unreadable" = "Ene od priloženih datotek ne moremo prebrati. Preverite, ali je poškodovana, in poskusite znova.";
-
-/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
-"aichat.attachment.image.count.limit" = "V enem pogovoru lahko priložite največ toliko slik: %d.";
-
-/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
-"aichat.attachment.image.turn.limit" = "Naenkrat lahko priložite samo toliko slik: %d.";
-
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Priloži datoteko";
-
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Priloži fotografijo";
-
-/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
-"aichat.attachment.prompt.too.long" = "To sporočilo je predolgo za pošiljanje s prilogami.";
-
-/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
-"aichat.attachment.unavailable" = "Priloge trenutno niso na voljo. Poskusite znova pozneje.";
-
-/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
-"aichat.attachment.unsupported.file.type" = "Ta vrsta datoteke ni podprta.";
-
-/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
-"aichat.attachment.unsupported.file.type.multiple" = "Ta vrsta datoteke ni podprta, priložite datoteko %1$@ ali %2$@.";
-
-/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "Ta vrsta datoteke ni podprta, priložite %@.";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitične naloge";
 
@@ -277,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odzive";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pretvorba besedila v slike";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Ustvari sliko";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Poiščite trenutne informacije";
@@ -3064,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je iskanje DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki vas ščiti in vam omogoča, da se odločite, kdaj in kako boste uporabljali umetno inteligenco?";
+"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki daje nadzor vam?\n\nUmetna inteligenca je vedno neobvezna, zaščita zasebnosti pa je vedno vklopljena.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Pozdravljeni.";
@@ -3504,7 +3465,10 @@
 "settings.address.trackers.animation" = "Prikaži v naslovni vrstici";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Izberite, kaj naj bo prikazano ob vrnitvi po %@ neaktivnosti.";
+"settings.afterInactivity.footer.format" = "Izberite, kaj želite videti, ko se po %@ neaktivnosti vrnete na DuckDuckGo.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Izberite, kaj bo prikazano, ko se vrnete na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 uri";
@@ -3518,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutah";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Brez";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekundi";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekundah";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Časovnik neaktivnosti";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po neaktivnosti";
+"settings.afterInactivity.label" = "Začetni zaslon";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Nazadnje uporabljeni zavihek";
@@ -4921,6 +4891,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Ko je to vklopljeno, DuckDuckGo anonimno zaznava motnje pri blokiranju oglasov ali napake v YouTubu, da izboljša izkušnjo za vse uporabnike. DuckDuckGo nikoli ne vidi, katere videoposnetke si ogledujete, niti nobenih osebnih podatkov.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Več o tem";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zaznamki";

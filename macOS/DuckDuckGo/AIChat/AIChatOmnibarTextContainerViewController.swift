@@ -327,6 +327,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// and presents (or dismisses) the mention picker panel accordingly. The detector itself
     /// is in `AIChatMentionTokenDetector`; this method only does the panel-lifecycle glue.
     private func updateMentionTokenDetection() {
+        // Gate on the same `isOmnibarTabPickerEnabled` feature flag the "Add Page Content"
+        // submenu uses. Without this, a user typing `@` in the omnibar would see the picker
+        // regardless of the `aiChatOmnibarAttachMoreTabs` rollout state. Dismissing any
+        // already-presented picker too, so a remote flag flip-off while the panel is on
+        // screen tears it down on the next text edit / selection change.
+        guard omnibarController.isOmnibarTabPickerEnabled else {
+            mentionPickerCoordinator.dismiss()
+            return
+        }
         let caret = textView.selectedRange.location
         guard let token = AIChatMentionTokenDetector.token(in: textView.string, caret: caret) else {
             mentionPickerCoordinator.dismiss()

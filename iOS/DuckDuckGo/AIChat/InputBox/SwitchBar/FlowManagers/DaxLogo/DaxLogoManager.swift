@@ -52,6 +52,7 @@ final class DaxLogoManager {
 
     private(set) var currentProgress: CGFloat = 0
     private var isAnimatingLogoTransition = false
+    private var pendingTransitionToken: UUID?
     private var isSwipeInProgress = false
     private var escapeHatchBaseOffset: CGFloat = 0
     private(set) var logoYOffset: CGFloat = 0
@@ -111,8 +112,11 @@ final class DaxLogoManager {
         daxLogoView.logoAnimation.currentProgress
     }
 
-    /// Plays the Lottie from its current progress to the given target.
+    /// Plays the Lottie from its current progress to the given target. Clears any in-flight
+    /// `animateLogoTransition` state since this play interrupts it without a `finished == true` callback.
     func animateProgress(to targetProgress: CGFloat) {
+        pendingTransitionToken = nil
+        isAnimatingLogoTransition = false
         daxLogoView.animateProgress(to: targetProgress)
     }
 
@@ -139,9 +143,14 @@ final class DaxLogoManager {
         }
 
         isAnimatingLogoTransition = true
+        let token = UUID()
+        pendingTransitionToken = token
         daxLogoView.updateProgress(previousProgress)
-        daxLogoView.animateProgress(to: targetProgress) { [weak self] finished in
-            guard finished else { return }
+        // Token-gated: Lottie reports `finished == false` on interruption, so gating on
+        // `finished` alone would leave the flag stuck across UTI sessions.
+        daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in
+            guard self?.pendingTransitionToken == token else { return }
+            self?.pendingTransitionToken = nil
             self?.isAnimatingLogoTransition = false
         }
     }

@@ -380,11 +380,9 @@ final class AIChatMentionPickerViewController: NSViewController {
             setHighlightedIndex(nil)
             return
         }
-        for (index, row) in rowViews.enumerated() {
-            if NSPointInRect(pointInStack, row.frame) {
-                setHighlightedIndex(index)
-                return
-            }
+        for (index, row) in rowViews.enumerated() where row.frame.contains(pointInStack) {
+            setHighlightedIndex(index)
+            return
         }
     }
 }

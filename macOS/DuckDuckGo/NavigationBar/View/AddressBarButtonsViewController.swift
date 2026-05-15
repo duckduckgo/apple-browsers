@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AVFoundation
 import Cocoa
 import Combine
 import Common
@@ -802,10 +803,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
 
-        if isForcingPermissionCenterButtonVisible {
+        if isForcingPermissionCenterButtonVisible || isDuckAiVoiceChatSystemMicDenied(forDomain: domain) {
             // Voice-chat failure flow needs the shield as a popover anchor regardless of the
             // current address-bar state (focused text field, AI chat omnibar suppression).
-            // Reset by `popoverDidClose` once the Permission Center popover closes.
+            // `isForcingPermissionCenterButtonVisible` is reset by `popoverDidClose`;
+            // `isDuckAiVoiceChatSystemMicDenied` is a derived check so the shield stays around
+            // for the user to re-open the OS-disabled warning after dismissing it.
             permissionCenterButton.isShown = true
         } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
@@ -852,6 +855,23 @@ final class AddressBarButtonsViewController: NSViewController {
             .contains { $0 != .microphone }
         let hasOtherUsed = tabViewModel.usedPermissions.keys.contains { $0 != .microphone }
         return !hasOtherPersisted && !hasOtherUsed
+    }
+
+    /// Mirrors the predicate that drives `PermissionCenterViewModel.buildDuckAiMicSystemDisabledItemIfNeeded`:
+    /// while the OS denies mic access on duck.ai under the voice-chat flag, keep the shield in the
+    /// address bar so the user can re-open the system-disabled warning after dismissing it. The
+    /// check is derived from current OS state (no stored flag), so it clears the moment the user
+    /// grants access in System Settings or navigates away from duck.ai.
+    private func isDuckAiVoiceChatSystemMicDenied(forDomain domain: String) -> Bool {
+        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
+              domain == URL.duckAi.host else {
+            return false
+        }
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .denied, .restricted: return true
+        case .authorized, .notDetermined: return false
+        @unknown default: return false
+        }
     }
 
     private func showOrHidePermissionCenterPopoverIfNeeded() {

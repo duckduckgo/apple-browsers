@@ -380,13 +380,19 @@ struct Launching: LaunchingHandling {
         let containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
 
         if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
-            DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+            let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
                 from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
                 to: containerURL,
                 migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                 label: .default,
                 pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
             )
+            // A failed move retries next launch. If we create/open the destination
+            // now, the retry would see it as already-migrated and treat the old
+            // data as an orphan to delete.
+            if outcome == .skip {
+                return nil
+            }
         }
 
         DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL)

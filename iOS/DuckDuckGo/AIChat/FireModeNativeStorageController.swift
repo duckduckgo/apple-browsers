@@ -78,13 +78,19 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
         let baseDirectoryURL = appSupportURL.appendingPathComponent(Constants.fireModeDirectoryName)
 
         if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) {
-            DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+            let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
                 from: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
                 to: baseDirectoryURL,
                 migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
                 label: .fireMode,
                 pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
             )
+            // A failed move retries next launch. If we create/open the destination
+            // now, the retry would see it as already-migrated and treat the old
+            // data as an orphan to delete.
+            if outcome == .skip {
+                return nil
+            }
         }
 
         DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL)

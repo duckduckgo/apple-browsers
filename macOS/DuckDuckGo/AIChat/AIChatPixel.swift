@@ -710,15 +710,6 @@ enum AIChatPixel: PixelKitEvent {
         }
     }
 
-    var error: NSError? {
-        switch self {
-        case .aiChatReportMetricDecodeError(let error, _):
-            return error
-        default:
-            return nil
-        }
-    }
-
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .aichatApplicationMenuAppClicked,

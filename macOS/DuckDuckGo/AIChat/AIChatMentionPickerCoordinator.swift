@@ -217,14 +217,19 @@ final class AIChatMentionPickerCoordinator {
         // user's action (chosen vs removed) — the toggle flips it, so post-toggle the
         // signal would be inverted.
         let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == attachment.id })
+        // Set the accept flag BEFORE `spliceTokenFromTextView()` — the splice's
+        // `didChangeText` posts `NSText.didChangeNotification` synchronously, which
+        // cascades into the omnibar's `textDidChange → updateMentionTokenDetection →
+        // dismiss()` path. If the flag isn't already set when that re-entrant `dismiss`
+        // runs, it sees `didAcceptDuringPresentation == false` and erroneously fires the
+        // `mention_picker_canceled` pixel alongside the chosen/removed pixel below.
+        didAcceptDuringPresentation = true
         spliceTokenFromTextView()
         omnibarController.toggleTabAttachment(attachment)
         let pixel: AIChatPixel = wasAttached
             ? .aiChatAddressBarMentionTabRemoved
             : .aiChatAddressBarMentionTabChosen
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        // Mark the session so `dismiss` below doesn't also fire `mention_picker_canceled`.
-        didAcceptDuringPresentation = true
         dismiss()
     }
 

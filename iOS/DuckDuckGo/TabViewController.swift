@@ -525,6 +525,13 @@ class TabViewController: UIViewController {
             onShouldShowAdBlockingAnimation: { [weak self] in
                 guard let self else { return }
                 self.delegate?.tabDidRequestPresentingYouTubeAdBlockAnimation(tab: self)
+            },
+            onShouldShowAdBlockUnavailableDialog: { [weak self] in
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    guard let self else { return }
+                    self.delegate?.tabDidRequestYouTubeAdBlockUnavailableDialog(tab: self)
+                }
             }
         )
     }()

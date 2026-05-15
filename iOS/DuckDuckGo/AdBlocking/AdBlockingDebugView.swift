@@ -28,6 +28,7 @@ struct AdBlockingDebugView: View {
     @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
     @State private var youTubeAnalyticsEnabled: Bool?
     @State private var shouldHideDisclosure: Bool?
+    @State private var unavailableNoticeShown: Bool?
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.storage = keyValueStore.throwingKeyedStoring()
@@ -37,6 +38,11 @@ struct AdBlockingDebugView: View {
         List {
             Section {
                 Toggle("Remotely Disabled", isOn: $isRemotelyDisabled)
+                row(title: "Unavailable notice shown", value: unavailableNoticeShown)
+                Button("Reset 'notice shown' state") {
+                    try? storage.removeValue(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
+                    refresh()
+                }
             } header: {
                 Text("Remote Disable Override")
             } footer: {
@@ -115,5 +121,6 @@ struct AdBlockingDebugView: View {
     private func refresh() {
         youTubeAnalyticsEnabled = try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
         shouldHideDisclosure = try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        unavailableNoticeShown = try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
     }
 }

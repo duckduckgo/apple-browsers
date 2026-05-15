@@ -161,6 +161,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController)
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
 }
 
 extension TabDelegate {

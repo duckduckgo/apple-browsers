@@ -158,6 +158,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestYouTubeAdBlockPicker(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: DuckDuckGo.TabViewController) {}
 }
 
 extension TabViewController {

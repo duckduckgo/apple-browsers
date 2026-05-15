@@ -4677,6 +4677,34 @@ extension MainViewController: TabDelegate {
         present(controller, animated: true)
     }
 
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController) {
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        guard (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)) != true else { return }
+        try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
+
+        let view = YouTubeAdBlockUnavailableView(
+            onAcknowledge: { [weak self] in self?.dismiss(animated: true) },
+            onClose: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        controller.modalPresentationStyle = .pageSheet
+        if let sheet = controller.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                let fittingWidth = self.view.bounds.width
+                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                sheet.detents = [.custom { _ in contentHeight }]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = false
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(controller, animated: true)
+    }
+
     private func presentYouTubeAdBlockBreakageReport() {
         let view = YouTubeAdBlockBreakageReportView(
             onSend: { [weak self] in

@@ -285,7 +285,8 @@ class RunSummary:
     pairs_same_author: int = 0
     pairs_already_reported: int = 0
     tasks_created: int = 0
-    tasks_auto_closed: int = 0
+    tasks_auto_closed_merged: int = 0
+    tasks_auto_closed_resolved: int = 0
     tasks_skipped_cap: int = 0
     errors: list[str] = field(default_factory=list)
     skipped_pairs: list[str] = field(default_factory=list)
@@ -752,6 +753,23 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
     else:
         soft_files = []
 
+    # Cross-reference filter: only keep files BOTH branches actually
+    # modify vs current main. Drops the false-positive class where a
+    # branch's "change" was inherited via a merge-from-main (the file
+    # genuinely changed in main, and the old pair-merge-base reports
+    # that change as the branch's own).
+    if apply_ignore_filter:
+        a_vs_main = _branch_files_vs_main(a.name)
+        b_vs_main = _branch_files_vs_main(b.name)
+        hard_files_kept = {
+            p for p in hard_files_kept
+            if p in a_vs_main and p in b_vs_main
+        }
+        soft_files = [
+            p for p in soft_files
+            if p in a_vs_main and p in b_vs_main
+        ]
+
     if not hard_files_kept and not soft_files:
         return None
 
@@ -775,6 +793,33 @@ def _diff_names(base: str, ref: str) -> list[str]:
     if proc.returncode != 0:
         return []
     return [ln for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+_branch_files_vs_main_cache: dict[str, set[str]] = {}
+
+
+def _branch_files_vs_main(branch: str) -> set[str]:
+    """Set of files where the branch's tip differs from main's tip.
+
+    Used by probe_pair to drop "false-positive via merge-from-main"
+    conflicts: a branch that merged main in inherits main's recent
+    edits, which from an old pair-merge-base look like the branch's
+    own changes. If diff(main..branch) doesn't include a file, the
+    branch's owner isn't actually contributing changes to it — so
+    pinging them about a conflict on that file is misleading.
+
+    Cached per branch within a single run.
+    """
+    if branch in _branch_files_vs_main_cache:
+        return _branch_files_vs_main_cache[branch]
+    proc = git(["diff", "--name-only",
+                f"{DEFAULT_BRANCH}..{branch}"], check=False)
+    if proc.returncode != 0:
+        files: set[str] = set()
+    else:
+        files = {ln.strip() for ln in proc.stdout.splitlines() if ln.strip()}
+    _branch_files_vs_main_cache[branch] = files
+    return files
 
 
 # ---------------------------------------------------------------------------
@@ -1095,21 +1140,37 @@ def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
             summary.errors.append(f"asana write failed for {title}: {exc}")
 
 
+def _branch_from_ref(name: str) -> Optional[Branch]:
+    """Build a minimal Branch object from a ref name.
+
+    Used by the sweep to re-probe pairs against current tips. Only the
+    ``name`` and ``sha`` fields are populated — author/committer
+    metadata is not needed for probe_pair.
+    """
+    proc = git(["rev-parse", name], check=False)
+    if proc.returncode != 0:
+        return None
+    sha = (proc.stdout or "").strip()
+    if not sha:
+        return None
+    return Branch(name=name, sha=sha, committer_iso="",
+                  author_name="", author_email="")
+
+
 def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
     """Auto-close open conflict-watch tasks whose underlying conflict no
-    longer applies.
+    longer applies. Two close paths:
 
-    For each open ``Likely merge conflict:`` task in the project, parse
-    the branch names out of the title and query GitHub for the current
-    PR state of each. If at least one branch's most recent PR is in the
-    MERGED state, the conflict is resolved (the merged branch is now
-    part of main; the other branch will conflict with main if it
-    conflicts with anything, not with the merged peer). Mark the task
-    complete with a one-line auto-close comment.
+    1. **Merged**: at least one branch's most recent PR is MERGED. The
+       merged branch is now in main; the other will conflict with main
+       on its own merits, not with this now-merged peer.
+    2. **Resolved**: neither branch has merged, but a fresh probe_pair
+       on the current tips finds no conflict above threshold (e.g. the
+       overlap was rebased away, or one branch's "conflict" was an
+       inherited-from-main false positive that's now been corrected).
 
-    Tasks that humans have already completed are left alone — the human
-    decision wins. Tasks whose branches have no PR history (or are still
-    open) are also left alone — only the merged signal is acted on.
+    Tasks that humans have already completed are left alone — human
+    decision wins.
     """
     try:
         tasks = asana.list_project_tasks_by_name(prefix=TITLE_PREFIX)
@@ -1128,37 +1189,76 @@ def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
         a_name, b_name = a_name.strip(), b_name.strip()
         if not a_name or not b_name:
             continue
+        gid = task.get("gid", "")
+        if not gid:
+            continue
 
+        # Path 1: did a branch merge?
         merged_branches: list[tuple[str, Optional[str]]] = []
         for name in (a_name, b_name):
             status = lookup_branch_pr_status(name)
             if status.most_recent_state == "MERGED":
                 merged_branches.append((name, status.most_recent_merged_at))
-
-        if not merged_branches:
+        if merged_branches:
+            merged_summary = ", ".join(
+                f"<code>{html_escape(n)}</code> (merged "
+                f"{html_escape(m or 'recently')})"
+                for n, m in merged_branches
+            )
+            comment_html = (
+                f"<body>Auto-closing — {merged_summary} merged since "
+                "this task was created, so the conflict no longer needs "
+                "coordination. Reopen if a new conflict surfaces.</body>"
+            )
+            try:
+                asana.add_comment(gid, comment_html,
+                                  plain_preview="auto-closing (merged)")
+                asana.complete_task(gid)
+                summary.tasks_auto_closed_merged += 1
+                logger.info("Auto-closed Asana task %s for %s "
+                            "(merged: %s)", gid, title,
+                            ", ".join(n for n, _ in merged_branches))
+            except AsanaError as exc:
+                summary.errors.append(f"auto-close failed for {title}: {exc}")
             continue
 
-        gid = task.get("gid", "")
-        if not gid:
+        # Path 2: re-probe. If the pair no longer conflicts above the
+        # noise threshold, close.
+        a_branch = _branch_from_ref(a_name)
+        b_branch = _branch_from_ref(b_name)
+        if a_branch is None or b_branch is None:
+            # One of the refs is gone from the mirror (e.g. branch
+            # deleted but PR not merged). Leave for human cleanup.
             continue
-        merged_summary = ", ".join(
-            f"<code>{html_escape(n)}</code> (merged "
-            f"{html_escape(m or 'recently')})"
-            for n, m in merged_branches
+        try:
+            result = probe_pair(a_branch, b_branch,
+                                compute_soft=INCLUDE_SOFT_CONFLICTS)
+        except subprocess.CalledProcessError as exc:
+            logger.warning("Sweep re-probe failed for %s: %s", title, exc)
+            continue
+        still_conflicts = (
+            result is not None
+            and (
+                result.hard_conflict_lines >= MIN_CONFLICT_LINES
+                or bool(result.soft_files)
+            )
         )
+        if still_conflicts:
+            continue
         comment_html = (
-            f"<body>Auto-closing — {merged_summary} merged since this "
-            "task was created, so the conflict no longer needs "
-            "coordination. Reopen the task if a new conflict "
-            "surfaces.</body>"
+            "<body>Auto-closing — a fresh check found no remaining "
+            f"conflict between <code>{html_escape(a_name)}</code> and "
+            f"<code>{html_escape(b_name)}</code>. The overlap may have "
+            "been resolved by a rebase or refactor. Reopen if a new "
+            "conflict surfaces.</body>"
         )
         try:
-            asana.add_comment(gid, comment_html, plain_preview="auto-closing")
+            asana.add_comment(gid, comment_html,
+                              plain_preview="auto-closing (resolved)")
             asana.complete_task(gid)
-            summary.tasks_auto_closed += 1
-            logger.info("Auto-closed Asana task %s for %s "
-                        "(merged: %s)", gid, title,
-                        ", ".join(n for n, _ in merged_branches))
+            summary.tasks_auto_closed_resolved += 1
+            logger.info("Auto-closed Asana task %s for %s (resolved)",
+                        gid, title)
         except AsanaError as exc:
             summary.errors.append(f"auto-close failed for {title}: {exc}")
 
@@ -1645,12 +1745,17 @@ def main() -> int:
     print("=== conflict-watch summary ===")
     for k, v in asdict(summary).items():
         print(f"{k}: {v}")
+    total_auto_closed = (
+        summary.tasks_auto_closed_merged + summary.tasks_auto_closed_resolved
+    )
     print(
         f"Conflict watch: {len(conflicts)} pairs found "
         f"({summary.tasks_created} new / "
         f"{summary.pairs_already_reported} already-reported / "
         f"{summary.tasks_skipped_cap} skipped-by-cap / "
-        f"{summary.tasks_auto_closed} auto-closed)"
+        f"{total_auto_closed} auto-closed "
+        f"[{summary.tasks_auto_closed_merged} merged + "
+        f"{summary.tasks_auto_closed_resolved} resolved])"
     )
     return 0 if not summary.errors else 1
 

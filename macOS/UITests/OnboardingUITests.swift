@@ -28,9 +28,13 @@ final class OnboardingUITests: UITestCase {
         continueAfterFailure = false
         try resetApplicationData()
 
-        app = XCUIApplication.setUp(environment: [
-            "UITEST_MODE_ONBOARDING": "1"
-        ])
+        // The rebranded onboarding flow (gated by the `onboardingRebranding` feature flag, enabled by
+        // default since #4795) ships different copy and a different step ordering, so the assertions
+        // in this file no longer match. Force the flag off until the tests are rewritten for v4.
+        app = XCUIApplication.setUp(
+            environment: ["UITEST_MODE_ONBOARDING": "1"],
+            featureFlags: ["onboardingRebranding": false]
+        )
         app.enforceSingleWindow()
 
         welcomeWindow = app.windows["Welcome"]

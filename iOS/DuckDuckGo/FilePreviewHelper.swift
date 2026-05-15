@@ -65,4 +65,14 @@ struct FilePreviewHelper {
         guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
         return mimeType == .calendar || url?.pathExtension.lowercased() == "ics"
     }
+
+    /// File types we hand off to a native handler instead of the generic download UI; used
+    /// to suppress the download started/finished toasts. Add new natively-handled types here.
+    static func handlesDownloadNatively(mimeType: MIMEType, url: URL?, featureFlagger: FeatureFlagger) -> Bool {
+        if featureFlagger.isFeatureOn(.icsCalendarLinks),
+           mimeType == .calendar || url?.pathExtension.lowercased() == "ics" {
+            return true
+        }
+        return false
+    }
 }

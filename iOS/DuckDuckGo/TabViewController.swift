@@ -2980,7 +2980,10 @@ extension TabViewController {
 
     @objc private func downloadDidStart(_ notification: Notification) {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download,
-              !download.temporary
+              !download.temporary,
+              !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                         url: download.location,
+                                                         featureFlagger: featureFlagger)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3013,13 +3016,10 @@ extension TabViewController {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download else { return }
 
         DispatchQueue.main.async {
-            // ICS persists AND auto-previews; other persistent downloads only show the toast.
-            let icsPersistAndPreview = FilePreviewHelper.shouldPersistInDownloads(
-                mimeType: download.mimeType,
-                url: download.location,
-                featureFlagger: self.featureFlagger
-            )
-            if !download.temporary && !icsPersistAndPreview {
+            let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                                            url: download.location,
+                                                                            featureFlagger: self.featureFlagger)
+            if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: attributedMessage, numberOfLines: 2, actionTitle: UserText.actionGenericShow,
@@ -3077,7 +3077,23 @@ extension TabViewController {
         }
         ActionMessageView.present(
             message: message,
-            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
+            duration: 10,
+            onAction: { [weak self] in
+                guard let self else { return }
+                Pixel.fire(pixel: .downloadsListOpened,
+                           withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+                let openDownloads = { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabDidRequestDownloads(tab: self)
+                }
+                if let presented = self.presentedViewController {
+                    presented.dismiss(animated: true, completion: openDownloads)
+                } else {
+                    openDownloads()
+                }
+            }
         )
     }
 }

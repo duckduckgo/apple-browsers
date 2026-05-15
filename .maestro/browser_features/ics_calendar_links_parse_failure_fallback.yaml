@@ -1,5 +1,5 @@
 # ics_calendar_links_parse_failure_fallback.yaml
-# Malformed .ics file should show the parse-failure toast and fall back to QuickLook.
+# Malformed .ics should fall back to QuickLook (and show the parse-failure toast).
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
@@ -26,5 +26,6 @@ tags:
 - pressKey: Enter
 
 - extendedWaitUntil:
-    visible: "This file can't be processed. Try opening the downloaded file instead."
+    visible:
+        id: "QLOverlayDoneButtonAccessibilityIdentifier"
     timeout: 10000

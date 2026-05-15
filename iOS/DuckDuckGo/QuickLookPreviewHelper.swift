@@ -41,13 +41,18 @@ class QuickLookPreviewHelper: NSObject, FilePreview {
     }
 
     func preview() {
-        preview(completion: nil)
+        preview(modalPresentationStyle: nil, completion: nil)
     }
 
-    /// Fires `completion` after QL animates in. Used to stack a toast on top of QL.
-    func preview(completion: (() -> Void)?) {
+    /// `completion` fires after QL animates in.
+    /// Pass a non-nil `modalPresentationStyle` to override QL's default full-screen.
+    func preview(modalPresentationStyle: UIModalPresentationStyle? = nil,
+                 completion: (() -> Void)?) {
         guard let viewController else { return }
         selfRetain = self
+        if let modalPresentationStyle {
+            qlPreview.modalPresentationStyle = modalPresentationStyle
+        }
         viewController.present(qlPreview, animated: true, completion: completion)
     }
 

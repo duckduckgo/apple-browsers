@@ -385,6 +385,9 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)
+        if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
+            utiHost?.observeChatUpdates(chatUpdatesPublisher)
+        }
 
         isContentHandlerReady = true
         submitPendingIfReady()

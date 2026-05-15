@@ -46,7 +46,8 @@ final class AIChatContextualUTIHost {
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
         pageContextHandler: AIChatPageContextHandling,
-        isFireTab: Bool
+        isFireTab: Bool,
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
     ) {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
@@ -54,7 +55,8 @@ final class AIChatContextualUTIHost {
         self.coordinator = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
-            isFireTab: isFireTab
+            isFireTab: isFireTab,
+            lastUsedModelProvider: lastUsedModelProvider
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -167,13 +169,21 @@ final class AIChatContextualUTIHost {
     func bindToUserScript(_ userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
         isBoundToUserScript = true
-        coordinator.bindToTab(userScript)
+        let chatID = userScript.webView?.url?.duckAIChatID
+        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
+        if let chatID {
+            coordinator.restoreLastUsedModel(forChatID: chatID)
+        }
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.attachedContext?.contextData
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.chipViewModel.markPromptSubmitted()
         }
+    }
+
+    func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
+        coordinator.observeChatUpdates(publisher)
     }
 
     func markPromptSubmitted() {

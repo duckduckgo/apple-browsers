@@ -1,5 +1,5 @@
 //
-//  DuckAiChatReasoningModeProviding.swift
+//  DuckAiLastUsedReasoningModeProviding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import DuckAiDataStore
 import Foundation
 
 /// Reads the last-used `reasoningMode` raw string for a stored Duck.ai chat.
-public protocol DuckAiChatReasoningModeProviding {
+public protocol DuckAiLastUsedReasoningModeProviding {
     /// Returns the raw `reasoningMode` string persisted with `chatId`, or `nil` when:
     /// - the chat is not in storage,
     /// - the payload has no `reasoningMode` field, or
@@ -28,7 +28,7 @@ public protocol DuckAiChatReasoningModeProviding {
     func reasoningMode(forChatId chatId: String) -> String?
 }
 
-public struct DuckAiChatReasoningModeProvider: DuckAiChatReasoningModeProviding {
+public struct DuckAiLastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding {
     private let storage: DuckAiNativeStorageHandling
     private let pixelFiring: DuckAiNativeStoragePixelFiring
 

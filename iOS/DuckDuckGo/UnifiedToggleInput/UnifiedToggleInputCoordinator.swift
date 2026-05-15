@@ -304,7 +304,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
-    private let reasoningModeProvider: DuckAiChatReasoningModeProviding?
+    private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
         let cache = NSCache<NSString, NSString>()
         cache.countLimit = 64
@@ -345,7 +345,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
-        reasoningModeProvider: DuckAiChatReasoningModeProviding? = nil,
+        lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
@@ -366,8 +366,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
-        self.reasoningModeProvider = reasoningModeProvider
-            ?? duckAiNativeStorageHandler.map { DuckAiChatReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
+        self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
+            ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
@@ -503,11 +503,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// - Unknown value → no-op (same as missing).
     /// - Known value → live preferences updated + reasoning picker refreshed.
     func restoreLastUsedReasoningMode(forChatID chatID: String) {
-        guard let reasoningModeProvider else {
+        guard let lastUsedReasoningModeProvider else {
             Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no provider configured")
             return
         }
-        guard let rawValue = reasoningModeProvider.reasoningMode(forChatId: chatID) else {
+        guard let rawValue = lastUsedReasoningModeProvider.reasoningMode(forChatId: chatID) else {
             Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no reasoningMode in payload")
             return
         }

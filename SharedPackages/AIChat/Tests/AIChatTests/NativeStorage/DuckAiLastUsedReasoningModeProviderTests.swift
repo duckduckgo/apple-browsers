@@ -1,5 +1,5 @@
 //
-//  DuckAiChatReasoningModeProviderTests.swift
+//  DuckAiLastUsedReasoningModeProviderTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,17 +20,17 @@ import DuckAiDataStore
 import XCTest
 @testable import AIChat
 
-final class DuckAiChatReasoningModeProviderTests: XCTestCase {
+final class DuckAiLastUsedReasoningModeProviderTests: XCTestCase {
 
     private var storage: ReasoningModeStubStorageHandler!
     private var pixelFiring: MockDuckAiNativeStoragePixelFiring!
-    private var sut: DuckAiChatReasoningModeProvider!
+    private var sut: DuckAiLastUsedReasoningModeProvider!
 
     override func setUp() {
         super.setUp()
         storage = ReasoningModeStubStorageHandler()
         pixelFiring = MockDuckAiNativeStoragePixelFiring()
-        sut = DuckAiChatReasoningModeProvider(storage: storage, pixelFiring: pixelFiring)
+        sut = DuckAiLastUsedReasoningModeProvider(storage: storage, pixelFiring: pixelFiring)
     }
 
     func testWhenPayloadHasFastReasoningModeThenReturnsFastRawValue() {

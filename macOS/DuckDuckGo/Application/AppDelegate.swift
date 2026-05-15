@@ -922,7 +922,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: UserDefaults.standard
         )
         dockPreferences = DockPreferencesModel(
-            featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
             pixelFiring: PixelKit.shared
         )

@@ -111,7 +111,7 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(manager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_DoesNotShowDockRow() {
+    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_IncludesDockInstructionsRow() {
         // Given
         applicationBuildType.isAppStoreBuild = true
         let appStoreManager = OnboardingActionsManager(
@@ -125,7 +125,7 @@ class OnboardingManagerTests: XCTestCase {
             applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
-        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
+        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["dock-instructions", "import"]))
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],

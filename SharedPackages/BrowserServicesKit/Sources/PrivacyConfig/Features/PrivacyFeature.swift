@@ -193,8 +193,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
 
-    case addToDockAppStore
-
     case screenTimeCleaning
 
     /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26

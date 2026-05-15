@@ -124,11 +124,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
         if applicationBuildType.isAppStoreBuild {
-            let rows = [
-                featureFlagger.isFeatureOn(.addToDockAppStore) ? OnboardingRow.dockInstructions.rawValue : nil,
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dockInstructions.rawValue,
                 OnboardingRow.dataImport.rawValue,
-            ].compactMap { $0 }
-            systemSettings = SystemSettings(rows: rows)
+            ])
         } else {
             systemSettings = SystemSettings(rows: [
                 OnboardingRow.dock.rawValue,

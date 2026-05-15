@@ -110,7 +110,7 @@ private struct PromptChartAndButtons: View {
             browsersComparisonChart
 
             HStack {
-                OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
+                OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction, pillShape: true)
                     .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
                     .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
                 OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)

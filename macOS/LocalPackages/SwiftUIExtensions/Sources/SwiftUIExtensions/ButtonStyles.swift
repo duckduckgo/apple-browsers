@@ -66,17 +66,19 @@ public struct DefaultActionButtonStyle: ButtonStyle {
     public let bottomPadding: CGFloat
     public let shouldBeFixedVertical: Bool
     public let stateColors: ButtonStateColors
+    public let pillShape: Bool
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, stateColors: ButtonStateColors = .legacyActionButton) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, stateColors: ButtonStateColors = .legacyActionButton, pillShape: Bool = true) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.shouldBeFixedVertical = shouldBeFixedVertical
         self.stateColors = stateColors
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        ButtonContent(configuration: configuration, stateColors: stateColors, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical)
+        ButtonContent(configuration: configuration, stateColors: stateColors, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical, pillShape: pillShape)
     }
 
     struct ButtonContent: View {
@@ -86,6 +88,7 @@ public struct DefaultActionButtonStyle: ButtonStyle {
         let topPadding: CGFloat
         let bottomPadding: CGFloat
         let shouldBeFixedVertical: Bool
+        let pillShape: Bool
         @State private var isHovered: Bool = false
 
         var body: some View {
@@ -108,7 +111,8 @@ public struct DefaultActionButtonStyle: ButtonStyle {
                 .background(backgroundColor)
                 .foregroundColor(labelColor)
                 .opacity(enabled ? 1 : 0.5)
-                .liquidGlassPillShape(fallbackCornerRadius: 5)
+                .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: 5) }
+                .if(!pillShape) { $0.cornerRadius(5) }
                 .onHover { hovering in
                     isHovered = hovering
                 }
@@ -154,11 +158,13 @@ public struct DismissActionButtonStyle: ButtonStyle {
     public let textColor: Color
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let pillShape: Bool
 
-    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = true) {
         self.textColor = textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -174,7 +180,7 @@ public struct DismissActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 7.5)
             .background(
                 Group {
-                    if AppVersion.isLiquidGlassSupported {
+                    if pillShape && AppVersion.isLiquidGlassSupported {
                         Capsule(style: .continuous)
                             .fill(backgroundColor)
                             .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
@@ -189,7 +195,7 @@ public struct DismissActionButtonStyle: ButtonStyle {
             )
             .overlay(
                 Group {
-                    if AppVersion.isLiquidGlassSupported {
+                    if pillShape && AppVersion.isLiquidGlassSupported {
                         Capsule()
                             .stroke(Color.black.opacity(0.1), lineWidth: 1)
                     } else {

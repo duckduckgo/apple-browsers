@@ -286,22 +286,36 @@ struct OnboardingSecondaryCTAButton: View {
 
     let title: String
     let action: () -> Void
+    var pillShape: Bool = false
+
+    private var usePillShape: Bool {
+        pillShape && AppVersion.isLiquidGlassSupported
+    }
 
     var body: some View {
         Button(action: action) {
             Text(title)
             .padding(.horizontal, 18)
         }
-        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: Metrics.cornerRadius))
+        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: usePillShape ? Metrics.pillCornerRadius : Metrics.cornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .inset(by: 0.5)
-                .stroke(strokeColor, lineWidth: 1)
+            Group {
+                if usePillShape {
+                    Capsule()
+                        .inset(by: 0.5)
+                        .stroke(strokeColor, lineWidth: 1)
+                } else {
+                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                        .inset(by: 0.5)
+                        .stroke(strokeColor, lineWidth: 1)
+                }
+            }
         )
     }
 
     private enum Metrics {
         static let cornerRadius: CGFloat = 5
+        static let pillCornerRadius: CGFloat = 999
     }
 
 }

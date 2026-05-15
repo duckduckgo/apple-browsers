@@ -276,6 +276,7 @@ class RunSummary:
     branches_checked: int = 0
     branches_skipped_merged: int = 0
     branches_skipped_bot: int = 0
+    branches_skipped_inactive_pr: int = 0
     pairs_probed: int = 0
     pairs_with_hard_conflicts: int = 0
     pairs_with_soft_conflicts: int = 0
@@ -284,6 +285,7 @@ class RunSummary:
     pairs_same_author: int = 0
     pairs_already_reported: int = 0
     tasks_created: int = 0
+    tasks_auto_closed: int = 0
     tasks_skipped_cap: int = 0
     errors: list[str] = field(default_factory=list)
     skipped_pairs: list[str] = field(default_factory=list)
@@ -363,9 +365,18 @@ def refresh_mirror() -> None:
 
 
 def _is_merged_into_default(branch: str) -> bool:
-    """True if ``branch`` has no diff against ``DEFAULT_BRANCH`` — i.e.
-    every change is already in main (covers squash-merged branches)."""
-    proc = git(["diff", "--quiet", f"{DEFAULT_BRANCH}...{branch}"], check=False)
+    """True if ``branch`` and ``DEFAULT_BRANCH`` have identical tip-tree
+    content — i.e. every change in branch is already in main, regardless
+    of how it got there.
+
+    Uses two-dot (``main..branch``) rather than three-dot
+    (``main...branch``). Three-dot diffs from the merge-base and would
+    miss squash-merged branches (the squash commit lives on main but the
+    original branch commits don't, so three-dot reports a diff even
+    though the *contents* are identical). Two-dot compares tip trees,
+    which is what "are these branches effectively the same?" means.
+    """
+    proc = git(["diff", "--quiet", f"{DEFAULT_BRANCH}..{branch}"], check=False)
     return proc.returncode == 0
 
 
@@ -419,8 +430,25 @@ def list_active_branches(within_hours: int, summary: RunSummary) -> list[Branch]
 # GitHub: author -> login + PR lookup
 # ---------------------------------------------------------------------------
 
+@dataclass
+class BranchPRStatus:
+    """Snapshot of a branch's PR history from GitHub.
+
+    Used by main() to filter branches whose only PRs are merged or
+    closed-unmerged (the engineer is not actively preparing this for
+    merge), and by the end-of-run sweep to auto-close tasks whose
+    branches have since merged.
+    """
+    has_any_pr: bool = False
+    has_open_pr: bool = False
+    open_pr_url: Optional[str] = None
+    most_recent_state: Optional[str] = None    # "OPEN" | "MERGED" | "CLOSED" | None
+    most_recent_merged_at: Optional[str] = None
+    most_recent_pr_number: Optional[int] = None
+
+
 _login_cache: dict[str, Optional[str]] = {}
-_pr_cache: dict[str, Optional[str]] = {}
+_pr_status_cache: dict[str, BranchPRStatus] = {}
 
 
 def lookup_github_login(sha: str) -> Optional[str]:
@@ -443,28 +471,55 @@ def lookup_github_login(sha: str) -> Optional[str]:
     return _login_cache[sha]
 
 
-def lookup_pr_url(branch_name: str) -> Optional[str]:
-    if branch_name in _pr_cache:
-        return _pr_cache[branch_name]
+def lookup_branch_pr_status(branch_name: str) -> BranchPRStatus:
+    """Fetch the branch's PR history once and cache it.
+
+    A single ``gh pr list --state all`` query is enough to populate
+    everything we need: the open-PR URL for the description, plus the
+    "is this branch still actively heading toward merge?" signal that
+    drives both the pre-create branch filter and the post-create
+    auto-close sweep.
+    """
+    if branch_name in _pr_status_cache:
+        return _pr_status_cache[branch_name]
+    status = BranchPRStatus()
     if not have_command("gh"):
-        _pr_cache[branch_name] = None
-        return None
+        _pr_status_cache[branch_name] = status
+        return status
     try:
         proc = run(
             ["gh", "pr", "list",
              "--repo", REPO,
              "--head", branch_name,
-             "--state", "open",
-             "--json", "url",
-             "--jq", ".[0].url // \"\""],
+             "--state", "all",
+             "--json", "state,url,mergedAt,createdAt,number",
+             "--limit", "10"],
             check=False,
         )
-        url = (proc.stdout or "").strip()
-        _pr_cache[branch_name] = url or None
+        if proc.returncode != 0:
+            _pr_status_cache[branch_name] = status
+            return status
+        prs = json.loads(proc.stdout or "[]")
     except Exception as exc:
-        logger.warning("gh pr lookup failed for %s: %s", branch_name, exc)
-        _pr_cache[branch_name] = None
-    return _pr_cache[branch_name]
+        logger.warning("gh pr list failed for %s: %s", branch_name, exc)
+        _pr_status_cache[branch_name] = status
+        return status
+    if not prs:
+        _pr_status_cache[branch_name] = status
+        return status
+    status.has_any_pr = True
+    prs_sorted = sorted(prs, key=lambda p: p.get("createdAt", ""), reverse=True)
+    most_recent = prs_sorted[0]
+    status.most_recent_state = most_recent.get("state")
+    status.most_recent_merged_at = most_recent.get("mergedAt")
+    status.most_recent_pr_number = most_recent.get("number")
+    for pr in prs_sorted:
+        if pr.get("state") == "OPEN":
+            status.has_open_pr = True
+            status.open_pr_url = pr.get("url")
+            break
+    _pr_status_cache[branch_name] = status
+    return status
 
 
 # ---------------------------------------------------------------------------
@@ -839,6 +894,13 @@ class AsanaClient:
         body = {"data": {"completed": False}}
         self._request("PUT", f"/tasks/{task_gid}", body=body)
 
+    def complete_task(self, task_gid: str) -> None:
+        if self.dry_run:
+            logger.info("[dry-run] would complete %s", task_gid)
+            return
+        body = {"data": {"completed": True}}
+        self._request("PUT", f"/tasks/{task_gid}", body=body)
+
     def add_followers(self, task_gid: str, user_gids: list[str]) -> None:
         if not user_gids:
             return
@@ -1031,6 +1093,74 @@ def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
                 asana.add_comment(gid, comment_html, plain_preview="")
         except AsanaError as exc:
             summary.errors.append(f"asana write failed for {title}: {exc}")
+
+
+def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
+    """Auto-close open conflict-watch tasks whose underlying conflict no
+    longer applies.
+
+    For each open ``Likely merge conflict:`` task in the project, parse
+    the branch names out of the title and query GitHub for the current
+    PR state of each. If at least one branch's most recent PR is in the
+    MERGED state, the conflict is resolved (the merged branch is now
+    part of main; the other branch will conflict with main if it
+    conflicts with anything, not with the merged peer). Mark the task
+    complete with a one-line auto-close comment.
+
+    Tasks that humans have already completed are left alone — the human
+    decision wins. Tasks whose branches have no PR history (or are still
+    open) are also left alone — only the merged signal is acted on.
+    """
+    try:
+        tasks = asana.list_project_tasks_by_name(prefix=TITLE_PREFIX)
+    except AsanaError as exc:
+        logger.warning("Sweep prefetch failed: %s", exc)
+        return
+
+    for title, task in tasks.items():
+        if task.get("completed"):
+            continue
+        body = title[len(TITLE_PREFIX):].strip()
+        if TITLE_SEP not in body:
+            logger.debug("Sweep: skipping unparseable title %r", title)
+            continue
+        a_name, _, b_name = body.partition(TITLE_SEP)
+        a_name, b_name = a_name.strip(), b_name.strip()
+        if not a_name or not b_name:
+            continue
+
+        merged_branches: list[tuple[str, Optional[str]]] = []
+        for name in (a_name, b_name):
+            status = lookup_branch_pr_status(name)
+            if status.most_recent_state == "MERGED":
+                merged_branches.append((name, status.most_recent_merged_at))
+
+        if not merged_branches:
+            continue
+
+        gid = task.get("gid", "")
+        if not gid:
+            continue
+        merged_summary = ", ".join(
+            f"<code>{html_escape(n)}</code> (merged "
+            f"{html_escape(m or 'recently')})"
+            for n, m in merged_branches
+        )
+        comment_html = (
+            f"<body>Auto-closing — {merged_summary} merged since this "
+            "task was created, so the conflict no longer needs "
+            "coordination. Reopen the task if a new conflict "
+            "surfaces.</body>"
+        )
+        try:
+            asana.add_comment(gid, comment_html, plain_preview="auto-closing")
+            asana.complete_task(gid)
+            summary.tasks_auto_closed += 1
+            logger.info("Auto-closed Asana task %s for %s "
+                        "(merged: %s)", gid, title,
+                        ", ".join(n for n, _ in merged_branches))
+        except AsanaError as exc:
+            summary.errors.append(f"auto-close failed for {title}: {exc}")
 
 
 def _record_state(state: dict, title: str, pair: ConflictPair,
@@ -1423,7 +1553,17 @@ def main() -> int:
             continue
         if b.github_login and b.github_login in user_map:
             b.asana_gid = user_map[b.github_login]
-        b.pr_url = lookup_pr_url(b.name)
+        pr_status = lookup_branch_pr_status(b.name)
+        # PR-state filter: if every PR for this branch is non-open, the
+        # engineer isn't actively heading toward merge. Closes the
+        # "PR merged but bare mirror is stale" race that produces
+        # creation-time false positives.
+        if pr_status.has_any_pr and not pr_status.has_open_pr:
+            summary.branches_skipped_inactive_pr += 1
+            logger.info("Skipping branch %s: most recent PR is %s "
+                        "(no open PR)", b.name, pr_status.most_recent_state)
+            continue
+        b.pr_url = pr_status.open_pr_url
         kept.append(b)
     branches = kept
     summary.branches_checked = len(branches)
@@ -1489,6 +1629,16 @@ def main() -> int:
     elif conflicts:
         reconcile(asana, conflicts, state, summary)
 
+    # End-of-run sweep: auto-close tasks whose branches merged since
+    # creation. Handles the race-after-creation case (e.g. a PR that
+    # merged a few minutes after the task was opened — yesterday's task
+    # closes on today's cron run).
+    if not dry_run or pat:
+        try:
+            sweep_existing_tasks(asana, summary)
+        except Exception as exc:  # pragma: no cover — defensive
+            summary.errors.append(f"sweep failed: {exc}")
+
     save_state(state)
 
     print()
@@ -1499,7 +1649,8 @@ def main() -> int:
         f"Conflict watch: {len(conflicts)} pairs found "
         f"({summary.tasks_created} new / "
         f"{summary.pairs_already_reported} already-reported / "
-        f"{summary.tasks_skipped_cap} skipped-by-cap)"
+        f"{summary.tasks_skipped_cap} skipped-by-cap / "
+        f"{summary.tasks_auto_closed} auto-closed)"
     )
     return 0 if not summary.errors else 1
 

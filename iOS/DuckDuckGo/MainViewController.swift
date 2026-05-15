@@ -4651,21 +4651,7 @@ extension MainViewController: TabDelegate {
         }
         let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = UIColor(designSystemColor: .surface)
-        controller.modalPresentationStyle = .pageSheet
-        if let sheet = controller.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                let fittingWidth = self.view.bounds.width
-                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
-                sheet.detents = [.custom { _ in contentHeight }]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = true
-            if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = 24
-            }
-        }
-        present(controller, animated: true)
+        presentYouTubeAdBlockSheet(controller, grabberVisible: true)
     }
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController) {
@@ -4679,21 +4665,7 @@ extension MainViewController: TabDelegate {
         )
         let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = UIColor(designSystemColor: .surface)
-        controller.modalPresentationStyle = .pageSheet
-        if let sheet = controller.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                let fittingWidth = self.view.bounds.width
-                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
-                sheet.detents = [.custom { _ in contentHeight }]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = false
-            if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = 24
-            }
-        }
-        present(controller, animated: true)
+        presentYouTubeAdBlockSheet(controller)
     }
 
     private func presentYouTubeAdBlockBreakageReport() {
@@ -4707,18 +4679,29 @@ extension MainViewController: TabDelegate {
         )
         let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
-        controller.modalPresentationStyle = .pageSheet
-        if let sheet = controller.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                let fittingWidth = self.view.bounds.width
-                let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
-                sheet.detents = [.custom { _ in contentHeight }]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = false
-            if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = 24
+        presentYouTubeAdBlockSheet(controller)
+    }
+
+    private func presentYouTubeAdBlockSheet<Content: View>(_ controller: UIHostingController<Content>, grabberVisible: Bool = false) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.modalPresentationStyle = .formSheet
+            let formSheetWidth: CGFloat = 540
+            let contentHeight = controller.sizeThatFits(in: CGSize(width: formSheetWidth, height: .infinity)).height
+            controller.preferredContentSize = CGSize(width: formSheetWidth, height: contentHeight)
+        } else {
+            controller.modalPresentationStyle = .pageSheet
+            if let sheet = controller.sheetPresentationController {
+                if #available(iOS 16.0, *) {
+                    let fittingWidth = self.view.bounds.width
+                    let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                    sheet.detents = [.custom { _ in contentHeight }]
+                } else {
+                    sheet.detents = [.medium()]
+                }
+                sheet.prefersGrabberVisible = grabberVisible
+                if #unavailable(iOS 26) {
+                    sheet.preferredCornerRadius = 24
+                }
             }
         }
         present(controller, animated: true)

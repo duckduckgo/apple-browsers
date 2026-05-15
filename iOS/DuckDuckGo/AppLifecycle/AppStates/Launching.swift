@@ -374,10 +374,24 @@ struct Launching: LaunchingHandling {
 
     private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+              let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             return nil
         }
-        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+        let containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+
+        if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+            DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+                from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
+                to: containerURL,
+                migrationDoneKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup"
+            )
+        }
+
+        let dbURL = containerURL.appendingPathComponent("chats.db")
+        if !FileManager.default.fileExists(atPath: dbURL.path) {
+            Logger.aiChat.info("[NativeStorage] DB does not exist yet, will be created at: \(dbURL.path)")
+        }
+
         do {
             return try DuckAiNativeStorageHandler(
                 .disk(path: containerURL,

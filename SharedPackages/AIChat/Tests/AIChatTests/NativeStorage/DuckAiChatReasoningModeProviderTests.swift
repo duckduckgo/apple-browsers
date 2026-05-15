@@ -23,12 +23,14 @@ import XCTest
 final class DuckAiChatReasoningModeProviderTests: XCTestCase {
 
     private var storage: ReasoningModeStubStorageHandler!
+    private var pixelFiring: MockDuckAiNativeStoragePixelFiring!
     private var sut: DuckAiChatReasoningModeProvider!
 
     override func setUp() {
         super.setUp()
         storage = ReasoningModeStubStorageHandler()
-        sut = DuckAiChatReasoningModeProvider(storage: storage)
+        pixelFiring = MockDuckAiNativeStoragePixelFiring()
+        sut = DuckAiChatReasoningModeProvider(storage: storage, pixelFiring: pixelFiring)
     }
 
     func testWhenPayloadHasFastReasoningModeThenReturnsFastRawValue() {
@@ -63,20 +65,39 @@ final class DuckAiChatReasoningModeProviderTests: XCTestCase {
         XCTAssertNil(sut.reasoningMode(forChatId: "chat-1"))
     }
 
-    func testWhenChatNotInStorageThenReturnsNil() {
+    func testWhenChatNotInStorageThenReturnsNilWithoutPixel() {
         storage.stubbedChat = nil
         XCTAssertNil(sut.reasoningMode(forChatId: "missing"))
+        XCTAssertTrue(pixelFiring.firedEvents.isEmpty)
     }
 
-    func testWhenStorageThrowsThenReturnsNil() {
+    func testWhenStorageThrowsThenReturnsNilAndFiresChatGetErrorPixel() {
         struct E: Error {}
         storage.stubbedGetChatError = E()
         XCTAssertNil(sut.reasoningMode(forChatId: "chat-1"))
+        XCTAssertEqual(pixelFiring.firedEvents.count, 1)
+        guard case .chatGetError = pixelFiring.firedEvents[0] else {
+            return XCTFail("Expected chatGetError pixel, got \(pixelFiring.firedEvents[0])")
+        }
     }
 
-    func testWhenStoredDataIsNotJsonThenReturnsNil() {
+    func testWhenStoredDataIsNotJsonThenReturnsNilAndFiresParseErrorPixel() {
         storage.stubbedChat = DuckAiChatRecord(chatId: "chat-1", data: Data([0xFF, 0xFE, 0xFD]))
         XCTAssertNil(sut.reasoningMode(forChatId: "chat-1"))
+        XCTAssertEqual(pixelFiring.firedEvents.count, 1)
+        guard case .lastUsedReasoningModeParseError = pixelFiring.firedEvents[0] else {
+            return XCTFail("Expected lastUsedReasoningModeParseError pixel, got \(pixelFiring.firedEvents[0])")
+        }
+    }
+
+    func testWhenChatIdFieldIsMissingThenReturnsNilAndFiresParseErrorPixel() {
+        // Forces decode failure via missing required `chatId` key.
+        storage.stubbedChat = makeRecord(chatId: "chat-1", json: #"{"reasoningMode":"fast"}"#)
+        XCTAssertNil(sut.reasoningMode(forChatId: "chat-1"))
+        XCTAssertEqual(pixelFiring.firedEvents.count, 1)
+        guard case .lastUsedReasoningModeParseError = pixelFiring.firedEvents[0] else {
+            return XCTFail("Expected lastUsedReasoningModeParseError pixel, got \(pixelFiring.firedEvents[0])")
+        }
     }
 
     func testWhenFullChatPayloadMatchingFEContractThenReturnsReasoningMode() {

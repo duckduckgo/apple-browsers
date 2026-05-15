@@ -367,7 +367,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.reasoningModeProvider = reasoningModeProvider
-            ?? duckAiNativeStorageHandler.map { DuckAiChatReasoningModeProvider(storage: $0) }
+            ?? duckAiNativeStorageHandler.map { DuckAiChatReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,

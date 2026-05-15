@@ -1590,6 +1590,7 @@ extension Pixel {
         case duckAiNativeStorageFileListError
         case duckAiNativeStorageFileDeleteError
         case duckAiNativeStorageLastUsedModelParseError
+        case duckAiNativeStorageLastUsedReasoningModeParseError
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -3329,6 +3330,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
         case .duckAiNativeStorageLastUsedModelParseError: return "m_duck-ai_native-storage_last-used-model-parse_error"
+        case .duckAiNativeStorageLastUsedReasoningModeParseError: return "m_duck-ai_native-storage_last-used-reasoning-mode-parse_error"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"

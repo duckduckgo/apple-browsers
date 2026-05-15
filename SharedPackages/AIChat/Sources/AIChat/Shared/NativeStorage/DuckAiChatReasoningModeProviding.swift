@@ -30,9 +30,14 @@ public protocol DuckAiChatReasoningModeProviding {
 
 public struct DuckAiChatReasoningModeProvider: DuckAiChatReasoningModeProviding {
     private let storage: DuckAiNativeStorageHandling
+    private let pixelFiring: DuckAiNativeStoragePixelFiring
 
-    public init(storage: DuckAiNativeStorageHandling) {
+    public init(
+        storage: DuckAiNativeStorageHandling,
+        pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
+    ) {
         self.storage = storage
+        self.pixelFiring = pixelFiring
     }
 
     public func reasoningMode(forChatId chatId: String) -> String? {
@@ -40,12 +45,14 @@ public struct DuckAiChatReasoningModeProvider: DuckAiChatReasoningModeProviding 
         do {
             record = try storage.getChat(chatId: chatId)
         } catch {
+            pixelFiring.fire(.chatGetError(error))
             return nil
         }
         guard let record else { return nil }
         do {
             return try DuckAiChat.decode(from: record.data).chat.reasoningMode
         } catch {
+            pixelFiring.fire(.lastUsedReasoningModeParseError(error))
             return nil
         }
     }

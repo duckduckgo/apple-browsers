@@ -3273,6 +3273,30 @@
         }
       }
     },
+    "aichat.mention-picker.current-tab-suffix" : {
+      "comment" : "Trailing badge displayed in the @-mention tab picker next to the user's currently active browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Current Tab)"
+          }
+        }
+      }
+    },
+    "aichat.mention-picker.no-matches" : {
+      "comment" : "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No matching tabs"
+          }
+        }
+      }
+    },
     "aichat.model-picker-button.tooltip" : {
       "comment" : "Tooltip for the model picker button in AI chat omnibar",
       "extractionState" : "extracted_with_value",

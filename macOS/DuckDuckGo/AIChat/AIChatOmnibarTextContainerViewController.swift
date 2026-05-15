@@ -42,6 +42,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
+    /// Coordinator for the `@`-mention tab picker. Created lazily on the first detected
+    /// token so the panel and view controller don't allocate until the feature is used.
+    /// Reset to `nil` once the picker is dismissed AND the omnibar is torn down via
+    /// `cleanup`; ordinary dismiss/re-present cycles keep the coordinator alive.
+    private lazy var mentionPickerCoordinator: AIChatMentionPickerCoordinator = {
+        AIChatMentionPickerCoordinator(omnibarController: omnibarController)
+    }()
     private var cancellables = Set<AnyCancellable>()
     /// When true, the text view is being updated programmatically (text or selection) and any
     /// resulting `textViewDidChangeSelection` callback must not overwrite the persisted caret
@@ -275,6 +282,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
         updatePlaceholderVisibility()
+        updateMentionTokenDetection()
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -289,6 +297,47 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         /// sink (triggered by cleanup on tab switch) would overwrite the saved selection with `(0, 0)`.
         guard !isUpdatingProgrammatically else { return }
         omnibarController.updateSelection(textView.selectedRange)
+        // Caret movement (arrow keys, mouse click) can move the caret in or out of an @-token —
+        // re-check on selection changes too, not only on text edits.
+        updateMentionTokenDetection()
+    }
+
+    /// Fired by `NSTextView` whenever it resigns first-responder status — covers
+    /// click-outside, Cmd-Tab to another app, etc. The picker should not stay floating
+    /// above an unfocused input.
+    ///
+    /// Esc is intercepted *before* it gets here (see `dismissMentionPickerIfPresented` —
+    /// the address bar's `escapeKeyDown` consults that hook and short-circuits when the
+    /// picker is open so the omnibar's focus is preserved).
+    func textDidEndEditing(_ notification: Notification) {
+        mentionPickerCoordinator.dismiss()
+    }
+
+    /// Called by `AddressBarViewController.escapeKeyDown()` (via the wiring set up in
+    /// `MainViewController`) when the user presses Esc. Returns `true` when the picker was
+    /// presented and got dismissed — the address bar uses that to short-circuit its own
+    /// focus-resign behavior so the user can keep typing in the omnibar.
+    func dismissMentionPickerIfPresented() -> Bool {
+        guard mentionPickerCoordinator.isPresented else { return false }
+        mentionPickerCoordinator.dismiss()
+        return true
+    }
+
+    /// Detects whether the caret is currently inside an `@`-mention token in the omnibar input
+    /// and presents (or dismisses) the mention picker panel accordingly. The detector itself
+    /// is in `AIChatMentionTokenDetector`; this method only does the panel-lifecycle glue.
+    private func updateMentionTokenDetection() {
+        let caret = textView.selectedRange.location
+        guard let token = AIChatMentionTokenDetector.token(in: textView.string, caret: caret) else {
+            mentionPickerCoordinator.dismiss()
+            return
+        }
+        guard let window = view.window else {
+            // No window yet (e.g. VC is being attached) — defer; the next text change will
+            // re-evaluate once the view is attached.
+            return
+        }
+        mentionPickerCoordinator.presentIfNeeded(for: token, anchoredTo: textView, in: window)
     }
 
     private func updatePlaceholderVisibility() {
@@ -319,6 +368,37 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on
+        // screen with a real (non-empty-state) selection. Anything it doesn't claim
+        // falls through to the regular omnibar handling below.
+        if mentionPickerCoordinator.canHandleKeyCommands {
+            switch commandSelector {
+            case #selector(NSResponder.moveDown(_:)):
+                mentionPickerCoordinator.moveHighlightDown()
+                return true
+            case #selector(NSResponder.moveUp(_:)):
+                mentionPickerCoordinator.moveHighlightUp()
+                return true
+            case #selector(NSResponder.cancelOperation(_:)):
+                mentionPickerCoordinator.dismiss()
+                return true
+            case #selector(insertNewline(_:)),
+                 #selector(insertNewlineIgnoringFieldEditor(_:)):
+                if mentionPickerCoordinator.acceptHighlighted() {
+                    return true
+                }
+                // No real selection — fall through to the normal Enter path below.
+            default:
+                break
+            }
+        } else if mentionPickerCoordinator.isPresented,
+                  commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            // Picker is showing the empty-state row. Esc should still dismiss it so the
+            // user can keep typing without the panel covering content.
+            mentionPickerCoordinator.dismiss()
+            return true
+        }
+
         if commandSelector == #selector(insertNewline(_:)) || commandSelector == #selector(insertNewlineIgnoringFieldEditor(_:)) {
             guard let event = NSApp.currentEvent else { return false }
 
@@ -377,7 +457,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func focusTextViewRestoringCursorPosition() {
         focusTextView()
         isUpdatingProgrammatically = true
-        defer { isUpdatingProgrammatically = false }
         /// `saved.location` is a UTF-16 offset (it came from an `NSRange`), so compare it against the
         /// UTF-16 length of the string rather than `String.count` (grapheme-cluster count). For prompts
         /// containing emoji or other non-BMP characters the two differ and valid saved positions would
@@ -390,6 +469,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         } else {
             moveCursorToEnd()
         }
+        isUpdatingProgrammatically = false
+
+        // Re-evaluate `@`-mention detection now that focus + caret have been restored. Without
+        // this, typing `@` in search mode and then toggling to Duck.ai leaves the text in place
+        // but never fires `textDidChange`/`textViewDidChangeSelection` (the text update is
+        // programmatic, the selection update is suppressed via `isUpdatingProgrammatically`),
+        // so the picker would otherwise never open for a pre-existing `@` token.
+        updateMentionTokenDetection()
     }
 
     /// Forces the text view's string to match `omnibarController.currentText` synchronously.

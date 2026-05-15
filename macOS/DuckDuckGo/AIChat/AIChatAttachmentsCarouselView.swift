@@ -148,6 +148,11 @@ final class AIChatAttachmentsCarouselView: NSView {
     /// resize replacement (same id, fresh `NSImage`) the existing thumbnail is updated in place.
     func setAttachments(_ newAttachments: [AIChatPanelAttachment]) {
         guard newAttachments != attachments else { return }
+        // Capture which ids are *new* in this update (present in the new list but absent
+        // from the previous one) so we can scroll the latest addition into view after
+        // layout. Triggered both by the @-mention picker and the "Add Page Content"
+        // submenu, so a newly attached tab is always visible without manual scrolling.
+        let previousIds = Set(attachments.map(\.attachmentId))
         attachments = newAttachments
 
         let newIds = Set(newAttachments.map(\.attachmentId))
@@ -180,7 +185,36 @@ final class AIChatAttachmentsCarouselView: NSView {
             stackView.insertArrangedSubview(view, at: index)
         }
 
+        scrollLatestAddedAttachmentIntoView(previousIds: previousIds, currentList: newAttachments)
+
         onAttachmentsChanged?()
+    }
+
+    /// Scrolls the carousel so the most recently appended attachment is visible. Picks the
+    /// last entry in `currentList` whose id wasn't present in `previousIds` — that's the
+    /// latest insertion in carousel order. No-op when nothing was newly added (e.g. the
+    /// user removed a card or an image resize replaced an existing one in place).
+    ///
+    /// Scheduled on the next runloop tick rather than executed inline because, when the
+    /// carousel goes from zero → one attachment, the container VC's reactive sink that
+    /// drives the carousel's *own* height constraint (`height == 0` when empty) hasn't
+    /// updated yet at the moment we're inside `setAttachments`. Forcing a synchronous
+    /// `layoutSubtreeIfNeeded()` here triggers AppKit to solve constraints with the new
+    /// card's 62pt height against the still-zero carousel height — producing an
+    /// "unable to simultaneously satisfy" warning and, more practically, a `scrollToVisible`
+    /// that reads stale frames (lands on the next-to-last card).
+    private func scrollLatestAddedAttachmentIntoView(previousIds: Set<String>, currentList: [AIChatPanelAttachment]) {
+        let addedIds = Set(currentList.map(\.attachmentId)).subtracting(previousIds)
+        guard !addedIds.isEmpty,
+              let lastAdded = currentList.last(where: { addedIds.contains($0.attachmentId) })
+        else { return }
+        let lastAddedId = lastAdded.attachmentId
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let view = self.viewsByAttachmentId[lastAddedId]
+            else { return }
+            view.scrollToVisible(view.bounds)
+        }
     }
 
     // MARK: - Cursor management

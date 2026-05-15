@@ -304,6 +304,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
+    private let reasoningModeProvider: DuckAiChatReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
         let cache = NSCache<NSString, NSString>()
         cache.countLimit = 64
@@ -344,6 +345,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        reasoningModeProvider: DuckAiChatReasoningModeProviding? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
@@ -364,6 +366,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
+        self.reasoningModeProvider = reasoningModeProvider
+            ?? duckAiNativeStorageHandler.map { DuckAiChatReasoningModeProvider(storage: $0) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
@@ -457,6 +461,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 // Storage changed for this chat; drop the cached model so the next read reflects it.
                 self.lastUsedModelCache[activeChatID] = nil
                 self.restoreLastUsedModel(forChatID: activeChatID)
+                self.restoreLastUsedReasoningMode(forChatID: activeChatID)
             }
     }
 
@@ -489,6 +494,30 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
         modelStore.updateSelectedModel(modelID)
         handleModelsUpdated()
+    }
+
+    /// Reads the persisted `reasoningMode` for `chatID` from the chat payload in native
+    /// storage and applies it to the live reasoning picker. Mirrors `restoreLastUsedModel`.
+    /// Contract:
+    /// - Missing field → no-op (older chats keep current picker state).
+    /// - Unknown value → no-op (same as missing).
+    /// - Known value → live preferences updated + reasoning picker refreshed.
+    func restoreLastUsedReasoningMode(forChatID chatID: String) {
+        guard let reasoningModeProvider else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no provider configured")
+            return
+        }
+        guard let rawValue = reasoningModeProvider.reasoningMode(forChatId: chatID) else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no reasoningMode in payload")
+            return
+        }
+        guard let mode = AIChatReasoningMode(rawValue: rawValue) else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: unknown value '\(rawValue, privacy: .public)'")
+            return
+        }
+        Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: applying '\(rawValue, privacy: .public)'")
+        modelStore.applyChatPersistedReasoningMode(mode)
+        updateReasoningPicker()
     }
 
     // MARK: - Per-Tab State

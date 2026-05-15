@@ -1252,11 +1252,23 @@ def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
         except subprocess.CalledProcessError as exc:
             logger.warning("Sweep re-probe failed for %s: %s", title, exc)
             continue
+        # Mirror the creation-path threshold guard: hard_conflict_lines
+        # is meaningful only on modern git (>= 2.38) where merge-tree
+        # writes a tree we can inspect. On legacy git the line count is
+        # always 0, so without the merged_tree_oid check we'd auto-close
+        # every legacy-detected hard-only conflict — even genuine ones.
+        modern_path = bool(result is not None and result.merged_tree_oid)
         still_conflicts = (
             result is not None
             and (
-                result.hard_conflict_lines >= MIN_CONFLICT_LINES
-                or bool(result.soft_files)
+                bool(result.soft_files)
+                or (
+                    bool(result.hard_files)
+                    and (
+                        not modern_path
+                        or result.hard_conflict_lines >= MIN_CONFLICT_LINES
+                    )
+                )
             )
         )
         if still_conflicts:

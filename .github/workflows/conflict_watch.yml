@@ -29,6 +29,10 @@ on:
         description: "Verbose logging"
         type: boolean
         default: false
+      no_mentions:
+        description: "Don't tag people: suppress Asana @-mentions and follower-adds"
+        type: boolean
+        default: false
   schedule:
     - cron: '0 5 * * *' # 05:00 UTC == 07:00 CEST / 06:00 CET
 
@@ -78,6 +82,7 @@ jobs:
           CW_ASANA_PROJECT_GID: ${{ inputs.asana_project_gid || '1214448335754394' }}
           CW_RECENCY_HOURS: ${{ inputs.recency_hours || '48' }}
           CW_VERBOSE: ${{ inputs.verbose && '1' || '0' }}
+          CW_NO_MENTIONS: ${{ inputs.no_mentions && '1' || '0' }}
         run: |
           python3 scripts/conflict-watch/conflict-watch.py
 

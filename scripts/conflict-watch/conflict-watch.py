@@ -172,6 +172,10 @@ ALWAYS_IGNORE_PATTERNS = [
     if p.strip()
 ]
 MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "20"))
+# When set, suppress all Asana @-mentions and skip the addFollowers call so
+# the run writes tasks without notifying anyone. Useful for the first real
+# write while the team is still inspecting filter output.
+NO_MENTIONS = os.environ.get("CW_NO_MENTIONS", "0").lower() in ("1", "true", "yes")
 
 DEFAULT_BOT_AUTHORS = (
     "dependabot[bot],"
@@ -211,6 +215,17 @@ class Branch:
     @property
     def short_sha(self) -> str:
         return self.sha[:7]
+
+    @property
+    def owner_key(self) -> str:
+        """Stable identifier for "who owns this branch" used to skip
+        same-author pair-conflicts (a single engineer touching their own
+        two branches doesn't need an Asana task to coordinate with
+        themselves). Preference order: GitHub login (canonical), commit
+        author email, commit author name. Lowercased + trimmed.
+        """
+        candidate = self.github_login or self.author_email or self.author_name
+        return (candidate or "").lower().strip()
 
     @property
     def committer_dt(self) -> datetime:
@@ -266,6 +281,7 @@ class RunSummary:
     pairs_with_soft_conflicts: int = 0
     pairs_with_both: int = 0
     pairs_below_line_threshold: int = 0
+    pairs_same_author: int = 0
     tasks_created: int = 0
     tasks_updated: int = 0
     tasks_reopened: int = 0
@@ -844,7 +860,14 @@ class AsanaClient:
 
 def asana_mention(b: Branch) -> str:
     """Asana rich-text mention if we have the user's gid; otherwise a
-    plain-text label that won't notify."""
+    plain-text label that won't notify.
+
+    Honours ``CW_NO_MENTIONS=1`` by always returning a plain-text label —
+    no Asana-mention HTML, no leading ``@`` — so the task body shows the
+    author name as context but generates no inbox notification.
+    """
+    if NO_MENTIONS:
+        return html_escape(b.author_name or b.github_login or b.author_email or "unknown")
     if b.asana_gid:
         return f'<a data-asana-gid="{html_escape(b.asana_gid)}"/>'
     if b.github_login:
@@ -923,10 +946,14 @@ def render_comment_html(pair: ConflictPair, today_local: str, *,
         items.append(
             f"<li>Soft-conflict files ({len(pair.soft_files)}): {soft}</li>"
         )
+    cc_segment = (
+        ""
+        if NO_MENTIONS
+        else f" (cc {asana_mention(pair.a)} {asana_mention(pair.b)})"
+    )
     html = (
         "<body>"
-        f"{html_escape(head)} {html_escape(today_local)} "
-        f"(cc {asana_mention(pair.a)} {asana_mention(pair.b)})"
+        f"{html_escape(head)} {html_escape(today_local)}{cc_segment}"
         "<ul>"
         + "".join(items)
         + "</ul>"
@@ -989,7 +1016,7 @@ def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
                 logger.info("Created Asana task %s for %s", gid, title)
                 summary.tasks_created += 1
                 followers = [u for u in (pair.a.asana_gid, pair.b.asana_gid) if u]
-                if gid and gid != "dry-run" and followers:
+                if gid and gid != "dry-run" and followers and not NO_MENTIONS:
                     asana.add_followers(gid, followers)
                 _record_state(state, title, pair, gid, "new", today_utc)
             else:
@@ -1415,6 +1442,12 @@ def main() -> int:
     for a, b in pairs:
         if time.monotonic() - started > TIME_BUDGET_S:
             summary.skipped_pairs.append(f"{a.name} ↔ {b.name}")
+            continue
+        # Same-author pairs aren't a coordination signal — the engineer
+        # is rebasing their own branches and already knows. Skip before
+        # the expensive merge-tree probe.
+        if a.owner_key and a.owner_key == b.owner_key:
+            summary.pairs_same_author += 1
             continue
         try:
             result = probe_pair(a, b, compute_soft=INCLUDE_SOFT_CONFLICTS)

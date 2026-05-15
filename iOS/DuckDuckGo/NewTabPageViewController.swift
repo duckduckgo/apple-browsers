@@ -29,6 +29,7 @@ import Subscription
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
+        guard !newTabPageViewModel.isLogoHidden else { return false }
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             let isLandscape = view.bounds.width > view.bounds.height

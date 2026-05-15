@@ -87,6 +87,76 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode"]
     },
+    "m_duck-ai_native-storage_container-migration_not-needed_default": {
+        "description": "Fires once when no app-group default container directory exists on launch (fresh install or already migrated previously)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_not-needed_fire-mode": {
+        "description": "Fires once when no app-group fire-mode container directory exists on launch (fresh install or already migrated previously)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_orphan-removed_default": {
+        "description": "Fires once when the new default container already had data so the orphaned app-group default copy was deleted",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_orphan-removed_fire-mode": {
+        "description": "Fires once when the new fire-mode container already had data so the orphaned app-group fire-mode copy was deleted",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_success_default": {
+        "description": "Fires once when the default Duck.ai container was successfully moved from the app-group container into Application Support",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_success_fire-mode": {
+        "description": "Fires once when the fire-mode Duck.ai container was successfully moved from the app-group container into Application Support",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_attempt-failed_default": {
+        "description": "Fires when a default-container move attempt fails and will be retried on a subsequent launch (up to 3 attempts total)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_attempt-failed_fire-mode": {
+        "description": "Fires when a fire-mode container move attempt fails and will be retried on a subsequent launch (up to 3 attempts total)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_gave-up_default": {
+        "description": "Fires once after the default-container move has failed the maximum number of attempts; migration will not be retried and old data is abandoned",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_gave-up_fire-mode": {
+        "description": "Fires once after the fire-mode container move has failed the maximum number of attempts; migration will not be retried and old data is abandoned",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
     "m_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn"],

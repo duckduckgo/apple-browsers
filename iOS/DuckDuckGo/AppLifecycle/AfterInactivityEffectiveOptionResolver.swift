@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Persistence
+import PrivacyConfig
 import UIKit
 
 protocol AfterInactivityEffectiveOptionResolving {

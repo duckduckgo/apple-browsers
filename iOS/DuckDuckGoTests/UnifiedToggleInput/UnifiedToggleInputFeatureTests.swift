@@ -65,20 +65,32 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
 
     // MARK: - Snapshot semantics
 
-    /// Flipping the feature flag mid-session must NOT change the captured value — the UI
-    /// architecture is bound at launch and changing it mid-session leaves the old toggle UI
-    /// in a half-wired state.
-    func test_isFeatureFlagEnabled_doesNotReflectFlaggerChangesAfterResolve() {
-        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInput]))
-        let captured = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+    /// Mid-session flag flips (e.g. debug-menu toggle, remote-config update) must NOT
+    /// change the captured value. The resolve writes the launch-time value into UserDefaults,
+    /// and readers must never re-consult the live flagger — even if the same flagger object
+    /// that was passed to resolve subsequently reports a different value. This is the whole
+    /// point of the snapshot: a re-evaluating implementation would let the live flagger drag
+    /// `isFeatureFlagEnabled` along with it and would fail this test.
+    func test_isFeatureFlagEnabled_ignoresLiveFlaggerMutationAfterResolve() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInput])
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+        XCTAssertTrue(feature.isFeatureFlagEnabled, "Precondition: snapshot is ON after resolve")
 
-        // Simulate "the flag was turned off remotely / via debug menu" by re-resolving with a flagger
-        // that reports the flag as off. The captured instance must still report the launch value.
-        let originalCapturedValue = captured.isFeatureFlagEnabled
+        // Simulate "the user toggled the flag off in the debug menu" by mutating the same
+        // flagger that was passed to resolve. A re-evaluating implementation would observe
+        // this and flip; the snapshot must not.
+        flagger.enabledFeatureFlags = []
+        XCTAssertFalse(flagger.isFeatureOn(.unifiedToggleInput),
+                       "Sanity: the live flagger now reports the flag as off")
+        XCTAssertTrue(feature.isFeatureFlagEnabled,
+                      "Snapshot must ignore the post-resolve mutation on the same instance")
+        XCTAssertTrue(UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self).isFeatureFlagEnabled,
+                      "A fresh instance must read the same snapshot, not the mutated live flagger")
 
-        // No re-resolve here; the live flagger value flipped, but consumers must keep the
-        // snapshot. (Re-resolving would be a fresh app launch — not what we're modelling.)
-        XCTAssertEqual(captured.isFeatureFlagEnabled, originalCapturedValue)
-        XCTAssertTrue(captured.isFeatureFlagEnabled)
+        // Only an explicit re-resolve (i.e. the next app launch) flips the snapshot.
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        XCTAssertFalse(feature.isFeatureFlagEnabled,
+                       "After re-resolving the snapshot must flip — otherwise resolve isn't doing its job")
     }
 }

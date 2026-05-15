@@ -193,6 +193,7 @@ jobs:
 
       - name: Generate and upload OTA install manifest and page
         id: generate-ota
+        continue-on-error: true
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
@@ -274,7 +275,12 @@ jobs:
 
           echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "${INSTALL_URL:-}" ]]; then
+            echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
+            echo "> OTA install page generation failed or did not produce a URL. Use the IPA link below." >> $GITHUB_STEP_SUMMARY
+          fi
           echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
 
@@ -295,7 +301,12 @@ jobs:
             exit 1
           fi
 
-          html_body="<body><strong>${TITLE} ${app_version} (${build_number})</strong><ul><li><a href=\"${INSTALL_URL}\">Install on iPhone</a> — open in Safari</li><li><a href=\"${IPA_URL}\">Download IPA</a></li><li><a href=\"${WORKFLOW_URL}\">Workflow run</a></li></ul></body>"
+          title="${TITLE:-DuckDuckGo iOS}"
+          install_html=""
+          if [[ -n "${INSTALL_URL:-}" ]]; then
+            install_html="<li><a href=\"${INSTALL_URL}\">Install on iPhone</a> — open in Safari</li>"
+          fi
+          html_body="<body><strong>${title} ${app_version} (${build_number})</strong><ul>${install_html}<li><a href=\"${IPA_URL}\">Download IPA</a></li><li><a href=\"${DSYM_URL}\">Download dSYM</a></li><li><a href=\"${WORKFLOW_URL}\">Workflow run</a></li></ul></body>"
           payload=$(jq -nc --arg t "$html_body" '{data: {html_text: $t}}')
 
           curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${asana_task_id}/stories" \

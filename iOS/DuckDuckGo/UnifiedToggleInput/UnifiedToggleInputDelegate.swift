@@ -31,3 +31,8 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidRequestFire()
     func unifiedToggleInputDidRequestDuckAIVoiceMode()
 }
+
+extension UnifiedToggleInputDelegate {
+    /// Optional: only fires when no `AIChatUserScript` is bound (omnibar "open new chat" path).
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {}
+}

@@ -227,16 +227,6 @@ final class AIChatContextualUTIHost {
 }
 
 extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
-
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
-                                           modelId: String?,
-                                           tools: [AIChatRAGTool]?,
-                                           reasoningEffort: AIChatReasoningEffort?,
-                                           images: [AIChatNativePrompt.NativePromptImage]?,
-                                           files: [AIChatNativePrompt.NativePromptFile]?) {
-        contextualChatViewController?.submitPrompt(prompt, pageContext: chipViewModel.attachedContext?.contextData)
-    }
-
     func unifiedToggleInputDidChangeHeight() {
         contextualChatViewController?.view.layoutIfNeeded()
     }

@@ -53,30 +53,28 @@ final class DuckAiVoiceChatFailureHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - NotAllowedError + OS denied → present popover + fire mic_os_denied
+    // MARK: - NotAllowedError + OS denied → request popover, no pixel from this layer
 
-    func testWhenNotAllowedErrorAndOSDenied_thenPresentsPopoverAndFiresMicOsDenied() {
+    /// `.micOsDenied` is fired by the receiver (`AddressBarButtonsViewController`) after it
+    /// dedupes against its own popover state. The failure handler only requests the
+    /// presentation; it must not fire the pixel itself or the count metric over-reports on
+    /// rapid FE retries (the production presenter's dedupe probe always returns `false`).
+    func testWhenNotAllowedErrorAndOSDenied_thenPresentsPopoverAndDoesNotFireMicOsDenied() {
         authorizationStatus = .denied
 
         sut.handleVoiceChatStartFailed(reason: "NotAllowedError", sourceWebView: nil)
 
         XCTAssertEqual(presenter.presentCount, 1)
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
-            ExpectedFireCall(
-                pixel: AIChatPixel.aiChatVoiceChatStartFailed(reason: .micOsDenied),
-                frequency: .dailyAndCount
-            )
-        ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testWhenNotAllowedErrorAndOSRestricted_thenPresentsPopoverAndFiresMicOsDenied() {
+    func testWhenNotAllowedErrorAndOSRestricted_thenPresentsPopoverAndDoesNotFireMicOsDenied() {
         authorizationStatus = .restricted
 
         sut.handleVoiceChatStartFailed(reason: "NotAllowedError", sourceWebView: nil)
 
         XCTAssertEqual(presenter.presentCount, 1)
-        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.parameters?["reason"],
-                       AIChatVoiceChatStartFailedReason.micOsDenied.rawValue)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     // MARK: - NotAllowedError + OS NOT denied → no popover, fire `other`
@@ -152,7 +150,7 @@ final class DuckAiVoiceChatFailureHandlerTests: XCTestCase {
         sut.handleVoiceChatStartFailed(reason: "NotAllowedError", sourceWebView: nil)
 
         XCTAssertEqual(presenter.presentCount, 1)
-        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 }
 

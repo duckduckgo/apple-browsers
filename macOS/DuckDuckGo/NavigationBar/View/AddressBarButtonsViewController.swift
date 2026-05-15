@@ -624,7 +624,11 @@ final class AddressBarButtonsViewController: NSViewController {
               tabViewModel.tab.webView === sourceWebView else {
             return
         }
-        // Dedupe: ignore repeated requests while the popover is already on screen.
+        // Dedupe: ignore repeated requests while the popover is already on screen. We fire
+        // `.micOsDenied` only after this guard passes so the pixel reflects an actual popover
+        // presentation — `DuckAiVoiceChatFailureHandler`'s presenter-side dedupe is dead in
+        // production (its `isPresentedProvider` is hardcoded `false`), so this is the only
+        // reliable counting point.
         if let existing = systemDisabledInfoPopover, existing.isShown {
             return
         }
@@ -636,6 +640,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
         showSystemDisabledInfoPopover(for: domain, permissionType: .microphone)
+        PixelKit.fire(AIChatPixel.aiChatVoiceChatStartFailed(reason: .micOsDenied), frequency: .dailyAndCount)
     }
 
     private func subscribeToUrl() {

@@ -85,16 +85,12 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
         // the popover is window-scoped). Avoids stacking when the user mashes the voice button.
         guard !permissionCenterPresenter.isPermissionCenterPresented(for: sourceWebView) else { return }
 
+        // `.micOsDenied` is fired by the receiver (`AddressBarButtonsViewController`) after it
+        // dedupes against its own popover state — that's the ground truth for "we actually
+        // surfaced the remediation popover". Firing here would over-count on rapid FE retries
+        // because the production presenter's `isPermissionCenterPresented` always returns
+        // `false`.
         permissionCenterPresenter.presentPermissionCenter(for: sourceWebView)
-        // Fired when we _request_ the popover, not when AppKit confirms it's on screen.
-        // Posting the notification synchronously delivers it to the address-bar observer
-        // on the same run loop turn, but if no observer matches (background window, tab
-        // already gone) the popover won't actually appear. Treat this as "attempted to
-        // surface", not "definitely shown".
-        pixelFiring?.fire(
-            AIChatPixel.aiChatVoiceChatStartFailed(reason: .micOsDenied),
-            frequency: .dailyAndCount
-        )
     }
 }
 

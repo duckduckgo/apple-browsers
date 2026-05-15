@@ -71,7 +71,6 @@ final class AIChatContextualUTIHost {
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.handleChipRemoveRequest()
         }
-        coordinator.delegate = self
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
@@ -224,18 +223,4 @@ final class AIChatContextualUTIHost {
         coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
         contextualChatViewController?.view.layoutIfNeeded()
     }
-}
-
-extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
-    func unifiedToggleInputDidChangeHeight() {
-        contextualChatViewController?.view.layoutIfNeeded()
-    }
-
-    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
-    func unifiedToggleInputDidRequestVoiceSearch() {}
-    func unifiedToggleInputDidRequestAIVoiceChat() {}
-    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
-    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
-    func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
 }

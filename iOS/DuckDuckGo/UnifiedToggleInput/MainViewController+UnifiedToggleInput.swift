@@ -69,9 +69,9 @@ extension MainViewController {
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
-        coordinator.onAnimatedDismissToOmnibar = { [weak self] in
+        coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
         }
         self.unifiedToggleInputCoordinator = coordinator
 
@@ -752,7 +752,8 @@ extension MainViewController {
 
 private extension MainViewController {
 
-    func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
+    func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
+                                            completion: (() -> Void)? = nil) {
         applyUnifiedInputChromeBackground(.standardChrome)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
@@ -785,6 +786,7 @@ private extension MainViewController {
                 // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
                 // the toolbar on their own.
                 self.reconcileToolbarVisibilityForCurrentTab()
+                completion?()
             }
         )
 

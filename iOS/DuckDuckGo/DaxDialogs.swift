@@ -407,6 +407,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func dismiss() {
         Logger.onboarding.debug("DaxDialogs.dismiss() called – ending onboarding, isDismissed will be set to true")
+        // Chat-path EOJ is dismissed via this method rather than via setFinalOnboardingDialogSeen()
+        // (which the standard path calls inside the factory's onCompletion). Ensure the flag is set
+        // so isStillOnboarding() resolves to false and finalDaxDialogSeen-gated paths work correctly.
+        if settings.isChatFirstPath {
+            settings.browsingFinalDialogShown = true
+        }
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)

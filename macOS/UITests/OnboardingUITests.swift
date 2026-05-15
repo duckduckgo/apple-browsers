@@ -28,13 +28,9 @@ final class OnboardingUITests: UITestCase {
         continueAfterFailure = false
         try resetApplicationData()
 
-        // The rebranded onboarding flow (gated by the `onboardingRebranding` feature flag, enabled by
-        // default since #4795) ships different copy and a different step ordering, so the assertions
-        // in this file no longer match. Force the flag off until the tests are rewritten for v4.
-        app = XCUIApplication.setUp(
-            environment: ["UITEST_MODE_ONBOARDING": "1"],
-            featureFlags: ["onboardingRebranding": false]
-        )
+        app = XCUIApplication.setUp(environment: [
+            "UITEST_MODE_ONBOARDING": "1"
+        ])
         app.enforceSingleWindow()
 
         welcomeWindow = app.windows["Welcome"]
@@ -54,7 +50,7 @@ final class OnboardingUITests: UITestCase {
         // Get Started
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that keeps you protected?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s Do It!"]
+        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s do it!"]
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Use coordinate tap to avoid overlay/hittability quirks
         let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))

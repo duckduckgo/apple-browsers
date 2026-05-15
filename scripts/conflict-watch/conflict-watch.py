@@ -958,9 +958,7 @@ def render_creation_comment_html(pair: ConflictPair) -> str:
     a_branch, b_branch = _branches_alpha(pair)
     rest = (
         " — your branches are likely to conflict at merge. "
-        "If you're already aware, just mark this task complete. "
-        "Otherwise, use this thread to coordinate and mark it complete "
-        "once sorted."
+        "You can use this thread to coordinate."
     )
     if NO_MENTIONS:
         head = (

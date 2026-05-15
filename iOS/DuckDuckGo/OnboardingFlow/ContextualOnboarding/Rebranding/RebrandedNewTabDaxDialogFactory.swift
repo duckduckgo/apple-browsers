@@ -131,7 +131,9 @@ private extension RebrandedNewTabDaxDialogFactory {
         let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .visitSite
 
         let viewModel = OnboardingSiteSuggestionsViewModel(
-            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
+            title: isChatPath
+                ? UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle
+                : UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
             delegate: delegate,
             onSuggestionPressed: { [weak self] in
@@ -139,7 +141,7 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
         )
 
-        let manualDismissAction = { [weak self] in
+        let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingPixelReporter.measureTryVisitSiteDialogNewTabDismissButtonTapped()
             onManualDismiss()
         }
@@ -247,9 +249,15 @@ private extension RebrandedNewTabDaxDialogFactory {
             return AttributedString(fullText)
         }
 
+        let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
+        let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
+            self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+            self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
+            onDismiss(true)
+        }
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
                 title: title,
@@ -260,23 +268,21 @@ private extension RebrandedNewTabDaxDialogFactory {
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    // Pass onDismiss as a post-presentation callback so it fires only after
+                    // the settings sheet is fully on screen — keeping the promo dialog visible
+                    // until the sheet covers it completely, avoiding an NTP flash.
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                        userInfo: nil
+                        userInfo: [SettingsDeepLinkUserInfoKey.onPresented: SettingsDeepLinkCallback(onPresented: { onDismiss(false) })]
                     )
-                    onDismiss(false)
                 },
                 dismissAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
                     self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 },
-                onManualDismiss: { [weak self] in
-                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
-                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
-                    onDismiss(true)
-                }
+                onManualDismiss: manualDismissAction
             )
         }
         .applyNewTabOnboardingBackground(backgroundType: .privacyProTrial)

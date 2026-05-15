@@ -1729,6 +1729,17 @@ extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
 }
 
+enum SettingsDeepLinkUserInfoKey {
+    static let onPresented = "onPresented"
+}
+
+/// Typed wrapper for the post-presentation callback passed via `settingsDeepLinkNotification`
+/// userInfo. Using a concrete type instead of a bare closure makes signature mismatches a
+/// build error rather than a silent runtime nil.
+struct SettingsDeepLinkCallback {
+    let onPresented: () -> Void
+}
+
 // MARK: - AI Chat
 extension SettingsViewModel {
 

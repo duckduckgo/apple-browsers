@@ -2362,25 +2362,25 @@
       }
     },
     "aichat.attach-menu.image-or-file" : {
-      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker",
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker. PDF is the only file format the menu currently accepts on the file side, so the copy names it explicitly rather than the more abstract 'file'.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add Image or File"
+            "value" : "Add Images or PDFs"
           }
         }
       }
     },
     "aichat.attach-menu.no-open-tabs" : {
-      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from",
+      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No open tabs"
+            "value" : "No page content available"
           }
         }
       }
@@ -3269,18 +3269,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Прикрепить изображение"
-          }
-        }
-      }
-    },
-    "aichat.mention-picker.current-tab-suffix" : {
-      "comment" : "Trailing badge displayed in the @-mention tab picker next to the user's currently active browser tab",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "(Current Tab)"
           }
         }
       }

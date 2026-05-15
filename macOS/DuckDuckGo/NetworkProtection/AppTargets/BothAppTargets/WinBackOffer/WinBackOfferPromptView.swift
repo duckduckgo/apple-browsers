@@ -86,7 +86,7 @@ struct WinBackOfferPromptView: ModalView {
                         .frame(height: Constants.buttonHeight)
                 }
                 .frame(height: 28)
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
 
                  Button {
                     viewModel.confirmAction()

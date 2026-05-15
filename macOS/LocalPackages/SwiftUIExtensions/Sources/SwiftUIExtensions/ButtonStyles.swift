@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import DesignResourcesKit
 import Foundation
 import SwiftUI
@@ -29,8 +30,9 @@ public struct StandardButtonStyle: ButtonStyle {
     public let backgroundColor: Color
     public let backgroundPressedColor: Color
     public let cornerRadius: CGFloat
+    public let pillShape: Bool
 
-    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat = 5) {
+    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat = 5, pillShape: Bool = false) {
         self.fontSize = fontSize
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
@@ -38,6 +40,7 @@ public struct StandardButtonStyle: ButtonStyle {
         self.backgroundColor = backgroundColor ?? Color(.pwmButtonBackground)
         self.backgroundPressedColor = backgroundPressedColor ?? Color(.pwmButtonBackgroundPressed)
         self.cornerRadius = cornerRadius
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -51,7 +54,8 @@ public struct StandardButtonStyle: ButtonStyle {
             .padding(.horizontal, horizontalPadding)
             .background(backgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(cornerRadius)
+            .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: cornerRadius) }
+            .if(!pillShape) { $0.cornerRadius(cornerRadius) }
     }
 }
 
@@ -104,7 +108,7 @@ public struct DefaultActionButtonStyle: ButtonStyle {
                 .background(backgroundColor)
                 .foregroundColor(labelColor)
                 .opacity(enabled ? 1 : 0.5)
-                .cornerRadius(5)
+                .liquidGlassPillShape(fallbackCornerRadius: 5)
                 .onHover { hovering in
                     isHovered = hovering
                 }
@@ -139,7 +143,7 @@ public struct TransparentActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 0)
             .background(Color.clear)
             .foregroundColor(enabled ? enabledForegroundColor : disabledForegroundColor)
-            .cornerRadius(5)
+            .liquidGlassPillShape(fallbackCornerRadius: 5)
 
     }
 }
@@ -169,14 +173,30 @@ public struct DismissActionButtonStyle: ButtonStyle {
             .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
             .background(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(backgroundColor)
-                    .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
-                    .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                Group {
+                    if AppVersion.isLiquidGlassSupported {
+                        Capsule(style: .continuous)
+                            .fill(backgroundColor)
+                            .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
+                            .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                    } else {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(backgroundColor)
+                            .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
+                            .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                    }
+                }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                Group {
+                    if AppVersion.isLiquidGlassSupported {
+                        Capsule()
+                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                    } else {
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                    }
+                }
             )
             .foregroundColor(textColor)
 
@@ -213,7 +233,7 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 7.5)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(5)
+            .liquidGlassPillShape(fallbackCornerRadius: 5)
 
     }
 }

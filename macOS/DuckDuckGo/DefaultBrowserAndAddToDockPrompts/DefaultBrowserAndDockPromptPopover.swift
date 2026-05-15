@@ -88,7 +88,7 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
                         Text(secondaryButtonText)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .buttonStyle(StandardButtonStyle())
+                    .buttonStyle(StandardButtonStyle(pillShape: true))
                 }
 
                 Button {

@@ -18,6 +18,7 @@
 
 import DesignResourcesKit
 import SwiftUI
+import SwiftUIExtensions
 import UIComponents
 
 struct BookmarkDialogButtonsView: View {
@@ -66,7 +67,7 @@ struct BookmarkDialogButtonsView: View {
         .buttonStyle(.plain)
         .background(
             Color(designSystemColor: backgroundColor)
-                .cornerRadius(6)
+                .liquidGlassPillShape(fallbackCornerRadius: 6)
                 .opacity(action.isDisabled ? 0.4 : 1)
         )
         .ifLet(action.keyboardShortCut) { $0.keyboardShortcut($1) }

@@ -576,8 +576,15 @@ struct FireDialogView: ModalView {
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                        Group {
+                            if AppVersion.isLiquidGlassSupported {
+                                Capsule(style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            } else {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            }
+                        }
                     )
             }
             .buttonStyle(.plain)

@@ -38,7 +38,7 @@ struct AutofillToolbarOnboardingView: View {
 
             HStack {
                 createButton(title: UserText.autofillOnboardingPopoverCTAReject,
-                             style: StandardButtonStyle(),
+                             style: StandardButtonStyle(pillShape: true),
                              action: viewModel.rejectToolbarIcon)
 
                 createButton(title: UserText.autofillOnboardingPopoverCTAAccept,

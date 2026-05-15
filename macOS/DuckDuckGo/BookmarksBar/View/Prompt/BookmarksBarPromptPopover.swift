@@ -116,7 +116,7 @@ struct BookmarksBarPromptView: View {
                         .frame(height: 28)
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.hide")
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
                 .padding(0)
 
                 Button {

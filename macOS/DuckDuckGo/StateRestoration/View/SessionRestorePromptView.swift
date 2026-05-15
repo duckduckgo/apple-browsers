@@ -59,7 +59,7 @@ struct SessionRestorePromptView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
                 .accessibilityIdentifier("session.restore.prompt.reject")
 
                 Button {

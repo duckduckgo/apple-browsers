@@ -514,16 +514,14 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
-        // `DuckAiVoiceChatPermissionOverride` forces `.microphone` to `.allow` at read time
-        // for duck.ai unconditionally (not flag-gated — the FE voice flow requires silent
-        // grant). A regular editable row here would read the masked `.allow` through the
-        // override and let the user make a change that's silently re-masked, *and* it would
-        // surface as "Always allow" even when nothing has been persisted (e.g. while voice
-        // chat is active, `usedPermissions[.microphone]` is set and `buildPermissionItem`
-        // reads via the override). Drop it. The only mic UI on duck.ai is the synthetic
-        // OS-denied warning (flag-gated, since OS-denial remediation is part of the
-        // failure-handling surface the flag controls).
-        if domain == URL.duckAi.host {
+        // On duck.ai with the voice-chat flag on, `DuckAiVoiceChatPermissionOverride` forces
+        // `.microphone` to `.allow` at read time. A regular editable row here would read the
+        // masked `.allow` through the override and let the user make a change that's silently
+        // re-masked. Drop it — the only mic UI for duck.ai under the flag is the synthetic
+        // OS-denied warning injected by `loadPermissions`. With the flag off, the override
+        // returns nil and the real persisted decision (if any) is the user's actual state,
+        // so the row stays.
+        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow), domain == URL.duckAi.host {
             otherPermissions.removeAll { $0 == .microphone }
         }
 

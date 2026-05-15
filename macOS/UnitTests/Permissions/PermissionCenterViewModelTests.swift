@@ -401,11 +401,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
                        "Synthetic row should carry the OS state synchronously so the warning renders on first paint")
     }
 
-    /// The duck.ai/mic filter is unconditional because the override is unconditional. Even
-    /// with the flag off, the override silently masks the decision to `.allow` at read time,
-    /// so surfacing an editable row (or any row sourced from `usedPermissions[.microphone]`)
-    /// would render as "Always allow" without the user ever having granted that.
-    func testWhenFlagOff_andMicrophoneOnDuckAi_thenNoMicRowAppears() {
+    func testWhenFlagOff_andMicrophoneOnDuckAi_thenItemIsNotLocked() {
         mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
         var usedPermissions = Permissions()
         usedPermissions[.microphone] = .active
@@ -421,8 +417,8 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }),
-                       "Override masks the decision unconditionally; the filter must hide the row regardless of flag")
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertEqual(micItem?.isLocked, false)
     }
 
     func testWhenFlagOn_andMicrophoneOnOtherDomain_thenItemIsNotLocked() {
@@ -445,10 +441,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertEqual(micItem?.isLocked, false)
     }
 
-    /// Flag off + OS denied: the synthetic OS-disabled warning row is flag-gated (it's part of
-    /// the failure-remediation UI), so it must not be injected here. Combined with the
-    /// unconditional filter, no mic row exists at all for duck.ai.
-    func testWhenFlagOff_duckAiMic_osDenied_thenNoMicRowAppearsAtAll() {
+    /// With the flag off, mic items behave like any other site: regular row, no system-disabled
+    /// surfacing, no synthetic injection.
+    func testWhenFlagOff_thenMicrophoneSystemAuthorizationStateStaysNil() {
         mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
         mockSystemPermissionManager.authorizationStateToReturn = .denied
         var usedPermissions = Permissions()
@@ -465,8 +460,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }),
-                       "Flag off → no synthetic OS-disabled row; unconditional filter → no regular row either")
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertNil(micItem?.systemAuthorizationState,
+                     "Flag off → no synthetic injection, no async probe → state stays nil")
     }
 
     // MARK: - Row visibility on duck.ai (OS-state-driven synthetic injection)
@@ -618,10 +614,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
                        "Legacy persisted entries must not produce a row that lets the user toggle a masked decision")
     }
 
-    /// Even with the flag off, the override masks the legacy persisted decision at read time
-    /// (the override is unconditional), so we must NOT expose an editable row whose changes
-    /// would be silently re-masked. The filter applies regardless of flag.
-    func testWhenFlagOff_duckAiMic_legacyDenyPersisted_thenNoMicRowAppears() {
+    /// With the flag *off*, legacy persisted entries still surface as regular rows so users
+    /// retain control. The filter only kicks in when the override is actually in effect.
+    func testWhenFlagOff_duckAiMic_legacyDenyPersisted_thenRegularRowAppears() {
         mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
         mockPermissionManager.savedPermissions["duck.ai"] = [.microphone: .deny]
 
@@ -636,8 +631,10 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }),
-                       "Flag off does not undo the override; the row must stay hidden")
+        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
+        XCTAssertNotNil(micItem)
+        XCTAssertEqual(micItem?.isLocked, false,
+                       "Flag off → no override, no synthetic row, the legacy decision is plain user state")
     }
 
     /// Non-duck.ai sites with mic permission keep their existing UX regardless of OS state.

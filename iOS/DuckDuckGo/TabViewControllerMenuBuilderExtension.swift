@@ -1002,7 +1002,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         let title = isEnabled ? UserText.youTubeAdBlockingMenuToggle : UserText.youTubeAdBlockingMenuEnable
 
         return .regular(name: title,
-                        image: DesignSystemImages.Glyphs.Size24.shieldBlocked,
+                        image: DesignSystemImages.Glyphs.Size24.videoAdBlocked,
                         action: { [weak self] in
             guard let self else { return }
             if isEnabled {

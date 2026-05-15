@@ -65,9 +65,9 @@ struct YouTubeAdBlockUnavailableView: View {
 
     private var header: some View {
         VStack(spacing: Constants.headerSectionSpacing) {
-            Image(uiImage: DesignSystemImages.Color.Size96.announcement)
+            Image(uiImage: DesignSystemImages.Color.Size128.youTubeAdBlockWarning)
                 .resizable()
-                .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+                .frame(width: Constants.headerIconWidth, height: Constants.headerIconHeight)
 
             VStack(spacing: Constants.headlineTextSpacing) {
                 Text(UserText.youTubeAdBlockingUnavailableTitle)
@@ -100,7 +100,8 @@ private extension YouTubeAdBlockUnavailableView {
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
-        static let headerIconSize: CGFloat = 96
+        static let headerIconWidth: CGFloat = 128
+        static let headerIconHeight: CGFloat = 96
         static let headlineTextSpacing: CGFloat = 12
     }
 }

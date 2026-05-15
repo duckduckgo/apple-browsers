@@ -136,9 +136,9 @@ struct BookmarksBarPromptView: View {
 
         }
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.interfaceBackground))
     }

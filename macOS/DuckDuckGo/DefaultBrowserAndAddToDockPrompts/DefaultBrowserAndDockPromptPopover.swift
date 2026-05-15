@@ -19,6 +19,7 @@
 import SwiftUI
 import Carbon.HIToolbox
 import Combine
+import Common
 import SwiftUIExtensions
 
 public final class DefaultBrowserAndDockPromptPopoverViewModel {
@@ -103,7 +104,7 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(width: 344)
-        .padding([.leading, .trailing, .bottom], 16)
+        .padding([.leading, .trailing, .bottom], AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
     }
 }

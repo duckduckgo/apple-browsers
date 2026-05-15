@@ -42,13 +42,22 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
-    /// Coordinator for the `@`-mention tab picker. Created lazily on the first detected
-    /// token so the panel and view controller don't allocate until the feature is used.
-    /// Reset to `nil` once the picker is dismissed AND the omnibar is torn down via
-    /// `cleanup`; ordinary dismiss/re-present cycles keep the coordinator alive.
-    private lazy var mentionPickerCoordinator: AIChatMentionPickerCoordinator = {
-        AIChatMentionPickerCoordinator(omnibarController: omnibarController)
-    }()
+    /// Coordinator for the `@`-mention tab picker. `nil` until the first detected token, so
+    /// the panel and view controller don't allocate while the user just types in the omnibar
+    /// without ever triggering `@`. Use `ensureMentionPickerCoordinator()` at the present
+    /// site to lazy-init; all dismiss / read-state call sites use optional chaining and
+    /// no-op safely while still nil.
+    private var mentionPickerCoordinator: AIChatMentionPickerCoordinator?
+
+    /// Lazy-init the coordinator on first use (the `presentIfNeeded` path). Other paths
+    /// (dismiss, isPresented, canHandleKeyCommands) should stay on optional chaining so
+    /// they don't force allocation when the user never typed `@`.
+    private func ensureMentionPickerCoordinator() -> AIChatMentionPickerCoordinator {
+        if let mentionPickerCoordinator { return mentionPickerCoordinator }
+        let coordinator = AIChatMentionPickerCoordinator(omnibarController: omnibarController)
+        mentionPickerCoordinator = coordinator
+        return coordinator
+    }
     private var cancellables = Set<AnyCancellable>()
     /// When true, the text view is being updated programmatically (text or selection) and any
     /// resulting `textViewDidChangeSelection` callback must not overwrite the persisted caret
@@ -310,7 +319,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// the address bar's `escapeKeyDown` consults that hook and short-circuits when the
     /// picker is open so the omnibar's focus is preserved).
     func textDidEndEditing(_ notification: Notification) {
-        mentionPickerCoordinator.dismiss()
+        // `?.` — skip the lazy allocation when the user never typed `@`. The coordinator
+        // would no-op anyway, but avoiding the alloc keeps the omnibar's idle path cheap.
+        mentionPickerCoordinator?.dismiss()
     }
 
     /// Called by `AddressBarViewController.escapeKeyDown()` (via the wiring set up in
@@ -318,8 +329,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// presented and got dismissed — the address bar uses that to short-circuit its own
     /// focus-resign behavior so the user can keep typing in the omnibar.
     func dismissMentionPickerIfPresented() -> Bool {
-        guard mentionPickerCoordinator.isPresented else { return false }
-        mentionPickerCoordinator.dismiss()
+        guard let coordinator = mentionPickerCoordinator, coordinator.isPresented else { return false }
+        coordinator.dismiss()
         return true
     }
 
@@ -331,14 +342,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         // submenu uses. Without this, a user typing `@` in the omnibar would see the picker
         // regardless of the `aiChatOmnibarAttachMoreTabs` rollout state. Dismissing any
         // already-presented picker too, so a remote flag flip-off while the panel is on
-        // screen tears it down on the next text edit / selection change.
+        // screen tears it down on the next text edit / selection change. `?.` so the
+        // dismiss-only paths below don't lazy-allocate the coordinator when it was never
+        // needed (user typing without `@`, flag off, etc.).
         guard omnibarController.isOmnibarTabPickerEnabled else {
-            mentionPickerCoordinator.dismiss()
+            mentionPickerCoordinator?.dismiss()
             return
         }
         let caret = textView.selectedRange.location
         guard let token = AIChatMentionTokenDetector.token(in: textView.string, caret: caret) else {
-            mentionPickerCoordinator.dismiss()
+            mentionPickerCoordinator?.dismiss()
             return
         }
         guard let window = view.window else {
@@ -346,7 +359,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             // re-evaluate once the view is attached.
             return
         }
-        mentionPickerCoordinator.presentIfNeeded(for: token, anchoredTo: textView, in: window)
+        // Present path: this is the one site that needs the coordinator instance, so
+        // lazy-init here.
+        ensureMentionPickerCoordinator().presentIfNeeded(for: token, anchoredTo: textView, in: window)
     }
 
     private func updatePlaceholderVisibility() {
@@ -379,32 +394,35 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on
         // screen with a real (non-empty-state) selection. Anything it doesn't claim
-        // falls through to the regular omnibar handling below.
-        if mentionPickerCoordinator.canHandleKeyCommands {
+        // falls through to the regular omnibar handling below. The picker only matters
+        // when it has already been instantiated and presented — bind once via `if let`
+        // so we don't lazy-allocate the coordinator on every keystroke.
+        if let coordinator = mentionPickerCoordinator, coordinator.canHandleKeyCommands {
             switch commandSelector {
             case #selector(NSResponder.moveDown(_:)):
-                mentionPickerCoordinator.moveHighlightDown()
+                coordinator.moveHighlightDown()
                 return true
             case #selector(NSResponder.moveUp(_:)):
-                mentionPickerCoordinator.moveHighlightUp()
+                coordinator.moveHighlightUp()
                 return true
             case #selector(NSResponder.cancelOperation(_:)):
-                mentionPickerCoordinator.dismiss()
+                coordinator.dismiss()
                 return true
             case #selector(insertNewline(_:)),
                  #selector(insertNewlineIgnoringFieldEditor(_:)):
-                if mentionPickerCoordinator.acceptHighlighted() {
+                if coordinator.acceptHighlighted() {
                     return true
                 }
                 // No real selection — fall through to the normal Enter path below.
             default:
                 break
             }
-        } else if mentionPickerCoordinator.isPresented,
+        } else if let coordinator = mentionPickerCoordinator,
+                  coordinator.isPresented,
                   commandSelector == #selector(NSResponder.cancelOperation(_:)) {
             // Picker is showing the empty-state row. Esc should still dismiss it so the
             // user can keep typing without the panel covering content.
-            mentionPickerCoordinator.dismiss()
+            coordinator.dismiss()
             return true
         }
 

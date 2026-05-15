@@ -1064,6 +1064,12 @@ struct UserText {
     static let locationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.location",
                                                                          value: "“%@“ website would like to use your current location.",
                                                                          comment: "Popover asking for domain %@ to use location")
+    static let microphonePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.microphone",
+                                                                           value: "“%@“ website would like to use your microphone.",
+                                                                           comment: "Popover asking for domain %@ to use the microphone")
+    static let duckAiVoiceChatMicrophonePrompt = NSLocalizedString("permission.authorization.microphone.duckai-voice-chat",
+                                                                   value: "Duck.ai voice chat requires microphone access.",
+                                                                   comment: "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai")
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")

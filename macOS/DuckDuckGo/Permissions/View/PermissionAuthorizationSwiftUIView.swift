@@ -135,7 +135,9 @@ enum PermissionAuthorizationType: Equatable {
             return UserText.permissionSystemLocationDisabled
         case .notification:
             return UserText.permissionPopoverSystemNotificationDisabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .microphone:
+            return UserText.permissionSystemMicrophoneDisabled
+        case .camera, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -147,7 +149,9 @@ enum PermissionAuthorizationType: Equatable {
             return systemPermissionDisabledText
         case .notification:
             return UserText.permissionPopoverSystemNotificationDisabledStandalone
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .microphone:
+            return systemPermissionDisabledText
+        case .camera, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -159,7 +163,9 @@ enum PermissionAuthorizationType: Equatable {
             return UserText.permissionSystemSettingsLocation
         case .notification:
             return UserText.permissionCenterSystemSettingsNotifications
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .microphone:
+            return UserText.permissionSystemSettingsMicrophone
+        case .camera, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -171,7 +177,9 @@ enum PermissionAuthorizationType: Equatable {
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
         case .notification:
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .microphone:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+        case .camera, .cameraAndMicrophone, .popups, .externalScheme:
             return nil
         }
     }

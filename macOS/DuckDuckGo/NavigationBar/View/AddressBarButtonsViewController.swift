@@ -219,11 +219,6 @@ final class AddressBarButtonsViewController: NSViewController {
             updateButtons()
         }
     }
-    /// Overrides the `isAIChatPanelActive` suppression of `permissionCenterButton` so the
-    /// Permission Center popover can anchor to it. Used by the Duck.ai voice-chat failure
-    /// flow (`handleAIChatVoiceChatPermissionRequested`) where the popover is the entire
-    /// remediation surface. Reset when the popover closes (`popoverDidClose`).
-    private var isForcingPermissionCenterButtonVisible: Bool = false
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
@@ -573,11 +568,6 @@ final class AddressBarButtonsViewController: NSViewController {
             }
             closePrivacyDashboard()
             closePermissionPopovers()
-            // The force-show flag is owned by the controller (one per window), not by a tab.
-            // If we just closed a Permission Center popover that was being held open by the
-            // voice-chat-failure flow, drop the override here too — otherwise it can leak
-            // onto the next tab's button visibility until `popoverDidClose` finally fires.
-            isForcingPermissionCenterButtonVisible = false
 
             self.tabViewModel = tabViewModel
             subscribeToUrl()
@@ -613,10 +603,12 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
-    /// Observes `aiChatVoiceChatPermissionCenterRequested` and opens the Permission Center
-    /// popover when the request originated from this window's selected tab. The notification
-    /// is broadcast app-wide; the comparison against `selectedTabViewModel?.tab.webView`
-    /// scopes it to the right window and skips background tabs.
+    /// Observes `aiChatVoiceChatPermissionCenterRequested` and opens the standalone
+    /// system-disabled info popover when the request originated from this window's selected
+    /// tab. The notification is broadcast app-wide; the comparison against
+    /// `selectedTabViewModel?.tab.webView` scopes it to the right window and skips background
+    /// tabs. `DuckAiVoiceChatFailureHandler` only posts this notification when the OS has
+    /// already denied mic access, so we route straight to the OS-disabled remediation surface.
     private func subscribeToAIChatVoiceChatPermissionRequests() {
         NotificationCenter.default.addObserver(
             self,
@@ -628,28 +620,22 @@ final class AddressBarButtonsViewController: NSViewController {
 
     @objc private func handleAIChatVoiceChatPermissionRequested(_ notification: Notification) {
         guard let sourceWebView = notification.object as? WKWebView,
-              tabCollectionViewModel.selectedTabViewModel?.tab.webView === sourceWebView else {
+              let tabViewModel = tabCollectionViewModel.selectedTabViewModel,
+              tabViewModel.tab.webView === sourceWebView else {
             return
         }
         // Dedupe: ignore repeated requests while the popover is already on screen.
-        if let existing = permissionCenterPopover, existing.isShown {
+        if let existing = systemDisabledInfoPopover, existing.isShown {
             return
         }
-        // Force the shield button visible for the duration of this popover. On duck.ai the
-        // AI chat omnibar panel normally suppresses left-side indicators
-        // (`isAIChatPanelActive`); without this override the Permission Center popover would
-        // have no anchor. The flag is cleared by `popoverDidClose` when the popover closes.
-        isForcingPermissionCenterButtonVisible = true
+        // `isDuckAiVoiceChatSystemMicDenied` keeps the shield visible whenever the OS denies
+        // mic access on duck.ai — that's also the precondition for this notification firing.
+        // Force a layout pass before anchoring so the shield's frame is current.
         updateButtons()
-        // The button was just flipped from hidden→shown; force a layout pass so its frame is
-        // current before we anchor the popover, otherwise `permissionCenterButton.bounds`
-        // can be `.zero` and the popover is positioned at a degenerate rect.
         view.layoutSubtreeIfNeeded()
-        guard permissionCenterButton.isVisible else {
-            isForcingPermissionCenterButtonVisible = false
-            return
-        }
-        permissionCenterButtonAction(self)
+        let url = tabViewModel.tab.content.urlForWebView ?? .empty
+        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+        showSystemDisabledInfoPopover(for: domain, permissionType: .microphone)
     }
 
     private func subscribeToUrl() {
@@ -803,18 +789,18 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
 
-        if isForcingPermissionCenterButtonVisible || isDuckAiVoiceChatSystemMicDenied(forDomain: domain) {
-            // Voice-chat failure flow needs the shield as a popover anchor regardless of the
-            // current address-bar state (focused text field, AI chat omnibar suppression).
-            // `isForcingPermissionCenterButtonVisible` is reset by `popoverDidClose`;
-            // `isDuckAiVoiceChatSystemMicDenied` is a derived check so the shield stays around
-            // for the user to re-open the OS-disabled warning after dismissing it.
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) {
+            // While the OS denies mic access on duck.ai under the voice-chat flag, keep the
+            // shield as an anchor for `systemDisabledInfoPopover` regardless of the current
+            // address-bar state (focused text field, AI chat omnibar suppression). The check
+            // is derived from current OS state, so the shield stays available for the user to
+            // re-open the warning after dismissing it and clears as soon as the OS state
+            // changes or they navigate away.
             permissionCenterButton.isShown = true
         } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
             // FE owns the in-page UI for active mic usage — so we don't need the shield to
-            // appear for mic alone. It surfaces only when our voice-chat failure flow flips
-            // `isForcingPermissionCenterButtonVisible` (OS-denied case).
+            // appear for mic alone. It surfaces only via the OS-denied branch above.
             permissionCenterButton.isShown = false
         } else {
             // `isAIChatPanelActive` normally suppresses the shield (clean omnibar on duck.ai
@@ -843,9 +829,9 @@ final class AddressBarButtonsViewController: NSViewController {
     /// per-site mic permission and the FE handles in-page voice-chat UI, so the shield has
     /// nothing actionable to surface by default — neither the auto-granted persisted mic
     /// nor an active mic in `usedPermissions` should make it appear. The voice-chat failure
-    /// flow uses `isForcingPermissionCenterButtonVisible` to surface the button when the OS
-    /// has denied access. Non-mic permissions (e.g. user-granted notifications) still keep
-    /// the button visible.
+    /// flow uses `isDuckAiVoiceChatSystemMicDenied` to surface the button as an anchor for
+    /// the OS-disabled remediation popover when the OS has denied access. Non-mic permissions
+    /// (e.g. user-granted notifications) still keep the button visible.
     private func shouldSuppressShieldOnDuckAi(forDomain domain: String, tabViewModel: TabViewModel) -> Bool {
         guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
               domain == URL.duckAi.host else {
@@ -857,11 +843,11 @@ final class AddressBarButtonsViewController: NSViewController {
         return !hasOtherPersisted && !hasOtherUsed
     }
 
-    /// Mirrors the predicate that drives `PermissionCenterViewModel.buildDuckAiMicSystemDisabledItemIfNeeded`:
-    /// while the OS denies mic access on duck.ai under the voice-chat flag, keep the shield in the
-    /// address bar so the user can re-open the system-disabled warning after dismissing it. The
-    /// check is derived from current OS state (no stored flag), so it clears the moment the user
-    /// grants access in System Settings or navigates away from duck.ai.
+    /// While the OS denies mic access on duck.ai under the voice-chat flag, keep the shield
+    /// in the address bar so it can anchor `systemDisabledInfoPopover` and the user can
+    /// re-open the remediation message after dismissing it. The check is derived from
+    /// current OS state (no stored flag), so it clears the moment the user grants access in
+    /// System Settings or navigates away from duck.ai.
     private func isDuckAiVoiceChatSystemMicDenied(forDomain domain: String) -> Bool {
         guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
               domain == URL.duckAi.host else {
@@ -1909,6 +1895,19 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
 
+        // On duck.ai with OS mic denied, the shield only exists as an anchor for the
+        // system-disabled remediation surface — route the click to that popover and toggle it
+        // if it's already shown.
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: url.host ?? "") {
+            if let existing = systemDisabledInfoPopover, existing.isShown {
+                existing.close()
+                systemDisabledInfoPopover = nil
+            } else {
+                showSystemDisabledInfoPopover(for: domain, permissionType: .microphone)
+            }
+            return
+        }
+
         // Get popup queries for the Permission Center
         let popupQueries = tabViewModel.tab.permissions.authorizationQueries.filter { $0.permissions.contains(.popups) }
 
@@ -2629,12 +2628,6 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
             permissionCenterButton.mouseOverColor = .buttonMouseOver
-            // If we forced the button visible for the voice-chat failure flow, let the next
-            // `updateButtons()` re-apply the normal `isAIChatPanelActive` suppression.
-            if isForcingPermissionCenterButtonVisible {
-                isForcingPermissionCenterButtonVisible = false
-                updateButtons()
-            }
         default:
             break
         }

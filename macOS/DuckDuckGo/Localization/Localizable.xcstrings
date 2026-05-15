@@ -68615,6 +68615,30 @@
         }
       }
     },
+    "permission.authorization.microphone" : {
+      "comment" : "Popover asking for domain %@ to use the microphone",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%@“ website would like to use your microphone."
+          }
+        }
+      }
+    },
+    "permission.authorization.microphone.duckai-voice-chat" : {
+      "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai voice chat requires microphone access."
+          }
+        }
+      }
+    },
     "permission.authorization.notifications.format" : {
       "comment" : "Popover asking for domain %@ to send notifications",
       "extractionState" : "extracted_with_value",

@@ -29,8 +29,9 @@ protocol DuckAiVoiceChatFailureHandling: AnyObject {
 
 /// Acts on Duck.ai voice-chat failures forwarded from the JS bridge. When the FE reports a
 /// `NotAllowedError` and the OS has actually denied microphone access to the app, this
-/// surfaces the existing Permission Center popover anchored to the active tab so the user
-/// can remediate. Other reasons are logged as `other` for telemetry and otherwise ignored.
+/// surfaces the system-disabled remediation popover anchored to the address-bar shield so
+/// the user can open System Settings → Privacy. Other reasons are logged as `other` for
+/// telemetry and otherwise ignored.
 ///
 /// Dependencies are injected to make the class fully unit-testable:
 /// - `microphoneAuthorizationStatusProvider` for the OS state
@@ -134,7 +135,10 @@ final class NotificationCenterPermissionCenterPresenter: DuckAiVoiceChatPermissi
 
 extension NSNotification.Name {
     /// Posted when Duck.ai voice chat failed due to OS-level microphone denial and native
-    /// should surface the Permission Center popover. `object` is the source `WKWebView`.
+    /// should surface the system-disabled remediation popover. `object` is the source
+    /// `WKWebView`. The receiver (`AddressBarButtonsViewController`) anchors the popover to
+    /// the address-bar shield, which is kept visible by `isDuckAiVoiceChatSystemMicDenied`
+    /// for the duration of the OS-denied state.
     static let aiChatVoiceChatPermissionCenterRequested: NSNotification.Name =
         Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceChatPermissionCenterRequested")
 }

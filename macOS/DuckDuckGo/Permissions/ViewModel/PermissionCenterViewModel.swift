@@ -470,14 +470,6 @@ final class PermissionCenterViewModel: ObservableObject {
         // Build items for non-external-scheme permissions
         var items: [PermissionCenterItem] = otherPermissions.map { buildPermissionItem(for: $0) }
 
-        // Inject a synthetic OS-denied warning row for duck.ai/mic when the user has revoked
-        // microphone access at the system level. There is no persisted entry to surface (the
-        // override never writes), so the row is built ad-hoc and locked.
-        if !items.contains(where: { $0.permissionType == .microphone }),
-           let syntheticItem = buildDuckAiMicSystemDisabledItemIfNeeded() {
-            items.append(syntheticItem)
-        }
-
         // Group all external schemes into a single row
         if let groupedItem = buildExternalSchemesItem(from: externalSchemePermissions) {
             items.append(groupedItem)
@@ -517,10 +509,10 @@ final class PermissionCenterViewModel: ObservableObject {
         // On duck.ai with the voice-chat flag on, `DuckAiVoiceChatPermissionOverride` forces
         // `.microphone` to `.allow` at read time. A regular editable row here would read the
         // masked `.allow` through the override and let the user make a change that's silently
-        // re-masked. Drop it — the only mic UI for duck.ai under the flag is the synthetic
-        // OS-denied warning injected by `loadPermissions`. With the flag off, the override
-        // returns nil and the real persisted decision (if any) is the user's actual state,
-        // so the row stays.
+        // re-masked, so drop it. The OS-denied remediation surface lives in
+        // `SystemDisabledPermissionInfoView`, anchored to the address-bar shield — not in the
+        // Permission Center. With the flag off, the override returns nil and the real
+        // persisted decision (if any) is the user's actual state, so the row stays.
         if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow), domain == URL.duckAi.host {
             otherPermissions.removeAll { $0 == .microphone }
         }
@@ -564,37 +556,6 @@ final class PermissionCenterViewModel: ObservableObject {
             checkSystemDisabledAsync(for: item)
         }
 
-        return item
-    }
-
-    /// Builds a read-only duck.ai/mic row to surface the OS-disabled warning when the user has
-    /// revoked microphone access at the system level. Returns `nil` when the flag is off, the
-    /// current domain isn't duck.ai, or the OS state has nothing to remediate. The row carries
-    /// `.denied` synchronously so the warning renders on first paint without waiting for the
-    /// async system-state probe.
-    private func buildDuckAiMicSystemDisabledItemIfNeeded() -> PermissionCenterItem? {
-        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
-              domain == URL.duckAi.host else {
-            return nil
-        }
-        let authState = systemPermissionManager.cachedAuthorizationState(for: .microphone)
-        switch authState {
-        case .denied, .restricted:
-            break
-        case .authorized, .notDetermined, .systemDisabled:
-            return nil
-        }
-        var item = PermissionCenterItem(
-            id: .microphone,
-            permissionType: .microphone,
-            domain: domain,
-            decision: .allow,
-            systemAuthorizationState: authState,
-            state: .inactive,
-            blockedPopups: [],
-            externalSchemes: []
-        )
-        item.isLocked = true
         return item
     }
 

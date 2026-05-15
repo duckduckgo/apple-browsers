@@ -276,8 +276,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
-            chromeDelegate?.setNavigationBarHidden(false)
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
         }
         delegate = nil
         chromeDelegate = nil
@@ -462,19 +461,16 @@ extension NewTabPageViewController {
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
 
-        // For the chat-path "try visiting a site" dialog hide the address bar and lock toolbar
-        // controls so the user can only choose from the preset suggestions. Showing the address
-        // bar or leaving controls interactive lets users bypass the onboarding step (by typing a
-        // search or switching tabs), causing edge-cases.
-        // Defer the bar hide to the next run loop so that any pending beginEditing() call in
-        // onboardingCompleted() finishes activating the keyboard before we hide the bar
-        // (setNavigationBarHidden calls hideKeyboard internally).
-        if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
-            guard (parent as? MainViewController)?.currentTab?.isLoading != true else { return }
+        // For the chat-path "try visiting a site" dialog, hide both the address bar and toolbar
+        // so the user can only choose from the preset suggestions. Showing the bars lets users
+        // bypass the onboarding step (by typing a search or switching tabs), causing edge-cases.
+        // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
+        // (which calls hideKeyboard internally).
+        if spec == .subsequent,
+           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
             didHideBarsForChatPathVisitSiteDialog = true
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(true)
             DispatchQueue.main.async { [weak self] in
-                self?.chromeDelegate?.setNavigationBarHidden(true)
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
             }
         }
 
@@ -506,8 +502,7 @@ extension NewTabPageViewController {
         isShowingDuckAICompletionDialog = false
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
-            chromeDelegate?.setNavigationBarHidden(false)
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
         }
         if didDismissDuckAICompletionDialog {
             // Restore NTP visibility that was muted during the chat-path handoff so the

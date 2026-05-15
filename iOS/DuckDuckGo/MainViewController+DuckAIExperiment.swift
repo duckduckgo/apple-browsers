@@ -160,18 +160,6 @@ extension MainViewController {
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
     }
 
-    /// Like `setExperimentFireControlsLocked` but also disables the fire button.
-    /// Used during the chat-path "try visiting a site" dialog where the fire button
-    /// must be locked too (unlike the fire onboarding step where it must stay tappable).
-    func setChatPathVisitSiteControlsLocked(_ locked: Bool) {
-        setExperimentFireControlsLocked(locked)
-        if let fireButtonView = viewCoordinator.toolbarFireBarButtonItem.customView {
-            fireButtonView.alpha = locked ? 0.5 : 1
-            fireButtonView.isUserInteractionEnabled = !locked
-        }
-        viewCoordinator.omniBar.barView.fireButton.isEnabled = !locked
-    }
-
     // MARK: Completion
 
     func completeExperimentDuckAIFireOnboarding() {

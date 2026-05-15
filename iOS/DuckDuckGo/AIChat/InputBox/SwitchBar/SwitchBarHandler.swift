@@ -108,6 +108,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
@@ -138,14 +139,14 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+        guard unifiedToggleInputFeature.isFeatureFlagEnabled else {
             return devicePlatform.isIphone
         }
         return false
     }
 
     var shouldDisableAutocorrectOnEmpty: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) || devicePlatform.isIphone
+        unifiedToggleInputFeature.isFeatureFlagEnabled || devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -207,6 +208,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
@@ -216,6 +218,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
         self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab

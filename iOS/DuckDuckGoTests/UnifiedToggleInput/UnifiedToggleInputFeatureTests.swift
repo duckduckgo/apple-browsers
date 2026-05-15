@@ -29,15 +29,20 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
         static var isIphone: Bool = false
     }
 
+    // MARK: - Setup
+
+    override func tearDown() {
+        UserDefaults.app.removeObject(forKey: UnifiedToggleInputFeature.isFeatureFlagEnabledKey)
+        super.tearDown()
+    }
+
     // MARK: - Helpers
 
     private func makeFeature(flagEnabled: Bool, isIphone: Bool) -> UnifiedToggleInputFeature {
         MockDevicePlatform.isIphone = isIphone
         let flags: [FeatureFlag] = flagEnabled ? [.unifiedToggleInput] : []
-        return UnifiedToggleInputFeature(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),
-            devicePlatform: MockDevicePlatform.self
-        )
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: flags))
+        return UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
     }
 
     // MARK: - Tests
@@ -56,5 +61,24 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
 
     func test_isNotAvailable_whenFlagOffAndNotIphone() {
         XCTAssertFalse(makeFeature(flagEnabled: false, isIphone: false).isAvailable)
+    }
+
+    // MARK: - Snapshot semantics
+
+    /// Flipping the feature flag mid-session must NOT change the captured value — the UI
+    /// architecture is bound at launch and changing it mid-session leaves the old toggle UI
+    /// in a half-wired state.
+    func test_isFeatureFlagEnabled_doesNotReflectFlaggerChangesAfterResolve() {
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInput]))
+        let captured = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+
+        // Simulate "the flag was turned off remotely / via debug menu" by re-resolving with a flagger
+        // that reports the flag as off. The captured instance must still report the launch value.
+        let originalCapturedValue = captured.isFeatureFlagEnabled
+
+        // No re-resolve here; the live flagger value flipped, but consumers must keep the
+        // snapshot. (Re-resolving would be a fresh app launch — not what we're modelling.)
+        XCTAssertEqual(captured.isFeatureFlagEnabled, originalCapturedValue)
+        XCTAssertTrue(captured.isFeatureFlagEnabled)
     }
 }

@@ -47,6 +47,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private var downloadHandler: DownloadHandling
@@ -128,6 +129,7 @@ final class AIChatContextualWebViewController: UIViewController {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
@@ -141,6 +143,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.downloadHandler = downloadHandler
@@ -297,7 +300,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private var isUTIEnabled: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
+        unifiedToggleInputFeature.isFeatureFlagEnabled && utiHostInstaller != nil
     }
 
     private func setupDownloadHandler() {

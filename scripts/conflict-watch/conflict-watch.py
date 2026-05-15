@@ -188,7 +188,7 @@ BOT_AUTHORS = {
     if a.strip()
 }
 
-TITLE_PREFIX = "[conflict-watch]"
+TITLE_PREFIX = "Likely merge conflict:"
 TITLE_SEP = " ↔ "
 COMPARE_URL_TEMPLATE = f"https://github.com/{REPO}/compare/{{a}}...{{b}}"
 
@@ -282,9 +282,8 @@ class RunSummary:
     pairs_with_both: int = 0
     pairs_below_line_threshold: int = 0
     pairs_same_author: int = 0
+    pairs_already_reported: int = 0
     tasks_created: int = 0
-    tasks_updated: int = 0
-    tasks_reopened: int = 0
     tasks_skipped_cap: int = 0
     errors: list[str] = field(default_factory=list)
     skipped_pairs: list[str] = field(default_factory=list)
@@ -875,92 +874,103 @@ def asana_mention(b: Branch) -> str:
     return html_escape(b.author_name or b.author_email or "unknown")
 
 
-def render_branch_line_html(b: Branch) -> str:
-    parts = [
-        f"<strong>{html_escape(b.name)}</strong>",
-        f"last commit {html_escape(b.short_sha)} by {asana_mention(b)}",
-        f"at {html_escape(b.committer_iso)}",
-    ]
-    if b.pr_url:
-        parts.append(f'(<a href="{html_escape(b.pr_url)}">PR</a>)')
-    return "<li>" + " — ".join(parts) + "</li>"
+def _author_label(b: Branch) -> str:
+    """Plain-text author label for the task description (no mentions —
+    description is informational; the kickoff comment carries the
+    notification)."""
+    return html_escape(
+        b.author_name or b.author_email or b.github_login or "unknown"
+    )
+
+
+def _branches_alpha(pair: ConflictPair) -> tuple[Branch, Branch]:
+    """Return the pair's branches in alphabetical name order so the
+    rendered task always matches the alphabetised title."""
+    if pair.a.name <= pair.b.name:
+        return pair.a, pair.b
+    return pair.b, pair.a
 
 
 def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
-    a_name, b_name = sorted([pair.a.name, pair.b.name])
-    compare_url = COMPARE_URL_TEMPLATE.format(a=a_name, b=b_name)
+    """Plain-English description for the conflict task.
+
+    Lead sentence carries the action so the inbox preview is meaningful
+    on its own; structured sections follow with branch tips, file list,
+    GitHub compare link, and a detection footnote.
+    """
+    a_branch, b_branch = _branches_alpha(pair)
+    compare_url = COMPARE_URL_TEMPLATE.format(a=a_branch.name, b=b_branch.name)
+    n_files = len(pair.hard_files)
+    n_lines = pair.hard_conflict_lines
+    file_word = "file" if n_files == 1 else "files"
+
     parts: list[str] = ["<body>"]
+    parts.append(
+        f"<strong>{html_escape(a_branch.name)}</strong> and "
+        f"<strong>{html_escape(b_branch.name)}</strong> both modify the same "
+        f"lines in {n_files} {file_word} — {n_lines} conflict line"
+        f"{'' if n_lines == 1 else 's'} total. "
+        "Whoever lands first is fine; the other branch will need to rebase "
+        "and resolve the overlap before merging."
+    )
+    parts.append("")
+
     parts.append("<strong>Branches</strong>")
     parts.append("<ul>")
-    parts.append(render_branch_line_html(pair.a))
-    parts.append(render_branch_line_html(pair.b))
+    for b in (a_branch, b_branch):
+        pr_segment = (
+            f' (<a href="{html_escape(b.pr_url)}">PR</a>)'
+            if b.pr_url else " (no open PR yet)"
+        )
+        parts.append(
+            f"<li>{html_escape(b.name)} — last commit "
+            f"<code>{html_escape(b.short_sha)}</code> by {_author_label(b)}"
+            f"{pr_segment} on {html_escape(b.committer_iso)}</li>"
+        )
     parts.append("</ul>")
-    parts.append(f"<em>Merge base:</em> {html_escape(pair.merge_base[:7])}\n")
     parts.append("")
-    if pair.hard_files:
-        parts.append(f"<strong>Hard-conflict files ({len(pair.hard_files)})</strong>")
-        parts.append("<ul>")
-        parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.hard_files)
-        parts.append("</ul>")
-    else:
-        parts.append("<em>Hard-conflict files:</em> none")
+
+    parts.append(f"<strong>Files in conflict ({n_files})</strong>")
+    parts.append("<ul>")
+    parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.hard_files)
+    parts.append("</ul>")
     parts.append("")
-    if INCLUDE_SOFT_CONFLICTS:
-        if pair.soft_files:
-            parts.append(
-                f"<strong>Soft-conflict files (same file edited on different "
-                f"lines, {len(pair.soft_files)})</strong>"
-            )
-            parts.append("<ul>")
-            parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.soft_files)
-            parts.append("</ul>")
-        else:
-            parts.append("<em>Soft-conflict files:</em> none")
-        parts.append("")
+
     parts.append(
         f'Compare on GitHub: <a href="{html_escape(compare_url)}">'
-        f"{html_escape(a_name)}...{html_escape(b_name)}</a>"
+        f"{html_escape(a_branch.name)}...{html_escape(b_branch.name)}</a>"
     )
     parts.append("")
     parts.append(
-        f"Detected: {html_escape(today_local)} by daily conflict-watch routine."
+        f"<em>Detected {html_escape(today_local)} by conflict-watch "
+        "(runs daily at 07:00 CEST / 06:00 CET).</em>"
     )
     parts.append("</body>")
     return "\n".join(parts)
 
 
-def render_comment_html(pair: ConflictPair, today_local: str, *,
-                        reappeared: bool = False) -> tuple[str, str]:
-    head = ("Conflict reappeared after task was closed."
-            if reappeared else "Today's snapshot:")
-    hard = (", ".join(html_escape(p) for p in pair.hard_files)
-            if pair.hard_files else "none")
-    items = [
-        f"<li>{html_escape(pair.a.name)}: {html_escape(pair.a.short_sha)}</li>",
-        f"<li>{html_escape(pair.b.name)}: {html_escape(pair.b.short_sha)}</li>",
-        f"<li>Hard-conflict files ({len(pair.hard_files)}): {hard}</li>",
-    ]
-    if INCLUDE_SOFT_CONFLICTS:
-        soft = (", ".join(html_escape(p) for p in pair.soft_files)
-                if pair.soft_files else "none")
-        items.append(
-            f"<li>Soft-conflict files ({len(pair.soft_files)}): {soft}</li>"
+def render_creation_comment_html(pair: ConflictPair) -> str:
+    """Kickoff comment posted right after task creation. Carries the
+    @-mentions (so this is what fires the inbox notification) and a
+    short next-steps prompt. In NO_MENTIONS mode the lead-in switches
+    to plain author names and no notification fires.
+    """
+    a_branch, b_branch = _branches_alpha(pair)
+    rest = (
+        " — your branches are likely to conflict at merge. "
+        "If you're already aware, just mark this task complete. "
+        "Otherwise, use this thread to coordinate and mark it complete "
+        "once sorted."
+    )
+    if NO_MENTIONS:
+        head = (
+            f"Heads up {_author_label(a_branch)} and {_author_label(b_branch)}"
         )
-    cc_segment = (
-        ""
-        if NO_MENTIONS
-        else f" (cc {asana_mention(pair.a)} {asana_mention(pair.b)})"
-    )
-    html = (
-        "<body>"
-        f"{html_escape(head)} {html_escape(today_local)}{cc_segment}"
-        "<ul>"
-        + "".join(items)
-        + "</ul>"
-        "</body>"
-    )
-    plain = f"{head} {today_local}"
-    return html, plain
+    else:
+        head = (
+            f"Hey {asana_mention(a_branch)} {asana_mention(b_branch)}"
+        )
+    return f"<body>{head}{rest}</body>"
 
 
 # ---------------------------------------------------------------------------
@@ -969,73 +979,58 @@ def render_comment_html(pair: ConflictPair, today_local: str, *,
 
 def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
               state: dict, summary: RunSummary) -> None:
+    """Single-write-per-pair: each pair gets one Asana task (description
+    + kickoff comment) on first detection. If the same pair surfaces
+    again — open or closed — the run skips it. Avoids inbox spam at the
+    cost of stale task bodies; teammates can complete a task and trust
+    it won't be reopened.
+    """
     today_local = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     today_utc = datetime.now(timezone.utc).isoformat()
 
-    # Prefetch all existing conflict-watch tasks in the project once,
-    # rather than searching per conflict (which spams the Asana API and
-    # trips its rate limit on the first hundred-pair run).
     try:
         existing_index = asana.list_project_tasks_by_name(prefix=TITLE_PREFIX)
         logger.info("Prefetched %d existing %s tasks from Asana",
                     len(existing_index), TITLE_PREFIX)
     except AsanaError as exc:
         logger.warning("Failed to prefetch project tasks (%s); "
-                       "falling back to per-conflict lookups", exc)
-        existing_index = None
+                       "treating all pairs as new (may create duplicates)", exc)
+        existing_index = {}
 
     for pair in conflicts:
         title = pair.title_key
+        existing = existing_index.get(title)
+
+        if existing is not None:
+            status = "completed" if existing.get("completed") else "open"
+            summary.pairs_already_reported += 1
+            logger.info(
+                "Pair %s already has Asana task %s (status=%s); skipping",
+                title, existing.get("gid", "?"), status,
+            )
+            continue
+
+        if summary.tasks_created >= MAX_NEW_TASKS:
+            summary.tasks_skipped_cap += 1
+            logger.warning(
+                "Hard cap of %d new tasks reached; skipping create for %s",
+                MAX_NEW_TASKS, title,
+            )
+            continue
+
         body_html = render_task_body_html(pair, today_local)
-
-        existing: Optional[dict] = None
-        if existing_index is not None:
-            existing = existing_index.get(title)
-        else:
-            cached = state.get("pairs", {}).get(title)
-            if cached and cached.get("asanaTaskGid"):
-                try:
-                    existing = asana.get_task(cached["asanaTaskGid"])
-                    if existing and existing.get("name") != title:
-                        existing = None
-                except AsanaError as exc:
-                    logger.warning("Stale cache for %s: %s", title, exc)
-                    existing = None
-
         try:
-            if existing is None:
-                if summary.tasks_created >= MAX_NEW_TASKS:
-                    summary.tasks_skipped_cap += 1
-                    logger.warning(
-                        "Hard cap of %d new tasks reached; skipping create for %s",
-                        MAX_NEW_TASKS, title,
-                    )
-                    continue
-                created = asana.create_task(title, body_html)
-                gid = created.get("gid", "")
-                logger.info("Created Asana task %s for %s", gid, title)
-                summary.tasks_created += 1
-                followers = [u for u in (pair.a.asana_gid, pair.b.asana_gid) if u]
-                if gid and gid != "dry-run" and followers and not NO_MENTIONS:
-                    asana.add_followers(gid, followers)
-                _record_state(state, title, pair, gid, "new", today_utc)
-            else:
-                gid = existing.get("gid", "")
-                completed = bool(existing.get("completed"))
-                if completed:
-                    asana.reopen_task(gid)
-                    html, plain = render_comment_html(pair, today_local,
-                                                     reappeared=True)
-                    asana.add_comment(gid, html, plain)
-                    logger.info("Reopened Asana task %s for %s", gid, title)
-                    summary.tasks_reopened += 1
-                    _record_state(state, title, pair, gid, "reopened", today_utc)
-                else:
-                    html, plain = render_comment_html(pair, today_local)
-                    asana.add_comment(gid, html, plain)
-                    logger.info("Commented on Asana task %s for %s", gid, title)
-                    summary.tasks_updated += 1
-                    _record_state(state, title, pair, gid, "open", today_utc)
+            created = asana.create_task(title, body_html)
+            gid = created.get("gid", "")
+            logger.info("Created Asana task %s for %s", gid, title)
+            summary.tasks_created += 1
+            _record_state(state, title, pair, gid, "new", today_utc)
+            # Kickoff comment carries the @-mentions (and therefore the
+            # inbox notification + auto-follow). Without it, the task
+            # would be silently created with no one notified.
+            if gid and gid != "dry-run":
+                comment_html = render_creation_comment_html(pair)
+                asana.add_comment(gid, comment_html, plain_preview="")
         except AsanaError as exc:
             summary.errors.append(f"asana write failed for {title}: {exc}")
 
@@ -1503,9 +1498,9 @@ def main() -> int:
     for k, v in asdict(summary).items():
         print(f"{k}: {v}")
     print(
-        f"Conflict watch: {len(conflicts)} pairs reported "
-        f"({summary.tasks_created} new / {summary.tasks_updated} updated / "
-        f"{summary.tasks_reopened} reopened / "
+        f"Conflict watch: {len(conflicts)} pairs found "
+        f"({summary.tasks_created} new / "
+        f"{summary.pairs_already_reported} already-reported / "
         f"{summary.tasks_skipped_cap} skipped-by-cap)"
     )
     return 0 if not summary.errors else 1

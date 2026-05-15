@@ -19,37 +19,62 @@ Two kinds of conflict are detected:
 Filters
 -------
 * Branch tip committed within the recency window.
-* Branch is not already merged into ``main`` (squash-merged refs are
-  detected via ``git diff --quiet main...branch``).
+* Branch is not already merged into ``main`` (``git diff --quiet
+  main..branch`` — two-dot, so it catches squash-merged refs whose
+  tip content already matches main).
+* Branch's most recent PR (if any) is OPEN — branches whose latest PR
+  is MERGED or CLOSED-unmerged are skipped via the GitHub API (catches
+  the "PR landed but the bare mirror hasn't fetched yet" race).
+* Pair authors differ — single-author pair-conflicts aren't a
+  coordination signal.
 * Branch author is not a known bot (dependabot, renovate, …).
 * Pairs are ordered by recency-of-newer-tip so the time budget hits
   the freshest pairs first.
 
 Idempotency
 -----------
-Tasks are deduplicated by an order-independent title of the form
-``[conflict-watch] <branchA> ↔ <branchB>`` (branch names sorted
-alphabetically). Re-running finds the existing task and adds a comment
-instead of creating a duplicate.
+Each pair gets at most one Asana task, ever. Tasks are deduplicated by
+an order-independent title of the form ``Likely merge conflict:
+<branchA> ↔ <branchB>`` (branch names sorted alphabetically).
 
-Behaviour by task state:
+* No matching task → create a new task + post a kickoff comment
+  (capped at ``CW_MAX_NEW_TASKS`` per run).
+* Matching task (open or completed) → leave it alone. No daily
+  snapshot comments, no reopens. Once a teammate completes a task it
+  stays closed.
 
-* No matching task → create a new one (capped at ``CW_MAX_NEW_TASKS``
-  per run).
-* Matching open task → add a comment with today's snapshot.
-* Matching completed task → re-open it and add a "conflict reappeared"
-  comment.
+End-of-run sweep
+----------------
+After reconciliation, the run walks every open ``Likely merge
+conflict:`` task in the project and auto-closes it if either of two
+conditions holds:
+
+* one of its branches has been merged (PR state ``MERGED``) → the
+  conflict is no longer actionable;
+* a fresh ``merge-tree`` probe on the current tips finds no remaining
+  conflict above ``CW_MIN_CONFLICT_LINES`` → the overlap was rebased
+  or refactored away, or the original detection was a false positive
+  that no longer reproduces.
+
+Each auto-close adds a one-line story explaining why.
 
 Tagging branch owners
 ---------------------
 If a user-map file is provided via ``CW_USER_MAP_PATH`` (a flat YAML of
-``github_login: asana_user_gid``), authors of the two branch tips are
-added as task followers and `@`-mentioned via Asana's rich-text format
-(``<a data-asana-gid="…"/>``) so they receive notifications.
+``github_login: asana_user_gid``), the kickoff comment posted right
+after task creation ``@``-mentions both branch authors using Asana's
+rich-text format (``<a data-asana-gid="…"/>``). Asana auto-adds
+mentioned users as task followers, so a single comment delivers the
+inbox notification *and* the long-term association. When
+``CW_NO_MENTIONS=1`` the mentions collapse to plain author names and
+no notification fires.
 
 Configuration
 -------------
-All knobs are environment variables (see ``CW_*`` constants below).
+All knobs are environment variables (see ``CW_*`` constants below);
+the optional ``CW_ROOT/config.env`` file feeds ``ASANA_PAT`` only —
+the ``CW_*`` constants are evaluated at import time, so they must be
+set in the process environment before the script runs.
 
 Required:
     ASANA_PAT          Asana personal access token
@@ -73,6 +98,9 @@ Optional (defaults shown):
     CW_MIN_CONFLICT_LINES=20
                           (skip pairs whose hard-conflict regions sum to
                            fewer lines after the always-ignore filter)
+    CW_NO_MENTIONS=0      (1 to render kickoff comments with plain author
+                           names instead of Asana @-mentions — no inbox
+                           notification fires; useful for first-run pilots)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
     CW_USER_MAP_PATH=     (path to a flat YAML of github→asana gid)
 
@@ -81,6 +109,10 @@ CLI flags
     --dry-run    Same as CW_DRY_RUN=1 — don't create / update Asana tasks.
     --self-test  Build a synthetic git repo and verify conflict detection.
     --once PAIR  Probe a single pair "branchA..branchB" and exit (debug).
+    --report     Probe all pairs and print a histogram + top conflict
+                 files in each bucket. No Asana calls. Used to calibrate
+                 CW_ALWAYS_IGNORE and CW_MIN_CONFLICT_LINES from real
+                 data; takes --top N for list size.
     --verbose    Verbose logging.
 
 Exit codes
@@ -570,7 +602,6 @@ def load_user_map() -> dict[str, str]:
 # Git: pairwise conflict probe
 # ---------------------------------------------------------------------------
 
-_CONFLICT_LINE = re.compile(r"^CONFLICT \([^)]+\): .* in (.+?)\s*$")
 _LEGACY_TRIPLE = re.compile(r"^(?:base|our|their)\s+\d+\s+\S+\s+(.+)$")
 _GIT_VERSION: Optional[tuple[int, int]] = None
 
@@ -686,10 +717,15 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
                 if stripped and re.fullmatch(r"[0-9a-f]{40,}", stripped):
                     merged_tree_oid = stripped
                     break
-            for line in (proc.stdout + "\n" + proc.stderr).splitlines():
-                m = _CONFLICT_LINE.match(line.strip())
-                if m:
-                    hard_files.add(m.group(1))
+            # Conflicted paths are emitted as stage-1/2/3 index entries:
+            #     <mode> <oid> <stage>\t<path>
+            # This is authoritative for every conflict type the
+            # --write-tree path produces (content, modify/delete,
+            # rename/delete, binary, …) so we don't need a second
+            # parser on the human-readable "CONFLICT (...): ..."
+            # messages — those had ambiguous file-path placement
+            # (e.g. "X deleted in HEAD and modified in branch") that
+            # made a regex unreliable.
             for line in proc.stdout.splitlines():
                 if "\t" in line:
                     left, _, path = line.partition("\t")
@@ -932,32 +968,12 @@ class AsanaClient:
         body = {"data": {"html_text": html_text}}
         self._request("POST", f"/tasks/{task_gid}/stories", body=body)
 
-    def reopen_task(self, task_gid: str) -> None:
-        if self.dry_run:
-            logger.info("[dry-run] would reopen %s", task_gid)
-            return
-        body = {"data": {"completed": False}}
-        self._request("PUT", f"/tasks/{task_gid}", body=body)
-
     def complete_task(self, task_gid: str) -> None:
         if self.dry_run:
             logger.info("[dry-run] would complete %s", task_gid)
             return
         body = {"data": {"completed": True}}
         self._request("PUT", f"/tasks/{task_gid}", body=body)
-
-    def add_followers(self, task_gid: str, user_gids: list[str]) -> None:
-        if not user_gids:
-            return
-        if self.dry_run:
-            logger.info("[dry-run] would add followers to %s: %s",
-                        task_gid, user_gids)
-            return
-        body = {"data": {"followers": user_gids}}
-        try:
-            self._request("POST", f"/tasks/{task_gid}/addFollowers", body=body)
-        except AsanaError as exc:
-            logger.warning("addFollowers failed for %s: %s", task_gid, exc)
 
 
 # ---------------------------------------------------------------------------
@@ -1636,7 +1652,6 @@ def main() -> int:
         return 0
 
     branches = list_active_branches(RECENCY_HOURS, summary)
-    summary.branches_checked = len(branches)
     logger.info("Active branches in last %dh (post-merged-filter): %d",
                 RECENCY_HOURS, len(branches))
 
@@ -1694,7 +1709,14 @@ def main() -> int:
         # filter) is below the noise floor. Soft-only pairs aren't
         # subject to the threshold — they're either off entirely or
         # already a coordination signal regardless of size.
+        #
+        # Skip the filter on the legacy git path (< 2.38): line counting
+        # requires a merged-tree OID from `merge-tree --write-tree`,
+        # which legacy doesn't produce. Without that, hard_conflict_lines
+        # is always 0 and the threshold would unconditionally drop every
+        # hard-only pair on a CI runner that happens to have old git.
         if (result.hard_files
+                and result.merged_tree_oid
                 and result.hard_conflict_lines < MIN_CONFLICT_LINES
                 and not result.soft_files):
             summary.pairs_below_line_threshold += 1

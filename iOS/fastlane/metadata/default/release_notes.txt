@@ -1,3 +1,1 @@
-• Start searching faster — we now give you a fresh tab when you open the app and an easy way to get back to your last used tab, with a link right below the address bar.
-• You can always customize the browser to show your last used tab when returning instead, and set an inactivity timer to delay your opening screen of choice. Go to Settings > General to customize.
-• This update also includes other bug fixes and improvements.
+• As usual, we've included some bug fixes and improvements.

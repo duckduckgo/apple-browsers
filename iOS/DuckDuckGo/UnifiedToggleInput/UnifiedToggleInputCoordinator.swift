@@ -254,7 +254,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
-    var onAnimatedDismissToOmnibar: (() -> Void)?
+    var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
     var isOmnibarSession: Bool {
         if case .omnibar = displayState { return true }
@@ -1655,13 +1655,25 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
-        // The inline X dismisses the same way the floating X does — forward to the
-        // content container's shared handler so both controls route through one path.
+        // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
+        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         contentViewController.onDismissRequested?()
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: viewController.handler.currentText)
+        let prefilledText = viewController.handler.currentText
+        // Outside omnibar editing the chip can't dismiss-to-omnibar; preserve the original
+        // straight-to-chat behavior to avoid wrong-destination collapses.
+        guard isOmnibarSession else {
+            delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
+            return
+        }
+        // Defer the chat request to the dismiss completion — its side-effects (omniBar.endEditing,
+        // sheet present, tab refresh) clobber the in-flight UTI mid-collapse otherwise.
+        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
+        onAnimatedDismissToOmnibar?({ [weak self] in
+            self?.delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
+        })
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {

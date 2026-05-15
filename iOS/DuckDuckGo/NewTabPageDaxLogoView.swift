@@ -17,17 +17,21 @@
 //  limitations under the License.
 //
 
+import Lottie
 import SwiftUI
 
 struct NewTabPageDaxLogoView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var animationName: String {
+        colorScheme == .dark ? "duckduckgo-ai-transition-dark.json" : "duckduckgo-ai-transition.json"
+    }
+
     var body: some View {
-        VStack(spacing: 12) {
-            Image(.home)
-                .resizable()
-                .aspectRatio(1, contentMode: .fit)
-                .frame(width: 96)
-            Image(.textDuckDuckGo)
-        }
+        Lottie.LottieView(animation: LottieAnimation.named(animationName))
+            .playbackMode(.paused(at: .progress(0)))
+            .frame(height: 162)
+            .id(animationName)
     }
 }
 

@@ -87,9 +87,6 @@ final class AIChatMentionPickerViewController: NSViewController {
         return rowViews[index].attachment
     }
 
-    /// Count of real (non-empty-state) rows. Used by the coordinator for arrow-key wrapping.
-    var rowCount: Int { rowViews.count }
-
     /// Moves the keyboard highlight to the next row, wrapping from the last back to the
     /// first. No-op when there are zero real rows (empty-state mode).
     func moveHighlightDown() {

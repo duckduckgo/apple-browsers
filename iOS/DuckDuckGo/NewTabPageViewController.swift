@@ -50,6 +50,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
+    private var didHideBarsForChatPathVisitSiteDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -273,6 +274,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
+        }
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -456,6 +461,20 @@ extension NewTabPageViewController {
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
 
+        // For the chat-path "try visiting a site" dialog, hide both the address bar and toolbar
+        // so the user can only choose from the preset suggestions. Showing the bars lets users
+        // bypass the onboarding step (by typing a search or switching tabs), causing edge-cases.
+        // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
+        // (which calls hideKeyboard internally).
+        if spec == .subsequent,
+           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            didHideBarsForChatPathVisitSiteDialog = true
+            DispatchQueue.main.async { [weak self] in
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            }
+        }
+
+
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -481,6 +500,10 @@ extension NewTabPageViewController {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
         isShowingDuckAICompletionDialog = false
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        }
         if didDismissDuckAICompletionDialog {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.

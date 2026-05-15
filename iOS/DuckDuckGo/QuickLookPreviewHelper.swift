@@ -17,8 +17,8 @@
 //  limitations under the License.
 //
 
-import UIKit
 import QuickLook
+import UIKit
 
 class QuickLookPreviewHelper: NSObject, FilePreview {
     private weak var viewController: UIViewController?
@@ -48,13 +48,7 @@ class QuickLookPreviewHelper: NSObject, FilePreview {
     func preview(completion: (() -> Void)?) {
         guard let viewController else { return }
         selfRetain = self
-        // Front-of-stack modals (address-bar editing, etc.) make UIKit drop our present silently.
-        let doPresent = { [qlPreview] in viewController.present(qlPreview, animated: true, completion: completion) }
-        if let presented = viewController.presentedViewController {
-            presented.dismiss(animated: false, completion: doPresent)
-        } else {
-            doPresent()
-        }
+        viewController.present(qlPreview, animated: true, completion: completion)
     }
 
     static func canPreview(_ url: URL) -> Bool {

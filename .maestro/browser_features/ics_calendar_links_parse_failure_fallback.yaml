@@ -7,8 +7,16 @@ tags:
 
 ---
 
-- runFlow:
-    file: ../shared/setup.yaml
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.icsCalendarLinks: "true"
 
 - assertVisible:
     id: "searchEntry"

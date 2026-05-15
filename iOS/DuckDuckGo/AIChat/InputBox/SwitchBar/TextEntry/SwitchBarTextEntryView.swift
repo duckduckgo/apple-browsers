@@ -307,6 +307,7 @@ class SwitchBarTextEntryView: UIView {
     /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
     func clearDismissSnapshot() {
         buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
+        placeholderLabel.text = placeholderText(for: currentMode)
         if textView.text != handler.currentText {
             textView.text = handler.currentText
             updatePlaceholderVisibility()

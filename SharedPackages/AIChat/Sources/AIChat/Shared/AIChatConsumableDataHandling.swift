@@ -143,8 +143,13 @@ public struct AIChatPageContextData: Codable, Equatable {
     public let truncated: Bool
     public let fullContentLength: Int
     public let attachable: Bool?
+    /// Discriminator for the duck.ai web app: presence marks a tab-picker context (e.g.
+    /// picked via the sidebar `@` picker or the omnibar's "Add Page Content" menu); absence
+    /// marks the current sidebar page. The omnibar strips this for the entry that matches
+    /// the active tab so the discriminator's semantics hold end-to-end.
+    public let tabId: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -152,6 +157,23 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.truncated = truncated
         self.fullContentLength = fullContentLength
         self.attachable = attachable
+        self.tabId = tabId
+    }
+
+    /// Returns a copy of this page context with the `tabId` field set to the given value.
+    /// Used at extraction time to stamp the originating tab id, and at omnibar submit time
+    /// to strip the id for the entry that matches the active tab.
+    public func withTabId(_ tabId: String?) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: title,
+            favicon: favicon,
+            url: url,
+            content: content,
+            truncated: truncated,
+            fullContentLength: fullContentLength,
+            attachable: attachable,
+            tabId: tabId
+        )
     }
 
     public struct PageContextFavicon: Codable, Equatable {

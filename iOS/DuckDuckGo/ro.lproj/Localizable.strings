@@ -3465,7 +3465,10 @@
 "settings.address.trackers.animation" = "Afișează în bara de adrese";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Alege ce vezi când revii după %@ de inactivitate.";
+"settings.afterInactivity.footer.format" = "Alege ce vezi când revii la DuckDuckGo după %@ de inactivitate.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Alege ce vezi când revii la DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 oră";
@@ -3479,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minute";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Niciuna";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 secundă";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d secunde";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Cronometru de inactivitate";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "După inactivitate";
+"settings.afterInactivity.label" = "Ecran de deschidere";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima filă utilizată";

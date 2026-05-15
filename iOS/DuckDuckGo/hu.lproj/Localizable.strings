@@ -3465,7 +3465,10 @@
 "settings.address.trackers.animation" = "Megjelenítés a címsorban";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Válaszd ki, mit jelenjen meg, ha %@ inaktivitás után visszatérsz.";
+"settings.afterInactivity.footer.format" = "Válaszd ki, mi jelenjen meg, amikor %@ tétlenség után visszatérsz a DuckDuckGóba.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Válaszd ki, mi jelenjen meg, amikor visszatérsz a DuckDuckGóba.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 óra";
@@ -3479,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d perc";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nincs";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 másodperc";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d másodperc";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Tétlenségi időzítő";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Inaktivitás után";
+"settings.afterInactivity.label" = "Nyitóképernyő";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";

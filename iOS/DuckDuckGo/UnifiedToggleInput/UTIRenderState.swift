@@ -25,12 +25,13 @@ struct UTIRenderState: Equatable {
     var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
-    var isFloatingSubmitVisible: Bool
+    var isFloatingReturnKeyVisible: Bool
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    /// True when the UTI is hosted by a Duck.ai tab.
+    var isAITab: Bool
 
     var isExpanded: Bool { cardLayout.isExpanded }
 
@@ -39,10 +40,10 @@ struct UTIRenderState: Equatable {
             cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
-            isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isAITab: isAITab
         )
     }
 

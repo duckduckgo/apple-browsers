@@ -238,7 +238,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.containerYCenterConstraint?.constant = offset
+        daxLogoManager.setLogoYOffset(offset)
     }
 
     func setLogoHidden(_ hidden: Bool) {

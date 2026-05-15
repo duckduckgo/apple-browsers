@@ -113,6 +113,9 @@ jobs:
     # by the stop_workflow flag.
     if: always() && !cancelled() && needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
+    outputs:
+      dmg-url: ${{ steps.set-common-env.outputs.dmg-url }}
+
     runs-on: macos-26-xlarge
     timeout-minutes: 10
 
@@ -334,13 +337,16 @@ jobs:
           echo "tasks=$tasks" >> $GITHUB_OUTPUT
 
       - name: Set common environment variables
+        id: set-common-env
         if: always()
         env:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
+          DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
           echo "APPCAST_PATCH_NAME=${{ steps.appcast.outputs.appcast-patch-name }}" >> $GITHUB_ENV
           echo "DMG_NAME=${DMG_NAME}" >> $GITHUB_ENV
-          echo "DMG_URL=${{ vars.DMG_URL_ROOT }}${DMG_NAME}" >> $GITHUB_ENV
+          echo "DMG_URL=${DMG_URL}" >> $GITHUB_ENV
+          echo "dmg-url=${DMG_URL}" >> $GITHUB_OUTPUT
           echo "RELEASE_BUCKET_NAME=${{ vars.RELEASE_BUCKET_NAME }}" >> $GITHUB_ENV
           echo "RELEASE_BUCKET_PREFIX=${{ vars.RELEASE_BUCKET_PREFIX }}" >> $GITHUB_ENV
           echo "RELEASE_TASK_ID=${{ steps.task-id.outputs.asana_task_id }}" >> $GITHUB_ENV
@@ -463,4 +469,6 @@ jobs:
     if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
 
     uses: ./.github/workflows/macos_create_variants.yml
+    with:
+      dmg-url: ${{ needs.publish-to-sparkle.outputs.dmg-url }}
     secrets: inherit

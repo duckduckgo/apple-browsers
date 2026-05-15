@@ -180,6 +180,7 @@
 		1DA84D322C119AE70011C80F /* SparkleUpdateMenuItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA84D312C119AE70011C80F /* SparkleUpdateMenuItemFactory.swift */; };
 		1DA860722BE3AE950027B813 /* DockPositionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA860712BE3AE950027B813 /* DockPositionProviderTests.swift */; };
 		1DA860732BE3AE950027B813 /* DockPositionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA860712BE3AE950027B813 /* DockPositionProviderTests.swift */; };
+		1DB433792FAB390D0047762C /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
 		1DB5E6212E2920A2009C692F /* Suggestion+GeneralPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB5E6202E29209E009C692F /* Suggestion+GeneralPixel.swift */; };
 		1DB5E6222E2920A2009C692F /* Suggestion+GeneralPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB5E6202E29209E009C692F /* Suggestion+GeneralPixel.swift */; };
 		1DB67F292B6FE4A6003DF243 /* WebViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB67F282B6FE4A6003DF243 /* WebViewSnapshotRenderer.swift */; };
@@ -227,8 +228,6 @@
 		1DE8222F2F6D6B4300177B99 /* NewTabPageOmnibarModelsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */; };
 		1DE906D32F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */; };
 		1DE906D42F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */; };
-		1DE906D62F3DBF5000C3B853 /* AIChatImageAttachmentsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D52F3DBF4F00C3B853 /* AIChatImageAttachmentsContainerView.swift */; };
-		1DE906D72F3DBF5000C3B853 /* AIChatImageAttachmentsContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D52F3DBF4F00C3B853 /* AIChatImageAttachmentsContainerView.swift */; };
 		1DEF3BAD2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DEF3BAE2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DF78E102CE6197B00AB898E /* Tab+WKWebExtensionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */; };
@@ -2207,6 +2206,26 @@
 		7BA930AF2E0DA5BF00723574 /* NavigationEngagementPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */; };
 		7BA930B12E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
 		7BA930B22E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
+		7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
+		7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
+		7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
+		7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
+		7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
+		7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
+		7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
+		7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
+		7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */; };
+		7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
+		7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
+		7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */; };
+		7BAB1A0100000000A0000015 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
+		7BAB1A0100000000A0000016 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
+		7BAB1A0100000000A0000017 /* AIChatFileAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */; };
+		7BAB1A0100000000A00000C1 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000C0 /* PointingHandButton.swift */; };
+		7BAB1A0100000000A00000C2 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000C0 /* PointingHandButton.swift */; };
+		7BAB1A0100000000A00000C3 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000C0 /* PointingHandButton.swift */; };
 		7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */; };
 		7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7BAF9E4C2A8A3CCA002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
@@ -4784,7 +4803,6 @@
 		1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionViewTests.swift; sourceTree = "<group>"; };
 		1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarModelsProviderTests.swift; sourceTree = "<group>"; };
 		1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatImageAttachmentThumbnailView.swift; sourceTree = "<group>"; };
-		1DE906D52F3DBF4F00C3B853 /* AIChatImageAttachmentsContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatImageAttachmentsContainerView.swift; sourceTree = "<group>"; };
 		1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoClearHandler.swift; sourceTree = "<group>"; };
 		1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+WKWebExtensionTab.swift"; sourceTree = "<group>"; };
 		1DF78E112CE61DB000AB898E /* MainWindowController+WKWebExtensionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+WKWebExtensionWindow.swift"; sourceTree = "<group>"; };
@@ -5601,6 +5619,13 @@
 		7BA7CC4D2AD11F6F0042E5CE /* NetworkProtectionIPCTunnelController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionIPCTunnelController.swift; sourceTree = "<group>"; };
 		7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationEngagementPixel.swift; sourceTree = "<group>"; };
 		7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksNavigationEngagementMetrics.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachment.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerMenuRowView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachmentCardView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachmentsCarouselView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPanelAttachment.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFileAttachmentCardView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A00000C0 /* PointingHandButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingHandButton.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
 		7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSiteInfoPublisher.swift; sourceTree = "<group>"; };
 		7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveDomainPublisher.swift; sourceTree = "<group>"; };
@@ -7607,7 +7632,13 @@
 				1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */,
 				1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */,
 				1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */,
-				1DE906D52F3DBF4F00C3B853 /* AIChatImageAttachmentsContainerView.swift */,
+				7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */,
+				7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */,
+				7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */,
+				7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */,
+				7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */,
+				7BAB1A0100000000A0000014 /* AIChatFileAttachmentCardView.swift */,
+				7BAB1A0100000000A00000C0 /* PointingHandButton.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -15422,7 +15453,13 @@
 				EED4D3E02C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */,
 				3706FBE3293F65D500E42796 /* WindowControllersManager.swift in Sources */,
 				37197EAA2942443D00394917 /* ModalSheetCancellable.swift in Sources */,
-				1DE906D72F3DBF5000C3B853 /* AIChatImageAttachmentsContainerView.swift in Sources */,
+				7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */,
+				7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */,
+				7BAB1A0100000000A0000015 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A00000C1 /* PointingHandButton.swift in Sources */,
 				31267C6B2B640C5200FEF811 /* DataBrokerProtectionAppEvents.swift in Sources */,
 				1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */,
 				BBF667FD2EE33E74003B9401 /* HomePageSetUpDependencies.swift in Sources */,
@@ -15852,6 +15889,13 @@
 				BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
 				BBFEE6C92E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,
 				1DE906D32F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */,
+				7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */,
+				7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */,
+				7BAB1A0100000000A0000016 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A00000C2 /* PointingHandButton.swift in Sources */,
 				B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */,
 				B602E8172A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
 				C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
@@ -17104,7 +17148,6 @@
 				85774AFF2A713D3B00DE0561 /* BookmarksBarMenuFactory.swift in Sources */,
 				4B9292A026670D2A00AD2C21 /* SpacerNode.swift in Sources */,
 				3775913629AB9A1C00E26367 /* SyncManagementDialogViewController.swift in Sources */,
-				1DE906D62F3DBF5000C3B853 /* AIChatImageAttachmentsContainerView.swift in Sources */,
 				CC26B6132F0BDEC600D380B6 /* NewTabPageNextStepsCardsPixelHandler.swift in Sources */,
 				7B7F5D242C52725A00826256 /* AddExcludedDomainButtonsView.swift in Sources */,
 				B6C0BB6729AEFF8100AE8E3C /* BookmarkExtension.swift in Sources */,
@@ -17769,6 +17812,13 @@
 				BB3A50B32EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift in Sources */,
 				B6040856274B830F00680351 /* DictionaryExtension.swift in Sources */,
 				B684592725C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift in Sources */,
+				1DB433792FAB390D0047762C /* AIChatTabAttachment.swift in Sources */,
+				7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */,
+				7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */,
+				7BAB1A0100000000A0000017 /* AIChatFileAttachmentCardView.swift in Sources */,
+				7BAB1A0100000000A00000C3 /* PointingHandButton.swift in Sources */,
 				B6DA06E62913F39400225DE2 /* MenuItemSelectors.swift in Sources */,
 				3712092C2C23383C003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */,
 				85589E9A27BFE3C30038AD11 /* FaviconView.swift in Sources */,

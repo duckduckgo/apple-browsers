@@ -260,6 +260,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
+
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
 }
@@ -433,8 +436,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
-    /// Enables attaching content from multiple open tabs to Duck.ai chat
-    case attachMoreTabs
+    /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
+    case sidebarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
+    case omnibarAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext

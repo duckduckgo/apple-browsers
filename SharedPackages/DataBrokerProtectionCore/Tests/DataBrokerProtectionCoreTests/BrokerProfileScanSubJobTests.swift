@@ -49,10 +49,20 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         mockDependencies.pixelHandler = self.mockPixelHandler
 
         sut = BrokerProfileScanSubJob(dependencies: mockDependencies)
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
     }
 
     private func makeFixtureIdentifiers() -> BrokerProfileScanSubJob.ScanIdentifiers {
         .init(brokerId: 1, profileQueryId: 1)
+    }
+
+    private func firedFirstScanPixel() -> Bool {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains { pixel in
+            if case .firstScan = pixel {
+                return true
+            }
+            return false
+        }
     }
 
     private func makeFixtureBrokerProfileQueryData(broker: DataBroker = .mock,
@@ -1569,6 +1579,50 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result)
+    }
+
+    func testRunScan_whenNoScanHistoryExists_firesFirstScanPixel() async throws {
+        // Given
+        mockDatabase.hasScanHistoryEventsResult = .success(false)
+
+        // When
+        let result = try await sut.runScan(
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock
+            ),
+            showWebView: false,
+            isManual: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockDatabase.wasHasScanHistoryEventsCalled)
+        XCTAssertTrue(firedFirstScanPixel())
+    }
+
+    func testRunScan_whenScanHistoryExists_doesNotFireFirstScanPixel() async throws {
+        // Given
+        mockDatabase.hasScanHistoryEventsResult = .success(true)
+
+        // When
+        let result = try await sut.runScan(
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock
+            ),
+            showWebView: false,
+            isManual: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockDatabase.wasHasScanHistoryEventsCalled)
+        XCTAssertFalse(firedFirstScanPixel())
     }
 
 }

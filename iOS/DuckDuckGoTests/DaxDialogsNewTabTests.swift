@@ -129,9 +129,10 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     func testWhenFireShownAndNoBrowsingAndChatPathVisitSiteNotSeen_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
         // GIVEN – chat path: fire was seen before visiting any site
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = false
+        mockSettings.isChatFirstPath = true
+        mockSettings.fireMessageExperimentShown = true
+        mockSettings.chatPathVisitSiteSeen = false
+        mockSettings.chatPathPhase = .visitSite
         // nonDDGBrowsingMessageSeen = false by default
 
         // WHEN

@@ -107,10 +107,50 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "imageCount",
                 "type": "integer",
                 "description": "Number of images attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_submit_with_tabs": {
+        "description": "Fired when user submits a prompt that includes one or more page-content tab attachments via the omnibar's Attach Page Content menu",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tabCount",
+                "type": "integer",
+                "description": "Number of tabs attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_file_attached": {
+        "description": "Fired when user attaches a file (PDF etc.) via the file picker in the duck.ai omnibar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_submit_with_files": {
+        "description": "Fired when user submits a prompt that includes one or more file (PDF etc.) attachments",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "fileCount",
+                "type": "integer",
+                "description": "Number of files attached to the submitted prompt"
             }
         ]
     },

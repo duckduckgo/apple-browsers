@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DesignResourcesKitIcons
 import XCTest
 import UIKit
 import UniformTypeIdentifiers
@@ -119,36 +120,125 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
-    func test_floatingSubmitEnablesAndSubmitsAttachmentOnlyState() throws {
-        let sut = UnifiedToggleInputFloatingSubmitViewController()
-        let delegate = SpyFloatingSubmitDelegate()
+    func test_floatingReturnKeyDoesNotInsertReturnForEmptyState() throws {
+        let sut = UnifiedToggleInputFloatingReturnKeyViewController()
+        let delegate = SpyFloatingReturnKeyDelegate()
         sut.delegate = delegate
         sut.loadViewIfNeeded()
 
-        sut.updateState(UnifiedToggleInputFloatingSubmitState(
-            hasText: false,
-            hasValidAttachment: true,
-            hasInvalidAttachment: false
+        sut.updateState(UnifiedToggleInputFloatingReturnKeyState(
+            hasText: false
         ))
 
-        XCTAssertTrue(sut.isSubmitButtonEnabled)
-        try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view)).sendActions(for: .touchUpInside)
-        XCTAssertEqual(delegate.submitTapCount, 1)
-        XCTAssertEqual(delegate.voiceTapCount, 0)
+        let button = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view))
+        XCTAssertFalse(button.isEnabled)
+        button.sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.returnKeyTapCount, 0)
     }
 
-    func test_floatingSubmitDisablesWhenInvalidAttachmentIsPresent() {
-        let sut = UnifiedToggleInputFloatingSubmitViewController()
-        sut.isAIVoiceChatEnabled = true
+    func test_floatingReturnKeyInsertsReturnForNewAIChatTextState() throws {
+        let sut = UnifiedToggleInputFloatingReturnKeyViewController()
+        let delegate = SpyFloatingReturnKeyDelegate()
+        sut.delegate = delegate
         sut.loadViewIfNeeded()
 
-        sut.updateState(UnifiedToggleInputFloatingSubmitState(
+        let state = UnifiedToggleInputFloatingReturnKeyState(
             hasText: true,
-            hasValidAttachment: false,
-            hasInvalidAttachment: true
+            mode: .aiChat,
+            usesFloatingReturnKey: true
+        )
+        XCTAssertTrue(state.canInsertReturn)
+        sut.updateState(state)
+
+        let button = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view))
+        XCTAssertTrue(button.isEnabled)
+        button.sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.returnKeyTapCount, 1)
+    }
+
+    func test_floatingReturnKeyDoesNotInsertReturnForFollowUpAIChatTextState() throws {
+        let sut = UnifiedToggleInputFloatingReturnKeyViewController()
+        let delegate = SpyFloatingReturnKeyDelegate()
+        sut.delegate = delegate
+        sut.loadViewIfNeeded()
+
+        sut.updateState(UnifiedToggleInputFloatingReturnKeyState(
+            hasText: true,
+            mode: .aiChat
         ))
 
-        XCTAssertFalse(sut.isSubmitButtonEnabled)
+        let button = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view))
+        XCTAssertFalse(button.isEnabled)
+        button.sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.returnKeyTapCount, 0)
+    }
+
+    func test_floatingReturnKeyDoesNotInsertReturnForSearchTextState() throws {
+        let sut = UnifiedToggleInputFloatingReturnKeyViewController()
+        let delegate = SpyFloatingReturnKeyDelegate()
+        sut.delegate = delegate
+        sut.loadViewIfNeeded()
+
+        sut.updateState(UnifiedToggleInputFloatingReturnKeyState(
+            hasText: true,
+            mode: .search
+        ))
+
+        let button = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut.view))
+        XCTAssertFalse(button.isEnabled)
+        button.sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.returnKeyTapCount, 0)
+    }
+
+    func test_toolbarDismissalPreservesNewPromptSubmitStyleUntilShownAgain() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.usesNewPromptSubmitStyle = true
+        sut.isSubmitEnabled = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowRight)
+
+        sut.prepareForToolbarVisibilityChange(showToolbar: false)
+        sut.usesNewPromptSubmitStyle = false
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowRight)
+
+        sut.finalizeToolbarShown()
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowUp)
+    }
+
+    func test_insertNewlineAtCursor_whenTextIsEmpty() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+
+        sut.insertNewlineAtCursor()
+
+        XCTAssertEqual(handler.currentText, "\n")
+    }
+
+    func test_insertNewlineAtCursor_whenCursorIsAtEnd() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.setQueryText("hello")
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let end = textView.endOfDocument
+        textView.selectedTextRange = textView.textRange(from: end, to: end)
+
+        sut.insertNewlineAtCursor()
+
+        XCTAssertEqual(handler.currentText, "hello\n")
+    }
+
+    func test_insertNewlineAtCursor_whenCursorIsMidText() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.setQueryText("hello")
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let cursor = try XCTUnwrap(textView.position(from: textView.beginningOfDocument, offset: 2))
+        textView.selectedTextRange = textView.textRange(from: cursor, to: cursor)
+
+        sut.insertNewlineAtCursor()
+
+        XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
     private func flushMainQueue() {
@@ -198,17 +288,26 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         return nil
     }
+
+    private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
+        if let button = view as? UIButton, button.accessibilityLabel == accessibilityLabel {
+            return button
+        }
+
+        for subview in view.subviews {
+            if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+                return button
+            }
+        }
+
+        return nil
+    }
 }
 
-private final class SpyFloatingSubmitDelegate: UnifiedToggleInputFloatingSubmitDelegate {
-    var submitTapCount = 0
-    var voiceTapCount = 0
+private final class SpyFloatingReturnKeyDelegate: UnifiedToggleInputFloatingReturnKeyDelegate {
+    var returnKeyTapCount = 0
 
-    func floatingSubmitDidTapSubmit() {
-        submitTapCount += 1
-    }
-
-    func floatingSubmitDidTapVoice() {
-        voiceTapCount += 1
+    func floatingReturnKeyDidTap() {
+        returnKeyTapCount += 1
     }
 }

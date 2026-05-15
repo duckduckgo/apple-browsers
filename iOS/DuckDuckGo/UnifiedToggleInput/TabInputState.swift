@@ -31,6 +31,9 @@ struct TabInputState: Equatable {
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
     /// because FE does not re-emit when the user returns to a tab already in voice mode.
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility
+    /// Driven by FE `voiceSessionStarted` / `voiceSessionEnded` user-script messages. Hides the
+    /// header chats/compose pill while voice is active; orthogonal to `aiChatInputBoxVisibility`.
+    var isVoiceSessionActive: Bool
 
     init(
         text: String = "",
@@ -39,7 +42,8 @@ struct TabInputState: Equatable {
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
-        aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+        aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown,
+        isVoiceSessionActive: Bool = false
     ) {
         self.text = text
         self.toggleMode = toggleMode
@@ -48,6 +52,18 @@ struct TabInputState: Equatable {
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
+        self.isVoiceSessionActive = isVoiceSessionActive
+    }
+
+    /// Leaving voice also restores the chat input if it was hidden for voice, so the user isn't
+    /// left without an input bar when FE / URL teardown ends the session.
+    func applyingVoiceSessionTransition(active: Bool) -> TabInputState {
+        var copy = self
+        copy.isVoiceSessionActive = active
+        if !active, copy.aiChatInputBoxVisibility == .hidden {
+            copy.aiChatInputBoxVisibility = .visible
+        }
+        return copy
     }
 
     static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
@@ -58,6 +74,7 @@ struct TabInputState: Equatable {
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
+            && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and
@@ -70,6 +87,6 @@ struct TabInputState: Equatable {
         let model = selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
-        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue)"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive)"
     }
 }

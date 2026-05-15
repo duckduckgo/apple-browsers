@@ -83,6 +83,7 @@ extension OnboardingView {
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        private let content: OnboardingDuckAIQueryContent
         private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
@@ -123,6 +124,12 @@ extension OnboardingView {
         ]
 
         init(
+            content: OnboardingDuckAIQueryContent = .init(
+                title: UserText.Onboarding.DuckAIQueryExperiment.title,
+                searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
+                isToggleVisible: true
+            ),
             defaultMode: DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
@@ -132,6 +139,7 @@ extension OnboardingView {
             measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
+            self.content = content
             self.onModeConfirmed = onModeConfirmed
             self.openAIChatAction = openAIChatAction
             self.openSearchAction = openSearchAction
@@ -157,13 +165,13 @@ extension OnboardingView {
                 Group {
                     if visualStyle == .rebranded {
                         TypingText(
-                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            content.title,
                             startAnimating: $rebrandedAnimateTitle,
                             onTypingFinished: handleTitleAnimationFinished
                         )
                     } else {
                         AnimatableTypingText(
-                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            content.title,
                             startAnimating: animateTitle,
                             onTypingFinished: handleTitleAnimationFinished
                         )
@@ -176,36 +184,41 @@ extension OnboardingView {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Group {
-                    // Search / Duck.ai segmented control.
-                    ImageSegmentedPickerView(viewModel: pickerViewModel)
-                        .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
-                        .padding(.vertical, Metrics.pickerVerticalPadding)
-                        .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
+                    if content.isToggleVisible {
+                        // Search / Duck.ai segmented control.
+                        ImageSegmentedPickerView(viewModel: pickerViewModel)
+                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
+                            .padding(.vertical, Metrics.pickerVerticalPadding)
+                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
-                        .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
-                            let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
-                            if reduceMotion {
-                                selectedMode = newMode
-                            } else {
-                                SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
+                            .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
+                                let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                                if reduceMotion {
                                     selectedMode = newMode
+                                } else {
+                                    SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
+                                        selectedMode = newMode
+                                    }
                                 }
                             }
-                        }
                         // Keep picker model + visual progress in sync for programmatic/default mode changes.
-                        .onChange(of: selectedMode) { selection in
-                            let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
-                            if pickerViewModel.selectedItem != pickerItem {
-                                pickerViewModel.selectItem(pickerItem)
+                            .onChange(of: selectedMode) { selection in
+                                let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
+                                if pickerViewModel.selectedItem != pickerItem {
+                                    pickerViewModel.selectItem(pickerItem)
+                                }
+                                pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
                             }
-                            pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
-                        }
-                        .padding(.top, titleToPickerTopPadding)
-                        .padding(.bottom, Metrics.pickerBottomPadding)
+                            .padding(.top, titleToPickerTopPadding)
+                            .padding(.bottom, Metrics.pickerBottomPadding)
+                    }
+
+                    // If toggle is not visible set a different padding to avoid text area to be too close to the title
+                    let queryFieldTopPadding = content.isToggleVisible ? Metrics.queryFieldTopPadding : nil
 
                     // Query field + trailing action icon.
                     queryField
-                        .padding(.top, Metrics.queryFieldTopPadding)
+                        .padding(.top, queryFieldTopPadding)
                         .padding(.bottom, Metrics.queryFieldBottomPadding)
                 }
                 .opacity(showInteractiveControls ? 1 : 0)
@@ -319,8 +332,8 @@ extension OnboardingView {
                 OnboardingQueryField(
                     text: $query,
                     placeholder: selectedMode == .duckAI
-                    ? UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
-                    : UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+                    ? content.aiPlaceholder
+                    : content.searchPlaceholder,
                     isFocused: $isInputFocused,
                     isSingleLine: selectedMode != .duckAI,
                     onSubmit: handlePrimaryAction

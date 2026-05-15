@@ -165,6 +165,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+        let content: OnboardingLandingContent
         let animationNamespace: Namespace.ID
         var onAnimationComplete: () -> Void
 
@@ -215,7 +216,7 @@ extension OnboardingRebranding.OnboardingView {
                     .opacity(logo.opacity)
 
                 // Text
-                Text(UserText.onboardingWelcomeHeader)
+                Text(content.title)
                     .font(onboardingTheme.typography.largeTitle)
                     .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
                     .multilineTextAlignment(.center)

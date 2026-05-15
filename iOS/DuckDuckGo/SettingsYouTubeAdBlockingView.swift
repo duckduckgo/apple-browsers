@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SettingsYouTubeAdBlockingView: View {
@@ -29,6 +30,8 @@ struct SettingsYouTubeAdBlockingView: View {
     @State private var hasFiredSettingsDisplayedPixel = false
 
     @State private var showDuckPlayer = false
+
+    @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
@@ -58,7 +61,12 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
-                if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                if isRemotelyDisabled {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                        remotelyDisabledRow
+                            .listRowBackground(Color(designSystemColor: .surface))
+                    }
+                } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(UserText.youTubeAdBlockingExplanation)) {
                         SettingsCellView(
@@ -104,6 +112,22 @@ struct SettingsYouTubeAdBlockingView: View {
                 }
             }
         }
+    }
+
+    private var remotelyDisabledRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(uiImage: DesignSystemImages.Color.Size24.exclamationMedium)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(UserText.youTubeAdBlockingToggle)
+                    .daxHeadline()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(UserText.youTubeAdBlockingUnavailableMessage)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")

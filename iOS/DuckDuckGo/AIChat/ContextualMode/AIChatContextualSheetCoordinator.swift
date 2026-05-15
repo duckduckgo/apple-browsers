@@ -314,7 +314,8 @@ private extension AIChatContextualSheetCoordinator {
                     hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,
-                    isFireTab: self.isFireTab
+                    isFireTab: self.isFireTab,
+                    lastUsedModelProvider: self.duckAiLastUsedModelProvider
                 )
                 host.install(in: contextualChatViewController)
                 return host
@@ -332,6 +333,13 @@ private extension AIChatContextualSheetCoordinator {
             return (context, .pendingSubmit)
         }
         return (nil, .delivered)
+    }
+
+    var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
+            DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
+        }
     }
     
     /// Starts the session timer after the sheet is dismissed.

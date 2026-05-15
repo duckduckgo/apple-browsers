@@ -87,7 +87,7 @@ final class UnifiedToggleInputView: UIView {
         static let flankedCardBottomMargin: CGFloat = 6
         static let cardHorizontalMargin: CGFloat = 16
         static let cardVerticalMargin: CGFloat = 8
-        static let cardHorizontalMarginBottom: CGFloat = 12
+        static let cardHorizontalMarginBottom: CGFloat = 8
         static let cardVerticalMarginBottom: CGFloat = 8
         static let cardCornerRadiusExpanded: CGFloat = 28
         static let toggleTopPadding: CGFloat = 8
@@ -159,6 +159,11 @@ final class UnifiedToggleInputView: UIView {
     var text: String {
         get { handler.currentText }
         set { textEntryView.setQueryText(newValue) }
+    }
+
+    /// See `SwitchBarTextEntryView.applyDismissSnapshot`.
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        textEntryView.applyDismissSnapshot(snapshot)
     }
 
     var inputMode: TextEntryMode {
@@ -335,7 +340,7 @@ final class UnifiedToggleInputView: UIView {
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid, traitCollection: traitCollection)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionForgetAll
         button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
@@ -343,7 +348,7 @@ final class UnifiedToggleInputView: UIView {
     }()
 
     private lazy var aiTabCollapsedVoiceButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice, traitCollection: traitCollection)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionDuckAIVoice
         button.addTarget(self, action: #selector(voiceTapped), for: .touchUpInside)
@@ -383,13 +388,43 @@ final class UnifiedToggleInputView: UIView {
 
     private var expandedShadows: [CompositeShadowView.Shadow] {
         [
-            .init(color: UIColor(designSystemColor: .shadowSecondary),
+            .init(id: ShadowID.outer,
+                  color: UIColor(designSystemColor: .shadowSecondary),
                   radius: 32,
                   offset: CGSize(width: 0, height: 8)),
-            .init(color: UIColor(designSystemColor: .shadowTertiary),
+            .init(id: ShadowID.rim,
+                  color: UIColor(designSystemColor: .shadowTertiary),
                   radius: 16,
                   offset: CGSize(width: 0, height: 2)),
         ]
+    }
+
+    private var flankedShadows: [CompositeShadowView.Shadow] {
+        [
+            .init(id: ShadowID.outer,
+                  color: UIColor(designSystemColor: .shadowSecondary),
+                  radius: 12,
+                  offset: CGSize(width: 0, height: 4)),
+            .init(id: ShadowID.rim,
+                  color: flankedHaloColor,
+                  radius: 6,
+                  offset: CGSize(width: 0, height: 2)),
+        ]
+    }
+
+    /// Stable IDs so we can mutate shadows in place at runtime via `updateShadow(_:)`
+    /// instead of reassigning `.shadows` (which recreates sublayers mid-animation).
+    private enum ShadowID {
+        static let outer = "outer"
+        static let rim = "rim"
+    }
+
+    private var flankedHaloColor: UIColor {
+        UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor.white.withAlphaComponent(0.18)
+                : UIColor.black.withAlphaComponent(0.10)
+        }
     }
 
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
@@ -412,6 +447,7 @@ final class UnifiedToggleInputView: UIView {
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
     private var textEntryViewLeadingConstraint: NSLayoutConstraint!
+    private var textEntryViewTrailingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
     private var pageContextChipHeightConstraint: NSLayoutConstraint!
@@ -437,7 +473,7 @@ final class UnifiedToggleInputView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        guard isExpanded else { return }
+        guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
         expandedShadowView.layer.maskedCorners = cardView.layer.maskedCorners
@@ -447,9 +483,25 @@ final class UnifiedToggleInputView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             cardView.layer.shadowColor = cardShadowColor
+            // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
+            // revert dynamic colors to the init-time config.
+            expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
             if isExpanded {
                 cardView.layer.borderColor = expandedBorderColor
             }
+            refreshGlassAITabAccessoryConfigurations()
+        }
+    }
+
+    private func refreshGlassAITabAccessoryConfigurations() {
+        guard #available(iOS 26, *) else { return }
+        // Rebuilds config from scratch — re-apply any per-button tweaks here if added later.
+        for button in [aiTabCollapsedFireButton, aiTabCollapsedVoiceButton] {
+            guard let currentImage = button.configuration?.image else { continue }
+            var config = Self.glassAccessoryConfiguration(for: traitCollection)
+            config.image = currentImage
+            config.cornerStyle = .capsule
+            button.configuration = config
         }
     }
 
@@ -607,7 +659,17 @@ final class UnifiedToggleInputView: UIView {
         isExpanded = expanded
         handler.isExpanded = expanded
         // Flanked layout has its own external voice flank — suppress the in-pill duplicate.
-        textEntryView.voiceButtonAppearance = layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain)
+        // Snap the icon style synchronously so the focus animation drives the visual transition
+        // — animating the buttons-row crossfade here would snapshot at the old layout and drift.
+        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
+        if layout != .flanked {
+            // Non-flanked layouts let the card span the full width; the external fire/voice
+            // accessories must hide or they overlap the card's edges. The opposite direction
+            // (showing them on `.flanked`) is handled by `setAITabCollapsedFooterPoseActive`,
+            // which adds the fade-in animation.
+            aiTabCollapsedFireButton.isHidden = true
+            aiTabCollapsedVoiceButton.isHidden = true
+        }
         guard layout != currentLayout else { return }
         currentLayout = layout
 
@@ -657,8 +719,13 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isExpandable = expanded
 
         if updateShadow {
-            expandedShadowView.isHidden = !expanded
-            cardView.layer.shadowOpacity = expanded ? 0 : 1.0
+            let useCompositeShadow = expanded || layout == .flanked
+            // In-place mutation preserves the in-flight cornerRadius CAAnimation.
+            for shadow in (layout == .flanked ? flankedShadows : expandedShadows) {
+                expandedShadowView.updateShadow(shadow)
+            }
+            expandedShadowView.isHidden = !useCompositeShadow
+            cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         }
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
@@ -695,6 +762,11 @@ final class UnifiedToggleInputView: UIView {
             self.applyInlineDismissVisibility(showInlineDismiss || showFieldRowInlineDismiss)
             self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowInlineDismiss)
             self.applyToggleLeadingInset()
+            // Only restore when re-presenting (focusing) — clearing during the dismiss collapse
+            // would fade the buttons in over the same animation that's shrinking them away.
+            if expanded {
+                self.textEntryView.clearDismissSnapshot()
+            }
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
@@ -803,6 +875,7 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        textEntryView.isExpandable = false
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {
@@ -993,9 +1066,9 @@ private extension UnifiedToggleInputView {
 
     /// Liquid Glass on iOS 26+, raised fill on legacy. Used for the fire / voice
     /// accessories flanking the collapsed input pill on Duck.ai tabs.
-    static func makeAITabAccessoryButton(image: UIImage?) -> UIButton {
+    static func makeAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
         if #available(iOS 26, *) {
-            return makeGlassAITabAccessoryButton(image: image)
+            return makeGlassAITabAccessoryButton(image: image, traitCollection: traitCollection)
         }
 
         let button = makeLegacyAITabAccessoryButton(image: image)
@@ -1004,8 +1077,8 @@ private extension UnifiedToggleInputView {
     }
 
     @available(iOS 26, *)
-    private static func makeGlassAITabAccessoryButton(image: UIImage?) -> UIButton {
-        var config = UIButton.Configuration.prominentClearGlass()
+    private static func makeGlassAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
+        var config = glassAccessoryConfiguration(for: traitCollection)
         config.image = image
         config.cornerStyle = .capsule
 
@@ -1013,6 +1086,13 @@ private extension UnifiedToggleInputView {
         configureAITabAccessoryButton(button)
         applyAITabAccessoryShadow(to: button)
         return button
+    }
+
+    /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
+    /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
+    @available(iOS 26, *)
+    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+        traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
     private static func makeLegacyAITabAccessoryButton(image: UIImage?) -> UIButton {
@@ -1151,10 +1231,16 @@ private extension UnifiedToggleInputView {
         // explicitly; `applyCardLayout(.flanked)` then writes the AI-tab-pose values.
         cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.collapsedCardTopMargin)
         cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin)
-        cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: aiTabCollapsedFireButton.trailingAnchor, constant: Constants.aiTabCollapsedAccessorySpacing)
+        // Anchoring to self (not to the flank buttons) keeps voice/fire out of the card's
+        // dependency chain. Inner content's intrinsic width pressure can no longer slide
+        // voice — Auto Layout has to compress the content instead.
+        let flankedHorizontalInset = Constants.cardHorizontalMargin
+            + Constants.aiTabCollapsedAccessorySize
+            + Constants.aiTabCollapsedAccessorySpacing
+        cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: flankedHorizontalInset)
         cardLeadingFlankedConstraint.isActive = false
         cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
-        cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: aiTabCollapsedVoiceButton.leadingAnchor, constant: -Constants.aiTabCollapsedAccessorySpacing)
+        cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -flankedHorizontalInset)
         cardTrailingFlankedConstraint.isActive = false
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
         cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
@@ -1167,6 +1253,7 @@ private extension UnifiedToggleInputView {
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
+        textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
         pageContextChipHeightConstraint = pageContextChip.heightAnchor.constraint(equalToConstant: 0)
@@ -1190,7 +1277,7 @@ private extension UnifiedToggleInputView {
 
             inputTopConstraint,
             textEntryViewLeadingConstraint,
-            textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            textEntryViewTrailingConstraint,
 
             pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
             pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
@@ -1239,6 +1326,7 @@ private extension UnifiedToggleInputView {
 
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] mode in
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)

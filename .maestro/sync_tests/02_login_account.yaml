@@ -6,9 +6,9 @@ name: 02_login_account
 
 ---
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# Set up
+- runFlow:
+    file: ../shared/sync_setup.yaml
 
 #  Copy Recovery Code
 - tapOn: Browsing menu

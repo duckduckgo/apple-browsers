@@ -194,6 +194,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
+    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
+    case bookmarksBarMenusCustomWindow
+
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
 }
@@ -259,6 +262,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

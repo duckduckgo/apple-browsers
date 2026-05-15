@@ -357,7 +357,7 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             textView.keyboardType = .default
-            textView.returnKeyType = .go
+            textView.returnKeyType = aiChatReturnKeyType
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -615,6 +615,16 @@ class SwitchBarTextEntryView: UIView {
             .sink { [weak self] _ in
                 guard let self, self.currentMode == .aiChat else { return }
                 self.placeholderLabel.text = self.placeholderText(for: .aiChat)
+                self.updateKeyboardConfiguration()
+            }
+            .store(in: &cancellables)
+
+        handler.submitsAIChatOnKeyboardReturnPublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, self.currentMode == .aiChat else { return }
+                self.updateKeyboardConfiguration()
             }
             .store(in: &cancellables)
     }
@@ -632,7 +642,7 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         } else {
             textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
-            textView.returnKeyType = currentMode == .aiChat ? .go : .search
+            textView.returnKeyType = currentMode == .aiChat ? aiChatReturnKeyType : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -665,6 +675,17 @@ class SwitchBarTextEntryView: UIView {
         handler.updateCurrentText(text)
         updateButtonState()
         updateTextViewHeight()
+    }
+
+    func insertNewlineAtCursor() {
+        let selectedRange = textView.selectedTextRange
+            ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
+        if let selectedRange {
+            textView.replace(selectedRange, withText: "\n")
+        } else {
+            textView.text.append("\n")
+        }
+        textViewDidChange(textView)
     }
 
     /// Reflects the current transform; reset the shift to zero before reading the natural x.
@@ -745,6 +766,10 @@ class SwitchBarTextEntryView: UIView {
         textView.autocorrectionType = .default
         textView.spellCheckingType = .default
     }
+
+    private var aiChatReturnKeyType: UIReturnKeyType {
+        handler.submitsAIChatOnKeyboardReturn ? .go : .default
+    }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
@@ -780,6 +805,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
+                return true
+            }
             fireKeyboardGoPressedPixel()
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

@@ -63,6 +63,8 @@ protocol SwitchBarHandling: AnyObject {
 
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
+    var submitsAIChatOnKeyboardReturn: Bool { get }
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -92,6 +94,8 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var submitsAIChatOnKeyboardReturn: Bool { true }
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -115,6 +119,8 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var hasSubmittedPrompt: Bool = false
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    let submitsAIChatOnKeyboardReturn = true
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false

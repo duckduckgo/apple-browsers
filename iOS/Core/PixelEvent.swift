@@ -1589,6 +1589,7 @@ extension Pixel {
         case duckAiNativeStorageFileGetError
         case duckAiNativeStorageFileListError
         case duckAiNativeStorageFileDeleteError
+        case duckAiNativeStorageLastUsedModelParseError
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -1861,6 +1862,9 @@ extension Pixel {
         case linkLongPressNewTab
         case linkLongPressBackgroundTab
         case linkLongPressFireTab
+
+        // MARK: - Custom Product Page
+        case customProductPageDuckAIOpenedAIChat
     }
 
 }
@@ -3324,6 +3328,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageFileGetError: return "m_duck-ai_native-storage_file-get_error"
         case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
+        case .duckAiNativeStorageLastUsedModelParseError: return "m_duck-ai_native-storage_last-used-model-parse_error"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -3648,6 +3653,8 @@ extension Pixel.Event {
         case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
         case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
+        // MARK: - Custom Product Page
+        case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
         }
     }
 }

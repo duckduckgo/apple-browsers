@@ -98,10 +98,15 @@ struct BrokerProfileScanSubJob {
         )
 
         do {
+            let shouldFireFirstScanPixel = try !dependencies.database.hasScanHistoryEvents()
             try markScanStarted(brokerId: brokerId,
                                 profileQueryId: profileQueryId,
                                 stageCalculator: stageCalculator,
                                 database: dependencies.database)
+
+            if shouldFireFirstScanPixel {
+                dependencies.pixelHandler.fire(.firstScan(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+            }
 
             let runner = makeScanRunner(brokerProfileQueryData: brokerProfileQueryData,
                                         stageCalculator: stageCalculator,

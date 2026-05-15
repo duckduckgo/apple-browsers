@@ -105,7 +105,7 @@ extension AIChatMessageHandler {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
+            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatSidebarAttachMoreTabs),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
         )
     }

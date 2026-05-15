@@ -351,9 +351,3 @@ extension WKContentRuleList {
     func swizzled_dealloc() { }
 
 }
-
-private final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
-    var isFeatureAvailable: Bool { false }
-    var isEnabledByUser: Bool { false }
-    func shouldShowAnimation(for url: URL) -> Bool { false }
-}

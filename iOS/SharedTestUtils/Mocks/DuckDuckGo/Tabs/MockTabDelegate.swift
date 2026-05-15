@@ -19,6 +19,7 @@
 
 import Foundation
 import struct UIKit.UIKeyModifierFlags
+import WebExtensions
 import WebKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
@@ -201,7 +202,8 @@ extension TabViewController {
             privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-            autoplaySettings: MockAutoplaySettings()
+            autoplaySettings: MockAutoplaySettings(),
+            adBlockingAvailability: StubAdBlockingAvailability()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -284,4 +286,10 @@ struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
 final class MockAutoplaySettings: AutoplaySettings {
     var currentAutoplayBlockingMode: AutoplayBlockingMode = .blockAudio
+}
+
+final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
+    var isFeatureAvailable: Bool = false
+    var isEnabledByUser: Bool = false
+    func shouldShowAnimation(for url: URL) -> Bool { false }
 }

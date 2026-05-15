@@ -814,12 +814,19 @@ final class AddressBarButtonsViewController: NSViewController {
             // `isForcingPermissionCenterButtonVisible` (OS-denied case).
             permissionCenterButton.isShown = false
         } else {
+            // `isAIChatPanelActive` normally suppresses the shield (clean omnibar on duck.ai
+            // and when the AI chat sidebar is active). A pending permission authorization
+            // query — e.g. getUserMedia with no prior decision, as happens when the duck.ai
+            // native voice flow feature flag is off — needs the shield as an anchor for its
+            // allow/deny popover, so we override the suppression for the duration of the
+            // request. The query clears on user decision/dismiss and the suppression resumes.
+            let hasPendingAuthorizationQuery = tabViewModel.permissionAuthorizationQuery != nil
             permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
                 isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
                 isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
                 hasAnyPersistedPermissions: hasAnyPersistedPermissions,
                 hasPendingBarInput: hasPendingBarInput
-            ) && !isAIChatPanelActive
+            ) && (hasPendingAuthorizationQuery || !isAIChatPanelActive)
         }
 
         showOrHidePermissionCenterPopoverIfNeeded()

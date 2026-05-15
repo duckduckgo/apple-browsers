@@ -83,11 +83,10 @@ struct PermissionCenterItem: Identifiable {
         state == .active
     }
 
-    /// Whether the user is prevented from editing this row. Duck.ai's microphone
-    /// permission is auto-granted at launch by `DuckAiVoiceChatPermissionMigration`,
-    /// so exposing the dropdown / remove button would let the user make a change
-    /// that gets reverted on next launch. Populated at build time by
-    /// `PermissionCenterViewModel` based on the `aiChatNativeVoicePermissionFlow` flag.
+    /// Marks an informational row that is not backed by a persisted user decision and therefore
+    /// has no edit controls. Currently used for the synthetic duck.ai/mic OS-denied warning row
+    /// that the view model injects when the OS has revoked microphone access — the row exists
+    /// only to surface the system-settings prompt; there is nothing for the user to toggle.
     var isLocked: Bool = false
 
     /// Whether the permission is allowed (granted or user selected "Always Allow")
@@ -468,10 +467,16 @@ final class PermissionCenterViewModel: ObservableObject {
 
         let (externalSchemePermissions, otherPermissions) = collectPermissions()
 
-        // Build items for non-external-scheme permissions; `buildPermissionItem` may return
-        // nil for rows that have nothing actionable to show (e.g. duck.ai locked mic when
-        // OS access is authorized).
-        var items: [PermissionCenterItem] = otherPermissions.compactMap { buildPermissionItem(for: $0) }
+        // Build items for non-external-scheme permissions
+        var items: [PermissionCenterItem] = otherPermissions.map { buildPermissionItem(for: $0) }
+
+        // Inject a synthetic OS-denied warning row for duck.ai/mic when the user has revoked
+        // microphone access at the system level. There is no persisted entry to surface (the
+        // override never writes), so the row is built ad-hoc and locked.
+        if !items.contains(where: { $0.permissionType == .microphone }),
+           let syntheticItem = buildDuckAiMicSystemDisabledItemIfNeeded() {
+            items.append(syntheticItem)
+        }
 
         // Group all external schemes into a single row
         if let groupedItem = buildExternalSchemesItem(from: externalSchemePermissions) {
@@ -509,6 +514,19 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
+        // `DuckAiVoiceChatPermissionOverride` forces `.microphone` to `.allow` at read time
+        // for duck.ai unconditionally (not flag-gated — the FE voice flow requires silent
+        // grant). A regular editable row here would read the masked `.allow` through the
+        // override and let the user make a change that's silently re-masked, *and* it would
+        // surface as "Always allow" even when nothing has been persisted (e.g. while voice
+        // chat is active, `usedPermissions[.microphone]` is set and `buildPermissionItem`
+        // reads via the override). Drop it. The only mic UI on duck.ai is the synthetic
+        // OS-denied warning (flag-gated, since OS-denial remediation is part of the
+        // failure-handling surface the flag controls).
+        if domain == URL.duckAi.host {
+            otherPermissions.removeAll { $0 == .microphone }
+        }
+
         return (externalSchemePermissions, otherPermissions)
     }
 
@@ -524,22 +542,7 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
-    private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem? {
-        let isLocked = isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType)
-
-        // Locked rows are read-only by design — their only purpose is to surface the
-        // system-disabled warning. If the OS access is authorized (granted) or notDetermined
-        // (not yet asked, the OS will prompt naturally), there's nothing meaningful to show,
-        // so we omit the row entirely.
-        if isLocked {
-            switch systemPermissionManager.cachedAuthorizationState(for: permissionType) {
-            case .authorized, .notDetermined, .systemDisabled:
-                return nil
-            case .denied, .restricted:
-                break
-            }
-        }
-
+    private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem {
         let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         let state = usedPermissions[permissionType] ?? .inactive
 
@@ -547,7 +550,7 @@ final class PermissionCenterViewModel: ObservableObject {
             ? popupQueries.map { BlockedPopup(url: $0.url, query: $0) }
             : []
 
-        var item = PermissionCenterItem(
+        let item = PermissionCenterItem(
             id: permissionType,
             permissionType: permissionType,
             domain: domain,
@@ -557,31 +560,44 @@ final class PermissionCenterViewModel: ObservableObject {
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
-        item.isLocked = isLocked
 
         // Async check for permissions whose OS-level state may surface a system-disabled warning
-        if shouldSurfaceSystemDisabledWarning(for: permissionType) {
+        if permissionType.surfacesSystemDisabledWarning {
             checkSystemDisabledAsync(for: item)
         }
 
         return item
     }
 
-    /// Wraps `PermissionType.surfacesSystemDisabledWarning` to layer in the duck.ai-scoped
-    /// `.microphone` case. The mic warning is intentionally limited to duck.ai (where we
-    /// auto-grant per-site permission and own the voice-chat flow) to avoid changing the
-    /// Permission Center UX for unrelated sites that happen to have mic persisted.
-    private func shouldSurfaceSystemDisabledWarning(for permissionType: PermissionType) -> Bool {
-        if permissionType.surfacesSystemDisabledWarning { return true }
-        if isDuckAiVoiceMicrophoneRow(domain: domain, permissionType: permissionType) {
-            return true
+    /// Builds a read-only duck.ai/mic row to surface the OS-disabled warning when the user has
+    /// revoked microphone access at the system level. Returns `nil` when the flag is off, the
+    /// current domain isn't duck.ai, or the OS state has nothing to remediate. The row carries
+    /// `.denied` synchronously so the warning renders on first paint without waiting for the
+    /// async system-state probe.
+    private func buildDuckAiMicSystemDisabledItemIfNeeded() -> PermissionCenterItem? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
+              domain == URL.duckAi.host else {
+            return nil
         }
-        return false
-    }
-
-    private func isDuckAiVoiceMicrophoneRow(domain: String, permissionType: PermissionType) -> Bool {
-        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return false }
-        return permissionType == .microphone && domain == URL.duckAi.host
+        let authState = systemPermissionManager.cachedAuthorizationState(for: .microphone)
+        switch authState {
+        case .denied, .restricted:
+            break
+        case .authorized, .notDetermined, .systemDisabled:
+            return nil
+        }
+        var item = PermissionCenterItem(
+            id: .microphone,
+            permissionType: .microphone,
+            domain: domain,
+            decision: .allow,
+            systemAuthorizationState: authState,
+            state: .inactive,
+            blockedPopups: [],
+            externalSchemes: []
+        )
+        item.isLocked = true
+        return item
     }
 
     private func buildExternalSchemesItem(from externalSchemePermissions: [PermissionType]) -> PermissionCenterItem? {
@@ -625,7 +641,7 @@ final class PermissionCenterViewModel: ObservableObject {
     /// a system-disabled warning. Uses weak self to handle case where popover is
     /// dismissed before check completes.
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
-        guard shouldSurfaceSystemDisabledWarning(for: item.permissionType) else { return }
+        guard item.permissionType.surfacesSystemDisabledWarning else { return }
 
         Task { @MainActor [weak self] in
             guard let self else { return }

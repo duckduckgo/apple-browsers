@@ -158,8 +158,9 @@ extension PermissionType {
     /// system level. Decoupled from `requiresSystemPermission` (which gates the two-step
     /// authorization flow) so we can light up the warning UI without changing the prompt flow.
     ///
-    /// `.microphone` is *not* included here — that surfacing is gated behind the
-    /// `aiChatNativeVoicePermissionFlow` flag and is added by `PermissionCenterViewModel`.
+    /// `.microphone` is *not* included here — duck.ai's mic warning is surfaced via a synthetic
+    /// row built by `PermissionCenterViewModel` and gated behind `aiChatNativeVoicePermissionFlow`,
+    /// so non-duck.ai mic rows keep their previous Permission Center behavior.
     var surfacesSystemDisabledWarning: Bool {
         switch self {
         case .geolocation, .notification:

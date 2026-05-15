@@ -336,7 +336,8 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
-        duckAiNativeStorageHandler.map {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
             DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
         }
     }

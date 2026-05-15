@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import PixelKit
 
 /// Owns the omnibar `@`-mention picker's panel + view controller and drives its lifecycle.
 ///
@@ -56,6 +57,11 @@ final class AIChatMentionPickerCoordinator {
     /// last refreshed), but we keep this around as a fallback.
     private var lastTokenRange: NSRange?
     private var windowObservers: [NSObjectProtocol] = []
+    /// `true` once `accept(attachment:)` fires during the current open session — used to
+    /// decide between `mention_tab_chosen`/`mention_tab_removed` (already fired by accept)
+    /// and the `mention_picker_canceled` pixel (fired by `dismiss` only when no accept ran).
+    /// Reset to `false` on each hidden→visible transition in `presentIfNeeded`.
+    private var didAcceptDuringPresentation = false
 
     /// `true` once the panel is on screen and attached as a child of the omnibar window.
     var isPresented: Bool { panel?.isVisible == true }
@@ -87,6 +93,11 @@ final class AIChatMentionPickerCoordinator {
     /// and refreshes the row contents.
     @MainActor
     func presentIfNeeded(for token: AIChatMentionToken, anchoredTo textView: NSTextView, in window: NSWindow) {
+        // Detect a fresh "the picker is becoming visible now" transition so the shown pixel
+        // fires once per open/close cycle rather than every refresh-on-keystroke. Capture
+        // BEFORE `ensurePanel` because that lazy-create makes a non-visible panel either way.
+        let wasPresented = panel?.isVisible == true
+
         let viewController = ensureViewController()
         let panel = ensurePanel(hosting: viewController)
 
@@ -126,12 +137,30 @@ final class AIChatMentionPickerCoordinator {
         repositionPanel(textView: textView, tokenRange: token.range)
 
         panel.orderFront(nil)
+
+        if !wasPresented {
+            // Fresh open: reset the per-session accept flag and fire the shown pixel.
+            // Subsequent calls to `presentIfNeeded` within the same session (re-position on
+            // each keystroke) intentionally don't re-fire.
+            didAcceptDuringPresentation = false
+            PixelKit.fire(
+                AIChatPixel.aiChatAddressBarMentionPickerShown,
+                frequency: .dailyAndCount,
+                includeAppVersionParameter: true
+            )
+        }
     }
 
     /// Hides the panel and detaches it from the omnibar window.
     @MainActor
     func dismiss() {
         guard let panel else { return }
+        // Capture pre-dismiss state so the canceled pixel only fires for a real
+        // hidden→visible→hidden cycle that wrapped no accept. A no-op dismiss (panel never
+        // shown, or accept just fired) must not count as a cancel.
+        let wasPresented = panel.isVisible
+        let shouldFireCanceled = wasPresented && !didAcceptDuringPresentation
+
         if let parent = attachedToWindow {
             parent.removeChildWindow(panel)
         }
@@ -140,6 +169,14 @@ final class AIChatMentionPickerCoordinator {
         panel.orderOut(nil)
         lastTokenRange = nil
         anchoredTextView = nil
+
+        if shouldFireCanceled {
+            PixelKit.fire(
+                AIChatPixel.aiChatAddressBarMentionPickerCanceled,
+                frequency: .dailyAndCount,
+                includeAppVersionParameter: true
+            )
+        }
     }
 
     // MARK: - Keyboard navigation
@@ -176,8 +213,18 @@ final class AIChatMentionPickerCoordinator {
     /// dismisses the picker.
     @MainActor
     private func accept(attachment: AIChatTabAttachment) {
+        // Read attached state BEFORE the toggle so we know which pixel describes the
+        // user's action (chosen vs removed) — the toggle flips it, so post-toggle the
+        // signal would be inverted.
+        let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == attachment.id })
         spliceTokenFromTextView()
         omnibarController.toggleTabAttachment(attachment)
+        let pixel: AIChatPixel = wasAttached
+            ? .aiChatAddressBarMentionTabRemoved
+            : .aiChatAddressBarMentionTabChosen
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        // Mark the session so `dismiss` below doesn't also fire `mention_picker_canceled`.
+        didAcceptDuringPresentation = true
         dismiss()
     }
 

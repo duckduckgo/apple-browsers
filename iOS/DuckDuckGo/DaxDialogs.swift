@@ -662,7 +662,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             if chatPathPhase == .visitSite {
                 return .subsequent
             }
-            return nil
+            // When AI Chat is enabled the EOJ is driven by presentChatPathOnboardingCompletionIfNeeded.
+            // When disabled, fall through to .final so users still see an end-of-journey dialog.
+            return isAIChatEnabled ? nil : .final
         }
 
         // Check final first as if we skip anonymous searches we don't want to show this.

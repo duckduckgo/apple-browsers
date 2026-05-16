@@ -78,7 +78,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
         didSet {
-            configureTabSwitcherLongPressMenu()
             configureAddTabButtonLongPressMenu()
         }
     }
@@ -306,10 +305,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
             }
         }
-    }
-
-    private func configureTabSwitcherLongPressMenu() {
-        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
     }
 
     private func configureAddTabButtonLongPressMenu() {

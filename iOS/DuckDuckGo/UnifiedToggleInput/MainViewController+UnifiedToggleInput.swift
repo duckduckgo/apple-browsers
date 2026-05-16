@@ -658,7 +658,6 @@ private extension MainViewController {
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
-        headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),

@@ -363,6 +363,7 @@ extension OnboardingRebranding {
                     content: content.restorePromptStepContent,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     restoreAction: {
                         model.restoreSyncAccountAction()
                         animateContentTransition {
@@ -382,6 +383,7 @@ extension OnboardingRebranding {
                     content: content,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     continueAction: {
                         animateContentTransition {
                             model.startOnboardingAction(isResumingOnboarding: false)
@@ -680,7 +682,6 @@ extension OnboardingRebranding {
         ///   and bubble resize). `nil` for the initial fade-in.
         private func animateContentTransition(action: (() -> Void)? = nil) {
             showBubbleContent = false
-            skipTypingAnimation = false
 
             // Read the currently-displayed animation (not the model-derived one) so e.g. the
             // add-to-dock promo→tutorial in-place swap, where the overlay is already cleared,
@@ -694,7 +695,8 @@ extension OnboardingRebranding {
             )
 
             if action == nil {
-                // Initial appearance: pin the overlay to the current step.
+                // Initial appearance: pin the overlay.
+                skipTypingAnimation = false
                 currentDaxAnimation = activeDaxAnimation
                 daxPlayForward = true
                 daxAnimationID += 1
@@ -705,6 +707,7 @@ extension OnboardingRebranding {
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
+                    skipTypingAnimation = false
                     if hasAnyDaxExit {
                         // Don't update `currentDaxAnimation` yet — the old animation must stay
                         // rendered while its exit plays, even after `model.state` moves on.

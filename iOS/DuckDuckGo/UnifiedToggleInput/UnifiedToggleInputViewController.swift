@@ -82,6 +82,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.text = newValue }
     }
 
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        inputBarView.applyDismissSnapshot(snapshot)
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }

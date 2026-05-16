@@ -83,7 +83,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton()
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     

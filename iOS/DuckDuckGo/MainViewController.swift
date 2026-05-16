@@ -1367,7 +1367,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1378,7 +1378,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView

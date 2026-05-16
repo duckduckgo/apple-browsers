@@ -34,7 +34,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     // Just to satisfy protocol requirement
     let pointer: UIView? = nil
 
-    init(showMenuOnLongPress: Bool) {
+    init() {
         super.init()
         self.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 

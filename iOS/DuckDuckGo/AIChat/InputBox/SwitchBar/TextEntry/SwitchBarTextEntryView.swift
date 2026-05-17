@@ -181,8 +181,8 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         applyFireModeAppearance(isFireTab: handler.isFireTab)
 
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        // Match the omnibar's placeholder font so UTI ↔ omnibar transitions don't show a size jump.
+        let textFont = UIFont.daxBodyRegular()
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear

@@ -202,11 +202,11 @@ final class AIChatContextualWebViewController: UIViewController {
         }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
-            let nativeBridgePushed = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
-            utiHost?.promptDeliveryUpdated(wasQueued: false, nativeBridgePushed: nativeBridgePushed)
+            let didSendBridgeMessage = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+            utiHost?.promptDeliveryUpdated(wasQueued: false, willSendBridgeMessage: true, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
-            utiHost?.promptDeliveryUpdated(wasQueued: true, nativeBridgePushed: nil)
+            utiHost?.promptDeliveryUpdated(wasQueued: true, willSendBridgeMessage: nil, didSendBridgeMessage: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -356,8 +356,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
-        let nativeBridgePushed = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
-        utiHost?.promptDeliveryUpdated(wasQueued: nil, nativeBridgePushed: nativeBridgePushed)
+        let didSendBridgeMessage = aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        utiHost?.promptDeliveryUpdated(wasQueued: nil, willSendBridgeMessage: true, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     // MARK: - URL Observation

@@ -30,7 +30,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                            inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
                            fireMode: Bool,
-                           userScriptBound: Bool,
+                           isFirstPrompt: Bool,
                            frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            selectedTools: [String],
@@ -39,8 +39,10 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            invalidAttachmentCount: Int)
 
     /// Native attempted to hand the prompt to the frontend. Records whether
-    /// contextual delivery was queued and whether a user-script bridge push was possible.
-    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?)
+    /// contextual delivery was queued, whether native entered the bridge-push
+    /// branch (`willSendBridgeMessage`), and whether the push itself succeeded
+    /// (`didSendBridgeMessage`).
+    func promptDeliveryUpdated(wasQueued: Bool?, willSendBridgeMessage: Bool?, didSendBridgeMessage: Bool?)
 
     /// The Duck.ai frontend reported its prompt-submitted metric for the active flow.
     func frontendSubmissionAcknowledged()
@@ -99,7 +101,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                            inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
                            fireMode: Bool,
-                           userScriptBound: Bool,
+                           isFirstPrompt: Bool,
                            frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            selectedTools: [String],
@@ -118,7 +120,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             entryPoint: entryPoint,
             inputMode: inputMode,
             fireMode: fireMode,
-            userScriptBound: userScriptBound,
+            isFirstPrompt: isFirstPrompt,
             frontendDeliveryPath: frontendDeliveryPath,
             hasPageContext: hasPageContext,
             selectedTools: selectedTools,
@@ -133,14 +135,17 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         wideEvent.startFlow(data)
     }
 
-    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?) {
+    func promptDeliveryUpdated(wasQueued: Bool?, willSendBridgeMessage: Bool?, didSendBridgeMessage: Bool?) {
         guard let activeFlow else { return }
 
         if let wasQueued {
             activeFlow.frontendDeliveryQueued = wasQueued
         }
-        if let nativeBridgePushed {
-            activeFlow.nativeBridgePushed = nativeBridgePushed
+        if let willSendBridgeMessage {
+            activeFlow.willSendBridgeMessage = willSendBridgeMessage
+        }
+        if let didSendBridgeMessage {
+            activeFlow.didSendBridgeMessage = didSendBridgeMessage
         }
 
         wideEvent.updateFlow(activeFlow)

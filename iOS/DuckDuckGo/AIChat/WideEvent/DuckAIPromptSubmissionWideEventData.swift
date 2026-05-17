@@ -42,12 +42,13 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var entryPoint: EntryPoint
     var inputMode: InputMode
     var fireMode: Bool
+    var isFirstPrompt: Bool
     var lastStep: LastStep?
     var cancellationReason: CancellationReason?
-    var userScriptBound: Bool
     var frontendDeliveryPath: FrontendDeliveryPath
     var frontendDeliveryQueued: Bool
-    var nativeBridgePushed: Bool?
+    var willSendBridgeMessage: Bool?
+    var didSendBridgeMessage: Bool?
 
     var hasPageContext: Bool
     var selectedTools: [String]
@@ -81,7 +82,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          entryPoint: EntryPoint,
          inputMode: InputMode,
          fireMode: Bool,
-         userScriptBound: Bool,
+         isFirstPrompt: Bool,
          frontendDeliveryPath: FrontendDeliveryPath,
          hasPageContext: Bool,
          selectedTools: [String],
@@ -98,7 +99,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.entryPoint = entryPoint
         self.inputMode = inputMode
         self.fireMode = fireMode
-        self.userScriptBound = userScriptBound
+        self.isFirstPrompt = isFirstPrompt
         self.frontendDeliveryPath = frontendDeliveryPath
         self.frontendDeliveryQueued = false
         self.hasPageContext = hasPageContext
@@ -198,7 +199,8 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.nativeBridgePushed, nativeBridgePushed),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.willSendBridgeMessage, willSendBridgeMessage),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.didSendBridgeMessage, didSendBridgeMessage),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
@@ -207,8 +209,9 @@ extension DuckAIPromptSubmissionWideEventData {
         ])
 
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.userScriptBound] = userScriptBound
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.isFirstPrompt] = isFirstPrompt
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryQueued] = frontendDeliveryQueued
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.didReceiveBridgeMessage] = frontendSubmissionAckInterval.end != nil
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.imageAttachmentCount] = imageAttachmentCount
@@ -228,12 +231,14 @@ extension WideEventParameter {
         static let entryPoint = "feature.data.ext.entry_point"
         static let inputMode = "feature.data.ext.input_mode"
         static let fireMode = "feature.data.ext.fire_mode"
+        static let isFirstPrompt = "feature.data.ext.is_first_prompt"
         static let lastStep = "feature.data.ext.last_step"
         static let cancellationReason = "feature.data.ext.cancellation_reason"
-        static let userScriptBound = "feature.data.ext.user_script_bound"
         static let frontendDeliveryPath = "feature.data.ext.delivery.path"
         static let frontendDeliveryQueued = "feature.data.ext.delivery.queued"
-        static let nativeBridgePushed = "feature.data.ext.delivery.native_bridge_pushed"
+        static let willSendBridgeMessage = "feature.data.ext.delivery.will_send_bridge_message"
+        static let didSendBridgeMessage = "feature.data.ext.delivery.did_send_bridge_message"
+        static let didReceiveBridgeMessage = "feature.data.ext.delivery.did_receive_bridge_message"
         static let hasPageContext = "feature.data.ext.has_page_context"
         static let selectedTools = "feature.data.ext.selected_tools"
         static let imageAttachmentCount = "feature.data.ext.attachments.image_count"

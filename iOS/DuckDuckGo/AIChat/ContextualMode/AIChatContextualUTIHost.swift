@@ -205,8 +205,8 @@ final class AIChatContextualUTIHost {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
     }
 
-    func promptDeliveryUpdated(wasQueued: Bool?, nativeBridgePushed: Bool?) {
-        duckAIWideEventInstrumentation.promptDeliveryUpdated(wasQueued: wasQueued, nativeBridgePushed: nativeBridgePushed)
+    func promptDeliveryUpdated(wasQueued: Bool?, willSendBridgeMessage: Bool?, didSendBridgeMessage: Bool?) {
+        duckAIWideEventInstrumentation.promptDeliveryUpdated(wasQueued: wasQueued, willSendBridgeMessage: willSendBridgeMessage, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     func frontendSubmissionAcknowledged() {

@@ -73,9 +73,9 @@
                         "type": "boolean",
                         "description": "Whether the submitting tab was a fire tab at submit time."
                     },
-                    "user_script_bound": {
+                    "is_first_prompt": {
                         "type": "boolean",
-                        "description": "Whether an `AIChatUserScript` was bound to the input coordinator at submit time. False means the prompt was forwarded via the delegate fallback rather than into a live chat session."
+                        "description": "Whether this submission was the first prompt in the chat session. True for prompts that initiate a new chat (no prior submissions and no pre-existing chat bound to the tab); false for follow-up prompts within an already-active chat. Disambiguates failure modes that differ between cold-start (page load + initial chat creation) and warm-start (existing chat) paths."
                     },
                     "delivery": {
                         "type": "object",
@@ -90,9 +90,17 @@
                                 "type": "boolean",
                                 "description": "Whether contextual delivery had to wait for the page/content handler to become ready before native could push the prompt to frontend."
                             },
-                            "native_bridge_pushed": {
+                            "will_send_bridge_message": {
                                 "type": "boolean",
-                                "description": "Whether native had both a web view and message broker available when it attempted to push the prompt through the user-script bridge. Absent for URL-autosubmit delivery paths."
+                                "description": "Whether native entered the bridge-push branch for this submission (i.e. attempted to send the prompt via the user-script bridge rather than another delivery path). Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries still waiting on page/content-handler readiness). Pair with `did_send_bridge_message` to isolate cases where native tried to send but the push didn't succeed."
+                            },
+                            "did_send_bridge_message": {
+                                "type": "boolean",
+                                "description": "Whether the bridge push itself succeeded - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. Absent when `will_send_bridge_message` is absent or false."
+                            },
+                            "did_receive_bridge_message": {
+                                "type": "boolean",
+                                "description": "Whether the Duck.ai frontend reported its `userDidSubmitPrompt` (or `userDidSubmitFirstPrompt`) metric back across the bridge for this submission before the flow ended. True confirms the frontend received and accepted the prompt; false means the prompt never landed on the frontend submission state machine - either WebKit dropped the JS call, the frontend rejected the message, or the flow terminated before the metric arrived."
                             }
                         }
                     },

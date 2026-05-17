@@ -72071,7 +72071,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System microphone disabled. Turn it on in "
+            "value" : "System microphone access disabled. Turn it on in "
           }
         }
       }

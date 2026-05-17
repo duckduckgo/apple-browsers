@@ -25,16 +25,17 @@ import DesignResourcesKitIcons
 final class AIChatImageAttachmentThumbnailView: NSView {
 
     private enum Constants {
-        static let thumbnailSize: CGFloat = 50
+        static let thumbnailSize: CGFloat = 56
         static let cornerRadius: CGFloat = 12
-        static let borderWidth: CGFloat = 2
         static let removeButtonSize: CGFloat = 20
         static let removeButtonInset: CGFloat = 4
-        /// How far the remove button extends beyond the thumbnail edge.
-        static let removeButtonOverflow: CGFloat = 8
-        static let shadowRadius: CGFloat = 4
-        static let shadowOpacity: Float = 0.3
-        static let shadowOffset = CGSize(width: 0, height: -2)
+        /// How far the remove button extends beyond the thumbnail edge. Calibrated so that
+        /// the total view height (`thumbnailSize + removeButtonOverflow`) matches the tab-card
+        /// total height — both kinds of attachments line up vertically in the carousel.
+        static let removeButtonOverflow: CGFloat = 6
+        static let shadowRadius: CGFloat = 3
+        static let shadowOpacity: Float = 0.15
+        static let shadowOffset = CGSize(width: 0, height: -1)
 
         // Remove button colors (defined in Assets.xcassets)
         static let removeButtonBackgroundColorName = "AIChatRemoveButtonBackgroundColor"
@@ -52,7 +53,6 @@ final class AIChatImageAttachmentThumbnailView: NSView {
         view.wantsLayer = true
         view.layer?.masksToBounds = true
         view.layer?.cornerRadius = Constants.cornerRadius
-        view.layer?.borderWidth = Constants.borderWidth
         return view
     }()
 
@@ -77,8 +77,8 @@ final class AIChatImageAttachmentThumbnailView: NSView {
         return layer
     }()
 
-    private let removeButton: NSButton = {
-        let button = NSButton()
+    private let removeButton: PointingHandButton = {
+        let button = PointingHandButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.bezelStyle = .shadowlessSquare
         button.isBordered = false
@@ -189,15 +189,28 @@ final class AIChatImageAttachmentThumbnailView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        NSCursor.arrow.set()
+        setCursorIfNotOverRemoveButton(event: event)
     }
 
     override func mouseMoved(with event: NSEvent) {
+        setCursorIfNotOverRemoveButton(event: event)
+    }
+
+    /// Only push `.arrow` when the cursor isn't over the remove button — otherwise the
+    /// thumbnail's per-tick `mouseMoved` events would race the button's own `.pointingHand`
+    /// set and produce a brief flicker as the cursor approaches the ×.
+    private func setCursorIfNotOverRemoveButton(event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        guard !removeButton.frame.contains(location) else { return }
         NSCursor.arrow.set()
     }
 
     override func resetCursorRects() {
+        // Arrow rect for the thumbnail, then explicitly carve out the remove button's frame
+        // with a pointing-hand rect. AppKit picks the most recently added rect for a given
+        // point, so the button rect wins inside its bounds.
         addCursorRect(bounds, cursor: .arrow)
+        addCursorRect(removeButton.frame, cursor: .pointingHand)
     }
 
     // MARK: - Image
@@ -225,11 +238,12 @@ final class AIChatImageAttachmentThumbnailView: NSView {
 
     private func updateAppearance() {
         NSAppearance.withAppAppearance {
-            let surfaceColor = NSColor(designSystemColor: .surfacePrimary)
+            // Match the tab-card style: surface secondary background, no border, shadow.
+            let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white
             let removeButtonIconColor = NSColor(named: Constants.removeButtonIconColorName) ?? .black
 
-            imageContainerView.layer?.borderColor = surfaceColor.cgColor
+            imageContainerView.layer?.backgroundColor = surfaceColor.cgColor
             shadowBackingView.layer?.backgroundColor = surfaceColor.cgColor
             removeButton.layer?.backgroundColor = removeButtonBackgroundColor.cgColor
             removeButton.layer?.borderColor = removeButtonBackgroundColor.cgColor

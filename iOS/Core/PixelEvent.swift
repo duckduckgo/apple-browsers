@@ -1862,6 +1862,9 @@ extension Pixel {
         case linkLongPressNewTab
         case linkLongPressBackgroundTab
         case linkLongPressFireTab
+
+        // MARK: - Custom Product Page
+        case customProductPageDuckAIOpenedAIChat
     }
 
 }
@@ -3650,6 +3653,8 @@ extension Pixel.Event {
         case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
         case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
+        // MARK: - Custom Product Page
+        case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
         }
     }
 }

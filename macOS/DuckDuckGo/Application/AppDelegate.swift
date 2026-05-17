@@ -1192,6 +1192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let returningUserProvider = AttributedMetricReturningUserProvider(
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         )
+        let installDateProvider = AttributedMetricATBInstallDateProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
@@ -1201,6 +1202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
+                                                               installDateProvider: installDateProvider,
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 

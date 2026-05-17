@@ -1045,7 +1045,7 @@ class MainViewController: UIViewController {
         guard unifiedToggleInputFeature.isAvailable,
               currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator,
-              coordinator.shouldCollapseOnKeyboardDismiss,
+              coordinator.isAITabExpanded,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
         // With a hardware keyboard connected, iOS fires keyboardWillHide even though the
         // text field is still the first responder. Treat that as "still editing" and skip
@@ -3313,8 +3313,7 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
-        // Voice mode has no on-screen keyboard, so dismiss whatever input is focused before
-        // loading — applies to both the current-tab and new-tab branches below.
+        // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
         unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
 
         let hasContent = currentTab.tabModel.link != nil

@@ -542,9 +542,8 @@ private extension MainViewController {
         if tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
-        // AI tabs never show the wrapping web-view border. Apply before the early-return so
-        // a freshly-bound AI tab opened from another AI tab (which routes through
-        // `preserveCurrentPresentation`) still gets its `UIView`-default visible borders hidden.
+        // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
+        // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
         tab.borderView.isBottomVisible = false
         reconcileToolbarVisibilityForCurrentTab()

@@ -84,6 +84,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var currentMinHeight: CGFloat {
+        if isExpandable && currentMode == .aiChat && handler.isTopBarPosition {
+            return Constants.minHeightAIChat
+        }
+
         guard handler.isUsingFadeOutAnimation else {
             return Constants.minHeight
         }
@@ -107,10 +111,16 @@ class SwitchBarTextEntryView: UIView {
         handler.isUsingExpandedBottomBarHeight
     }
 
+    private var usesTopAlignedPlaceholder: Bool {
+        isExpandable && currentMode == .aiChat
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var placeholderTopConstraint: NSLayoutConstraint?
+    private var placeholderCenterYConstraint: NSLayoutConstraint?
 
     private var wasTextEmptyForAutocorrection: Bool = true
 
@@ -131,8 +141,14 @@ class SwitchBarTextEntryView: UIView {
 
     var isExpandable: Bool = false {
         didSet {
+            updatePlaceholderVerticalAlignment()
             updateTextViewHeight()
         }
+    }
+
+    func refreshLayoutForBarPositionChange() {
+        updatePlaceholderVerticalAlignment()
+        updateTextViewHeight()
     }
 
     /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
@@ -272,6 +288,11 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
+        let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        self.placeholderTopConstraint = placeholderTopConstraint
+        self.placeholderCenterYConstraint = placeholderCenterYConstraint
+        placeholderTopConstraint.isActive = false
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -279,7 +300,7 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
+            placeholderCenterYConstraint,
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
@@ -345,6 +366,7 @@ class SwitchBarTextEntryView: UIView {
             }
         }
         updateKeyboardConfiguration()
+        updatePlaceholderVerticalAlignment()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
@@ -401,6 +423,18 @@ class SwitchBarTextEntryView: UIView {
 
     private func updatePlaceholderAlignment() {
         placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
+    private func updatePlaceholderVerticalAlignment() {
+        guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
+
+        if usesTopAlignedPlaceholder {
+            placeholderCenterYConstraint?.isActive = false
+            placeholderTopConstraint?.isActive = true
+        } else {
+            placeholderTopConstraint?.isActive = false
+            placeholderCenterYConstraint?.isActive = true
+        }
     }
 
     private func updateVoiceButtonStyle() {

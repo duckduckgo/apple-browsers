@@ -241,12 +241,161 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
+    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
+        let expectedTopAIChatMinimumHeight: CGFloat = 68
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: true)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText("hello")
+        let initialHeight = applyFittingHeight(to: sut)
+
+        sut.insertNewlineAtCursor()
+        let heightAfterFirstNewline = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(initialHeight, expectedTopAIChatMinimumHeight, accuracy: 1)
+        XCTAssertEqual(heightAfterFirstNewline, initialHeight, accuracy: 1)
+    }
+
+    func test_topAIChatPlaceholderAlignsWithTextContainerTopInset() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: true)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+    }
+
+    func test_collapsedAIChatPlaceholderStaysVerticallyCenteredInPill() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        prepareForFitting(sut, height: 48)
+        applyFittingHeight(to: sut, height: 48)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+    }
+
+    func test_expandedSearchPlaceholderStaysVerticallyCenteredInPill() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut, height: 48)
+        applyFittingHeight(to: sut, height: 48)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+    }
+
+    func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: true)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+
+        handler.setToggleState(.search)
+        flushMainQueue()
+        applyFittingHeight(to: sut)
+
+        XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+
+        handler.setToggleState(.aiChat)
+        flushMainQueue()
+        applyFittingHeight(to: sut)
+
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+    }
+
+    func test_clearButtonStaysPinnedToTopLineWhenTextEntryExpands() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: true)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText("hello")
+        let initialHeight = applyFittingHeight(to: sut)
+        let clearButton = try XCTUnwrap(findButton(accessibilityLabel: "Clear text", in: sut))
+        let initialClearButtonMinY = clearButton.convert(clearButton.bounds, to: sut).minY
+
+        sut.insertNewlineAtCursor()
+        sut.insertNewlineAtCursor()
+        let expandedHeight = applyFittingHeight(to: sut)
+        let expandedClearButtonMinY = clearButton.convert(clearButton.bounds, to: sut).minY
+
+        XCTAssertGreaterThan(expandedHeight, initialHeight)
+        XCTAssertEqual(expandedClearButtonMinY, initialClearButtonMinY, accuracy: 1)
+    }
+
+    func test_topAIChatToggleDoesNotCompressWhenFloatingReturnExpandsTextEntry() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.handlerIsTopBarPosition = true
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+        sut.onNeedsHierarchyLayout = { [weak sut] in
+            guard let sut else { return }
+            self.applyFittingHeight(to: sut, width: 402)
+        }
+        sut.text = "hello"
+        applyFittingHeight(to: sut, width: 402)
+        let duckAIButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AddressBar.Button.DuckAI", in: sut))
+
+        sut.insertNewlineAtCursor()
+        sut.insertNewlineAtCursor()
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(duckAIButton.frame.height, 36, accuracy: 1)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1)
+    }
+
+    private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {
+        view.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+    }
+
+    @discardableResult
+    private func applyFittingHeight(to view: UIView, width: CGFloat = 320, height proposedHeight: CGFloat = UIView.layoutFittingCompressedSize.height) -> CGFloat {
+        let height = view.systemLayoutSizeFitting(
+            CGSize(width: width, height: proposedHeight),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height
+        view.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        return height
     }
 
     private func makeInvalidFileAttachment(
@@ -290,12 +439,20 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
-        if let button = view as? UIButton, button.accessibilityLabel == accessibilityLabel {
+        findButton(in: view) { $0.accessibilityLabel == accessibilityLabel }
+    }
+
+    private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
+        findButton(in: view) { $0.accessibilityIdentifier == accessibilityIdentifier }
+    }
+
+    private func findButton(in view: UIView, where matches: (UIButton) -> Bool) -> UIButton? {
+        if let button = view as? UIButton, matches(button) {
             return button
         }
 
         for subview in view.subviews {
-            if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+            if let button = findButton(in: subview, where: matches) {
                 return button
             }
         }

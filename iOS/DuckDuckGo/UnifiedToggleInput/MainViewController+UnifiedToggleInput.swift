@@ -76,7 +76,7 @@ extension MainViewController {
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
+            self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator, completion: completion)
         }
         self.unifiedToggleInputCoordinator = coordinator
 
@@ -722,7 +722,7 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
-                self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+                self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
             }
@@ -842,6 +842,32 @@ private extension MainViewController {
         }
     }
 
+    /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for
+    /// AI tabs, standard omnibar morph for everything else.
+    func dismissUnifiedToggleInputOmnibarSession(coordinator: UnifiedToggleInputCoordinator,
+                                                 completion: (() -> Void)? = nil) {
+        if currentTab?.isAITab == true {
+            dismissFocusedOmnibarToAITabChrome(coordinator: coordinator, completion: completion)
+        } else {
+            dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
+        }
+    }
+
+    /// Snaps back to AI tab chrome — the two surfaces share no visual element, so a crossfade
+    /// would briefly show both. Pins coordinator to `.aiTab(.collapsed)` so refresh routes to
+    /// `.preserveCurrentPresentation` and skips the auto-expand.
+    func dismissFocusedOmnibarToAITabChrome(coordinator: UnifiedToggleInputCoordinator,
+                                            completion: (() -> Void)? = nil) {
+        viewCoordinator.unifiedInputContentContainer.isHidden = true
+        viewCoordinator.showAIChatTabChatHeader()
+        coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
+        coordinator.showCollapsed()
+        if let tab = currentTab {
+            refreshUnifiedToggleInput(for: tab)
+        }
+        completion?()
+    }
+
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
         let isAITabSubmission = currentTab?.isAITab == true
         if isAITabSubmission {
@@ -905,6 +931,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
         let trimmed = prefilledText.trimmingWhitespace()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
+        // On a Duck.ai tab, load a new chat URL here so the previous chat goes into WebView back-history.
+        if currentTab?.isAITab == true {
+            currentTab?.load(trimmed.isEmpty ? nil : trimmed, autoSend: !trimmed.isEmpty)
+            return
+        }
         onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
     }
 
@@ -1019,12 +1050,23 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         if currentTab?.canGoBack == true {
             onBackPressed()
         } else {
-            showTabSwitcher()
+            presentFocusedOmnibarFromAITab()
         }
     }
 
     func aiChatTabChatHeaderDidTapForward() {
         onForwardPressed()
+    }
+
+    /// Hides only the AI Chat header (NOT the nav chrome via `hideAITabChrome()`) so the standard
+    /// omnibar stays suppressed and dismiss skips its omnibar crossfade.
+    private func presentFocusedOmnibarFromAITab() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        viewCoordinator.hideAIChatTabChatHeader()
+        applyUnifiedInputChromeBackground(.standardChrome)
+
+        let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
+        coordinator.activateFromOmnibar(prefilledText: nil, inputMode: .search, cardPosition: position)
     }
 }
 

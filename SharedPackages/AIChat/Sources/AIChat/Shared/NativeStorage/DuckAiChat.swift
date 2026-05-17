@@ -60,12 +60,10 @@ public struct DuckAiChat: Equatable {
 extension DuckAiChat {
 
     /// Decodes a `DuckAiChat` and its first user message content from a raw JSON data blob
-    /// as stored in the native data store's `duck_ai_chats` table.
-    /// - Parameter data: The raw JSON data.
-    /// - Returns: A tuple of the decoded chat and the optional first user message content,
-    ///   or `nil` if decoding fails.
-    static func decode(from data: Data) -> (chat: DuckAiChat, firstUserMessageContent: String?)? {
-        guard let blob = try? JSONDecoder().decode(ChatBlob.self, from: data) else { return nil }
+    /// as stored in the native data store's `duck_ai_chats` table. Throws when the data is
+    /// not valid JSON or is missing required fields (e.g. `chatId`).
+    public static func decode(from data: Data) throws -> (chat: DuckAiChat, firstUserMessageContent: String?) {
+        let blob = try JSONDecoder().decode(ChatBlob.self, from: data)
 
         let chat = DuckAiChat(
             chatId: blob.chatId,

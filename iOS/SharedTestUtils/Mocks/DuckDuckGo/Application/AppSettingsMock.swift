@@ -106,6 +106,7 @@ class AppSettingsMock: AppSettings {
     var newTabPageIntroMessageSeenCount: Int = 0
 
     var onboardingUserType: OnboardingUserType = .notSet
+    var onboardingForceRestorePromptEligible: Bool = false
 
     var duckPlayerNativeUISERPEnabled: Bool = true
     var duckPlayerNativeYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!

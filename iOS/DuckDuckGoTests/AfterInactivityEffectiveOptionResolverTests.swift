@@ -19,6 +19,7 @@
 
 import Foundation
 import Testing
+import Core
 import Persistence
 import PersistenceTestingUtils
 @testable import DuckDuckGo
@@ -32,30 +33,69 @@ struct AfterInactivityEffectiveOptionResolverTests {
         return (store, storage)
     }
 
-    @Test("When stored value exists then resolveEffectiveOption returns it")
-    func whenStoredValueExistsThenReturnsIt() throws {
+    private func resolver(
+        storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>,
+        isPad: Bool,
+        enabledFlags: [FeatureFlag]
+    ) -> AfterInactivityEffectiveOptionResolver {
+        AfterInactivityEffectiveOptionResolver(
+            storage: storage,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFlags),
+            isPad: isPad
+        )
+    }
+
+    private func expectAfterInactivityOptionUnset(_ storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>) {
+        let raw = try? storage.value(for: \AfterInactivitySettingKeys.afterInactivityOption)
+        #expect(raw == nil)
+    }
+
+    @Test("When stored value exists then resolveEffectiveOption returns it with cohort flag off")
+    func whenStoredValueExistsThenReturnsItFlagOff() throws {
         let (_, storage) = try makeStorage()
         try storage.set(AfterInactivityOption.lastUsedTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
 
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [])
 
-        #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
     }
 
-    @Test("When no stored value and idleReturnNewUser is true on iPhone then returns New Tab and persists")
-    func whenNewUserOnPhoneThenReturnsNewTabAndPersists() throws {
+    @Test("When stored value exists then resolveEffectiveOption returns it with cohort flag on")
+    func whenStoredValueExistsThenReturnsItFlagOn() throws {
+        let (_, storage) = try makeStorage()
+        try storage.set(AfterInactivityOption.lastUsedTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [.defaultExistingIPhoneUsersToNewTabAfterIdle])
+
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
+    }
+
+    @Test("When no stored value and cohort flag on and idleReturnNewUser is true on iPhone then returns New Tab and persists")
+    func whenNewUserOnPhoneFlagOnThenReturnsNewTabAndPersists() throws {
         let (store, storage) = try makeStorage()
         try storage.set(true, for: \AfterInactivitySettingKeys.idleReturnNewUser)
 
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [.defaultExistingIPhoneUsersToNewTabAfterIdle])
 
-        #expect(resolver.resolveEffectiveOption() == .newTab)
+        #expect(sut.resolveEffectiveOption() == .newTab)
 
         let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
-        let persistedOption = try storage2.value(for: \AfterInactivitySettingKeys.afterInactivityOption)
-        let persistedNewUser = try storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser)
-        #expect(persistedOption == AfterInactivityOption.newTab.rawValue)
-        #expect(persistedNewUser == false)
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.afterInactivityOption) == AfterInactivityOption.newTab.rawValue)
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser) == false)
+    }
+
+    @Test("When no stored value and cohort flag off and idleReturnNewUser is true on iPhone then returns New Tab and persists")
+    func whenNewUserOnPhoneFlagOffThenReturnsNewTabAndPersists() throws {
+        let (store, storage) = try makeStorage()
+        try storage.set(true, for: \AfterInactivitySettingKeys.idleReturnNewUser)
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [])
+
+        #expect(sut.resolveEffectiveOption() == .newTab)
+
+        let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.afterInactivityOption) == AfterInactivityOption.newTab.rawValue)
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser) == false)
     }
 
     @Test("When no stored value and idleReturnNewUser is true on iPad then returns Last Used Tab")
@@ -63,28 +103,73 @@ struct AfterInactivityEffectiveOptionResolverTests {
         let (_, storage) = try makeStorage()
         try storage.set(true, for: \AfterInactivitySettingKeys.idleReturnNewUser)
 
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: true)
+        let sut = resolver(storage: storage, isPad: true, enabledFlags: [])
 
-        #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
     }
 
-    @Test("When no stored value and idleReturnNewUser is false then returns Last Used Tab")
-    func whenReturningUserThenReturnsLastUsedTab() throws {
+    @Test("When no stored value and cohort flag on and idleReturnNewUser is false on iPhone then returns New Tab without persisting")
+    func whenReturningUserOnPhoneFlagOnThenReturnsNewTabWithoutPersisting() throws {
+        let (store, storage) = try makeStorage()
+        try storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [.defaultExistingIPhoneUsersToNewTabAfterIdle])
+
+        #expect(sut.resolveEffectiveOption() == .newTab)
+
+        let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
+        expectAfterInactivityOptionUnset(storage2)
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser) == false)
+    }
+
+    @Test("When no stored value and cohort flag off and idleReturnNewUser is false on iPhone then returns Last Used Tab without persisting option")
+    func whenReturningUserOnPhoneFlagOffThenReturnsLastUsedTabWithoutPersistingOption() throws {
+        let (store, storage) = try makeStorage()
+        try storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [])
+
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
+
+        let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
+        expectAfterInactivityOptionUnset(storage2)
+        #expect(try storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser) == false)
+    }
+
+    @Test("When no stored value and cohort flag on and idleReturnNewUser not set on iPhone then returns New Tab without persisting")
+    func whenNoStoredValueAndNewUserNotSetOnPhoneFlagOnThenReturnsNewTabWithoutPersisting() throws {
+        let (store, storage) = try makeStorage()
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [.defaultExistingIPhoneUsersToNewTabAfterIdle])
+
+        #expect(sut.resolveEffectiveOption() == .newTab)
+
+        let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
+        expectAfterInactivityOptionUnset(storage2)
+    }
+
+    @Test("When no stored value and cohort flag off and idleReturnNewUser not set on iPhone then returns Last Used Tab without persisting option")
+    func whenNoStoredValueAndNewUserNotSetOnPhoneFlagOffThenReturnsLastUsedTabWithoutPersistingOption() throws {
+        let (store, storage) = try makeStorage()
+
+        let sut = resolver(storage: storage, isPad: false, enabledFlags: [])
+
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
+
+        let storage2: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
+        expectAfterInactivityOptionUnset(storage2)
+        let cohortUnset = try? storage2.value(for: \AfterInactivitySettingKeys.idleReturnNewUser)
+        #expect(cohortUnset == nil)
+    }
+
+    @Test("When no stored value and idleReturnNewUser is false on iPad then returns Last Used Tab")
+    func whenReturningUserOnPadThenReturnsLastUsedTab() throws {
         let (_, storage) = try makeStorage()
         try storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
 
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
+        let sut = resolver(storage: storage, isPad: true, enabledFlags: [])
 
-        #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
-    }
-
-    @Test("When no stored value and idleReturnNewUser not set then returns Last Used Tab")
-    func whenNoStoredValueAndNewUserNotSetThenReturnsLastUsedTab() throws {
-        let (_, storage) = try makeStorage()
-
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: false)
-
-        #expect(resolver.resolveEffectiveOption() == .lastUsedTab)
+        #expect(sut.resolveEffectiveOption() == .lastUsedTab)
     }
 
     @Test("When stored value exists on iPad then resolveEffectiveOption returns it")
@@ -92,8 +177,8 @@ struct AfterInactivityEffectiveOptionResolverTests {
         let (_, storage) = try makeStorage()
         try storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
 
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage, isPad: true)
+        let sut = resolver(storage: storage, isPad: true, enabledFlags: [])
 
-        #expect(resolver.resolveEffectiveOption() == .newTab)
+        #expect(sut.resolveEffectiveOption() == .newTab)
     }
 }

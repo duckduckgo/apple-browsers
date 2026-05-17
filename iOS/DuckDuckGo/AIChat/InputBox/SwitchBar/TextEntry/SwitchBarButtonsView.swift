@@ -24,10 +24,7 @@ enum SwitchBarButtonState {
     case noButtons
     case clearOnly
     case voiceOnly
-    case searchGoToOnly
-    case voiceAndSearchGoTo
     case stopGeneratingOnly
-    case stopGeneratingAndSearchGoTo
     case aiChatShortcutOnly
     case voiceAndAIChatShortcut
     case clearAndAIChatShortcut
@@ -36,8 +33,7 @@ enum SwitchBarButtonState {
         switch self {
         case .clearOnly, .clearAndAIChatShortcut:
             return true
-        case .noButtons, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
-             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+        case .noButtons, .voiceOnly, .stopGeneratingOnly,
              .aiChatShortcutOnly, .voiceAndAIChatShortcut:
             return false
         }
@@ -45,40 +41,27 @@ enum SwitchBarButtonState {
 
     var showsVoiceButton: Bool {
         switch self {
-        case .voiceOnly, .voiceAndSearchGoTo, .voiceAndAIChatShortcut:
+        case .voiceOnly, .voiceAndAIChatShortcut:
             return true
-        case .noButtons, .clearOnly, .searchGoToOnly,
-             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+        case .noButtons, .clearOnly, .stopGeneratingOnly,
              .aiChatShortcutOnly, .clearAndAIChatShortcut:
-            return false
-        }
-    }
-
-    var showsSearchGoToButton: Bool {
-        switch self {
-        case .searchGoToOnly, .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
-            return true
-        case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly,
-             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
     }
 
     var showsSeparator: Bool {
         switch self {
-        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
-            return true
-        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .stopGeneratingOnly,
-             .aiChatShortcutOnly:
+        case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly,
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
     }
 
     var showsStopGeneratingButton: Bool {
         switch self {
-        case .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
+        case .stopGeneratingOnly:
             return true
-        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+        case .noButtons, .clearOnly, .voiceOnly,
              .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
@@ -88,8 +71,7 @@ enum SwitchBarButtonState {
         switch self {
         case .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
-        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
-             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
+        case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly:
             return false
         }
     }
@@ -98,8 +80,7 @@ enum SwitchBarButtonState {
         switch self {
         case .noButtons:
             return false
-        case .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
-             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
+        case .clearOnly, .voiceOnly, .stopGeneratingOnly,
              .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
         }
@@ -120,6 +101,13 @@ class SwitchBarButtonsView: UIView {
 
         static let stopButtonBackdropInset: CGFloat = 2
         static let stopButtonBackdropCornerRadius: CGFloat = (buttonSize - (stopButtonBackdropInset * 2)) / 2
+
+        /// Chip is laid out as a 40pt circle (Figma) — same diameter as the inline back button.
+        static let aiChatShortcutChipSize: CGFloat = 40
+        /// 8pt of trailing space inside the stack so the chip's right edge sits 8pt from the
+        /// buttonsView trailing — matches the back button's leading 8pt for symmetry.
+        static let stackTrailingInset: CGFloat = 8
+
         static let accessibilityPrefix = "Browser.OmniBar"
     }
 
@@ -137,7 +125,6 @@ class SwitchBarButtonsView: UIView {
 
     var onClearTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
-    var onSearchGoToTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
@@ -161,8 +148,16 @@ class SwitchBarButtonsView: UIView {
     }()
     private let voiceButton = BrowserChromeButton(.primary)
     private let aiChatShortcutButton = BrowserChromeButton(.primary)
+    private let aiChatShortcutBackdrop: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.layer.cornerRadius = Constants.aiChatShortcutChipSize / 2
+        view.clipsToBounds = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
     private let separatorView = UIView()
-    private let searchGoToButton = BrowserChromeButton(.primary)
 
     init() {
         super.init(frame: CGRect(origin: .zero,
@@ -186,6 +181,8 @@ class SwitchBarButtonsView: UIView {
     private func setUpSubviews() {
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.alignment = .center
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: Constants.stackTrailingInset)
 
         addSubview(stack)
 
@@ -194,8 +191,8 @@ class SwitchBarButtonsView: UIView {
         stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
         stack.addArrangedSubview(separatorView)
+        aiChatShortcutButton.insertSubview(aiChatShortcutBackdrop, at: 0)
         stack.addArrangedSubview(aiChatShortcutButton)
-        stack.addArrangedSubview(searchGoToButton)
     }
 
     private func setUpConstraints() {
@@ -219,14 +216,16 @@ class SwitchBarButtonsView: UIView {
             voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
+            aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
+
+            aiChatShortcutBackdrop.topAnchor.constraint(equalTo: aiChatShortcutButton.topAnchor),
+            aiChatShortcutBackdrop.leadingAnchor.constraint(equalTo: aiChatShortcutButton.leadingAnchor),
+            aiChatShortcutBackdrop.trailingAnchor.constraint(equalTo: aiChatShortcutButton.trailingAnchor),
+            aiChatShortcutBackdrop.bottomAnchor.constraint(equalTo: aiChatShortcutButton.bottomAnchor),
 
             separatorView.widthAnchor.constraint(equalToConstant: Constants.separatorWidth),
             separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
-
-            searchGoToButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            searchGoToButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
         ])
     }
 
@@ -243,9 +242,6 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.addAction(UIAction { [weak self] _ in self?.onAIChatShortcutTapped?() }, for: .touchUpInside)
 
         separatorView.backgroundColor = UIColor(designSystemColor: .decorationPrimary)
-
-        searchGoToButton.setImage(DesignSystemImages.Glyphs.Size24.searchFind)
-        searchGoToButton.addAction(UIAction { [weak self] _ in self?.onSearchGoToTapped?() }, for: .touchUpInside)
     }
 
     private func setUpAccessibility() {
@@ -264,10 +260,6 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatShortcutButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.AIChat"
         aiChatShortcutButton.accessibilityTraits = .button
-
-        searchGoToButton.accessibilityLabel = "Search"
-        searchGoToButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.SearchGoTo"
-        searchGoToButton.accessibilityTraits = .button
     }
 
     private func updateButtonsVisibility() {
@@ -276,7 +268,26 @@ class SwitchBarButtonsView: UIView {
         voiceButton.isHidden = !buttonState.showsVoiceButton
         aiChatShortcutButton.isHidden = !buttonState.showsAIChatShortcutButton
         separatorView.isHidden = !buttonState.showsSeparator
-        searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
+    }
+
+    /// Fades the duck.ai chip's circular fill and slides the chip horizontally so it lands at
+    /// the omnibar's chat-icon resting position. Icon stays at full alpha throughout the
+    /// surrounding dismiss/collapse animation.
+    func fadeAIChatShortcutBackdrop(duration: TimeInterval, horizontalOffset: CGFloat) {
+        UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+            self.aiChatShortcutBackdrop.alpha = 0
+            self.aiChatShortcutButton.transform = CGAffineTransform(translationX: horizontalOffset, y: 0)
+        }
+    }
+
+    /// Restore the override applied by `fadeAIChatShortcutBackdrop`. Eases the backdrop back
+    /// in and slides the chip from its dismissed offset to the resting position; mirrors the
+    /// dismiss fade so the chip transitions both ways.
+    func restoreAIChatShortcutBackdrop(duration: TimeInterval) {
+        UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+            self.aiChatShortcutBackdrop.alpha = 1
+            self.aiChatShortcutButton.transform = .identity
+        }
     }
 
     private func updateVoiceButtonAppearance() {

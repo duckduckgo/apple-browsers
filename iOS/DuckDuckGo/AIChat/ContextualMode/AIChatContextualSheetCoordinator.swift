@@ -73,7 +73,9 @@ final class AIChatContextualSheetCoordinator {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
 
@@ -117,10 +119,12 @@ final class AIChatContextualSheetCoordinator {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -129,10 +133,12 @@ final class AIChatContextualSheetCoordinator {
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
@@ -185,7 +191,7 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
-        if featureFlagger.isFeatureOn(.unifiedToggleInput) { return }
+        if unifiedToggleInputFeature.isFeatureFlagEnabled { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {
@@ -287,6 +293,7 @@ private extension AIChatContextualSheetCoordinator {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             isFireTab: isFireTab,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
@@ -310,7 +317,8 @@ private extension AIChatContextualSheetCoordinator {
                     hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,
-                    isFireTab: self.isFireTab
+                    isFireTab: self.isFireTab,
+                    lastUsedModelProvider: self.duckAiLastUsedModelProvider
                 )
                 host.install(in: contextualChatViewController)
                 return host
@@ -328,6 +336,13 @@ private extension AIChatContextualSheetCoordinator {
             return (context, .pendingSubmit)
         }
         return (nil, .delivered)
+    }
+
+    var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
+            DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
+        }
     }
     
     /// Starts the session timer after the sheet is dismissed.

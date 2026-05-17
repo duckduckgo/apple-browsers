@@ -30,6 +30,7 @@ public class RemoteMessageManagedObject: NSManagedObject {
         return NSEntityDescription.entity(forEntityName: "RemoteMessageManagedObject", in: context)!
     }
 
+    @NSManaged public var firstShownDate: Date?
     @NSManaged public var id: String?
     @NSManaged public var message: String?
     @NSManaged public var shown: Bool

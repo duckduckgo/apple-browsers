@@ -101,9 +101,13 @@ extension RebrandedNewTabDaxDialogFactory {
         return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
+                    // The Duck.ai experiment completion dialog reuses `OnboardingEndOfJourneyDialog`
+                    // but is presented over the active address bar with the keyboard up — no room
+                    // for the screen-bottom Dax animation, so suppress it explicitly here.
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(
                         message: message,
                         cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                        showsDaxAnimation: false,
                         dismissAction: onDismiss
                     )
                 }
@@ -169,9 +173,11 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+        // Dax placement is owned by the dialog's `ScreenBottomDaxOverlay` (keyboard-aware).
+        // The previous large-screen `DaxAnimationOverlay` here didn't track the keyboard.
         return FadeInView {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey
                     message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                     cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                     dismissAction: { [weak self] in

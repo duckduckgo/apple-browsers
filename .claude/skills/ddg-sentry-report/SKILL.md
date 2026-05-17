@@ -101,7 +101,7 @@ Otherwise branch on `release-type`:
     limit=20)
   ```
   Filter the returned list to **exact name pattern match** for the platform: `^<platform> <version> is now public$` (e.g. `iOS 7.218.0 is now public`). Cross-platform names must be discarded — the `text` filter is fuzzy. Then drop any task whose `created_at` is within the last 12 hours (compare against `date -u +%Y-%m-%dT%H:%M:%SZ` minus 12 hours via Bash). From the remaining tasks, take the **first** (newest `created_at`). The 12-hour gate handles the case where a brand-new release task has just been created but Sentry has no events for that version yet — without it, we'd target the just-rolled-out release and the report would be near-empty. Order matters: filter by 12h, *then* take newest. If every candidate is <12h old, stop and ask the user.
-- **`release-type=internal`** — find the newest open `<platform> App Release <version>` task in the Apple Releases project's `<platform>` section:
+- **`release-type=internal`** — find the open `<platform> App Release <version>` task in the Apple Releases project's `<platform>` section that's currently pending publishing:
   ```
   asana_search_tasks(workspace="137249556945",
     projects.any="1209802997613369",
@@ -114,7 +114,9 @@ Otherwise branch on `release-type`:
     opt_fields="name,gid,created_at,permalink_url",
     limit=10)
   ```
-  where `<PLATFORM_RELEASE_SECTION>` is `1209802997613372` for iOS or `1209802997613373` for macOS. Also filter the returned list to exact name pattern `^<platform> App Release \d+\.\d+\.\d+$` so cross-platform tasks and unrelated rollout subtasks are dropped. `is_subtask=false` is required — without it the rollout-step subtasks (`Run "Tag Release and Update Asana" GHA Job`, `Start Phased rollout`, etc.) clutter the result. Take the **first** remaining (newest `created_at`).
+  where `<PLATFORM_RELEASE_SECTION>` is `1209802997613372` for iOS or `1209802997613373` for macOS. Also filter the returned list to exact name pattern `^<platform> App Release \d+\.\d+\.\d+$` so cross-platform tasks and unrelated rollout subtasks are dropped. `is_subtask=false` is required — without it the rollout-step subtasks (`Run "Tag Release and Update Asana" GHA Job`, `Start Phased rollout`, etc.) clutter the result.
+
+  **Pick by weekday (UTC).** Check `date -u +%u` via Bash. On Tuesday–Sunday (`2`–`7`), take the **first** remaining (newest `created_at`). On Monday UTC (`1`), drop the newest match and take the **second** (next-newest `created_at`): internal code freeze runs at 01:00 UTC every Monday and creates a fresh `<platform> App Release` task whose version has been out for only a few hours and won't have meaningful Sentry events yet — the task one position older is the internal release currently pending publishing, which is the one we want to triage. If only one task survives the filter on a Monday, stop and ask the user — do NOT fall back to the newest.
 
 In both branches: **stop and ask the user** if zero matching tasks survive the filter. Do NOT silently fall back to a different platform, a different release-type, or a manually-chosen version. Surface the resolved task (name + permalink + `created_at`) to the user in your first text update.
 
@@ -142,7 +144,7 @@ Pass values **unquoted**. `app_version:"1.186.*"` and `lastSeen:"-24h"` both bre
 Use both user count and new-vs-pre-existing:
 
 - 🔴 **HIGH:** new-in-version AND a visible cluster (≥3 issues in same subsystem) OR new-in-version with ≥10 users
-- 🟡 **MEDIUM:** new-in-version, single occurrence, app-code culprit
+- 🟡 **MEDIUM:** new-in-version, single Sentry issue (not a multi-issue cluster), <10 users, app-code culprit (regardless of event count — but see the 1-event carve-out below)
 - 🟢 **LOW:** new-in-version but OS-level, Swift-runtime internals, Jetsam OOM on `main`, or symbol-less
 - ⚠️ **Pre-existing:** still firing but not new — list by user count, do not attribute blame
 
@@ -152,7 +154,13 @@ Use both user count and new-vs-pre-existing:
 - **LOW:** no step-5 lookup, no git blame, no subagent, no tracking task. Main-report line leads with the Sentry short-ID.
 - **Pre-existing:** no tracking task, no subagent, **no blame attribution at all** — not full names, not initials, not "assigned to X". List by user count only. Pre-existing issues are owned by their existing tracking tasks; the daily summary records volume.
 
-**Low user count is NOT a skip reason for MEDIUM.** Single-occurrence (1 user, 1 event) is the *definition* of MEDIUM, not an exit ramp. A MEDIUM with 1 user gets the same treatment as a MEDIUM with 9 users: tracking task + RCA. Do not invent thresholds like "1-user threshold = no tracking" or "low-volume = monitor only". The legitimate skips are the four in step 8, full stop.
+**1-event carve-out for MEDIUM.** When a new-in-version cluster has exactly 1 event **total** (sum of Sentry's `count` field across every short-ID in the cluster, all-time — NOT just within `<TIME_RANGE>`) AND step 5 finds no existing tracking task for it, **skip steps 6 (git blame), 8 (RCA), and 9 (tracking task creation)**. List the cluster in the main report's MEDIUM section with just the Sentry short-ID + link + minimal stats (e.g. `1 user, 1 event`) and the `<code>culprit</code>` symbol — no `Tracking` link, no PR attribution, no 1–2 sentence description. Rationale: one-off crashes don't justify a triage doc until they recur; the per-issue tracking infrastructure is for patterns we can investigate, not single events. The first run on which the cluster's total event count rises above 1 flips it to the full MEDIUM path.
+
+A cluster with 1 event in `<TIME_RANGE>` but multiple historical events is a *recurring* crash that resurfaced — it does NOT qualify for the carve-out. Use total event count, not windowed count, to gate this rule.
+
+Existing tracking tasks still get updated when the cluster is 1-event-total (open task → capture link; reopened regression → run 6 and 8 as usual). The carve-out is specifically the "no existing task + exactly 1 event total" path.
+
+**Low user count alone is NOT a skip reason for MEDIUM.** A MEDIUM with 1 user but ≥2 events still gets a tracking task and RCA. The carve-out above is keyed on event count == 1, not user count, not "low-volume". Do not invent broader thresholds like "1-user threshold = no tracking" or "<5 events = monitor only". The legitimate skips are the five in step 8 (the 1-event carve-out being #5), full stop.
 
 ## Step 5: Pre-flight — existing tracking-task lookup (gates the rest)
 
@@ -208,7 +216,9 @@ Notes on the outcomes:
 
 ## Step 6: Git blame each surviving new issue
 
-For each culprit symbol (e.g. `TabBarViewController.tabCollectionViewModel`):
+Skip this step for any cluster that hit step 4's **1-event carve-out** (1 event total across the cluster's short-IDs AND step 5 returned "no existing task"). No tracking task will be created, so there's nothing to attribute.
+
+For each remaining culprit symbol (e.g. `TabBarViewController.tabCollectionViewModel`):
 
 - `grep` the symbol to find the file + line.
 - `git blame -L <line-range>` on that region.
@@ -232,6 +242,7 @@ For each new issue with an informative stacktrace that survived step 5's gate. E
 2. The stacktrace contains **no first-party frames at all** (literally zero DuckDuckGo frames, not "leaf is in OS code").
 3. Crash is Jetsam OOM SIGKILL on `main` (LOW classification).
 4. Step 5 routed the issue to "fix already shipped in vX.Y.Z".
+5. Cluster has exactly 1 event total (sum of Sentry's `count` across every short-ID, all-time) AND step 5 returned "no existing task" (step 4's 1-event carve-out). Step 9 doesn't create a tracking task in this case, so there's no triage doc for the RCA to feed. A cluster with 1 event in `<TIME_RANGE>` but ≥2 events historically does NOT qualify — those are recurring crashes, run RCA. If a 1-event-total cluster *does* have an existing open or reopened-regression task, RCA still runs normally — the carve-out is keyed on the no-task path.
 
 Dispatch one **general-purpose** subagent per qualifying issue **in parallel** (single message, multiple Agent tool calls). Brief each subagent with: short-ID, exception class + message, full stacktrace from `get_sentry_resource`, suspect PR(s) from step 6, and a concrete instruction to (a) trace the call chain backward to its origin in this repo, (b) identify the invariant being violated *or* explicitly rule out an app-code root cause if evidence points elsewhere, (c) return a short structured report (root-cause summary, numbered call chain 4–8 steps, likely category, optional fix sketch). Cap responses ("under 250 words"). A "we investigated and concluded this is OS-runtime / hardware noise — not actionable" finding is a valid result; **an empty Root Cause Analysis section in the tracking task is not.** Use the analyses to populate the per-issue tracking tasks in step 9.
 
@@ -245,7 +256,8 @@ The lookup itself was done in step 5. Outcomes:
 
 - **Found in step 5 (open or future-fix-tag):** capture `permalink_url`; reference it in the main report's per-issue line as `· <a href="...">tracking</a>`. If the existing task lacks one of the new sibling short-IDs you would otherwise file under it, you may extend its custom field with the missing IDs (`asana_update_task` with `custom_fields={"1214294661819893": "<existing>,<new1>,<new2>"}`); otherwise leave it alone. Do **not** rewrite the body of an existing task.
 - **Found in step 5 (reopened regression):** the task already has a body; append a regression note via `asana_update_task` with `html_notes` that preserves the existing content and adds a "Regression seen in <version>" section with the fresh RCA from step 8 (read existing `html_notes` first via `asana_get_task` so you can preserve it). Capture `permalink_url`.
-- **Not found in step 5:** create one task with `asana_create_task`. **Always create in the platform section, never the fallback:**
+- **Not found in step 5, cluster has exactly 1 event total** (sum of Sentry's `count` across every short-ID in the cluster, all-time): do NOT create a tracking task (step 4's 1-event carve-out). The cluster is listed in the main report's MEDIUM section with the Sentry short-ID + link only — no `permalink_url` to capture, no RCA. The first run on which the cluster's total event count rises above 1, this gate releases and that run creates the task.
+- **Not found in step 5, cluster has ≥2 events total:** create one task with `asana_create_task`. **Always create in the platform section, never the fallback:**
   - `name`: `<error type> <culprit>` — mirrors existing tasks (e.g. `EXC_CRASH TabBarViewController.tabCollectionViewModel`, `NSInternalInconsistencyException CollectionView.reloadItems`).
   - `project_id`: `1214294661819890`
   - `section_id`: `<PLATFORM_SECTION>`
@@ -263,7 +275,7 @@ Capture the new task's `permalink_url` and reference it in the main report.
 - `<YYYY-MM-DD>` is today's date.
 - **Never write to the parent task itself** (no `asana_update_task` on the parent — its body is owned by humans).
 
-**Lead with tracking.** Each HIGH/MEDIUM line leads with the tracking-task link captured in step 9, then Sentry short-ID(s), then stats (users + events), then 1–2 sentence description with inline PR links. Lead-with-tracking is the readability win — readers scanning the list jump to the per-issue triage doc in one click instead of hunting at the end of a paragraph. LOW and Pre-existing entries skip the tracking link (no task created) and lead with the Sentry short-ID. Issues that step 5 routed to "Fix already shipped in vX.Y.Z" get their own MEDIUM sub-section with a one-line note explaining no further action is needed for this release.
+**Lead with tracking.** Each HIGH/MEDIUM line leads with the tracking-task link captured in step 9, then Sentry short-ID(s), then stats (users + events), then 1–2 sentence description with inline PR links. Lead-with-tracking is the readability win — readers scanning the list jump to the per-issue triage doc in one click instead of hunting at the end of a paragraph. LOW, Pre-existing, and **1-event-carve-out MEDIUM** entries skip the tracking link (no task created) and lead with the Sentry short-ID. 1-event MEDIUM entries are intentionally terse — short-ID + link + minimal stats (`1 user, 1 event`) + `<code>culprit</code>`, no PR attribution and no description, so future runs can grow them into full MEDIUM entries when the event count rises. Issues that step 5 routed to "Fix already shipped in vX.Y.Z" get their own MEDIUM sub-section with a one-line note explaining no further action is needed for this release.
 
 The "Recommended next step" block is governed by the **Reporting tone** section above — anchor every claim to `<TIME_RANGE>`; no release-readiness verdicts. Where there *are* action items: each links directly to the corresponding tracking task in `Sentry Crash Reports` so the reader can jump from the recommendation to the per-issue triage doc. Where a recommendation covers a family of crashes spanning multiple tracking tasks, link each tracking task inline (e.g. "Tracked across <a href="...">D6N7+D7RR</a>, <a href="...">D8BH</a>, <a href="...">D7SV</a>"). Include a brief pointer to the suspected root-cause PR.
 
@@ -286,6 +298,7 @@ Do **not** add the DRI as a follower of any per-issue tracking task created in s
 - **Subtask name format:** `Sentry summary - <platform> <version> - <YYYY-MM-DD>` (e.g. `Sentry summary - macOS 1.186 - 2026-04-30`).
 - **`asana_get_task` requires `opt_fields="tags,tags.name"`** — the data-protection hook rejects queries without it (`RETRY REQUIRED` error).
 - **Asana `html_notes` must be wrapped in `<body>...</body>`.** Use `<a href="...">` for plain links (not @-mentions). `<strong>`, `<em>`, `<code>`, `<hr>` supported. See the `asana-rich-text` skill for full syntax.
+- **Use literal Unicode characters, never HTML named entities.** `html_notes` is XML — Asana decodes only the five XML built-ins (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`). Any other named entity (`&bull;`, `&mdash;`, `&ndash;`, `&hellip;`, `&middot;`, `&nbsp;`, `&copy;`, `&trade;`, …) renders as its literal source text (e.g. `&bull;` shows as the eight characters `&bull;`, not `•`). Type the character itself: `•` `—` `–` `…` `·` (regular space) `©` `™`. The templates already use literal characters; preserve them through substitution and never "HTML-escape" typographic punctuation before passing the string to `asana_create_task` / `asana_update_task`. Numeric character references (`&#8226;`) have the same problem — use the literal character.
 - **Resolve parent task GID from URL:** numeric segment after `/task/` (e.g. `.../task/1214175611004136` → `1214175611004136`).
 
 ## Common mistakes
@@ -316,7 +329,9 @@ Top-bite rows. See [`references/common-mistakes-extended.md`](references/common-
 
 | Mistake | Fix |
 |---|---|
-| Skipping tracking-task creation for MEDIUM because they're "low-volume" or "single-user" | MEDIUM is *defined* as new-in-version + single occurrence + app-code culprit. Single-user is the entry condition, not a justification to drop it. MEDIUM follows the same path as HIGH. The only legitimate skips are the four in step 8. |
+| Creating a tracking task for a new-in-version cluster with exactly 1 event total | Don't. Step 4's 1-event carve-out gates this: when a new cluster has 1 event total (sum of `count` across every short-ID, all-time — NOT just within `<TIME_RANGE>`) AND step 5 finds no existing task, skip git blame + RCA + tracking task. List in the main report's MEDIUM section with Sentry short-ID + link + minimal stats only. One-off crashes don't justify a triage doc until they recur. |
+| Applying the 1-event carve-out to clusters with 1 event in `<TIME_RANGE>` but multiple historical events | The gate is keyed on **total** event count, not windowed count. A cluster firing once in the last 24h with 50 historical events is a recurring crash that just resurfaced — full MEDIUM path (git blame + RCA + tracking task). Read each short-ID's all-time `count` field and sum across the cluster, not the windowed slice. |
+| Skipping tracking-task creation for MEDIUM with ≥2 events because it's "low-volume" or "single-user" | The event-count carve-out is exactly 1. A MEDIUM with 1 user but 2+ events, or any cluster with 2+ events, still gets a tracking task + RCA. Do not generalise the 1-event rule to broader low-volume thresholds. The legitimate skips are the five in step 8, full stop. |
 | Substituting a different version when the requested one returns no events | The user-supplied version is authoritative. Take the step 2 short-circuit and write the "Crash-free release" report. Do NOT silently retarget to a previously-shipped version. |
 | Writing full employee names to Asana | Hook blocks it. Use initials + PR links. If the hook blocks even initials, fall back to PR-number-only. |
 
@@ -325,6 +340,7 @@ Top-bite rows. See [`references/common-mistakes-extended.md`](references/common-
 | Mistake | Fix |
 |---|---|
 | Overstating coverage in the report's headlines or "Recommended next step" | Anchor every finding to `<TIME_RANGE>`: "No new regressions in the last 24h", not "Zero new regressions in {version}". Never write "ship it / proceed with confidence / release looks healthy" — those are sign-off statements, not summaries. |
+| Emitting HTML named entities (`&bull;`, `&mdash;`, `&ndash;`, `&hellip;`, `&middot;`, `&nbsp;`) or numeric character references (`&#8226;`) into `html_notes` | Asana's `html_notes` is XML — it decodes only `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`. Everything else renders literally (`&bull;` becomes the eight characters `&bull;`, not `•`). The templates store the bullet/em-dash as literal Unicode — copy them through verbatim; do not "escape" typographic punctuation when substituting values. |
 
 ## Examples
 

@@ -45,6 +45,9 @@ public enum DuckAiNativeStorageEvent {
     case fileGetError(Error)
     case fileListError(Error)
     case fileDeleteError(Error)
+
+    // Parsing errors
+    case lastUsedModelParseError(Error)
 }
 
 public protocol DuckAiNativeStoragePixelFiring {

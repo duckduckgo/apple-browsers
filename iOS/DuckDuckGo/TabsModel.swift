@@ -117,6 +117,15 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
     }
 
+    /// Returns a frozen deep copy of the model suitable for archiving without concurrent-mutation risk.
+    func archivalSnapshot() -> TabsModel {
+        let tabsCopy = tabs.map { $0.archivalSnapshot() }
+        return TabsModel(tabs: tabsCopy,
+                         currentIndex: _currentIndex,
+                         desktop: UIDevice.current.userInterfaceIdiom == .pad,
+                         mode: mode)
+    }
+
     var currentTab: Tab? {
         guard let index = currentIndex else {
             return nil

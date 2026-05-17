@@ -60,6 +60,7 @@ final class SyncDataProvidersSource: DataProvidersSource {
             creditCardsAdapter?.setUpProviderIfNeeded(
                 secureVaultFactory: secureVaultFactory,
                 metadataStore: syncMetadata,
+                keyValueStore: keyValueStore,
                 metricsEventsHandler: metricsEventsHandler
             )
         }
@@ -159,12 +160,14 @@ final class SyncDataProvidersSource: DataProvidersSource {
         bookmarkManager: BookmarkManager,
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         appearancePreferences: AppearancePreferences,
+        keyValueStore: ThrowingKeyValueStoring,
         syncErrorHandler: SyncErrorHandler,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.secureVaultFactory = secureVaultFactory
         self.appearancePreferences = appearancePreferences
+        self.keyValueStore = keyValueStore
         self.syncErrorHandler = syncErrorHandler
         self.featureFlagger = featureFlagger
         bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: bookmarkManager, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
@@ -215,4 +218,5 @@ final class SyncDataProvidersSource: DataProvidersSource {
     private let bookmarksDatabase: CoreDataDatabase
     private let secureVaultFactory: AutofillVaultFactory
     private let appearancePreferences: AppearancePreferences
+    private let keyValueStore: ThrowingKeyValueStoring
 }

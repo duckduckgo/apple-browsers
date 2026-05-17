@@ -141,7 +141,9 @@ class TabsModelPersistence: TabsModelPersisting {
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         do {
-            let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+            // Deep-copy to freeze mutable state before archiving
+            let snapshot = model.archivalSnapshot()
+            let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
             try store(for: key).set(data, forKey: Constants.storageKey)
             return .success(())
         } catch {

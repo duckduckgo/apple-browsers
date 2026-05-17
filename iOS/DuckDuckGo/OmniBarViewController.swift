@@ -785,7 +785,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
+    var querySubmitted = false
     func onQuerySubmitted() {
+        querySubmitted = true
+        defer {
+            querySubmitted = false
+        }
         if let suggestion = omniDelegate?.selectedSuggestion() {
             omniDelegate?.onOmniSuggestionSelected(suggestion)
         } else {
@@ -1062,7 +1067,11 @@ extension OmniBarViewController: UITextFieldDelegate {
         case .dismissed, .none:
             refreshState(state.onEditingStoppedState)
         case .suspended:
-            refreshState(state.onEditingSuspendedState)
+            if querySubmitted {
+                refreshState(state.onEditingStoppedState)
+            } else {
+                refreshState(state.onEditingSuspendedState)
+            }
         }
         self.omniDelegate?.onDidEndEditing()
     }

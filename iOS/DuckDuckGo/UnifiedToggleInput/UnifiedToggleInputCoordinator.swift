@@ -1698,7 +1698,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
-                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: nil)
             }
         }
     }

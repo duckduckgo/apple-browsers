@@ -92,7 +92,7 @@
                             },
                             "did_send_bridge_message": {
                                 "type": "boolean",
-                                "description": "Whether native successfully sent the prompt over the user-script bridge - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. False means native entered the bridge-push branch but the push failed (e.g. broker was missing); the user did try to submit, since the wide event was emitted at all. Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries that terminated while still queued). Pair with `did_receive_bridge_message` to isolate where delivery broke."
+                                "description": "Whether native successfully sent the prompt over the user-script bridge - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. False means native entered the bridge-push branch but the push failed (e.g. broker was missing). Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries that terminated while still queued). Pair with `did_receive_bridge_message` to isolate where delivery broke."
                             },
                             "did_receive_bridge_message": {
                                 "type": "boolean",

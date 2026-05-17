@@ -145,11 +145,24 @@ extension MainViewController {
         aiChatTabChatHeaderView?.setForceBackButtonVisible(!isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
     }
 
-    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent.
-    /// Safe to call with the feature flag off — `isCurrentTabUsingUnifiedInputAIChrome` is
-    /// already flag-gated, so the else branch reduces to the legacy width/minimal-chrome rule.
+    /// Programmatic dismiss of an active UTI omnibar session (the intent-path used by
+    /// `dismissOmniBar`, toolbar buttons, etc.). On a Duck.ai tab this routes through the snap
+    /// dismiss so the AI tab's auto-expand doesn't bring the keyboard back up.
+    func deactivateUnifiedToggleInputOmnibarSession() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return }
+        if currentTab?.isAITab == true {
+            dismissFocusedOmnibarToAITabChrome(coordinator: coordinator)
+        } else {
+            coordinator.deactivateToOmnibar()
+        }
+    }
+
+    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. The focused omnibar session
+    /// opened from a Duck.ai tab counts as "tab-like" — keep the toolbar so the user has the
+    /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
-        if isCurrentTabUsingUnifiedInputAIChrome {
+        let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
@@ -1067,6 +1080,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
         coordinator.activateFromOmnibar(prefilledText: nil, inputMode: .search, cardPosition: position)
+        reconcileToolbarVisibilityForCurrentTab()
     }
 }
 

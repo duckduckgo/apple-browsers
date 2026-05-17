@@ -38,11 +38,14 @@ extension OnboardingRebranding.OnboardingView {
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding var isVisible: Bool
+        /// Reset before the skip swap so the new `TypingText` doesn't skip itself.
+        @Binding var skipTypingAnimation: Bool
 
         init(
             content: OnboardingIntroStepContent.RestorePromptStepContent,
             skipOnboardingView: AnyView?,
             isVisible: Binding<Bool>,
+            skipTypingAnimation: Binding<Bool>,
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
@@ -50,6 +53,7 @@ extension OnboardingRebranding.OnboardingView {
             self.content = content
             self.skipOnboardingView = skipOnboardingView
             self._isVisible = isVisible
+            self._skipTypingAnimation = skipTypingAnimation
             self.restoreAction = restoreAction
             self.skipAction = skipAction
             self.onSkipOnboardingPresented = onSkipOnboardingPresented
@@ -117,32 +121,37 @@ extension OnboardingRebranding.OnboardingView {
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Hide → resize → show transition into the skip dialog. Internal view swap, so we drive
-        /// the resize explicitly with `withAnimation`.
+        /// Hide → resize → show swap. Deferred so the parent's tap-to-skip gesture fires
+        /// before we reset `skipTypingAnimation` and mount the new view.
         private func showSkipOnboardingDialog() {
             isVisible = false
             skipAction()
 
-            // Reduce Motion: jump to the final state.
+            // Reduce Motion: jump to final state.
             guard !reduceMotion else {
+                skipTypingAnimation = false
                 showSkipOnboarding = true
                 isVisible = true
                 return
             }
 
-            if #available(iOS 17.0, *) {
-                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                } completion: {
-                    withAnimation { isVisible = true }
-                }
-            } else {
-                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                }
-                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation { isVisible = true }
+            DispatchQueue.main.async {
+                skipTypingAnimation = false
+
+                if #available(iOS 17.0, *) {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    } completion: {
+                        withAnimation { isVisible = true }
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    }
+                    // iOS 16 fallback (no withAnimation completion).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                        withAnimation { isVisible = true }
+                    }
                 }
             }
         }

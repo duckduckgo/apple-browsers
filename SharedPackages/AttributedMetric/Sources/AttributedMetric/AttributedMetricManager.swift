@@ -58,6 +58,11 @@ public protocol AttributedMetricSettingsProviding {
     var originSendList: [String] { get }
 }
 
+/// Provides the install date used for all AttributedMetrics day-based calculations
+public protocol AttributedMetricInstallDateProviding {
+    var installDate: Date? { get }
+}
+
 /// Indicates whether the current user is a returning (reinstalling) user.
 ///
 /// iOS: checks the variant stored in `StatisticsStore` for the `"ru"` value.
@@ -82,6 +87,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
     private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
     private let subscriptionStateProvider: any SubscriptionStateProviding
     private let returningUserProvider: any AttributedMetricReturningUserProviding
+    private let installDateProvider: any AttributedMetricInstallDateProviding
     private var dateProvider: any DateProviding
     private let featureSettings: any AttributedMetricSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
@@ -95,6 +101,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                 defaultBrowserProviding: any AttributedMetricDefaultBrowserProviding,
                 subscriptionStateProvider: any SubscriptionStateProviding,
                 returningUserProvider: any AttributedMetricReturningUserProviding,
+                installDateProvider: any AttributedMetricInstallDateProviding,
                 dateProvider: any DateProviding = DefaultDateProvider(),
                 settingsProvider: any AttributedMetricSettingsProviding) {
         self.pixelKit = pixelKit
@@ -104,16 +111,12 @@ public final class AttributedMetricManager: @unchecked Sendable {
         self.defaultBrowserProvider = defaultBrowserProviding
         self.subscriptionStateProvider = subscriptionStateProvider
         self.returningUserProvider = returningUserProvider
+        self.installDateProvider = installDateProvider
         self.dateProvider = dateProvider
 
         // Buckets
         self.featureSettings = settingsProvider
         updateBucketSettings()
-
-        if dataStorage.installDate == nil {
-            Logger.attributedMetric.debug("First install, storing Install Date")
-            dataStorage.installDate = self.dateProvider.now()
-        }
 
         if let debugDate = dataStorage.debugDate {
             self.dateProvider.debugDate = debugDate
@@ -122,36 +125,27 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
     // MARK: - Private
 
+    var installDate: Date? {
+        installDateProvider.installDate
+    }
+
     var isEnabled: Bool {
         featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
     }
 
-    /// The number of whole days elapsed since the app was first installed.
+    /// The number of whole ET calendar days elapsed since the app was first installed.
     ///
-    /// Uses the stored `installDate` and the current date from `dateProvider`,
-    /// converting the `TimeInterval` between them into full days (truncated, not rounded).
-    /// Returns `0` if the install date has not been recorded yet, or if the current
-    /// date is still within the first calendar day of installation.
-    ///
-    /// ## Examples
-    /// ```
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 10, 23:59
-    /// daysSinceInstalled // → 0 (same day, less than 24 h)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 11:59
-    /// daysSinceInstalled // → 0 (less than 24 h elapsed)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 12:00
-    /// daysSinceInstalled // → 1 (exactly 24 h)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 17, 15:30
-    /// daysSinceInstalled // → 7
-    /// ```
+    /// Uses Eastern Time calendar day boundaries (matching ATB and RollingEightDays).
+    /// Returns `0` if the install date has not been recorded yet, or if the current date is still within the same ET calendar day as installation.
     var daysSinceInstalled: Int {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             return 0
         }
-        return Int(dateProvider.now().timeIntervalSince(installDate) / .day)
+        return Calendar.eastern.dateComponents(
+            [.day],
+            from: Calendar.eastern.startOfDay(for: installDate),
+            to: Calendar.eastern.startOfDay(for: dateProvider.now())
+        ).day ?? 0
     }
 
     /// The quantised time period elapsed since the app was installed.
@@ -180,7 +174,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
     /// timePastFromInstall // → nil
     /// ```
     var timePastFromInstall: QuantisedTimePast? {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             Logger.attributedMetric.error("Install date missing")
             return nil
         }
@@ -193,7 +187,6 @@ public final class AttributedMetricManager: @unchecked Sendable {
            origin.containsAny(of: self.featureSettings.originSendList) {
             return (origin, nil)
         } else {
-            let installDate = dataStorage.installDate
             return (nil, installDate?.ISO8601ETFormat())
         }
     }
@@ -201,15 +194,14 @@ public final class AttributedMetricManager: @unchecked Sendable {
     var isDefaultBrowser: Bool { defaultBrowserProvider.isDefaultBrowser }
 
     var isLessThanSixMonths: Bool {
-        guard let installDate = dataStorage.installDate else {
+        guard installDate != nil else {
             return true
         }
-        let days = Constants.daysInAMonth * 6
-        return installDate > self.dateProvider.now().addingTimeInterval(Double(-days) * TimeInterval.day)
+        return daysSinceInstalled < Constants.daysInAMonth * 6
     }
 
     var isSameDayOfInstallDate: Bool {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             return false
         }
         return Calendar.eastern.isDate(dateProvider.now(), inSameDayAs: installDate)
@@ -256,8 +248,15 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
     public func process(trigger: Trigger) {
         Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
+
         guard isEnabled else {
             Logger.attributedMetric.log("Feature disabled")
+            return
+        }
+
+        guard let installDate = installDateProvider.installDate else {
+            Logger.attributedMetric.error("Install date is nil")
+            assertionFailure("Install date is nil")
             return
         }
 
@@ -267,7 +266,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         }
 
         guard isLessThanSixMonths else {
-            dataStorage.removeAllExceptInstallDate()
+            dataStorage.removeAll()
             return
         }
 

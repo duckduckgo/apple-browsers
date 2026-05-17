@@ -171,7 +171,6 @@ final class SwitchBarHandlerDefaultModeTests: XCTestCase {
             aiChatSettings: settings,
             toggleModeStorage: toggleModeStorage,
             sessionStateMetrics: SessionStateMetrics(storage: MockKeyValueStore()),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
             isFireTab: false
         )
     }

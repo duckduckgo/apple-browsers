@@ -377,6 +377,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
+
+    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214684208036378
+    case bookmarksBarMenusCustomWindow
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -635,6 +639,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
+        case .bookmarksBarMenusCustomWindow:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow)))
         }
     }
 

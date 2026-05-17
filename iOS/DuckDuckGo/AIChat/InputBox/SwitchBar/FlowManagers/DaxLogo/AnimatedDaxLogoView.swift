@@ -41,6 +41,12 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
         logoAnimation.currentProgress = progress
     }
 
+    func animateProgress(to targetProgress: CGFloat, completion: LottieCompletionBlock? = nil) {
+        logoAnimation.play(fromProgress: logoAnimation.currentProgress,
+                           toProgress: targetProgress,
+                           completion: completion)
+    }
+
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")

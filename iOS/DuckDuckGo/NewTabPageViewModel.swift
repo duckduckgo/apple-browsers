@@ -29,6 +29,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var escapeHatch: EscapeHatchModel?
     @Published var sectionTitle: String?
     @Published var openTabCount: Int = 0
+    @Published var isLogoHidden: Bool = false
     var onEscapeHatchTap: (() -> Void)?
     var onTabSwitcherTap: (() -> Void)?
     private(set) var fireTab: Bool

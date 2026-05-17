@@ -18,26 +18,38 @@
 //
 
 import Foundation
-import PrivacyConfig
 import Common
-import UIKit
+import Core
+import PrivacyConfig
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
+    var isFeatureFlagEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    private let featureFlagger: any FeatureFlagger
+    static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
+
+    /// Evaluate the feature flag once and persist the result for the session.
+    /// Must be called early in the app launch sequence, before any consumer
+    /// reads `isAvailable`, so that every component sees the same value.
+    static func resolve(using featureFlagger: FeatureFlagger) {
+        let enabled = featureFlagger.isFeatureOn(.unifiedToggleInput)
+        UserDefaults.app.set(enabled, forKey: isFeatureFlagEnabledKey)
+    }
+
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
+    var isFeatureFlagEnabled: Bool {
+        UserDefaults.app.bool(forKey: Self.isFeatureFlagEnabledKey)
+    }
+
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) && devicePlatform.isIphone
+        isFeatureFlagEnabled && devicePlatform.isIphone
     }
 }

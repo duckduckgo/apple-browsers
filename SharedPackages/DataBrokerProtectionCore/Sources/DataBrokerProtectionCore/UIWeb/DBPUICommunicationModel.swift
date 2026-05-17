@@ -255,12 +255,18 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let alternativeNames: [String]
     public let relatives: [String]
     public let foundDate: Double
+    /// The moment the broker acknowledged the opt-out for email-confirming brokers, or the moment our
+    /// form submission completed for brokers that don't email-confirm. For a value that consistently
+    /// represents form submission across both broker types, see `optOutFormSubmittedDate`.
     public let optOutSubmittedDate: Double?
+    /// The moment our form submission to the broker successfully completed, regardless of broker
+    /// type. For child brokers, propagated from the parent broker's most recent opt-out.
+    public let optOutFormSubmittedDate: Double?
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
@@ -269,6 +275,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
         self.relatives = relatives
         self.foundDate = foundDate
         self.optOutSubmittedDate = optOutSubmittedDate
+        self.optOutFormSubmittedDate = optOutFormSubmittedDate
         self.estimatedRemovalDate = estimatedRemovalDate
         self.removedDate = removedDate
         self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
@@ -308,6 +315,19 @@ extension DBPUIDataBrokerProfileMatch {
         }
         let estimatedRemovalDate = Calendar.current.date(byAdding: .day, value: 14, to: optOutSubmittedDate ?? foundDate)
 
+        // For child brokers, propagate the parent's most recent form submission. Strict profile
+        // matching is intentionally avoided: brokers scrape name granularity inconsistently
+        // (e.g. "Adam Joseph Smith" vs "Adam P Smith") so matching rejects nearly every
+        // real-world child↔parent pairing.
+        let optOutFormSubmittedDate: Date?
+        if let parentBrokerOptOutJobData {
+            optOutFormSubmittedDate = parentBrokerOptOutJobData
+                .compactMap(Self.formSubmittedDate(from:))
+                .max()
+        } else {
+            optOutFormSubmittedDate = Self.formSubmittedDate(from: optOutJobData)
+        }
+
         // Check for any matching records on the parent broker
         let hasFoundParentMatch = parentBrokerOptOutJobData?.contains { parentOptOut in
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
@@ -321,9 +341,17 @@ extension DBPUIDataBrokerProfileMatch {
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,
                   optOutSubmittedDate: optOutSubmittedDate?.timeIntervalSince1970,
+                  optOutFormSubmittedDate: optOutFormSubmittedDate?.timeIntervalSince1970,
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
                   hasMatchingRecordOnParentBroker: hasFoundParentMatch)
+    }
+
+    private static func formSubmittedDate(from optOutJobData: OptOutJobData) -> Date? {
+        optOutJobData.historyEvents
+            .filter { $0.isFormSubmittedEvent() }
+            .min(by: { $0.date < $1.date })?
+            .date
     }
 
     /// Generates an array of `DBPUIDataBrokerProfileMatch` objects from the provided query data.

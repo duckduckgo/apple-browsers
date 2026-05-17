@@ -3313,6 +3313,10 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
+        // Voice mode has no on-screen keyboard, so dismiss whatever input is focused before
+        // loading — applies to both the current-tab and new-tab branches below.
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
+
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
 
@@ -3329,7 +3333,6 @@ class MainViewController: UIViewController {
             return
         }
 
-        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }

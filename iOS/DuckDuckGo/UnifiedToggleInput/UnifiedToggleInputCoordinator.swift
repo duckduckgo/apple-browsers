@@ -280,7 +280,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     var shouldCollapseOnKeyboardDismiss: Bool {
-        displayState == .aiTab(.expanded) && inputMode == .aiChat
+        displayState == .aiTab(.expanded)
     }
 
     private var isOmnibarNewAIChatPrompt: Bool {

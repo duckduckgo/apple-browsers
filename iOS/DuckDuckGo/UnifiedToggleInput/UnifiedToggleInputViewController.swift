@@ -380,7 +380,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
-        view.window?.layoutIfNeeded()
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }

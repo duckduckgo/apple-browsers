@@ -1065,7 +1065,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearStoreEntryAfterSubmission()
         showCollapsed()
         let didSendBridgeMessage = userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
-        duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, willSendBridgeMessage: true, didSendBridgeMessage: didSendBridgeMessage)
+        duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -1695,10 +1695,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
             if let userScript {
                 let didSendBridgeMessage = userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
-                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, willSendBridgeMessage: true, didSendBridgeMessage: didSendBridgeMessage)
+                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
-                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, willSendBridgeMessage: nil, didSendBridgeMessage: nil)
+                duckAIWideEventInstrumentation?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: nil)
             }
         }
     }

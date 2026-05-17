@@ -47,7 +47,6 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var cancellationReason: CancellationReason?
     var frontendDeliveryPath: FrontendDeliveryPath
     var frontendDeliveryQueued: Bool
-    var willSendBridgeMessage: Bool?
     var didSendBridgeMessage: Bool?
 
     var hasPageContext: Bool
@@ -199,7 +198,6 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.willSendBridgeMessage, willSendBridgeMessage),
             (WideEventParameter.DuckAIPromptSubmissionFeature.didSendBridgeMessage, didSendBridgeMessage),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
@@ -236,7 +234,6 @@ extension WideEventParameter {
         static let cancellationReason = "feature.data.ext.cancellation_reason"
         static let frontendDeliveryPath = "feature.data.ext.delivery.path"
         static let frontendDeliveryQueued = "feature.data.ext.delivery.queued"
-        static let willSendBridgeMessage = "feature.data.ext.delivery.will_send_bridge_message"
         static let didSendBridgeMessage = "feature.data.ext.delivery.did_send_bridge_message"
         static let didReceiveBridgeMessage = "feature.data.ext.delivery.did_receive_bridge_message"
         static let hasPageContext = "feature.data.ext.has_page_context"

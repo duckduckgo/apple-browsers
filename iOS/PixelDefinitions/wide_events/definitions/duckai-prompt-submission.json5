@@ -90,13 +90,9 @@
                                 "type": "boolean",
                                 "description": "Whether contextual delivery had to wait for the page/content handler to become ready before native could push the prompt to frontend."
                             },
-                            "will_send_bridge_message": {
-                                "type": "boolean",
-                                "description": "Whether native entered the bridge-push branch for this submission (i.e. attempted to send the prompt via the user-script bridge rather than another delivery path). Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries still waiting on page/content-handler readiness). Pair with `did_send_bridge_message` to isolate cases where native tried to send but the push didn't succeed."
-                            },
                             "did_send_bridge_message": {
                                 "type": "boolean",
-                                "description": "Whether the bridge push itself succeeded - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. Absent when `will_send_bridge_message` is absent or false."
+                                "description": "Whether native successfully sent the prompt over the user-script bridge - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. False means native entered the bridge-push branch but the push failed (e.g. broker was missing); the user did try to submit, since the wide event was emitted at all. Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries that terminated while still queued). Pair with `did_receive_bridge_message` to isolate where delivery broke."
                             },
                             "did_receive_bridge_message": {
                                 "type": "boolean",

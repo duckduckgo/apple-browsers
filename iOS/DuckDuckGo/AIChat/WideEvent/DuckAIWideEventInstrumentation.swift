@@ -39,10 +39,8 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            invalidAttachmentCount: Int)
 
     /// Native attempted to hand the prompt to the frontend. Records whether
-    /// contextual delivery was queued, whether native entered the bridge-push
-    /// branch (`willSendBridgeMessage`), and whether the push itself succeeded
-    /// (`didSendBridgeMessage`).
-    func promptDeliveryUpdated(wasQueued: Bool?, willSendBridgeMessage: Bool?, didSendBridgeMessage: Bool?)
+    /// contextual delivery was queued and whether a user-script bridge message was sent.
+    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?)
 
     /// The Duck.ai frontend reported its prompt-submitted metric for the active flow.
     func frontendSubmissionAcknowledged()
@@ -135,14 +133,11 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         wideEvent.startFlow(data)
     }
 
-    func promptDeliveryUpdated(wasQueued: Bool?, willSendBridgeMessage: Bool?, didSendBridgeMessage: Bool?) {
+    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
         guard let activeFlow else { return }
 
         if let wasQueued {
             activeFlow.frontendDeliveryQueued = wasQueued
-        }
-        if let willSendBridgeMessage {
-            activeFlow.willSendBridgeMessage = willSendBridgeMessage
         }
         if let didSendBridgeMessage {
             activeFlow.didSendBridgeMessage = didSendBridgeMessage

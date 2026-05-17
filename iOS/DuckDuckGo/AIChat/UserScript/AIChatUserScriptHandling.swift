@@ -121,6 +121,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
@@ -148,6 +149,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isNativeStorageBridgeAvailable: Bool = false) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
@@ -156,6 +158,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.promptHandler = promptHandler
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         setUpSyncStatusObserver()
     }
@@ -256,7 +259,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && featureFlagger.isFeatureOn(.unifiedToggleInput)
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isFeatureFlagEnabled
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
         let fireMode = isFireModeProvider?() ?? false
 

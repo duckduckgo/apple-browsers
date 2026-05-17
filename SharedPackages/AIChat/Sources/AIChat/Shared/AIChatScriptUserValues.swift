@@ -171,6 +171,40 @@ public struct AIChatNativeConfigValues: Codable {
     }
 }
 
+/// Payload form for the prompt's `pageContext` field. The duck.ai web app accepts either a
+/// single `AIChatPageContextData` (the sidebar's current-page case) or an array (the
+/// omnibar's multi-tab case) at the same JSON key — this enum encodes/decodes both shapes
+/// without a discriminator on the wire.
+///
+/// Per the discriminator in the tech design: each element's `tabId` discriminates
+/// tab-picker contexts (non-nil) from the current sidebar page (nil).
+public enum AIChatPageContextPayload: Codable, Equatable {
+    case single(AIChatPageContextData)
+    case multiple([AIChatPageContextData])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        // Decode array first — a JSON object would fail array decoding cleanly, and we want
+        // to disambiguate without relying on Swift's behavior of partially decoding objects.
+        if let array = try? container.decode([AIChatPageContextData].self) {
+            self = .multiple(array)
+        } else {
+            let single = try container.decode(AIChatPageContextData.self)
+            self = .single(single)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .single(let value):
+            try container.encode(value)
+        case .multiple(let values):
+            try container.encode(values)
+        }
+    }
+}
+
 public struct AIChatNativePrompt: Codable, Equatable {
     /// Mode value for image generation prompts.
     public static let imageGenerationMode = "image-generation"
@@ -180,7 +214,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
     public let platform: String
     public let tool: Tool?
-    public let pageContext: AIChatPageContextData?
+    public let pageContext: AIChatPageContextPayload?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -266,6 +300,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
             reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
         }
+
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -320,7 +355,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case pageContext
     }
 
-    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextData? = nil) {
+    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextPayload? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
@@ -347,7 +382,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             tool = nil
         }
 
-        pageContext = try container.decodeIfPresent(AIChatPageContextData.self, forKey: .pageContext)
+        pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -372,7 +407,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
         AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
     }
 

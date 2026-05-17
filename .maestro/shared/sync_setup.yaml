@@ -1,0 +1,21 @@
+# sync_setup.yaml
+# Shared setup for the sync_tests suite.
+#
+# Forces simplifiedSyncSetupExperiment into the `control` cohort so the
+# Maestro flows continue to find the legacy "Sync and Back Up This Device"
+# entry point. Remove the override once the experiment is fully rolled out
+# and the flows are migrated to the simplified UI.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        "experiment.simplifiedSyncSetupExperiment": "control"

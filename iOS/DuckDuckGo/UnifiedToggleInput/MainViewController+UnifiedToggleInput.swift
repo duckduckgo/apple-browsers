@@ -31,10 +31,18 @@ import WebKit
 extension MainViewController {
 
     enum Constants {
+        static let floatingReturnKeyKeyboardBottomConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.KeyboardBottom"
+        static let floatingReturnKeyInputTopConstraintIdentifier = "UnifiedToggleInput.FloatingReturnKey.InputTop"
+        static let floatingReturnKeyActiveAnchorPriority = UILayoutPriority(999)
+        static let floatingReturnKeyInactiveAnchorPriority = UILayoutPriority(250)
+
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
         }
+
+        static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
+        static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -69,9 +77,9 @@ extension MainViewController {
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
-        coordinator.onAnimatedDismissToOmnibar = { [weak self] in
+        coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
         }
         self.unifiedToggleInputCoordinator = coordinator
 
@@ -83,7 +91,7 @@ extension MainViewController {
 
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
-        installFloatingSubmitViewController()
+        installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -94,6 +102,7 @@ extension MainViewController {
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
         unifiedToggleInputCoordinator?.updateOmnibarInputVisibility(keyboardVisible)
+        updateFloatingReturnKeyVisibility()
     }
 
     var isCurrentTabUsingUnifiedInputAIChrome: Bool {
@@ -192,6 +201,7 @@ extension MainViewController {
         let rootBackgroundColor: UIColor
         let navigationBarContainerColor: UIColor?
         let inputContentContainerColor: UIColor
+        let unifiedToggleInputContainerColor: UIColor
         let webViewBackgroundColor: UIColor?
 
         switch state {
@@ -200,6 +210,7 @@ extension MainViewController {
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
             navigationBarContainerColor = nil
             inputContentContainerColor = .clear
+            unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil
         case .aiTabSearchChromeHidden:
             // Match the top status background so the area around the input card — and the area
@@ -211,6 +222,7 @@ extension MainViewController {
             rootBackgroundColor = UIColor(designSystemColor: .panel)
             navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
+            unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = rootBackgroundColor
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
@@ -221,10 +233,14 @@ extension MainViewController {
             if unifiedToggleInputCoordinator?.isInputEditing == true {
                 rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
                 navigationBarContainerColor = rootBackgroundColor
+                unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
+                // is the same tone as the card. The card defines itself via its halo rim shadow.
+                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
                 navigationBarContainerColor = .clear
+                unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = .clear
             }
         }
@@ -237,7 +253,7 @@ extension MainViewController {
         view.backgroundColor = rootBackgroundColor
         viewCoordinator.navigationBarContainer.backgroundColor = navigationBarContainerColor
         viewCoordinator.unifiedInputContentContainer?.backgroundColor = inputContentContainerColor
-        viewCoordinator.unifiedToggleInputContainer.backgroundColor = .clear
+        viewCoordinator.unifiedToggleInputContainer.backgroundColor = unifiedToggleInputContainerColor
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
 
         guard updateWebView else { return }
@@ -316,6 +332,13 @@ private extension MainViewController {
                 if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
+                updateFloatingReturnKeyVisibility()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.textChangePublisher
+            .sink { [weak self] _ in
+                self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -351,14 +374,29 @@ private extension MainViewController {
         } else if coordinator.isAITabState && mode == .aiChat {
             coordinator.showExpanded(inputMode: .aiChat)
         }
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
+        let previousLottieProgress = coordinator.contentViewController.daxLogoManager.lottieProgress
+        let wasLogoVisible = coordinator.contentViewController.daxLogoManager.isLogoVisible
+        // If the swipe gesture already drove progress to the target, skip the
+        // programmatic animation — the swipe handled the visual transition.
+        let swipeProgress = coordinator.contentViewController.daxLogoManager.currentProgress
+        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
+        let wasSwipeDriven = abs(swipeProgress - targetProgress) < 0.01
+
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        updateFloatingSubmitVisibility()
+        if !wasSwipeDriven {
+            coordinator.contentViewController.daxLogoManager.animateLogoTransition(
+                toMode: mode,
+                fromProgress: previousLottieProgress,
+                wasLogoVisible: wasLogoVisible)
+        }
+        updateFloatingReturnKeyVisibility()
     }
 
     func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -724,34 +762,53 @@ extension MainViewController {
         contentVC.didMove(toParent: self)
     }
 
-    func installFloatingSubmitViewController() {
+    func installFloatingReturnKeyViewController() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        let floatingVC = coordinator.floatingSubmitViewController
+        let floatingVC = coordinator.floatingReturnKeyViewController
         floatingVC.delegate = self
 
         addChild(floatingVC)
         floatingVC.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(floatingVC.view)
+        let keyboardBottomConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8)
+        keyboardBottomConstraint.identifier = Constants.floatingReturnKeyKeyboardBottomConstraintIdentifier
+        keyboardBottomConstraint.priority = Constants.floatingReturnKeyActiveAnchorPriority
+        let inputTopConstraint = floatingVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.topAnchor, constant: -8)
+        inputTopConstraint.identifier = Constants.floatingReturnKeyInputTopConstraintIdentifier
+        inputTopConstraint.priority = Constants.floatingReturnKeyInactiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint = keyboardBottomConstraint
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint = inputTopConstraint
         NSLayoutConstraint.activate([
-            floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8),
+            keyboardBottomConstraint,
+            inputTopConstraint,
             floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
         floatingVC.didMove(toParent: self)
-        floatingVC.subscribe(to: coordinator.floatingSubmitStatePublisher)
         floatingVC.view.isHidden = true
     }
 
-    func updateFloatingSubmitVisibility() {
+    func updateFloatingReturnKeyVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
-        coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
+        updateFloatingReturnKeyAnchor(aboveUnifiedInput: renderState.isFloatingReturnKeyVisible && renderState.cardPosition == .bottom)
+        coordinator.floatingReturnKeyViewController.view.isHidden = !renderState.isFloatingReturnKeyVisible
+    }
+
+    func updateFloatingReturnKeyAnchor(aboveUnifiedInput: Bool) {
+        unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyInactiveAnchorPriority
+            : Constants.floatingReturnKeyActiveAnchorPriority
+        unifiedToggleInputFloatingReturnKeyInputTopConstraint?.priority = aboveUnifiedInput
+            ? Constants.floatingReturnKeyActiveAnchorPriority
+            : Constants.floatingReturnKeyInactiveAnchorPriority
     }
 }
 
 private extension MainViewController {
 
-    func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
+    func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
+                                            completion: (() -> Void)? = nil) {
         applyUnifiedInputChromeBackground(.standardChrome)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
@@ -759,6 +816,48 @@ private extension MainViewController {
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+
+        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
+        let ntpStartCenterY = ntpLogoWindowCenterY()
+        let isBottom = coordinator.cardPosition.isBottom
+
+        // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
+        // natural (post-dismiss) position.
+        if isLogoToLogo,
+           let utiY = utiStartCenterY {
+            let ntpNaturalY: CGFloat
+            if isBottom {
+                // The bottom UTI logo is centered against a guide ending one omnibar-height
+                // below the keyboard; compensate by half that height to match the NTP logo.
+                ntpNaturalY = (ntpStartCenterY ?? utiY) + Constants.bottomDaxLogoTransitionYOffset
+            } else {
+                // Top bar: the nav bar shrinks back to standard height, making the
+                // contentContainer taller and shifting the NTP Logo center up by half the delta.
+                let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
+                    - viewCoordinator.standardNavigationBarContainerHeight
+                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2 + Constants.topDaxLogoTransitionYOffset
+            }
+
+            // How far the UTI Logo needs to move to land at the NTP Logo's final position.
+            let offset = ntpNaturalY - utiY
+
+            // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
+            newTabPageViewController?.setLogoHidden(true)
+
+            // If the UTI Logo is showing the duck.ai state, morph it to the search state
+            // so it matches the NTP Logo by the time the swap happens.
+            if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
+                coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
+            }
+
+            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
+            // to the NTP Logo's post-dismiss position.
+            let currentOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
+            coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
+        }
+
+         let shouldCrossfadeOmnibar = !viewCoordinator.isNavigationChromeHidden
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -767,15 +866,32 @@ private extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                // Mirror the focus path: push updated content insets so the suggestion
+                // tray content (including the escape hatch) animates with the bar collapse.
+                coordinator.pushContentInsets()
+                if !isLogoToLogo {
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                }
+                if shouldCrossfadeOmnibar {
+                    self.viewCoordinator.navigationBarCollectionView.alpha = 1
+                    self.viewCoordinator.unifiedToggleInputContainer.alpha = 0
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
                 }
             },
             completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                // Reveal the NTP Logo and force a layout pass before hiding the UTI
+                // content container, so the NTP Logo is rendered in the same frame
+                // and there's no one-frame gap where neither logo is visible.
+                self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.view.setNeedsLayout()
+                self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
+                coordinator.contentViewController.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
@@ -784,6 +900,7 @@ private extension MainViewController {
                 // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
                 // the toolbar on their own.
                 self.reconcileToolbarVisibilityForCurrentTab()
+                completion?()
             }
         )
 
@@ -872,6 +989,17 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestDuckAIVoiceMode() {
         onDuckAIVoiceModeRequested()
+    }
+
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
+        let preferredMode = preferredTextEntryModeForCurrentTab() ?? .search
+        let tab = tabManager.currentTabsModel.currentTab
+        // AI tab reuses the same textView for the flanked input — text here bleeds past the
+        // collapse. AI-mode tabs likewise show a placeholder rather than the URL.
+        let isAIDestination = tab?.isAITab == true || preferredMode == .aiChat
+        let placeholderMode: TextEntryMode = isAIDestination ? .aiChat : preferredMode
+        let text = isAIDestination ? "" : AddressDisplayHelper.plainDisplayString(for: tab?.link?.url)
+        return UTIDismissSnapshot(text: text, placeholderMode: placeholderMode)
     }
 }
 
@@ -971,16 +1099,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 }
 
-// MARK: - UnifiedToggleInputFloatingSubmitDelegate
+// MARK: - UnifiedToggleInputFloatingReturnKeyDelegate
 
-extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
+extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
 
-    func floatingSubmitDidTapSubmit() {
+    func floatingReturnKeyDidTap() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.submitCurrentInputFromFloatingSubmit()
+        coordinator.insertNewlineFromFloatingReturnKey()
     }
 
-    func floatingSubmitDidTapVoice() {
-        onDuckAIVoiceModeRequested()
-    }
 }

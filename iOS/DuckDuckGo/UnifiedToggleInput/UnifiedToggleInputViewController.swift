@@ -82,6 +82,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.text = newValue }
     }
 
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        inputBarView.applyDismissSnapshot(snapshot)
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }
@@ -92,6 +96,14 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     var inputMode: TextEntryMode {
         inputBarView.inputMode
+    }
+
+    func insertNewlineAtCursor() {
+        inputBarView.insertNewlineAtCursor()
+    }
+
+    func prepareToolbarSubmitStyleForDismissal() {
+        inputBarView.prepareToolbarSubmitStyleForDismissal()
     }
 
     var isVoiceSearchAvailable: Bool {
@@ -118,11 +130,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isTopBarPosition: Bool {
         get { inputBarView.handlerIsTopBarPosition }
         set { inputBarView.handlerIsTopBarPosition = newValue }
-    }
-
-    var isToolbarSubmitHidden: Bool {
-        get { inputBarView.isToolbarSubmitHidden }
-        set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
     var isToolbarAIVoiceChatActive: Bool {
@@ -240,7 +247,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     func apply(_ config: UTIViewConfig, animated: Bool) {
         cardPosition = config.cardPosition
         usesOmnibarMargins = config.usesOmnibarMargins
-        isToolbarSubmitHidden = config.isToolbarSubmitHidden
         isTopBarPosition = config.isTopBarPosition
         // Set before `applyCardLayout` reads the flag.
         inputBarView.isInlineDismissHidden = config.isAITab

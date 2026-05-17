@@ -45,12 +45,19 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private let isWebViewInspectable: Bool
 
-    private lazy var webUIViewModel: DBPUIViewModel = {
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler = {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        return DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+    }()
 
+    private lazy var interactionPixels = DataBrokerProtectionInteractionPixels(
+        handler: sharedPixelsHandler,
+        repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+    )
+
+    private lazy var webUIViewModel: DBPUIViewModel = {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
@@ -148,6 +155,12 @@ final public class DataBrokerProtectionViewController: UIViewController {
         super.viewDidAppear(animated)
         webUIViewModel.viewDidAppear()
         subscribeToBackgroundRefreshNotifications()
+        Task { [weak self] in
+            guard let self else { return }
+            let isAuthenticated = await self.authenticationDelegate.isUserAuthenticated()
+            self.interactionPixels.fireInteractionPixel(isAuthenticated: isAuthenticated)
+            self.sharedPixelsHandler.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+        }
     }
 
     override public func viewDidDisappear(_ animated: Bool) {

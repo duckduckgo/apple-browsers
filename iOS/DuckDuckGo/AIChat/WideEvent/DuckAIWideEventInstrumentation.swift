@@ -139,6 +139,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         if let wasQueued {
             activeFlow.frontendDeliveryQueued = wasQueued
         }
+
         if let didSendBridgeMessage {
             activeFlow.didSendBridgeMessage = didSendBridgeMessage
         }
@@ -160,8 +161,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         if status == .ready {
             guard hasObservedNonReady else { return }
             let now = dateProvider()
-            activeFlow.completeInterval.end = now
-            activeFlow.terminalInterval.end = now
+            activeFlow.generatingCompletedInterval.end = now
+            activeFlow.endedInterval.end = now
             // SUCCESS doesn't carry last_step.
             activeFlow.lastStep = nil
             wideEvent.completeFlow(activeFlow, status: .success(), onComplete: { _, _ in })
@@ -180,7 +181,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         }
 
         if status == .error || status == .blocked {
-            activeFlow.terminalInterval.end = now
+            activeFlow.endedInterval.end = now
             wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
             self.activeFlow = nil
             return
@@ -211,7 +212,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     func stopGeneratingTapped() {
         guard let activeFlow else { return }
         activeFlow.cancellationReason = .stopButton
-        activeFlow.terminalInterval.end = dateProvider()
+        activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
     }
@@ -219,7 +220,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     func tabClosedDuringGeneration() {
         guard let activeFlow else { return }
         activeFlow.cancellationReason = .tabClosed
-        activeFlow.terminalInterval.end = dateProvider()
+        activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
     }
@@ -227,7 +228,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     func sheetDismissedDuringGeneration() {
         guard let activeFlow else { return }
         activeFlow.cancellationReason = .sheetDismissed
-        activeFlow.terminalInterval.end = dateProvider()
+        activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
     }
@@ -236,7 +237,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         guard let activeFlow else { return }
         activeFlow.lastStep = .navigationFailed
         activeFlow.errorData = WideEventErrorData(error: error)
-        activeFlow.terminalInterval.end = dateProvider()
+        activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
         self.activeFlow = nil
     }

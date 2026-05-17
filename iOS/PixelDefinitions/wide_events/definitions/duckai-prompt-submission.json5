@@ -150,13 +150,13 @@
                                 "type": "integer",
                                 "description": "Milliseconds from prompt submission to the first `streaming` chat status (time to first token). Absent if the journey never reached a streaming state."
                             },
-                            "complete_ms": {
+                            "generating_completed_ms": {
                                 "type": "integer",
                                 "description": "Milliseconds from prompt submission to the `ready` chat status that completed the flow (time to last token). Present only on SUCCESS outcomes."
                             },
-                            "terminal_ms": {
+                            "ended_ms": {
                                 "type": "integer",
-                                "description": "Milliseconds from prompt submission to the terminal outcome, regardless of status. Present on SUCCESS, FAILURE, and CANCELLED outcomes; absent on UNKNOWN outcomes where the terminal time is not observed."
+                                "description": "Milliseconds from prompt submission to the outcome, regardless of status. Present on SUCCESS, FAILURE, and CANCELLED outcomes; absent on UNKNOWN outcomes where the end time is not observed."
                             },
                             "frontend_submission_ack_ms": {
                                 "type": "integer",

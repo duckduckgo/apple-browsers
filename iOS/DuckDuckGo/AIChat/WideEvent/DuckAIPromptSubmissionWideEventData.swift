@@ -65,11 +65,11 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
     /// Time to the `.ready` status that completed the flow (TTLT). Nil if the
     /// flow was cancelled or orphaned before reaching ready.
-    var completeInterval: WideEvent.MeasuredInterval
+    var generatingCompletedInterval: WideEvent.MeasuredInterval
 
-    /// Time to the terminal outcome, regardless of status. Provides the total
-    /// observed duration for failures and cancellations where `.ready` is never reached.
-    var terminalInterval: WideEvent.MeasuredInterval
+    /// Time to the outcome, regardless of status. Provides the total observed
+    /// duration for failures and cancellations where `.ready` is never reached.
+    var endedInterval: WideEvent.MeasuredInterval
 
     /// Time to the frontend `userDidSubmitPrompt` metric after native submission.
     /// Nil if the frontend never acknowledged the prompt before the flow ended.
@@ -108,8 +108,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.invalidAttachmentCount = invalidAttachmentCount
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
-        self.completeInterval = WideEvent.MeasuredInterval(start: startedAt)
-        self.terminalInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.generatingCompletedInterval = WideEvent.MeasuredInterval(start: startedAt)
+        self.endedInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.frontendSubmissionAckInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.contextData = contextData
         self.appData = appData
@@ -201,8 +201,8 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.didSendBridgeMessage, didSendBridgeMessage),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.completeMs, completeInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.terminalMs, terminalInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.generatingCompletedMs, generatingCompletedInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.endedMs, endedInterval.intValue(.noBucketing)),
             (WideEventParameter.DuckAIPromptSubmissionFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(.noBucketing)),
         ])
 
@@ -243,8 +243,8 @@ extension WideEventParameter {
         static let invalidAttachmentCount = "feature.data.ext.attachments.invalid_count"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
-        static let completeMs = "feature.data.ext.latency.complete_ms"
-        static let terminalMs = "feature.data.ext.latency.terminal_ms"
+        static let generatingCompletedMs = "feature.data.ext.latency.generating_completed_ms"
+        static let endedMs = "feature.data.ext.latency.ended_ms"
         static let frontendSubmissionAckMs = "feature.data.ext.latency.frontend_submission_ack_ms"
     }
 }

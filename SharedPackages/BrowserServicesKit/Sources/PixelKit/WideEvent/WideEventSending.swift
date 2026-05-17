@@ -198,15 +198,16 @@ public final class DefaultWideEventSender: WideEventSending {
             return
         }
 
-        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-        Self.logger.info("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
+        let prettyJSONString = (try? JSONSerialization.data(withJSONObject: nested, options: [.prettyPrinted, .sortedKeys]))
+            .flatMap { String(data: $0, encoding: .utf8) }
+            ?? String(data: jsonData, encoding: .utf8)
+            ?? "{}"
+        Self.logger.info("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload:\n\(prettyJSONString, privacy: .public)")
 
         let headers = ["Content-Type": "application/json"]
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
-            if success {
-                Self.logger.info("Wide event POST request sent successfully")
-            } else {
+            if !success {
                 Self.logger.error("Wide event POST request failed: \(String(describing: error), privacy: .public)")
             }
         }

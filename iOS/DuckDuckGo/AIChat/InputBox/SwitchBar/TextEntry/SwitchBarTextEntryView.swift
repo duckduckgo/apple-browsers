@@ -238,15 +238,14 @@ class SwitchBarTextEntryView: UIView {
             guard let self else { return }
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
-            
+
             self.textView.text = ""
             self.updatePlaceholderVisibility()
-            self.updateButtonState()
-            self.updateTextViewHeight()
-            
+            self.updateButtonState(animated: false)
+
             self.handler.clearText()
             self.handler.clearButtonTapped()
-            
+
             self.wasTextEmptyForAutocorrection = false
             self.updateAutoCorrectionSetupForAIChat(for: "")
         }

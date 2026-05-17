@@ -866,7 +866,6 @@ private extension MainViewController {
             coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
         }
 
-         let shouldCrossfadeOmnibar = !viewCoordinator.isNavigationChromeHidden
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -880,10 +879,6 @@ private extension MainViewController {
                 coordinator.pushContentInsets()
                 if !isLogoToLogo {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                }
-                if shouldCrossfadeOmnibar {
-                    self.viewCoordinator.navigationBarCollectionView.alpha = 1
-                    self.viewCoordinator.unifiedToggleInputContainer.alpha = 0
                 }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)

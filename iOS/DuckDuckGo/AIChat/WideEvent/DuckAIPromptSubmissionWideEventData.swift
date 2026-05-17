@@ -188,6 +188,18 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
 extension DuckAIPromptSubmissionWideEventData {
 
+    /// Shared bucketing for all latency milestones in this event.
+    /// - 0-500ms: 100ms buckets
+    /// - 500ms-10s: 500ms buckets
+    /// - 10s-30s: 30s bucket
+    /// - 30s+: 60s bucket (overflow)
+    static let latencyBucket: DurationBucket = .bucketed { ms in
+        if ms <= 500 { return ((ms + 99) / 100) * 100 }
+        if ms <= 10_000 { return ((ms + 499) / 500) * 500 }
+        if ms <= 30_000 { return 30_000 }
+        return 60_000
+    }
+
     func jsonParameters() -> [String: Encodable] {
         var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
@@ -199,11 +211,11 @@ extension DuckAIPromptSubmissionWideEventData {
             (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
             (WideEventParameter.DuckAIPromptSubmissionFeature.didSendBridgeMessage, didSendBridgeMessage),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.generatingCompletedMs, generatingCompletedInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.endedMs, endedInterval.intValue(.noBucketing)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(.noBucketing)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.generatingCompletedMs, generatingCompletedInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.endedMs, endedInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(Self.latencyBucket)),
         ])
 
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode

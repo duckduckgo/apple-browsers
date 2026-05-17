@@ -140,7 +140,7 @@
                     },
                     "latency": {
                         "type": "object",
-                        "description": "Latency milestones measured in milliseconds from prompt submission.",
+                        "description": "Latency milestones measured in milliseconds from prompt submission. All values are bucketed (round-up): 0-500ms in 100ms buckets, 500ms-10s in 500ms buckets, 10s-30s collapses to 30000, 30s+ collapses to 60000.",
                         "properties": {
                             "start_thinking_ms": {
                                 "type": "integer",

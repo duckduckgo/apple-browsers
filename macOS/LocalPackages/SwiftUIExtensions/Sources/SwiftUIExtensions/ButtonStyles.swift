@@ -152,7 +152,7 @@ public struct TransparentActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 0)
             .background(Color.clear)
             .foregroundColor(enabled ? enabledForegroundColor : disabledForegroundColor)
-            .liquidGlassPillShape(fallbackCornerRadius: 5)
+            .cornerRadius(5)
 
     }
 }

@@ -834,7 +834,6 @@ final class NavigationBarViewController: NSViewController {
         menu.addItem(withTitle: title, action: #selector(toggleBookmarksPanelPinning(_:)), keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
-
         bookmarkListButton.menu = menu
 
         if pinningManager.isPinned(.bookmarks) {

@@ -125,25 +125,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
-        if let model {
-            let targetTab = model.targetTab
-            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
-            }
-            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestTabSwitcher(self)
-            }
-        } else {
-            newTabPageViewModel.onEscapeHatchTap = nil
-            newTabPageViewModel.onTabSwitcherTap = nil
-        }
         updateBorderView()
-    }
-
-    func setOpenTabCount(_ count: Int) {
-        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {

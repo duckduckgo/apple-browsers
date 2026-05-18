@@ -288,10 +288,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState != .hidden
     }
 
-    var shouldCollapseOnKeyboardDismiss: Bool {
-        displayState == .aiTab(.expanded) && inputMode == .aiChat
-    }
-
     private var isOmnibarNewAIChatPrompt: Bool {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
@@ -916,20 +912,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel,
-                        openTabCount: Int,
-                        onTapped: @escaping () -> Void,
-                        onTabSwitcherTapped: @escaping () -> Void) {
-        contentViewController.setEscapeHatch(
-            model,
-            openTabCount: openTabCount,
-            onTapped: onTapped,
-            onTabSwitcherTapped: onTabSwitcherTapped
-        )
+    func setEscapeHatch(_ model: EscapeHatchModel) {
+        contentViewController.setEscapeHatch(model)
     }
 
     func clearEscapeHatch() {
-        contentViewController.setEscapeHatch(nil, openTabCount: 0, onTapped: nil, onTabSwitcherTapped: nil)
+        contentViewController.setEscapeHatch(nil)
     }
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
@@ -1982,8 +1970,10 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        guard hasSubmittedPrompt != hasExistingChat else { return }
-        hasSubmittedPrompt = hasExistingChat
+        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
+        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
+        guard hasExistingChat, !hasSubmittedPrompt else { return }
+        hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -1999,6 +1989,8 @@ private extension UnifiedToggleInputCoordinator {
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
+        viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
     }
 

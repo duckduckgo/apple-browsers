@@ -255,10 +255,11 @@ public final class AttributedMetricManager: @unchecked Sendable {
         }
 
         guard let installDate = installDateProvider.installDate else {
-            Logger.attributedMetric.error("Install date is nil")
-            assertionFailure("Install date is nil")
+            Logger.attributedMetric.log("Install date is nil")
             return
         }
+
+        Logger.attributedMetric.debug("Install date: \(installDate)")
 
         guard !returningUserProvider.isReturningUser else {
             Logger.attributedMetric.log("Returning user, skipping")

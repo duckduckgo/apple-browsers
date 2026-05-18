@@ -90,6 +90,11 @@ class FindInPageView: UIView {
     }
 
     @IBAction func done() {
+        // Idempotent — `closeFindInPage` defensively calls this on every WKWebView navigation
+        // (see TabViewController's decidePolicyFor handler), but the delegate's `done` side-effect
+        // un-hides the bottom navigation bar. Bail if the view is not actually visible so we
+        // don't leak that un-hide into states that need the bar hidden (e.g. Duck.ai voice mode).
+        guard !isHidden else { return }
         isHidden = true
         findInPage?.done()
         delegate?.done(findInPageView: self)

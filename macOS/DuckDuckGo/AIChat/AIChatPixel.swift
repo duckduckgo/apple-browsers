@@ -359,6 +359,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User taps "View All Chats..." from the more options menu
     case aiChatViewAllChatsMoreOptionsMenu
 
+    /// Event Trigger: Duck.ai tab WebKit process terminates
+    case aiChatTabDidTerminate(error: Error)
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
@@ -575,6 +578,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_main_menu"
         case .aiChatViewAllChatsMoreOptionsMenu:
             return "aichat_view_all_chats_more_options_menu"
+        case .aiChatTabDidTerminate:
+            return "aichat_tab_did_terminate"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         }
@@ -667,7 +672,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
-                .aiChatViewAllChatsMoreOptionsMenu:
+                .aiChatViewAllChatsMoreOptionsMenu,
+                .aiChatTabDidTerminate:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -808,7 +814,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
-                .aiChatIsEnabled:
+                .aiChatIsEnabled,
+                .aiChatTabDidTerminate:
             return [.pixelSource]
         }
     }

@@ -91,6 +91,9 @@ protocol OmniBar: AnyObject {
 
     /// Sets the selected text entry mode for the toggle (search or aiChat).
     func setSelectedTextEntryMode(_ mode: TextEntryMode)
+
+    func prepareForMoveTransition()
+    func moveTransitionCompleted()
 }
 
 extension OmniBar {

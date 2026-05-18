@@ -355,6 +355,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("KeyImport", .keyImport),
             ("NewTabOptions", .newTabOptions),
             ("SplitBarMobile", .splitBarMobile),
+            ("YoutubeNew", .youtubeNew),
             ("PIR", .pir),
             ("Subscription", .subscription),
             (nil, nil)

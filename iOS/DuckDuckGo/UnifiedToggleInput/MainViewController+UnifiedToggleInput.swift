@@ -557,8 +557,19 @@ private extension MainViewController {
         coordinator: UnifiedToggleInputCoordinator,
         behavior: AITabRefreshBehavior
     ) -> Bool {
-        let hasExistingChat = (tab.url ?? tab.link?.url)?.duckAIChatID != nil
+        let tabURL = tab.url ?? tab.link?.url
+        let hasExistingChat = tabURL?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
+        // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
+        // flash visible during the FE's "Connecting…" window. The FE's `hideChatInput` is
+        // idempotent over this. Persisted per tab in `TabInputState`.
+        if tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested {
+            coordinator.aiChatInputBoxVisibility = .hidden
+        }
+        // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
+        // override the `UIView`-default-visible borders on a freshly-bound tab.
+        tab.borderView.isTopVisible = false
+        tab.borderView.isBottomVisible = false
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
 
@@ -582,8 +593,6 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
-        tab.borderView.isTopVisible = false
-        tab.borderView.isBottomVisible = false
         return true
     }
 

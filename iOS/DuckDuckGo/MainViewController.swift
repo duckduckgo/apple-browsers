@@ -1045,7 +1045,7 @@ class MainViewController: UIViewController {
         guard unifiedToggleInputFeature.isAvailable,
               currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator,
-              coordinator.shouldCollapseOnKeyboardDismiss,
+              coordinator.isAITabExpanded,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
         // With a hardware keyboard connected, iOS fires keyboardWillHide even though the
         // text field is still the first responder. Treat that as "still editing" and skip
@@ -3313,18 +3313,25 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
-        if fromDeepLink, currentTab.tabModel.link != nil {
+        // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
+
+        let hasContent = currentTab.tabModel.link != nil
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+
+        if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
-            // Collapse the input that was auto-expanded for the restored tab.
-            // This cancels any pending async activateInput because showCollapsed
-            // sets displayState to .collapsed, failing the guard in showExpanded's
-            // async block.
-            unifiedToggleInputCoordinator?.showCollapsed()
+            if fromDeepLink {
+                // Collapse the input that was auto-expanded for the restored tab.
+                // This cancels any pending async activateInput because showCollapsed
+                // sets displayState to .collapsed, failing the guard in showExpanded's
+                // async block.
+                unifiedToggleInputCoordinator?.showCollapsed()
+            }
             return
         }
 
-        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }
@@ -5862,12 +5869,20 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
-        guard let tab = self.currentTab?.tabModel else { return }
-        self.closeTab(tab)
+        closeCurrentTab()
+    }
+
+    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {
+        closeCurrentTab()
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
+    }
+
+    private func closeCurrentTab() {
+        guard let tab = currentTab?.tabModel else { return }
+        closeTab(tab)
     }
 
 }

@@ -360,7 +360,7 @@ private extension ContextMenuManager {
     }
 
     func openLinkInNewFireWindowMenuItem(from item: NSMenuItem) -> NSMenuItem {
-        let menuItem = makeMenuItem(withTitle: UserText.openLinkInNewBurnerWindow, action: #selector(openLinkInNewFireWindow), from: item, with: .openLinkInNewWindow).withImage(nil)
+        let menuItem = makeMenuItem(withTitle: UserText.openLinkInNewBurnerWindow, action: #selector(openLinkInNewFireWindow), from: item, with: .openLinkInNewWindow).withImage(DesignSystemImages.Glyphs.Size12.fireWindow)
         return menuItem
     }
 

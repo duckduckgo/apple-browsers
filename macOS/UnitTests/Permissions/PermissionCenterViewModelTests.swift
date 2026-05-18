@@ -397,46 +397,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
     }
 
-    func testWhenFlagOff_andMicrophoneOnDuckAi_thenItemIsNotLocked() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
-        var usedPermissions = Permissions()
-        usedPermissions[.microphone] = .active
-
-        let viewModel = PermissionCenterViewModel(
-            domain: "duck.ai",
-            usedPermissions: usedPermissions,
-            permissionManager: mockPermissionManager,
-            autoplayPreferences: autoplayPreferences,
-            featureFlagger: mockFeatureFlagger,
-            removePermission: { _ in },
-            dismissPopover: { },
-            systemPermissionManager: mockSystemPermissionManager
-        )
-
-        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
-        XCTAssertEqual(micItem?.isLocked, false)
-    }
-
-    func testWhenFlagOn_andMicrophoneOnOtherDomain_thenItemIsNotLocked() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
-        var usedPermissions = Permissions()
-        usedPermissions[.microphone] = .active
-
-        let viewModel = PermissionCenterViewModel(
-            domain: "example.com",
-            usedPermissions: usedPermissions,
-            permissionManager: mockPermissionManager,
-            autoplayPreferences: autoplayPreferences,
-            featureFlagger: mockFeatureFlagger,
-            removePermission: { _ in },
-            dismissPopover: { },
-            systemPermissionManager: mockSystemPermissionManager
-        )
-
-        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
-        XCTAssertEqual(micItem?.isLocked, false)
-    }
-
     /// With the flag off, mic items behave like any other site: regular row, no special
     /// system-disabled surfacing for duck.ai.
     func testWhenFlagOff_thenMicrophoneSystemAuthorizationStateStaysNil() {
@@ -576,7 +536,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
         XCTAssertNotNil(micItem)
-        XCTAssertEqual(micItem?.isLocked, false)
         XCTAssertNil(micItem?.systemAuthorizationState,
                      "Non-duck.ai sites must not have systemAuthorizationState populated for mic")
     }
@@ -625,9 +584,8 @@ final class PermissionCenterViewModelTests: XCTestCase {
         )
 
         let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
-        XCTAssertNotNil(micItem)
-        XCTAssertEqual(micItem?.isLocked, false,
-                       "Flag off → no override, the legacy decision is plain user state")
+        XCTAssertNotNil(micItem,
+                        "Flag off → no override, the legacy decision surfaces as a regular row")
     }
 
     /// Non-duck.ai sites with mic permission keep their existing UX regardless of OS state.
@@ -648,9 +606,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        let micItem = viewModel.permissionItems.first { $0.permissionType == .microphone }
-        XCTAssertNotNil(micItem)
-        XCTAssertEqual(micItem?.isLocked, false)
+        XCTAssertTrue(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
     }
 }
 

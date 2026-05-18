@@ -243,32 +243,30 @@ struct PermissionRowView: View {
 
                 Spacer()
 
-                if !item.isLocked {
-                    // Decision dropdown
-                    decisionPopUpButton
-                        .disabled(item.isPendingRemoval)
-                        .opacity(item.isPendingRemoval ? 0.5 : 1.0)
-
-                    // Remove button with hover effect
-                    Button(action: onRemove) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
-                    )
-                    .onHover { hovering in
-                        isRemoveButtonHovered = hovering
-                    }
-                    .help(UserText.permissionCenterResetTooltip)
+                // Decision dropdown
+                decisionPopUpButton
                     .disabled(item.isPendingRemoval)
                     .opacity(item.isPendingRemoval ? 0.5 : 1.0)
+
+                // Remove button with hover effect
+                Button(action: onRemove) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(PlainButtonStyle())
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
+                )
+                .onHover { hovering in
+                    isRemoveButtonHovered = hovering
+                }
+                .help(UserText.permissionCenterResetTooltip)
+                .disabled(item.isPendingRemoval)
+                .opacity(item.isPendingRemoval ? 0.5 : 1.0)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)

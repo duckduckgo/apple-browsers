@@ -83,12 +83,6 @@ struct PermissionCenterItem: Identifiable {
         state == .active
     }
 
-    /// Marks an informational row that is not backed by a persisted user decision and therefore
-    /// has no edit controls. Currently used for the synthetic duck.ai/mic OS-denied warning row
-    /// that the view model injects when the OS has revoked microphone access — the row exists
-    /// only to surface the system-settings prompt; there is nothing for the user to toggle.
-    var isLocked: Bool = false
-
     /// Whether the permission is allowed (granted or user selected "Always Allow")
     var isAllowed: Bool {
         // Check persisted decision first

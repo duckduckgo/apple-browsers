@@ -88434,55 +88434,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo entfernt Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption."
+            "value" : "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo elimina los anuncios de vídeo en YouTube, para que puedas ver vídeos sin interrupciones."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo supprime les publicités vidéo sur YouTube, afin que vous puissiez regarder des vidéos sans interruption."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo rimuove gli annunci video su YouTube, così puoi guardare i video senza interruzioni."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo verwijdert videoadvertenties op YouTube, zodat je ongestoord video's kunt bekijken."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo usuwa reklamy wideo z YouTube, dzięki czemu możesz oglądać filmy bez przerw."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "O DuckDuckGo remove os anúncios nos vídeos no YouTube para que possas ver vídeos sem interrupções."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo удаляет рекламу на YouTube, позволяя вам смотреть видео без перерыва."
           }
         }

@@ -44,12 +44,16 @@ final class YouTubeAdBlockViewModel: ObservableObject {
 
     private let preferences: YouTubeAdBlockingPreferences
     private let reloadPage: () -> Void
+    /// Wired by `AddressBarButtonsViewController` after the popover is created so it can close
+    /// the popover before presenting the Report Broken Site sheet.
+    var sendBreakageReport: () -> Void = {}
 
     @Published var setting: YouTubeAdBlockSetting {
         didSet {
             apply(setting)
         }
     }
+    @Published var showBreakageReportBanner: Bool = false
     @Published var backgroundColor: NSColor = .clear
 
     init(preferences: YouTubeAdBlockingPreferences = YouTubeAdBlockingPreferences(),
@@ -57,6 +61,11 @@ final class YouTubeAdBlockViewModel: ObservableObject {
         self.preferences = preferences
         self.reloadPage = reloadPage
         self.setting = preferences.youTubeAdBlockingEnabled ? .alwaysOn : .alwaysOff
+    }
+
+    func handleSendBreakageReport() {
+        sendBreakageReport()
+        showBreakageReportBanner = false
     }
 
     private func apply(_ setting: YouTubeAdBlockSetting) {
@@ -71,6 +80,7 @@ final class YouTubeAdBlockViewModel: ObservableObject {
         }
         if preferences.youTubeAdBlockingEnabled != wasEnabled {
             reloadPage()
+            showBreakageReportBanner = !preferences.youTubeAdBlockingEnabled
         }
     }
 }
@@ -105,6 +115,14 @@ struct YouTubeAdBlockView: View {
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
+
+            if viewModel.showBreakageReportBanner {
+                YouTubeAdBlockBreakageReportRowView {
+                    viewModel.handleSendBreakageReport()
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
         }
         .frame(width: Layout.width)
         .background(Color(viewModel.backgroundColor))
@@ -118,7 +136,7 @@ struct YouTubeAdBlockRowView: View {
     @Binding var currentSetting: YouTubeAdBlockSetting
 
     private enum Layout {
-        static let iconSize: CGFloat = 24
+        static let iconSize: CGFloat = 16
         static let iconTrailingSpacing: CGFloat = 8
         static var descriptionLeadingInset: CGFloat { iconSize + iconTrailingSpacing }
     }
@@ -126,7 +144,7 @@ struct YouTubeAdBlockRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: Layout.iconTrailingSpacing) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size24.videoPlayer)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.videoPlayer)
                     .resizable()
                     .frame(width: Layout.iconSize, height: Layout.iconSize)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -170,6 +188,69 @@ struct YouTubeAdBlockRowView: View {
     }
 }
 
+// MARK: - YouTubeAdBlockBreakageReportRowView
+
+struct YouTubeAdBlockBreakageReportRowView: View {
+
+    let onSendReport: () -> Void
+
+    private enum Layout {
+        static let iconSize: CGFloat = 16
+        static let iconTrailingSpacing: CGFloat = 8
+        static var descriptionLeadingInset: CGFloat { iconSize + iconTrailingSpacing }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: Layout.iconTrailingSpacing) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.feedbackAlert)
+                    .resizable()
+                    .frame(width: Layout.iconSize, height: Layout.iconSize)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                Text("YouTube Ad Blocking not working?")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+                    .fixedSize()
+
+                Spacer()
+
+                Button(action: onSendReport) {
+                    Text("Send Report")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(designSystemColor: .permissionReloadButtonText))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color(designSystemColor: .permissionReloadButtonBackground))
+                        .cornerRadius(4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            Text("Send an anonymous breakage report to DuckDuckGo. Help make Ad Blocking better for everyone!")
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, Layout.descriptionLeadingInset)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(designSystemColor: .permissionWarningBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                )
+        )
+    }
+}
+
 // MARK: - YouTubeAdBlockViewController
 
 final class YouTubeAdBlockViewController: NSViewController {
@@ -204,8 +285,7 @@ final class YouTubeAdBlockViewController: NSViewController {
     }
 
     private func setupHostingView() {
-        let swiftUIView = YouTubeAdBlockView(viewModel: viewModel)
-        let hostingView = NSHostingView(rootView: swiftUIView)
+        let hostingView = NSHostingView(rootView: YouTubeAdBlockView(viewModel: viewModel))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(hostingView)
 

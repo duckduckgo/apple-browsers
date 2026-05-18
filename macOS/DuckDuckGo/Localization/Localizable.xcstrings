@@ -88420,6 +88420,18 @@
         }
       }
     },
+    "preferences.youtube-ad-blocking.disabled-until-relaunch" : {
+      "comment" : "Sub-line shown below the YouTube Ad Blocking toggle when the user has temporarily disabled ad blocking for the current app session",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disabled until relaunch."
+          }
+        }
+      }
+    },
     "preferences.youtube-ad-blocking.explanation" : {
       "comment" : "Explanation of the YouTube Ad Blocking feature",
       "extractionState" : "extracted_with_value",

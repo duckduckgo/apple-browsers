@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Persistence
 import SwiftUI
+import WebExtensions
 
 // MARK: - YouTubeAdBlockUnavailableTipController
 
@@ -91,6 +92,7 @@ enum YouTubeAdBlockSetting: String, CaseIterable {
 final class YouTubeAdBlockViewModel: ObservableObject {
 
     private let preferences: YouTubeAdBlockingPreferences
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let reloadPage: () -> Void
     /// Wired by `AddressBarButtonsViewController` after the popover is created so it can close
     /// the popover before presenting the Report Broken Site sheet.
@@ -105,13 +107,23 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     @Published var showBreakageReportBanner: Bool = false
     @Published var backgroundColor: NSColor = .clear
 
-    init(isRemotelyDisabled: Bool = false,
-         preferences: YouTubeAdBlockingPreferences = YouTubeAdBlockingPreferences(),
+    init(adBlockingAvailability: AdBlockingAvailabilityProviding,
+         preferences: YouTubeAdBlockingPreferences? = nil,
          reloadPage: @escaping () -> Void = {}) {
-        self.isRemotelyDisabled = isRemotelyDisabled
-        self.preferences = preferences
+        self.adBlockingAvailability = adBlockingAvailability
+        self.preferences = preferences ?? YouTubeAdBlockingPreferences(adBlockingAvailability: adBlockingAvailability)
         self.reloadPage = reloadPage
-        self.setting = preferences.youTubeAdBlockingEnabled ? .alwaysOn : .alwaysOff
+        self.isRemotelyDisabled = adBlockingAvailability.isRemotelyDisabled
+
+        // Initial dropdown selection mirrors the live state: an active session-scoped
+        // "Disable Until Relaunch" override wins over the persisted on/off preference.
+        if adBlockingAvailability.isDisabledUntilRelaunch {
+            self.setting = .disableUntilRelaunch
+        } else if self.preferences.youTubeAdBlockingEnabled {
+            self.setting = .alwaysOn
+        } else {
+            self.setting = .alwaysOff
+        }
     }
 
     func handleSendBreakageReport() {
@@ -121,17 +133,29 @@ final class YouTubeAdBlockViewModel: ObservableObject {
 
     private func apply(_ setting: YouTubeAdBlockSetting) {
         let wasEnabled = preferences.youTubeAdBlockingEnabled
+        let wasDisabledUntilRelaunch = adBlockingAvailability.isDisabledUntilRelaunch
+
         switch setting {
         case .alwaysOn:
+            adBlockingAvailability.clearDisableUntilRelaunch()
             preferences.youTubeAdBlockingEnabled = true
         case .alwaysOff:
+            adBlockingAvailability.clearDisableUntilRelaunch()
             preferences.youTubeAdBlockingEnabled = false
         case .disableUntilRelaunch:
-            return
+            adBlockingAvailability.disableUntilRelaunch()
         }
-        if preferences.youTubeAdBlockingEnabled != wasEnabled {
+
+        let stateChanged = preferences.youTubeAdBlockingEnabled != wasEnabled
+            || adBlockingAvailability.isDisabledUntilRelaunch != wasDisabledUntilRelaunch
+        if stateChanged {
             reloadPage()
-            showBreakageReportBanner = !preferences.youTubeAdBlockingEnabled
+            // Show the breakage banner whenever the user has actively disabled ad blocking
+            // (either persistently or just for this session) — iOS surfaces a breakage report
+            // sheet in both cases too.
+            let isDisabled = !preferences.youTubeAdBlockingEnabled
+                || adBlockingAvailability.isDisabledUntilRelaunch
+            showBreakageReportBanner = isDisabled
         }
     }
 }

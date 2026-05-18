@@ -1935,7 +1935,7 @@ final class AddressBarButtonsViewController: NSViewController {
         guard youTubeAdBlockButton.isShown else { return false }
 
         let viewModel = YouTubeAdBlockViewModel(
-            isRemotelyDisabled: adBlockingAvailability.isRemotelyDisabled,
+            adBlockingAvailability: adBlockingAvailability,
             reloadPage: { [weak tabViewModel] in
                 tabViewModel?.reload()
             }

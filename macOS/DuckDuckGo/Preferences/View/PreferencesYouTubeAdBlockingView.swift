@@ -38,8 +38,12 @@ extension Preferences {
 
         var youTubeAdBlockingEnabledBinding: Binding<Bool> {
             .init {
-                model.youTubeAdBlockingEnabled
+                // While a session-scoped "Disable Until Relaunch" override is active the toggle
+                // must read as off — same iOS behaviour. Flipping it back on calls
+                // `clearDisableUntilRelaunch()` first so the override drops.
+                model.youTubeAdBlockingEnabled && !model.isDisabledUntilRelaunch
             } set: { newValue in
+                model.clearDisableUntilRelaunch()
                 let isTurningOn = newValue && !model.youTubeAdBlockingEnabled
                 let disclosureVisibleAtToggle = !model.isDisclosureHidden
                 model.youTubeAdBlockingEnabled = newValue
@@ -110,7 +114,16 @@ extension Preferences {
 
                     Spacer().frame(height: 4)
 
-                    ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
+                    if model.isDisabledUntilRelaunch {
+                        ToggleMenuItemWithDescription(
+                            UserText.youTubeAdBlockingToggle,
+                            UserText.youTubeAdBlockingDisabledUntilRelaunch,
+                            isOn: youTubeAdBlockingEnabledBinding,
+                            spacing: 4
+                        )
+                    } else {
+                        ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
+                    }
 
                     if !model.isDisclosureHidden {
                         VStack(alignment: .leading, spacing: 1) {

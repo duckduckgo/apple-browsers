@@ -24,6 +24,7 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 import SwiftUI
+import WebExtensions
 
 struct YouTubeAdBlockingSettings: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(.youTubeAdBlockingEnabled)
@@ -38,7 +39,13 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings>
     private let pixelFiring: PixelFiring?
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding?
     private var cancellables = Set<AnyCancellable>()
+
+    /// Mirrors `adBlockingAvailability.isDisabledUntilRelaunch` (when injected), updated via the
+    /// shared change notification. Exposed as `@Published` so SwiftUI views observing this model
+    /// (e.g. the Preferences pane) re-render the "Disabled until relaunch" sub-line on changes.
+    @Published private(set) var isDisabledUntilRelaunch: Bool = false
 
     private var isHandlingExternalChange = false
 
@@ -138,13 +145,16 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
-         pixelFiring: PixelFiring? = nil) {
+         pixelFiring: PixelFiring? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding? = nil) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
+        self.adBlockingAvailability = adBlockingAvailability
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled ?? false
         isDisclosureHidden = resolvedSettings.shouldHideYouTubeAdBlockingDisclosure == true
+        isDisabledUntilRelaunch = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in
@@ -156,8 +166,21 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             .publisher(for: Self.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
                 self?.syncFromStore()
+                self?.syncDisableUntilRelaunchFromAvailability()
             }
             .store(in: &cancellables)
+    }
+
+    /// Forwards the user-initiated Settings/popover toggle clear to the shared availability
+    /// instance. No-op when no availability was injected (e.g. test fixtures).
+    func clearDisableUntilRelaunch() {
+        adBlockingAvailability?.clearDisableUntilRelaunch()
+    }
+
+    private func syncDisableUntilRelaunchFromAvailability() {
+        let current = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
+        guard current != isDisabledUntilRelaunch else { return }
+        isDisabledUntilRelaunch = current
     }
 
     /// Re-reads the persisted value when another instance posts the change notification, so

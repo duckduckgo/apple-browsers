@@ -46,7 +46,7 @@ struct MenuItemWithNotificationDot: View {
                     .resizable()
                     .foregroundColor(isHovered ? .white : .blackWhite100)
                     .frame(width: 12, height: 12)
-                    .padding(.trailing, 8)
+                    .padding(.trailing, 6)
                     .padding(.leading, 16)
 
                 Text(title)

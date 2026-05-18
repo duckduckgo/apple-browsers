@@ -255,8 +255,9 @@ final class UnifiedToggleInputView: UIView {
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
         set {
+            guard handler.isTopBarPosition != newValue else { return }
             handler.updateBarPosition(isTop: newValue)
-            textEntryView.refreshLayoutForBarPositionChange()
+            textEntryView.updatePoseForCurrentState()
         }
     }
 

@@ -2173,12 +2173,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashMultipleTimesAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
-            return
-        }
-
-        tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcessMultipleTimes()
+        (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.killWebContentProcessMultipleTimes()
     }
 
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {

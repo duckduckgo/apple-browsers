@@ -57,7 +57,6 @@ final class FileDownloadManagerTests: XCTestCase {
 
     override func tearDown() {
         FileManager.restoreUrlsForIn()
-        FileManager.restoreCreateFile()
         customAssertionFailure = nil
         self.chooseDestination = nil
         self.fileIconFlyAnimationOriginalRect = nil
@@ -289,27 +288,24 @@ final class FileDownloadManagerTests: XCTestCase {
         waitForExpectations(timeout: 5)
     }
 
-    // Regression test: when createFile fails for a real reason (disk full, read-only fs, unavailable volume),
-    // the download should fail immediately — not loop 10001 times trying every possible filename variation.
+    // Regression test: when writing the placeholder file fails for a real reason (disk full, read-only fs,
+    // unmounted volume), the download should be marked as .failed with the real underlying error — not
+    // silently cancelled — and the pixel assertion should fire with the right message.
     @MainActor
-    func testWhenFileCreationFailsWithPersistentErrorThenDownloadIsCancelledImmediately() {
+    func testWhenFileCreationFailsWithPersistentErrorThenDownloadIsMarkedFailed() {
+        // Use a real writable directory so effectiveDownloadLocation resolves it correctly.
         let downloadsURL = fm.temporaryDirectory
         preferences.selectedDownloadLocation = downloadsURL
 
-        // Make createFile always return false without actually creating the file.
-        // This simulates a disk-full / permissions error that isWritableFile didn't catch.
-        var createFileCallCount = 0
-        FileManager.swizzleCreateFile { _ in
-            createFileCallCount += 1
-            return false
-        }
-
+        // Inject a write failure to simulate a persistent OS error (e.g. disk full).
+        let writeError = CocoaError(.fileWriteOutOfSpace)
+        dm._reservePlaceholderFile = { _ in throw writeError }
         // pixelAssertionFailure → assertionFailure → customAssertionFailure: capture instead of crashing.
         var assertionMessage: String?
         customAssertionFailure = { message, _, _ in assertionMessage = message() }
 
         let download = WKDownloadMock(url: .duckDuckGo)
-        dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+        let task = dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
 
         self.chooseDestination = { _, _, _ in
             XCTFail("Unexpected chooseDestination call — download should have failed, not prompted")
@@ -323,39 +319,31 @@ final class FileDownloadManagerTests: XCTestCase {
 
         waitForExpectations(timeout: 5)
 
-        XCTAssertEqual(assertionMessage, "Failed to create file in the Downloads folder", "Pixel should fire once")
-        // With the fix: loop breaks on the first failure (1 call to createFile).
-        // Without the fix: loop would run 10001 times before failing.
-        XCTAssertEqual(createFileCallCount, 1, "createFile should be called only once — fail fast, not loop 10001 times")
+        // The pixel assertion must fire with the right message.
+        XCTAssertEqual(assertionMessage, "Failed to create file in the Downloads folder")
+
+        // The task must be in .failed state with the real underlying error — not silently cancelled.
+        if case .failed(_, _, _, let error) = task.state {
+            let nsError = (error.underlyingError as? NSError)
+            XCTAssertEqual(nsError?.domain, NSCocoaErrorDomain)
+            XCTAssertEqual(nsError?.code, NSFileWriteOutOfSpaceError)
+        } else {
+            XCTFail("Expected task state .failed, got \(task.state)")
+        }
     }
 
-    // When createFile returns false but the file actually appeared on disk (TOCTOU race condition),
+    // When the preferred filename is already taken on disk (TOCTOU race: another process claimed it),
     // the download manager should retry with the next available filename rather than aborting.
     @MainActor
-    func testWhenFileCreationFailsDueToRaceConditionThenRetriesWithNextAvailableName() {
+    func testWhenFileCreationFailsDueToRaceConditionThenRetriesWithNextAvailableName() throws {
         let downloadsURL = fm.temporaryDirectory
         preferences.selectedDownloadLocation = downloadsURL
 
-        let racedPath = downloadsURL.appendingPathComponent("file.pdf").path
-        // Simulate race: createFile returns false for "file.pdf" but the file was actually written
-        // by another process right between the fileExists check and createFile call.
-        // Use Data().write(to:) to create the file without going through (swizzled) createFile.
-        // For all other paths, mimic real createFile behavior via Data().write(to:).
-        FileManager.swizzleCreateFile { path in
-            let url = URL(fileURLWithPath: path)
-            if path == racedPath {
-                try? Data().write(to: url)  // file appears but createFile "loses the race"
-                return false
-            }
-            do {
-                try Data().write(to: url)
-                return true
-            } catch {
-                return false
-            }
-        }
+        // Pre-create "file.pdf" so withNonExistentUrl skips it and tries "file 2.pdf".
+        let takenURL = downloadsURL.appendingPathComponent("file.pdf")
+        try Data().write(to: takenURL)
         defer {
-            try? FileManager.default.removeItem(atPath: racedPath)
+            try? FileManager.default.removeItem(at: takenURL)
             try? FileManager.default.removeItem(at: downloadsURL.appendingPathComponent("file 2.pdf"))
         }
 
@@ -369,9 +357,7 @@ final class FileDownloadManagerTests: XCTestCase {
         let e = expectation(description: "WKDownload callback called")
         download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
             XCTAssertNotNil(url, "Download should succeed by retrying with a different name")
-            // withNonExistentUrl double-increments the index after a caught TOCTOU error (index 0 → 2),
-            // so "file 1.pdf" is skipped and "file 2.pdf" is the next attempt.
-            XCTAssertEqual(url?.lastPathComponent, "file 2.pdf", "Should pick the next available filename after the race")
+            XCTAssertEqual(url?.lastPathComponent, "file 1.pdf", "Should pick the next available filename")
             e.fulfill()
         }
 
@@ -436,46 +422,6 @@ final class TestWorkspace: NSWorkspace {
 }
 
 private extension FileManager {
-    private static var createFileHandler: ((String) -> Bool)?
-    private static let createFileLock = NSLock()
-    private static var isCreateFileSwizzled = false
-    private static let originalCreateFile = {
-        class_getInstanceMethod(FileManager.self, #selector(FileManager.createFile(atPath:contents:attributes:)))!
-    }()
-    private static let swizzledCreateFile = {
-        class_getInstanceMethod(FileManager.self, #selector(FileManager.swizzled_createFile(atPath:contents:attributes:)))!
-    }()
-
-    static func swizzleCreateFile(with handler: @escaping (String) -> Bool) {
-        createFileLock.lock()
-        defer { createFileLock.unlock() }
-        if !isCreateFileSwizzled {
-            isCreateFileSwizzled = true
-            method_exchangeImplementations(originalCreateFile, swizzledCreateFile)
-        }
-        createFileHandler = handler
-    }
-
-    static func restoreCreateFile() {
-        createFileLock.lock()
-        defer { createFileLock.unlock() }
-        if isCreateFileSwizzled {
-            isCreateFileSwizzled = false
-            method_exchangeImplementations(originalCreateFile, swizzledCreateFile)
-        }
-        createFileHandler = nil
-    }
-
-    @objc dynamic func swizzled_createFile(atPath path: String, contents: Data?, attributes: [FileAttributeKey: Any]?) -> Bool {
-        Self.createFileLock.lock()
-        let handler = Self.createFileHandler
-        Self.createFileLock.unlock()
-        guard let handler else {
-            return self.swizzled_createFile(atPath: path, contents: contents, attributes: attributes) // calls original (exchanged)
-        }
-        return handler(path)
-    }
-
     private static var urlsForIn: ((SearchPathDirectory, SearchPathDomainMask) -> [URL])?
     private static let lock = NSLock()
     private static var isSwizzled = false

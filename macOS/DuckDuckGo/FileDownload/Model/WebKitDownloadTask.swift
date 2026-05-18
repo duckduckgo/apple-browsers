@@ -444,6 +444,14 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         return (tempFile: tempFile, destinationFile: destination)
     }
 
+    /// Call when a legitimate write error prevents the destination from being chosen (e.g. disk full, read-only fs).
+    /// Marks the task as failed immediately with the real underlying error so it appears in the download list.
+    @MainActor
+    func failDestination(with error: Error) {
+        Logger.fileDownload.error("🛑 failDestination \(self): \(error)")
+        finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
+    }
+
     func cancel() {
         guard Thread.isMainThread else {
             DispatchQueue.main.async {

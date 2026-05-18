@@ -48,6 +48,11 @@ final class FileDownloadManager: FileDownloadManagerProtocol {
 
     private let preferences: DownloadsPreferences
 
+    /// Overridable in tests to simulate write failures without touching the real filesystem.
+    var _reservePlaceholderFile: (URL) throws -> Void = { url in
+        try Data().write(to: url, options: .withoutOverwriting)
+    }
+
     init(preferences: DownloadsPreferences) {
         self.preferences = preferences
     }
@@ -151,7 +156,12 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
     private func chooseDestination(for task: WebKitDownloadTask, suggestedFilename: String, suggestedFileType fileType: UTType?) async -> (URL?, UTType?) {
         guard task.shouldPromptForLocation || preferences.alwaysRequestDownloadLocation,
               self.downloadTaskDelegates[task]?() != nil else {
-            return await defaultDownloadLocation(for: task, suggestedFilename: suggestedFilename, fileType: fileType)
+            do {
+                return try await defaultDownloadLocation(for: task, suggestedFilename: suggestedFilename, fileType: fileType)
+            } catch {
+                task.failDestination(with: error)
+                return (nil, nil)
+            }
         }
 
         return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
@@ -207,7 +217,7 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
     }
 
     @MainActor
-    private func defaultDownloadLocation(for task: WebKitDownloadTask, suggestedFilename: String, fileType: UTType?) async -> (URL?, UTType?) {
+    private func defaultDownloadLocation(for task: WebKitDownloadTask, suggestedFilename: String, fileType: UTType?) async throws -> (URL?, UTType?) {
         // download to default Downloads destination
         guard let downloadLocation = preferences.effectiveDownloadLocation ?? DownloadsPreferences.defaultDownloadLocation(validate: false /* verify later */) else {
             pixelAssertionFailure("Failed to access Downloads folder")
@@ -226,22 +236,33 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
             return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
         }
 
-        // choose non-existent filename
+        // Reserve a unique placeholder file — throws on TOCTOU race (retried by withNonExistentUrl)
+        // or a real write error (propagated to caller as a legitimate failure).
         do {
             url = try fm.withNonExistentUrl(for: url, incrementingIndexIfExistsUpTo: 10000) { url in
-                // the file will be overwritten in the WebKitDownloadTask
-                guard fm.createFile(atPath: url.path, contents: nil) else {
-                    // Distinguish TOCTOU race (file appeared between fileExists check and createFile → retry with next name)
-                    // from a real failure (disk full, read-only fs, unavailable volume, etc. → break out immediately).
-                    if fm.fileExists(atPath: url.path) {
-                        throw CocoaError(.fileWriteFileExists)
-                    }
-                    throw CocoaError(.fileWriteNoPermission, userInfo: [NSFilePathErrorKey: url.path])
-                }
+                // .withoutOverwriting maps to O_EXCL: atomic, no separate fileExists check needed.
+                // • File already exists (TOCTOU race) → throws CocoaError(.fileWriteFileExists) → withNonExistentUrl retries.
+                // • Real failure (disk full, read-only fs, unmounted volume) → throws the actual system error.
+                try self._reservePlaceholderFile(url)
                 return url
             }
         } catch {
-            pixelAssertionFailure("Failed to create file in the Downloads folder")
+            // Legitimate write failures: the error carries real diagnostic info (errorCode/errorDomain).
+            // These are NOT retryable — propagate so the download is marked failed with the real cause.
+            let nsError = error as NSError
+            let legitimateWriteErrorCodes: Set<Int> = [
+                NSFileWriteOutOfSpaceError,       // ENOSPC  — disk full
+                NSFileWriteVolumeReadOnlyError,   // EROFS   — read-only filesystem
+                NSFileWriteNoPermissionError,     // EACCES/EPERM — no write permission
+                NSFileWriteUnknownError,          // catch-all for unexpected write failures
+                NSFileNoSuchFileError,            // ENOENT  — parent dir removed / volume unmounted
+            ]
+            if nsError.domain == NSCocoaErrorDomain && legitimateWriteErrorCodes.contains(nsError.code) {
+                pixelAssertionFailure("Failed to create file in the Downloads folder", error: error)
+                throw error
+            }
+            // Any other error (e.g. withNonExistentUrl exhausted its limit): fire pixel and cancel silently.
+            pixelAssertionFailure("Failed to create file in the Downloads folder", error: error)
             return (nil, nil)
         }
 

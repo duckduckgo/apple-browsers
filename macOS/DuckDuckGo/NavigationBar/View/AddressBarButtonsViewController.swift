@@ -1742,6 +1742,15 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         updateAskAIChatButtonVisibility()
         updateButtonsPosition()
+
+        /// Force an immediate layout pass after the visibility flips above. NSStackView's
+        /// `detachesHiddenViews=YES` only marks the stack for layout on `isHidden` changes —
+        /// the actual reflow is deferred to the next runloop. If a display pass lands in the
+        /// gap (e.g. from an `image =` mutation in `updateImageButton`/`updatePrivacyEntryPointIcon`,
+        /// or a Lottie shield appearing during URL load), newly-shown buttons render at their
+        /// stale pre-layout frames and the privacy shield / permission center icons visibly
+        /// overlap at x=0 for a frame. Covers both leading and trailing stacks in one pass.
+        view.layoutSubtreeIfNeeded()
     }
 
     private func updateToggleExpansionState(shouldShowToggle: Bool) {

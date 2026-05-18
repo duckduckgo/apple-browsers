@@ -615,30 +615,19 @@ extension WindowControllersManagerProtocol {
 
     // MARK: - Web Notifications Support
 
-    /// Finds a tab by its UUID across all windows, materializing it if unloaded.
+    /// Focuses the tab with the given UUID across all windows, materializing it if unloaded.
     /// - Parameter uuid: The tab's UUID.
-    /// - Returns: The tab if found, nil otherwise.
-    func findTab(byUUID uuid: String) -> Tab? {
+    /// - Returns: The loaded tab if found, nil otherwise.
+    @discardableResult
+    func focusTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
-                return tabCollectionViewModel.materialize(at: index)
+                windowController.window?.makeKeyAndOrderFront(nil)
+                return tabCollectionViewModel.selectTab(at: index)
             }
         }
         return nil
-    }
-
-    /// Focuses the window containing the given tab and selects the tab.
-    /// - Parameter tab: The tab to focus.
-    func focusTab(_ tab: Tab) {
-        for windowController in mainWindowControllers {
-            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-            if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
-                windowController.window?.makeKeyAndOrderFront(nil)
-                tabCollectionViewModel.select(at: index)
-                return
-            }
-        }
     }
 
     /// Focuses the most recently active browser window.

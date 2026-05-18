@@ -4711,6 +4711,9 @@ extension MainViewController: TabDelegate {
         adBlockingAvailability.clearDisableUntilRelaunch()
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        if !enabled {
+            try? storage.set(false, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        }
         DailyPixel.fireDailyAndCount(
             pixel: enabled ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes

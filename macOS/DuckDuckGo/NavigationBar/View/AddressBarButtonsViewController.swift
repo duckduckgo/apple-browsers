@@ -838,14 +838,12 @@ final class AddressBarButtonsViewController: NSViewController {
     /// the OS-disabled remediation popover when the OS has denied access. Non-mic permissions
     /// (e.g. user-granted notifications) still keep the button visible.
     private func shouldSuppressShieldOnDuckAi(forDomain domain: String, tabViewModel: TabViewModel) -> Bool {
-        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
-              domain == URL.duckAi.host else {
-            return false
-        }
-        let hasOtherPersisted = permissionManager.persistedPermissionTypes(forDomain: domain)
-            .contains { $0 != .microphone }
-        let hasOtherUsed = tabViewModel.usedPermissions.keys.contains { $0 != .microphone }
-        return !hasOtherPersisted && !hasOtherUsed
+        DuckAiVoiceChatShieldScope.isOnlyMicInPlay(
+            domain: domain,
+            usedPermissions: tabViewModel.usedPermissions,
+            persistedPermissionTypes: permissionManager.persistedPermissionTypes(forDomain: domain),
+            featureFlagger: featureFlagger
+        )
     }
 
     /// While the OS denies mic access on duck.ai under the voice-chat flag, keep the shield
@@ -1900,10 +1898,14 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
 
-        // On duck.ai with OS mic denied, the shield only exists as an anchor for the
-        // system-disabled remediation surface — route the click to that popover and toggle it
-        // if it's already shown.
-        if isDuckAiVoiceChatSystemMicDenied(forDomain: url.host ?? "") {
+        // On duck.ai with OS mic denied AND no other permission in play, the shield only
+        // exists as an anchor for the system-disabled remediation surface — route the click
+        // to that popover and toggle it if it's already shown. With other permissions
+        // present, fall through to the normal Permission Center route so the user can
+        // manage them; the FE failure handler still surfaces the system-disabled popover
+        // automatically when voice chat is actually attempted.
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: url.host ?? "") &&
+           shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             if let existing = systemDisabledInfoPopover, existing.isShown {
                 existing.close()
                 systemDisabledInfoPopover = nil

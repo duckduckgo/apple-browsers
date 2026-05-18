@@ -339,8 +339,8 @@ final class DuckAISuggestionsViewController: UIViewController {
         UIView.performWithoutAnimation {
             let effectiveTopPadding = Constants.escapeHatchTopPadding + additionalTopInset
             let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
-            let maxWidth = HomeMessageCollectionViewCell.maximumWidth
-            let cardWidth = min(width - 2 * Constants.horizontalInset, maxWidth)
+            let availableCardWidth = width - 2 * layoutConfiguration.escapeHatchHorizontalInset
+            let cardWidth = layoutConfiguration.escapeHatchMaxWidth.map { min(availableCardWidth, $0) } ?? availableCardWidth
 
             // Sizing pass: compute each card's intrinsic height by giving its hosting view a fixed width.
             var hatchHeight: CGFloat = 0
@@ -387,7 +387,6 @@ final class DuckAISuggestionsViewController: UIViewController {
                 nextY += promoHeight
             }
 
-            container.layoutIfNeeded()
             tableView.tableHeaderView = container
 
             // First-install of the promo within this VC's lifetime → log the displayed pixel.

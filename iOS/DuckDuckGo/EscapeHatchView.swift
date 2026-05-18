@@ -21,51 +21,51 @@ import SwiftUI
 
 /// Bundles the "Return to tab" card and the tab switcher pill so callers render them as a single unit.
 struct EscapeHatchView: View {
-    let model: EscapeHatchModel
-    let openTabCount: Int
-    let onCardTap: () -> Void
-    let onTabSwitcherTap: () -> Void
+    @ObservedObject var model: EscapeHatchModel
 
     var body: some View {
-        HStack(spacing: Metrics.spacing) {
-            ReturnToTabCard(model: model, onTap: onCardTap)
-            TabSwitcherPill(count: openTabCount, onTap: onTabSwitcherTap)
+        HStack(spacing: model.isTargetTabPresent ? Metrics.spacing : 0) {
+            ReturnToTabCard(model: model)
+                .frame(maxWidth: model.isTargetTabPresent ? .infinity : 0)
+                .opacity(model.isTargetTabPresent ? 1 : 0)
+                .clipped()
+                .allowsHitTesting(model.isTargetTabPresent)
+
+            TabSwitcherPill(count: model.openTabCount, onTap: model.onTabSwitcherTap)
+                .frame(maxWidth: model.isTargetTabPresent ? TabSwitcherPill.compactSize : .infinity)
+                .frame(height: TabSwitcherPill.compactSize)
         }
+        .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isTargetTabPresent)
     }
 
     private enum Metrics {
         static let spacing: CGFloat = 8
+        static let collapseDuration: Double = 0.25
     }
 }
 
+#if DEBUG
+
 #Preview("Escape hatch — regular tab") {
-    EscapeHatchView(
-        model: EscapeHatchModel(
-            title: "Tokamak - Wikipedia",
-            subtitle: "en.wikipedia.org/wiki/Tokamak",
-            tabType: .regular,
-            domain: "en.wikipedia.org",
-            targetTab: Tab(fireTab: false)
-        ),
-        openTabCount: 9,
-        onCardTap: {},
-        onTabSwitcherTap: {}
-    )
-    .padding()
+    let target = Tab(fireTab: false)
+    EscapeHatchView(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
 }
 
 #Preview("Escape hatch — duck.ai") {
-    EscapeHatchView(
-        model: EscapeHatchModel(
-            title: "Good Dog Name Ideas",
-            subtitle: "Duck.ai",
-            tabType: .aiChat,
-            domain: nil,
-            targetTab: Tab(fireTab: false)
-        ),
-        openTabCount: 99,
-        onCardTap: {},
-        onTabSwitcherTap: {}
-    )
-    .padding()
+    let target = Tab(fireTab: false)
+    EscapeHatchView(model: .preview(title: "Good Dog Name Ideas",
+                                    subtitle: "Duck.ai",
+                                    tabType: .aiChat,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 99))
+        .padding()
 }
+
+#endif

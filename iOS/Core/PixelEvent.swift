@@ -196,6 +196,11 @@ extension Pixel {
         case addressBarClearPressedOnSERP
         case addressBarClearPressedOnAIChat
         case addressBarGestureDismiss
+        case longPressBarOpen
+        case longPressBarActionShare
+        case longPressBarActionCopy
+        case longPressBarActionMove
+        case longPressBarActionCloseTab
 
         case shareSheetResultSuccess
         case shareSheetResultFail
@@ -2048,6 +2053,11 @@ extension Pixel.Event {
         case .addressBarClearPressedOnSERP: return "m_addressbar_focus_clear_entry_serp"
         case .addressBarClearPressedOnAIChat: return "m_addressbar_focus_clear_entry_aichat"
         case .addressBarGestureDismiss: return "m_addressbar_focus_dismiss_gesture"
+        case .longPressBarOpen: return "m_longpress_bar_open"
+        case .longPressBarActionShare: return "m_longpress_bar_action_share"
+        case .longPressBarActionCopy: return "m_longpress_bar_action_copy"
+        case .longPressBarActionMove: return "m_longpress_bar_action_move"
+        case .longPressBarActionCloseTab: return "m_longpress_bar_action_close_tab"
 
         case .shareSheetResultSuccess: return "m_sharesheet_result_success"
         case .shareSheetResultFail: return "m_sharesheet_result_fail"

@@ -182,6 +182,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
@@ -1525,7 +1526,10 @@ class MainViewController: UIViewController {
                     subtitle: "",
                     tabType: .fire,
                     domain: nil,
-                    targetTab: targetTab
+                    targetTab: targetTab,
+                    tabsSource: tabManager,
+                    router: self,
+                    featureFlagger: featureFlagger
                 )
             }
             return nil
@@ -1536,7 +1540,10 @@ class MainViewController: UIViewController {
                 subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
                 tabType: .aiChat,
                 domain: nil,
-                targetTab: targetTab
+                targetTab: targetTab,
+                tabsSource: tabManager,
+                router: self,
+                featureFlagger: featureFlagger
             )
         }
         if let link = targetTab.link {
@@ -1546,7 +1553,10 @@ class MainViewController: UIViewController {
                 subtitle: subtitle,
                 tabType: .regular,
                 domain: link.url.host,
-                targetTab: targetTab
+                targetTab: targetTab,
+                tabsSource: tabManager,
+                router: self,
+                featureFlagger: featureFlagger
             )
         }
         return nil
@@ -1644,7 +1654,6 @@ class MainViewController: UIViewController {
         newTabPageViewController = controller
 
         controller.setEscapeHatch(hatch)
-        controller.setOpenTabCount(tabManager.currentTabsModel.count)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
@@ -1686,22 +1695,7 @@ class MainViewController: UIViewController {
             clearEscapeHatch()
             return
         }
-        let targetTab = hatch.targetTab
-        unifiedToggleInputCoordinator?.setEscapeHatch(
-            hatch,
-            openTabCount: tabManager.currentTabsModel.count,
-            onTapped: { [weak self] in
-                guard let self else { return }
-                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    clearEscapeHatch()
-                    return
-                }
-                onSwitchToTab(targetTab)
-            },
-            onTabSwitcherTapped: { [weak self] in
-                self?.requestTabSwitcher()
-            }
-        )
+        unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
@@ -2286,7 +2280,7 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
+        deactivateUnifiedToggleInputOmnibarSession()
         refreshOmniBar()
     }
 
@@ -3998,6 +3992,65 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu? {
+        let isPrivacyProtectionEnabled: Bool
+        if let url = currentTab?.url {
+            isPrivacyProtectionEnabled = privacyConfigurationManager.privacyConfig.isProtected(domain: url.host)
+        } else {
+            isPrivacyProtectionEnabled = false
+        }
+
+        return longPressBarMenuBuilder.makeOmniBarMenu(context: .init(
+            state: state,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.omniBarLongPressMenu),
+            currentURL: currentTab?.url,
+            isAITab: currentTab?.isAITab == true,
+            isPad: isPad,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isPrivacyProtectionEnabled: isPrivacyProtectionEnabled,
+            onShare: { [weak self] in
+                self?.shareCurrentURLFromAddressBar()
+            },
+            onCopy: { [weak self] url in
+                self?.currentTab?.onCopyAction(forUrl: url)
+            },
+            onMoveAddressBar: { [weak self] in
+                // iOS 26 has broken something so we have to use an animation
+                //  to get symmetry in the movement (rather than disabling animations
+                //  which doesn't appear to work properly on iOS 26.4,
+                if #available(iOS 18.0, *) {
+
+                    self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
+                    self?.omniBar.prepareForMoveTransition()
+                    UIView.animate(.smooth) {
+                        self?.toggleAddressBarLocation()
+                    } completion: {
+                        self?.omniBar.moveTransitionCompleted()
+                        self?.decorate()
+                    }
+
+                } else {
+                    self?.toggleAddressBarLocation()
+                }
+
+            },
+            onCloseTab: { [weak self] in
+                guard let tab = self?.currentTab else { return }
+                self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+            }
+        ))
+    }
+
+    func onOmniBarLongPressMenuDisplayed() {
+        longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
+    }
+
+    private func toggleAddressBarLocation() {
+        let current = appSettings.currentAddressBarPosition
+        appSettings.currentAddressBarPosition = current == .top ? .bottom : .top
+        self.view.layoutIfNeeded()
+    }
+
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         defer { super.motionEnded(motion, with: event) }
 
@@ -4400,10 +4453,11 @@ extension MainViewController: OmniBarDelegate {
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
-              tabManager.currentTabsModel.currentTab?.link == nil else {
+              tabManager.currentTabsModel.currentTab?.link == nil,
+              let model = currentNTPEscapeHatch else {
             return nil
         }
-        return currentNTPEscapeHatch
+        return model
     }
 
     private func clearEscapeHatch() {
@@ -4573,6 +4627,43 @@ extension MainViewController {
         } else {
             loadUrl(url)
         }
+    }
+}
+
+extension MainViewController: EscapeHatchActionRouter {
+    func escapeHatchDidRequestSwitch(to tab: Tab) {
+        guard tabManager.tabsModel(for: tab.mode).tabExists(tab: tab) else {
+            clearEscapeHatch()
+            return
+        }
+        onSwitchToTab(tab)
+    }
+
+    func escapeHatchDidRequestClose(_ tab: Tab) {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
+            return
+        }
+
+        tabManager.remove(tab: tab, in: targetTabsModel)
+        refreshControls()
+
+        if targetTabsModel.hasActiveTabs {
+            return
+        }
+
+        /// # TODO: Invoking `closeTab` removes the Escape Hatch from screen
+        clearEscapeHatch()
+        dismissOmniBar()
+    }
+
+    func escapeHatchDidRequestBurn(_ tab: Tab) {
+        // TODO: Wire FireConfirmationPresenter — currently falls back to a plain close.
+        escapeHatchDidRequestClose(tab)
+    }
+
+    func escapeHatchDidRequestTabSwitcher() {
+        requestTabSwitcher()
     }
 }
 

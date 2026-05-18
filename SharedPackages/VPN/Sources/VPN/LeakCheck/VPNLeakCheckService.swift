@@ -476,4 +476,14 @@ public actor VPNLeakCheckService {
         }
         return .success
     }
+
+    /// A rekey that lands on the same server can't have changed the egress path, so we skip the
+    /// leak check and let the periodic timer handle routine validation. Only force an immediate
+    /// check when the server (or its IP) actually changed. A `nil` postRekey means WireGuard
+    /// dropped state out from under us — the service would skip the check anyway.
+    public nonisolated static func shouldScheduleCheckAfterRekey(preRekey: LeakCheckEgressInfo?,
+                                                                 postRekey: LeakCheckEgressInfo?) -> Bool {
+        guard let postRekey else { return false }
+        return preRekey != postRekey
+    }
 }

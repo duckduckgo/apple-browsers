@@ -55,7 +55,12 @@ class OmniBarViewController: UIViewController, OmniBar {
     // -
 
     let dependencies: OmnibarDependencyProvider
-    weak var omniDelegate: OmniBarDelegate?
+    weak var omniDelegate: OmniBarDelegate? {
+        didSet {
+            guard isViewLoaded else { return }
+            barView.refreshLongPressMenuAvailability()
+        }
+    }
 
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
@@ -152,6 +157,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         registerNotifications()
         assignActions()
         configureEditingMenu()
+        configureLongPressMenuProvider()
 
         enableInteractionsWithPointer()
 
@@ -160,6 +166,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         decorate()
 
         refreshState(state)
+    }
+
+    private func configureLongPressMenuProvider() {
+        guard dependencies.featureFlagger.isFeatureOn(.omniBarLongPressMenu) else { return }
+        barView.longPressMenuProvider = { [weak self] in
+            guard let self else { return nil }
+            return self.omniDelegate?.menuForOmniBarLongPress(in: self.state)
+        }
+        barView.onLongPressMenuDisplayed = { [weak self] in
+            self?.omniDelegate?.onOmniBarLongPressMenuDisplayed()
+        }
+        barView.refreshLongPressMenuAvailability()
     }
 
     private func enableInteractionsWithPointer() {
@@ -392,6 +410,14 @@ class OmniBarViewController: UIViewController, OmniBar {
     
     func refreshFireMode(fireMode: Bool) {
         barView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func prepareForMoveTransition() {
+        barView.prepareForMoveTransition()
+    }
+
+    func moveTransitionCompleted() {
+        barView.moveTransitionCompleted()
     }
 
     func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) {
@@ -702,6 +728,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
 
         updateInterface(from: oldState, to: state)
+        barView.refreshLongPressMenuAvailability()
 
         UIView.animate(withDuration: 0.0) { [weak self] in
             self?.view.layoutIfNeeded()

@@ -1260,12 +1260,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: unpinnedIndex) else {
-            assertionFailure("TabBarViewController: Failed to get tab view model")
+        guard let tab = tabCollectionViewModel.materialize(at: sourceTab) else {
+            assertionFailure("TabBarViewController: Failed to get tab")
             return
         }
 
-        let tab = tabViewModel.tab
         tabCollectionViewModel.remove(at: sourceTab, published: false)
         WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
     }

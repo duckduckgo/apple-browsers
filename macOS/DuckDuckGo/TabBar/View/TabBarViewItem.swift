@@ -32,6 +32,7 @@ struct OtherTabBarViewItemsState {
 }
 
 protocol TabBarViewModel {
+    var uuid: TabIdentifier { get }
     var tabContent: Tab.TabContent { get }
     var isPinned: Bool { get }
     var title: String { get }
@@ -52,6 +53,7 @@ protocol TabBarViewModel {
 }
 
 extension TabViewModel: TabBarViewModel {
+    var uuid: TabIdentifier { tab.uuid }
     var isPinned: Bool {
         tab.isPinned
     }
@@ -1761,6 +1763,7 @@ extension TabBarViewItem {
         func tabBarViewItemSuspendAction(_: TabBarViewItem) {}
 
         final class TabBarViewModelMock: TabBarViewModel {
+            let uuid: TabIdentifier = UUID().uuidString
             var url: URL?
             var width: CGFloat
             var isSelected: Bool

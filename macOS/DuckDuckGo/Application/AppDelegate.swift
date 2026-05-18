@@ -1192,6 +1192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let returningUserProvider = AttributedMetricReturningUserProvider(
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         )
+        let installDateProvider = AttributedMetricATBInstallDateProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
@@ -1201,6 +1202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
+                                                               installDateProvider: installDateProvider,
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
@@ -1574,7 +1576,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireDailyAdBlockingPixel() {
-        PixelKit.fire(WebExtensionPixel.dailyAdBlockingState(isEnabled: adBlockingAvailability.isEnabled), frequency: .daily)
+        let isEnabled = adBlockingAvailability.isEnabled
+        let storage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
+        let analyticsEnabled = isEnabled && (storage.youTubeAnalyticsEnabled ?? false)
+        PixelKit.fire(
+            WebExtensionPixel.dailyAdBlockingState(
+                isEnabled: isEnabled,
+                analyticsEnabled: analyticsEnabled
+            ),
+            frequency: .daily
+        )
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -1719,6 +1730,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 installDate: AppDelegate.firstLaunchDate,
                 persistor: persistor,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                isAppRelaunchingForUpdate: { [weak self] in
+                    self?.stateRestorationManager?.isRelaunchingAutomatically ?? false
+                },
+                isSystemQuitting: {
+                    NSAppleEventManager.shared().isQuittingForSystemEvent
+                },
+                resetRelaunchFlagOnCancel: { [weak self] in
+                    guard let stateRestorationManager = self?.stateRestorationManager,
+                          stateRestorationManager.isRelaunchingAutomatically else { return }
+                    stateRestorationManager.resetRelaunchFlag()
+                },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
                     let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
@@ -2065,6 +2087,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
             appearancePreferences: appearancePreferences,
+            keyValueStore: keyValueStore,
             syncErrorHandler: syncErrorHandler
         )
         let syncService = DDGSync(
@@ -2400,6 +2423,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
         case .fileDeleteError(let error):
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+        case .lastUsedModelParseError:
+            break
         }
     }
 }

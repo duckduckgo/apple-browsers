@@ -151,4 +151,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
 
 protocol OnboardingDebugAppSettings {
     var onboardingUserType: OnboardingUserType { get set }
+    /// When `true`, `OnboardingRestorePromptHandler.isEligibleForRestorePrompt()` short-circuits to `true`
+    /// in DEBUG/ALPHA builds so the `.restoreData` intro can be reached without a preserved sync account.
+    var onboardingForceRestorePromptEligible: Bool { get set }
 }

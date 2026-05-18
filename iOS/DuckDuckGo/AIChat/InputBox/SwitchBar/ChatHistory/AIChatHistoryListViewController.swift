@@ -41,9 +41,9 @@ final class AIChatHistoryListViewController: UIViewController {
         // use the wider padding when the hatch stands alone.
         static let escapeHatchTopPaddingNoTitle: CGFloat = 16
         static let escapeHatchTopPaddingWithTitle: CGFloat = 6
-        static let escapeHatchHeaderHeight: CGFloat = 72
+        static let escapeHatchHeaderHeight: CGFloat = 56
         static let escapeHatchBottomPadding: CGFloat = 16
-        static let escapeHatchTopContentInset: CGFloat = 8
+        static let escapeHatchTopContentInset: CGFloat = 0
         static let escapeHatchMaxWidth: CGFloat = HomeMessageCollectionViewCell.maximumWidth
         static let escapeHatchMaxWidthPad: CGFloat = HomeMessageCollectionViewCell.maximumWidthPad
     }
@@ -105,7 +105,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private var currentEscapeHatchModel: EscapeHatchModel?
-    private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
 
     var additionalTopInset: CGFloat = 0 {
         didSet {
@@ -251,14 +251,21 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
-    /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        if model == currentEscapeHatchModel {
-            return
-        }
+    /// Shows or hides the escape hatch (return-to-tab card + tab switcher pill) as the table header. Pass nil to hide.
+    func setEscapeHatch(_ model: EscapeHatchModel?,
+                        openTabCount: Int,
+                        onTapped: (() -> Void)?,
+                        onTabSwitcherTapped: (() -> Void)?) {
+        let modelChanged = model != currentEscapeHatchModel
         currentEscapeHatchModel = model
 
-        if let model, let onTapped {
+        if let model, let onTapped, let onTabSwitcherTapped {
+            // The escape hatch is set once when the NTP appears and the open tab count
+            // can't change without dismissing it, so an unchanged model implies the
+            // openTabCount and closures are also still valid — nothing to rebuild.
+            if escapeHatchHostingController != nil, !modelChanged {
+                return
+            }
             if let existingHosting = escapeHatchHostingController {
                 existingHosting.willMove(toParent: nil)
                 existingHosting.view.removeFromSuperview()
@@ -266,8 +273,13 @@ final class AIChatHistoryListViewController: UIViewController {
             }
             escapeHatchHostingController = nil
 
-            let card = ReturnToTabCard(model: model, onTap: onTapped)
-            let hosting = UIHostingController(rootView: card)
+            let view = EscapeHatchView(
+                model: model,
+                openTabCount: openTabCount,
+                onCardTap: onTapped,
+                onTabSwitcherTap: onTabSwitcherTapped
+            )
+            let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             escapeHatchHostingController = hosting
 

@@ -17,34 +17,43 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-42055
     struct RestorePromptDialogContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        private typealias Copy = UserText.Onboarding.RestorePrompt
-
+        private let content: OnboardingIntroStepContent.RestorePromptStepContent
         private let skipOnboardingView: AnyView?
         private let restoreAction: () -> Void
         private let skipAction: () -> Void
         private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
-        @Binding var showContent: Bool
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
+        /// Reset before the skip swap so the new `TypingText` doesn't skip itself.
+        @Binding var skipTypingAnimation: Bool
 
         init(
+            content: OnboardingIntroStepContent.RestorePromptStepContent,
             skipOnboardingView: AnyView?,
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
+            skipTypingAnimation: Binding<Bool>,
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
         ) {
+            self.content = content
             self.skipOnboardingView = skipOnboardingView
-            self._showContent = showContent
+            self._isVisible = isVisible
+            self._skipTypingAnimation = skipTypingAnimation
             self.restoreAction = restoreAction
             self.skipAction = skipAction
             self.onSkipOnboardingPresented = onSkipOnboardingPresented
@@ -75,70 +84,73 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 message:
                     AnyView(
-                        Text(Copy.body)
+                        Text(content.message)
                             .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                             .font(onboardingTheme.typography.body)
                             .multilineTextAlignment(.center)
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(Copy.title)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: restoreAction) {
-                            Text(Copy.restoreCTA)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
                             Button(action: showSkipOnboardingDialog) {
-                                Text(Copy.skipCTA)
+                                Text(content.secondaryCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }
                     }
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Handles the transition from restore dialog to skip onboarding dialog with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content immediately (no fade-out animation)
-        /// 2. Switch to skip dialog and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Hide → resize → show swap. Deferred so the parent's tap-to-skip gesture fires
+        /// before we reset `skipTypingAnimation` and mount the new view.
         private func showSkipOnboardingDialog() {
-            // Phase 1: Hide current content immediately
-            showContent = false
+            isVisible = false
             skipAction()
 
-            if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-            } else {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                }
+            // Reduce Motion: jump to final state.
+            guard !reduceMotion else {
+                skipTypingAnimation = false
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
 
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
+            DispatchQueue.main.async {
+                skipTypingAnimation = false
+
+                if #available(iOS 17.0, *) {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    } completion: {
+                        withAnimation { isVisible = true }
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    }
+                    // iOS 16 fallback (no withAnimation completion).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                        withAnimation { isVisible = true }
                     }
                 }
             }

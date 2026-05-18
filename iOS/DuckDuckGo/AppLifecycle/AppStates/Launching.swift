@@ -134,6 +134,7 @@ struct Launching: LaunchingHandling {
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             syncErrorHandler: syncService.syncErrorHandler,
+                                                            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController)
@@ -465,6 +466,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             Pixel.fire(pixel: .duckAiNativeStorageFileListError, error: error)
         case .fileDeleteError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
+        case .lastUsedModelParseError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageLastUsedModelParseError, error: error)
         }
     }
 }

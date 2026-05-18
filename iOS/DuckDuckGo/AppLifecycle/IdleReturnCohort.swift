@@ -22,7 +22,8 @@ import BrowserServicesKit
 import Persistence
 
 /// Sets `idleReturnNewUser` once at launch (before statistics load) so that
-/// `AfterInactivityEffectiveOptionResolver` can default new users to .newTab and existing users to .lastUsedTab.
+/// `AfterInactivityEffectiveOptionResolver` can treat **new** iPhone users (no stored after-idle preference) as New Tab and **persist** that choice.
+/// Existing users get Last Used Tab without persisting `afterInactivityOption` until they choose in Settings.
 /// Must run before StatisticsLoader.load() completes, otherwise a new user's first load would set hasInstallStatistics and we would misclassify them as existing.
 /// New user = no install statistics yet (true); existing user = has install statistics from a previous session (false).
 enum IdleReturnCohort {

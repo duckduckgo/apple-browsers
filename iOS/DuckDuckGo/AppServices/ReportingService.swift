@@ -70,6 +70,7 @@ final class ReportingService {
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionManager)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         let returningUserProvider = AttributedMetricReturningUserProvider()
+        let installDateProvider = AttributedMetricATBInstallDateProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagging,
@@ -77,6 +78,7 @@ final class ReportingService {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
+                                                               installDateProvider: installDateProvider,
                                                                settingsProvider: settingsProvider)
         addNotificationsObserver()
     }
@@ -318,5 +320,18 @@ struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProvi
 
     var isReturningUser: Bool {
         statisticsStore.variant == VariantIOS.returningUser.name
+    }
+}
+
+struct AttributedMetricATBInstallDateProvider: AttributedMetricInstallDateProviding {
+
+    private let statisticsStore: StatisticsStore
+
+    init(statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+        self.statisticsStore = statisticsStore
+    }
+
+    var installDate: Date? {
+        statisticsStore.installDate
     }
 }

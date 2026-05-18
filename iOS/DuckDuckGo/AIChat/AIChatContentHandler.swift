@@ -58,6 +58,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the content handler receives a request to close the AIChat interface.
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling)
 
+    /// Called when the user explicitly ends a voice session via the X button — the host should close the originating tab.
+    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling)
+
     /// Called when the content handler receives a request to open Sync settings.
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
 
@@ -113,6 +116,7 @@ extension AIChatContentHandling {
 
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {}
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -260,6 +264,8 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             delegate?.aiChatContentHandlerDidReceiveOpenSettingsRequest(self)
         case .closeAIChat:
             delegate?.aiChatContentHandlerDidReceiveCloseChatRequest(self)
+        case .voiceSessionUserEnded:
+            delegate?.aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(self)
         case .sendToSyncSettings, .sendToSetupSync:
             delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
         default:

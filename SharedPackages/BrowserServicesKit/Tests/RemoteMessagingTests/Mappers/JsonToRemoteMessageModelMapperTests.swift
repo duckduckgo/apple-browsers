@@ -664,6 +664,164 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(resultItem.descriptionText, "Translated Description 1")
     }
 
+    // MARK: - DisplayConditions Mapping Tests
+
+    func testWhenMessageHasDisplayConditionsWithTriggerThenItIsMappedCorrectly() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-trigger",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: nil)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.trigger, .afterIdle)
+        XCTAssertNil(result.first?.displayConditions?.dismissAfterDaysShown)
+    }
+
+    func testWhenMessageHasDisplayConditionsWithTriggerAndDismissThenBothAreMapped() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-both",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: 5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.trigger, .afterIdle)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 5)
+    }
+
+    func testWhenMessageHasDisplayConditionsWithDismissOnlyThenTriggerIsNil() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-dismiss-only",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: 3)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertNil(result.first?.displayConditions?.trigger)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 3)
+    }
+
+    func testWhenMessageHasUnknownTriggerThenMessageIsDiscarded() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-unknown",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "some_future_trigger", dismissAfterDaysShown: nil)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testWhenMessageHasNoDisplayConditionsThenDisplayConditionsIsNil() {
+        let jsonMessage = makeJsonMessage(id: "msg-no-conditions", displayConditions: nil)
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertNil(result.first?.displayConditions)
+    }
+
+    func testWhenDismissAfterDaysShownIsZeroThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-clamp",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: 0)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenDismissAfterDaysShownIsNegativeThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-negative",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: -5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenMultipleMessagesAndOneHasUnknownTriggerThenOnlyThatOneIsDiscarded() {
+        let validMessage = makeJsonMessage(
+            id: "msg-valid",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: nil)
+        )
+        let invalidMessage = makeJsonMessage(
+            id: "msg-invalid",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "unknown_trigger", dismissAfterDaysShown: nil)
+        )
+        let noConditionsMessage = makeJsonMessage(id: "msg-plain", displayConditions: nil)
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [validMessage, invalidMessage, noConditionsMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(result.map(\.id), ["msg-valid", "msg-plain"])
+    }
+
+    // MARK: - Helpers
+
+    private func makeJsonMessage(id: String,
+                                 displayConditions: RemoteMessageResponse.JsonDisplayConditions?) -> RemoteMessageResponse.JsonRemoteMessage {
+        RemoteMessageResponse.JsonRemoteMessage(
+            id: id,
+            surfaces: nil,
+            content: .init(messageType: "small",
+                           titleText: "Title",
+                           descriptionText: "Description",
+                           listItems: nil,
+                           placeholder: nil,
+                           imageUrl: nil,
+                           actionText: nil,
+                           action: nil,
+                           primaryActionText: nil,
+                           primaryAction: nil,
+                           secondaryActionText: nil,
+                           secondaryAction: nil),
+            translations: nil,
+            matchingRules: [],
+            exclusionRules: [],
+            metrics: nil,
+            displayConditions: displayConditions
+        )
+    }
+}
+
+private struct MockSurveyActionMapper: RemoteMessagingSurveyActionMapping {
+    func add(parameters: [RemoteMessagingSurveyActionParameter], to url: URL) -> URL {
+        url
+    }
 }
 
 extension JsonToRemoteMessageModelMapperTests {

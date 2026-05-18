@@ -212,51 +212,6 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "写真を撮影";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
-"aichat.attachment.file.count.limit" = "ファイルは会話ごとに点しか添付できません。";
-
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.encrypted" = "添付ファイルのうち少なくとも1つが暗号化されているため、内容を読み取ることができません。";
-
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
-"aichat.attachment.file.exceeds.conversation.limit" = "添付ファイルは%dMBの総サイズ制限を超えています。";
-
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
-"aichat.attachment.file.too.large" = "このファイルは大きすぎます。最大ファイルサイズは%dMBです。";
-
-/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
-"aichat.attachment.file.too.many.pages" = "添付ファイルの1点が対応ページ数を超えています。%dページ以下のファイルをアップロードしてください。";
-
-/* Error message displayed when one or more attached files cannot be read */
-"aichat.attachment.file.unreadable" = "添付されたファイルの1つを読み取れません。破損していないか確認してから、もう一度お試しください。";
-
-/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
-"aichat.attachment.image.count.limit" = "画像は会話ごとに%d点しか添付できません。";
-
-/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
-"aichat.attachment.image.turn.limit" = "一度に添付できる画像は枚までです。";
-
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "ファイルを添付する";
-
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "写真を添付";
-
-/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
-"aichat.attachment.prompt.too.long" = "そのメッセージは長すぎて添付ファイル付きで送信できません。";
-
-/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
-"aichat.attachment.unavailable" = "添付ファイルは一時的に利用できません。時間を置いてもう一度お試しください。";
-
-/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
-"aichat.attachment.unsupported.file.type" = "このファイル形式はサポートされていません。";
-
-/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
-"aichat.attachment.unsupported.file.type.multiple" = "このファイル形式はサポートされていません。%1$@または%2$@を添付してください。";
-
-/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "分析タスク用";
 
@@ -277,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "応答をカスタマイズする";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "テキストを画像に変換";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "画像を作成";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "最新情報を検索";
@@ -3064,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "それがDuckDuckGo Searchです！";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "より高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
+"onboarding.rebranding.intro.message" = "より速いブラウザでコントロールを掌握する準備はできていますか？\n\nAIは常に任意であり、プライバシー保護は常に有効です。";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";
@@ -3504,7 +3465,10 @@
 "settings.address.trackers.animation" = "アドレスバーに表示";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、戻ってきたときに表示する内容を選択してください。";
+"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、DuckDuckGoに戻ってきたときに表示する内容を選択してください。";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "DuckDuckGoに戻ったときに表示する内容を選択してください。";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1時間";
@@ -3518,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d 分";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "なし";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1秒";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d 秒";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "非アクティブタイマー";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "操作がない状態が続いた後";
+"settings.afterInactivity.label" = "オープニングスクリーン";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "最後に使用したタブ";
@@ -4927,6 +4897,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "YouTubeで広告をブロック";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "オンにすると、広告ブロックによる干渉やYouTubeのエラーがDuckDuckGoにより匿名で検知され、すべてのユーザーの体験が向上します。ユーザーの視聴している動画や個人を識別可能な情報がDuckDuckGoに表示されることは一切ありません。";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "詳細情報";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "ブックマーク";

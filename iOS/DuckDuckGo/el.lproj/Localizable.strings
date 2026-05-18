@@ -212,51 +212,6 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
-"aichat.attachment.file.count.limit" = "Μπορείτε να επισυνάψετε μόνο %d αρχεία ανά συνομιλία.";
-
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.encrypted" = "Δεν μπορούμε να διαβάσουμε τα επισυναπτόμενα αρχεία επειδή τουλάχιστον ένα από αυτά είναι κρυπτογραφημένο.";
-
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
-"aichat.attachment.file.exceeds.conversation.limit" = "Τα συνημμένα αρχεία υπερβαίνουν το συνολικό όριο μεγέθους των %d MB.";
-
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
-"aichat.attachment.file.too.large" = "Αυτό το αρχείο είναι πολύ μεγάλο. Το μέγιστο μέγεθος αρχείου είναι %d MB.";
-
-/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
-"aichat.attachment.file.too.many.pages" = "Ένα από τα συνημμένα αρχεία έχει περισσότερες σελίδες από όσες υποστηρίζουμε. Μεταφορτώστε αρχεία με %d σελίδες ή λιγότερες.";
-
-/* Error message displayed when one or more attached files cannot be read */
-"aichat.attachment.file.unreadable" = "Δεν μπορούμε να διαβάσουμε ένα από τα συνημμένα αρχεία. Έλεγξε ότι δεν είναι κατεστραμμένο και προσπαθήστε ξανά.";
-
-/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
-"aichat.attachment.image.count.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες ανά συνομιλία.";
-
-/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
-"aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
-
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Επισύναψη αρχείου";
-
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Επισύναψη φωτογραφίας";
-
-/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
-"aichat.attachment.prompt.too.long" = "Αυτό το μήνυμα είναι πολύ μεγάλο για να σταλεί με συνημμένα.";
-
-/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
-"aichat.attachment.unavailable" = "Τα συνημμένα δεν είναι προσωρινά διαθέσιμα. Προσπαθήστε πάλι αργότερα.";
-
-/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
-"aichat.attachment.unsupported.file.type" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται.";
-
-/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
-"aichat.attachment.unsupported.file.type.multiple" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισύναψε %1$@ ή %2$@.";
-
-/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
 
@@ -277,6 +232,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Μετατροπή κειμένου σε εικόνες";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Δημιουργία εικόνας";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Βρείτε τρέχουσες πληροφορίες";
@@ -3064,7 +3025,7 @@
 "onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
+"onboarding.rebranding.intro.message" = "Είσαι έτοιμος για ένα ταχύτερο πρόγραμμα περιήγησης που σου δίνει τον έλεγχο;\n\nΗ τεχνητή νοημοσύνη είναι πάντα προαιρετική και η προστασία προσωπικών δεδομένων είναι πάντα ενεργοποιημένη.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Γεια σας.";
@@ -3504,7 +3465,10 @@
 "settings.address.trackers.animation" = "Εμφάνιση στη Γραμμή διευθύνσεων";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέφετε μετά από %@ αδράνειας.";
+"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέψετε στο DuckDuckGo μετά από %@ αδράνειας.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Επιλέξτε τι θα βλέπετε όταν επιστρέψετε στο DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 ώρα";
@@ -3518,14 +3482,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d λεπτά";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Κανένα";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 δευτερόλεπτο";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d δευτερόλεπτα";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Χρονόμετρο αδράνειας";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Μετά από αδράνεια";
+"settings.afterInactivity.label" = "Οθόνη έναρξης";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
@@ -4927,6 +4897,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Αποκλείστε διαφημίσεις στο YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Όταν είναι ενεργοποιημένο, το DuckDuckGo θα ανιχνεύει ανώνυμα παρεμβολές αποκλεισμού διαφημίσεων ή σφάλματα YouTube, για να βελτιώνει την εμπειρία για όλους. Το DuckDuckGo δεν βλέπει ποτέ ποια βίντεο παρακολουθείτε ούτε τυχόν προσωπικά στοιχεία ταυτοποίησης.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Μάθετε περισσότερα";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Σελιδοδείκτες";

@@ -350,12 +350,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     func fireMonitoringPixels() async {
         let isAuthenticated = await authenticationManager.isUserAuthenticated
-        
-        /*
-         Engagement pixels disabled for now as checking for the profile on the main thread was causing an increase in hang rates
-         */
-        // tryToFireEngagementPixels(isAuthenticated: isAuthenticated)
 
+        tryToFireEngagementPixels(isAuthenticated: isAuthenticated)
         tryToFireWeeklyPixels(isAuthenticated: isAuthenticated)
 
         // Stats pixels only fire for authenticated users (they relate to opt-outs)
@@ -682,8 +678,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmatio
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
     func tryToFireEngagementPixels(isAuthenticated: Bool) {
-        Task { @MainActor in
-            engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefreshForEngagementPixel())
+        Task {
+            let needBackgroundAppRefresh = await needBackgroundAppRefreshForEngagementPixel()
+            engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh)
         }
     }
 

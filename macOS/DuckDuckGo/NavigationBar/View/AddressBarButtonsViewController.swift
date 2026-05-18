@@ -109,7 +109,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var permissionCenterPopover: PermissionCenterPopover?
 
-    private var youTubeAdBlockPopover: NSPopover?
+    private var youTubeAdBlockPopover: YouTubeAdBlockPopover?
+    private var youTubeAdBlockViewModel: YouTubeAdBlockViewModel?
 
     private var popupBlockedPopover: PopupBlockedPopover?
     private var systemDisabledInfoPopover: NSPopover?
@@ -1893,10 +1894,10 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.contentViewController = YouTubeAdBlockPlaceholderViewController()
+        let viewModel = YouTubeAdBlockViewModel()
+        let popover = YouTubeAdBlockPopover(viewModel: viewModel)
         popover.delegate = self
+        youTubeAdBlockViewModel = viewModel
         youTubeAdBlockPopover = popover
 
         youTubeAdBlockButton.backgroundColor = .buttonMouseDown
@@ -2564,36 +2565,16 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
             permissionCenterButton.mouseOverColor = .buttonMouseOver
-        case youTubeAdBlockPopover:
+        case is YouTubeAdBlockPopover:
             youTubeAdBlockButton.backgroundColor = .clear
             youTubeAdBlockButton.mouseOverColor = .buttonMouseOver
             youTubeAdBlockPopover = nil
+            youTubeAdBlockViewModel = nil
         default:
             break
         }
     }
 
-}
-
-private final class YouTubeAdBlockPlaceholderViewController: NSViewController {
-
-    override func loadView() {
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 240, height: 96))
-
-        let label = NSTextField(labelWithString: "YouTube Ad Block — placeholder")
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.alignment = .center
-        container.addSubview(label)
-
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 16),
-            container.trailingAnchor.constraint(greaterThanOrEqualTo: label.trailingAnchor, constant: 16)
-        ])
-
-        view = container
-    }
 }
 
 // MARK: - URL Helpers

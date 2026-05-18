@@ -2107,6 +2107,8 @@
 		CB6D17892FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */; };
 		CB6D178B2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */; };
 		CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */; };
+		CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */; };
+		CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */; };
 		CB6D178F2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */; };
 		CB6D17912FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */; };
 		CB6D17972FA232E000ECD5AE /* Suggestion+URLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */; };
@@ -4742,6 +4744,8 @@
 		CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIURLSuggestionsLoader.swift; sourceTree = "<group>"; };
 		CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIURLSuggestionsLoaderTests.swift; sourceTree = "<group>"; };
 		CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsViewController.swift; sourceTree = "<group>"; };
+		CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoView.swift; sourceTree = "<group>"; };
+		CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetView.swift; sourceTree = "<group>"; };
 		CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SuggestionDisplay.swift"; sourceTree = "<group>"; };
 		CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinator.swift; sourceTree = "<group>"; };
 		CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Suggestion+URLFilter.swift"; sourceTree = "<group>"; };
@@ -9796,6 +9800,8 @@
 				CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */,
 				CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */,
 				CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */,
+				CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */,
+				CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12651,6 +12657,8 @@
 				6FE127432C204DF700EB5724 /* FavoriteItemView.swift in Sources */,
 				C150EB202F0D814C00A98C97 /* AIChatFeatureFlagProvider.swift in Sources */,
 				CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */,
+				CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */,
+				CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */,
 				980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */,
 				1E8AD1C927BFAD1500ABA377 /* DirectoryMonitor.swift in Sources */,
 				377D80222AB48554002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */,

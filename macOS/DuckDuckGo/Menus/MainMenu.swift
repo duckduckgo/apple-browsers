@@ -97,6 +97,7 @@ final class MainMenu: NSMenu {
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
         .withImage(DesignSystemImages.Glyphs.Size12.arrowUpRight)
     let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
+        .withImage(DesignSystemImages.Glyphs.Size12.folder)
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
         .withImage(DesignSystemImages.Glyphs.Size12.close)
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])

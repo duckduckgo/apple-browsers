@@ -1978,6 +1978,9 @@ final class AddressBarButtonsViewController: NSViewController {
             popover?.close()
             NSApp.delegateTyped.openReportBrokenSite(nil)
         }
+        viewModel.dismissPopover = { [weak popover] in
+            popover?.close()
+        }
 
         youTubeAdBlockButton.backgroundColor = .buttonMouseDown
         youTubeAdBlockButton.mouseOverColor = .buttonMouseDown

@@ -98,6 +98,11 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     /// the popover before presenting the Report Broken Site sheet.
     var sendBreakageReport: () -> Void = {}
 
+    /// Wired by `AddressBarButtonsViewController` after the popover is created so the view model
+    /// can dismiss it on user actions that imply the popover's purpose has been satisfied
+    /// (currently: selecting "Always On" from the dropdown re-enables ad blocking and closes).
+    var dismissPopover: () -> Void = {}
+
     let isRemotelyDisabled: Bool
     @Published var setting: YouTubeAdBlockSetting {
         didSet {
@@ -156,6 +161,11 @@ final class YouTubeAdBlockViewModel: ObservableObject {
             let isDisabled = !preferences.youTubeAdBlockingEnabled
                 || adBlockingAvailability.isDisabledUntilRelaunch
             showBreakageReportBanner = isDisabled
+            // Re-enabling ad blocking is a terminal action for the popover — auto-dismiss so the
+            // user gets immediate visual confirmation rather than having to click outside.
+            if setting == .alwaysOn {
+                dismissPopover()
+            }
         }
     }
 }

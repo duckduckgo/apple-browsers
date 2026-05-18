@@ -73,6 +73,14 @@ struct MenuItemWithBadgeConstants {
 
     /// Default height for the menu item hosting view
     static let hostingViewHeight: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 22
+
+    static let hoverColor: Color = {
+        if #available(macOS 12.0, *) {
+            return Color(nsColor: .selectedContentBackgroundColor)
+        }
+        return .menuItemHover
+    }()
+
 }
 
 // MARK: - Custom Badge Shape
@@ -192,18 +200,11 @@ struct MenuItemWithBadge: View {
     /// Tracks whether the menu item is currently being hovered
     @State private var isHovered: Bool = false
 
-    var hoverColor: Color {
-        if #available(macOS 12.0, *) {
-            return Color(nsColor: .selectedContentBackgroundColor)
-        }
-        return .menuItemHover
-    }
-
     var body: some View {
         ZStack {
             // Background highlight that appears on hover
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.menuItemCornerRadius)
-                .fill(isHovered ? hoverColor : Color.clear)
+                .fill(isHovered ? MenuItemWithBadgeConstants.hoverColor : Color.clear)
                 .padding([.leading, .trailing], MenuItemWithBadgeConstants.menuItemHorizontalPadding)
                 .frame(maxWidth: .infinity)
 

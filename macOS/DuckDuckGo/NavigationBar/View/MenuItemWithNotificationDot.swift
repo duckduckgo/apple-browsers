@@ -27,17 +27,10 @@ struct MenuItemWithNotificationDot: View {
 
     @State private var isHovered: Bool = false
 
-    var hoverColor: Color {
-        if #available(macOS 12.0, *) {
-            return Color(nsColor: .selectedContentBackgroundColor)
-        }
-        return .menuItemHover
-    }
-
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppVersion.isLiquidGlassSupported ? 7 : 4)
-                .fill(isHovered ? hoverColor : Color.clear)
+                .fill(isHovered ? MenuItemWithBadgeConstants.hoverColor : Color.clear)
                 .padding([.leading, .trailing], 5)
                 .frame(maxWidth: .infinity)
 

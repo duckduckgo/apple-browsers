@@ -42,11 +42,36 @@ enum YouTubeAdBlockSetting: String, CaseIterable {
 
 final class YouTubeAdBlockViewModel: ObservableObject {
 
-    @Published var setting: YouTubeAdBlockSetting
+    private let preferences: YouTubeAdBlockingPreferences
+    private let reloadPage: () -> Void
+
+    @Published var setting: YouTubeAdBlockSetting {
+        didSet {
+            apply(setting)
+        }
+    }
     @Published var backgroundColor: NSColor = .clear
 
-    init(setting: YouTubeAdBlockSetting = .alwaysOff) {
-        self.setting = setting
+    init(preferences: YouTubeAdBlockingPreferences = YouTubeAdBlockingPreferences(),
+         reloadPage: @escaping () -> Void = {}) {
+        self.preferences = preferences
+        self.reloadPage = reloadPage
+        self.setting = preferences.youTubeAdBlockingEnabled ? .alwaysOn : .alwaysOff
+    }
+
+    private func apply(_ setting: YouTubeAdBlockSetting) {
+        let wasEnabled = preferences.youTubeAdBlockingEnabled
+        switch setting {
+        case .alwaysOn:
+            preferences.youTubeAdBlockingEnabled = true
+        case .alwaysOff:
+            preferences.youTubeAdBlockingEnabled = false
+        case .disableUntilRelaunch:
+            return
+        }
+        if preferences.youTubeAdBlockingEnabled != wasEnabled {
+            reloadPage()
+        }
     }
 }
 

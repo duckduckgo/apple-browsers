@@ -1894,7 +1894,9 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let viewModel = YouTubeAdBlockViewModel()
+        let viewModel = YouTubeAdBlockViewModel(reloadPage: { [weak tabViewModel] in
+            tabViewModel?.reload()
+        })
         let popover = YouTubeAdBlockPopover(viewModel: viewModel)
         popover.delegate = self
         youTubeAdBlockViewModel = viewModel

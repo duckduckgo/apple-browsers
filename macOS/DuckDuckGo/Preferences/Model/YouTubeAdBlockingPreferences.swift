@@ -39,6 +39,8 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var cancellables = Set<AnyCancellable>()
 
+    private var isHandlingExternalChange = false
+
     @Published
     var youTubeAdBlockingEnabled: Bool {
         didSet {
@@ -47,6 +49,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             if !youTubeAdBlockingEnabled {
                 youTubeAnalyticsEnabled = false
             }
+            guard !isHandlingExternalChange else { return }
             pixelFiring?.fire(
                 youTubeAdBlockingEnabled ? WebExtensionPixel.adBlockingExtensionEnabled : WebExtensionPixel.adBlockingExtensionDisabled,
                 frequency: .dailyAndCount)
@@ -147,5 +150,24 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default
+            .publisher(for: Self.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                self?.syncFromStore()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Re-reads the persisted value when another instance posts the change notification, so
+    /// multiple `YouTubeAdBlockingPreferences` instances (e.g. Settings pane + address-bar
+    /// popover) stay in sync. Gated by `isHandlingExternalChange` to keep the pixel + notification
+    /// from firing on the sync path.
+    private func syncFromStore() {
+        let stored = settings.youTubeAdBlockingEnabled ?? false
+        guard stored != youTubeAdBlockingEnabled else { return }
+        isHandlingExternalChange = true
+        youTubeAdBlockingEnabled = stored
+        isHandlingExternalChange = false
     }
 }

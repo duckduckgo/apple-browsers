@@ -575,6 +575,8 @@ private extension MainViewController {
         applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
 
         applyAITabRefreshBehavior(behavior, coordinator: coordinator)
+        // Re-run: the early reconcile read pre-transition coordinator state.
+        reconcileToolbarVisibilityForCurrentTab()
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()

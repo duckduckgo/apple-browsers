@@ -49,7 +49,7 @@ final class FileDownloadManager: FileDownloadManagerProtocol {
     private let preferences: DownloadsPreferences
 
     /// Overridable in tests to simulate write failures without touching the real filesystem.
-    var _reservePlaceholderFile: (URL) throws -> Void = { url in
+    var reservePlaceholderFile: (URL) throws -> Void = { url in
         try Data().write(to: url, options: .withoutOverwriting)
     }
 
@@ -243,7 +243,7 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
                 // .withoutOverwriting maps to O_EXCL: atomic, no separate fileExists check needed.
                 // • File already exists (TOCTOU race) → throws CocoaError(.fileWriteFileExists) → withNonExistentUrl retries.
                 // • Real failure (disk full, read-only fs, unmounted volume) → throws the actual system error.
-                try self._reservePlaceholderFile(url)
+                try self.reservePlaceholderFile(url)
                 return url
             }
         } catch {

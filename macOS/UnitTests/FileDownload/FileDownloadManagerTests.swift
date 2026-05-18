@@ -299,7 +299,7 @@ final class FileDownloadManagerTests: XCTestCase {
 
         // Inject a write failure to simulate a persistent OS error (e.g. disk full).
         let writeError = CocoaError(.fileWriteOutOfSpace)
-        dm._reservePlaceholderFile = { _ in throw writeError }
+        dm.reservePlaceholderFile = { _ in throw writeError }
         // pixelAssertionFailure → assertionFailure → customAssertionFailure: capture instead of crashing.
         var assertionMessage: String?
         customAssertionFailure = { message, _, _ in assertionMessage = message() }

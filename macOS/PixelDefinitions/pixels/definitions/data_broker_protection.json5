@@ -1075,6 +1075,48 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "dbp-free_newtab_scan_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, in the pre-scan state (no scan results available yet).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page in the pre-scan state — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_scan_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing scan results (one or more matches found).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing scan results (one or more matches found) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing the no-results state (scan completed with zero matches).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing the no-results state (scan completed with zero matches) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_no-results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "dbp-free_newtab_scan_click_u": {
         "description": "Fires once per user when they click the scan CTA on the Freemium DBP promo banner on the New Tab Page, in the pre-scan state (no scan results available yet).",
         "owners": ["hanyutang-sandra"],

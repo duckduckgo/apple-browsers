@@ -26,7 +26,10 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
             switch event {
             case .subscription:
                 PixelKit.fire(event, frequency: .uniqueByName, withAdditionalParameters: params)
-            case .newTabScanClickCount,
+            case .newTabScanImpressionCount,
+                    .newTabResultsImpressionCount,
+                    .newTabNoResultsImpressionCount,
+                    .newTabScanClickCount,
                     .newTabResultsClickCount,
                     .newTabNoResultsClickCount:
                 PixelKit.fire(event, frequency: .standard)
@@ -46,16 +49,19 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
 
     // Before the first scan
     case newTabScanImpression
+    case newTabScanImpressionCount
     case newTabScanClick
     case newTabScanClickCount
     case newTabScanDismiss
     // When receiving results
     case newTabResultsImpression
+    case newTabResultsImpressionCount
     case newTabResultsClick
     case newTabResultsClickCount
     case newTabResultsDismiss
     // When receiving no results
     case newTabNoResultsImpression
+    case newTabNoResultsImpressionCount
     case newTabNoResultsClick
     case newTabNoResultsClickCount
     case newTabNoResultsDismiss
@@ -72,6 +78,8 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
         switch self {
         case .newTabScanImpression:
             return "dbp-free_newtab_scan_impression_u"
+        case .newTabScanImpressionCount:
+            return "dbp-free_newtab_scan_impression_c"
         case .newTabScanClick:
             return "dbp-free_newtab_scan_click_u"
         case .newTabScanClickCount:
@@ -80,6 +88,8 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
             return "dbp-free_newtab_scan_dismiss_u"
         case .newTabResultsImpression:
             return "dbp-free_newtab_results_impression_u"
+        case .newTabResultsImpressionCount:
+            return "dbp-free_newtab_results_impression_c"
         case .newTabResultsClick:
             return "dbp-free_newtab_results_click_u"
         case .newTabResultsClickCount:
@@ -88,6 +98,8 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
             return "dbp-free_newtab_results_dismiss_u"
         case .newTabNoResultsImpression:
             return "dbp-free_newtab_no-results_impression_u"
+        case .newTabNoResultsImpressionCount:
+            return "dbp-free_newtab_no-results_impression_c"
         case .newTabNoResultsClick:
             return "dbp-free_newtab_no-results_click_u"
         case .newTabNoResultsClickCount:
@@ -112,14 +124,17 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
     public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .newTabScanImpression,
+                .newTabScanImpressionCount,
                 .newTabScanClick,
                 .newTabScanClickCount,
                 .newTabScanDismiss,
                 .newTabResultsImpression,
+                .newTabResultsImpressionCount,
                 .newTabResultsClick,
                 .newTabResultsClickCount,
                 .newTabResultsDismiss,
                 .newTabNoResultsImpression,
+                .newTabNoResultsImpressionCount,
                 .newTabNoResultsClick,
                 .newTabNoResultsClickCount,
                 .newTabNoResultsDismiss,

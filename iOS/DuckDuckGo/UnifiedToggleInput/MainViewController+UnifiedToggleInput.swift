@@ -873,6 +873,7 @@ private extension MainViewController {
                                             completion: (() -> Void)? = nil) {
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
+        viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
         coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
         coordinator.showCollapsed()
         if let tab = currentTab {

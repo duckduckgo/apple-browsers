@@ -220,6 +220,11 @@ final class AddressBarButtonsViewController: NSViewController {
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
+            /// Shield animation views live outside `privacyDashboardButton` (in `animationWrapperView`),
+            /// so `updateButtons()` alone won't hide the Lottie shield when the bar transitions to/from
+            /// empty. Re-evaluate the entry-point icon here so the protected-site shield hides cleanly
+            /// when the bar is cleared (placeholder shown) and re-appears when a URL is restored.
+            updatePrivacyEntryPointIcon()
         }
     }
     var isMouseOverNavigationBar = false {
@@ -876,11 +881,18 @@ final class AddressBarButtonsViewController: NSViewController {
         /// `hasPendingBarInput` covers `.text(userTyped: true)`, `.url(userTyped: true)`, and `.suggestion` —
         /// any state where the bar is showing the user's pending edit (typed draft or autocomplete suggestion
         /// surfaced over it). The shield belongs to the loaded page, not to the edit.
+        ///
+        /// `isAddressBarEmpty` covers the "user cleared the URL, then switched tabs and came back" state where
+        /// the bar shows the placeholder ("Search or enter address") but `hasPendingBarInput` is false (the
+        /// stored value isn't `userTyped`). Without this check the shield would render next to an empty
+        /// placeholder, which doesn't match any URL.
+        let isAddressBarEmpty = textFieldValue?.isEmpty ?? true
         privacyDashboardButton.isShown = !isEditingMode
         && !isTextFieldEditorFirstResponder
         && isHypertextUrl
         && !tabViewModel.isShowingErrorPage
         && !hasPendingBarInput
+        && !isAddressBarEmpty
         && !isLocalUrl
         && !isAIChatPanelActive
 
@@ -893,6 +905,7 @@ final class AddressBarButtonsViewController: NSViewController {
         && privacyDashboardButton.isHidden
         && !isOnboarding
         && !isAIChatPanelActive
+        && !isAddressBarEmpty
     }
 
     /// Whether the address bar currently shows pending user input — a typed value (`.text` or `.url`
@@ -905,12 +918,15 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     /// Whether the privacy shield indicators should be suppressed because the user is interacting with
-    /// the address bar, or because the duck.ai panel is covering it (its prompt overlay would otherwise
-    /// clash with shield rendering at the overlay edges).
+    /// the address bar, the duck.ai panel is covering it (its prompt overlay would otherwise clash with
+    /// shield rendering at the overlay edges), or the bar is empty (showing placeholder — there's no URL
+    /// for the shield to refer to). The Lottie shield lives in `animationWrapperView` outside
+    /// `privacyDashboardButton`, so gating it here is required even when the button itself is hidden.
     private var shouldHideShieldsForInputOrAIChat: Bool {
         if isAIChatPanelActive { return true }
         if hasPendingBarInput { return true }
         if isTextFieldEditorFirstResponder { return true }
+        if textFieldValue?.isEmpty ?? true { return true }
         return false
     }
 
@@ -1742,6 +1758,15 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         updateAskAIChatButtonVisibility()
         updateButtonsPosition()
+
+        /// Force an immediate layout pass after the visibility flips above. NSStackView's
+        /// `detachesHiddenViews=YES` only marks the stack for layout on `isHidden` changes —
+        /// the actual reflow is deferred to the next runloop. If a display pass lands in the
+        /// gap (e.g. from an `image =` mutation in `updateImageButton`/`updatePrivacyEntryPointIcon`,
+        /// or a Lottie shield appearing during URL load), newly-shown buttons render at their
+        /// stale pre-layout frames and the privacy shield / permission center icons visibly
+        /// overlap at x=0 for a frame. Covers both leading and trailing stacks in one pass.
+        view.layoutSubtreeIfNeeded()
     }
 
     private func updateToggleExpansionState(shouldShowToggle: Bool) {

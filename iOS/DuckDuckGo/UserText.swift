@@ -1619,6 +1619,10 @@ public struct UserText {
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
     public static let escapeHatchFireTabTitle = NSLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
+    public static let escapeHatchMoreButtonAccessibilityLabel = NSLocalizedString("escapeHatch.moreButton.accessibility.label", value: "More options", comment: "Accessibility label for the more options button on the escape hatch card")
+    public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToTab", value: "Return to Tab", comment: "Menu item that returns the user to the open tab from the escape hatch card")
+    public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeTab", value: "Close Tab", comment: "Menu item that closes the open tab referenced by the escape hatch card")
+    public static let escapeHatchMenuBurnTab = NSLocalizedString("escapeHatch.menu.burnTab", value: "Burn Tab", comment: "Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
@@ -2699,6 +2703,12 @@ public struct UserText {
                 comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."
             )
 
+            static let reinstallerMessage = NSLocalizedString(
+                "subscription.promo.reinstaller.message",
+                value: "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.",
+                comment: "Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations."
+            )
+
             static let messageFormatDeprecated = NSLocalizedString(
                 "onboarding.subscription.promo.message",
                 value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
@@ -2763,6 +2773,8 @@ public struct UserText {
             static let learnMore =  NSLocalizedString("onboarding.privacypro.promo.buttons.learnMore", value: "Learn More", comment: "Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall.")
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
+            static let notNow = NSLocalizedString("subscription.promo.reinstaller.buttons.notNow", value: "Not Now", comment: "Dismiss button on the reinstaller subscription promo.")
+
             public enum Rebranding {
                 static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
                 static let tryItFree = NSLocalizedString("onboarding.subscription.promo.buttons.rebranding.tryItFree", value: "Try it free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
@@ -2795,4 +2807,12 @@ public struct UserText {
     public static let daxEasterEggSwitchToThisLogo = NSLocalizedString("dax.easter.egg.switch.to.this.logo", value: "Switch to This Logo", comment: "Button to switch to the displayed easter egg logo")
     public static let daxEasterEggResetToDefault = NSLocalizedString("dax.easter.egg.reset.to.default", value: "Reset Search Logo", comment: "Button to reset the search logo to the default Dax logo")
     public static let daxEasterEggLogoSaved = NSLocalizedString("dax.easter.egg.logo.saved", value: "Logo Saved", comment: "Toast message shown when the user saves a custom logo")
+
+
+    // MARK: - OmniBar Long Press Menu
+    public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
+    public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")
+    public static let actionCopyLink = NSLocalizedString("action.title.copy.link", value: "Copy Link", comment: "Copy link action")
+    public static let actionCopyCleanLink = NSLocalizedString("action.title.copy.clean.link", value: "Copy Clean Link", comment: "Copy clean link action")
+
 }

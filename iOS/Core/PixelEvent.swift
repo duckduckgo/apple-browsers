@@ -196,6 +196,11 @@ extension Pixel {
         case addressBarClearPressedOnSERP
         case addressBarClearPressedOnAIChat
         case addressBarGestureDismiss
+        case longPressBarOpen
+        case longPressBarActionShare
+        case longPressBarActionCopy
+        case longPressBarActionMove
+        case longPressBarActionCloseTab
 
         case shareSheetResultSuccess
         case shareSheetResultFail
@@ -1601,6 +1606,7 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
+        case aiChatTabDidTerminate
 
         // MARK: AI Chat Sync
 
@@ -1862,6 +1868,9 @@ extension Pixel {
         case linkLongPressNewTab
         case linkLongPressBackgroundTab
         case linkLongPressFireTab
+
+        // MARK: - Custom Product Page
+        case customProductPageDuckAIOpenedAIChat
     }
 
 }
@@ -2041,6 +2050,11 @@ extension Pixel.Event {
         case .addressBarClearPressedOnSERP: return "m_addressbar_focus_clear_entry_serp"
         case .addressBarClearPressedOnAIChat: return "m_addressbar_focus_clear_entry_aichat"
         case .addressBarGestureDismiss: return "m_addressbar_focus_dismiss_gesture"
+        case .longPressBarOpen: return "m_longpress_bar_open"
+        case .longPressBarActionShare: return "m_longpress_bar_action_share"
+        case .longPressBarActionCopy: return "m_longpress_bar_action_copy"
+        case .longPressBarActionMove: return "m_longpress_bar_action_move"
+        case .longPressBarActionCloseTab: return "m_longpress_bar_action_close_tab"
 
         case .shareSheetResultSuccess: return "m_sharesheet_result_success"
         case .shareSheetResultFail: return "m_sharesheet_result_fail"
@@ -3337,6 +3351,7 @@ extension Pixel.Event {
             
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
+        case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
@@ -3650,6 +3665,8 @@ extension Pixel.Event {
         case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
         case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
+        // MARK: - Custom Product Page
+        case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
         }
     }
 }

@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Copiar";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copiar link limpo";
+
+/* Copy link action */
+"action.title.copy.link" = "Copiar link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiada";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Último separador Fire utilizado";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Apagar separador";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Fechar separador";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Regressar ao separador";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Mais opções";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Voltar para %@";
 
@@ -2906,6 +2925,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Mover a barra de endereços para a parte inferior";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Mover a barra de endereços para o topo";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies geridos";
@@ -4219,6 +4244,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "A restaurar a subscrição…";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Agora Não";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "O DuckDuckGo também tem uma **subscrição paga opcional**, com uma **VPN** segura e **IA avançada e privada**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remover Deste Dispositivo";

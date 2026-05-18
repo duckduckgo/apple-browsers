@@ -40,10 +40,11 @@ struct AppStoreCustomProductPageDeepLinkHandler {
 
     init(
         handlers: [AppStoreCustomProductPage: CustomProductPageDestinationHandling] = [.duckAI: DuckAIDestinationHandler()],
-        customProductPageEvaluator: AppStoreCustomProductPageEvaluating = AppStoreCustomProductPageEvaluator()) {
-            self.handlers = handlers
-            self.customProductPageEvaluator = customProductPageEvaluator
-        }
+        customProductPageEvaluator: AppStoreCustomProductPageEvaluating = AppStoreCustomProductPageEvaluator())
+    {
+        self.handlers = handlers
+        self.customProductPageEvaluator = customProductPageEvaluator
+    }
 
     /// Handles a Custom Product Page deep link by routing to the appropriate feature.
     /// - Parameters:

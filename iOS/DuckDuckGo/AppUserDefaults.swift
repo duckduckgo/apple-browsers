@@ -108,6 +108,7 @@ public class AppUserDefaults: AppSettings {
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
         static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
+        static let onboardingForceRestorePromptEligibleKey = "com.duckduckgo.ios.debug.onboardingForceRestorePromptEligible"
         static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
     }
 
@@ -608,6 +609,15 @@ public class AppUserDefaults: AppSettings {
         }
         set {
             userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
+        }
+    }
+
+    var onboardingForceRestorePromptEligible: Bool {
+        get {
+            userDefaults?.bool(forKey: DebugKeys.onboardingForceRestorePromptEligibleKey) ?? false
+        }
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.onboardingForceRestorePromptEligibleKey)
         }
     }
 

@@ -147,7 +147,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
-    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature(featureFlagger: featureFlagger)
+    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature()
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -3071,6 +3071,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        if webView.url?.isDuckAIURL == true {
+            DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
+        }
         Pixel.fire(pixel: .webKitDidTerminate)
         delegate?.tabContentProcessDidTerminate(tab: self)
     }

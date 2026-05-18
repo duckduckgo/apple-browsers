@@ -48,6 +48,7 @@ class MainViewCoordinator {
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var aiTabCollapsedTopSeparator: UIView!
+    private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
 
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
@@ -275,6 +276,15 @@ class MainViewCoordinator {
     }
 
     func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
+        aiTabCollapsedTopSeparatorLogicallyVisible = visible
+        applyAITabCollapsedTopSeparatorVisibility()
+    }
+
+    /// Enforces the invariant: the separator can only be visible above a visible chrome. The
+    /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
+    /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
+    private func applyAITabCollapsedTopSeparatorVisibility() {
+        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
         guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
         aiTabCollapsedTopSeparator.isHidden = !visible
         if visible {
@@ -379,6 +389,7 @@ class MainViewCoordinator {
     func setAITabBottomChromeHidden(_ hidden: Bool) {
         guard navigationBarContainer.isHidden != hidden else { return }
         navigationBarContainer.isHidden = hidden
+        applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
             setContentContainerBottomAnchorMode(.safeArea)
         } else if isNavigationChromeHidden {

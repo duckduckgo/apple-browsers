@@ -95,9 +95,12 @@ public enum QuantisedTimePast: Equatable, Codable {
         }
     }
 
-    /// Calculates whole days between two dates using time intervals.
+    /// Calculates whole ET calendar days between two dates.
     static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
-        let timeInterval = endDate.timeIntervalSince(startDate)
-        return Int(timeInterval / .day)
+        Calendar.eastern.dateComponents(
+            [.day],
+            from: Calendar.eastern.startOfDay(for: startDate),
+            to: Calendar.eastern.startOfDay(for: endDate)
+        ).day ?? 0
     }
 }

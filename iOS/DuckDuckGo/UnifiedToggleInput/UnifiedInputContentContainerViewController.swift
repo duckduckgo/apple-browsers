@@ -25,9 +25,11 @@ import Bookmarks
 import Persistence
 import History
 import Core
+import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
+import SwiftUI
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -41,6 +43,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
+    func unifiedInputEditingStateDidRequestSyncSetup()
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
@@ -86,6 +89,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let syncService: DDGSyncing?
+    private lazy var syncPromoManager: SyncPromoManaging? = {
+        guard let syncService else { return nil }
+        return SyncPromoManager(syncService: syncService,
+                                featureFlagger: featureFlagger,
+                                privacyConfigurationManager: privacyConfigurationManager)
+    }()
 
     // MARK: - Manager Components
 
@@ -111,7 +121,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         syncService: DDGSyncing? = nil) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.daxLogoManager.usesLottieTransition = true
@@ -120,6 +131,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.syncService = syncService
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -487,7 +499,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            layoutConfiguration: .unifiedToggleInput
+            layoutConfiguration: .unifiedToggleInput,
+            syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
+            syncService: switchBarHandler.isFireTab ? nil : syncService
         )
         coordinator.delegate = self
         coordinator.onContentChanged = { [weak self] in
@@ -877,5 +891,28 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
         delegate?.unifiedInputEditingStateDidSubmitQuery(query)
+    }
+
+    func duckAISuggestionsDidRequestSyncSetup() {
+        presentAIChatSyncIntroSheet()
+    }
+
+    private func presentAIChatSyncIntroSheet() {
+        let sheet = AIChatSyncIntroSheetView(
+            onScanTap: { [weak self] in
+                self?.dismiss(animated: true) {
+                    self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+                }
+            },
+            onNotNowTap: { [weak self] in
+                self?.dismiss(animated: true)
+            }
+        )
+        let hosting = UIHostingController(rootView: sheet)
+        if let presentation = hosting.sheetPresentationController {
+            presentation.detents = [.medium()]
+            presentation.prefersGrabberVisible = true
+        }
+        present(hosting, animated: true)
     }
 }

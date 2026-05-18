@@ -33,14 +33,17 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
     }
 
     private func makeHarness(query: String = "",
-                             layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) -> Harness {
+                             layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard,
+							 syncPromoManager: SyncPromoManaging? = nil) -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
         let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         let vc = DuckAISuggestionsViewController(
             chatViewModel: viewModel,
             urlLoader: loader,
             queryProvider: { query },
-            layoutConfiguration: layoutConfiguration
+            layoutConfiguration: layoutConfiguration,
+            syncPromoManager: syncPromoManager,
+            syncService: nil
         )
         vc.loadViewIfNeeded()
         return Harness(viewController: vc, chatViewModel: viewModel, urlLoader: loader)
@@ -182,6 +185,53 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 
         XCTAssertEqual(table.numberOfSections, 3)
     }
+
+    // MARK: - Sync promo header
+
+    func test_syncPromo_whenManagerShouldPresent_installsTableHeaderViewWithPromo() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        let table = try tableView(in: harness.viewController)
+
+        let header = try XCTUnwrap(table.tableHeaderView, "promo eligibility → table header is installed")
+        XCTAssertGreaterThan(header.bounds.height, 0)
+        XCTAssertEqual(harness.viewController.children.count, 1, "promo hosting controller is added as a child")
+    }
+
+    func test_syncPromo_whenManagerDeclinesToPresent_doesNotInstallHeader() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = false
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        let table = try tableView(in: harness.viewController)
+
+        XCTAssertNil(table.tableHeaderView)
+        XCTAssertTrue(harness.viewController.children.isEmpty)
+    }
+
+    func test_syncPromo_whenQueryActive_promoIsRemovedFromHeader() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertNotNil(try tableView(in: harness.viewController).tableHeaderView,
+                        "precondition: promo is initially visible")
+
+        harness.viewController.setQueryActive(true)
+
+        XCTAssertNil(try tableView(in: harness.viewController).tableHeaderView,
+                     "typing hides the entire promo header")
+        XCTAssertTrue(harness.viewController.children.isEmpty,
+                      "promo hosting controller is removed when typing starts")
+    }
 }
 
 // MARK: - Test doubles
@@ -194,5 +244,31 @@ private extension EscapeHatchModel {
                  domain: "example.com",
                  targetTab: Tab(fireTab: false),
                  tabCount: 1)
+    }
+}
+
+private final class MockSyncPromoManager: SyncPromoManaging {
+    var shouldPresentForTouchpoint: [SyncPromoManager.Touchpoint: Bool] = [:]
+    var handledTouchpoints: [SyncPromoManager.Touchpoint] = []
+    var dismissedTouchpoints: [SyncPromoManager.Touchpoint] = []
+
+    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
+        shouldPresentForTouchpoint[touchpoint] ?? false
+    }
+
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {
+        handledTouchpoints.append(touchpoint)
+        shouldPresentForTouchpoint[touchpoint] = false
+    }
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) {
+        dismissedTouchpoints.append(touchpoint)
+        markPromoHandledFor(touchpoint)
+    }
+
+    func resetPromos() {
+        shouldPresentForTouchpoint.removeAll()
+        handledTouchpoints.removeAll()
+        dismissedTouchpoints.removeAll()
     }
 }

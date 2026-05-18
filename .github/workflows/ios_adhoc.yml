@@ -288,29 +288,6 @@ jobs:
             exit 0
           fi
 
-          # Extract task GID from either the legacy /0/<project>/<task> or the
-          # current /1/<workspace>/.../task/<task> URL shapes.
-          asana_task_id=$(perl -pe '
-            s|.*https://app\.asana\.com/0/[0-9]+/([0-9]+)(?:/f)?.*|\1|;
-            s|.*https://app\.asana\.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+).*|\1|;
-          ' <<< "$ASANA_TASK_URL")
-          asana_task_id="${asana_task_id//[^0-9]/}"
-
-          if [[ -z "$asana_task_id" ]]; then
-            echo "Could not parse Asana task GID from: ${ASANA_TASK_URL}" >&2
-            exit 1
-          fi
-
-          title="${TITLE:-DuckDuckGo iOS}"
-          install_html=""
-          if [[ -n "${INSTALL_URL:-}" ]]; then
-            install_html="<li><a href=\"${INSTALL_URL}\">Install on iPhone</a> — open in Safari</li>"
-          fi
-          html_body="<body><strong>${title} ${app_version} (${build_number})</strong><ul>${install_html}<li><a href=\"${IPA_URL}\">Download IPA</a></li><li><a href=\"${DSYM_URL}\">Download dSYM</a></li><li><a href=\"${WORKFLOW_URL}\">Workflow run</a></li></ul></body>"
-          payload=$(jq -nc --arg t "$html_body" '{data: {html_text: $t}}')
-
-          curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${asana_task_id}/stories" \
-            -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            --output /dev/null \
-            -d "$payload"
+          bundle exec fastlane run asana_add_comment \
+            task_url:"$ASANA_TASK_URL" \
+            template_name:"ios-adhoc-build-available"

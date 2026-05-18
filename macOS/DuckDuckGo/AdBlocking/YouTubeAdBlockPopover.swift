@@ -21,6 +21,7 @@ import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Persistence
+import PixelKit
 import SwiftUI
 import WebExtensions
 
@@ -116,7 +117,15 @@ final class YouTubeAdBlockViewModel: ObservableObject {
          preferences: YouTubeAdBlockingPreferences? = nil,
          reloadPage: @escaping () -> Void = {}) {
         self.adBlockingAvailability = adBlockingAvailability
-        self.preferences = preferences ?? YouTubeAdBlockingPreferences(adBlockingAvailability: adBlockingAvailability)
+        // Wire `pixelFiring: PixelKit.shared` so toggling ad blocking from the popover dropdown
+        // still fires the `adBlockingExtensionEnabled` / `adBlockingExtensionDisabled` daily
+        // pixel. Otherwise the sync path to the long-lived Settings instance suppresses pixels
+        // on its end (via `isHandlingExternalChange`), and this throwaway instance was
+        // constructed without a pixel firer — so the change would be invisible to analytics.
+        self.preferences = preferences ?? YouTubeAdBlockingPreferences(
+            pixelFiring: PixelKit.shared,
+            adBlockingAvailability: adBlockingAvailability
+        )
         self.reloadPage = reloadPage
         self.isRemotelyDisabled = adBlockingAvailability.isRemotelyDisabled
 

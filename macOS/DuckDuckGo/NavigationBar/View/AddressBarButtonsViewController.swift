@@ -1930,12 +1930,15 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateYouTubeAdBlockButtonVisibility() {
         // Mirror the zoom / permission button rules: hide while the address bar is being edited
         // (focused or in editing mode, or holding pending typed text) so the left-side icons
-        // don't compete with the URL the user is typing.
+        // don't compete with the URL the user is typing. Also keep the button completely off
+        // when the feature itself isn't available (OS gate / feature flags) — otherwise users
+        // without the underlying machinery would see a popover backed by nothing.
         let isYoutube = tabViewModel?.tab.url?.isYoutube ?? false
         let isEditingMode = controllerMode?.isEditing ?? false
         let isTextFieldValueText = textFieldValue?.isText ?? false
 
         youTubeAdBlockButton.isShown = isYoutube
+            && adBlockingAvailability.isFeatureAvailable
             && !isAIChatPanelActive
             && !isEditingMode
             && !isTextFieldValueText

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 
 /// View that represents a menu item that has a blue notification dot at the right.
@@ -26,10 +27,17 @@ struct MenuItemWithNotificationDot: View {
 
     @State private var isHovered: Bool = false
 
+    var hoverColor: Color {
+        if #available(macOS 14.0, *) {
+            return Color(nsColor: .selectedContentBackgroundColor)
+        }
+        return .menuItemHover
+    }
+
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isHovered ? .menuItemHover : Color.clear)
+            RoundedRectangle(cornerRadius: AppVersion.isLiquidGlassSupported ? 7 : 4)
+                .fill(isHovered ? hoverColor : Color.clear)
                 .padding([.leading, .trailing], 5)
                 .frame(maxWidth: .infinity)
 
@@ -39,7 +47,7 @@ struct MenuItemWithNotificationDot: View {
                     .foregroundColor(isHovered ? .white : .blackWhite100)
                     .frame(width: 12, height: 12)
                     .padding(.trailing, 8)
-                    .padding(.leading, 18)
+                    .padding(.leading, 16)
 
                 Text(title)
                     .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))

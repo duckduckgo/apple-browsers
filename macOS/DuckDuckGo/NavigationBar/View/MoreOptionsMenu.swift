@@ -282,7 +282,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let menuItem = MenuItemWithNotificationDot(leftImage: image, title: title, onTapMenuItem: onTap)
 
         let hostingView = NSHostingView(rootView: menuItem)
-        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: 22)
+        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: AppVersion.isLiquidGlassSupported ? 24 : 22)
         hostingView.autoresizingMask = [.width, .height]
 
         return hostingView

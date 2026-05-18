@@ -27,6 +27,7 @@ import DDGSync
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func resetPromos()
 }
@@ -37,10 +38,12 @@ final class SyncPromoManager: SyncPromoManaging {
         case bookmarks
         case passwords
         case dataImport = "data_import"
+        case aiChat = "ai_chat"
     }
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -51,10 +54,15 @@ final class SyncPromoManager: SyncPromoManaging {
     @UserDefaultsWrapper(key: .syncPromoDataImportDismissed, defaultValue: nil)
     private var syncPromoDataImportDismissed: Date?
 
+    @UserDefaultsWrapper(key: .syncPromoAIChatDismissed, defaultValue: nil)
+    private var syncPromoAIChatDismissed: Date?
+
     init(syncService: DDGSyncing,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
+        self.privacyConfigurationManager = privacyConfigurationManager
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint, count: Int) -> Bool {
@@ -82,12 +90,21 @@ final class SyncPromoManager: SyncPromoManaging {
                count > 0 {
                 return true
             }
+        case .aiChat:
+            if syncService.authState == .inactive,
+               featureFlagger.isFeatureOn(.aiChatSync),
+               featureFlagger.isFeatureOn(.aiChatSyncPromo),
+               privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckAiChatHistory),
+               syncPromoAIChatDismissed == nil,
+               count > 0 {
+                return true
+            }
         }
 
         return false
     }
 
-    func dismissPromoFor(_ touchpoint: Touchpoint) {
+    func markPromoHandledFor(_ touchpoint: Touchpoint) {
         switch touchpoint {
         case .bookmarks:
             syncPromoBookmarksDismissed = Date()
@@ -95,7 +112,13 @@ final class SyncPromoManager: SyncPromoManaging {
             syncPromoPasswordsDismissed = Date()
         case .dataImport:
             syncPromoDataImportDismissed = Date()
+        case .aiChat:
+            syncPromoAIChatDismissed = Date()
         }
+    }
+
+    func dismissPromoFor(_ touchpoint: Touchpoint) {
+        markPromoHandledFor(touchpoint)
 
         Pixel.fire(.syncPromoDismissed, withAdditionalParameters: ["source": touchpoint.rawValue])
     }
@@ -104,5 +127,6 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoBookmarksDismissed = nil
         syncPromoPasswordsDismissed = nil
         syncPromoDataImportDismissed = nil
+        syncPromoAIChatDismissed = nil
     }
 }

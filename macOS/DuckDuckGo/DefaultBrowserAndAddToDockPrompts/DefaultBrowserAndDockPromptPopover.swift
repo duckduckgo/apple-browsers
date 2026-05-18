@@ -98,7 +98,7 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
                     Text(viewModel.buttonText)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false, pillShape: true))
             }
             .frame(height: 28)
             .frame(maxWidth: .infinity)

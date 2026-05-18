@@ -618,7 +618,8 @@ struct FireDialogView: ModalView {
                     topPadding: 0,
                     bottomPadding: 0,
                     backgroundColor: Color(designSystemColor: .destructivePrimary),
-                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary),
+                    pillShape: true
                 )
             )
             .disabled(!isDeleteEnabled)

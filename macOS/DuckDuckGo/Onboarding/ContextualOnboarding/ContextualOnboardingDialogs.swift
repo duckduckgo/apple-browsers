@@ -265,6 +265,7 @@ struct OnboardingFinalDialog: View {
 struct OnboardingPrimaryCTAButton: View {
     let title: String
     let action: @MainActor () -> Void
+    var pillShape: Bool = false
 
     var body: some View {
         Button(action: action) {
@@ -272,7 +273,7 @@ struct OnboardingPrimaryCTAButton: View {
                 .padding(.vertical, 5)
                 .padding(.horizontal, 24)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton, pillShape: pillShape))
         .shadow(radius: 1, x: -0.6, y: +0.6)
     }
 
@@ -288,19 +289,15 @@ struct OnboardingSecondaryCTAButton: View {
     let action: () -> Void
     var pillShape: Bool = false
 
-    private var usePillShape: Bool {
-        pillShape && AppVersion.isLiquidGlassSupported
-    }
-
     var body: some View {
         Button(action: action) {
             Text(title)
             .padding(.horizontal, 18)
         }
-        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: usePillShape ? Metrics.pillCornerRadius : Metrics.cornerRadius))
+        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: Metrics.cornerRadius, pillShape: pillShape))
         .overlay(
             Group {
-                if usePillShape {
+                if pillShape && AppVersion.isLiquidGlassSupported {
                     Capsule()
                         .inset(by: 0.5)
                         .stroke(strokeColor, lineWidth: 1)
@@ -315,7 +312,6 @@ struct OnboardingSecondaryCTAButton: View {
 
     private enum Metrics {
         static let cornerRadius: CGFloat = 5
-        static let pillCornerRadius: CGFloat = 999
     }
 
 }

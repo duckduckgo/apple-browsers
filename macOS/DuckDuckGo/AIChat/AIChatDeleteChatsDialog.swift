@@ -64,7 +64,7 @@ struct AIChatDeleteChatsDialog: ModalView {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0))
+                .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, pillShape: true))
                 .keyboardShortcut(.defaultAction)
             }
         }

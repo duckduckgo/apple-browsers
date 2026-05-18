@@ -131,7 +131,7 @@ struct BookmarksBarPromptView: View {
 
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.show")
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, pillShape: true))
                 .padding(0)
             }
 
@@ -140,7 +140,7 @@ struct BookmarksBarPromptView: View {
         .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
         .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .background(Color(.interfaceBackground))
     }
 

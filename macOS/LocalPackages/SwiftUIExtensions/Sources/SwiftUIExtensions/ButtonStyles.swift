@@ -30,6 +30,11 @@ public struct StandardButtonStyle: ButtonStyle {
     public let backgroundColor: Color
     public let backgroundPressedColor: Color
     public let cornerRadius: CGFloat
+
+    /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
+    ///
+    /// Setting this to `true` when Liquid Glass is not supported has no effect
+    /// and falls back to using provided `cornerRadius`.
     public let pillShape: Bool
 
     public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat = 5, pillShape: Bool = false) {
@@ -68,7 +73,7 @@ public struct DefaultActionButtonStyle: ButtonStyle {
     public let stateColors: ButtonStateColors
     public let pillShape: Bool
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, stateColors: ButtonStateColors = .legacyActionButton, pillShape: Bool = true) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, stateColors: ButtonStateColors = .legacyActionButton, pillShape: Bool = false) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
@@ -160,7 +165,7 @@ public struct DismissActionButtonStyle: ButtonStyle {
     public let bottomPadding: CGFloat
     public let pillShape: Bool
 
-    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = true) {
+    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false) {
         self.textColor = textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
@@ -217,12 +222,19 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     public let backgroundColor: Color
     public let backgroundPressedColor: Color
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil) {
+    /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
+    ///
+    /// Setting this to `true` when Liquid Glass is not supported has no effect
+    /// and falls back to using a `cornerRadius` of 5.
+    public let pillShape: Bool
+
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, pillShape: Bool = false) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.backgroundColor = backgroundColor ?? Color(.destructiveActionButtonBackground)
         self.backgroundPressedColor = backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed)
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -239,7 +251,8 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 7.5)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
-            .liquidGlassPillShape(fallbackCornerRadius: 5)
+            .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: 5) }
+            .if(!pillShape) { $0.cornerRadius(5) }
 
     }
 }

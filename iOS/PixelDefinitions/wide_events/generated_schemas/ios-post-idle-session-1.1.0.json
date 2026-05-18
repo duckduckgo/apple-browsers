@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-post-idle-session" }, "version": { "const": "1.0.0" } }
+            "properties": { "type": { "const": "ios-post-idle-session" }, "version": { "const": "1.1.0" } }
         },
         "app": {
             "type": "object",

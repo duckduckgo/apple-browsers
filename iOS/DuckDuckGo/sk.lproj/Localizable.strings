@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopírovať";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopírovať čistý odkaz";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopírovať odkaz";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Adresa URL bola skopírovaná";
 
@@ -2906,6 +2912,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Presunúť panel s adresou nadol";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Presunúť panel s adresou nahor";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Spravované súbory cookie";

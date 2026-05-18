@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Copier";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copier le lien propre";
+
+/* Copy link action */
+"action.title.copy.link" = "Copier le lien";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiée";
 
@@ -2906,6 +2912,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Déplacer la barre d’adresses en bas";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Déplacer la barre d’adresses en haut";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gérés";

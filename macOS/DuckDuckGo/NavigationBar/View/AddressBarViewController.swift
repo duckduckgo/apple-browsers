@@ -149,6 +149,16 @@ final class AddressBarViewController: NSViewController {
     private var mode: Mode = .editing(.text) {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
+            /// `shouldUseTallAddressBarLayout` keys off `mode.isEditing`, but the height-driving
+            /// `resizeAddressBar` only re-runs on tab content changes and focus transitions — not on
+            /// mode flips. When a window opens with a stored URL tab, the initial resize reads the
+            /// default `mode = .editing(.text)` and locks the bar at the tall focused height; once
+            /// the bar's value updates to the loaded URL `mode` flips to `.browsing` but nothing
+            /// re-evaluates the height. Trigger a resize on the editing-ness flip so the compact
+            /// layout applies immediately on session restore / "Open in New Window".
+            if oldValue.isEditing != mode.isEditing {
+                delegate?.resizeAddressBarForHomePage(self)
+            }
         }
     }
 

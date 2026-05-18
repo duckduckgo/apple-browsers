@@ -401,11 +401,15 @@ private extension OnboardingIntroViewModel {
                 )
             )
         case .duckAIQuerySelection:
-            let duckAIQueryMode = onboardingManager.currentOnboardingFlow == .duckAI ? .duckAI : duckAIQueryExperimentDefaultMode
+            let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
+            // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
+            let duckAIQueryMode: DuckAIQueryExperimentMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
+            // Duck.ai Tailored flow shows step counter while experiment does not.
+            let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
             state = .onboarding(
                 .init(
                     type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
-                    step: stepInfo()
+                    step: progressStep
                 )
             )
         case .interlude(let interlude):

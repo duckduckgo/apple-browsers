@@ -1382,6 +1382,37 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.duckAIQuerySelection.rawValue)
     }
 
+    // MARK: Step counter visibility on the Duck.ai query screen
+
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOn_ThenStepIsHidden() {
+        // GIVEN — experiment-inserted step in the default flow; counter hidden so the A/B insertion isn't exposed.
+        let store = MockKeyValueStore()
+        setResumeStep(.duckAIQuerySelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
+        let sut = makeSUT(featureFlagger: featureFlagger, resumeStepStore: store)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state.intro?.step, .hidden)
+    }
+
+    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenStepIsVisible() {
+        // GIVEN — Duck.ai query screen is a regular step in the tailored flow; counter visible.
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .aiComparison)
+
+        // WHEN
+        sut.aiComparisonAction()
+
+        // THEN
+        XCTAssertNotEqual(sut.state.intro?.step, .hidden)
+    }
+
     // MARK: Interlude
 
     func testWhenResumeStepIsInterludeDuckAI_AndFlowContainsInterlude_ThenOnAppearFiresInterludeCallbackWithDuckAI() {

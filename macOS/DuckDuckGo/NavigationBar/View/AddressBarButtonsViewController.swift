@@ -30,6 +30,7 @@ import AIChat
 import UIComponents
 import DesignResourcesKitIcons
 import DuckPlayer
+import Persistence
 import SwiftUI
 import WebExtensions
 
@@ -252,6 +253,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionsCancellables = Set<AnyCancellable>()
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var youtubeAdBlockAnimationTriggerCancellable: AnyCancellable?
+    private let youTubeAdBlockUnavailableTipController = YouTubeAdBlockUnavailableTipController()
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
@@ -632,6 +634,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 configureAIChatButton()
                 subscribeToTrackerAnimationTrigger()
                 subscribeToYouTubeAdBlockAnimationTrigger()
+                scheduleYouTubeAdBlockUnavailableNoticeIfNeeded()
             }
     }
 
@@ -647,6 +650,24 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink { [weak self] _ in
                 self?.showBadgeNotification(.youTubeAdBlockOn)
             }
+    }
+
+    /// On each navigation, asks the tip controller to schedule the "YouTube Ad Block Unavailable"
+    /// popover when the current URL is YouTube AND ad blocking is remotely disabled AND the user
+    /// had ad blocking enabled. The controller debounces with a small delay (so the popover
+    /// button has time to lay out) and gates on the one-shot `youTubeAdBlockUnavailableNoticeShown`
+    /// flag — mirrors how `QuickFeedbackTipController` is presented.
+    private func scheduleYouTubeAdBlockUnavailableNoticeIfNeeded() {
+        let url = tabViewModel?.tab.url
+        guard url?.isYoutube == true,
+              adBlockingAvailability.isRemotelyDisabled,
+              adBlockingAvailability.isEnabledByUser else {
+            youTubeAdBlockUnavailableTipController.cancel()
+            return
+        }
+        youTubeAdBlockUnavailableTipController.scheduleIfNeeded { [weak self] in
+            self?.openYouTubeAdBlockPopover() ?? false
+        }
     }
 
     private func subscribeToPermissions() {
@@ -1904,9 +1925,21 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let viewModel = YouTubeAdBlockViewModel(reloadPage: { [weak tabViewModel] in
-            tabViewModel?.reload()
-        })
+        _ = openYouTubeAdBlockPopover()
+    }
+
+    /// Returns `true` if the popover was shown (i.e. the button is visible and could anchor it),
+    /// `false` if the call was a no-op. Lets the caller decide whether to retry later.
+    @discardableResult
+    private func openYouTubeAdBlockPopover() -> Bool {
+        guard youTubeAdBlockButton.isShown else { return false }
+
+        let viewModel = YouTubeAdBlockViewModel(
+            isRemotelyDisabled: adBlockingAvailability.isRemotelyDisabled,
+            reloadPage: { [weak tabViewModel] in
+                tabViewModel?.reload()
+            }
+        )
         let popover = YouTubeAdBlockPopover(viewModel: viewModel)
         popover.delegate = self
         youTubeAdBlockViewModel = viewModel
@@ -1921,6 +1954,7 @@ final class AddressBarButtonsViewController: NSViewController {
         youTubeAdBlockButton.mouseOverColor = .buttonMouseDown
 
         popover.show(positionedBelow: youTubeAdBlockButton.bounds.insetFromLineOfDeath(flipped: youTubeAdBlockButton.isFlipped), in: youTubeAdBlockButton)
+        return true
     }
 
     // MARK: - Notification Animation

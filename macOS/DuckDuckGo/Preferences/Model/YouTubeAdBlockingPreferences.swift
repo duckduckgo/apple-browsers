@@ -29,6 +29,7 @@ struct YouTubeAdBlockingSettings: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(.youTubeAdBlockingEnabled)
     let youTubeAnalyticsEnabled = StorageKey<Bool>(.youTubeAnalyticsEnabled)
     let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(.shouldHideYouTubeAdBlockingDisclosure)
+    let youTubeAdBlockUnavailableNoticeShown = StorageKey<Bool>(.youTubeAdBlockUnavailableNoticeShown)
 }
 
 final class YouTubeAdBlockingPreferences: ObservableObject {

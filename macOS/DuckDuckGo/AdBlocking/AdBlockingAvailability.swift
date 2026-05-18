@@ -39,6 +39,19 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding {
     }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
+    // TODO: Replace this UserDefaults-backed placeholder with the real derivation
+    // (likely `!isFeatureAvailable && wasRolledOutByDefault`, or a dedicated
+    // privacy-config flag — to be confirmed with privacy/growth).
+    // When wiring the real flag, also observe its `true -> false` transition and
+    // clear `YouTubeAdBlockingSettings.youTubeAdBlockUnavailableNoticeShown` so that
+    // a subsequent re-disable surfaces the "YouTube Ad Block Unavailable" sheet
+    // again for users who kept the app alive across the incident cycle.
+    var isRemotelyDisabled: Bool {
+        UserDefaults.standard.bool(forKey: Self.remotelyDisabledOverrideKey)
+    }
+
+    static let remotelyDisabledOverrideKey = "com.duckduckgo.macos.adBlocking.remotelyDisabledOverride"
+
     func shouldShowAnimation(for url: URL) -> Bool {
         isEnabled && url.isPlayableYoutubeVideoContent
     }

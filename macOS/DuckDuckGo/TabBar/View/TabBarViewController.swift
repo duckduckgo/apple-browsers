@@ -2475,10 +2475,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem),
-              let permissions = tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.permissions
-        else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item or its permissions")
+        guard let permissions = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.permissions else {
+            assertionFailure("TabBarViewController: Failed to get permissions for tab bar view item")
             return
         }
 

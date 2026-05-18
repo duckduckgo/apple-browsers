@@ -110,6 +110,11 @@ extension Preferences {
 
                 // YouTube Ad Blocking Section
                 PreferencePaneSection(UserText.adBlockingYouTubeSectionHeader) {
+                    if model.isRemotelyDisabled {
+                        AdBlockingUnavailableMessageView()
+                            .frame(width: 512)
+                    }
+
                     TextMenuItemCaption(UserText.youTubeAdBlockingExplanation)
 
                     Spacer().frame(height: 4)
@@ -121,8 +126,10 @@ extension Preferences {
                             isOn: youTubeAdBlockingEnabledBinding,
                             spacing: 4
                         )
+                        .disabled(model.isRemotelyDisabled)
                     } else {
                         ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
+                            .disabled(model.isRemotelyDisabled)
                     }
 
                     if !model.isDisclosureHidden {
@@ -180,6 +187,46 @@ extension Preferences {
                 model.markDisclosureHiddenIfExistingUser()
             }
         }
+    }
+}
+
+/// "YouTube Ad Block Unavailable" notice shown in the Preferences pane when the feature is
+/// remotely disabled. Styled like `ContingencyMessageView` (the DuckPlayer contingency banner)
+/// but without a CTA button, since there's no user action to take while the feature is down.
+private struct AdBlockingUnavailableMessageView: View {
+
+    private enum Constants {
+        static let cornerRadius: CGFloat = 8
+        static let imageName: String = "WarningYoutube"
+        static let imageSize: CGSize = CGSize(width: 64, height: 48)
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 20) {
+            Image(Constants.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.imageSize.width, height: Constants.imageSize.height)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(UserText.youTubeAdBlockUnavailableTitle)
+                    .bold()
+                Text(UserText.youTubeAdBlockUnavailableMessage)
+                    .foregroundColor(Color(.blackWhite60))
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding()
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: Constants.cornerRadius)
+                    .stroke(Color(.blackWhite10), lineWidth: 1)
+                RoundedRectangle(cornerRadius: Constants.cornerRadius)
+                    .fill(Color(.blackWhite1))
+            }
+        )
     }
 }
 

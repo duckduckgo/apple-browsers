@@ -47,6 +47,10 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     /// (e.g. the Preferences pane) re-render the "Disabled until relaunch" sub-line on changes.
     @Published private(set) var isDisabledUntilRelaunch: Bool = false
 
+    /// Mirrors `adBlockingAvailability.isRemotelyDisabled`, updated via the shared change
+    /// notification. Drives the "YouTube Ad Block Unavailable" card in the Preferences pane.
+    @Published private(set) var isRemotelyDisabled: Bool = false
+
     private var isHandlingExternalChange = false
 
     @Published
@@ -155,6 +159,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled ?? false
         isDisclosureHidden = resolvedSettings.shouldHideYouTubeAdBlockingDisclosure == true
         isDisabledUntilRelaunch = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
+        isRemotelyDisabled = adBlockingAvailability?.isRemotelyDisabled ?? false
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in
@@ -167,6 +172,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             .sink { [weak self] _ in
                 self?.syncFromStore()
                 self?.syncDisableUntilRelaunchFromAvailability()
+                self?.syncRemotelyDisabledFromAvailability()
             }
             .store(in: &cancellables)
     }
@@ -181,6 +187,12 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         let current = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
         guard current != isDisabledUntilRelaunch else { return }
         isDisabledUntilRelaunch = current
+    }
+
+    private func syncRemotelyDisabledFromAvailability() {
+        let current = adBlockingAvailability?.isRemotelyDisabled ?? false
+        guard current != isRemotelyDisabled else { return }
+        isRemotelyDisabled = current
     }
 
     /// Re-reads the persisted value when another instance posts the change notification, so

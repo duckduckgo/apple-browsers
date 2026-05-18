@@ -350,7 +350,7 @@ struct YouTubeAdBlockUnavailableRowView: View {
                     .frame(width: Layout.iconSize, height: Layout.iconSize)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                Text("YouTube Ad Block Unavailable")
+                Text(UserText.youTubeAdBlockUnavailableTitle)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
@@ -358,7 +358,7 @@ struct YouTubeAdBlockUnavailableRowView: View {
                 Spacer()
             }
 
-            Text("Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding")
+            Text(UserText.youTubeAdBlockUnavailableMessage)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)

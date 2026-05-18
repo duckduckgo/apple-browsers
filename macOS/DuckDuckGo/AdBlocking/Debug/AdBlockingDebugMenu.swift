@@ -144,6 +144,13 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
         let key = AdBlockingAvailability.remotelyDisabledOverrideKey
         let newValue = !UserDefaults.standard.bool(forKey: key)
         UserDefaults.standard.set(newValue, forKey: key)
+        // Post the same change notification the toggle / availability methods use, so listeners
+        // (Settings pane, popover view models, AppDelegate's embedded-extensions sync) react to
+        // the override flip in the same code path.
+        NotificationCenter.default.post(
+            name: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification,
+            object: nil
+        )
     }
 
     @objc private func resetUnavailableNoticeShown() {

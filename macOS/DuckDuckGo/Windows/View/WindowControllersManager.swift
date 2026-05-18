@@ -372,7 +372,7 @@ extension WindowControllersManager {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             guard let index = tabCollectionViewModel.indexInAllTabs(where: {
                 if let tabId {
-                    return $0.id == tabId
+                    return $0.uuid == tabId
                 }
                 return $0.content.urlForWebView == url || (url.isSettingsURL && $0.content.urlForWebView?.isSettingsURL == true)
             }) else { continue }

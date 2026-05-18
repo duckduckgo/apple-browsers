@@ -33,6 +33,29 @@ class SwitchBarTextEntryView: UIView {
         case hidden
     }
 
+    private enum TextEntryPose: Equatable {
+        case compact
+        case tallTopAlignedAIChat
+
+        var minHeight: CGFloat {
+            switch self {
+            case .compact:
+                return Constants.minHeight
+            case .tallTopAlignedAIChat:
+                return Constants.minHeightAIChat
+            }
+        }
+
+        var usesTopAlignedPlaceholder: Bool {
+            switch self {
+            case .compact:
+                return false
+            case .tallTopAlignedAIChat:
+                return true
+            }
+        }
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -83,9 +106,17 @@ class SwitchBarTextEntryView: UIView {
         handler.currentToggleState
     }
 
+    private var currentPose: TextEntryPose {
+        if isExpandable && currentMode == .aiChat && handler.isTopBarPosition && handler.usesExpandedAIChatTextEntryLayout {
+            return .tallTopAlignedAIChat
+        }
+
+        return .compact
+    }
+
     private var currentMinHeight: CGFloat {
-        if isExpandable && currentMode == .aiChat && handler.isTopBarPosition {
-            return Constants.minHeightAIChat
+        if currentPose == .tallTopAlignedAIChat {
+            return currentPose.minHeight
         }
 
         guard handler.isUsingFadeOutAnimation else {
@@ -112,7 +143,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var usesTopAlignedPlaceholder: Bool {
-        isExpandable && currentMode == .aiChat
+        currentPose.usesTopAlignedPlaceholder
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -141,12 +172,11 @@ class SwitchBarTextEntryView: UIView {
 
     var isExpandable: Bool = false {
         didSet {
-            updatePlaceholderVerticalAlignment()
-            updateTextViewHeight()
+            updatePoseForCurrentState()
         }
     }
 
-    func refreshLayoutForBarPositionChange() {
+    func updatePoseForCurrentState() {
         updatePlaceholderVerticalAlignment()
         updateTextViewHeight()
     }
@@ -366,10 +396,9 @@ class SwitchBarTextEntryView: UIView {
             }
         }
         updateKeyboardConfiguration()
-        updatePlaceholderVerticalAlignment()
+        updatePoseForCurrentState()
         updatePlaceholderVisibility()
         updateButtonState()
-        updateTextViewHeight()
     }
 
     private func updateKeyboardConfiguration() {

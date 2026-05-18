@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKitIcons
 import XCTest
 import UIKit
@@ -302,6 +303,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
+    func test_bottomAIChatPlaceholderStaysVerticallyCenteredInPill() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut, height: 48)
+        applyFittingHeight(to: sut, height: 48)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+    }
+
+    func test_legacyNonFadeOutTopAIChatTextEntryStaysCompactWhenExpandable() throws {
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: false
+        )
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut, height: 44)
+        let height = applyFittingHeight(to: sut, height: 44)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+
+        XCTAssertEqual(height, 44, accuracy: 1)
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+    }
+
+    func test_barPositionChangeRefreshesExpandedAIChatPose() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.updateBarPosition(isTop: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut, height: 44)
+
+        XCTAssertEqual(applyFittingHeight(to: sut, height: 44), 44, accuracy: 1)
+
+        handler.updateBarPosition(isTop: true)
+        sut.updatePoseForCurrentState()
+
+        XCTAssertEqual(applyFittingHeight(to: sut), 68, accuracy: 1)
+    }
+
     func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.updateBarPosition(isTop: true)
@@ -369,6 +419,24 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.layoutIfNeeded()
 
         XCTAssertEqual(duckAIButton.frame.height, 36, accuracy: 1)
+    }
+
+    func test_topAIChatHierarchyLayoutCallbackFiresSynchronouslyWhenNewlineExpandsTextEntry() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.handlerIsTopBarPosition = true
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+        sut.text = "hello"
+        applyFittingHeight(to: sut, width: 402)
+
+        var callbacks = 0
+        sut.onNeedsHierarchyLayout = { callbacks += 1 }
+        sut.insertNewlineAtCursor()
+        sut.insertNewlineAtCursor()
+
+        XCTAssertGreaterThan(callbacks, 0)
     }
 
     private func flushMainQueue() {
@@ -466,5 +534,62 @@ private final class SpyFloatingReturnKeyDelegate: UnifiedToggleInputFloatingRetu
 
     func floatingReturnKeyDidTap() {
         returnKeyTapCount += 1
+    }
+}
+
+private final class LegacyTextEntryMockHandler: SwitchBarHandling {
+    var currentText: String = ""
+    var currentToggleState: TextEntryMode
+    var isVoiceSearchEnabled: Bool = false
+    var isAIVoiceChatEnabled: Bool = false
+    var hasUserInteractedWithText: Bool = false
+    var isCurrentTextValidURL: Bool = false
+    var buttonState: SwitchBarButtonState = .noButtons
+    var isTopBarPosition: Bool
+    var isToggleEnabled: Bool = true
+    var isFireTab: Bool = false
+    var isUsingExpandedBottomBarHeight: Bool = false
+    var isUsingFadeOutAnimation: Bool
+    var shouldDisableAutocorrectOnEmpty: Bool = false
+    var hidesVoiceButton: Bool = false
+    var hasSubmittedPrompt: Bool = false
+    var modeParameters: [String: String] = [:]
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
+
+    init(currentToggleState: TextEntryMode, isTopBarPosition: Bool, isUsingFadeOutAnimation: Bool) {
+        self.currentToggleState = currentToggleState
+        self.isTopBarPosition = isTopBarPosition
+        self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
+    }
+
+    func updateCurrentText(_ text: String) {
+        currentText = text
+    }
+
+    func submitText(_ text: String) {}
+
+    func setToggleState(_ state: TextEntryMode) {
+        currentToggleState = state
+    }
+
+    func clearText() {}
+
+    func microphoneButtonTapped() {}
+
+    func markUserInteraction() {}
+
+    func clearButtonTapped() {}
+
+    func updateBarPosition(isTop: Bool) {
+        isTopBarPosition = isTop
     }
 }

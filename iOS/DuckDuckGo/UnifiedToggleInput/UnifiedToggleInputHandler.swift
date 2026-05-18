@@ -29,6 +29,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
+    let usesExpandedAIChatTextEntryLayout: Bool = true
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true

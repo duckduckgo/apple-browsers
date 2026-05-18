@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 import SwiftUI
 import DesignResourcesKit
 
@@ -48,7 +49,7 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Layout Constants
 
     /// Corner radius for the menu item hover background
-    static let menuItemCornerRadius: CGFloat = 4
+    static let menuItemCornerRadius: CGFloat = AppVersion.isLiquidGlassSupported ? 7 : 4
 
     /// Horizontal padding for the menu item hover background
     static let menuItemHorizontalPadding: CGFloat = 5
@@ -57,13 +58,13 @@ struct MenuItemWithBadgeConstants {
     static let iconSize: CGFloat = 12
 
     /// Spacing between icon and title text
-    static let iconTitleSpacing: CGFloat = 8
+    static let iconTitleSpacing: CGFloat = 6
 
     /// Spacing between title and badge
     static let titleBadgeSpacing: CGFloat = 16
 
     /// Left padding for the icon
-    static let iconLeftPadding: CGFloat = 18
+    static let iconLeftPadding: CGFloat = 16
 
     /// Right padding for the badge
     static let badgeRightPadding: CGFloat = 14
@@ -71,7 +72,7 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Hosting View Constants
 
     /// Default height for the menu item hosting view
-    static let hostingViewHeight: CGFloat = 22
+    static let hostingViewHeight: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 22
 }
 
 // MARK: - Custom Badge Shape
@@ -191,11 +192,18 @@ struct MenuItemWithBadge: View {
     /// Tracks whether the menu item is currently being hovered
     @State private var isHovered: Bool = false
 
+    var hoverColor: Color {
+        if #available(macOS 12.0, *) {
+            return Color(nsColor: .selectedContentBackgroundColor)
+        }
+        return .menuItemHover
+    }
+
     var body: some View {
         ZStack {
             // Background highlight that appears on hover
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.menuItemCornerRadius)
-                .fill(isHovered ? .menuItemHover : Color.clear)
+                .fill(isHovered ? hoverColor : Color.clear)
                 .padding([.leading, .trailing], MenuItemWithBadgeConstants.menuItemHorizontalPadding)
                 .frame(maxWidth: .infinity)
 

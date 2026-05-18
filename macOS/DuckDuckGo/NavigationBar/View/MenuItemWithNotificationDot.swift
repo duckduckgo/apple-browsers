@@ -28,7 +28,7 @@ struct MenuItemWithNotificationDot: View {
     @State private var isHovered: Bool = false
 
     var hoverColor: Color {
-        if #available(macOS 14.0, *) {
+        if #available(macOS 12.0, *) {
             return Color(nsColor: .selectedContentBackgroundColor)
         }
         return .menuItemHover

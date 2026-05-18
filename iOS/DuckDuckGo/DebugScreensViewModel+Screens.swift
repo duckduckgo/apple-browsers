@@ -249,6 +249,9 @@ extension DebugScreensViewModel {
             }),
             .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
+
+                    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {}
+
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
                     }

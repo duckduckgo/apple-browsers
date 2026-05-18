@@ -95,6 +95,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     var onCompletingOnboardingIntro: (() -> Void)?
     var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
     var onSearchFromOnboarding: ((String) -> Void)?
+    /// Invoked when the flow reaches an `OnboardingIntroStep.interlude(_)` step. The host is expected to dismiss the onboarding UI, run its own experience, and call `resumeOnboardingFromInterlude()` once finished.
+    var onOnboardingInterlude: ((OnboardingIntroStep.Interlude) -> Void)?
     private var introSteps: [OnboardingIntroStep]
     private var currentIntroStep: OnboardingIntroStep
 
@@ -303,6 +305,17 @@ final class OnboardingIntroViewModel: ObservableObject {
         pixelReporter.measureAutoRestoreOnboardingSkipCTAAction()
     }
 
+    /// Resumes the linear onboarding after the host has finished an interlude.
+    ///
+    /// Call this once the host's interlude experience completes. The view model will advance to the step immediately after the current interlude in `introSteps`.
+    func resumeOnboardingFromInterlude() {
+        guard case .interlude = currentIntroStep else {
+            assertionFailure("resumeOnboardingFromInterlude() called outside an interlude step (current: \(currentIntroStep))")
+            return
+        }
+        makeNextViewState()
+    }
+
 #if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
@@ -324,32 +337,82 @@ private extension OnboardingIntroViewModel {
 
     func setViewState(introStep: OnboardingIntroStep) {
         func stepInfo() -> OnboardingView.ViewState.Intro.StepInfo {
-            guard let currentStepIndex = introSteps.firstIndex(of: introStep) else { return .hidden }
+            // Remove interlude steps from counting the total number of steps as they're not rendered
+            let stepsWithoutInterludes = introSteps.filter { step in
+                if case .interlude = step {
+                    return false
+                }
+                return true
+            }
+            guard let currentStepIndex = stepsWithoutInterludes.firstIndex(of: introStep) else { return .hidden }
 
             // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: introSteps.count - 1)
+            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
         }
 
-        let viewState = switch introStep {
+        switch introStep {
         case .introDialog(let isReturningUser):
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)), step: .hidden))
+            state = .onboarding(
+                .init(
+                    type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)),
+                    step: .hidden
+                )
+            )
         case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent),
+                    step: stepInfo()
+                )
+            )
         case .aiComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .aiComparisonDialog(content: contentProvider.aiComparisonContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .aiComparisonDialog(content: contentProvider.aiComparisonContent),
+                    step: stepInfo()
+                )
+            )
         case .addToDockPromo:
-            OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog(content: contentProvider.addToDockContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .addToDockPromoDialog(content: contentProvider.addToDockContent),
+                    step: stepInfo()
+                )
+            )
         case .appIconSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog(content: contentProvider.appIconColorContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .chooseAppIconDialog(content: contentProvider.appIconColorContent),
+                    step: stepInfo()
+                )
+            )
         case .addressBarPositionSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog(content: contentProvider.addressBarPositionContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .chooseAddressBarPositionDialog(content: contentProvider.addressBarPositionContent),
+                    step: stepInfo()
+                )
+            )
         case .searchExperienceSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent), step: stepInfo()))
+            state = .onboarding(
+                .init(
+                    type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent),
+                    step: stepInfo()
+                )
+            )
         case .duckAIQuerySelection:
-            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: onboardingManager.currentOnboardingFlow == .duckAI ? .duckAI : duckAIQueryExperimentDefaultMode), step: stepInfo()))
+            let duckAIQueryMode = onboardingManager.currentOnboardingFlow == .duckAI ? .duckAI : duckAIQueryExperimentDefaultMode
+            state = .onboarding(
+                .init(
+                    type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                    step: stepInfo()
+                )
+            )
+        case .interlude(let interlude):
+            // Interlude steps don't render a view state. They inform the delegate that an interlude is starting.
+            // The delegate will resume the onboarding by calling `resumeOnboardingFromInterlude()` when finished.
+            onOnboardingInterlude?(interlude)
         }
-
-        state = viewState
     }
 
     func makeNextViewState() {
@@ -421,9 +484,10 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .addressBarPositionSelection
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
-
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
+        case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
+            currentIntroStep = .interlude(.duckAI)
 
         default:
             // Stored step is not available in the current flow — clear and start from the beginning.

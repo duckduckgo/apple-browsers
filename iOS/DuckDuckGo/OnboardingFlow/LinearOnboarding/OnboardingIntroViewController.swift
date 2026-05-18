@@ -48,6 +48,10 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
             guard let self, let delegate else { return }
             delegate.searchFromOnboarding(for: query)
         }
+        viewModel.onOnboardingInterlude = { [weak self] interlude in
+            guard let self, let delegate else { return }
+            delegate.didStartOnboardingInterlude(interlude)
+        }
     }
 
     @available(*, unavailable)

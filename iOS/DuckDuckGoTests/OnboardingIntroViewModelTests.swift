@@ -532,14 +532,37 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
     }
 
-    func testWhenSelectDuckAIQueryExperimentActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToAddToDockPromoDialogAndProgressIs3Of5() {
+    func testWhenSelectDuckAIQueryExperimentActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
         let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        let stateBeforeAction = sut.state
+        var didFireInterludeCallback = false
+        var capturedInterlude: OnboardingIntroStep.Interlude?
+        sut.onOnboardingInterlude = { interlude in
+            didFireInterludeCallback = true
+            capturedInterlude = interlude
+        }
 
         // WHEN
         sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+
+        // THEN
+        XCTAssertTrue(didFireInterludeCallback)
+        XCTAssertEqual(capturedInterlude, .duckAI)
+        // The interlude step doesn't render
+        XCTAssertEqual(sut.state, stateBeforeAction)
+    }
+
+    func testWhenResumeOnboardingFromInterludeIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToAddToDockPromoDialogAndProgressIs3Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .interlude(.duckAI))
+
+        // WHEN
+        sut.resumeOnboardingFromInterlude()
 
         // THEN
         XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog(content: .mock), step: .init(currentStep: 3, totalSteps: 5))))

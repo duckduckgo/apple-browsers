@@ -141,6 +141,27 @@ enum OnboardingIntroStep: Equatable {
     case addressBarPositionSelection
     case searchExperienceSelection
     case duckAIQuerySelection
+
+    /// A step that pauses the linear onboarding to hand control to the host
+    /// (e.g. for a short, contextual browsing session), then expects the host
+    /// to resume the linear flow once it completes.
+    ///
+    /// Unlike the other cases, an interlude step does not render a view state in the onboarding view.
+    case interlude(Interlude)
+}
+
+extension OnboardingIntroStep {
+
+    /// Identifies which interlude experience the host should run.
+    ///
+    /// New interlude types can be added here without changing the linear
+    /// onboarding's view-state mapping — the view model treats all interludes
+    /// uniformly (callback out, no view state).
+    enum Interlude: Equatable {
+        /// Hands off to the Duck.ai Fire onboarding flow after the user
+        /// submits their first query on the Duck.ai query-selection step.
+        case duckAI
+    }
 }
 
 extension OnboardingIntroStep {
@@ -155,6 +176,7 @@ extension OnboardingIntroStep {
         case .addressBarPositionSelection: return .addressBarPositionSelection
         case .searchExperienceSelection: return .searchExperienceSelection
         case .duckAIQuerySelection: return .duckAIQuerySelection
+        case .interlude(.duckAI): return .interludeDuckAI
         }
     }
 }
@@ -171,6 +193,9 @@ enum OnboardingResumeStep: String {
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
     case duckAIAnswerStep
+    /// User is currently inside the Duck.ai interlude (a contextual browsing session
+    /// hosted outside the linear onboarding); on relaunch, the host re-enters the interlude.
+    case interludeDuckAI
 }
 
 protocol OnboardingStepsProvider: AnyObject {
@@ -275,7 +300,7 @@ private extension OnboardingManager {
     }
 
     func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
-        [.aiComparison, .duckAIQuerySelection, .addToDockPromo, .browserComparison, .addressBarPositionSelection]
+        [.aiComparison, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .browserComparison, .addressBarPositionSelection]
     }
 
 }

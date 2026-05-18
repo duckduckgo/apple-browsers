@@ -157,18 +157,18 @@ final class SuggestionContainer: SuggestionContainerProtocol {
     private static func defaultOpenTabsProvider(burnerMode: BurnerMode, windowControllersManager: WindowControllersManagerProtocol) -> OpenTabsProvider {
         { @MainActor in
             let selectedTab = windowControllersManager.selectedTab
-            let openTabViewModels = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
+            let openTabBarViewModels = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
             var usedUrls = Set<String>() // deduplicate
-            return openTabViewModels.compactMap { model in
-                guard model.tab !== selectedTab,
-                      model.tab.content.displaysContentInWebView
-                        || model.tab.content.urlForWebView?.isSettingsURL == true
-                        || model.tab.content.urlForWebView == .bookmarks,
-                      let url = model.tab.content.userEditableUrl,
+            return openTabBarViewModels.compactMap { model in
+                guard model.uuid != selectedTab?.uuid,
+                      model.tabContent.displaysContentInWebView
+                        || model.tabContent.urlForWebView?.isSettingsURL == true
+                        || model.tabContent.urlForWebView == .bookmarks,
+                      let url = model.tabContent.userEditableUrl,
                       url != selectedTab?.content.userEditableUrl, // doesn't match currently selected
                       usedUrls.insert(url.nakedString ?? "").inserted == true /* if did not contain */ else { return nil }
 
-                return OpenTab(tabId: model.tab.id, title: model.title, url: url)
+                return OpenTab(tabId: model.uuid, title: model.title, url: url)
             }
         }
     }

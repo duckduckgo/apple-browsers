@@ -579,26 +579,22 @@ extension WindowControllersManagerProtocol {
         }
     }
 
-    var allTabViewModels: [TabViewModel] {
-        return allTabCollectionViewModels.flatMap {
-            $0.tabViewModels.values.compactMap { $0 as? TabViewModel }
-        }
-    }
-
-    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
+    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [any TabBarViewModel] {
         let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
             }
-        let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        let unpinnedTabBarViewModels = currentBurnerModeTabCollectionViewModels.flatMap { tabCollectionViewModel in
+            (0..<tabCollectionViewModel.tabViewModels.count).compactMap { index in
+                tabCollectionViewModel.tabBarViewModel(at: .unpinned(index))
+            }
         }
-        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
-        }) : []
-        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
-
-        return result
+        let pinnedTabBarViewModels: [any TabBarViewModel] = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { pinnedManager in
+            (0..<pinnedManager.tabViewModels.count).compactMap { index in
+                pinnedManager.tabBarViewModel(at: index)
+            }
+        } : []
+        return pinnedTabBarViewModels + unpinnedTabBarViewModels
     }
 
     func windowController(for tabCollectionViewModel: TabCollectionViewModel) -> MainWindowController? {

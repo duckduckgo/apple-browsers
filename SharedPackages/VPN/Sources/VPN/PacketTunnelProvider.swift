@@ -321,45 +321,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: any SubscriptionTokenHandling
+
+    private var keyRotator: KeyRotator!
+
     @MainActor
     func resetRegistrationKey() {
-        Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
-        keyStore.resetCurrentKeyPair()
-    }
-
-    private func rekey() async throws {
-        providerEvents.fire(.userBecameActive)
-
-        // Experimental option to disable rekeying.
-        guard !settings.disableRekeying else {
-            Logger.networkProtectionKeyManagement.log("Rekeying disabled")
-            return
-        }
-
-        providerEvents.fire(.rekeyAttempt(.begin))
-
-        let preRekeyEgress = await currentEgressInfo()
-
-        do {
-            try await updateTunnelConfiguration(
-                updateMethod: .selectServer(currentServerSelectionMethod),
-                reassert: false,
-                regenerateKey: true,
-                attemptSource: .rekey)
-            // A rekey that landed back on the same server can't have changed the egress path, so
-            // skip the leak check and let the periodic timer handle the routine validation. We
-            // only force an immediate check when the server (or its IP) actually changed.
-            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
-            // service would skip the check anyway, so don't bother scheduling.
-            if let postRekeyEgress = await currentEgressInfo(), preRekeyEgress != postRekeyEgress {
-                await leakCheckService?.scheduleCheck(trigger: .rekey)
-            }
-            providerEvents.fire(.rekeyAttempt(.success))
-        } catch {
-            providerEvents.fire(.rekeyAttempt(.failure(error)))
-            await subscriptionAccessErrorHandler(error)
-            throw error
-        }
+        keyRotator.resetRegistrationKey()
     }
 
     private func subscriptionAccessErrorHandler(_ error: Error) async {
@@ -529,6 +496,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
+        self.keyRotator = KeyRotator(
+            keyStore: keyStore,
+            settings: settings,
+            events: providerEvents,
+            rotateKey: { @MainActor [weak self] in
+                // Provider deinit mid-rekey: surface as failure rather than silently succeeding,
+                // so .rekeyAttempt(.success) is never fired for a rekey that didn't run.
+                guard let self else { throw CancellationError() }
+                try await self.updateTunnelConfiguration(
+                    updateMethod: .selectServer(self.currentServerSelectionMethod),
+                    reassert: false,
+                    regenerateKey: true,
+                    attemptSource: .rekey)
+            }
+        )
+
         self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
             keyStore: keyStore,
             settings: settings
@@ -538,7 +521,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await self.updateBandwidthAnalyzer()
             return await self.bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
-            try await self?.rekey()
+            guard let self else { return }
+            let preRekeyEgress = self.currentEgressInfo()
+            do {
+                try await self.keyRotator.rekey()
+            } catch {
+                await self.subscriptionAccessErrorHandler(error)
+                throw error
+            }
+            let postRekeyEgress = self.currentEgressInfo()
+            if VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: preRekeyEgress, postRekey: postRekeyEgress) {
+                await self.leakCheckService?.scheduleCheck(trigger: .rekey)
+            }
         }
 
         self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(

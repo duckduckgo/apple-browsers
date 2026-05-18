@@ -116,6 +116,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        self.daxLogoManager.usesLottieTransition = true
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -170,7 +171,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.containerYCenterConstraint?.constant = offset
+        daxLogoManager.setLogoYOffset(offset)
     }
 
     func setLogoHidden(_ hidden: Bool) {
@@ -186,6 +187,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func rebuildDaxLogoManager(isFireTab: Bool) {
         daxLogoManager.tearDown()
         daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        daxLogoManager.usesLottieTransition = true
         // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
         daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
         guard isViewLoaded else { return }
@@ -254,30 +256,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateEscapeHatchTopInset()
     }
 
-    /// Duck.ai suggestions tray uses the same escape-hatch-driven inset as the Search-side tray:
-    /// 0 when there's no hatch, +44pt to clear the hatch card in bottom-bar, -10pt pull-up in top-bar.
-    private var duckAITopInset: CGFloat {
-        Self.computeSuggestionTrayEscapeHatchInset(
-            hasEscapeHatch: escapeHatchModel != nil,
-            isBottomBar: !isUsingTopBarPosition
-        )
+    private var escapeHatchTopInset: CGFloat {
+        Self.computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: escapeHatchModel != nil)
     }
 
-    /// Updates both surfaces' top insets so the (x) dismiss button doesn't overlap their content in bottom-bar mode.
+    /// Updates both surfaces' top insets so the escape hatch aligns with the NTP hatch.
     private func updateEscapeHatchTopInset() {
-        let trayInset = Self.computeSuggestionTrayEscapeHatchInset(
-            hasEscapeHatch: escapeHatchModel != nil,
-            isBottomBar: !isUsingTopBarPosition
-        )
-        suggestionTrayManager?.setAdditionalTopInset(trayInset)
-        duckAISuggestionsCoordinator?.setAdditionalTopInset(duckAITopInset)
+        let inset = escapeHatchTopInset
+        suggestionTrayManager?.setAdditionalTopInset(inset)
+        duckAISuggestionsCoordinator?.setAdditionalTopInset(inset)
     }
 
-    static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool,
-                                                      isBottomBar: Bool) -> CGFloat {
-        // Top-bar tightening when the hatch is present; both surfaces handle their own
-        // breathing room around the hatch card internally, so no bottom-bar inset is needed.
-        return hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
+    /// Returns the top inset needed so the UTI escape hatch lines up with the NTP
+    /// escape hatch. The suggestion tray container chain positions the UTI hatch
+    /// ~10pt below the NTP equivalent; this pull-up corrects for that in both
+    /// top and bottom bar positions.
+    static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool) -> CGFloat {
+        hasEscapeHatch ? Metrics.escapeHatchTrayPullUp : 0
     }
 
     func setText(_ text: String) {
@@ -519,7 +514,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
 
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
-        coordinator.setAdditionalTopInset(duckAITopInset)
+        coordinator.setAdditionalTopInset(escapeHatchTopInset)
         if let escapeHatchModel, !switchBarHandler.isFireTab {
             coordinator.setEscapeHatch(
                 escapeHatchModel,
@@ -694,10 +689,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isAIDaxVisible = !hasContent && !isShowingDuckAISuggestions && !isDuckAISuggestionsPending
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
         // The toolbar is still in the hierarchy under the unified input, so the keyboard-relative
         // centering sits visually too high — shift the dax down by this constant to compensate.
-        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset + Metrics.toolbarCompensationOffset)
+        // The escape hatch sits in the suggestion tray above the logo and doesn't push it down.
+        daxLogoManager.setEscapeHatchBaseOffset(Metrics.toolbarCompensationOffset)
         updateSectionTitle()
     }
 
@@ -705,9 +700,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
-        static let escapeHatchLogoOffset: CGFloat = 120
-        // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
-        static let escapeHatchTopBarTrayPullUp: CGFloat = -10
+        // Pulls both the search and duck.ai suggestion trays up so the UTI escape
+        // hatch lines up with the NTP escape hatch. The suggestion tray container
+        // chain positions the UTI hatch ~10pt below the NTP equivalent.
+        static let escapeHatchTrayPullUp: CGFloat = -10
         static let toolbarCompensationOffset: CGFloat = 80
     }
 }

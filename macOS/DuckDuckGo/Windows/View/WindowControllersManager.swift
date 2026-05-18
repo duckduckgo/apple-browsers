@@ -378,8 +378,7 @@ extension WindowControllersManager {
             }) else { continue }
 
             windowController.window?.makeKeyAndOrderFront(self)
-            tabCollectionViewModel.select(at: index)
-            if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
+            if let tab = tabCollectionViewModel.selectTab(at: index),
                tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
@@ -616,14 +615,14 @@ extension WindowControllersManagerProtocol {
 
     // MARK: - Web Notifications Support
 
-    /// Finds a tab by its UUID across all windows.
+    /// Finds a tab by its UUID across all windows, materializing it if unloaded.
     /// - Parameter uuid: The tab's UUID.
     /// - Returns: The tab if found, nil otherwise.
     func findTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
-                return tabCollectionViewModel.tabViewModel(at: index)?.tab
+                return tabCollectionViewModel.materialize(at: index)
             }
         }
         return nil

@@ -265,24 +265,18 @@ extension DebugScreensViewModel {
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
 
-                    let controller: Onboarding = if flow.isRebranding {
-                        OnboardingIntroViewController.rebranded(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
-                            onboardingManager: OnboardingManager()
-                        )
-                    } else {
-                        OnboardingIntroViewController.legacy(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
-                            onboardingManager: OnboardingManager()
-                        )
-                    }
-                    controller.delegate = capturedController
+                    let viewModel = OnboardingIntroFactory.makeViewModel(
+                        pixelReporter: OnboardingPixelReporter(),
+                        systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                        daxDialogsManager: d.daxDialogManager,
+                        syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                        onboardingManager: OnboardingManager()
+                    )
+                    let controller = OnboardingIntroFactory.makeController(
+                        viewModel: viewModel,
+                        isRebranded: flow.isRebranding,
+                        delegate: capturedController
+                    )
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
                 })

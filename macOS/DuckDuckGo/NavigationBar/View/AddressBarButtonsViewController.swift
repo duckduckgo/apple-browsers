@@ -29,6 +29,7 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import DuckPlayer
 import SwiftUI
 import WebExtensions
 
@@ -108,6 +109,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var permissionCenterPopover: PermissionCenterPopover?
 
+    private var youTubeAdBlockPopover: NSPopover?
+
     private var popupBlockedPopover: PopupBlockedPopover?
     private var systemDisabledInfoPopover: NSPopover?
 
@@ -129,6 +132,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var permissionCenterButton: AddressBarButton!
+    @IBOutlet weak var youTubeAdBlockButton: AddressBarButton!
     @IBOutlet private weak var trailingButtonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
     @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
@@ -162,6 +166,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var askAIChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var permissionCenterButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var youTubeAdBlockButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var youTubeAdBlockButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var askAIChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
@@ -385,6 +391,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         permissionCenterButton.sendAction(on: .leftMouseDown)
         permissionCenterButton.setAccessibilityIdentifier("AddressBarButtonsViewController.permissionCenterButton")
+
+        youTubeAdBlockButton.sendAction(on: .leftMouseDown)
+        youTubeAdBlockButton.setAccessibilityIdentifier("AddressBarButtonsViewController.youTubeAdBlockButton")
+        youTubeAdBlockButton.toolTip = "YouTube Ad Block"
 
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")
@@ -1107,6 +1117,7 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButton.setCornerRadius(cornerRadius)
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
+        youTubeAdBlockButton.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {
@@ -1125,10 +1136,13 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButtonHeightConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
+        youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
+        youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
     }
 
     private func setupButtonIcons() {
         updatePermissionCenterButtonIcon()
+        youTubeAdBlockButton.image = DesignSystemImages.Glyphs.Size16.platformMacOS
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -1735,6 +1749,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateImageButton()
         updatePrivacyDashboardButton()
         updatePermissionCenterButton()
+        updateYouTubeAdBlockButtonVisibility()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         if !isToggleFeatureEnabled {
@@ -1859,6 +1874,35 @@ final class AddressBarButtonsViewController: NSViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
 
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
+    }
+
+    private func updateYouTubeAdBlockButtonVisibility() {
+        let isYoutube = tabViewModel?.tab.url?.isYoutube ?? false
+        youTubeAdBlockButton.isShown = isYoutube && !isAIChatPanelActive
+
+        if !youTubeAdBlockButton.isShown, let popover = youTubeAdBlockPopover, popover.isShown {
+            popover.close()
+            youTubeAdBlockPopover = nil
+        }
+    }
+
+    @IBAction func youTubeAdBlockButtonAction(_ sender: Any) {
+        if let existingPopover = youTubeAdBlockPopover, existingPopover.isShown {
+            existingPopover.close()
+            youTubeAdBlockPopover = nil
+            return
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = YouTubeAdBlockPlaceholderViewController()
+        popover.delegate = self
+        youTubeAdBlockPopover = popover
+
+        youTubeAdBlockButton.backgroundColor = .buttonMouseDown
+        youTubeAdBlockButton.mouseOverColor = .buttonMouseDown
+
+        popover.show(positionedBelow: youTubeAdBlockButton.bounds.insetFromLineOfDeath(flipped: youTubeAdBlockButton.isFlipped), in: youTubeAdBlockButton)
     }
 
     // MARK: - Notification Animation
@@ -2520,11 +2564,36 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
             permissionCenterButton.mouseOverColor = .buttonMouseOver
+        case youTubeAdBlockPopover:
+            youTubeAdBlockButton.backgroundColor = .clear
+            youTubeAdBlockButton.mouseOverColor = .buttonMouseOver
+            youTubeAdBlockPopover = nil
         default:
             break
         }
     }
 
+}
+
+private final class YouTubeAdBlockPlaceholderViewController: NSViewController {
+
+    override func loadView() {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 240, height: 96))
+
+        let label = NSTextField(labelWithString: "YouTube Ad Block — placeholder")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.alignment = .center
+        container.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 16),
+            container.trailingAnchor.constraint(greaterThanOrEqualTo: label.trailingAnchor, constant: 16)
+        ])
+
+        view = container
+    }
 }
 
 // MARK: - URL Helpers

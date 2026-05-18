@@ -4250,6 +4250,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Όχι τώρα";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "Το DuckDuckGo διαθέτει επίσης μια **προαιρετική επί πληρωμή συνδρομή**, με ασφαλές **VPN** και **προηγμένη, ιδιωτική τεχνητή νοημοσύνη**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
 

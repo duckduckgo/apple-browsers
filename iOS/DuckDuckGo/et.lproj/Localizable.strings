@@ -4250,6 +4250,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Tellimuse taastamine...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Mitte praegu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGol on ka **valikuline tasuline tellimus**, millel on turvaline **VPN** ja **täiustatud privaatne tehisintellekt**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eemalda sellest seadmest";
 

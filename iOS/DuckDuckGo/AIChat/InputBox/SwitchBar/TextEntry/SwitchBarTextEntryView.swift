@@ -242,6 +242,7 @@ class SwitchBarTextEntryView: UIView {
             self.textView.text = ""
             self.updatePlaceholderVisibility()
             self.updateButtonState(animated: false)
+            self.updateTextViewHeight()
 
             self.handler.clearText()
             self.handler.clearButtonTapped()

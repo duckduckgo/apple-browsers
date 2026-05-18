@@ -68,11 +68,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
-        // Apply fire-mode dark trait to content children only; submit keeps OS trait so `.fireModeAccent` tracks the OS.
-        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
-        [toolsButton, imageButton, modelChipButton, selectedToolChipView, stopButton].forEach {
-            $0.overrideUserInterfaceStyle = style
-        }
+        overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
         updateSubmitButtonAppearance()
     }
 

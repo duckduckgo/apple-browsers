@@ -520,9 +520,18 @@ final class UnifiedToggleInputView: UIView {
         expandedShadowView.backgroundColor = background
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        // `toolsToolbar` manages its own subtree's trait so the accent submit button keeps OS trait.
-        [toggleView, textEntryView, attachmentsStrip, inlineDismissButton].forEach {
+        // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.
+        fireModeContentSubviews.forEach {
             $0.overrideUserInterfaceStyle = style
+        }
+    }
+
+    private var fireModeContentSubviews: [UIView] {
+        subviews.filter {
+            $0 !== cardView &&
+            $0 !== expandedShadowView &&
+            $0 !== aiTabCollapsedFireButton &&
+            $0 !== aiTabCollapsedVoiceButton
         }
     }
 

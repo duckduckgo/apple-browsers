@@ -1,0 +1,57 @@
+name: 'Generate iOS Ad-Hoc OTA Install Page'
+description: 'Generates and uploads the iOS ad-hoc OTA manifest and install page.'
+
+inputs:
+  aws-access-key-id:
+    description: 'AWS access key ID for the release S3 bucket.'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS secret access key for the release S3 bucket.'
+    required: true
+  aws-default-region:
+    description: 'AWS region for the release S3 bucket.'
+    required: true
+  build-type:
+    description: 'The ad-hoc build type.'
+    required: true
+  ipa-url:
+    description: 'Public URL for the uploaded IPA.'
+    required: true
+  ipa-s3-path:
+    description: 'S3 path for the uploaded IPA.'
+    required: true
+  app-version:
+    description: 'Application version for the OTA manifest.'
+    required: true
+  build-number:
+    description: 'Build number for the OTA manifest.'
+    required: true
+  output-name:
+    description: 'Base output name used for generated OTA files.'
+    required: true
+
+outputs:
+  install-url:
+    description: 'Public URL for the generated install page.'
+    value: ${{ steps.generate-ota.outputs.install-url }}
+  title:
+    description: 'Display title for the generated install page.'
+    value: ${{ steps.generate-ota.outputs.title }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: generate-ota
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-default-region }}
+        BUILD_TYPE: ${{ inputs.build-type }}
+        IPA_URL: ${{ inputs.ipa-url }}
+        IPA_S3_PATH: ${{ inputs.ipa-s3-path }}
+        BUNDLE_VERSION: ${{ inputs.app-version }}
+        BUILD_NUMBER: ${{ inputs.build-number }}
+        OUTPUT_NAME: ${{ inputs.output-name }}
+      run: |
+        bash "${{ github.action_path }}/generate_ota.sh"

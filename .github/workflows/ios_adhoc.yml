@@ -194,70 +194,17 @@ jobs:
       - name: Generate and upload OTA install manifest and page
         id: generate-ota
         continue-on-error: true
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-          BUILD_TYPE: ${{ github.event.inputs.build-type }}
-          IPA_URL: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
-          IPA_S3_PATH: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
-        run: |
-          set -euo pipefail
-
-          # Bundle ID and display title per build type. These must match the
-          # IPA's actual bundle ID exactly or iOS will fail OTA install with a
-          # generic "Unable to install" error.
-          case "${BUILD_TYPE}" in
-            Alpha)
-              export BUNDLE_ID="com.duckduckgo.mobile.ios.alpha"
-              export TITLE="DuckDuckGo Alpha"
-              ;;
-            Release)
-              export BUNDLE_ID="com.duckduckgo.mobile.ios"
-              export TITLE="DuckDuckGo"
-              ;;
-            Experimental)
-              export BUNDLE_ID="com.duckduckgo.mobile.ios.experimental"
-              export TITLE="DuckDuckGo Experimental"
-              ;;
-            *)
-              echo "Unknown build type: ${BUILD_TYPE}" >&2
-              exit 1
-              ;;
-          esac
-
-          export BUILD_TYPE
-          export IPA_URL
-          export BUNDLE_VERSION="${app_version}"
-          export BUILD_NUMBER="${build_number}"
-          export COMMIT_SHORT_SHA="$(git rev-parse --short HEAD)"
-          export BUILD_TIMESTAMP="$(date -u +'%Y-%m-%d %H:%M UTC')"
-
-          # Place manifest + install page in the same <sha>/ directory as the
-          # IPA, named after the IPA's output_name so re-runs on the same SHA
-          # with different suffixes don't overwrite each other.
-          ipa_dir_url="${IPA_URL%/*}"
-          ipa_dir_s3="${IPA_S3_PATH%/*}"
-          manifest_filename="${output_name}.manifest.plist"
-          install_filename="${output_name}.install.html"
-
-          export MANIFEST_URL="${ipa_dir_url}/${manifest_filename}"
-          install_url="${ipa_dir_url}/${install_filename}"
-
-          # URL-encode the manifest URL for embedding in the itms-services link.
-          export MANIFEST_URL_ENCODED="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${MANIFEST_URL}")"
-
-          template_dir="${{ github.workspace }}/.github/templates"
-          python3 "${template_dir}/render.py" "${template_dir}/ios_adhoc_manifest.plist" "${manifest_filename}"
-          python3 "${template_dir}/render.py" "${template_dir}/ios_adhoc_install.html"   "${install_filename}"
-
-          aws s3 cp "${manifest_filename}" "${ipa_dir_s3}/${manifest_filename}" \
-            --acl public-read --content-type "application/x-plist"
-          aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
-            --acl public-read --content-type "text/html; charset=utf-8"
-
-          echo "install-url=${install_url}" >> $GITHUB_OUTPUT
-          echo "title=${TITLE}" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/generate-ios-adhoc-ota-install
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          aws-default-region: ${{ vars.AWS_DEFAULT_REGION }}
+          build-type: ${{ github.event.inputs.build-type }}
+          ipa-url: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
+          ipa-s3-path: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
+          app-version: ${{ env.app_version }}
+          build-number: ${{ env.build_number }}
+          output-name: ${{ env.output_name }}
 
       - name: Report success
         env:

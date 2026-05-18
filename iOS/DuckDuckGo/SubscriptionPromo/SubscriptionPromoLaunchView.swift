@@ -85,7 +85,7 @@ private extension SubscriptionPromoLaunchView {
             VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(.subscription128)
+                Image(.privacyProHeader)
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)

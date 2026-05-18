@@ -954,9 +954,9 @@ final class AddressBarViewController: NSViewController {
             return
         }
 
-        self.passiveTextFieldMinXConstraint.constant = minX
+        self.passiveTextFieldMinXConstraint.constant = max(minX, duckAILeadingPadding)
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
-        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
+        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? max(minX, duckAILeadingPadding) : Constants.defaultActiveTextFieldMinX
 
         /// The negative offset compensates for the leading padding of the search icon so the typed text sits
         /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —

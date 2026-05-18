@@ -122,8 +122,6 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
 
-    func tabWillCloseDuringDuckAIChat(_ tab: TabViewController)
-
     /// User activated an in-page link in this tab.
     func tabDidEngageWithPage(_ tab: TabViewController)
     
@@ -170,7 +168,5 @@ extension TabDelegate {
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
-
-    func tabWillCloseDuringDuckAIChat(_ tab: TabViewController) {}
 
 }

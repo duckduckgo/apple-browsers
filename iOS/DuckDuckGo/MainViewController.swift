@@ -4642,10 +4642,6 @@ extension MainViewController: TabDelegate {
         duckAIWideEventInstrumentation.pageLoadFailed(error: error)
     }
 
-    func tabWillCloseDuringDuckAIChat(_ tab: TabViewController) {
-        duckAIWideEventInstrumentation.tabClosedDuringGeneration()
-    }
-
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
     }
@@ -5091,6 +5087,10 @@ extension MainViewController: TabSwitcherDelegate {
             if let closingTabController = tabManager.controller(for: tab) {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
             }
+        }
+
+        if let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL {
+            duckAIWideEventInstrumentation.tabClosedDuringGeneration()
         }
 
         hideSuggestionTray()

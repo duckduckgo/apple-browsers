@@ -1556,9 +1556,6 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
-        if let url = webView.url, url.isDuckAIURL {
-            delegate?.tabWillCloseDuringDuckAIChat(self)
-        }
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
         chromeDelegate?.omniBar.cancelAllAnimations()

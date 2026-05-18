@@ -224,6 +224,7 @@ final class AIChatContextualUTIHost {
         coordinator.recordExternalPromptSubmitted(
             entryPoint: .contextualChat,
             inputMode: .keyboard,
+            isFirstPrompt: true,
             hasPageContext: hasPageContext
         )
     }

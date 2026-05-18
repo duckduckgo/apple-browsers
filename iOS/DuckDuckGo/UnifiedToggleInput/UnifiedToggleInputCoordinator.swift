@@ -1013,6 +1013,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func recordExternalPromptSubmitted(entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
                                        inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+                                       isFirstPrompt: Bool,
                                        hasPageContext: Bool) {
         duckAIWideEventInstrumentation?.submissionStarted(
             modelId: persistedModelId,
@@ -1021,7 +1022,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             entryPoint: entryPoint,
             inputMode: inputMode,
             fireMode: viewController.handler.isFireTab,
-            isFirstPrompt: !hasSubmittedPrompt,
+            isFirstPrompt: isFirstPrompt,
             frontendDeliveryPath: entryPoint == .contextualChat ? .contextualNativeInput : .urlAutoSubmit,
             hasPageContext: hasPageContext,
             selectedTools: [],

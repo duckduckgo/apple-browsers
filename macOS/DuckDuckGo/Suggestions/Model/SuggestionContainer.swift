@@ -157,9 +157,9 @@ final class SuggestionContainer: SuggestionContainerProtocol {
     private static func defaultOpenTabsProvider(burnerMode: BurnerMode, windowControllersManager: WindowControllersManagerProtocol) -> OpenTabsProvider {
         { @MainActor in
             let selectedTab = windowControllersManager.selectedTab
-            let openTabBarViewModels = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
+            let openTabViewModels = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
             var usedUrls = Set<String>() // deduplicate
-            return openTabBarViewModels.compactMap { model in
+            return openTabViewModels.compactMap { model in
                 guard model.uuid != selectedTab?.uuid,
                       model.tabContent.displaysContentInWebView
                         || model.tabContent.urlForWebView?.isSettingsURL == true

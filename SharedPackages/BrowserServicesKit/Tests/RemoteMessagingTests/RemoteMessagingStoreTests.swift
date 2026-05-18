@@ -707,7 +707,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func testWhenMessageHasNoTriggerThenItIsReturnedRegardlessOfCallerTrigger() async throws {
+    func testWhenMessageHasNoTriggerThenItMatchesNoTriggerAndAnyButNotSpecific() async throws {
         let context = store.context
         try context.performAndWait {
             let message = RemoteMessageManagedObject(context: context)
@@ -721,10 +721,13 @@ class RemoteMessagingStoreTests: XCTestCase {
             try context.save()
         }
 
-        let resultWithTrigger = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .specific(.afterIdle))
-        XCTAssertNotNil(resultWithTrigger)
+        let resultWithSpecificTrigger = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .specific(.afterIdle))
+        XCTAssertNil(resultWithSpecificTrigger)
 
-        // Reset status to scheduled for the second fetch
+        let resultWithAny = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any)
+        XCTAssertNotNil(resultWithAny)
+
+        // Reset status to scheduled for the next fetch
         try context.performAndWait {
             let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
             fetchRequest.predicate = NSPredicate(format: "id == %@", "no-trigger")

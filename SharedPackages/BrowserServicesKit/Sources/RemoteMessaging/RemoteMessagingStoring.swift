@@ -37,6 +37,6 @@ public protocol RemoteMessagingStoring: RemoteMessagingStoringDebuggingSupport {
 
 public extension RemoteMessagingStoring {
     func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
-        fetchScheduledRemoteMessage(surfaces: surfaces, triggerFilter: .any)
+        fetchScheduledRemoteMessage(surfaces: surfaces, triggerFilter: .noTrigger)
     }
 }

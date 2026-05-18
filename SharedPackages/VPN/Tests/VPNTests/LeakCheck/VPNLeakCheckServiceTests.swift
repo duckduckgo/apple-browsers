@@ -961,6 +961,24 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.completedWithReason.count, 1)
         XCTAssertEqual(wideEvent.completedWithReason.first, "check_interrupted")
     }
+
+    // MARK: - shouldScheduleCheckAfterRekey
+
+    func testShouldScheduleCheckAfterRekey_returnsFalseWhenPostRekeyIsNil() {
+        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        XCTAssertFalse(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: pre, postRekey: nil))
+    }
+
+    func testShouldScheduleCheckAfterRekey_returnsFalseWhenPreAndPostAreEqual() {
+        let info = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        XCTAssertFalse(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: info, postRekey: info))
+    }
+
+    func testShouldScheduleCheckAfterRekey_returnsTrueWhenEgressChanged() {
+        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        let post = LeakCheckEgressInfo(ipAddress: "5.6.7.8", name: "eu-west")
+        XCTAssertTrue(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: pre, postRekey: post))
+    }
 }
 
 final class MockWideEventManagerWithPending: WideEventManaging, @unchecked Sendable {

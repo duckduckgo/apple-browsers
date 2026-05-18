@@ -387,7 +387,7 @@ extension SuggestionContainerTests {
             return false
         }
         let tabs = openTabs.map {
-            Tab(id: $0.tabId, content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
+            Tab(id: $0.tabId, uuid: $0.tabId, content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
         }
         return TabCollection(tabs: tabs)
     }

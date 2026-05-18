@@ -33,6 +33,29 @@ class SwitchBarTextEntryView: UIView {
         case hidden
     }
 
+    private enum TextEntryPose: Equatable {
+        case compact
+        case tallTopAlignedAIChat
+
+        var minHeight: CGFloat {
+            switch self {
+            case .compact:
+                return Constants.minHeight
+            case .tallTopAlignedAIChat:
+                return Constants.minHeightAIChat
+            }
+        }
+
+        var usesTopAlignedPlaceholder: Bool {
+            switch self {
+            case .compact:
+                return false
+            case .tallTopAlignedAIChat:
+                return true
+            }
+        }
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -83,7 +106,19 @@ class SwitchBarTextEntryView: UIView {
         handler.currentToggleState
     }
 
+    private var currentPose: TextEntryPose {
+        if isExpandable && currentMode == .aiChat && handler.isTopBarPosition && handler.usesExpandedAIChatTextEntryLayout {
+            return .tallTopAlignedAIChat
+        }
+
+        return .compact
+    }
+
     private var currentMinHeight: CGFloat {
+        if currentPose == .tallTopAlignedAIChat {
+            return currentPose.minHeight
+        }
+
         guard handler.isUsingFadeOutAnimation else {
             return Constants.minHeight
         }
@@ -107,10 +142,16 @@ class SwitchBarTextEntryView: UIView {
         handler.isUsingExpandedBottomBarHeight
     }
 
+    private var usesTopAlignedPlaceholder: Bool {
+        currentPose.usesTopAlignedPlaceholder
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var placeholderTopConstraint: NSLayoutConstraint?
+    private var placeholderCenterYConstraint: NSLayoutConstraint?
 
     private var wasTextEmptyForAutocorrection: Bool = true
 
@@ -131,8 +172,13 @@ class SwitchBarTextEntryView: UIView {
 
     var isExpandable: Bool = false {
         didSet {
-            updateTextViewHeight()
+            updatePoseForCurrentState()
         }
+    }
+
+    func updatePoseForCurrentState() {
+        updatePlaceholderVerticalAlignment()
+        updateTextViewHeight()
     }
 
     /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
@@ -181,8 +227,8 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         applyFireModeAppearance(isFireTab: handler.isFireTab)
 
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        // Match the omnibar's placeholder font so UTI ↔ omnibar transitions don't show a size jump.
+        let textFont = UIFont.daxBodyRegular()
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
@@ -238,15 +284,15 @@ class SwitchBarTextEntryView: UIView {
             guard let self else { return }
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
-            
+
             self.textView.text = ""
             self.updatePlaceholderVisibility()
-            self.updateButtonState()
+            self.updateButtonState(animated: false)
             self.updateTextViewHeight()
-            
+
             self.handler.clearText()
             self.handler.clearButtonTapped()
-            
+
             self.wasTextEmptyForAutocorrection = false
             self.updateAutoCorrectionSetupForAIChat(for: "")
         }
@@ -272,6 +318,11 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
+        let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        self.placeholderTopConstraint = placeholderTopConstraint
+        self.placeholderCenterYConstraint = placeholderCenterYConstraint
+        placeholderTopConstraint.isActive = false
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -279,7 +330,7 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
+            placeholderCenterYConstraint,
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
@@ -297,7 +348,7 @@ class SwitchBarTextEntryView: UIView {
     /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
         textView.text = snapshot.text
-        placeholderLabel.text = placeholderText(for: snapshot.placeholderMode)
+        setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
         updatePlaceholderVisibility()
         buttonsView.fadeAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration,
                                                 horizontalOffset: Constants.dismissedChipHorizontalOffset)
@@ -307,11 +358,26 @@ class SwitchBarTextEntryView: UIView {
     /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
     func clearDismissSnapshot() {
         buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
-        placeholderLabel.text = placeholderText(for: currentMode)
+        setPlaceholderText(placeholderText(for: currentMode))
         if textView.text != handler.currentText {
             textView.text = handler.currentText
             updatePlaceholderVisibility()
         }
+    }
+
+    // Keeps in-flight color-transition overlays in sync so their captured text doesn't
+    // composite over the new text mid-animation.
+    private func setPlaceholderText(_ text: String) {
+        placeholderLabel.text = text
+        for case let overlay as UILabel in placeholderLabel.subviews {
+            overlay.text = text
+        }
+    }
+
+    // Sync hook used by the coordinator to beat the async `hasSubmittedPromptPublisher`
+    // sink before the flanked UTI first renders.
+    func refreshPlaceholderForCurrentMode() {
+        setPlaceholderText(placeholderText(for: currentMode))
     }
 
     private func placeholderText(for mode: TextEntryMode) -> String {
@@ -328,7 +394,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         wasTextEmptyForAutocorrection = textView.text.isEmpty
 
-        placeholderLabel.text = placeholderText(for: currentMode)
+        setPlaceholderText(placeholderText(for: currentMode))
         switch currentMode {
         case .search:
             textView.autocapitalizationType = .none
@@ -345,9 +411,9 @@ class SwitchBarTextEntryView: UIView {
             }
         }
         updateKeyboardConfiguration()
+        updatePoseForCurrentState()
         updatePlaceholderVisibility()
         updateButtonState()
-        updateTextViewHeight()
     }
 
     private func updateKeyboardConfiguration() {
@@ -401,6 +467,18 @@ class SwitchBarTextEntryView: UIView {
 
     private func updatePlaceholderAlignment() {
         placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
+    private func updatePlaceholderVerticalAlignment() {
+        guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
+
+        if usesTopAlignedPlaceholder {
+            placeholderCenterYConstraint?.isActive = false
+            placeholderTopConstraint?.isActive = true
+        } else {
+            placeholderTopConstraint?.isActive = false
+            placeholderCenterYConstraint?.isActive = true
+        }
     }
 
     private func updateVoiceButtonStyle() {
@@ -615,7 +693,7 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, self.currentMode == .aiChat else { return }
-                self.placeholderLabel.text = self.placeholderText(for: .aiChat)
+                self.setPlaceholderText(self.placeholderText(for: .aiChat))
                 self.updateKeyboardConfiguration()
             }
             .store(in: &cancellables)

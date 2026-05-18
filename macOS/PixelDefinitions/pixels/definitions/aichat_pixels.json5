@@ -147,6 +147,13 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_tab_did_terminate": {
+        "description": "Fired when a Duck.ai tab's WebKit web content process terminates",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     "m_mac_aichat_sidebar_closed": {
         "description": "Fired when the AI Chat sidebar is closed",
         "owners": ["miasma13"],

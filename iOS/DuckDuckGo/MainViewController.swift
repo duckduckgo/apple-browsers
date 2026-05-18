@@ -182,6 +182,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
@@ -1050,7 +1051,7 @@ class MainViewController: UIViewController {
         guard unifiedToggleInputFeature.isAvailable,
               currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator,
-              coordinator.shouldCollapseOnKeyboardDismiss,
+              coordinator.isAITabExpanded,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
         // With a hardware keyboard connected, iOS fires keyboardWillHide even though the
         // text field is still the first responder. Treat that as "still editing" and skip
@@ -1530,7 +1531,10 @@ class MainViewController: UIViewController {
                     subtitle: "",
                     tabType: .fire,
                     domain: nil,
-                    targetTab: targetTab
+                    targetTab: targetTab,
+                    tabsSource: tabManager,
+                    router: self,
+                    featureFlagger: featureFlagger
                 )
             }
             return nil
@@ -1541,7 +1545,10 @@ class MainViewController: UIViewController {
                 subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
                 tabType: .aiChat,
                 domain: nil,
-                targetTab: targetTab
+                targetTab: targetTab,
+                tabsSource: tabManager,
+                router: self,
+                featureFlagger: featureFlagger
             )
         }
         if let link = targetTab.link {
@@ -1551,7 +1558,10 @@ class MainViewController: UIViewController {
                 subtitle: subtitle,
                 tabType: .regular,
                 domain: link.url.host,
-                targetTab: targetTab
+                targetTab: targetTab,
+                tabsSource: tabManager,
+                router: self,
+                featureFlagger: featureFlagger
             )
         }
         return nil
@@ -1649,7 +1659,6 @@ class MainViewController: UIViewController {
         newTabPageViewController = controller
 
         controller.setEscapeHatch(hatch)
-        controller.setOpenTabCount(tabManager.currentTabsModel.count)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
@@ -1691,22 +1700,7 @@ class MainViewController: UIViewController {
             clearEscapeHatch()
             return
         }
-        let targetTab = hatch.targetTab
-        unifiedToggleInputCoordinator?.setEscapeHatch(
-            hatch,
-            openTabCount: tabManager.currentTabsModel.count,
-            onTapped: { [weak self] in
-                guard let self else { return }
-                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    clearEscapeHatch()
-                    return
-                }
-                onSwitchToTab(targetTab)
-            },
-            onTabSwitcherTapped: { [weak self] in
-                self?.requestTabSwitcher()
-            }
-        )
+        unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
@@ -2291,7 +2285,7 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
+        deactivateUnifiedToggleInputOmnibarSession()
         refreshOmniBar()
     }
 
@@ -3318,18 +3312,25 @@ class MainViewController: UIViewController {
 
         guard let currentTab else { return }
 
-        if fromDeepLink, currentTab.tabModel.link != nil {
+        // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
+
+        let hasContent = currentTab.tabModel.link != nil
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+
+        if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
-            // Collapse the input that was auto-expanded for the restored tab.
-            // This cancels any pending async activateInput because showCollapsed
-            // sets displayState to .collapsed, failing the guard in showExpanded's
-            // async block.
-            unifiedToggleInputCoordinator?.showCollapsed()
+            if fromDeepLink {
+                // Collapse the input that was auto-expanded for the restored tab.
+                // This cancels any pending async activateInput because showCollapsed
+                // sets displayState to .collapsed, failing the guard in showExpanded's
+                // async block.
+                unifiedToggleInputCoordinator?.showCollapsed()
+            }
             return
         }
 
-        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }
@@ -3996,6 +3997,65 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu? {
+        let isPrivacyProtectionEnabled: Bool
+        if let url = currentTab?.url {
+            isPrivacyProtectionEnabled = privacyConfigurationManager.privacyConfig.isProtected(domain: url.host)
+        } else {
+            isPrivacyProtectionEnabled = false
+        }
+
+        return longPressBarMenuBuilder.makeOmniBarMenu(context: .init(
+            state: state,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.omniBarLongPressMenu),
+            currentURL: currentTab?.url,
+            isAITab: currentTab?.isAITab == true,
+            isPad: isPad,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isPrivacyProtectionEnabled: isPrivacyProtectionEnabled,
+            onShare: { [weak self] in
+                self?.shareCurrentURLFromAddressBar()
+            },
+            onCopy: { [weak self] url in
+                self?.currentTab?.onCopyAction(forUrl: url)
+            },
+            onMoveAddressBar: { [weak self] in
+                // iOS 26 has broken something so we have to use an animation
+                //  to get symmetry in the movement (rather than disabling animations
+                //  which doesn't appear to work properly on iOS 26.4,
+                if #available(iOS 18.0, *) {
+
+                    self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
+                    self?.omniBar.prepareForMoveTransition()
+                    UIView.animate(.smooth) {
+                        self?.toggleAddressBarLocation()
+                    } completion: {
+                        self?.omniBar.moveTransitionCompleted()
+                        self?.decorate()
+                    }
+
+                } else {
+                    self?.toggleAddressBarLocation()
+                }
+
+            },
+            onCloseTab: { [weak self] in
+                guard let tab = self?.currentTab else { return }
+                self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+            }
+        ))
+    }
+
+    func onOmniBarLongPressMenuDisplayed() {
+        longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
+    }
+
+    private func toggleAddressBarLocation() {
+        let current = appSettings.currentAddressBarPosition
+        appSettings.currentAddressBarPosition = current == .top ? .bottom : .top
+        self.view.layoutIfNeeded()
+    }
+
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         defer { super.motionEnded(motion, with: event) }
 
@@ -4398,10 +4458,11 @@ extension MainViewController: OmniBarDelegate {
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
-              tabManager.currentTabsModel.currentTab?.link == nil else {
+              tabManager.currentTabsModel.currentTab?.link == nil,
+              let model = currentNTPEscapeHatch else {
             return nil
         }
-        return currentNTPEscapeHatch
+        return model
     }
 
     private func clearEscapeHatch() {
@@ -4571,6 +4632,43 @@ extension MainViewController {
         } else {
             loadUrl(url)
         }
+    }
+}
+
+extension MainViewController: EscapeHatchActionRouter {
+    func escapeHatchDidRequestSwitch(to tab: Tab) {
+        guard tabManager.tabsModel(for: tab.mode).tabExists(tab: tab) else {
+            clearEscapeHatch()
+            return
+        }
+        onSwitchToTab(tab)
+    }
+
+    func escapeHatchDidRequestClose(_ tab: Tab) {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
+            return
+        }
+
+        tabManager.remove(tab: tab, in: targetTabsModel)
+        refreshControls()
+
+        if targetTabsModel.hasActiveTabs {
+            return
+        }
+
+        /// # TODO: Invoking `closeTab` removes the Escape Hatch from screen
+        clearEscapeHatch()
+        dismissOmniBar()
+    }
+
+    func escapeHatchDidRequestBurn(_ tab: Tab) {
+        // TODO: Wire FireConfirmationPresenter — currently falls back to a plain close.
+        escapeHatchDidRequestClose(tab)
+    }
+
+    func escapeHatchDidRequestTabSwitcher() {
+        requestTabSwitcher()
     }
 }
 
@@ -5879,12 +5977,20 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
-        guard let tab = self.currentTab?.tabModel else { return }
-        self.closeTab(tab)
+        closeCurrentTab()
+    }
+
+    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {
+        closeCurrentTab()
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+    }
+
+    private func closeCurrentTab() {
+        guard let tab = currentTab?.tabModel else { return }
+        closeTab(tab)
     }
 
 }

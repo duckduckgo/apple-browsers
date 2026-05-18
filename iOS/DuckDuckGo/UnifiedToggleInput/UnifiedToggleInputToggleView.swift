@@ -101,9 +101,9 @@ final class UnifiedToggleInputToggleView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        // Clip subviews to bounds so labels don't protrude past the pill while the height
-        // constraint animates 0→40 during the reveal animation.
+        // Clip to pill so the indicator shadow doesn't leak past the pill edge.
         clipsToBounds = true
+        layer.cornerRadius = Constants.cornerRadius
         setupUI()
     }
 

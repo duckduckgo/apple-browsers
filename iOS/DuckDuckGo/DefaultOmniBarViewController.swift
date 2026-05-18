@@ -306,11 +306,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let escapeHatch = omniDelegate?.escapeHatchForEditingState()
+        let escapeHatchModel = omniDelegate?.escapeHatchForEditingState()
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
-            escapeHatch: escapeHatch
+            escapeHatchModel: escapeHatchModel
         )
         editingStateViewController.delegate = self
 

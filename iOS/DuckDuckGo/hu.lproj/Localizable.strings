@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Másolás";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Megtisztított hivatkozás másolása";
+
+/* Copy link action */
+"action.title.copy.link" = "Hivatkozás másolása";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL lemásolva";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Utoljára használt Fire lap";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Törlés lap";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Lap bezárása";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Vissza a lapra";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "További lehetőségek";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Visszalépés erre: %@";
 
@@ -2906,6 +2925,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Címsor áthelyezése alulra";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Címsor áthelyezése felülre";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Kezelt sütik";
@@ -4219,6 +4244,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Előfizetés visszaállítása…";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Most nem";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "A DuckDuckGo emellett **opcionális előfizetési lehetőséget** is kínál biztonságos **VPN**-nel és **fejlett, privát MI**-vel.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eltávolítás erről az eszközről";

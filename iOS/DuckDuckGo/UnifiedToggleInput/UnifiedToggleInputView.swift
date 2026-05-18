@@ -166,6 +166,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.applyDismissSnapshot(snapshot)
     }
 
+    func refreshPlaceholderForCurrentMode() {
+        textEntryView.refreshPlaceholderForCurrentMode()
+    }
+
     var inputMode: TextEntryMode {
         handler.currentToggleState
     }
@@ -254,7 +258,11 @@ final class UnifiedToggleInputView: UIView {
 
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
-        set { handler.isTopBarPosition = newValue }
+        set {
+            guard handler.isTopBarPosition != newValue else { return }
+            handler.updateBarPosition(isTop: newValue)
+            textEntryView.updatePoseForCurrentState()
+        }
     }
 
     // MARK: - Attachment Callbacks
@@ -520,9 +528,18 @@ final class UnifiedToggleInputView: UIView {
         expandedShadowView.backgroundColor = background
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        // `toolsToolbar` manages its own subtree's trait so the accent submit button keeps OS trait.
-        [toggleView, textEntryView, attachmentsStrip, inlineDismissButton].forEach {
+        // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.
+        fireModeContentSubviews.forEach {
             $0.overrideUserInterfaceStyle = style
+        }
+    }
+
+    private var fireModeContentSubviews: [UIView] {
+        subviews.filter {
+            $0 !== cardView &&
+            $0 !== expandedShadowView &&
+            $0 !== aiTabCollapsedFireButton &&
+            $0 !== aiTabCollapsedVoiceButton
         }
     }
 
@@ -617,8 +634,9 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.placeholderTextAlignment = active ? .center : .natural
 
         guard active else { return }
-        // Reset color: the omnibar dismiss crossfade leaves it on `.textSecondary`.
+        // Clear transient state left by the omnibar dismiss (color + horizontal shift).
         textEntryView.placeholderTextColor = textEntryView.defaultPlaceholderColor
+        textEntryView.setTextHorizontalShift(0)
         UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
                        delay: Constants.aiTabCollapsedAccessoryFadeDelay,
                        options: .curveEaseOut) {
@@ -969,7 +987,7 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
-
+    
     private func updateSubmitButtonAvailability() {
         let isAIChatMode = handler.currentToggleState == .aiChat
         let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1343,7 +1361,6 @@ private extension UnifiedToggleInputView {
             .store(in: &cancellables)
 
         textEntryView.textHeightChangeSubject
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.onNeedsHierarchyLayout?()
             }

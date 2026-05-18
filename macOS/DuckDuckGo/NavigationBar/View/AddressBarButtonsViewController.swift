@@ -352,6 +352,7 @@ final class AddressBarButtonsViewController: NSViewController {
         setupSearchModeToggleControl()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
+        subscribeToAdBlockingStateChanges()
         subscribeToEffectiveAppearance()
         subscribeToIsMouseOverAnimationVisible()
         updateBookmarkButtonVisibility()
@@ -708,6 +709,19 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink { [weak self] _ in
                 self?.updatePermissionCenterButton()
             }
+    }
+
+    /// Refresh the address-bar button's icon + tint whenever the ad-blocking state changes from
+    /// any surface (Settings toggle, popover dropdown, debug menu remote-disable override) — even
+    /// without a navigation that would otherwise trigger `updateButtons()`.
+    private func subscribeToAdBlockingStateChanges() {
+        NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateYouTubeAdBlockButtonAppearance()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToBookmarkList() {
@@ -1164,7 +1178,21 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func setupButtonIcons() {
         updatePermissionCenterButtonIcon()
-        youTubeAdBlockButton.image = DesignSystemImages.Glyphs.Size16.platformMacOS
+        updateYouTubeAdBlockButtonAppearance()
+    }
+
+    /// Switches the YouTube ad-block address-bar button between two visual states:
+    /// - **On** (ad blocking actively running): `videoPlayerBlocked` glyph in the primary icon color.
+    /// - **Off** (disabled by user, disabled-until-relaunch, or remotely disabled): `videoPlayer`
+    ///   glyph in the tertiary icon color so it visually reads as muted.
+    private func updateYouTubeAdBlockButtonAppearance() {
+        let isAdBlockingActive = adBlockingAvailability.isEnabled
+        youTubeAdBlockButton.image = isAdBlockingActive
+            ? DesignSystemImages.Glyphs.Size16.videoPlayerBlocked
+            : DesignSystemImages.Glyphs.Size16.videoPlayer
+        youTubeAdBlockButton.normalTintColor = isAdBlockingActive
+            ? theme.colorsProvider.iconsColor
+            : theme.palette.iconsTertiary
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -1772,6 +1800,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePrivacyDashboardButton()
         updatePermissionCenterButton()
         updateYouTubeAdBlockButtonVisibility()
+        updateYouTubeAdBlockButtonAppearance()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         if !isToggleFeatureEnabled {

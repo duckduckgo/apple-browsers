@@ -30,7 +30,7 @@ final class QRSharingService: NSSharingService {
     fileprivate var imageUrl: URL?
 
     fileprivate init() {
-        super.init(title: UserText.shareViaQRCodeMenuItem, image: .qrIcon, alternateImage: nil) {}
+        super.init(title: UserText.shareViaQRCodeMenuItem, image: .qrIcon.resized(to: .init(width: 12, height: 12)), alternateImage: nil) {}
     }
 
     /// Get ASCII `Data` for an array of items to share that can be represented as strings (e.g., URLs or Strings).

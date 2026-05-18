@@ -750,7 +750,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.printIcon)
+            .withImage(moreOptionsMenuIconsProvider.printIcon.resized(to: .init(width: 12, height: 12)))
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())
@@ -841,7 +841,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 
             addItem(withTitle: UserText.emailOptionsMenuTurnOffSubItem, action: #selector(turnOffEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOffIcon)
+                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOffIcon.resized(to: .init(width: 12, height: 12)))
 
         } else {
             addItem(withTitle: UserText.emailOptionsMenuTurnOnSubItem, action: #selector(turnOnEmailAction(_:)), keyEquivalent: "")
@@ -1072,7 +1072,7 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         let globalZoomSettingItem = NSMenuItem(title: UserText.defaultZoomPageMoreOptionsItem,
                                                action: #selector(MoreOptionsMenu.openAccessibilityPreferences(_:)),
                                                target: target)
-            .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon)
+            .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon.resized(to: .init(width: 12, height: 12)))
         addItem(globalZoomSettingItem)
 
         zoomItems = [zoomInItem, zoomOutItem, actualSizeItem]
@@ -1476,7 +1476,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.openIdentityTheftRestoration),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(moreOptionsMenuIconsProvider.identityTheftRestorationIcon)
+        .withImage(moreOptionsMenuIconsProvider.identityTheftRestorationIcon.resized(to: .init(width: 12, height: 12)))
     }
 
     private func makeSubscriptionSettingsItem(target: AnyObject) -> NSMenuItem {

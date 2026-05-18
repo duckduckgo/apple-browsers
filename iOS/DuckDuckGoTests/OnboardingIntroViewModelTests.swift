@@ -1275,6 +1275,16 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.searchExperienceSelection.rawValue)
     }
 
+    func testWhenAdvancingToInterludeDuckAIThenResumeStepIsPersistedAsInterludeDuckAI() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, resumeStepStore: store)
+        sut.onAppear()
+        sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.interludeDuckAI.rawValue)
+    }
+
     // MARK: Restore
 
     func testWhenResumeStepIsBrowserComparisonThenOnAppearShowsBrowserComparison() {
@@ -1370,6 +1380,43 @@ extension OnboardingIntroViewModelTests {
             XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
         }
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.duckAIQuerySelection.rawValue)
+    }
+
+    // MARK: Interlude
+
+    func testWhenResumeStepIsInterludeDuckAI_AndFlowContainsInterlude_ThenOnAppearFiresInterludeCallbackWithDuckAI() {
+        // GIVEN
+        let store = MockKeyValueStore()
+        setResumeStep(.interludeDuckAI, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(resumeStepStore: store)
+        var didFireInterludeCallback = false
+        var capturedInterlude: OnboardingIntroStep.Interlude?
+        sut.onOnboardingInterlude = { interlude in
+            didFireInterludeCallback = true
+            capturedInterlude = interlude
+        }
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertTrue(didFireInterludeCallback)
+        XCTAssertEqual(capturedInterlude, .duckAI)
+    }
+
+    func testWhenResumeStepIsInterludeDuckAI_AndFlowDoesNotContainInterlude_ThenStoreIsCleared() {
+        // GIVEN — iPhone flow doesn't have the interlude step
+        let store = MockKeyValueStore()
+        setResumeStep(.interludeDuckAI, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+
+        // WHEN
+        _ = makeSUT(resumeStepStore: store)
+
+        // THEN — stale checkpoint is cleared during init
+        XCTAssertNil(resumeStepRawValue(in: store))
     }
 
     func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOff_ThenStoreIsCleared() {

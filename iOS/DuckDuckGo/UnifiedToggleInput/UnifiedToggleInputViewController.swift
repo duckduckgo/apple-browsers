@@ -86,6 +86,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyDismissSnapshot(snapshot)
     }
 
+    func refreshPlaceholderForCurrentMode() {
+        inputBarView.refreshPlaceholderForCurrentMode()
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }

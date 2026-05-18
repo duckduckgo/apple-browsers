@@ -1978,8 +1978,10 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        guard hasSubmittedPrompt != hasExistingChat else { return }
-        hasSubmittedPrompt = hasExistingChat
+        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
+        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
+        guard hasExistingChat, !hasSubmittedPrompt else { return }
+        hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -1995,6 +1997,8 @@ private extension UnifiedToggleInputCoordinator {
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
+        viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
     }
 

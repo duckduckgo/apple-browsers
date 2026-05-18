@@ -166,6 +166,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.applyDismissSnapshot(snapshot)
     }
 
+    func refreshPlaceholderForCurrentMode() {
+        textEntryView.refreshPlaceholderForCurrentMode()
+    }
+
     var inputMode: TextEntryMode {
         handler.currentToggleState
     }
@@ -617,8 +621,9 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.placeholderTextAlignment = active ? .center : .natural
 
         guard active else { return }
-        // Reset color: the omnibar dismiss crossfade leaves it on `.textSecondary`.
+        // Clear transient state left by the omnibar dismiss (color + horizontal shift).
         textEntryView.placeholderTextColor = textEntryView.defaultPlaceholderColor
+        textEntryView.setTextHorizontalShift(0)
         UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
                        delay: Constants.aiTabCollapsedAccessoryFadeDelay,
                        options: .curveEaseOut) {

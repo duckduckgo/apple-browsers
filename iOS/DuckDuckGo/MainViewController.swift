@@ -3537,8 +3537,10 @@ extension MainViewController: BrowserChromeDelegate {
         }
         bottomHeight += view.safeAreaInsets.bottom
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom
-        // address bar; everywhere else the slot tracks `ratio` (chrome-animator visibility).
-        let multiplier = isInMinimalChromeLayout ? 1.0 : 1.0 - ratio
+        // address bar, and on iPad the toolbar is permanently hidden (its layout slot would
+        // otherwise leave a 49pt gap below the webview). Everywhere else the slot tracks
+        // `ratio` (chrome-animator visibility).
+        let multiplier = (viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout) ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
         if isInMinimalChromeLayout, viewCoordinator.addressBarPosition.isBottom {

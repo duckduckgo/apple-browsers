@@ -237,6 +237,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
                 actionsHandlerMode: .emailConfirmation(confirmationURL),
+                contentBlocking: jobDependencies.contentBlocking,
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
@@ -258,7 +259,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
                 },
-                applicationNameForUserAgent: applicationNameForUserAgent
+                applicationNameForUserAgent: applicationNameForUserAgent,
+                contentBlocking: jobDependencies.contentBlocking
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")

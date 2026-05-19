@@ -2152,6 +2152,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var featureFlagger: DBPFeatureFlagging
     public var applicationNameForUserAgent: String?
     public var wideEvent: WideEventManaging?
+    public var contentBlocking: DBPWebViewContentBlocking?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()

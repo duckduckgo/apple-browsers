@@ -94,6 +94,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
+    private let searchPreferences: SearchPreferences
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     @Published private var hasExcessChats = false
@@ -103,11 +104,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+         searchPreferences: SearchPreferences,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        self.searchPreferences = searchPreferences
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -243,6 +246,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isVoiceChatAccessEnabled }
             .prepend(isVoiceChatAccessEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var showAskAiSuggestion: Bool {
+        searchPreferences.showAutocompleteSuggestions
+    }
+
+    /// Drops the initial value so subscriber attachment during init doesn't push a redundant
+    /// `omnibar_onConfigUpdate` — matches the other `*Publisher` shapes in this provider.
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        searchPreferences.$showAutocompleteSuggestions
+            .dropFirst()
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

@@ -351,6 +351,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Just(nil).eraseToAnyPublisher() }
     var isVoiceChatAccessEnabled: Bool = false
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var showAskAiSuggestion: Bool = true
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

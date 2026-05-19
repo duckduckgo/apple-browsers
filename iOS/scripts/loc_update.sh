@@ -4,6 +4,10 @@
 script_dir=$(dirname "$(readlink -f "$0")")
 base_dir="${script_dir}/.."
 
+if [ "${ENABLE_PREVIEWS:-NO}" = "YES" ] || [ "${ENABLE_XOJIT_PREVIEWS:-NO}" = "YES" ]; then
+	exit 0
+fi
+
 # Add target sub-directories here when needed
 set -- "${base_dir}/DuckDuckGo" "${base_dir}/Widgets" "${base_dir}/PacketTunnelProvider"
 

@@ -47,9 +47,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1213962493484138?focus=true
-    case vpnConnectionFailureLoopDetection
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -378,6 +375,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
+    /// macOS only. Gates the native-driven Duck.ai voice-chat microphone permission flow
+    /// (auto-grant at launch, locked Permission Center row, system-disabled warning UI,
+    /// FE→native failure handler that surfaces the popover).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214713654448759
+    case aiChatNativeVoicePermissionFlow
+
     /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214684208036378
     case bookmarksBarMenusCustomWindow
@@ -433,8 +436,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension)), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage)), category: .vpn)
-        case .vpnConnectionFailureLoopDetection:
-            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.connectionFailureLoopDetection)), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:
@@ -637,6 +638,11 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), supportsLocalOverriding: true, category: .subscription)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
+        case .aiChatNativeVoicePermissionFlow:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeVoicePermissionFlow)),
+                   supportsLocalOverriding: true,
+                   category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:

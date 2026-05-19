@@ -88,6 +88,11 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
+    /// `true` when the native app handles the "voice chat start failed" remediation UI
+    /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
+    /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
+    /// after `getUserMedia` rejects.
+    public let supportsNativeVoicePermissionHandler: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -107,7 +112,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
-                                        supportsNativeStorage: false)
+                                        supportsNativeStorage: false,
+                                        supportsNativeVoicePermissionHandler: false)
 #endif
 
 #if os(macOS)
@@ -127,7 +133,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
-                                        supportsNativeStorage: false)
+                                        supportsNativeStorage: false,
+                                        supportsNativeVoicePermissionHandler: true)
 #endif
     }
 
@@ -148,7 +155,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsAIChatSync: Bool,
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
-                supportsNativeStorage: Bool = false) {
+                supportsNativeStorage: Bool = false,
+                supportsNativeVoicePermissionHandler: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -168,6 +176,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
+        self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
     }
 }
 

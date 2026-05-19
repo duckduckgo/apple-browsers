@@ -181,7 +181,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         setupMenuItems()
     }
 
-    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(.zoomIn)
+    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
 
     @MainActor
     private func setupMenuItems() {
@@ -282,7 +282,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let menuItem = MenuItemWithNotificationDot(leftImage: image, title: title, onTapMenuItem: onTap)
 
         let hostingView = NSHostingView(rootView: menuItem)
-        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: 22)
+        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: AppVersion.isLiquidGlassSupported ? 24 : 22)
         hostingView.autoresizingMask = [.width, .height]
 
         return hostingView
@@ -575,7 +575,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
             let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = DesignSystemImages.Glyphs.Size16.duckAi
+            aiChatItem.image = DesignSystemImages.Glyphs.Size12.duckAi
             aiChatItem.target = self
             aiChatItem.submenu = makeAIChatMenu()
             addItem(aiChatItem)
@@ -978,13 +978,13 @@ final class FeedbackSubMenu: NSMenu, NSMenuDelegate {
         let reportABrowserProblemItem = NSMenuItem(title: UserText.reportBrowserProblem,
                                                    action: #selector(AppDelegate.openReportABrowserProblem(_:)),
                                                    keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.feedbackAlert)
+            .withImage(DesignSystemImages.Glyphs.Size12.feedbackAlert)
         addItem(reportABrowserProblemItem)
 
         let requestANewFeatureItem = NSMenuItem(title: UserText.requestNewFeature,
                                                 action: #selector(AppDelegate.openRequestANewFeature(_:)),
                                                 keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
         addItem(requestANewFeatureItem)
     }
 
@@ -1142,6 +1142,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
             .withModifierMask([.command])
             .targetting(target)
             .withAccessibilityIdentifier("MoreOptionsMenu.bookmarkPage")
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
 
         bookmarkPageItem.isEnabled = tabCollectionViewModel.selectedTabViewModel?.canBeBookmarked == true
 
@@ -1161,6 +1162,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
         addItem(withTitle: UserText.bookmarksManageBookmarks, action: #selector(MoreOptionsMenu.openBookmarksManagementInterface), keyEquivalent: "b")
             .withModifierMask([.command, .option])
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         addItem(NSMenuItem.separator())
 
@@ -1193,8 +1195,10 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.importBookmarks, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.import)
 
         let exportBookmarItem = NSMenuItem(title: UserText.exportBookmarks, action: #selector(MoreOptionsMenu.openBookmarkExportInterface(_:)), keyEquivalent: "").targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.export)
         exportBookmarItem.isEnabled = bookmarkManager.list?.totalBookmarks != 0
         addItem(exportBookmarItem)
 

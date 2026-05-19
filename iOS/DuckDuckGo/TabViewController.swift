@@ -147,7 +147,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
-    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature(featureFlagger: featureFlagger)
+    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature()
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -588,7 +588,8 @@ class TabViewController: UIViewController {
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
-            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
         )
         coordinator.delegate = self
         return coordinator
@@ -1173,20 +1174,9 @@ class TabViewController: UIViewController {
 
         if url == nil {
             url = newURL
-        } else if shouldUpdateAddressBar(for: newURL, legacySameHostFallback: true) {
+        } else if addressBarURLFilter.shouldUpdate(for: newURL) {
             url = newURL
         }
-    }
-
-    private func shouldUpdateAddressBar(for newURL: URL, legacySameHostFallback: Bool = false) -> Bool {
-        guard featureFlagger.isFeatureOn(.filterAddressBarUpdates) else {
-            if legacySameHostFallback {
-                guard let currentHost = url?.host, let newHost = newURL.host else { return false }
-                return currentHost == newHost
-            }
-            return true
-        }
-        return addressBarURLFilter.shouldUpdate(for: newURL)
     }
 
     @available(iOS 18.4, *)
@@ -1208,13 +1198,23 @@ class TabViewController: UIViewController {
 
     func dismissContextualDaxFireDialog() {
         guard contextualOnboardingLogic.isShowingFireDialog else { return }
-        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        dismissContextualOnboardingIfNeeded()
     }
 
     func presentExperimentContextualDaxFireDialog() {
         contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
         let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
-        contextualOnboardingPresenter.presentContextualOnboarding(for: fireSpec, in: self)
+        presentContextualOnboarding(for: fireSpec)
+    }
+
+    private func presentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec) {
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
+        contextualOnboardingPresenter.presentContextualOnboarding(for: spec, in: self)
+    }
+
+    private func dismissContextualOnboardingIfNeeded() {
+        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
     }
 
     private func shouldHandleUpdate(_ previousURL: URL?, _ newURL: URL?) -> Bool {
@@ -1447,7 +1447,7 @@ class TabViewController: UIViewController {
     private var didGoBackForward: Bool = false {
         didSet {
             if didGoBackForward {
-                contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+                dismissContextualOnboardingIfNeeded()
             }
         }
     }
@@ -1599,7 +1599,7 @@ class TabViewController: UIViewController {
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
-                                                                     autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
+                                                                     autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
@@ -2080,7 +2080,7 @@ extension TabViewController: WKNavigationDelegate {
         guard let spec = daxDialogsManager.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
 
             // Dismiss Contextual onboarding if there's no message to show.
-            contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+            dismissContextualOnboardingIfNeeded()
             // Dismiss privacy dashbooard pulse animation when no browsing dialog to show.
             delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: false)
 
@@ -2109,7 +2109,7 @@ extension TabViewController: WKNavigationDelegate {
             self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
             // Present the contextual onboarding
-            contextualOnboardingPresenter.presentContextualOnboarding(for: spec, in: self)
+            presentContextualOnboarding(for: spec)
 
             if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
                 self.woShownRecently = true
@@ -2266,7 +2266,7 @@ extension TabViewController: WKNavigationDelegate {
         self.privacyInfo = makePrivacyInfo(url: url)
         onPrivacyInfoChanged()
 
-        if shouldUpdateAddressBar(for: url) {
+        if addressBarURLFilter.shouldUpdate(for: url) {
             self.url = url
         }
 
@@ -3071,6 +3071,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        if webView.url?.isDuckAIURL == true {
+            DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
+        }
         Pixel.fire(pixel: .webKitDidTerminate)
         delegate?.tabContentProcessDidTerminate(tab: self)
     }
@@ -3240,7 +3243,6 @@ extension TabViewController: UserContentControllerDelegate {
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
@@ -3452,18 +3454,18 @@ extension TabViewController: AdClickAttributionLogicDelegate {
         userScripts?.trackerProtectionSubfeature.currentAdClickAttributionVendor = vendor
         userScripts?.trackerProtectionSubfeature.currentAttributionTrackerData = rules?.trackerData
 
-        if let rules = rules {
+        let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
 
-            let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-            let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
-
-            if vendor != nil {
-                userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
-                try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            } else {
-                userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-                try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            }
+        if let rules, vendor != nil {
+            userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
+            try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
+        } else if vendor == nil {
+            // No active attribution — tear down any previously installed local list and
+            // re-enable the global attribution list, even when `rules` is nil (e.g. on the
+            // initial pre-compilation call from `AdClickAttributionLogic.applyRules`).
+            userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
+            try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
         }
     }
 
@@ -4187,6 +4189,15 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // Reset last visited onboarding site and last dax dialog shown.
         contextualOnboardingLogic.setDaxDialogDismiss()
 
+        dismissContextualOnboardingIfNeeded()
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+        // Collapse the dialog immediately so the user isn't left looking at the visit-site bubble
+        // while the chosen page is loading. Crucially this does NOT call `setDaxDialogDismiss()` —
+        // we want the natural next contextual spec (trackers / no-trackers / etc.) to surface
+        // once the page finishes loading, which depends on `lastShownDaxDialogType` /
+        // `lastVisitedOnboardingWebsiteURL` not being cleared.
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
     }
 

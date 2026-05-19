@@ -42,7 +42,7 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.isInputVisible)
         XCTAssertFalse(state.isContentVisible)
         XCTAssertFalse(state.isExpanded)
-        XCTAssertFalse(state.isFloatingSubmitVisible)
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
 
         XCTAssertFalse(state.inactiveAppearance)
     }
@@ -69,11 +69,31 @@ final class UTIRenderStateTests: XCTestCase {
 
     }
 
-    func test_aiTabExpanded_search_showsContent() {
+    func test_aiTabExpanded_search_emptyText_hidesContent() {
+        // Toggling to search on a chat tab without typing keeps the chat web view visible —
+        // suggestions only take over once there's text to suggest against.
         sut.showExpanded(inputMode: .search)
         let state = sut.computeRenderState()
-        XCTAssertTrue(state.isContentVisible)
+        XCTAssertFalse(state.isContentVisible)
+    }
 
+    func test_aiTabExpanded_search_withText_showsContent() {
+        sut.showExpanded(inputMode: .search)
+        sut.setText("hello")
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isContentVisible)
+    }
+
+    func test_aiTabExpanded_search_afterDismissCleanupWithDraft_hidesContent() {
+        // Dismiss-cleanup scrubs the visible input (`textState = .empty`) but keeps `currentText`
+        // as a per-tab draft. Toggling to Search on a Duck.ai tab afterwards must still hide
+        // content — the field is visually empty even though the draft persists.
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.setText("draft")
+        sut.clearText()
+        sut.showExpanded(inputMode: .search)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isContentVisible)
     }
 
     func test_aiTabExpanded_search_keyboardHidden_showsInactive() {
@@ -120,7 +140,6 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertEqual(state.cardPosition, .top)
         XCTAssertTrue(state.usesOmnibarMargins)
-        XCTAssertTrue(state.isToolbarSubmitHidden)
     }
 
     func test_omnibarActive_bottomPosition_setsOmnibarProperties() {
@@ -128,7 +147,6 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertEqual(state.cardPosition, .bottom)
         XCTAssertFalse(state.usesOmnibarMargins)
-        XCTAssertFalse(state.isToolbarSubmitHidden)
     }
 
     // MARK: - Omnibar Inactive
@@ -150,37 +168,89 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.inactiveAppearance)
     }
 
-    // MARK: - Floating Submit
+    // MARK: - Floating Return Key
 
-    func test_floatingSubmit_visibleForOmnibarActiveTopAIChat() {
+    func test_floatingReturnKey_visibleForOmnibarActiveTopAIChat() {
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
+        sut.setText("how")
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isFloatingReturnKeyVisible)
+    }
+
+    func test_floatingReturnKey_hiddenForEmptyNewAIChat() {
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
         let state = sut.computeRenderState()
-        XCTAssertTrue(state.isFloatingSubmitVisible)
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
     }
 
-    func test_floatingSubmit_hiddenForSearchMode() {
+    func test_floatingReturnKey_hiddenForSearchModeWithText() {
         sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+        sut.setText("how")
         let state = sut.computeRenderState()
-        XCTAssertFalse(state.isFloatingSubmitVisible)
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
     }
 
-    func test_floatingSubmit_hiddenForBottomPosition() {
+    func test_floatingReturnKey_visibleForBottomPosition() {
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
         let state = sut.computeRenderState()
-        XCTAssertFalse(state.isFloatingSubmitVisible)
+        XCTAssertTrue(state.isFloatingReturnKeyVisible)
     }
 
-    func test_floatingSubmit_hiddenForOmnibarInactive() {
+    func test_floatingReturnKey_hiddenForOmnibarInactive() {
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
         sut.updateOmnibarInputVisibility(false)
         let state = sut.computeRenderState()
-        XCTAssertFalse(state.isFloatingSubmitVisible)
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
     }
 
-    func test_floatingSubmit_hiddenForAITab() {
-        sut.showExpanded(inputMode: .aiChat)
+    func test_floatingReturnKey_restoresReturnKeyAfterOmnibarReactivates() {
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+        sut.updateOmnibarInputVisibility(false)
+        sut.updateOmnibarInputVisibility(true)
         let state = sut.computeRenderState()
-        XCTAssertFalse(state.isFloatingSubmitVisible)
+
+        XCTAssertTrue(state.isFloatingReturnKeyVisible)
+    }
+
+    func test_floatingReturnKey_hiddenForAITabNewChatWithText() {
+        sut.showExpanded(inputMode: .aiChat)
+        sut.setText("how")
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
+    }
+
+    func test_omnibarNewAIChat_submitsAIChatOnKeyboardReturn() {
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+    }
+
+    func test_aiTabNewChat_usesNormalKeyboardReturn() {
+        sut.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+    }
+
+    func test_omnibarSearch_doesNotUseFloatingReturnKeyOrKeyboardReturnSubmit() {
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
+        sut.setText("how")
+        let state = sut.computeRenderState()
+
+        XCTAssertFalse(state.isFloatingReturnKeyVisible)
+        XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+    }
+
+    func test_deactivateToOmnibar_clearsNewPromptInputBehavior() {
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+        XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+
+        sut.deactivateToOmnibar()
+
+        XCTAssertFalse(sut.computeRenderState().isFloatingReturnKeyVisible)
+        XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
     }
 
     // MARK: - Content Input Mode
@@ -220,6 +290,26 @@ final class UTIRenderStateTests: XCTestCase {
     func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
         sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
         sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
+
+    func test_omnibarHost_aiTabExpanded_aiChat_toggleDisabled_stillShowsToolbar() {
+        // Toggle-off on a Duck.ai tab must keep the AI-chat toolbar so the user retains
+        // the model selector / attachments / send affordances.
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
+        sut.showExpanded(inputMode: .aiChat)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
+
+    func test_omnibarHost_aiTabExpanded_aiChat_disablingToggleAfterShow_keepsToolbar() {
+        // Live disable path — coordinator must compute showsToolbar=true here so the live update
+        // doesn't strip the AI toolbar (the view's local rule alone can't see isAITabState).
+        sut.showExpanded(inputMode: .aiChat)
+        sut.updateToggleEnabled(false)
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)

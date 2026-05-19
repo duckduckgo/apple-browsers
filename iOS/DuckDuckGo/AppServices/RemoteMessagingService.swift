@@ -50,6 +50,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          configurationURLProvider: ConfigurationURLProviding,
          syncService: DDGSyncing,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
@@ -79,6 +81,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             configurationURLProvider: configurationURLProvider,
             syncService: syncService,
             winBackOfferService: winBackOfferService,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()

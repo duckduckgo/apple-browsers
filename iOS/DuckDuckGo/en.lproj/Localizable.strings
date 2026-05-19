@@ -49,6 +49,12 @@
 /* Copy action */
 "action.title.copy" = "Copy";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copy Clean Link";
+
+/* Copy link action */
+"action.title.copy.link" = "Copy Link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copied";
 
@@ -246,6 +252,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Customize Responses";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Turn text into images";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Create Image";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Find current information";
@@ -1924,6 +1936,18 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Last used Fire Tab";
 
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Burn Tab";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Close Tab";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Return to Tab";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "More options";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
 
@@ -2755,6 +2779,12 @@ https://duckduckgo.com/mac";
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Move Address Bar to Bottom";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Move Address Bar to Top";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 
@@ -2873,7 +2903,7 @@ https://duckduckgo.com/mac";
 "onboarding.rebranding.first-search-done.title" = "That’s DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
+"onboarding.rebranding.intro.message" = "Ready for a faster browser that puts you in control?\n\nAI is always optional, and privacy protection is always on.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";
@@ -3269,7 +3299,10 @@ Take back control of your personal information with the browser designed for dat
 "settings.address.trackers.animation" = "Show in Address Bar";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Choose what you see when you return after %@ of inactivity.";
+"settings.afterInactivity.footer.format" = "Choose what you see when you return to DuckDuckGo after %@ of inactivity.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Choose what you see when you return to DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hour";
@@ -3283,14 +3316,20 @@ Take back control of your personal information with the browser designed for dat
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutes";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "None";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 second";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d seconds";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inactivity Timer";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "After Inactivity";
+"settings.afterInactivity.label" = "Opening Screen";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Last Used Tab";
@@ -3997,6 +4036,12 @@ Take back control of your personal information with the browser designed for dat
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Not Now";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";
 
@@ -4647,6 +4692,12 @@ https://duckduckgo.com/windows";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Block ads on YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Learn More";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bookmarks";

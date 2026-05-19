@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiera";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiera ren länk";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiera länk";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Webbadress kopierad";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Anpassa svar";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Förvandla text till bilder";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Skapa bild";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Hitta aktuell information";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Senast använda Fire Tab";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Rensa flik";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Stäng flik";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Återgå till flik";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Fler alternativ";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tillbaka till %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Flytta adressfält till botten";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Flytta adressfältet till toppen";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies hanteras";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som skyddar dig och låter dig själv bestämma när och hur du vill använda AI?";
+"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som ger dig kontroll?\n\nAI är alltid valfritt och integritetsskydd är alltid på.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Visa i adressfältet";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår efter %@ av inaktivitet.";
+"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår till DuckDuckGo efter %@ av inaktivitet.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Välj vad du ser när du återgår till DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 timme";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuter";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Ingen";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekund";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inaktivitetstimer";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Efter inaktivitet";
+"settings.afterInactivity.label" = "Öppningsskärm";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Återställer abonnemang ...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Inte nu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo har också en **valfri betald prenumeration** med ett säkert **VPN** och **avancerad, privat AI**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ta bort från den här enheten";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Annonsblockering på YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "När det här alternativet är på identifierar DuckDuckGo anonymt störningar i annonsblockeringen eller YouTube-fel för att förbättra upplevelsen för dig och alla andra. DuckDuckGo ser aldrig vilka videor du tittar på eller någon personligt identifierbar information.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Läs mer";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmärken";

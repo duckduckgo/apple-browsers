@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiëren";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Schone link kopiëren";
+
+/* Copy link action */
+"action.title.copy.link" = "Link kopiëren";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL gekopieerd";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antwoorden aanpassen";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Tekst omzetten in afbeeldingen";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Afbeelding maken";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Actuele informatie zoeken";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Laatst gebruikte Fire Tab";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Tabblad verbranden";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Tabblad sluiten";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Terug naar tabblad";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Meer opties";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Keer terug naar %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Adresbalk naar beneden verplaatsen";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Adresbalk naar boven verplaatsen";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Beheerde cookies";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Dat is DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Klaar voor een snellere browser die je beschermt en je zelf laat bepalen wanneer en hoe je AI gebruikt?";
+"onboarding.rebranding.intro.message" = "Ben je klaar voor een snellere browser waarmee jij de controle hebt?\n\nAI is altijd optioneel en privacybescherming staat altijd aan.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hoi.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "In adresbalk weergeven";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Kies wat je ziet als je terugkeert na %@ inactiviteit.";
+"settings.afterInactivity.footer.format" = "Kies wat je wilt zien als je terugkeert naar DuckDuckGo na %@ inactiviteit.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Kies wat je wilt zien als je terugkeert naar DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 uur";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuten";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Geen";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 seconde";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d seconden";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inactiviteitstimer";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Na inactiviteit";
+"settings.afterInactivity.label" = "Openingsscherm";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Laatst gebruikte tabblad";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Je abonnement wordt hersteld ...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Niet nu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo heeft ook een **optioneel betaald abonnement**, met een veilige **VPN** en **geavanceerde, privé-AI**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Verwijderen van dit apparaat";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Advertenties op YouTube blokkeren";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Als deze optie is ingeschakeld, detecteert DuckDuckGo anoniem verstoring van advertentieblokkeringen of YouTube-fouten, om de ervaring voor iedereen te verbeteren. DuckDuckGo ziet niet welke video's je bekijkt en heeft geen toegang tot je persoonlijk identificeerbare informatie.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Meer informatie";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bladwijzers";

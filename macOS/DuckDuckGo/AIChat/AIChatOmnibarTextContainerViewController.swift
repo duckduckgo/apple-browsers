@@ -671,7 +671,7 @@ private final class FocusableTextView: NSTextView {
     /// Checks if the cursor is on the last line of the text view
     private func isCursorOnLastLine() -> Bool {
         guard let layoutManager = layoutManager,
-              let textContainer = textContainer else {
+              textContainer != nil else {
             return true
         }
 

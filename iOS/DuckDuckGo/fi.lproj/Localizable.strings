@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopioi";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopioi puhdas linkki";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopioi linkki";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL kopioitu";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Käännä teksti kuviksi";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Luo kuva";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Löydä ajankohtaiset tiedot";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Viimeksi käytetty Fire-välilehti";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Polta välilehti";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Sulje välilehti";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Palaa välilehteen";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Lisää vaihtoehtoja";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Siirrä osoitepalkki alas";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Siirrä osoitepalkki ylös";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallitut evästeet";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka suojaa sinua ja antaa sinun päättää, milloin ja miten käytät tekoälyä?";
+"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka antaa sinulle hallinnan?\n\nTekoäly on aina valinnainen, ja yksityisyyden suoja on aina päällä.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hei!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Näytä osoitekentässä";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
+"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat DuckDuckGoon %@ passiivisuuden jälkeen.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Valitse, mitä näet, kun palaat DuckDuckGoon.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 tunti";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Ei mitään";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekunti";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Passiivisuusajastin";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
+"settings.afterInactivity.label" = "Aloitusnäyttö";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Palautetaan tilausta...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ei nyt";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGolla on myös **valinnainen maksullinen tilaus**, jossa on turvallinen **VPN** ja **edistynyt, yksityinen tekoäly**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Poista tältä laitteelta";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Estä mainokset YouTubessa";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kun tämä toiminto on käytössä, DuckDuckGo tunnistaa nimettömästi mainosten eston aiheuttamat häiriöt tai YouTube-virheet parantaakseen kaikkien käyttökokemusta. DuckDuckGo ei koskaan näe, mitä videoita katsot tai mitään henkilökohtaisesti tunnistettavia tietoja.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Lue lisää";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Kirjanmerkit";

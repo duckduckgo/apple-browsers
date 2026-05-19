@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Copiar";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copiar link limpo";
+
+/* Copy link action */
+"action.title.copy.link" = "Copiar link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiada";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personaliza as respostas";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Transformar texto em imagens";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Criar Imagem";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Encontra informações atuais";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Último separador Fire utilizado";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Apagar separador";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Fechar separador";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Regressar ao separador";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Mais opções";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Voltar para %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Mover a barra de endereços para a parte inferior";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Mover a barra de endereços para o topo";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies geridos";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "É o DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "A postos para um navegador mais rápido que te proteja e te permita decidir quando e como usar a IA?";
+"onboarding.rebranding.intro.message" = "Pronto para um navegador mais rápido que te coloca no controlo?\n\nA IA é sempre opcional, e a proteção de privacidade está sempre ativa.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Olá!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Mostrar na barra de endereço";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Escolhe o que vês quando voltares após %@ de inatividade.";
+"settings.afterInactivity.footer.format" = "Escolhe o que vês quando voltas ao DuckDuckGo após %@ de inatividade.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Escolhe o que vês quando voltares ao DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hora";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutos";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nenhum";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 segundo";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d segundos";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Temporizador de inatividade";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Após Inatividade";
+"settings.afterInactivity.label" = "Ecrã de abertura";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Último separador utilizado";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "A restaurar a subscrição…";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Agora Não";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "O DuckDuckGo também tem uma **subscrição paga opcional**, com uma **VPN** segura e **IA avançada e privada**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remover Deste Dispositivo";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloquear anúncios no YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Quando ativado, o DuckDuckGo irá detetar anonimamente interferências no bloqueio de anúncios ou erros no YouTube, para melhorar a experiência de todos. O DuckDuckGo nunca vê os vídeos que vês nem nenhuma informação pessoal identificável.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Sabe mais";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Marcadores";

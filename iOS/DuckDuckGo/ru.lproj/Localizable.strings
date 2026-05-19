@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Копировать";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Скопировать чистую ссылку";
+
+/* Copy link action */
+"action.title.copy.link" = "Копировать ссылку";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Адрес скопирован";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Создавайте изображения по текстовому описанию";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Создать изображение";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Найдите актуальную информацию";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Последняя использованная Fire-вкладка";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Уничтожить вкладку";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Закрыть вкладку";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Вернуться к вкладке";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Другие параметры";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Вернуться к %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Переместить адресную строку вниз";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Переместить адресную строку вверх";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Kуки-файлы выбраны";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
+"onboarding.rebranding.intro.message" = "Нужен быстрый браузер, где все контролируете вы?\n\nЗдесь ИИ — всегда лишь дополнительная опция, а защита конфиденциальности всегда включена.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Показывать в адресной строке";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Выберите, что вы увидите, когда вернетесь после %@ бездействия.";
+"settings.afterInactivity.footer.format" = "Выберите, что будет отображаться в DuckDuckGo после %@ бездействия.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Выберите, что будет отображаться при возвращении в DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 ч.";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d минут";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Каждый раз";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 секунда";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d секунд";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Таймер бездействия";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "После бездействия";
+"settings.afterInactivity.label" = "Начальный экран";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Последняя использованная вкладка";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Восстановление подписки...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Не сейчас";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo также предлагает **дополнительную платную подписку** с безопасным **VPN** и **приватным ИИ с расширенными возможностями**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Удалить с этого устройства";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Блокировать рекламу на YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Если функция включена, DuckDuckGo будет анонимно выявлять проблемы при блокировке рекламы и ошибки YouTube, чтобы улучшить работу сервиса для всех. DuckDuckGo не получает данные о просмотренных вами видео или ваши персональные данные.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Подробнее";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Закладки";

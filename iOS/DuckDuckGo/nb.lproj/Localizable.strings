@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopier";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopier ren lenke";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopier lenken";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Nettadresse kopiert";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tilpass svar";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Gjør tekst om til bilder";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Lag bilde";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Finn oppdatert informasjon";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Sist brukte Fire-fane";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Brenn fanen";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Lukk fanen";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Tilbake til fanen";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Flere alternativer";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tilbake til %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Flytt adresselinjen til bunnen";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Flytt adresselinjen til toppen";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Informasjonskapsler administrert";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det er DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Er du klar for en raskere nettleser som beskytter deg og lar deg selv bestemme når og hvordan du skal bruke AI?";
+"onboarding.rebranding.intro.message" = "Klar for en raskere nettleser som du har kontroll over?\n\nAI er alltid valgfritt, og personvern er alltid på.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Heisann.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Vis i adressefeltet";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Velg hva du vil se, når du kommer tilbake etter %@ med inaktivitet.";
+"settings.afterInactivity.footer.format" = "Velg hva du vil se, når du kommer tilbake til DuckDuckGo etter %@ med inaktivitet.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Velg hva du vil se, når du kommer tilbake til DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 time";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutter";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Ingen";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekund";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Inaktivitetstidtaker";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Etter inaktivitet";
+"settings.afterInactivity.label" = "Gjenopptaksskjerm";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Sist brukte fane";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Gjenoppretter abonnementet...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ikke nå";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo har også et **valgfritt betalt abonnement**, med en sikker **VPN** og **avansert, privat AI**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Fjern fra denne enheten";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokker annonser på YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Når dette er aktivert, registrerer DuckDuckGo anonymt forstyrrelser i annonseblokkering eller feil i YouTube, for å forbedre opplevelsen for alle. DuckDuckGo ser aldri hvilke videoer du ser på, eller noen personlig identifiserbar informasjon.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Finn ut mer";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmerker";

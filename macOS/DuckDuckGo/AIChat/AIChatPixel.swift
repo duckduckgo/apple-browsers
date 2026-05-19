@@ -217,6 +217,16 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt that includes one or more image attachments
     case aiChatAddressBarSubmitWithImage(imageCount: Int)
 
+    /// Event Trigger: User submits a prompt that includes one or more page-content tab
+    /// attachments via the omnibar's Attach Page Content menu.
+    case aiChatAddressBarSubmitWithTabs(tabCount: Int)
+
+    /// Event Trigger: User attaches a file (PDF etc.) via the file picker in the duck.ai omnibar.
+    case aiChatAddressBarFileAttached
+
+    /// Event Trigger: User submits a prompt that includes one or more file attachments.
+    case aiChatAddressBarSubmitWithFiles(fileCount: Int)
+
     // MARK: - Model Picker
 
     /// Event Trigger: User selects a model from the model picker menu
@@ -348,6 +358,9 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User taps "View All Chats..." from the more options menu
     case aiChatViewAllChatsMoreOptionsMenu
+
+    /// Event Trigger: Duck.ai tab WebKit process terminates
+    case aiChatTabDidTerminate(error: Error)
 
     // MARK: - Daily
 
@@ -491,6 +504,12 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_image_removed"
         case .aiChatAddressBarSubmitWithImage:
             return "aichat_addressbar_submit_with_image"
+        case .aiChatAddressBarSubmitWithTabs:
+            return "aichat_addressbar_submit_with_tabs"
+        case .aiChatAddressBarFileAttached:
+            return "aichat_addressbar_file_attached"
+        case .aiChatAddressBarSubmitWithFiles:
+            return "aichat_addressbar_submit_with_files"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
@@ -559,6 +578,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_main_menu"
         case .aiChatViewAllChatsMoreOptionsMenu:
             return "aichat_view_all_chats_more_options_menu"
+        case .aiChatTabDidTerminate:
+            return "aichat_tab_did_terminate"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         }
@@ -616,6 +637,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
+                .aiChatAddressBarFileAttached,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarImageGenerationActivated,
@@ -650,13 +672,18 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
-                .aiChatViewAllChatsMoreOptionsMenu:
+                .aiChatViewAllChatsMoreOptionsMenu,
+                .aiChatTabDidTerminate:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
+        case .aiChatAddressBarSubmitWithTabs(let tabCount):
+            return ["tabCount": String(tabCount)]
+        case .aiChatAddressBarSubmitWithFiles(let fileCount):
+            return ["fileCount": String(fileCount)]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -748,6 +775,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
+                .aiChatAddressBarSubmitWithTabs,
+                .aiChatAddressBarFileAttached,
+                .aiChatAddressBarSubmitWithFiles,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatNtpSubmitWithImage,
@@ -784,7 +814,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
-                .aiChatIsEnabled:
+                .aiChatIsEnabled,
+                .aiChatTabDidTerminate:
             return [.pixelSource]
         }
     }

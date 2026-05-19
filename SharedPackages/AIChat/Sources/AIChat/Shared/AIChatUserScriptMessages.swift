@@ -50,6 +50,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     case voiceSessionStarted
     case voiceSessionEnded
+    case voiceSessionUserEnded
 
     // Sync
     case getSyncStatus

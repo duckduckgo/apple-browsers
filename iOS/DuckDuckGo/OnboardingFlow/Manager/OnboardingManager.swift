@@ -21,6 +21,7 @@ import AVKit
 import BrowserServicesKit
 import Core
 import Onboarding
+import Persistence
 import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
@@ -44,7 +45,11 @@ protocol OnboardingAddToDockVisibilityManager {
     var userHasSeenAddToDockPromoDuringOnboarding: Bool { get }
 }
 
-protocol OnboardingFlowManaging {
+protocol OnboardingFlowProviding {
+    var currentOnboardingFlow: OnboardingFlowType { get }
+}
+
+protocol OnboardingFlowManaging: OnboardingFlowProviding {
     func configureOnboardingFlow(from url: URL?)
 }
 
@@ -57,6 +62,8 @@ final class OnboardingManager {
     private let variantManager: VariantManager
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
+    private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
@@ -90,7 +97,9 @@ final class OnboardingManager {
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
-        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
+        onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
@@ -98,8 +107,9 @@ final class OnboardingManager {
         self.isIphone = isIphone
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
+        self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
+        self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
     }
-
 }
 
 // MARK: - New User Debugging
@@ -125,11 +135,42 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 enum OnboardingIntroStep: Equatable {
     case introDialog(isReturningUser: Bool)
     case browserComparison
+    case aiComparison
     case appIconSelection
     case addToDockPromo
     case addressBarPositionSelection
     case searchExperienceSelection
-    case duckAIQueryExperimentSelection
+    case duckAIQuerySelection
+}
+
+extension OnboardingIntroStep {
+    /// The resume checkpoint that should be persisted when this step is reached, or `nil` if no checkpoint is needed.
+    var resumeStep: OnboardingResumeStep? {
+        switch self {
+        case .introDialog: return nil
+        case .browserComparison: return .browserComparison
+        case .aiComparison: return .aiComparison
+        case .addToDockPromo: return .addToDockPromo
+        case .appIconSelection: return .appIconSelection
+        case .addressBarPositionSelection: return .addressBarPositionSelection
+        case .searchExperienceSelection: return .searchExperienceSelection
+        case .duckAIQuerySelection: return .duckAIQuerySelection
+        }
+    }
+}
+
+/// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
+enum OnboardingResumeStep: String {
+    case browserComparison
+    case aiComparison
+    case addToDockPromo
+    case appIconSelection
+    case addressBarPositionSelection
+    case searchExperienceSelection
+    /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
+    case duckAIQuerySelection
+    /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
+    case duckAIAnswerStep
 }
 
 protocol OnboardingStepsProvider: AnyObject {
@@ -151,10 +192,18 @@ extension OnboardingManager: OnboardingAddToDockVisibilityManager {
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {
         onboardingSteps.contains(.addToDockPromo)
     }
-    
+
 }
 
 // MARK: - Onboarding Manager + Onboarding Flows
+
+extension OnboardingManager: OnboardingFlowProviding {
+
+    var currentOnboardingFlow: OnboardingFlowType {
+        tutorialSettings.onboardingFlowType ?? .default
+    }
+
+}
 
 extension OnboardingManager: OnboardingFlowManaging {
 
@@ -174,16 +223,28 @@ extension OnboardingManager: OnboardingFlowManaging {
             return
         }
 
-        let flowType = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
-        Logger.onboarding.debug("Configured onboarding flow: \(flowType.rawValue, privacy: .public)")
+        let evaluatedOnboarding = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
+        Logger.onboarding.debug("Configured onboarding flow: \(evaluatedOnboarding.flow.rawValue, privacy: .public)")
 
-        switch flowType {
+        let resolvedFlow: OnboardingFlowType
+        switch evaluatedOnboarding.flow {
         case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
             Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
-            tutorialSettings.onboardingFlowType = .default
+            resolvedFlow = .default
+        case .duckAI where !isIphone:
+            Logger.onboarding.debug("Duck.ai onboarding not available for iPad. Reverting to default onboarding")
+            resolvedFlow = .default
         default:
-            tutorialSettings.onboardingFlowType = flowType
+            resolvedFlow = evaluatedOnboarding.flow
         }
+
+        // Clear any stale resume checkpoint persisted before the flow was configured
+        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
+        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+
+        tutorialSettings.onboardingFlowType = resolvedFlow
+        persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)
     }
 
 }
@@ -192,19 +253,54 @@ extension OnboardingManager: OnboardingFlowManaging {
 
 private extension OnboardingManager {
 
+    /// Persist the flow and source for onboarding pixels based on the evaluated context.
+    /// This must be called before onboarding is presented.
+    func persistOnboardingPixelContext(flow: OnboardingFlowType, source: OnboardingSource) {
+        sharedPixelsStorage.onboardingFlow = OnboardingPixelParameter.Flow(flow)
+        sharedPixelsStorage.onboardingSource = OnboardingPixelParameter.Source(source)
+    }
+
     func stepsForCurrentFlow() -> [OnboardingIntroStep] {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
         switch tutorialSettings.onboardingFlowType {
         case .none, .default:
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + defaultFlowSteps(isIphone: isIphone)
         case .duckAI:
-            // Temporarily return steps for default flow
-            return [introStep] + steps(isIphone: isIphone)
+            return [introStep] + duckAITailoredFlowSteps()
         }
     }
 
-    func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+    func defaultFlowSteps(isIphone: Bool) -> [OnboardingIntroStep] {
         isIphone ? iPhoneFlow : iPadFlow
     }
 
+    func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
+        [.aiComparison, .duckAIQuerySelection, .addToDockPromo, .browserComparison, .addressBarPositionSelection]
+    }
+
+}
+
+private extension OnboardingPixelParameter.Source {
+
+    init(_ source: OnboardingSource) {
+        switch source {
+        case .default:
+            self = .default
+        case .duckAICPP:
+            self = .duckAICustomProductPage
+        }
+    }
+
+}
+
+private extension OnboardingPixelParameter.Flow {
+
+    init(_ flow: OnboardingFlowType) {
+        switch flow {
+        case .default:
+            self = .default
+        case .duckAI:
+            self = .duckAI
+        }
+    }
 }

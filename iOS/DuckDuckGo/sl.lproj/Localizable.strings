@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiraj";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiraj čisto povezavo";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiraj povezavo";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL naslov kopiran";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odzive";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pretvorba besedila v slike";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Ustvari sliko";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Poiščite trenutne informacije";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zadnja uporaba zavihka Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Zavihek za izbris";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zapri zavihek";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Nazaj na zavihek";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Več možnosti";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Vrnitev na zavihek %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Premakni naslovno vrstico na dno";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Premakni naslovno vrstico na vrh";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Upravljani piškotki";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je iskanje DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki vas ščiti in vam omogoča, da se odločite, kdaj in kako boste uporabljali umetno inteligenco?";
+"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki daje nadzor vam?\n\nUmetna inteligenca je vedno neobvezna, zaščita zasebnosti pa je vedno vklopljena.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Pozdravljeni.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Prikaži v naslovni vrstici";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Izberite, kaj naj bo prikazano ob vrnitvi po %@ neaktivnosti.";
+"settings.afterInactivity.footer.format" = "Izberite, kaj želite videti, ko se po %@ neaktivnosti vrnete na DuckDuckGo.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Izberite, kaj bo prikazano, ko se vrnete na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 uri";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutah";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Brez";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekundi";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekundah";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Časovnik neaktivnosti";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po neaktivnosti";
+"settings.afterInactivity.label" = "Začetni zaslon";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Nazadnje uporabljeni zavihek";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne zdaj";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo ima tudi **izbirno plačljivo naročnino** z varnim **VPN** in **napredno, zasebno umetno inteligenco**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrani iz te naprave";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Ko je to vklopljeno, DuckDuckGo anonimno zaznava motnje pri blokiranju oglasov ali napake v YouTubu, da izboljša izkušnjo za vse uporabnike. DuckDuckGo nikoli ne vidi, katere videoposnetke si ogledujete, niti nobenih osebnih podatkov.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Več o tem";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zaznamki";

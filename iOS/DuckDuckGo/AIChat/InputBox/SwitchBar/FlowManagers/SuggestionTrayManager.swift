@@ -50,6 +50,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
 }
@@ -64,7 +65,7 @@ final class SuggestionTrayManager: NSObject {
     // MARK: - Properties
     
     weak var delegate: SuggestionTrayManagerDelegate?
-    
+
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
     private var cancellables = Set<AnyCancellable>()
@@ -134,7 +135,7 @@ final class SuggestionTrayManager: NSObject {
     }
 
     /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
+    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatchModel: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }
         
 
@@ -176,7 +177,7 @@ final class SuggestionTrayManager: NSObject {
             self.delegate?.suggestionTrayManagerDidUpdateVisibility(self)
         }
         controller.didMove(toParent: parentViewController)
-        controller.setEscapeHatch(escapeHatch)
+        controller.setEscapeHatch(escapeHatchModel)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()
@@ -347,6 +348,10 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestTabSwitcher(self)
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {

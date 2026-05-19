@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Copiere";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copiază linkul curat";
+
+/* Copy link action */
+"action.title.copy.link" = "Copiază linkul";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiat";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizează răspunsurile";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Transformă textul în imagini";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Creează imaginea";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Găsește informații actuale";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Fila Fire utilizată ultima dată";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Șterge toate datele din filă";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Închide fila";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Înapoi la filă";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Mai multe opțiuni";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Înapoi la %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Mută bara de adrese în partea de jos";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Mută bara de adrese în partea de sus";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Modulele cookie au fost gestionate";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Acesta este DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
+"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care îți oferă control deplin?\n\nInteligența artificială este întotdeauna opțională, iar protecția confidențialității este întotdeauna activată.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Afișează în bara de adrese";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Alege ce vezi când revii după %@ de inactivitate.";
+"settings.afterInactivity.footer.format" = "Alege ce vezi când revii la DuckDuckGo după %@ de inactivitate.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Alege ce vezi când revii la DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 oră";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minute";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Niciuna";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 secundă";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d secunde";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Cronometru de inactivitate";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "După inactivitate";
+"settings.afterInactivity.label" = "Ecran de deschidere";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima filă utilizată";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Se restabilește abonamentul...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Nu acum";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo oferă și un **abonament opțional cu plată**, cu un **VPN** securizat și **IA avansată, privată**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blochează reclamele pe YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "În cazul activării, DuckDuckGo va detecta anonim interferențele de blocare a reclamelor sau erorile YouTube, pentru a îmbunătăți experiența pentru toți utilizatorii. DuckDuckGo nu vede niciodată videoclipurile pe care le vizionezi sau orice informație de identificare personală.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Află mai multe";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Semne de carte";

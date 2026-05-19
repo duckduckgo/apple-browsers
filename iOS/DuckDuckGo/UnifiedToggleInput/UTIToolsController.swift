@@ -39,7 +39,7 @@ final class UTIToolsController {
     private(set) var selectedTool: AIChatRAGTool?
 
     func select(_ tool: AIChatRAGTool, for modelStore: UTIModelStore) {
-        guard tool == .webSearch, modelStore.selectedModelSupports(tool: tool) else { return }
+        guard modelStore.selectedModelSupports(tool: tool) else { return }
         selectedTool = tool
     }
 
@@ -56,7 +56,7 @@ final class UTIToolsController {
     }
 
     func clearSelectionIfUnsupported(for modelStore: UTIModelStore) {
-        guard let selectedTool, modelStore.selectedModelSupports(tool: selectedTool) == false else { return }
+        guard let selectedTool, !modelStore.selectedModelSupports(tool: selectedTool) else { return }
         self.selectedTool = nil
     }
 
@@ -68,15 +68,21 @@ final class UTIToolsController {
         displayState: UnifiedToggleInputDisplayState,
         modelStore: UTIModelStore
     ) -> Presentation {
-        guard canShowTools(displayState: displayState) else {
+        let toolsMenu = buildToolsMenu(modelStore: modelStore)
+        guard canShowTools(displayState: displayState),
+              selectedModelSupportsAnyTool(modelStore: modelStore, toolsMenu: toolsMenu) else {
             return .hidden
         }
 
         return Presentation(
             isToolsButtonHidden: false,
             selectedTool: selectedTool,
-            toolsMenu: buildToolsMenu(modelStore: modelStore)
+            toolsMenu: toolsMenu
         )
+    }
+
+    private func selectedModelSupportsAnyTool(modelStore: UTIModelStore, toolsMenu: UTIToolsMenu) -> Bool {
+        toolsMenu.items.contains { modelStore.selectedModelSupports(tool: $0.tool) }
     }
 }
 
@@ -89,6 +95,10 @@ private extension UTIToolsController {
 
     func buildToolsMenu(modelStore: UTIModelStore) -> UTIToolsMenu {
         return UTIToolsMenu(items: [
+            .imageGeneration(
+                isSelected: selectedTool == .imageGeneration,
+                isEnabled: modelStore.selectedModelSupports(tool: .imageGeneration)
+            ),
             .webSearch(
                 isSelected: selectedTool == .webSearch,
                 isEnabled: modelStore.selectedModelSupports(tool: .webSearch)
@@ -101,15 +111,28 @@ struct UTIToolsMenu {
 
     enum Item: Equatable {
         case webSearch(isSelected: Bool, isEnabled: Bool)
+        case imageGeneration(isSelected: Bool, isEnabled: Bool)
 
         enum Identifier {
             case webSearch
+            case imageGeneration
         }
 
         var identifier: Identifier {
             switch self {
             case .webSearch:
                 return .webSearch
+            case .imageGeneration:
+                return .imageGeneration
+            }
+        }
+
+        var tool: AIChatRAGTool {
+            switch self {
+            case .webSearch:
+                return .webSearch
+            case .imageGeneration:
+                return .imageGeneration
             }
         }
     }
@@ -134,6 +157,12 @@ struct UTIToolsMenuFactory {
                 isEnabled: isEnabled,
                 onSelect: onSelect
             )
+        case let .imageGeneration(isSelected, isEnabled):
+            return makeImageGenerationAction(
+                isSelected: isSelected,
+                isEnabled: isEnabled,
+                onSelect: onSelect
+            )
         }
     }
 
@@ -153,6 +182,25 @@ struct UTIToolsMenuFactory {
             state: state
         ) { _ in
             onSelect(.webSearch)
+        }
+    }
+
+    private func makeImageGenerationAction(
+        isSelected: Bool,
+        isEnabled: Bool,
+        onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void
+    ) -> UIAction {
+        let state: UIMenuElement.State = isSelected ? .on : .off
+        let attributes: UIMenuElement.Attributes = isEnabled ? [] : .disabled
+
+        return UIAction(
+            title: UserText.aiChatToolbarImageGenerationToolTitle,
+            subtitle: UserText.aiChatToolbarImageGenerationToolSubtitle,
+            image: DesignSystemImages.Glyphs.Size24.images,
+            attributes: attributes,
+            state: state
+        ) { _ in
+            onSelect(.imageGeneration)
         }
     }
 }

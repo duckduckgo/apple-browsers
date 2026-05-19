@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopijuoti";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopijuoti švarią nuorodą";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopijuoti nuorodą";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL nukopijuotas";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Teksto vertimas vaizdais";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Kurti vaizdą";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Naujausios informacijos paieška";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Sunaikinti kortelę";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Uždaryti kortelę";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Grįžti į kortelę";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Daugiau parinkčių";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Perkelti adreso juostą į apačią";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Perkelti adreso juostą į viršų";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Slapukai valdomi";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ar nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
+"onboarding.rebranding.intro.message" = "Ar nori spartesnės naršyklės, kurią valdai tu?\n\nDI neprivalomas, o privatumo apsauga – visada įjungta.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Rodyti adreso juostoje";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Pasirinkite, ką matysite grįžę po %@ neaktyvumo.";
+"settings.afterInactivity.footer.format" = "Pasirinkite, ką matysite grįžę į „DuckDuckGo“ po %@ neaktyvumo.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Pasirinkite, ką matysite grįžę į „DuckDuckGo“.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 val.";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d min.";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nėra";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sek.";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sek.";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Neaktyvumo laikmatis";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po neaktyvumo";
+"settings.afterInactivity.label" = "Atidarymo ekranas";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atkuriama prenumerata...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne dabar";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "„DuckDuckGo“ taip pat siūlo **pasirenkamą mokamą prenumeratą** su saugiu **VPN** ir **pažangiu, privačiu DI (dirbtiniu intelektu)**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Pašalinti iš šio įrenginio";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokuoti reklamas „YouTube“";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kai įjungta, „DuckDuckGo“ anonimiškai aptiks skelbimų blokavimo trukdžius arba „YouTube“ klaidas, kad pagerintų patirtį visiems. „DuckDuckGo“ niekada nemato, kokius vaizdo įrašus žiūrite, ar bet kokios asmenį identifikuojančios informacijos.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Sužinoti daugiau";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Žymės";

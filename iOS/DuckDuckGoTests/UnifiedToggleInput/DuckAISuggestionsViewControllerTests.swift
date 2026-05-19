@@ -32,20 +32,23 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let urlLoader: DuckAIURLSuggestionsLoader
     }
 
-    private func makeHarness(query: String = "") -> Harness {
+    private func makeHarness(query: String = "",
+                             layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
         let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         let vc = DuckAISuggestionsViewController(
             chatViewModel: viewModel,
             urlLoader: loader,
-            queryProvider: { query }
+            queryProvider: { query },
+            layoutConfiguration: layoutConfiguration
         )
         vc.loadViewIfNeeded()
         return Harness(viewController: vc, chatViewModel: viewModel, urlLoader: loader)
     }
 
-    private func makeViewController(query: String = "") -> DuckAISuggestionsViewController {
-        makeHarness(query: query).viewController
+    private func makeViewController(query: String = "",
+                                    layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) -> DuckAISuggestionsViewController {
+        makeHarness(query: query, layoutConfiguration: layoutConfiguration).viewController
     }
 
     private func makeChat(id: String) -> AIChatSuggestion {
@@ -64,31 +67,64 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let table = try tableView(in: vc)
         XCTAssertNil(table.tableHeaderView)
 
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture)
 
         XCTAssertNotNil(table.tableHeaderView)
         XCTAssertGreaterThan(table.tableHeaderView?.bounds.height ?? 0, 0)
         XCTAssertEqual(vc.children.count, 1, "hatch hosting controller should be added as a child view controller")
     }
 
+    func test_defaultLayout_preservesFullWidthTableView() throws {
+        let vc = makeViewController()
+        vc.view.frame = CGRect(x: 0, y: 0, width: 430, height: 800)
+        vc.view.layoutIfNeeded()
+
+        let table = try tableView(in: vc)
+
+        XCTAssertEqual(table.frame.minX, 0, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, 0, accuracy: 0.5)
+    }
+
+    func test_unifiedToggleInputLayout_matchesRecentChatsHorizontalInset() throws {
+        let vc = makeViewController(layoutConfiguration: .unifiedToggleInput)
+        vc.view.frame = CGRect(x: 0, y: 0, width: 430, height: 800)
+        vc.view.layoutIfNeeded()
+
+        let table = try tableView(in: vc)
+        vc.setEscapeHatch(.testFixture)
+        vc.view.layoutIfNeeded()
+
+        let header = try XCTUnwrap(table.tableHeaderView)
+        let hatchView = try XCTUnwrap(header.subviews.first)
+        let hatchFrame = hatchView.convert(hatchView.bounds, to: vc.view)
+        let expectedTableInset: CGFloat = 10
+        let expectedHatchInset: CGFloat = 26
+
+        XCTAssertEqual(table.frame.minX, expectedTableInset, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, expectedTableInset, accuracy: 0.5)
+        XCTAssertEqual(header.bounds.width, table.bounds.width, accuracy: 0.5)
+        XCTAssertEqual(hatchFrame.minX, expectedHatchInset, accuracy: 0.5)
+        XCTAssertEqual(vc.view.bounds.width - hatchFrame.maxX, expectedHatchInset, accuracy: 0.5)
+    }
+
     func test_setEscapeHatch_withNil_removesTableHeaderView() throws {
         let vc = makeViewController()
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture)
         XCTAssertNotNil(try tableView(in: vc).tableHeaderView)
 
-        vc.setEscapeHatch(nil, onTapped: nil)
+        vc.setEscapeHatch(nil)
 
         XCTAssertNil(try tableView(in: vc).tableHeaderView)
         XCTAssertTrue(vc.children.isEmpty, "hatch hosting controller should be removed from children")
     }
 
     func test_setEscapeHatch_calledTwiceWithDifferentModels_replacesExistingHostingController() {
-        // Each `.testFixture` build a new Tab with a fresh uid, so the two models compare unequal.
+        // `EscapeHatchModel` is a reference type — each `.testFixture` is a distinct instance.
         let vc = makeViewController()
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture)
         let firstChild = vc.children.first
 
-        vc.setEscapeHatch(.testFixture, onTapped: {})
+        vc.setEscapeHatch(.testFixture)
 
         XCTAssertEqual(vc.children.count, 1)
         XCTAssertFalse(vc.children.first === firstChild, "different model → hosting controller is replaced")
@@ -97,10 +133,10 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
     func test_setEscapeHatch_calledTwiceWithIdenticalModel_isNoOp() {
         let vc = makeViewController()
         let model: EscapeHatchModel = .testFixture
-        vc.setEscapeHatch(model, onTapped: {})
+        vc.setEscapeHatch(model)
         let firstChild = vc.children.first
 
-        vc.setEscapeHatch(model, onTapped: {})
+        vc.setEscapeHatch(model)
 
         XCTAssertEqual(vc.children.count, 1)
         XCTAssertTrue(vc.children.first === firstChild, "identical model → short-circuit; existing hosting controller is preserved")
@@ -152,12 +188,11 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 
 private extension EscapeHatchModel {
     static var testFixture: EscapeHatchModel {
-        EscapeHatchModel(
-            title: "Test tab",
-            subtitle: "example.com",
-            tabType: .regular,
-            domain: "example.com",
-            targetTab: Tab(fireTab: false)
-        )
+        .preview(title: "Test tab",
+                 subtitle: "example.com",
+                 tabType: .regular,
+                 domain: "example.com",
+                 targetTab: Tab(fireTab: false),
+                 tabCount: 1)
     }
 }

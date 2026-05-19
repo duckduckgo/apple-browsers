@@ -327,6 +327,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let faviconManager = NSApp.delegateTyped.faviconManager
         let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
+            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             let favicon: [AIChatPageContextData.PageContextFavicon]
             if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
                let base64 = image.base64PNGDataURL {
@@ -364,10 +365,29 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
+        // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the
+        // result is always a tab-picker context — stamp `tabId` so the duck.ai web app sees
+        // the discriminator and treats it as "additional context", not "current page".
+        let extracted = await Self.extractPageContext(from: tab)
+        return AIChatTabContentResponse(pageContext: extracted?.withTabId(params.tabId))
+    }
+
+    /// Extracts a fresh `AIChatPageContextData` from the given `Tab` by invoking its
+    /// `PageContextUserScript`. Returns `nil` if the user script isn't attached or the
+    /// page-context script's webView has been released (e.g. suspended tab).
+    ///
+    /// The returned page context carries **no `tabId`** — callers stamp it themselves
+    /// (`getAIChatTabContent` always stamps; the omnibar submit path strips for the active
+    /// tab and stamps for the rest).
+    ///
+    /// Shared by the JS-bridge consumer (`getAIChatTabContent`) and the omnibar's submit
+    /// path so both go through the exact same extraction + favicon-enrichment logic.
+    @MainActor
+    static func extractPageContext(from tab: Tab, timeout: TimeInterval = 5) async -> AIChatPageContextData? {
         // Access the tab's PageContextUserScript via its content blocking assets
         guard let userScripts = tab.userContentController?.contentBlockingAssets?.userScripts as? UserScripts,
               let pageContextScript = userScripts.pageContextUserScript else {
-            return AIChatTabContentResponse(pageContext: nil)
+            return nil
         }
 
         // Ensure the webView is set — it may have been released for background tabs
@@ -377,13 +397,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         // If webView is still nil (e.g. suspended tab), return immediately instead of waiting for timeout
         guard pageContextScript.webView != nil else {
-            return AIChatTabContentResponse(pageContext: nil)
+            return nil
         }
 
-        let pageContext = await pageContextScript.collectAndWait()
+        let pageContext = await pageContextScript.collectAndWait(timeout: timeout)
 
         // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
-        let enrichedContext = pageContext.map { ctx -> AIChatPageContextData in
+        return pageContext.map { ctx -> AIChatPageContextData in
             guard let pageURL = URL(string: ctx.url),
                   let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
                   let base64 = favicon.base64PNGDataURL else {
@@ -400,7 +420,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 attachable: ctx.attachable
             )
         }
-        return AIChatTabContentResponse(pageContext: enrichedContext)
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {

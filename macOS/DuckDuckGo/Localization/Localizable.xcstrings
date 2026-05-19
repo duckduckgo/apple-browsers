@@ -2361,61 +2361,109 @@
         }
       }
     },
+    "aichat.attach-menu.image-or-file" : {
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Image or File"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.no-open-tabs" : {
+      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No open tabs"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.page-content" : {
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Page Content"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.recent-tabs-header" : {
+      "comment" : "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recent Tabs"
+          }
+        }
+      }
+    },
     "aichat.attachments.limit-error" : {
-      "comment" : "Error message shown when the user tries to attach more than 3 images in AI chat",
+      "comment" : "Error message shown when the user tries to add more than 3 images in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Du kannst jeweils nur 3 Bilder anhängen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can only attach 3 images at a time"
+            "value" : "You can only add 3 images at a time"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Solo puedes adjuntar 3 imágenes a la vez"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vous ne pouvez joindre que 3 images à la fois"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Puoi allegare solo 3 immagini alla volta"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Je kunt slechts 3 afbeeldingen tegelijk bijvoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Jednocześnie możesz załączyć tylko 3 obrazy"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Só podes anexar 3 imagens de cada vez"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Можно прикрепить не более 3 изображений за раз"
           }
         }
@@ -2777,6 +2825,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.file-attachment.accessibility-format" : {
+      "comment" : "Accessibility label for a file added to the AI chat omnibar — %@ is replaced with the filename",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Added file %@"
+          }
+        }
+      }
+    },
+    "aichat.file-attachments.limit-error" : {
+      "comment" : "Error message shown when the user tries to add more than 3 files (PDFs etc.) in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only add 3 files per conversation"
           }
         }
       }
@@ -3147,55 +3219,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bild anhängen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Attach image"
+            "value" : "Add image"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adjuntar imagen"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Joindre une image"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Allega immagine"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Afbeelding bijvoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Załącz obraz"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anexar imagem"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Прикрепить изображение"
           }
         }
@@ -4042,120 +4114,120 @@
       }
     },
     "aichat.remove-attachment-button.accessibility" : {
-      "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
+      "comment" : "Accessibility label for the remove button on added items (images, files, tabs) in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anhang entfernen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Remove attachment"
+            "value" : "Remove"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Eliminar archivo adjunto"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Supprimer la pièce jointe"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rimuovi allegato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bijlage verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usuń załącznik"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Remover anexo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Удалить вложение"
           }
         }
       }
     },
     "aichat.remove-attachment-button.tooltip" : {
-      "comment" : "Tooltip for the remove attachment button on image thumbnails in AI chat",
+      "comment" : "Tooltip for the remove button on added items (images, files, tabs) in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anhang entfernen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Remove attachment"
+            "value" : "Remove"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Eliminar archivo adjunto"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Supprimer la pièce jointe"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rimuovi allegato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bijlage verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usuń załącznik"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Remover anexo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Удалить вложение"
           }
         }
@@ -4817,6 +4889,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Просмотреть все чаты"
+          }
+        }
+      }
+    },
+    "aichat.tab-picker.current-tab-suffix" : {
+      "comment" : "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Current Tab)"
           }
         }
       }
@@ -88448,6 +88532,66 @@
         }
       }
     },
+    "preferences.youtube-ad-blocking.learn-more" : {
+      "comment" : "Learn more button shown below the YouTube ad blocking toggle description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr erfahren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn More"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más información"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En savoir plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ulteriori informazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer informatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się więcej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sabe mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее"
+          }
+        }
+      }
+    },
     "preferences.youtube-ad-blocking.toggle" : {
       "comment" : "Toggle label for enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
@@ -88504,6 +88648,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блокировать рекламу на YouTube"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.toggle.footer" : {
+      "comment" : "Description shown below the YouTube ad blocking toggle",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn diese Funktion aktiviert ist, erkennt DuckDuckGo anonym, ob Werbeblocker stören oder YouTube-Fehler auftreten, um das Erlebnis für alle zu verbessern. DuckDuckGo sieht niemals, welche Videos du dir ansiehst, und erhält auch keine personenbezogenen Daten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando esté activado, DuckDuckGo detectará de forma anónima las interferencias en el bloqueo de anuncios o los errores de YouTube para mejorar tu experiencia y la de todos. DuckDuckGo nunca ve los vídeos que ves ni ningún dato de identificación personal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lorsque cette fonction est activée, DuckDuckGo détecte anonymement les interférences liées au blocage des publicités ou les erreurs de YouTube, afin d'améliorer l'expérience pour tous. DuckDuckGo ne voit jamais les vidéos que vous regardez ni aucune information permettant de vous identifier personnellement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando questa opzione è attivata, DuckDuckGo rileverà in modo anonimo interferenze nel blocco degli annunci o errori di YouTube per migliorare l'esperienza di tutti. DuckDuckGo non vede mai quali video visualizzi né alcuna informazione di identificazione personale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als deze optie is ingeschakeld, detecteert DuckDuckGo anoniem verstoring van advertentieblokkeringen of YouTube-fouten, om de ervaring voor iedereen te verbeteren. DuckDuckGo ziet niet welke video's je bekijkt en heeft geen toegang tot je persoonlijk identificeerbare informatie."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy jest włączony, DuckDuckGo anonimowo wykryje zakłócenia blokowania reklam lub błędy YouTube, aby poprawić wrażenia dla wszystkich. DuckDuckGo nigdy nie widzi, które filmy oglądasz ani żadnych danych osobowych."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando ativado, o DuckDuckGo irá detetar anonimamente interferências no bloqueio de anúncios ou erros no YouTube, para melhorar a experiência de todos. O DuckDuckGo nunca vê os vídeos que vês nem nenhuma informação pessoal identificável."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если функция включена, DuckDuckGo будет анонимно выявлять проблемы при блокировке рекламы и ошибки YouTube, чтобы улучшить работу сервиса для всех. DuckDuckGo не получает данные о просмотренных вами видео или ваши персональные данные."
           }
         }
       }

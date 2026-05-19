@@ -209,6 +209,10 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        // no-op
+    }
+
     var canHideBars: Bool = false
 
     var isToolbarHidden: Bool = false

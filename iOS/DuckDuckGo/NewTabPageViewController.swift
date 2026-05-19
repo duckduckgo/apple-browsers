@@ -29,12 +29,17 @@ import Subscription
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
+        guard !newTabPageViewModel.isLogoHidden else { return false }
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             let isLandscape = view.bounds.width > view.bounds.height
             return !isLandscape
         }
         return true
+    }
+
+    func setLogoHidden(_ hidden: Bool) {
+        newTabPageViewModel.isLogoHidden = hidden
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -55,6 +60,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+    private let tutorialSettings: TutorialSettings
 
     var onViewDidAppear: (() -> Void)?
 
@@ -71,12 +77,15 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
-         appWidthObserver: AppWidthObserver = .shared) {
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         appWidthObserver: AppWidthObserver = .shared,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -84,6 +93,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
+        self.tutorialSettings = tutorialSettings
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
@@ -95,11 +105,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
-                                                fireModePromotionEligibility: fireModePromotionEligibility)
+                                                fireModePromotionEligibility: fireModePromotionEligibility,
+                                                isOpenedAfterIdle: hasEscapeHatch)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
+                                            layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
@@ -113,15 +125,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
-        if let model {
-            let targetTab = model.targetTab
-            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
-            }
-        } else {
-            newTabPageViewModel.onEscapeHatchTap = nil
-        }
         updateBorderView()
     }
 
@@ -258,6 +261,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -284,6 +288,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
+        // If linear onboarding is not completed do not attempt to present any Dax dialog.
+        guard tutorialSettings.hasSeenOnboarding else { return }
+        // Present Dax dialog if needed.
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
@@ -369,9 +376,13 @@ extension NewTabPageViewController {
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        dismissHostingController(didFinishNTPOnboarding: false)
+        dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
 
-        guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
+        guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
+            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            return
+        }
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
             guard let self else { return }
@@ -429,11 +440,14 @@ extension NewTabPageViewController {
         newTabPageViewModel.startOnboarding()
     }
 
-    private func dismissHostingController(didFinishNTPOnboarding: Bool) {
+    private func dismissHostingController(didFinishNTPOnboarding: Bool, updateUnifiedInputContentOverlaySuppression: Bool = true) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        if updateUnifiedInputContentOverlaySuppression {
+            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        }
         isShowingDuckAICompletionDialog = false
         if didDismissDuckAICompletionDialog {
             delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)

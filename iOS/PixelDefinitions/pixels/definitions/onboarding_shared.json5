@@ -1,0 +1,264 @@
+{
+    "m_ios_onboarding_welcome": {
+        "description": "Fired during linear onboarding on the Welcome step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_skip-onboarding": {
+        "description": "Fired during linear onboarding on the Skip Onboarding step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_set-default": {
+        "description": "Fired during linear onboarding on the Set Default Browser step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_add-to-dock": {
+        "description": "Fired during linear onboarding on the Add to Dock step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_app-icon-color": {
+        "description": "Fired during linear onboarding on the App Icon Color step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "The selected app icon color",
+                "enum": ["red", "pink", "yellow", "green", "blue", "purple", "black"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_address-bar-position": {
+        "description": "Fired during linear onboarding on the Address Bar Position step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "The selected address bar position",
+                "enum": ["top", "bottom"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_search-experience": {
+        "description": "Fired during linear onboarding on the Search Experience ('Search Only' or 'Search & Duck.ai') step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Which search experience option the user selected",
+                "enum": ["search_only", "search_plus_duckai"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_search-chat-toggle": {
+        "description": "Fired during linear onboarding on the Duck.ai Search dialog in the 'Try a search or AI chat' step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Whether the user selected a suggested search or chat, or a custom search or chat",
+                "enum": ["custom_chat", "custom_search", "suggested_chat", "suggested_search"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
+    "m_ios_onboarding_search": {
+        "description": "Fired during contextual onboarding on the default Search dialog in the 'Try a search' step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Whether the user selected a suggested search, entered a custom search, or dismissed the step",
+                "enum": ["custom", "dismiss", "suggested"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_search-results": {
+        "description": "Fired during contextual onboarding on the Search Results ('That's DuckDuckGo Search!') step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_visit-site": {
+        "description": "Fired during contextual onboarding on the Visit Site ('Try visiting a site!') step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Whether the user selected a suggested site, entered a custom site, or dismissed the step",
+                "enum": ["custom", "dismiss", "suggested"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_trackers-blocked": {
+        "description": "Fired during contextual onboarding on the Trackers Blocked step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_fire-button": {
+        "description": "Fired during contextual onboarding on the Fire Button step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_end": {
+        "description": "Fired on the final ('You've got this!') step of the contextual onboarding flow.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_subscription-promo": {
+        "description": "Fired during contextual onboarding on the Subscription Promotion step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    }
+}

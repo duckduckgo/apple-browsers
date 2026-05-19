@@ -24,41 +24,22 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
     // MARK: - computeSuggestionTrayEscapeHatchInset
     //
-    // Returns the additionalTopInset for the suggestion tray (Search-side).
-    // Reference constants (from `Metrics` enum in the VC):
-    //   escapeHatchBaseTopInset      = 44   (bottom-bar dismiss-button clearance)
-    //   escapeHatchTopBarTrayPullUp  = -10  (top-bar tightening)
+    // Returns the additionalTopInset applied to both the search and duck.ai
+    // suggestion trays so the UTI escape hatch lines up with the NTP hatch.
 
     func test_inset_whenNoHatch_returnsZero() {
         XCTAssertEqual(
             UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: false, isBottomBar: true
-            ),
-            0
-        )
-        XCTAssertEqual(
-            UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: false, isBottomBar: false
+                hasEscapeHatch: false
             ),
             0
         )
     }
 
-    func test_inset_whenBottomBarAndHatch_returnsDismissButtonClearance() {
-        // 44 (base) + 0 (no top-bar pull-up) = 44
+    func test_inset_whenHatchPresent_returnsPullUp() {
         XCTAssertEqual(
             UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: true, isBottomBar: true
-            ),
-            44
-        )
-    }
-
-    func test_inset_whenTopBarAndHatch_returnsPullUp() {
-        // 0 (base) + (-10) (top-bar pull-up) = -10
-        XCTAssertEqual(
-            UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: true, isBottomBar: false
+                hasEscapeHatch: true
             ),
             -10
         )

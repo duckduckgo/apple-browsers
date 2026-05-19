@@ -25,11 +25,10 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
-    struct OnboardingTrackersBlockedDialog: View {
-        @Environment(\.verticalSizeClass) private var vSizeClass
-        @Environment(\.horizontalSizeClass) private var hSizeClass
-        @Environment(\.onboardingTheme) private var theme
-
+    /// Screen wrapper that hosts the Trackers dialog plus its Dax. Dax is a sibling (not nested
+    /// in the dialog) so it spans the full background — nesting inside the bubble would let
+    /// iPad's `.fixedSize` ScrollView anchor Dax to the bubble bottom instead of the screen.
+    struct OnboardingTrackersBlockedDialogScreen: View {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
@@ -39,7 +38,54 @@ extension OnboardingRebranding {
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }) {
+            ZStack(alignment: .top) {
+                // Sibling overlay; hidden during the Fire follow-up.
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !showNextScreen {
+                    DaxAnimationOverlay(
+                        animation: OnboardingTrackersBlockedDialog.daxAnimation,
+                        playForward: true,
+                        isExiting: false
+                    )
+                }
+
+                OnboardingConditionalCenteredScrollableContainerView {
+                    OnboardingTrackersBlockedDialog(
+                        shouldFollowUp: shouldFollowUp,
+                        message: message,
+                        cta: cta,
+                        showNextScreen: $showNextScreen,
+                        blockedTrackersCTAAction: blockedTrackersCTAAction,
+                        onManualDismiss: onManualDismiss
+                    )
+                }
+            }
+        }
+    }
+
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-39034&m=dev
+    struct OnboardingTrackersBlockedDialog: View {
+        @Environment(\.verticalSizeClass) private var vSizeClass
+        @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.onboardingTheme) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        let shouldFollowUp: Bool
+        let message: AttributedString
+        var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
+        @Binding var showNextScreen: Bool
+        let blockedTrackersCTAAction: () -> Void
+        let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-WingBottom",
+            size: CGSize(width: 390/3, height: 211/3),
+            position: .left(),
+            twoStagesAnimation: 0.5
+        )
+
+        var body: some View {
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }
+            ) {
                 if showNextScreen {
                     OnboardingRebranding.OnboardingFireDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
                 } else {
@@ -55,11 +101,15 @@ extension OnboardingRebranding {
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                 message: message
             ) {
-                Button {
+                Button { [reduceMotion] in
                     blockedTrackersCTAAction()
                     if shouldFollowUp {
-                        withAnimation {
+                        if reduceMotion {
                             showNextScreen = true
+                        } else {
+                            withAnimation {
+                                showNextScreen = true
+                            }
                         }
                     }
                 } label: {

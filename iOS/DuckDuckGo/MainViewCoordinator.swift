@@ -47,6 +47,8 @@ class MainViewCoordinator {
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
+    var aiTabCollapsedTopSeparator: UIView!
+    private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
 
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
@@ -228,6 +230,11 @@ class MainViewCoordinator {
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
+        if addressBarPosition == .top {
+            setAddressBarBottomActive(false)
+            setNavBarContainerBottomToToolbar(active: false)
+            setAddressBarTopActive(true)
+        }
         constraints.navigationBarContainerHeight.constant = expandedHeight
         superview.layoutIfNeeded()
     }
@@ -258,6 +265,7 @@ class MainViewCoordinator {
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
+        setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
         setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
@@ -265,6 +273,23 @@ class MainViewCoordinator {
             setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+    }
+
+    func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
+        aiTabCollapsedTopSeparatorLogicallyVisible = visible
+        applyAITabCollapsedTopSeparatorVisibility()
+    }
+
+    /// Enforces the invariant: the separator can only be visible above a visible chrome. The
+    /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
+    /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
+    private func applyAITabCollapsedTopSeparatorVisibility() {
+        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
+        aiTabCollapsedTopSeparator.isHidden = !visible
+        if visible {
+            superview.bringSubviewToFront(aiTabCollapsedTopSeparator)
+        }
     }
 
     // MARK: - Omnibar Editing Layout
@@ -358,6 +383,22 @@ class MainViewCoordinator {
         setNavigationChromeHidden(false)
     }
 
+    /// Hides the bottom `navigationBarContainer` (the flanked UTI on AI tabs) and re-anchors the
+    /// content container to the safe area, giving voice mode the full height between the AI
+    /// header and the home indicator. Idempotent.
+    func setAITabBottomChromeHidden(_ hidden: Bool) {
+        guard navigationBarContainer.isHidden != hidden else { return }
+        navigationBarContainer.isHidden = hidden
+        applyAITabCollapsedTopSeparatorVisibility()
+        if hidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else if isNavigationChromeHidden {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        } else {
+            setContentContainerBottomAnchorMode(.toolbar)
+        }
+    }
+
     func showAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = false
         guard isNavigationChromeHidden else { return }
@@ -447,7 +488,9 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            // Match the AI chat header's `.surfaceTertiary` background so the safe-area inset
+            // above it doesn't show as a different colour band.
+            UIColor(designSystemColor: .surfaceTertiary)
         }
     }
 
@@ -477,8 +520,16 @@ class MainViewCoordinator {
         case safeArea
     }
 
+    /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
+    /// (voice / FE-hidden chat input), in which case the UTI's frame still sits at the bottom of
+    /// the screen and anchoring there would leave a gap below the webview. Falls through to
+    /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
     func anchorContentContainerToInputTop() {
-        setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        if navigationBarContainer.isHidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        }
     }
 
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
@@ -487,14 +538,14 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
     }
 
-    private func setNavBarContainerBottomToToolbar() {
+    private func setNavBarContainerBottomToToolbar(active: Bool = true) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor = nil
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0
-        constraints.navigationBarContainerBottom.isActive = true
+        constraints.navigationBarContainerBottom.isActive = active
         isNavBarContainerBottomKeyboardBased = false
     }
 

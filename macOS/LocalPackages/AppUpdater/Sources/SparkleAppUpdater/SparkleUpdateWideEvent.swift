@@ -201,7 +201,7 @@ public final class SparkleUpdateWideEvent {
         }
         defer { currentFlowID = nil }
 
-        var data = flowData
+        let data = flowData
         data.totalDuration?.complete()
         data.downloadDuration?.complete()
         data.extractionDuration?.complete()

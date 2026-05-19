@@ -117,6 +117,9 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
@@ -137,6 +140,7 @@ final class MainCoordinator {
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
+        UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
         let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
@@ -158,10 +162,15 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider
+        )
+        let onboardingSearchExperienceSettingsResolver = OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: onboardingSearchExperienceProvider,
+            daxDialogsStatusProvider: daxDialogs
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
@@ -267,7 +276,11 @@ final class MainCoordinator {
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
+                                        onboardingSearchExperienceSettingsResolver: onboardingSearchExperienceSettingsResolver,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                        freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                        freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -338,7 +351,6 @@ final class MainCoordinator {
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
-                guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
                 }
@@ -592,9 +604,14 @@ final class MainCoordinator {
 
     private func fireDailyAdBlockingPixel() {
         let isEnabled = controller.adBlockingAvailability.isEnabled
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
         DailyPixel.fire(
             pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+            withAdditionalParameters: [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
         )
     }
 

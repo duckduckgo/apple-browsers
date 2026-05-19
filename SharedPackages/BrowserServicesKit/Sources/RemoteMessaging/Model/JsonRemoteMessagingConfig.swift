@@ -33,6 +33,7 @@ public enum RemoteMessageResponse {
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
         let metrics: JsonMetrics?
+        let displayConditions: JsonDisplayConditions?
 
         static func == (lhs: JsonRemoteMessage, rhs: JsonRemoteMessage) -> Bool {
             return lhs.id == rhs.id
@@ -41,6 +42,11 @@ public enum RemoteMessageResponse {
         var isMetricsEnabled: Bool {
             metrics?.state.flatMap(JsonMetrics.MetricsState.init) != .disabled
         }
+    }
+
+    struct JsonDisplayConditions: Decodable, Equatable {
+        let trigger: String?
+        let dismissAfterDaysShown: Int?
     }
 
     struct JsonMetrics: Decodable {
@@ -170,6 +176,7 @@ public enum RemoteMessageResponse {
         case pir = "PIR"
         case subscription = "Subscription"
         case veryCriticalUpdate = "VeryCriticalUpdate"
+        case youtubeNew = "YoutubeNew"
     }
 
     public enum StatusError: Error {

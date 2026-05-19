@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Αντιγραφή";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Αντιγραφή καθαρού συνδέσμου";
+
+/* Copy link action */
+"action.title.copy.link" = "Αντιγραφή συνδέσμου";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Η διεύθυνση URL αντιγράφτηκε";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Μετατροπή κειμένου σε εικόνες";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Δημιουργία εικόνας";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Βρείτε τρέχουσες πληροφορίες";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Τελευταία χρήση καρτέλας Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Κάψιμο καρτέλας";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Κλείσιμο καρτέλας";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Επιστροφή στην καρτέλα";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Μετακίνηση της γραμμής διευθύνσεων στο κάτω μέρος";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Μετακίνηση της γραμμής διευθύνσεων στην κορυφή";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
+"onboarding.rebranding.intro.message" = "Είσαι έτοιμος για ένα ταχύτερο πρόγραμμα περιήγησης που σου δίνει τον έλεγχο;\n\nΗ τεχνητή νοημοσύνη είναι πάντα προαιρετική και η προστασία προσωπικών δεδομένων είναι πάντα ενεργοποιημένη.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Γεια σας.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Εμφάνιση στη Γραμμή διευθύνσεων";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέφετε μετά από %@ αδράνειας.";
+"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέψετε στο DuckDuckGo μετά από %@ αδράνειας.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Επιλέξτε τι θα βλέπετε όταν επιστρέψετε στο DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 ώρα";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d λεπτά";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Κανένα";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 δευτερόλεπτο";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d δευτερόλεπτα";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Χρονόμετρο αδράνειας";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Μετά από αδράνεια";
+"settings.afterInactivity.label" = "Οθόνη έναρξης";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Όχι τώρα";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "Το DuckDuckGo διαθέτει επίσης μια **προαιρετική επί πληρωμή συνδρομή**, με ασφαλές **VPN** και **προηγμένη, ιδιωτική τεχνητή νοημοσύνη**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Αποκλείστε διαφημίσεις στο YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Όταν είναι ενεργοποιημένο, το DuckDuckGo θα ανιχνεύει ανώνυμα παρεμβολές αποκλεισμού διαφημίσεων ή σφάλματα YouTube, για να βελτιώνει την εμπειρία για όλους. Το DuckDuckGo δεν βλέπει ποτέ ποια βίντεο παρακολουθείτε ούτε τυχόν προσωπικά στοιχεία ταυτοποίησης.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Μάθετε περισσότερα";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Σελιδοδείκτες";

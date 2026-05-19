@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "コピー";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "クリーンなリンクをコピー";
+
+/* Copy link action */
+"action.title.copy.link" = "リンクをコピー";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URLをコピーしました";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "応答をカスタマイズする";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "テキストを画像に変換";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "画像を作成";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "最新情報を検索";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "最後に使ったFireタブ";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "データを消去してタブを閉じる";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "タブを閉じる";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "タブに戻る";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "その他のオプション";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@に戻る";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "アドレスバーを一番下に移動";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "アドレスバーを一番上に移動";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "管理対象のCookie";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "それがDuckDuckGo Searchです！";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "より高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
+"onboarding.rebranding.intro.message" = "より速いブラウザでコントロールを掌握する準備はできていますか？\n\nAIは常に任意であり、プライバシー保護は常に有効です。";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "アドレスバーに表示";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、戻ってきたときに表示する内容を選択してください。";
+"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、DuckDuckGoに戻ってきたときに表示する内容を選択してください。";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "DuckDuckGoに戻ったときに表示する内容を選択してください。";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1時間";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d 分";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "なし";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1秒";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d 秒";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "非アクティブタイマー";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "操作がない状態が続いた後";
+"settings.afterInactivity.label" = "オープニングスクリーン";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "最後に使用したタブ";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "後で";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGoには**オプションの有料サブスクリプション**もあり、安全な**VPN**と**高度なプライベートAI**を備えています。";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "YouTubeで広告をブロック";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "オンにすると、広告ブロックによる干渉やYouTubeのエラーがDuckDuckGoにより匿名で検知され、すべてのユーザーの体験が向上します。ユーザーの視聴している動画や個人を識別可能な情報がDuckDuckGoに表示されることは一切ありません。";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "詳細情報";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "ブックマーク";

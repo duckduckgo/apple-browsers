@@ -39,12 +39,16 @@ import WebExtensions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
+    case youTubeAnalyticsEnabled = "com_duckduckgo_ios_youTubeAnalyticsEnabled"
+    case shouldHideYouTubeAdBlockingDisclosure = "com_duckduckgo_ios_shouldHideYouTubeAdBlockingDisclosure"
 
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
 }
 
 struct YouTubeAdBlockingKeys: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
+    let youTubeAnalyticsEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabled)
+    let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.shouldHideYouTubeAdBlockingDisclosure)
 }
 
 final class SettingsViewModel: ObservableObject {
@@ -74,6 +78,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -182,6 +187,11 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
+    var canShowFreemiumPIRSettingsEntryPoint: Bool {
+        freemiumPIREligibilityChecker.canShowEntryPoint()
+            && dataBrokerProtectionViewControllerProvider != nil
+    }
+
     var dbpMeetsProfileRunPrequisite: Bool {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
@@ -240,6 +250,9 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
+
+    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
 
     // MARK: Bindings
 
@@ -381,19 +394,37 @@ final class SettingsViewModel: ObservableObject {
         formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
     }
 
+    var afterInactivityFooterText: String {
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .none {
+            return UserText.settingsAfterInactivityFooterNone
+        }
+        return String(format: UserText.settingsAfterInactivityFooterFormat, idleTimeInterval)
+    }
+
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
         Binding<AfterInactivityOption>(
-            get: {
-                self.idleReturnEligibilityManager.effectiveAfterInactivityOption()
-            },
-            set: {
-                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
-                self.objectWillChange.send()
-
-                let pixel: Pixel.Event = $0 == .newTab
+            get: { self.afterInactivityOption },
+            set: { newValue in
+                self.afterInactivityOption = newValue
+                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
                 DailyPixel.fireDailyAndCount(pixel: pixel)
+            }
+        )
+    }
+
+    var afterInactivityIdleIntervalBinding: Binding<AfterInactivityIdleInterval> {
+        Binding<AfterInactivityIdleInterval>(
+            get: { self.afterInactivityIdleInterval },
+            set: { newValue in
+                self.afterInactivityIdleInterval = newValue
+                try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
+                DailyPixel.fireDailyAndCount(
+                    pixel: .ntpAfterIdleSettingIdleIntervalChanged,
+                    withAdditionalParameters: ["idle_interval_seconds": String(newValue.seconds)]
+                )
             }
         )
     }
@@ -663,8 +694,14 @@ final class SettingsViewModel: ObservableObject {
             get: { self.state.youTubeAdBlockingEnabled },
             set: {
                 guard $0 != self.state.youTubeAdBlockingEnabled else { return }
+                let disclosureVisibleAtToggle = !self.state.youTubeAdBlockingDisclosureHidden
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
                 self.state.youTubeAdBlockingEnabled = $0
+                if !$0 {
+                    self.setYouTubeAnalyticsEnabled(false)
+                } else if disclosureVisibleAtToggle {
+                    self.setYouTubeAnalyticsEnabled(true)
+                }
                 DailyPixel.fireDailyAndCount(
                     pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
@@ -672,6 +709,14 @@ final class SettingsViewModel: ObservableObject {
                 NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
             }
         )
+    }
+
+    func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
+        try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+    }
+
+    var isYouTubeAdBlockingDisclosureHidden: Bool {
+        state.youTubeAdBlockingDisclosureHidden
     }
 
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
@@ -895,6 +940,7 @@ final class SettingsViewModel: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -930,9 +976,12 @@ final class SettingsViewModel: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -964,6 +1013,17 @@ extension SettingsViewModel {
     // and we can use subscribers (Currently called from the view onAppear)
     @MainActor
     private func initState() {
+        // One-time migration: pin the disclosure preference to the current
+        // YouTube Ad Blocking toggle so existing users (toggle already on)
+        // get the disclosure hidden, while new users (toggle off) keep it
+        // until they explicitly opt in. Done here — not in the destination
+        // view's `onAppear` — so the resulting `@Published` change can't
+        // race with a push transition and pop the screen on iPad.
+        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        }
+
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
@@ -1005,7 +1065,8 @@ extension SettingsViewModel {
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
             youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
-            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
+            youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )
 
         // Subscribe to DuckPlayerSettings updates
@@ -1435,6 +1496,7 @@ extension SettingsViewModel {
         case customizeToolbarButton
         case customizeAddressBarButton
         case appearance
+        case general
         // Add other cases as needed
 
         var id: String {
@@ -1452,6 +1514,7 @@ extension SettingsViewModel {
             case .customizeToolbarButton: return "customizeToolbarButton"
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
+            case .general: return "general"
             // Ensure all cases are covered
             }
         }
@@ -1460,7 +1523,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
                 return .navigationLink
             }
         }
@@ -1508,7 +1571,7 @@ extension SettingsViewModel {
         updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionManager.getAccessToken() else {
+        guard (try? await subscriptionManager.getAccessToken()) != nil else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false

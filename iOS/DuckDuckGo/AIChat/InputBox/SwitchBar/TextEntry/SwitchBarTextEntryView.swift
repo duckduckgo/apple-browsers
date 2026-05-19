@@ -25,6 +25,37 @@ import Core
 
 class SwitchBarTextEntryView: UIView {
 
+    enum VoiceButtonAppearance {
+        case automatic
+        case microphone
+        case aiVoicePlain
+        /// Suppress the in-pill voice button (e.g. when an external flank already provides it).
+        case hidden
+    }
+
+    private enum TextEntryPose: Equatable {
+        case compact
+        case tallTopAlignedAIChat
+
+        var minHeight: CGFloat {
+            switch self {
+            case .compact:
+                return Constants.minHeight
+            case .tallTopAlignedAIChat:
+                return Constants.minHeightAIChat
+            }
+        }
+
+        var usesTopAlignedPlaceholder: Bool {
+            switch self {
+            case .compact:
+                return false
+            case .tallTopAlignedAIChat:
+                return true
+            }
+        }
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
@@ -46,9 +77,22 @@ class SwitchBarTextEntryView: UIView {
 
         // Matches UnifiedToggleInputView.Constants.animationDuration so icons ride the focus animation.
         static let buttonStateAnimationDuration: TimeInterval = 0.25
+
+        /// Horizontal distance the duck.ai chip slides during the dismiss snapshot so it lands
+        /// at the unfocused omnibar's chat-icon position. Positive = right.
+        static let dismissedChipHorizontalOffset: CGFloat = 6
     }
 
     private let handler: SwitchBarHandling
+    private(set) var voiceButtonAppearance: VoiceButtonAppearance
+
+    /// Pass `animated: false` when the caller drives its own animation — the snapshot crossfade
+    /// would otherwise capture the old layout and drift as the parent moves.
+    func setVoiceButtonAppearance(_ appearance: VoiceButtonAppearance, animated: Bool = true) {
+        guard appearance != voiceButtonAppearance else { return }
+        voiceButtonAppearance = appearance
+        updateButtonState(animated: animated)
+    }
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -62,7 +106,19 @@ class SwitchBarTextEntryView: UIView {
         handler.currentToggleState
     }
 
+    private var currentPose: TextEntryPose {
+        if isExpandable && currentMode == .aiChat && handler.isTopBarPosition && handler.usesExpandedAIChatTextEntryLayout {
+            return .tallTopAlignedAIChat
+        }
+
+        return .compact
+    }
+
     private var currentMinHeight: CGFloat {
+        if currentPose == .tallTopAlignedAIChat {
+            return currentPose.minHeight
+        }
+
         guard handler.isUsingFadeOutAnimation else {
             return Constants.minHeight
         }
@@ -86,10 +142,16 @@ class SwitchBarTextEntryView: UIView {
         handler.isUsingExpandedBottomBarHeight
     }
 
+    private var usesTopAlignedPlaceholder: Bool {
+        currentPose.usesTopAlignedPlaceholder
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var placeholderTopConstraint: NSLayoutConstraint?
+    private var placeholderCenterYConstraint: NSLayoutConstraint?
 
     private var wasTextEmptyForAutocorrection: Bool = true
 
@@ -110,7 +172,20 @@ class SwitchBarTextEntryView: UIView {
 
     var isExpandable: Bool = false {
         didSet {
-            updateTextViewHeight()
+            updatePoseForCurrentState()
+        }
+    }
+
+    func updatePoseForCurrentState() {
+        updatePlaceholderVerticalAlignment()
+        updateTextViewHeight()
+    }
+
+    /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
+    /// value, so the placeholder doesn't sit lopsided under the icon.
+    var placeholderTextAlignment: NSTextAlignment = .natural {
+        didSet {
+            updatePlaceholderAlignment()
         }
     }
 
@@ -135,8 +210,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling, voiceButtonAppearance: VoiceButtonAppearance = .automatic) {
         self.handler = handler
+        self.voiceButtonAppearance = voiceButtonAppearance
         super.init(frame: .zero)
 
         setupView()
@@ -151,8 +227,8 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         applyFireModeAppearance(isFireTab: handler.isFireTab)
 
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        // Match the omnibar's placeholder font so UTI ↔ omnibar transitions don't show a size jump.
+        let textFont = UIFont.daxBodyRegular()
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
@@ -170,6 +246,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
+        placeholderLabel.lineBreakMode = .byTruncatingTail
 
         setupButtonsView()
 
@@ -207,25 +284,21 @@ class SwitchBarTextEntryView: UIView {
             guard let self else { return }
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
-            
+
             self.textView.text = ""
             self.updatePlaceholderVisibility()
-            self.updateButtonState()
+            self.updateButtonState(animated: false)
             self.updateTextViewHeight()
-            
+
             self.handler.clearText()
             self.handler.clearButtonTapped()
-            
+
             self.wasTextEmptyForAutocorrection = false
             self.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
         buttonsView.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()
-        }
-
-        buttonsView.onSearchGoToTapped = { [weak self] in
-            self?.handler.searchGoToButtonTapped()
         }
 
         buttonsView.onStopGeneratingTapped = { [weak self] in
@@ -245,6 +318,11 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
+        let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        self.placeholderTopConstraint = placeholderTopConstraint
+        self.placeholderCenterYConstraint = placeholderCenterYConstraint
+        placeholderTopConstraint.isActive = false
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -252,9 +330,11 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
+            placeholderCenterYConstraint,
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
-            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
+            // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
+            // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
+            placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])
@@ -262,17 +342,63 @@ class SwitchBarTextEntryView: UIView {
 
     // MARK: - UI Updates
 
+    /// Visual-only render override for the dismiss collapse so the UTI lands on the omnibar's
+    /// destination state. Handler is untouched — `currentTextPublisher` runs async via main-queue
+    /// dispatch, so clearing it here would clobber `textView.text` mid-collapse. The real handler
+    /// reset happens at dismiss completion via the coordinator's `clearText()`.
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        textView.text = snapshot.text
+        setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
+        updatePlaceholderVisibility()
+        buttonsView.fadeAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration,
+                                                horizontalOffset: Constants.dismissedChipHorizontalOffset)
+    }
+
+    /// Restore the override applied by `applyDismissSnapshot` so the reused view re-presents
+    /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
+    func clearDismissSnapshot() {
+        buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
+        setPlaceholderText(placeholderText(for: currentMode))
+        if textView.text != handler.currentText {
+            textView.text = handler.currentText
+            updatePlaceholderVisibility()
+        }
+    }
+
+    // Keeps in-flight color-transition overlays in sync so their captured text doesn't
+    // composite over the new text mid-animation.
+    private func setPlaceholderText(_ text: String) {
+        placeholderLabel.text = text
+        for case let overlay as UILabel in placeholderLabel.subviews {
+            overlay.text = text
+        }
+    }
+
+    // Sync hook used by the coordinator to beat the async `hasSubmittedPromptPublisher`
+    // sink before the flanked UTI first renders.
+    func refreshPlaceholderForCurrentMode() {
+        setPlaceholderText(placeholderText(for: currentMode))
+    }
+
+    private func placeholderText(for mode: TextEntryMode) -> String {
+        switch mode {
+        case .search:
+            return UserText.searchDuckDuckGo
+        case .aiChat:
+            return handler.hasSubmittedPrompt
+                ? UserText.aiChatFollowUpPlaceholder
+                : UserText.searchInputFieldPlaceholderDuckAI
+        }
+    }
+
     private func updateForCurrentMode() {
         wasTextEmptyForAutocorrection = textView.text.isEmpty
 
+        setPlaceholderText(placeholderText(for: currentMode))
         switch currentMode {
         case .search:
-            placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
         case .aiChat:
-            placeholderLabel.text = handler.hasSubmittedPrompt
-                ? UserText.aiChatFollowUpPlaceholder
-                : UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
             /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
@@ -285,9 +411,9 @@ class SwitchBarTextEntryView: UIView {
             }
         }
         updateKeyboardConfiguration()
+        updatePoseForCurrentState()
         updatePlaceholderVisibility()
         updateButtonState()
-        updateTextViewHeight()
     }
 
     private func updateKeyboardConfiguration() {
@@ -298,7 +424,7 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             textView.keyboardType = .default
-            textView.returnKeyType = .go
+            textView.returnKeyType = aiChatReturnKeyType
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
@@ -313,21 +439,60 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    private func updateButtonState() {
+    private func updateButtonState(animated: Bool = true) {
+        // Update handler-side flags first so `handler.buttonState` reflects the new appearance.
+        updateVoiceButtonStyle()
         let newButtonState = handler.buttonState
-        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
-        if newButtonState != currentButtonState {
-            // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
+        guard newButtonState != currentButtonState else { return }
+
+        let apply = {
+            UIView.performWithoutAnimation {
+                self.currentButtonState = newButtonState
+                self.adjustTextViewContentInset()
+                self.updatePlaceholderAlignment()
+                self.layoutIfNeeded()
+            }
+        }
+
+        if animated {
             UIView.transition(with: buttonsView,
                               duration: Constants.buttonStateAnimationDuration,
-                              options: .transitionCrossDissolve) {
-                UIView.performWithoutAnimation {
-                    self.currentButtonState = newButtonState
-                    self.adjustTextViewContentInset()
-                    self.layoutIfNeeded()
-                }
-            }
+                              options: .transitionCrossDissolve,
+                              animations: apply)
+        } else {
+            apply()
+        }
+    }
+
+    private func updatePlaceholderAlignment() {
+        placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
+    }
+
+    private func updatePlaceholderVerticalAlignment() {
+        guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
+
+        if usesTopAlignedPlaceholder {
+            placeholderCenterYConstraint?.isActive = false
+            placeholderTopConstraint?.isActive = true
+        } else {
+            placeholderTopConstraint?.isActive = false
+            placeholderCenterYConstraint?.isActive = true
+        }
+    }
+
+    private func updateVoiceButtonStyle() {
+        handler.hidesVoiceButton = voiceButtonAppearance == .hidden
+        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        switch voiceButtonAppearance {
+        case .automatic:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
+        case .microphone:
+            buttonsView.voiceButtonStyle = .microphone
+        case .aiVoicePlain:
+            buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoicePlain : .microphone
+        case .hidden:
+            break
         }
     }
 
@@ -528,9 +693,17 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, self.currentMode == .aiChat else { return }
-                self.placeholderLabel.text = self.handler.hasSubmittedPrompt
-                    ? UserText.aiChatFollowUpPlaceholder
-                    : UserText.searchInputFieldPlaceholderDuckAI
+                self.setPlaceholderText(self.placeholderText(for: .aiChat))
+                self.updateKeyboardConfiguration()
+            }
+            .store(in: &cancellables)
+
+        handler.submitsAIChatOnKeyboardReturnPublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, self.currentMode == .aiChat else { return }
+                self.updateKeyboardConfiguration()
             }
             .store(in: &cancellables)
     }
@@ -548,7 +721,7 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         } else {
             textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
-            textView.returnKeyType = currentMode == .aiChat ? .go : .search
+            textView.returnKeyType = currentMode == .aiChat ? aiChatReturnKeyType : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -566,6 +739,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func selectAllText() {
+        if !hasBeenInteractedWith {
+            hasBeenInteractedWith = true
+            updateTextViewHeight()
+        }
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
     }
@@ -573,9 +750,21 @@ class SwitchBarTextEntryView: UIView {
     func setQueryText(_ text: String) {
         textView.text = text
         updatePlaceholderVisibility()
+        // Handler first so `updateButtonState` reads the fresh state synchronously.
+        handler.updateCurrentText(text)
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(text)
+    }
+
+    func insertNewlineAtCursor() {
+        let selectedRange = textView.selectedTextRange
+            ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
+        if let selectedRange {
+            textView.replace(selectedRange, withText: "\n")
+        } else {
+            textView.text.append("\n")
+        }
+        textViewDidChange(textView)
     }
 
     /// Reflects the current transform; reset the shift to zero before reading the natural x.
@@ -585,7 +774,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
-    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    /// `.textTertiary` matches the spec ("Text/Placeholder, Labels/Tertiary, System/System Text Tertiary").
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textTertiary) }
 
     // Two transient overlays composite directly over the parent background (the original label is
     // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which
@@ -655,6 +845,10 @@ class SwitchBarTextEntryView: UIView {
         textView.autocorrectionType = .default
         textView.spellCheckingType = .default
     }
+
+    private var aiChatReturnKeyType: UIReturnKeyType {
+        handler.submitsAIChatOnKeyboardReturn ? .go : .default
+    }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
@@ -690,6 +884,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
+                return true
+            }
             fireKeyboardGoPressedPixel()
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

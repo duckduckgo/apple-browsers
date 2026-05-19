@@ -1260,12 +1260,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: unpinnedIndex) else {
-            assertionFailure("TabBarViewController: Failed to get tab view model")
+        guard let tab = tabCollectionViewModel.materialize(at: sourceTab) else {
+            assertionFailure("TabBarViewController: Failed to get tab")
             return
         }
 
-        let tab = tabViewModel.tab
         tabCollectionViewModel.remove(at: sourceTab, published: false)
         WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
     }
@@ -2425,7 +2424,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        if let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid {
+        if let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid {
             aiChatCoordinator?.closeFloatingWindow(for: tabID)
         }
         tabCollectionViewModel.remove(at: tabIndex)
@@ -2437,7 +2436,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     @discardableResult
     func tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for tabIndex: TabIndex) -> Bool {
-        guard let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid,
+        guard let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid,
               shouldWarnBeforeClosingFloatingAIChat(tabID: tabID),
               let tabBarViewItem = tabBarViewItem(for: tabIndex) else {
             return false

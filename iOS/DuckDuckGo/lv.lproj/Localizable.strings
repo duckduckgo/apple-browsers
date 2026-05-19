@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopēt";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopēt tīru saiti";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopēt saiti";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL ir nokopēts";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Pielāgo atbildes";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Pārvērst tekstu attēlos";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Izveidot attēlu";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Atrodi aktuālo informāciju";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Pēdējo reizi izmantotā Fire cilne";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Dzēst cilni";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Aizvērt cilni";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Atgriezties pie cilnes";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Citas iespējas";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Pārvietot adreses joslu uz leju";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Pārvietot adreses joslu uz augšu";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Pārvaldītie sīkfaili";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tā ir DuckDuckGo Search meklēšana!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā un ļauj tev izlemt, kad un kā izmantot mākslīgo intelektu?";
+"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tev sniedz kontroli?\n\nMākslīgais intelekts vienmēr ir izvēles iespēja, un privātuma aizsardzība vienmēr ir ieslēgta.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki!";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Rādīt adreses joslā";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Izvēlies, ko redzēt, atgriežoties pēc %@ neaktivitātes perioda.";
+"settings.afterInactivity.footer.format" = "Izvēlies, ko redzēt, atgriežoties DuckDuckGo pēc %@ neaktivitātes perioda.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Izvēlies, ko redzēt, atgriežoties DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 stunda";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minūtes";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Nav";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekunde";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekundes";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Neaktivitātes taimeris";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Pēc neaktivitātes perioda";
+"settings.afterInactivity.label" = "Ekrāna atvēršana";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atjauno abonementu...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne tagad";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo piedāvā arī **pēc izvēles maksas abonementu** ar drošu **VPN** un **uzlabotu, privātu mākslīgo intelektu**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Noņemt no šīs ierīces";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloķēt reklāmas pakalpojumā YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kad DuckDuckGo ir ieslēgts, tas anonīmi noteiks reklāmu bloķēšanas traucējumus vai YouTube kļūdas, lai uzlabotu pieredzi visiem. DuckDuckGo nekad neredz, kādus videoklipus skaties, vai jebkādu personiski identificējamu informāciju.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Uzzināt vairāk";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Grāmatzīmes";

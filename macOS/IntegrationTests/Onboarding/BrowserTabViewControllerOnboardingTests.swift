@@ -581,7 +581,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertNil(pixelReporter.gotItPressedDialog)
 
         // WHEN

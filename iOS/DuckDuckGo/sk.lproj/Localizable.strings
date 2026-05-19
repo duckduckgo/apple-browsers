@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopírovať";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopírovať čistý odkaz";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopírovať odkaz";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Adresa URL bola skopírovaná";
 
@@ -232,6 +238,12 @@
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prispôsobiť odpovede";
+
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Zmeň text na obrázky";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Vytvoriť obrázok";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Nájsť aktuálne informácie";
@@ -1984,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Karta Burn";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zatvoriť kartu";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Späť na kartu";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Ďalšie možnosti";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Vráť sa na %@";
 
@@ -2901,6 +2926,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Presunúť panel s adresou nadol";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Presunúť panel s adresou nahor";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Spravované súbory cookie";
 
@@ -3019,7 +3050,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Si pripravený/-á na rýchlejší prehliadač, ktorý ťa chráni a umožňuje ti rozhodnúť sa, kedy a ako používať umelú inteligenciu?";
+"onboarding.rebranding.intro.message" = "Si pripravený/-á na rýchlejší prehliadač, ktorý ti dáva kontrolu?\n\nUmelá inteligencia je vždy voliteľná a ochrana súkromia je vždy zapnutá.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Dobrý deň.";
@@ -3459,7 +3490,10 @@
 "settings.address.trackers.animation" = "Zobraziť v adresnom riadku";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vyber, čo sa zobrazí po návrate po %@ nečinnosti.";
+"settings.afterInactivity.footer.format" = "Vyber si, čo sa zobrazí po návrate do DuckDuckGo po %@ nečinnosti.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Vyber si, čo uvidíš po návrate na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hod.";
@@ -3473,14 +3507,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d min.";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Žiadne";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sek.";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sek.";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Časovač nečinnosti";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po nečinnosti";
+"settings.afterInactivity.label" = "Uvítacia obrazovka";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
@@ -4205,6 +4245,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnovuje sa predplatné...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Teraz nie";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo má tiež **voliteľné platené predplatné** s bezpečnou **VPN** a **pokročilou, súkromnou umelou inteligenciou**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrániť z tohto zariadenia";
 
@@ -4876,6 +4922,12 @@
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokuje reklamy na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Keď je zapnutá, DuckDuckGo anonymne zistí rušenie blokovania reklám alebo chyby na YouTube, aby zlepšil používateľský zážitok pre všetkých. DuckDuckGo nikdy nevidí, ktoré videá si pozeráš, ani žiadne osobné údaje.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Zisti viac";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Záložky";

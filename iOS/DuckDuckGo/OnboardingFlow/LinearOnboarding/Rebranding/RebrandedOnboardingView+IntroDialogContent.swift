@@ -17,49 +17,105 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
-        @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private let title: String
-        private let message: String
+        /// Dax "Thumbs Up", sized inversely to the bubble height so the two never overlap.
+        /// Returns `nil` when Dax would shrink below `minDaxHeight`. `bubbleHeight = 0`
+        /// (no measurement yet) renders Dax at full size so the first frame doesn't blink.
+        static func daxAnimation(forBubbleHeight bubbleHeight: CGFloat = 0) -> DaxAnimation? {
+            let baseSize = CGSize(width: 258.0, height: 352.0)
+            let baseBottomPadding: CGFloat = 110.0
+            let baseEntranceXOffset: CGFloat = -20.0
+            let baseLargeScreenXOffset: CGFloat = 200.0
+            let baseLeftXOffset: CGFloat = -40.0
+            /// Threshold above which the bubble starts shrinking Dax 1:1.
+            let referenceBubbleHeight: CGFloat = 280.0
+            /// Below this height Dax is hidden entirely (per design).
+            let minDaxHeight: CGFloat = 170.0
+
+            let extraBubbleHeight = max(0, bubbleHeight - referenceBubbleHeight)
+            let targetHeight = baseSize.height - extraBubbleHeight
+            guard targetHeight >= minDaxHeight else { return nil }
+
+            let scale = targetHeight / baseSize.height
+            let size = CGSize(width: baseSize.width * scale, height: targetHeight)
+            // Scale the bottom inset with Dax so the screen-bottom relationship is preserved.
+            let bottomPadding = baseBottomPadding * scale
+
+            return DaxAnimation(
+                animationName: "Dax-ThumbUp",
+                size: size,
+                position: .left(bottomPadding: bottomPadding, xOffset: baseLeftXOffset),
+                largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: baseLargeScreenXOffset),
+                entranceOffset: CGPoint(x: baseEntranceXOffset, y: 0),
+                // Slide left by the full (scaled) width so exit fully clears the screen.
+                exitOffset: CGPoint(x: -size.width, y: 0),
+                exitDuration: 0.5,
+                fadeOut: true,
+                startDelay: 0.75
+            )
+        }
+
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        private let content: OnboardingIntroStepContent
         private let skipOnboardingView: AnyView?
         private let continueAction: () -> Void
         private let skipAction: () -> Void
+        private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
-        @Binding var showContent: Bool
+        /// Gates the title's typing animation (waits until the bubble has faded in).
+        @State private var shouldStartTyping = false
+        /// Fade-in for everything below the title (set after typing completes).
+        @State private var showContent = false
+        /// Bound to the parent's `showBubbleContent` for hide/show coordination.
+        @Binding var isVisible: Bool
+        /// Reset before the skip swap so the new `TypingText` doesn't skip itself.
+        @Binding var skipTypingAnimation: Bool
 
         init(
-            title: String,
-            message: String,
+            content: OnboardingIntroStepContent,
             skipOnboardingView: AnyView?,
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
+            skipTypingAnimation: Binding<Bool>,
             continueAction: @escaping () -> Void,
-            skipAction: @escaping () -> Void
+            skipAction: @escaping () -> Void,
+            onSkipOnboardingPresented: @escaping () -> Void
         ) {
-            self.title = title
-            self.message = message
+            self.content = content
             self.skipOnboardingView = skipOnboardingView
-            self._showContent = showContent
+            self._isVisible = isVisible
+            self._skipTypingAnimation = skipTypingAnimation
             self.continueAction = continueAction
             self.skipAction = skipAction
+            self.onSkipOnboardingPresented = onSkipOnboardingPresented
         }
 
         var body: some View {
-            if showSkipOnboarding {
-                skipOnboardingView
-            } else {
-                content
+            Group {
+                if showSkipOnboarding {
+                    skipOnboardingView
+                } else {
+                    introContent
+                }
+            }
+            .onChange(of: showSkipOnboarding) { newValue in
+                if newValue {
+                    onSkipOnboardingPresented()
+                }
             }
         }
 
-        private var content: some View {
+        private var introContent: some View {
             LinearDialogContentContainer(
                 metrics: .init(
                     outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
@@ -68,13 +124,20 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(message)
+                    Text(content.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(title)
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -82,56 +145,64 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: continueAction) {
-                            Text(UserText.Onboarding.Intro.continueCTA)
+                            Text(content.primaryCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
                             Button(action: showSkipOnboardingDialog) {
-                                Text(UserText.Onboarding.Intro.skipCTA)
+                                Text(content.secondaryCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }
                     }
                 }
             )
+            /* The intro dialog's first appearance scale-fades the bubble in (see the parent's
+             `.transition(.scale.combined(with: .opacity))`); the standard typing delay
+             (just `contentFadeInAnimationDuration`) lands the typing while the bubble is still
+             moving. Add the bubble resize/entrance duration on top so typing only kicks off
+             once the bubble is fully settled in its final position.
+             */
+            .onBubbleVisibilityChanged(
+                isVisible: $isVisible,
+                shouldStartTyping: $shouldStartTyping,
+                showContent: $showContent,
+                typingStartDelay: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
+                                + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration
+            )
         }
 
-        /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content immediately (no fade-out animation)
-        /// 2. Switch to skip dialog and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Hide → resize → show swap. Deferred so the parent's tap-to-skip gesture fires
+        /// before we reset `skipTypingAnimation` and mount the new view.
         private func showSkipOnboardingDialog() {
-            // Phase 1: Hide current content immediately
-            showContent = false
+            isVisible = false
             skipAction()
 
-            if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-            } else {
-                // Phase 2: Animate view switch and bubble resize
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
-                    showSkipOnboarding = true
-                }
+            // Reduce Motion: jump to final state.
+            guard !reduceMotion else {
+                skipTypingAnimation = false
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
 
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
+            DispatchQueue.main.async {
+                skipTypingAnimation = false
+
+                if #available(iOS 17.0, *) {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    } completion: {
+                        withAnimation { isVisible = true }
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    }
+                    // iOS 16 fallback (no withAnimation completion).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                        withAnimation { isVisible = true }
                     }
                 }
             }

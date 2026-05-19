@@ -23,44 +23,95 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 struct ReturnToTabCard: View {
+    @Environment(\.layoutDirection) private var layoutDirection
+
     let model: EscapeHatchModel
-    let onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .center) {
-                iconView
-                VStack(alignment: .leading, spacing: Metrics.labelToContentSpacing) {
-                    returnToLabel
-                    VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
-                        Text(model.title)
-                            .daxHeadline()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                        if !model.subtitle.isEmpty {
-                            Text(model.subtitle)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                                .lineLimit(1)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.undo)
+        HStack(spacing: Metrics.innerSpacing) {
+            mainView
+            if model.isActionsEnabled {
+                menuView
             }
-            .padding(Metrics.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .fill(Color(designSystemColor: .surface))
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: Metrics.shadowRadius1, x: 0, y: Metrics.shadowOffset1)
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: Metrics.shadowRadius2, x: 0, y: Metrics.shadowOffset2)
-            )
+        }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(height: Metrics.height)
+        .background(
+            Capsule()
+                .fill(Color(designSystemColor: .controlsFillSecondary))
+        )
+        .if(model.isActionsEnabled) {
+            $0.contextMenu { menuContentView }
+        }
+    }
+
+    private var mainView: some View {
+        Button(action: model.onCardTap) {
+            HStack(spacing: Metrics.innerSpacing) {
+                iconView
+                VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
+                    Text(UserText.escapeHatchReturnToLabel)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                        .frame(height: Metrics.textRowHeight, alignment: .center)
+                    Text(model.title)
+                        .daxSubheadSemibold()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                        .frame(height: Metrics.textRowHeight, alignment: .center)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
+    }
+
+    private var menuView: some View {
+        Menu {
+            menuContentView
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(.horizontal, Metrics.horizontalPadding)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
+        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+    }
+
+    @ViewBuilder
+    private var menuContentView: some View {
+        Section(header: Text(model.subtitle)) {
+            Button(action: model.onCardTap) {
+                Label {
+                    Text(UserText.escapeHatchMenuReturnToTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.goBackCircle)
+                        .foregroundColor(Color(designSystemColor: .icons))
+                }
+            }
+            Button(role: .destructive, action: model.onCloseTab) {
+                Label {
+                    Text(UserText.escapeHatchMenuCloseTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                }
+            }
+            Button(role: .destructive, action: model.onBurnTab) {
+                Label {
+                    Text(UserText.escapeHatchMenuBurnTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
+                }
+            }
+        }
     }
 
     private var accessibilityLabelText: String {
@@ -70,39 +121,56 @@ struct ReturnToTabCard: View {
         return String(format: UserText.escapeHatchReturnToWithSubtitleAccessibilityLabelFormat, model.title, model.subtitle)
     }
 
-    private var returnToLabel: some View {
-        Text(returnToLabelText)
-            .daxFootnoteRegular()
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-    }
-
     /// Favicon from .tabs cache, fire tab icon, Duck.ai logo, or placeholder depending on tab type.
+    /// Decorated with a small back-arrow overlay to signal "return to" affordance.
     private var iconView: some View {
-        Group {
-            switch model.tabType {
-            case .fire:
-                Image(uiImage: DesignSystemImages.Color.Size96.fireTab)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            case .aiChat:
-                Image(uiImage: UIImage(resource: .duckAIDefault))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            case .regular:
-                if let domain = model.domain {
-                    DomainFaviconView(domain: domain)
-                } else {
-                    RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
-                        .fill(Color(designSystemColor: .controlsFillSecondary))
-                }
-            }
+        ZStack(alignment: .bottomTrailing) {
+            faviconBaseView
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                .clipShape(RoundedRectangle(cornerRadius: Metrics.iconCornerRadius))
+
+            backArrowOverlay
+                // Flip x for RTL so the badge stays at the bottom-trailing visual corner
+                // (which is bottom-left in RTL) and protrudes outward rather than inward.
+                .offset(x: layoutDirection == .rightToLeft ? -Metrics.overlayOffset : Metrics.overlayOffset,
+                        y: Metrics.overlayOffset)
         }
         .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-        .clipShape(RoundedRectangle(cornerRadius: Metrics.iconCornerRadius))
     }
 
-    private var returnToLabelText: String {
-        UserText.escapeHatchReturnToLabel
+    @ViewBuilder
+    private var faviconBaseView: some View {
+        switch model.tabType {
+        case .fire:
+            Image(uiImage: DesignSystemImages.Color.Size96.fireTab)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        case .aiChat:
+            Image(uiImage: UIImage(resource: .duckAIDefault))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        case .regular:
+            if let domain = model.domain {
+                DomainFaviconView(domain: domain)
+                    .id(domain)
+            } else {
+                RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
+            }
+        }
+    }
+
+    /// Uses rebranded `decorationPrimary` (9% vs default 30% opacity); will become global default after rebrand rollout.
+    private var backArrowOverlay: some View {
+        Image(uiImage: DesignSystemImages.Glyphs.Size12.goBackCircleRecolorable)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: Metrics.overlayContainerSize, height: Metrics.overlayContainerSize)
+            .overlay(
+                Circle()
+                    .strokeBorder(Color(singleUseColor: .rebranding(.decorationPrimary)),
+                                  lineWidth: Metrics.overlayStrokeWidth)
+            )
     }
 }
 
@@ -123,61 +191,56 @@ private struct DomainFaviconView: View {
 }
 
 private enum Metrics {
-    static let cornerRadius: CGFloat = 16
-    static let shadowRadius1: CGFloat = 12
-    static let shadowRadius2: CGFloat = 48
-    static let shadowOffset1: CGFloat = 4
-    static let shadowOffset2: CGFloat = 16
-    static let cardPadding: CGFloat = 16
-    static let labelToContentSpacing: CGFloat = 0
-    static let titleToSubtitleSpacing: CGFloat = 2
+    static let height: CGFloat = 56
+    static let horizontalPadding: CGFloat = 16
+    static let innerSpacing: CGFloat = 8
+    static let titleToSubtitleSpacing: CGFloat = 0
+    static let textRowHeight: CGFloat = 20
     static let iconSize: CGFloat = 24
-    static let iconCornerRadius: CGFloat = 4
+    static let iconCornerRadius: CGFloat = 6
+    static let overlayContainerSize: CGFloat = 12
+    static let overlayStrokeWidth: CGFloat = 1
+    static let overlayOffset: CGFloat = 3
 }
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Return to tab card") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Tokamak - Wikipedia",
-            subtitle: "en.wikipedia.org/wiki/Tokamak",
-            tabType: .regular,
-            domain: "en.wikipedia.org",
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Duck.ai") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Good Dog Name Ideas",
-            subtitle: "Duck.ai",
-            tabType: .aiChat,
-            domain: nil,
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Good Dog Name Ideas",
+                                    subtitle: "Duck.ai",
+                                    tabType: .aiChat,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Fire Tab") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Last Used Fire Tab",
-            subtitle: "",
-            tabType: .fire,
-            domain: nil,
-            targetTab: Tab(fireTab: true)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: true)
+    ReturnToTabCard(model: .preview(title: "Last Used Fire Tab",
+                                    subtitle: "",
+                                    tabType: .fire,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 1))
+        .padding()
+        .frame(width: 360)
 }
+
+#endif

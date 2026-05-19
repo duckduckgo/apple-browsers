@@ -106,7 +106,19 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 ### Wide Event Definitions
 
-Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a different schema from regular pixels. They have `meta`, `feature`, and `feature.data` sections instead of `suffixes` and `parameters`. Validating wide event schema correctness is out of scope for automated review — leave wide event definitions to human reviewers. Only flag if a wide event is added in Swift but has no definition file at all.
+Wide events have **two parallel definition files** that must stay in lockstep:
+- The **pixel definition** (`{iOS,macOS}/PixelDefinitions/pixels/definitions/*.json5`) declares the wide-event pixel with `feature.data.ext.*` parameters or `keyPattern`s.
+- The **wide-event source definition** (`{iOS,macOS}/PixelDefinitions/wide_events/definitions/*.json5`) declares the schema and generates `wide_events/generated_schemas/<meta-type>-<version>.json`, which is what remote validation uses.
+
+These two files are paired by `meta.type` — every wide-event pixel def has a `{ "key": "meta.type", "enum": ["<meta-type>"] }` parameter whose enum value matches the wide-event source's `meta.type`.
+
+CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms, and these enforce most of the rules below automatically. Still flag these patterns in review when they appear:
+
+- A PR modifies the pixel definition's `feature.data.ext.*` parameters without making the same change in the matching wide-event source definition (or vice versa). Both must move together.
+- A PR changes the **shape** of the wide-event source (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
+- A PR modifies the Swift wide-event emitter (`jsonParameters()` keys, `WideEventMetadata.version`) and only one of the two definition files. All three (Swift emitter + pixel def + wide-event source) must agree.
+
+Only flag if a wide event is added in Swift but has no definition files at all. Validating the deep shape of the schema itself (e.g. nested `ext.ipv4.http.status`) is still the human reviewer's job.
 
 ### Validating changes to package.resolved files
 

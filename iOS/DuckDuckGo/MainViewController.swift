@@ -1640,7 +1640,6 @@ class MainViewController: UIViewController {
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   fireModePromotionEligibility: fireModePromotionEligibility,
-                                                  hasEscapeHatch: hatch != nil,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,

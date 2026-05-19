@@ -37,11 +37,15 @@ extension NEPacketTunnelProvider {
             }
         }
 
-        guard let fallbackInterfaceName else {
+        guard let fallbackInterfaceName, Self.isTunnelInterfaceName(fallbackInterfaceName) else {
             return nil
         }
 
         return await Self.findInterface(named: fallbackInterfaceName)
+    }
+
+    static func isTunnelInterfaceName(_ interfaceName: String) -> Bool {
+        interfaceName.hasPrefix("utun")
     }
 
     private static func findInterface(named interfaceName: String) async -> NWInterface? {

@@ -61,12 +61,12 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
         return remoteMessagingConfig
     }
 
-    public var capturedTrigger: MessageTrigger?
+    public var capturedTriggerFilter: TriggerFilter?
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, trigger: MessageTrigger? = nil) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .noTrigger) -> RemoteMessageModel? {
         fetchScheduledRemoteMessageCalls += 1
         capturedSurfaces = surfaces
-        capturedTrigger = trigger
+        capturedTriggerFilter = triggerFilter
         return scheduledRemoteMessage
     }
 

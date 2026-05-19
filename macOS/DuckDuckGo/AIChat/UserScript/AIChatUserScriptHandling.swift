@@ -142,6 +142,11 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// to the owning `Tab` and decide whether to focus it instead of opening a new one.
     @MainActor func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Posted by Duck.ai when `getUserMedia()` rejects while starting voice chat. Native uses
+    /// the carried `reason` (the JS error name, e.g. `"NotAllowedError"`) to decide whether
+    /// to surface a system-permission remediation prompt.
+    @MainActor func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -173,6 +178,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let featureFlagger: FeatureFlagger
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
+    private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
 
     var isFireWindowProvider: (() -> Bool)?
 
@@ -187,7 +193,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         featureFlagger: FeatureFlagger,
         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -200,6 +207,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
+        self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
+            permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
+                notificationCenter: notificationCenter,
+                // Posting the notification is enough — the address-bar observer dedupes
+                // against its own popover state. From here we can't see UI state without
+                // pulling AppKit in, so the probe defaults to `false`.
+                isPresentedProvider: { _ in false }
+            )
+        )
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -722,6 +738,22 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         notificationCenter.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // No-op when the feature flag is off — FE should never reach here in that case
+        // (it sees `supportsNativeVoicePermissionHandler: false` and keeps its tooltip),
+        // but stale clients or local-override misuse could fire it. Fail closed.
+        guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return nil }
+        let reason: String = {
+            if let dict = params as? [String: Any], let value = dict["reason"] as? String {
+                return value
+            }
+            return ""
+        }()
+        voiceChatFailureHandler.handleVoiceChatStartFailed(reason: reason, sourceWebView: message.messageWebView)
         return nil
     }
 

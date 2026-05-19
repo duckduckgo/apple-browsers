@@ -134,7 +134,8 @@ extension NewTabPageActionsManager {
                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
                 ),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
-            )
+            ),
+            searchPreferences: NSApp.delegateTyped.searchPreferences
         )
         omnibarConfigProvider.configure(aiChatsProvider: aiChatsProvider)
         let stateProvider = NewTabPageStateProvider(

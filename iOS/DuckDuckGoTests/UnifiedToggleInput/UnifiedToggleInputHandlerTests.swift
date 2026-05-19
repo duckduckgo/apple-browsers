@@ -62,6 +62,7 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(sut.isTopBarPosition)
         XCTAssertFalse(sut.isUsingExpandedBottomBarHeight)
         XCTAssertFalse(sut.isCurrentTextValidURL)
+        XCTAssertTrue(sut.usesExpandedAIChatTextEntryLayout)
     }
 
     // MARK: - Fire Tab
@@ -400,9 +401,11 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
 
     // MARK: - updateBarPosition
 
-    func test_updateBarPosition_doesNotChangeConstants() {
-        sut.updateBarPosition(isTop: true)
+    func test_updateBarPosition_updatesTopBarPosition() {
         XCTAssertFalse(sut.isTopBarPosition)
+
+        sut.updateBarPosition(isTop: true)
+        XCTAssertTrue(sut.isTopBarPosition)
 
         sut.updateBarPosition(isTop: false)
         XCTAssertFalse(sut.isTopBarPosition)

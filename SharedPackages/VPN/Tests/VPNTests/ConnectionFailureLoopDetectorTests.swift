@@ -35,31 +35,10 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Feature Flag Off
-
-    func testWhenFeatureDisabled_connectionFailed_returnsFalse() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: false)
-
-        for _ in 1...5 {
-            XCTAssertFalse(detector.connectionFailed(isOnDemand: true))
-        }
-        XCTAssertFalse(detector.connectionLoopDetected)
-    }
-
-    func testWhenFeatureDisabled_noStateWrittenToDefaults() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: false)
-
-        _ = detector.connectionFailed(isOnDemand: true)
-        _ = detector.connectionFailed(isOnDemand: true)
-        _ = detector.connectionFailed(isOnDemand: true)
-
-        XCTAssertEqual(defaults.integer(forKey: ConnectionFailureLoopDetector.Keys.consecutiveFailureCount), 0)
-    }
-
     // MARK: - Threshold Detection
 
     func testThirdConsecutiveOnDemandFailure_returnsTrue() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         XCTAssertFalse(detector.connectionFailed(isOnDemand: true))
         XCTAssertFalse(detector.connectionFailed(isOnDemand: true))
@@ -67,7 +46,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     }
 
     func testConnectionLoopDetected_isFalseAtThreshold() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -77,7 +56,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     }
 
     func testConnectionLoopDetected_isTrueAfterThreshold() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -88,7 +67,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     }
 
     func testAfterLoopDetected_subsequentFailures_returnFalse() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -102,7 +81,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     // MARK: - Reset via Success
 
     func testConnectionSucceeded_resetsLoopState() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -119,7 +98,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     // MARK: - Reset via Manual Disable
 
     func testReset_clearsLoopState() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -136,7 +115,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     // MARK: - Reset via Non-On-Demand Failure
 
     func testNonOnDemandFailure_resetsLoopState() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -149,7 +128,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     }
 
     func testNonOnDemandFailure_preventsLoopDetection() {
-        let detector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector.connectionFailed(isOnDemand: true)
         _ = detector.connectionFailed(isOnDemand: true)
@@ -162,7 +141,7 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
     // MARK: - Persistence Across Instances
 
     func testLoopState_persistsAcrossInstances() {
-        let detector1 = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector1 = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector1.connectionFailed(isOnDemand: true)
         _ = detector1.connectionFailed(isOnDemand: true)
@@ -170,17 +149,17 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
         _ = detector1.connectionFailed(isOnDemand: true)
         XCTAssertTrue(detector1.connectionLoopDetected)
 
-        let detector2 = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector2 = ConnectionFailureLoopDetector(store: defaults)
         XCTAssertTrue(detector2.connectionLoopDetected)
     }
 
     func testFailureCount_persistsAcrossInstances() {
-        let detector1 = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector1 = ConnectionFailureLoopDetector(store: defaults)
 
         _ = detector1.connectionFailed(isOnDemand: true)
         _ = detector1.connectionFailed(isOnDemand: true)
 
-        let detector2 = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let detector2 = ConnectionFailureLoopDetector(store: defaults)
         XCTAssertTrue(detector2.connectionFailed(isOnDemand: true)) // 3rd failure triggers
         XCTAssertFalse(detector2.connectionLoopDetected) // but suppression doesn't start until 4th
     }

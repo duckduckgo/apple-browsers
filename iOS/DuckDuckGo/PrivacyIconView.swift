@@ -383,6 +383,10 @@ class PrivacyIconView: UIView {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             loadAnimations()
+
+            /// If the trait collection changes then it means this view is already visible and animations have
+            /// probably completed.
+            shieldDotAnimationView.currentProgress = 1.0
         }
     }
 }

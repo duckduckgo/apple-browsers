@@ -143,7 +143,6 @@ final class PermissionAuthorizationTypeTests: XCTestCase {
 
     func testSystemSettingsURL_NonGeolocation_ReturnsNil() {
         XCTAssertNil(PermissionAuthorizationType.camera.systemSettingsURL)
-        XCTAssertNil(PermissionAuthorizationType.microphone.systemSettingsURL)
         XCTAssertNil(PermissionAuthorizationType.cameraAndMicrophone.systemSettingsURL)
         XCTAssertNil(PermissionAuthorizationType.popups.systemSettingsURL)
         XCTAssertNil(PermissionAuthorizationType.externalScheme(scheme: "zoom").systemSettingsURL)

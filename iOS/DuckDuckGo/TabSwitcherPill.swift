@@ -21,6 +21,10 @@ import SwiftUI
 import DesignResourcesKit
 
 struct TabSwitcherPill: View {
+    /// Natural width/height when the pill renders as a circle. Parents typically constrain to this size,
+    /// or relax `maxWidth` for the expanded capsule shape.
+    static let compactSize: CGFloat = 56
+
     let count: Int
     let onTap: () -> Void
 
@@ -38,9 +42,11 @@ struct TabSwitcherPill: View {
         Button(action: onTap) {
             TabCountBadge(model: tabCountModel)
                 .foregroundColor(Color(designSystemColor: .icons))
-                .frame(width: Metrics.size, height: Metrics.size)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
-                    Circle()
+                    // Capsule degenerates to a circle when width == height,
+                    // so it covers both the compact and expanded shapes.
+                    Capsule()
                         .fill(Color(designSystemColor: .controlsFillSecondary))
                 )
         }
@@ -52,18 +58,18 @@ struct TabSwitcherPill: View {
     }
 }
 
-private enum Metrics {
-    static let size: CGFloat = 56
-}
-
 // MARK: - Previews
 
 #Preview("Tab switcher pill — counts") {
     HStack(spacing: 8) {
         TabSwitcherPill(count: 1, onTap: {})
+            .frame(width: TabSwitcherPill.compactSize, height: TabSwitcherPill.compactSize)
         TabSwitcherPill(count: 9, onTap: {})
+            .frame(width: TabSwitcherPill.compactSize, height: TabSwitcherPill.compactSize)
         TabSwitcherPill(count: 99, onTap: {})
+            .frame(width: TabSwitcherPill.compactSize, height: TabSwitcherPill.compactSize)
         TabSwitcherPill(count: 100, onTap: {})
+            .frame(width: TabSwitcherPill.compactSize, height: TabSwitcherPill.compactSize)
     }
     .padding()
 }

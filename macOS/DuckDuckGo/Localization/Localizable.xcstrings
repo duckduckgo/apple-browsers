@@ -2365,10 +2365,58 @@
       "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bild oder Datei hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Add Image or File"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir imagen o archivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une image ou un fichier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi immagine o file"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbeelding of bestand toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj obraz lub plik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Imagem ou Ficheiro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить изображение или файл"
           }
         }
       }
@@ -2377,10 +2425,58 @@
       "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine offenen Tabs"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "No open tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay pestañas abiertas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun onglet ouvert"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna scheda aperta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen open tabbladen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak otwartych kart"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum separador aberto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет открытых вкладок"
           }
         }
       }
@@ -2389,10 +2485,58 @@
       "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiteninhalt hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Add Page Content"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir contenido a la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter le contenu de la page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il contenuto della pagina"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina-inhoud toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj zawartość strony"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar conteúdo à página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить содержимое страницы"
           }
         }
       }
@@ -2401,10 +2545,58 @@
       "comment" : "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuletzt verwendete Tabs"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Recent Tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pestañas recientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onglets récents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schede recenti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recente tabbladen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnie karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Separadores recentes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние вкладки"
           }
         }
       }
@@ -2415,8 +2607,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Du kannst jeweils nur 3 Bilder anhängen"
+            "state" : "translated",
+            "value" : "Du kannst nur drei Bilder gleichzeitig hinzufügen"
           }
         },
         "en" : {
@@ -2427,44 +2619,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Solo puedes adjuntar 3 imágenes a la vez"
+            "state" : "translated",
+            "value" : "Solo puedes añadir 3 imágenes a la vez."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Vous ne pouvez joindre que 3 images à la fois"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Puoi allegare solo 3 immagini alla volta"
+            "state" : "translated",
+            "value" : "Puoi aggiungere solo 3 immagini alla volta"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Je kunt slechts 3 afbeeldingen tegelijk bijvoegen"
+            "state" : "translated",
+            "value" : "Je kunt maar 3 afbeeldingen tegelijk toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Jednocześnie możesz załączyć tylko 3 obrazy"
+            "state" : "translated",
+            "value" : "Jednocześnie możesz dodać tylko 3 obrazy"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Só podes anexar 3 imagens de cada vez"
+            "state" : "translated",
+            "value" : "Só podes adicionar 3 imagens de cada vez"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Можно прикрепить не более 3 изображений за раз"
+            "state" : "translated",
+            "value" : "Можно добавить не более 3 изображений за раз"
           }
         }
       }
@@ -2833,10 +3025,58 @@
       "comment" : "Accessibility label for a file added to the AI chat omnibar — %@ is replaced with the filename",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei %@ hinzugefügt"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Added file %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo añadido %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichier %@ ajouté"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File aggiunto %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestand %@ toegevoegd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodano plik %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ficheiro %@ adicionado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавлен файл %@"
           }
         }
       }
@@ -2845,10 +3085,58 @@
       "comment" : "Error message shown when the user tries to add more than 3 files (PDFs etc.) in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst pro Gespräch nur 3 Dateien hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "You can only add 3 files per conversation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo puedes añadir 3 archivos por conversación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pouvez joindre que 3 fichiers par conversation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi aggiungere solo 3 file per conversazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt per gesprek maximaal 3 bestanden bijvoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz dodać tylko 3 pliki na każdą rozmowę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só podes anexar 3 ficheiros por conversa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В одну беседу можно добавить только 3 файла"
           }
         }
       }
@@ -3219,8 +3507,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Bild anhängen"
+            "state" : "translated",
+            "value" : "Bild hinzufügen"
           }
         },
         "en" : {
@@ -3231,44 +3519,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adjuntar imagen"
+            "state" : "translated",
+            "value" : "Añadir imagen"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Joindre une image"
+            "state" : "translated",
+            "value" : "Ajouter une image"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allega immagine"
+            "state" : "translated",
+            "value" : "Aggiungi immagine"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Afbeelding bijvoegen"
+            "state" : "translated",
+            "value" : "Afbeelding toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Załącz obraz"
+            "state" : "translated",
+            "value" : "Dodaj obraz"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anexar imagem"
+            "state" : "translated",
+            "value" : "Adicionar imagem"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Прикрепить изображение"
+            "state" : "translated",
+            "value" : "Добавить изображение"
           }
         }
       }
@@ -4119,8 +4407,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anhang entfernen"
+            "state" : "translated",
+            "value" : "Entfernen"
           }
         },
         "en" : {
@@ -4131,44 +4419,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Eliminar archivo adjunto"
+            "state" : "translated",
+            "value" : "Eliminar"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer la pièce jointe"
+            "state" : "translated",
+            "value" : "Supprimer"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Rimuovi allegato"
+            "state" : "translated",
+            "value" : "Rimuovi"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Bijlage verwijderen"
+            "state" : "translated",
+            "value" : "Verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Usuń załącznik"
+            "state" : "translated",
+            "value" : "Usuń"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Remover anexo"
+            "state" : "translated",
+            "value" : "Remover"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Удалить вложение"
+            "state" : "translated",
+            "value" : "Удалить"
           }
         }
       }
@@ -4179,8 +4467,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anhang entfernen"
+            "state" : "translated",
+            "value" : "Entfernen"
           }
         },
         "en" : {
@@ -4191,44 +4479,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Eliminar archivo adjunto"
+            "state" : "translated",
+            "value" : "Eliminar"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer la pièce jointe"
+            "state" : "translated",
+            "value" : "Supprimer"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Rimuovi allegato"
+            "state" : "translated",
+            "value" : "Rimuovi"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Bijlage verwijderen"
+            "state" : "translated",
+            "value" : "Verwijderen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Usuń załącznik"
+            "state" : "translated",
+            "value" : "Usuń"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Remover anexo"
+            "state" : "translated",
+            "value" : "Remover"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Удалить вложение"
+            "state" : "translated",
+            "value" : "Удалить"
           }
         }
       }
@@ -4897,10 +5185,58 @@
       "comment" : "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Aktueller Tab)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "(Current Tab)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Pestaña actual)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Onglet actuel)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Scheda attuale)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Huidig tabblad)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Bieżąca karta)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(separador atual)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Текущая вкладка)"
           }
         }
       }
@@ -68699,6 +69035,126 @@
         }
       }
     },
+    "permission.authorization.microphone" : {
+      "comment" : "Popover asking for domain %@ to use the microphone",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Website „%@“ möchte dein Mikrofon benutzen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%@“ website would like to use your microphone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El sitio web «%@» quiere usar tu micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le site « %@ » souhaiterait utiliser votre micro."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il sito web “%@” desidera utilizzare il tuo microfono."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De website \"%@\" wil graag je microfoon gebruiken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@” chce korzystać z Twojego mikrofonu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O site \"%@\" gostaria de usar o seu microfone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайт «%@» запрашивает доступ к вашему микрофону."
+          }
+        }
+      }
+    },
+    "permission.authorization.microphone.duckai-voice-chat" : {
+      "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für den Sprachchat von Duck.ai ist ein Mikrofonzugriff erforderlich."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai voice chat requires microphone access."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El chat de voz de Duck.ai requiere acceso al micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le chat vocal Duck.ai nécessite un accès au micro."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La chat vocale di Duck.ai richiede l'accesso al microfono."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor voicechat via Duck.ai is toegang tot de microfoon vereist."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czat głosowy Duck.ai wymaga dostępu do mikrofonu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O chat de voz do Duck.ai requer acesso ao microfone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для голосового чата Duck.ai требуется доступ к микрофону."
+          }
+        }
+      }
+    },
     "permission.authorization.notifications.format" : {
       "comment" : "Popover asking for domain %@ to send notifications",
       "extractionState" : "extracted_with_value",
@@ -72040,6 +72496,66 @@
         }
       }
     },
+    "permission.system.microphone.disabled" : {
+      "comment" : "Text shown when system microphone access was previously denied. Followed by a link to System Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systemmikrofonzugriff deaktiviert. Schalte es ein in "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System microphone access disabled. Turn it on in "
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El acceso al micrófono del sistema está desactivado. Actívalo en "
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'accès au micro système est désactivé. Activez-le dans "
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesso al microfono di sistema disabilitato. Attivalo in "
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang tot de systeemmicrofoon is uitgeschakeld. Schakel deze functie in via "
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostęp do mikrofonu systemowego jest wyłączony. Włącz go w obszarze "
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acesso ao microfone do sistema desativado. Liga-o em "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к системному микрофону отключен. Включите его в разделе "
+          }
+        }
+      }
+    },
     "permission.system.notification.enable" : {
       "comment" : "Button to enable system notifications",
       "extractionState" : "extracted_with_value",
@@ -72222,6 +72738,66 @@
     },
     "permission.system.settings.location" : {
       "comment" : "Link text to open System Settings Privacy section for location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systemeinstellungen → Privatsphäre"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes del sistema → Privacidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres système → Confidentialité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di sistema → Privacy"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systeeminstellingen → Privacy"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia systemowe → Prywatność"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições do sistema → Privacidade"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки системы → Конфиденциальность"
+          }
+        }
+      }
+    },
+    "permission.system.settings.microphone" : {
+      "comment" : "Link text to open System Settings Privacy section for microphone",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

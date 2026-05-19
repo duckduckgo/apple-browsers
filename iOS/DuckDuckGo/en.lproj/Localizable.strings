@@ -49,6 +49,12 @@
 /* Copy action */
 "action.title.copy" = "Copy";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copy Clean Link";
+
+/* Copy link action */
+"action.title.copy.link" = "Copy Link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copied";
 
@@ -1930,6 +1936,18 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Last used Fire Tab";
 
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Burn Tab";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Close Tab";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Return to Tab";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "More options";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
 
@@ -2766,6 +2784,12 @@ https://duckduckgo.com/mac";
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Move Address Bar to Bottom";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Move Address Bar to Top";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
@@ -4017,6 +4041,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Not Now";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";

@@ -263,6 +263,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
+    case omniBarLongPressMenu
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
@@ -490,6 +493,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
+
+    /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
+    /// auto-grants per-site mic permission at launch, locks the Permission Center row,
+    /// surfaces a "System microphone disabled" warning when the OS has denied access, and
+    /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
+    case nativeVoicePermissionFlow
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

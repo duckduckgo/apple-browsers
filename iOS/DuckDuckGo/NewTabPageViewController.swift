@@ -29,12 +29,17 @@ import Subscription
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
+        guard !newTabPageViewModel.isLogoHidden else { return false }
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             let isLandscape = view.bounds.width > view.bounds.height
             return !isLandscape
         }
         return true
+    }
+
+    func setLogoHidden(_ hidden: Bool) {
+        newTabPageViewModel.isLogoHidden = hidden
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -72,7 +77,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -95,13 +99,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
+        let viewModel = newTabPageViewModel
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: hasEscapeHatch)
+                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -120,25 +125,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
-        if let model {
-            let targetTab = model.targetTab
-            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
-            }
-            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestTabSwitcher(self)
-            }
-        } else {
-            newTabPageViewModel.onEscapeHatchTap = nil
-            newTabPageViewModel.onTabSwitcherTap = nil
-        }
+        messagesModel.refresh()
         updateBorderView()
-    }
-
-    func setOpenTabCount(_ count: Int) {
-        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {

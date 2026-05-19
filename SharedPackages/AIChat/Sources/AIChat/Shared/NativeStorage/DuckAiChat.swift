@@ -38,13 +38,17 @@ public struct DuckAiChat: Equatable {
     /// UUIDs of files referenced by this chat, stored in the native file store.
     public let fileRefs: [String]
 
+    /// Raw FE-supplied reasoning-mode string for this chat.
+    public let reasoningMode: String?
+
     public init(
         chatId: String,
         title: String,
         model: String,
         lastEdit: String,
         pinned: Bool,
-        fileRefs: [String] = []
+        fileRefs: [String] = [],
+        reasoningMode: String? = nil
     ) {
         self.chatId = chatId
         self.title = title
@@ -52,6 +56,7 @@ public struct DuckAiChat: Equatable {
         self.lastEdit = lastEdit
         self.pinned = pinned
         self.fileRefs = fileRefs
+        self.reasoningMode = reasoningMode
     }
 }
 
@@ -71,7 +76,8 @@ extension DuckAiChat {
             model: blob.model ?? "",
             lastEdit: blob.lastEdit ?? "",
             pinned: blob.pinned ?? false,
-            fileRefs: blob.fileRefs ?? []
+            fileRefs: blob.fileRefs ?? [],
+            reasoningMode: blob.reasoningMode
         )
 
         let firstUserMessage = blob.messages?
@@ -92,6 +98,7 @@ private struct ChatBlob: Decodable {
     let pinned: Bool?
     let fileRefs: [String]?
     let messages: [MessageBlob]?
+    let reasoningMode: String?
 }
 
 private struct MessageBlob: Decodable {

@@ -4792,6 +4792,10 @@ extension MainViewController: TabDelegate {
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
     
+    func tabDidFinishNavigation(_ tab: TabViewController) {
+        _ = tabManager.save()
+    }
+
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {
         previewsSource.update(preview: preview, forTab: tab.tabModel)
     }

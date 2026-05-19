@@ -31,8 +31,6 @@ struct SettingsYouTubeAdBlockingView: View {
 
     @State private var showDuckPlayer = false
 
-    @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
-
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
@@ -61,7 +59,7 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
-                if isRemotelyDisabled {
+                if viewModel.isYouTubeAdBlockingRemotelyDisabled {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
                         remotelyDisabledRow
                             .listRowBackground(Color(designSystemColor: .surface))

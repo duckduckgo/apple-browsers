@@ -728,6 +728,10 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingDisclosureHidden
     }
 
+    var isYouTubeAdBlockingRemotelyDisabled: Bool {
+        adBlockingAvailability.isRemotelyDisabled
+    }
+
     /// Settings-pane open hook. If the disclosure preference has never been
     /// written, pin it to the current YouTube Ad Blocking state — existing
     /// users (toggle already on) get the disclosure hidden, new users (toggle

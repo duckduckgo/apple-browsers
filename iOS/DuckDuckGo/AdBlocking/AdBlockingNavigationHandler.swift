@@ -55,7 +55,7 @@ final class AdBlockingNavigationHandler: AdBlockingNavigationHandling {
     }
 
     private func handleAnimation(previousURL: URL?, newURL: URL?) {
-        guard availability.isEnabled, !availability.isRemotelyDisabled else { return }
+        guard availability.isEnabled else { return }
         guard let newURL, newURL.isPlayableYoutubeVideoContent else { return }
         guard let newVideoID = newURL.youtubeVideoID else { return }
 

@@ -503,6 +503,45 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(events.last, false)
     }
 
+    func testShowViewAllAiChats_isFalseWhenAutocompleteSuggestionsDisabled() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: false))
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        // Stale `hasExcessChats` from a prior fetch must not surface a "View All" button when
+        // the user has turned Autocomplete suggestions off — matches the address bar behaviour
+        // and avoids the empty-chats-but-View-All inconsistency Cursor Bugbot flagged.
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    func testShowViewAllAiChatsPublisher_emitsWhenAutocompleteSuggestionsToggles() throws {
+        PixelKit.setUp(dryRun: true, appVersion: "", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        defer { PixelKit.tearDown() }
+
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: searchPreferences)
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        var events: [Bool] = []
+        let cancellable = provider.showViewAllAiChatsPublisher.sink { events.append($0) }
+
+        searchPreferences.showAutocompleteSuggestions = false
+        searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertTrue(events.contains(false))
+        XCTAssertEqual(events.last, true)
+    }
+
     // MARK: - showAskAiSuggestion
 
     func testShowAskAiSuggestion_mirrorsSearchPreferences() throws {

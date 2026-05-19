@@ -275,18 +275,34 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var showViewAllAiChats: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
             && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && searchPreferences.showAutocompleteSuggestions
             && hasExcessChats
     }
 
+    /// Re-evaluates `showViewAllAiChats` whenever either `hasExcessChats` or the autocomplete
+    /// preference flips. Without the second input, disabling Autocomplete suggestions would leave
+    /// a stale `true` in `hasExcessChats` (set on a prior `aiChats(query:)` call that fetched
+    /// suggestions), and the web could be told to show a "View All" button while the chats
+    /// response is empty.
+    ///
+    /// The closure reads the values straight off `CombineLatest` rather than calling
+    /// `self.showViewAllAiChats`. `@Published` fires in `willSet`, so the stored property is
+    /// still the old value when the publisher emits — reading the getter at that point would
+    /// race against the assignment.
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
-        $hasExcessChats
-            .map { [weak self] hasExcess in
-                guard let self else { return false }
-                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
-                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
-                    && hasExcess
-            }
-            .eraseToAnyPublisher()
+        Publishers.CombineLatest(
+            $hasExcessChats,
+            searchPreferences.$showAutocompleteSuggestions
+        )
+        .map { [weak self] hasExcess, showAutocomplete in
+            guard let self else { return false }
+            return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                && showAutocomplete
+                && hasExcess
+        }
+        .removeDuplicates()
+        .eraseToAnyPublisher()
     }
 
     func configure(aiChatsProvider: NewTabPageOmnibarAiChatsProviding) {

@@ -78,15 +78,13 @@
                                         "app_terminated"
                                     ]
                                 },
-                                "session_duration_ms_bucketed": {
-                                    "type": "string",
-                                    "description": "Total time the post-idle surface was visible, from session start until the terminal action or background, bucketed (lower end of bucket, in ms). Absent when the session was orphaned (UNKNOWN / app_terminated).",
-                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                "session_duration_ms": {
+                                    "type": "integer",
+                                    "description": "Total time in milliseconds the post-idle surface was visible, from session start until the terminal action or background. Absent when the session was orphaned (UNKNOWN / app_terminated)."
                                 },
-                                "time_to_first_interaction_ms_bucketed": {
-                                    "type": "string",
-                                    "description": "Time from session start to the first user interaction with the post-idle surface (page engagement, toggle, back, or terminal action), bucketed (lower end of bucket, in ms). Absent if the session ended without any interaction.",
-                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                "time_to_first_interaction_ms": {
+                                    "type": "integer",
+                                    "description": "Time in milliseconds from session start to the first user interaction with the post-idle surface (page engagement, toggle, back, or terminal action). Absent if the session ended without any interaction."
                                 },
                                 "page_engaged": {
                                     "type": "boolean",

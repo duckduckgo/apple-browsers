@@ -115,7 +115,8 @@ These two files are paired by `meta.type` — every wide-event pixel def has a `
 CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms, and these enforce most of the rules below automatically. Still flag these patterns in review when they appear:
 
 - A PR modifies the pixel definition's `feature.data.ext.*` parameters without making the same change in the matching wide-event source definition (or vice versa). Both must move together.
-- A PR changes the **shape** of the wide-event source (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
+- A PR changes the **shape** of the wide-event source definition (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping that source definition's `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
+- A PR changes the **shape** of the Swift wide-event object/emitter (`WideEventData` stored properties that become `feature.data.ext.*`, `jsonParameters()` keys, status reasons, enum values, or field types) without bumping `WideEventMetadata.version` and the matching source definition's `meta.version`.
 - A PR modifies the Swift wide-event emitter (`jsonParameters()` keys, `WideEventMetadata.version`) and only one of the two definition files. All three (Swift emitter + pixel def + wide-event source) must agree.
 
 Only flag if a wide event is added in Swift but has no definition files at all. Validating the deep shape of the schema itself (e.g. nested `ext.ipv4.http.status`) is still the human reviewer's job.
@@ -131,4 +132,3 @@ If there are changes in `iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshar
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
-

@@ -109,7 +109,10 @@ extension NewTabPageActionsManager {
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
-        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
+        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: NSApp.delegateTyped.searchPreferences
+        )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences

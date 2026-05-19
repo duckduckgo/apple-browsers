@@ -174,7 +174,7 @@ private extension EscapeHatchModel {
     /// This causes `model.afterInactivityOptionBinding` to react to `AfterInactivityOptionAdapter` changes
     ///
     func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
-        afterInactivityOptionAdapter.objectWillChange
+        adapter.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

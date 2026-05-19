@@ -517,9 +517,27 @@ final class PreferencesSidebarModel: ObservableObject {
             return
         }
 
-        if sections.flatMap(\.panes).contains(identifier), identifier != selectedPane {
-            selectedPane = identifier
+        let visiblePanes = sections.flatMap(\.panes)
+        let resolvedIdentifier = Self.resolveTargetPane(identifier, visiblePanes: visiblePanes)
+
+        if visiblePanes.contains(resolvedIdentifier), resolvedIdentifier != selectedPane {
+            selectedPane = resolvedIdentifier
         }
+    }
+
+    /// Redirect navigations targeting panes that have been folded into a parent surface.
+    /// Currently: `.duckPlayer` → `.youTubeAdBlocking` when ad blocking is available, since
+    /// Duck Player settings live as a sub-section of YouTube Ad Blocking in that build.
+    /// Without this, deep links from Duck Player's web UI (e.g. `duck://settings/duckplayer`)
+    /// silently no-op because the standalone `.duckPlayer` pane is hidden from the sidebar.
+    private static func resolveTargetPane(_ identifier: PreferencePaneIdentifier,
+                                          visiblePanes: [PreferencePaneIdentifier]) -> PreferencePaneIdentifier {
+        if identifier == .duckPlayer,
+           !visiblePanes.contains(.duckPlayer),
+           visiblePanes.contains(.youTubeAdBlocking) {
+            return .youTubeAdBlocking
+        }
+        return identifier
     }
 
     func resetTabSelectionIfNeeded() {

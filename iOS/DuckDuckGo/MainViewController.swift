@@ -184,6 +184,7 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
@@ -403,6 +404,7 @@ class MainViewController: UIViewController {
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -482,6 +484,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
@@ -1519,11 +1522,6 @@ class MainViewController: UIViewController {
     }
     
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
-        let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
-            keyValueStore: keyValueStore,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
-        )
-
         if targetTab.fireTab {
             if targetTab.link != nil || targetTab.isAITab {
                 return EscapeHatchModel(

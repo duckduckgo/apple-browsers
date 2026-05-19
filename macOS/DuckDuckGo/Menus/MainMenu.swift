@@ -367,7 +367,7 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
-                .withImage(DesignSystemImages.Glyphs.Size16.print)
+                .withImage(DesignSystemImages.Glyphs.Size12.print)
         }
     }
 

@@ -218,9 +218,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1213962493484138?focus=true
-    case vpnConnectionFailureLoopDetection
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -578,8 +575,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor)))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem)))
-        case .vpnConnectionFailureLoopDetection:
-            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.connectionFailureLoopDetection)))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings)))
         case .fullDuckAIMode:

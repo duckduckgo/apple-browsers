@@ -5820,6 +5820,8 @@ extension MainViewController: OnboardingDelegate {
             isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
             delegate: self
         )
+        linearOnboardingContext?.onboardingViewController = controller
+        linearOnboardingContext?.onboardingViewModel = viewModel
         controller.modalPresentationStyle = .overFullScreen
         controller.modalTransitionStyle = .crossDissolve
         present(controller, animated: true, completion: completion)

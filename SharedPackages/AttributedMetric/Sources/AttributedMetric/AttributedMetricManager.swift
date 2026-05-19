@@ -256,7 +256,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
         guard let installDate = installDateProvider.installDate else {
             Logger.attributedMetric.error("Install date is nil")
-//            assertionFailure("Install date is nil")
+            assertionFailure("Install date is nil")
             return
         }
 

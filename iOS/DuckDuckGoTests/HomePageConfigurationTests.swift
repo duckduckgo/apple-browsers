@@ -18,6 +18,7 @@
 //
 
 import Testing
+import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import DuckDuckGo
 

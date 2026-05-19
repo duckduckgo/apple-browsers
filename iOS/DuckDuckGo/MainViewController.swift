@@ -1519,6 +1519,11 @@ class MainViewController: UIViewController {
     }
     
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
+        let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
+            keyValueStore: keyValueStore,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
+        )
+
         if targetTab.fireTab {
             if targetTab.link != nil || targetTab.isAITab {
                 return EscapeHatchModel(
@@ -1529,7 +1534,8 @@ class MainViewController: UIViewController {
                     targetTab: targetTab,
                     tabsSource: tabManager,
                     router: self,
-                    featureFlagger: featureFlagger
+                    featureFlagger: featureFlagger,
+                    afterInactivityOptionAdapter: afterInactivityOptionAdapter
                 )
             }
             return nil
@@ -1543,7 +1549,8 @@ class MainViewController: UIViewController {
                 targetTab: targetTab,
                 tabsSource: tabManager,
                 router: self,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                afterInactivityOptionAdapter: afterInactivityOptionAdapter
             )
         }
         if let link = targetTab.link {
@@ -1556,7 +1563,8 @@ class MainViewController: UIViewController {
                 targetTab: targetTab,
                 tabsSource: tabManager,
                 router: self,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                afterInactivityOptionAdapter: afterInactivityOptionAdapter
             )
         }
         return nil

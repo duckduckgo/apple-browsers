@@ -19,6 +19,8 @@
 
 import Foundation
 import Combine
+import SwiftUI
+import Persistence
 import PrivacyConfig
 import Core
 
@@ -60,6 +62,7 @@ final class EscapeHatchModel: ObservableObject {
 
     @Published private(set) var openTabCount: Int = 0
     @Published private(set) var isTargetTabPresent: Bool = true
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     private var cancellables = [AnyCancellable]()
 
     let title: String
@@ -80,6 +83,7 @@ final class EscapeHatchModel: ObservableObject {
          targetTab: Tab,
          tabsSource: some EscapeHatchTabsSource,
          isActionsEnabled: Bool,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          onCardTap: @escaping () -> Void,
          onTabSwitcherTap: @escaping () -> Void,
          onCloseTab: @escaping () -> Void,
@@ -90,17 +94,19 @@ final class EscapeHatchModel: ObservableObject {
         self.domain = domain
         self.targetTab = targetTab
         self.isActionsEnabled = isActionsEnabled
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.onCardTap = onCardTap
         self.onTabSwitcherTap = onTabSwitcherTap
         self.onCloseTab = onCloseTab
         self.onBurnTab = onBurnTab
 
         subscribeToTabsSource(tabsSource)
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
-    /// Builds the model with action closures wired to a router. The router is captured weakly so holders
-    /// of `EscapeHatchModel` don't pin its owner's lifecycle.
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger) {
+    /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
+    ///
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger, afterInactivityOptionAdapter: AfterInactivityOptionAdapter) {
         self.init(
             title: title,
             subtitle: subtitle,
@@ -109,6 +115,7 @@ final class EscapeHatchModel: ObservableObject {
             targetTab: targetTab,
             tabsSource: tabsSource,
             isActionsEnabled: featureFlagger.isFeatureOn(.escapeHatchActions),
+            afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             onCardTap: { [weak router] in
                 router?.escapeHatchDidRequestSwitch(to: targetTab)
             },
@@ -122,6 +129,13 @@ final class EscapeHatchModel: ObservableObject {
                 router?.escapeHatchDidRequestBurn(targetTab)
             }
         )
+    }
+}
+
+extension EscapeHatchModel {
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        afterInactivityOptionAdapter.afterInactivityOptionBinding
     }
 }
 
@@ -154,6 +168,17 @@ private extension EscapeHatchModel {
         if mode == .normal {
             openTabCount = allTabs.count
         }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOptionBinding` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        afterInactivityOptionAdapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 }
 

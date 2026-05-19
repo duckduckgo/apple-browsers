@@ -698,8 +698,9 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
     """
     base_proc = git(["merge-base", a.name, b.name], check=False)
     if base_proc.returncode != 0 or not base_proc.stdout.strip():
-        logger.warning("No merge base between %s and %s", a.name, b.name)
-        return None
+        raise ProbeError(
+            f"no merge base between {a.name} and {b.name}"
+        )
     base = base_proc.stdout.strip()
 
     hard_files: set[str] = set()
@@ -737,16 +738,17 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
                     if len(bits) == 3 and bits[2] in ("1", "2", "3"):
                         hard_files.add(path)
         else:
-            logger.warning("merge-tree --write-tree rc=%d for %s vs %s; stderr=%s",
-                           proc.returncode, a.name, b.name,
-                           proc.stderr.strip()[:200])
-            return None
+            raise ProbeError(
+                f"merge-tree --write-tree rc={proc.returncode} for "
+                f"{a.name} vs {b.name}: {proc.stderr.strip()[:200]}"
+            )
     else:
         legacy = git(["merge-tree", base, a.name, b.name], check=False)
         if legacy.returncode != 0:
-            logger.warning("legacy merge-tree failed for %s vs %s (rc=%d)",
-                           a.name, b.name, legacy.returncode)
-            return None
+            raise ProbeError(
+                f"legacy merge-tree failed for {a.name} vs {b.name} "
+                f"(rc={legacy.returncode})"
+            )
         in_section = False
         current_path: Optional[str] = None
         section_has_marker = False
@@ -867,6 +869,19 @@ def _branch_files_vs_main(branch: str) -> set[str]:
 # ---------------------------------------------------------------------------
 
 class AsanaError(RuntimeError):
+    pass
+
+
+class ProbeError(RuntimeError):
+    """Raised when ``probe_pair`` can't determine whether a pair
+    conflicts due to a git error (no shared merge-base, unexpected
+    ``merge-tree`` exit code, legacy ``merge-tree`` failure, …).
+
+    Callers should treat this as "unknown — try again next run":
+    ``main()`` skips the pair and records the failure in ``summary.errors``;
+    ``sweep_existing_tasks`` leaves the existing Asana task open instead
+    of auto-closing it.
+    """
     pass
 
 
@@ -1245,8 +1260,12 @@ def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
         try:
             result = probe_pair(a_branch, b_branch,
                                 compute_soft=INCLUDE_SOFT_CONFLICTS)
-        except subprocess.CalledProcessError as exc:
-            logger.warning("Sweep re-probe failed for %s: %s", title, exc)
+        except ProbeError as exc:
+            # Can't determine whether the conflict still exists — leave
+            # the task open rather than risk auto-closing a real one on
+            # a transient git error.
+            logger.warning("Sweep re-probe inconclusive for %s: %s",
+                           title, exc)
             continue
         # Mirror the creation-path threshold guard: hard_conflict_lines
         # is meaningful only on modern git (>= 2.38) where merge-tree
@@ -1537,8 +1556,9 @@ def run_report(top_n: int) -> int:
             # files into kept vs filtered.
             result = probe_pair(a, b, compute_soft=True,
                                 apply_ignore_filter=False)
-        except subprocess.CalledProcessError as exc:
-            logger.warning("git failed for %s vs %s: %s", a.name, b.name, exc)
+        except ProbeError as exc:
+            logger.warning("probe failed for %s vs %s: %s",
+                           a.name, b.name, exc)
             continue
         if result is None:
             continue
@@ -1650,7 +1670,11 @@ def main() -> int:
         b_sha = git(["rev-parse", b_name]).stdout.strip()
         a = Branch(a_name, a_sha, "n/a", "n/a", "n/a")
         b = Branch(b_name, b_sha, "n/a", "n/a", "n/a")
-        result = probe_pair(a, b)
+        try:
+            result = probe_pair(a, b)
+        except ProbeError as exc:
+            logger.error("probe failed: %s", exc)
+            return 1
         print(json.dumps({
             "pair": [a_name, b_name],
             "has_conflicts": bool(result and result.has_conflicts),
@@ -1707,8 +1731,10 @@ def main() -> int:
             continue
         try:
             result = probe_pair(a, b, compute_soft=INCLUDE_SOFT_CONFLICTS)
-        except subprocess.CalledProcessError as exc:
-            summary.errors.append(f"git failed for {a.name} vs {b.name}: {exc}")
+        except ProbeError as exc:
+            summary.errors.append(
+                f"probe failed for {a.name} vs {b.name}: {exc}"
+            )
             continue
         if result is None:
             continue

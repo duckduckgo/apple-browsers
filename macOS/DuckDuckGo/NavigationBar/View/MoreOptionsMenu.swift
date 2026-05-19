@@ -1079,10 +1079,23 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
     }
 
     override func performActionForItem(at index: Int) {
-        if let item = item(at: index), zoomItems.contains(item) {
-            PixelKit.fire(MoreOptionsMenuPixel.zoomActionClicked, frequency: .daily)
+        guard let item = item(at: index),
+              zoomItems.contains(item),
+              let mainViewController = item.target as? MainViewController else {
+            super.performActionForItem(at: index)
+            return
         }
-        super.performActionForItem(at: index)
+
+        switch item.action {
+        case #selector(MainViewController.zoomIn(_:)):
+            mainViewController.performZoomIn(entryPoint: .menu)
+        case #selector(MainViewController.zoomOut(_:)):
+            mainViewController.performZoomOut(entryPoint: .menu)
+        case #selector(MainViewController.actualSize(_:)):
+            mainViewController.performActualSize(entryPoint: .actualSize)
+        default:
+            super.performActionForItem(at: index)
+        }
     }
 
     private var zoomItems: [NSMenuItem] = []

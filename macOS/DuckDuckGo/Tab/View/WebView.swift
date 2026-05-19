@@ -21,6 +21,7 @@ import Cocoa
 import Combine
 import CommonObjCExtensions
 import FeatureFlags
+import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -165,32 +166,37 @@ final class WebView: WKWebView {
         window != nil && zoomLevel.index > 0 && !self.isInFullScreenMode
     }
 
-    func resetZoomLevel() {
+    func resetZoomLevel(entryPoint: WebViewZoomEntryPoint = .keyboard) {
         magnification = 1
         zoomLevel = defaultZoomValue
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
     }
 
-    func zoomIn() {
+    func zoomIn(entryPoint: WebViewZoomEntryPoint = .keyboard) {
         // if displaying PDF
         if let pdfHudView = self.hudView() {
             pdfHudView.zoomIn()
+            WebViewZoomPixel.fire(entryPoint: entryPoint)
             return
         }
         guard canZoomIn else { return }
         zoomLevel = DefaultZoomValue.allCases[self.zoomLevel.index + 1]
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
     }
 
-    func zoomOut() {
+    func zoomOut(entryPoint: WebViewZoomEntryPoint = .keyboard) {
         // if displaying PDF
         if let pdfHudView = self.hudView() {
             pdfHudView.zoomOut()
+            WebViewZoomPixel.fire(entryPoint: entryPoint)
             return
         }
         guard canZoomOut else { return }
         zoomLevel = DefaultZoomValue.allCases[self.zoomLevel.index - 1]
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
     }
 
     // MARK: - Immediate Actions (Look Up)

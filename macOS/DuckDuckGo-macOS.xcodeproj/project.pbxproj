@@ -1276,6 +1276,8 @@
 		37ABFE7D2DED901200DE39F2 /* SettingsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */; };
 		37ADC3EE2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */; };
 		37ADC3EF2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */; };
+		37ADC4012DF040000001CA03 /* WebViewZoomPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */; };
+		37ADC4022DF040000001CA03 /* WebViewZoomPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */; };
 		37AFCE8127DA2CA600471A10 /* PreferencesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AFCE8027DA2CA600471A10 /* PreferencesViewController.swift */; };
 		37AFCE8527DA2D3900471A10 /* PreferencesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AFCE8427DA2D3900471A10 /* PreferencesSidebar.swift */; };
 		37AFCE8727DA334800471A10 /* PreferencesRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AFCE8627DA334800471A10 /* PreferencesRootView.swift */; };
@@ -5099,6 +5101,7 @@
 		37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
+		37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewZoomPixel.swift; sourceTree = "<group>"; };
 		37AFCE8027DA2CA600471A10 /* PreferencesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesViewController.swift; sourceTree = "<group>"; };
 		37AFCE8427DA2D3900471A10 /* PreferencesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSidebar.swift; sourceTree = "<group>"; };
 		37AFCE8627DA334800471A10 /* PreferencesRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesRootView.swift; sourceTree = "<group>"; };
@@ -11955,6 +11958,7 @@
 				7B7821BB2E84440A00E0359A /* ErrorPagePixel.swift */,
 				7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */,
 				37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */,
+				37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */,
 				37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */,
 				373114BB2DEF513D0010C256 /* NavigationBarPixel.swift */,
 				B69B50332726A10700758A2B /* ATB */,
@@ -15815,6 +15819,7 @@
 				562802C72DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */,
 				3706FC77293F65D500E42796 /* PageObserverUserScript.swift in Sources */,
 				37ADC3EF2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */,
+				37ADC4022DF040000001CA03 /* WebViewZoomPixel.swift in Sources */,
 				4BF0E5132AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift in Sources */,
 				3706FC78293F65D500E42796 /* SecureVaultReporter.swift in Sources */,
 				C172E7302C9329D300521D9A /* FlippedView.swift in Sources */,
@@ -17450,6 +17455,7 @@
 				4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */,
 				CC26B68A2F0D6C2400D380B6 /* NewTabPageNextStepsSingleCardProvider.swift in Sources */,
 				37ADC3EE2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */,
+				37ADC4012DF040000001CA03 /* WebViewZoomPixel.swift in Sources */,
 				B6080BC52B21E78100B418EF /* DataImportErrorView.swift in Sources */,
 				B5E7B6C12ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */,
 				37CDFC252D7874C500CBB429 /* HistoryViewDataProviderPixelHandler.swift in Sources */,

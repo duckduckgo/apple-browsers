@@ -1250,17 +1250,29 @@ extension MainViewController {
     }
 
     @objc func zoomIn(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomIn()
+        performZoomIn(entryPoint: .keyboard)
+    }
+
+    func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
+        getActiveTabAndIndex()?.tab.webView.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func zoomOut(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomOut()
+        performZoomOut(entryPoint: .keyboard)
+    }
+
+    func performZoomOut(entryPoint: WebViewZoomEntryPoint) {
+        getActiveTabAndIndex()?.tab.webView.zoomOut(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func actualSize(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
+        performActualSize(entryPoint: .actualSize)
+    }
+
+    func performActualSize(entryPoint: WebViewZoomEntryPoint) {
+        getActiveTabAndIndex()?.tab.webView.resetZoomLevel(entryPoint: entryPoint)
     }
 
     @objc func summarize(_ sender: Any) {

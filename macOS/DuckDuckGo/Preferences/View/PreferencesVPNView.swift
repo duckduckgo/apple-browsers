@@ -205,6 +205,9 @@ extension Preferences {
                     }
                 }
             }
+            .onAppear {
+                model.onViewAppeared()
+            }
         }
 
         /// Resolves the text to be used for exclusion counts

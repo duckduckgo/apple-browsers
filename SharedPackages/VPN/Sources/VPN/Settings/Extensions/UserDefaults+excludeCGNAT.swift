@@ -24,7 +24,7 @@ extension UserDefaults {
         "networkProtectionSettingExcludeCGNAT"
     }
 
-    public static let excludeCGNATDefaultValue = false
+    public static let excludeCGNATDefaultValue = true
 
     @objc
     dynamic var networkProtectionSettingExcludeCGNAT: Bool {

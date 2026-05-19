@@ -111360,7 +111360,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Bypass the VPN for traffic to carrier-internal addresses (100.64.0.0/10). Recommended to keep on so Wi-Fi calling, Visual Voicemail, and mesh VPNs like Tailscale keep working."
+            "value" : "Let services like Wi-Fi calling and voicemail bypass the VPN so they keep working."
           }
         }
       }
@@ -111672,7 +111672,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Exclude Carrier-Grade NAT"
+            "value" : "Exclude Carrier Services"
           }
         }
       }

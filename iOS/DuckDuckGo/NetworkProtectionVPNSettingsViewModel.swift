@@ -90,11 +90,6 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
         self.controller = controller
         self.featureFlagger = featureFlagger
         self.excludeLocalNetworks = settings.excludeLocalNetworks
-        // If the feature flag is off, force the stored value back to its default so the
-        // tunnel never honors a value set while the flag was on for this user.
-        if !featureFlagger.isFeatureOn(.vpnExcludeCGNAT), settings.excludeCGNAT != UserDefaults.excludeCGNATDefaultValue {
-            settings.excludeCGNAT = UserDefaults.excludeCGNATDefaultValue
-        }
         self.excludeCGNAT = settings.excludeCGNAT
         self.settings = settings
         self.notificationsAuthorization = notificationsAuthorization
@@ -121,6 +116,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @MainActor
     func onViewAppeared() async {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNAT))
         let status = await notificationsAuthorization.authorizationStatus
         updateViewKind(for: status)
     }

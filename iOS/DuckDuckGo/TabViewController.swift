@@ -147,7 +147,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
-    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature()
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -585,6 +585,7 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
@@ -627,6 +628,7 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -671,9 +673,11 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         productSurfaceTelemetry: productSurfaceTelemetry)
+                                                         productSurfaceTelemetry: productSurfaceTelemetry,
+                                                         unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -2286,6 +2290,24 @@ extension TabViewController: WKNavigationDelegate {
         return request
     }
 
+    private func sanitizedAIChatNativeInputRequestIfNeeded(for navigationAction: WKNavigationAction) -> URLRequest? {
+        guard isAITab,
+              navigationAction.isTargetingMainFrame(),
+              let url = navigationAction.request.url else { return nil }
+
+        let sanitizedURL = AIChatURLParameters.updatingNativeInputURL(
+            from: url,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isSupportedURL: url.isDuckAIURL || AIChatDebugSettings().matchesCustomURL(url)
+        )
+        guard sanitizedURL != url else { return nil }
+
+        var request = navigationAction.request
+        request.url = sanitizedURL
+        request.attribution = .user
+        return request
+    }
+
     // swiftlint:disable cyclomatic_complexity
 
     func webView(_ webView: WKWebView,
@@ -2301,6 +2323,12 @@ extension TabViewController: WKNavigationDelegate {
                 }
                 return
             }
+        }
+
+        if let request = sanitizedAIChatNativeInputRequestIfNeeded(for: navigationAction) {
+            decisionHandler(.cancel)
+            load(urlRequest: request)
+            return
         }
         
         if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {

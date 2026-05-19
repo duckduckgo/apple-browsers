@@ -1965,6 +1965,13 @@ final class AddressBarButtonsViewController: NSViewController {
     @discardableResult
     private func openYouTubeAdBlockPopover() -> Bool {
         guard youTubeAdBlockButton.isShown else { return false }
+        // If a popover is already up (e.g. the user clicked the button manually during the tip
+        // controller's delay window), treat the request as already-fulfilled. Returning `true`
+        // lets the tip controller record its one-shot flag without orphaning the existing
+        // popover behind a second instance.
+        if let existingPopover = youTubeAdBlockPopover, existingPopover.isShown {
+            return true
+        }
 
         let viewModel = YouTubeAdBlockViewModel(
             adBlockingAvailability: adBlockingAvailability,

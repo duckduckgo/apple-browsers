@@ -135,9 +135,7 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         if viewModel.fireTab {
-            FireModeEmptyStateView(type: .tab,
-                                   escapeHatch: viewModel.escapeHatch,
-                                   onEscapeHatchTap: viewModel.onEscapeHatchTap)
+            FireModeEmptyStateView(type: .tab, escapeHatch: viewModel.escapeHatch)
         } else {
             logoEmptyView
         }
@@ -147,9 +145,9 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
-                if shouldShowLogoInEmptyState {
-                    NewTabPageDaxLogoView()
-                }
+                NewTabPageDaxLogoView()
+                    .opacity(shouldShowLogoInEmptyState ? 1 : 0)
+                    .allowsHitTesting(false)
 
                 ScrollView {
                     VStack(spacing: Metrics.sectionSpacing) {
@@ -174,6 +172,7 @@ private extension NewTabPageView {
     }
 
     private var shouldShowLogoInEmptyState: Bool {
+        guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
         if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
@@ -196,15 +195,10 @@ private extension NewTabPageView {
     @ViewBuilder
     private var escapeHatchSectionView: some View {
         if let escapeHatch = viewModel.escapeHatch {
-            EscapeHatchView(
-                model: escapeHatch,
-                openTabCount: viewModel.openTabCount,
-                onCardTap: { viewModel.onEscapeHatchTap?() },
-                onTabSwitcherTap: { viewModel.onTabSwitcherTap?() }
-            )
-            .frame(maxWidth: escapeHatchMaxWidth)
-            .padding(.top, Metrics.nonGridSectionTopPadding)
-            .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
+            EscapeHatchView(model: escapeHatch)
+                .frame(maxWidth: escapeHatchMaxWidth)
+                .padding(.top, Metrics.nonGridSectionTopPadding)
+                .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
 

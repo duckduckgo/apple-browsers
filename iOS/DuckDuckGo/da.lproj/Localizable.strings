@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopi";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiér rent link";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiér link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL kopieret";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Sidst brugte Fire-fane";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Brænd fane";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Luk fane";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Gå tilbage til fanen";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Flere muligheder";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tilbage til %@";
 
@@ -2906,6 +2925,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Flyt adresselinjen til bunden";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Flyt adresselinjen til toppen";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Administrerede cookies";
@@ -4219,6 +4244,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Gendanner abonnement...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ikke nu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo har også et **valgfrit betalt abonnement** med en sikker **VPN** og **avanceret, privat AI**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Fjern fra denne enhed";

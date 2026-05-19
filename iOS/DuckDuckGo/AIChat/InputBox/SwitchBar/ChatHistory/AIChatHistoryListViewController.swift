@@ -252,17 +252,13 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     /// Shows or hides the escape hatch (return-to-tab card + tab switcher pill) as the table header. Pass nil to hide.
-    func setEscapeHatch(_ model: EscapeHatchModel?,
-                        openTabCount: Int,
-                        onTapped: (() -> Void)?,
-                        onTabSwitcherTapped: (() -> Void)?) {
+    /// The pill's open-tab count is sourced from the model (it self-subscribes to the target mode's tabs publisher),
+    /// so this method only needs to swap when the model changes.
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
         let modelChanged = model != currentEscapeHatchModel
         currentEscapeHatchModel = model
 
-        if let model, let onTapped, let onTabSwitcherTapped {
-            // The escape hatch is set once when the NTP appears and the open tab count
-            // can't change without dismissing it, so an unchanged model implies the
-            // openTabCount and closures are also still valid — nothing to rebuild.
+        if let model {
             if escapeHatchHostingController != nil, !modelChanged {
                 return
             }
@@ -273,12 +269,7 @@ final class AIChatHistoryListViewController: UIViewController {
             }
             escapeHatchHostingController = nil
 
-            let view = EscapeHatchView(
-                model: model,
-                openTabCount: openTabCount,
-                onCardTap: onTapped,
-                onTabSwitcherTap: onTabSwitcherTapped
-            )
+            let view = EscapeHatchView(model: model)
             let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             escapeHatchHostingController = hosting

@@ -22,10 +22,22 @@ public enum MessageTrigger: String, Codable {
     case afterIdle = "after_idle"
 }
 
+/// Controls which messages are returned based on their `displayConditions.trigger` value.
 public enum TriggerFilter: Equatable {
+    /// Matches every message regardless of trigger (used by prefetch and cleanup paths).
     case any
+    /// Matches only messages that have no trigger (i.e. `displayConditions` is nil or its `trigger` is nil).
     case noTrigger
+    /// Matches only messages whose trigger equals the associated value.
     case specific(MessageTrigger)
+
+    func matches(_ trigger: MessageTrigger?) -> Bool {
+        switch self {
+        case .any: return true
+        case .noTrigger: return trigger == nil
+        case .specific(let required): return trigger == required
+        }
+    }
 }
 
 public struct DisplayConditions: Codable, Equatable {
@@ -355,4 +367,5 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case veryCriticalUpdate = "RemoteMessageVeryCriticalUpdate"
     case newTabOptions = "RemoteMessageNewTabOptions"
     case splitBarMobile = "RemoteMessageSplitBarMobile"
+    case youtubeNew = "RemoteMessageYoutubeNew" // macOS only
 }

@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "コピー";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "クリーンなリンクをコピー";
+
+/* Copy link action */
+"action.title.copy.link" = "リンクをコピー";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URLをコピーしました";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "最後に使ったFireタブ";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "データを消去してタブを閉じる";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "タブを閉じる";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "タブに戻る";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "その他のオプション";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@に戻る";
 
@@ -2906,6 +2925,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "アドレスバーを一番下に移動";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "アドレスバーを一番上に移動";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "管理対象のCookie";
@@ -4219,6 +4244,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "後で";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGoには**オプションの有料サブスクリプション**もあり、安全な**VPN**と**高度なプライベートAI**を備えています。";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";

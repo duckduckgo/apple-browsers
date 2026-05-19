@@ -260,14 +260,7 @@ extension RemoteMessagingStore {
                     continue
                 }
 
-                switch triggerFilter {
-                case .any:
-                    break
-                case .noTrigger:
-                    if remoteMessage.displayConditions?.trigger != nil { continue }
-                case .specific(let requiredTrigger):
-                    guard remoteMessage.displayConditions?.trigger == requiredTrigger else { continue }
-                }
+                guard triggerFilter.matches(remoteMessage.displayConditions?.trigger) else { continue }
 
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,

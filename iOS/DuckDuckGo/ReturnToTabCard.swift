@@ -23,12 +23,31 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 struct ReturnToTabCard: View {
-    let model: EscapeHatchModel
-    let onTap: () -> Void
     @Environment(\.layoutDirection) private var layoutDirection
 
+    let model: EscapeHatchModel
+
     var body: some View {
-        Button(action: onTap) {
+        HStack(spacing: Metrics.innerSpacing) {
+            mainView
+            if model.isActionsEnabled {
+                menuView
+            }
+        }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(height: Metrics.height)
+        .background(
+            Capsule()
+                .fill(Color(designSystemColor: .controlsFillSecondary))
+        )
+        .if(model.isActionsEnabled) {
+            $0.contextMenu { menuContentView }
+        }
+    }
+
+    private var mainView: some View {
+        Button(action: model.onCardTap) {
             HStack(spacing: Metrics.innerSpacing) {
                 iconView
                 VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
@@ -45,18 +64,54 @@ struct ReturnToTabCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, Metrics.horizontalPadding)
-            .frame(maxWidth: .infinity)
-            .frame(height: Metrics.height)
-            .background(
-                Capsule()
-                    .fill(Color(designSystemColor: .controlsFillSecondary))
-            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
+    }
+
+    private var menuView: some View {
+        Menu {
+            menuContentView
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(.horizontal, Metrics.horizontalPadding)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
+        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+    }
+
+    @ViewBuilder
+    private var menuContentView: some View {
+        Section(header: Text(model.subtitle)) {
+            Button(action: model.onCardTap) {
+                Label {
+                    Text(UserText.escapeHatchMenuReturnToTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.goBackCircle)
+                        .foregroundColor(Color(designSystemColor: .icons))
+                }
+            }
+            Button(role: .destructive, action: model.onCloseTab) {
+                Label {
+                    Text(UserText.escapeHatchMenuCloseTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                }
+            }
+            Button(role: .destructive, action: model.onBurnTab) {
+                Label {
+                    Text(UserText.escapeHatchMenuBurnTab)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
+                }
+            }
+        }
     }
 
     private var accessibilityLabelText: String {
@@ -150,47 +205,42 @@ private enum Metrics {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Return to tab card") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Tokamak - Wikipedia",
-            subtitle: "en.wikipedia.org/wiki/Tokamak",
-            tabType: .regular,
-            domain: "en.wikipedia.org",
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Duck.ai") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Good Dog Name Ideas",
-            subtitle: "Duck.ai",
-            tabType: .aiChat,
-            domain: nil,
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Good Dog Name Ideas",
+                                    subtitle: "Duck.ai",
+                                    tabType: .aiChat,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Fire Tab") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Last Used Fire Tab",
-            subtitle: "",
-            tabType: .fire,
-            domain: nil,
-            targetTab: Tab(fireTab: true)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: true)
+    ReturnToTabCard(model: .preview(title: "Last Used Fire Tab",
+                                    subtitle: "",
+                                    tabType: .fire,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 1))
+        .padding()
+        .frame(width: 360)
 }
+
+#endif

@@ -719,21 +719,6 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingDisclosureHidden
     }
 
-    /// Settings-pane open hook. If the disclosure preference has never been
-    /// written, pin it to the current YouTube Ad Blocking state — existing
-    /// users (toggle already on) get the disclosure hidden, new users (toggle
-    /// off) keep the disclosure until they explicitly opt in. Always refreshes
-    /// `state.youTubeAdBlockingDisclosureHidden` so external writes (e.g. debug
-    /// menu) are picked up.
-    func markYouTubeAdBlockingDisclosureHiddenIfExistingUser() {
-        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
-            try? youTubeAdBlockingStorage.set(state.youTubeAdBlockingEnabled,
-                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-        }
-        state.youTubeAdBlockingDisclosureHidden =
-            (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
-    }
-
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
@@ -1028,6 +1013,17 @@ extension SettingsViewModel {
     // and we can use subscribers (Currently called from the view onAppear)
     @MainActor
     private func initState() {
+        // One-time migration: pin the disclosure preference to the current
+        // YouTube Ad Blocking toggle so existing users (toggle already on)
+        // get the disclosure hidden, while new users (toggle off) keep it
+        // until they explicitly opt in. Done here — not in the destination
+        // view's `onAppear` — so the resulting `@Published` change can't
+        // race with a push transition and pop the screen on iPad.
+        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        }
+
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,

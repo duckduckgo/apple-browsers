@@ -73,6 +73,75 @@ protocol AIChatMetricReportingHandling: AnyObject {
     func didReportMetric(_ metric: AIChatMetric)
 }
 
+enum AIChatUserScriptErrorFailureReason: String {
+    case keyNotFound = "key_not_found"
+    case typeMismatch = "type_mismatch"
+    case valueNotFound = "value_not_found"
+    case dataCorrupted = "data_corrupted"
+    case unknownDecodingError = "unknown_decoding_error"
+
+    init(error: Error) {
+        switch error {
+        case DecodingError.keyNotFound(_, _):
+            self = .keyNotFound
+        case DecodingError.typeMismatch(_, _):
+            self = .typeMismatch
+        case DecodingError.valueNotFound(_, _):
+            self = .valueNotFound
+        case DecodingError.dataCorrupted(_):
+            self = .dataCorrupted
+        default:
+            self = .unknownDecodingError
+        }
+    }
+}
+
+enum AIChatUserScriptErrorEvent: Equatable {
+    case reportMetricDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+    case responseStateDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+
+    static func == (lhs: AIChatUserScriptErrorEvent, rhs: AIChatUserScriptErrorEvent) -> Bool {
+        switch (lhs, rhs) {
+        case (.reportMetricDecodingFailed, .reportMetricDecodingFailed),
+             (.responseStateDecodingFailed, .responseStateDecodingFailed):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
+
+    private enum Parameters {
+        static let failureReason = "failureReason"
+    }
+
+    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+        super.init { event, _, _, _ in
+            switch event {
+            case .reportMetricDecodingFailed(let error, let failureReason):
+                dailyPixelFiring.fireDailyAndCount(
+                    .aiChatReportMetricDecodeError,
+                    error: error,
+                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                )
+            case .responseStateDecodingFailed(let error, let failureReason):
+                dailyPixelFiring.fireDailyAndCount(
+                    .aiChatResponseStateDecodeError,
+                    error: error,
+                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                )
+            }
+        }
+    }
+
+    @available(*, unavailable, message: "Use init(dailyPixelFiring:) instead")
+    override init(mapping: @escaping EventMapping<AIChatUserScriptErrorEvent>.Mapping) {
+        fatalError("Use init(dailyPixelFiring:) instead")
+    }
+}
+
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
@@ -130,6 +199,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let keyValueStore: KeyValueStoring
     private let isNativeStorageBridgeAvailable: Bool
+    private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -150,6 +220,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
          isNativeStorageBridgeAvailable: Bool = false) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
@@ -159,6 +230,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         setUpSyncStatusObserver()
     }
@@ -187,17 +259,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
-        if let paramsDict = params as? [String: Any],
-           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+        guard let paramsDict = params as? [String: Any] else {
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
+                error: nil,
+                failureReason: .typeMismatch
+            ))
+            return nil
+        }
 
-            let decoder = JSONDecoder()
-            do {
-                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
-                handleTermsAcceptedIfNeeded(metric)
-                metricReportingHandler?.didReportMetric(metric)
-            } catch {
-                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
-            }
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: paramsDict, options: [])
+            let metric = try JSONDecoder().decode(AIChatMetric.self, from: jsonData)
+            handleTermsAcceptedIfNeeded(metric)
+            metricReportingHandler?.didReportMetric(metric)
+        } catch {
+            Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
+                error: error,
+                failureReason: AIChatUserScriptErrorFailureReason(error: error)
+            ))
         }
         return nil
     }
@@ -295,6 +375,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
             return nil
         } catch {
+            Logger.aiChat.debug("Failed to decode response state JSON in AIChatUserScript: \(error)")
+            aiChatUserScriptErrorEventMapper.fire(.responseStateDecodingFailed(
+                error: error,
+                failureReason: AIChatUserScriptErrorFailureReason(error: error)
+            ))
             return nil
         }
     }

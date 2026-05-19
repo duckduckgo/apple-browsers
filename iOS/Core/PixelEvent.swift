@@ -1609,6 +1609,9 @@ extension Pixel {
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
 
+        case aiChatReportMetricDecodeError
+        case aiChatResponseStateDecodeError
+
         // MARK: AI Chat Sync
 
         case aiChatSyncScopedSyncTokenError
@@ -3354,6 +3357,9 @@ extension Pixel.Event {
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
+
+        case .aiChatReportMetricDecodeError: return "m_aichat_report_metric_decode_error"
+        case .aiChatResponseStateDecodeError: return "m_aichat_response_state_decode_error"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"

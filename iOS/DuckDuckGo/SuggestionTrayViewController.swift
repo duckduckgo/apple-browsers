@@ -379,7 +379,6 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             fireModePromotionEligibility: dependencies.fireModePromotionEligibility,
-            hasEscapeHatch: pendingEscapeHatchModel != nil,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,

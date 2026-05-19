@@ -36,7 +36,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let fireModePromotionEligibility: FireModePromotionCoordinating?
-    private let isOpenedAfterIdle: Bool
+    private let isOpenedAfterIdle: () -> Bool
 
     var onTryFireModeRequested: (() -> Void)?
 
@@ -48,7 +48,7 @@ final class NewTabPageMessagesModel: ObservableObject {
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-         isOpenedAfterIdle: Bool = false) {
+         isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
@@ -84,7 +84,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Private
 
     func refresh() {
-        homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle)
+        homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
         updateHomeMessageViewModel()
     }
 

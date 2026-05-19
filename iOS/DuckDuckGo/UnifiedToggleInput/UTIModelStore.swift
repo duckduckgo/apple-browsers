@@ -125,6 +125,15 @@ final class UTIModelStore {
         preferences.selectedReasoningMode = mode
     }
 
+    /// Applies a reasoning mode coming from a trusted source (e.g. a stored chat
+    /// payload's `reasoningMode` field) without the model-supports validity check.
+    /// Mirrors `applyPersistedSelection`'s bypass — both are safe to call before `models`
+    /// has finished loading. `clearStaleReasoningModeIfNeeded()` in `fetchModels`
+    /// will null this out if the resolved model turns out not to support `mode`.
+    func applyChatPersistedReasoningMode(_ mode: AIChatReasoningMode?) {
+        preferences.selectedReasoningMode = mode
+    }
+
     /// Used by per-tab restoration to mirror a tab's stored selection into preferences,
     /// including nil values. Bypasses the validity checks of `updateSelectedModel`/
     /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.

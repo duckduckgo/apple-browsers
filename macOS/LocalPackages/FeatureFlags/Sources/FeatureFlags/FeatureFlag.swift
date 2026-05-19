@@ -51,6 +51,7 @@ public enum FeatureFlag: String, CaseIterable {
     case vpnConnectionFailureLoopDetection
 
     /// Gates the "Exclude Carrier-Grade NAT" VPN toggle (internal-only).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNAT
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736

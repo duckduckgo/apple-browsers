@@ -131,7 +131,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let zoomInIcon: NSImage = DesignSystemImages.Glyphs.Size12.zoomIn
     let zoomOutIcon: NSImage = DesignSystemImages.Glyphs.Size12.zoomOut
     let enterFullscreenIcon: NSImage = DesignSystemImages.Glyphs.Size12.expand
-    let changeDefaultZoomIcon: NSImage = DesignSystemImages.Glyphs.Size16.accessibility
+    let changeDefaultZoomIcon: NSImage = DesignSystemImages.Glyphs.Size12.accessibility
     let bookmarksIcon: NSImage = DesignSystemImages.Glyphs.Size12.bookmarks
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size12.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size12.history
@@ -144,7 +144,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let removeFireproofIcon: NSImage = DesignSystemImages.Glyphs.Size12.fire
     let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size12.findSearch
     let shareIcon: NSImage = DesignSystemImages.Glyphs.Size12.shareApple
-    let printIcon: NSImage = DesignSystemImages.Glyphs.Size16.print
+    let printIcon: NSImage = DesignSystemImages.Glyphs.Size12.print
     let helpIcon: NSImage = DesignSystemImages.Glyphs.Size12.help
     let settingsIcon: NSImage = DesignSystemImages.Glyphs.Size12.settings
     let browserFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size12.feedbackAlert
@@ -156,10 +156,10 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let vpnIcon: NSImage? = DesignSystemImages.Glyphs.Size12.vpnOn
     let personalInformationRemovalIcon: NSImage = DesignSystemImages.Glyphs.Size12.profileBlocked
     let paidAIChat: NSImage = DesignSystemImages.Glyphs.Size12.duckAi
-    let identityTheftRestorationIcon: NSImage = DesignSystemImages.Glyphs.Size16.identityTheftRestoration
+    let identityTheftRestorationIcon: NSImage = DesignSystemImages.Glyphs.Size12.identityTheftRestoration
     let emailGenerateAddressIcon: NSImage = DesignSystemImages.Glyphs.Size12.wand
     let emailManageAccount: NSImage = DesignSystemImages.Glyphs.Size12.profile
-    let emailProtectionTurnOffIcon: NSImage = DesignSystemImages.Glyphs.Size16.emailDisabled
+    let emailProtectionTurnOffIcon: NSImage = DesignSystemImages.Glyphs.Size12.emailDisabled
     let emailProtectionTurnOnIcon: NSImage = DesignSystemImages.Glyphs.Size12.email
     let favoritesIcon: NSImage = DesignSystemImages.Glyphs.Size12.favorite
 }

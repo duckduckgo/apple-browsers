@@ -125,7 +125,7 @@ extension PermissionType {
         case .externalScheme:
             return DesignSystemImages.Glyphs.Size16.openIn
         case .autoplayPolicy:
-            return DesignSystemImages.Glyphs.Size16.playerVideo
+            return DesignSystemImages.Glyphs.Size16.permissionAutoplay
         }
     }
 

@@ -56,6 +56,10 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType] ?? .ask
     }
 
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        savedPermissions[domain.droppingWwwPrefix()]?[permissionType]
+    }
+
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
         setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision

@@ -2100,6 +2100,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         return persistedPermissions[domain]?[permissionType] ?? .ask
     }
 
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        return persistedPermissions[domain]?[permissionType]
+    }
+
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
         if persistedPermissions[domain] == nil {
             persistedPermissions[domain] = [:]

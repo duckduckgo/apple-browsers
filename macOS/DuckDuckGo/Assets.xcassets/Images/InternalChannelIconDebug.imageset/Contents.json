@@ -1,12 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "Browser-Test-128-Debug.png",
+      "filename" : "Icon-Debug-Beta-128.png",
       "idiom" : "mac",
       "scale" : "1x"
     },
     {
-      "filename" : "Browser-Test-128-Debug@2x.png",
+      "filename" : "Icon-Debug-Beta-256.png",
       "idiom" : "mac",
       "scale" : "2x"
     }

@@ -67,6 +67,7 @@ public protocol NetworkProtectionDeviceManagement {
 
     func generateTunnelConfiguration(resolvedSelectionMethod: NetworkProtectionServerSelectionMethod,
                                      excludeLocalNetworks: Bool,
+                                     excludeCGNAT: Bool,
                                      dnsSettings: NetworkProtectionDNSSettings,
                                      regenerateKey: Bool) async throws -> GenerateTunnelConfigurationResult
 
@@ -140,6 +141,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
     ///
     public func generateTunnelConfiguration(resolvedSelectionMethod: NetworkProtectionServerSelectionMethod,
                                             excludeLocalNetworks: Bool,
+                                            excludeCGNAT: Bool,
                                             dnsSettings: NetworkProtectionDNSSettings,
                                             regenerateKey: Bool) async throws -> GenerateTunnelConfigurationResult {
         Logger.networkProtection.debug("Generating tunnel configuration")
@@ -180,6 +182,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             let configuration = try tunnelConfiguration(interfacePrivateKey: keyPair.privateKey,
                                                         server: selectedServer,
                                                         excludeLocalNetworks: excludeLocalNetworks,
+                                                        excludeCGNAT: excludeCGNAT,
                                                         dnsSettings: dnsSettings)
             return (configuration, selectedServer)
         } catch let error as NetworkProtectionError {
@@ -303,6 +306,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
     func tunnelConfiguration(interfacePrivateKey: PrivateKey,
                              server: NetworkProtectionServer,
                              excludeLocalNetworks: Bool,
+                             excludeCGNAT: Bool,
                              dnsSettings: NetworkProtectionDNSSettings) throws -> TunnelConfiguration {
 
         guard let allowedIPs = server.allowedIPs else {
@@ -338,7 +342,8 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
 
         let routingTableResolver = VPNRoutingTableResolver(
             dnsServers: dns,
-            excludeLocalNetworks: excludeLocalNetworks)
+            excludeLocalNetworks: excludeLocalNetworks,
+            excludeCGNAT: excludeCGNAT)
         Logger.networkProtection.log("Routing table information:\nL Included Routes: \(routingTableResolver.includedRoutes, privacy: .public)\nL Excluded Routes: \(routingTableResolver.excludedRoutes, privacy: .public)")
 
         let interface = InterfaceConfiguration(privateKey: interfacePrivateKey,

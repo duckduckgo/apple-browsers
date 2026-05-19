@@ -33,6 +33,7 @@ public final class VPNSettings {
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
+        case setExcludeCGNAT(_ excludeCGNAT: Bool)
         case setExcludeAPNs(_ excludeAPNs: Bool)
         case setExcludeCellularServices(_ excludeCellularServices: Bool)
         case setExcludeDeviceCommunication(_ excludeDeviceCommunication: Bool)
@@ -130,6 +131,13 @@ public final class VPNSettings {
                 Change.setExcludeLocalNetworks(excludeLocalNetworks)
             }.eraseToAnyPublisher()
 
+        let excludeCGNATPublisher = excludeCGNATPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeCGNAT in
+                Change.setExcludeCGNAT(excludeCGNAT)
+            }.eraseToAnyPublisher()
+
         let excludeAPNsPublisher = excludeAPNsPublisher
             .dropFirst()
             .removeDuplicates()
@@ -212,6 +220,7 @@ public final class VPNSettings {
             includeAllNetworksPublisher,
             enforceRoutesPublisher,
             excludeLocalNetworksPublisher,
+            excludeCGNATPublisher,
             excludeAPNsPublisher,
             excludeCellularServicesPublisher,
             excludeDeviceCommunicationPublisher,
@@ -234,6 +243,7 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingConnectOnLogin()
         defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
@@ -249,6 +259,7 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
@@ -264,6 +275,8 @@ public final class VPNSettings {
             self.enforceRoutes = enforceRoutes
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             self.excludeLocalNetworks = excludeLocalNetworks
+        case .setExcludeCGNAT(let excludeCGNAT):
+            self.excludeCGNAT = excludeCGNAT
         case .setExcludeAPNs(let excludeAPNs):
             self.excludeAPNs = excludeAPNs
         case .setExcludeCellularServices(let excludeCellularServices):
@@ -352,6 +365,22 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingExcludeLocalNetworks = newValue
+        }
+    }
+
+    // MARK: - Exclude CGNAT
+
+    public var excludeCGNATPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeCGNATPublisher
+    }
+
+    public var excludeCGNAT: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeCGNAT
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeCGNAT = newValue
         }
     }
 

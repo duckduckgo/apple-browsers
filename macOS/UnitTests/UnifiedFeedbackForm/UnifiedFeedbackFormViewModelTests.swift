@@ -273,6 +273,7 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             includeAllNetworksEnabled: true,
             enforceRoutesEnabled: true,
             excludeLocalNetworksEnabled: true,
+            excludeCGNATEnabled: true,
             notifyStatusChangesEnabled: true,
             showInMenuBarEnabled: true,
             selectedServer: "server",

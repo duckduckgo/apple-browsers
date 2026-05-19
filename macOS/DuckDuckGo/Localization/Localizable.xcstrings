@@ -111353,6 +111353,18 @@
         }
       }
     },
+    "vpn.setting.description.exclude.cgnat" : {
+      "comment" : "Exclude CGNAT setting description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bypass the VPN for traffic to carrier-internal addresses (100.64.0.0/10). Recommended to keep on so Wi-Fi calling, Visual Voicemail, and mesh VPNs like Tailscale keep working."
+          }
+        }
+      }
+    },
     "vpn.setting.description.exclude.local.networks" : {
       "comment" : "Exclude Local Networks setting description",
       "extractionState" : "extracted_with_value",
@@ -111649,6 +111661,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подключаться к VPN при входе на компьютер"
+          }
+        }
+      }
+    },
+    "vpn.setting.title.exclude.cgnat" : {
+      "comment" : "Exclude CGNAT setting title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exclude Carrier-Grade NAT"
           }
         }
       }

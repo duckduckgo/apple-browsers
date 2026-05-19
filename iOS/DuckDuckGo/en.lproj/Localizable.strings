@@ -2671,6 +2671,12 @@ https://duckduckgo.com/mac";
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Data Volume";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Let traffic to carrier-internal addresses (100.64.0.0/10) bypass the VPN. Recommended to keep on so Wi-Fi calling, Visual Voicemail, and mesh VPNs like Tailscale keep working.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier-Grade NAT";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Let local traffic bypass the VPN and connect to devices on your local network, like a printer.";
 

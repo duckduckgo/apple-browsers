@@ -50,6 +50,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1213962493484138?focus=true
     case vpnConnectionFailureLoopDetection
 
+    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle (internal-only).
+    case vpnExcludeCGNAT
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -435,6 +438,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage)), category: .vpn)
         case .vpnConnectionFailureLoopDetection:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.connectionFailureLoopDetection)), category: .vpn)
+        case .vpnExcludeCGNAT:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.excludeCGNAT)), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:

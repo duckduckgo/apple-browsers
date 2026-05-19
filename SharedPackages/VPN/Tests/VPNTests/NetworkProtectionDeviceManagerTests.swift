@@ -233,6 +233,7 @@ extension NetworkProtectionDeviceManager {
         try await generateTunnelConfiguration(
             resolvedSelectionMethod: selectionMethod,
             excludeLocalNetworks: false,
+            excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: protectionActive),
             regenerateKey: regenerateKey
         )

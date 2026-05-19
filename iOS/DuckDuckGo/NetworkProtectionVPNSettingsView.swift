@@ -43,6 +43,16 @@ struct NetworkProtectionVPNSettingsView: View {
                     Toggle("", isOn: $viewModel.excludeLocalNetworks)
                 }
 
+                if viewModel.isExcludeCGNATAvailable {
+                    toggleSection(
+                        text: UserText.netPExcludeCGNATSettingTitle,
+                        headerText: UserText.netPExcludeLocalNetworksSettingHeader,
+                        footerText: UserText.netPExcludeCGNATSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.excludeCGNAT)
+                    }
+                }
+
                 dnsSection()
             }
         }

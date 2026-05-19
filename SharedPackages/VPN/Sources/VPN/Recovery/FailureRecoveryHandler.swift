@@ -35,6 +35,7 @@ public protocol FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async
@@ -84,6 +85,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool = false,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
@@ -99,6 +101,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                 let result = try await makeRecoveryAttempt(
                     to: lastConnectedServer,
                     excludeLocalNetworks: excludeLocalNetworks,
+                    excludeCGNAT: excludeCGNAT,
                     dnsSettings: dnsSettings)
                 switch result {
                 case .noRecoveryNecessary:
@@ -124,6 +127,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     private func makeRecoveryAttempt(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings) async throws -> FailureRecoveryResult {
 
         let serverSelectionMethod: NetworkProtectionServerSelectionMethod = .failureRecovery(serverName: lastConnectedServer.serverName)
@@ -132,6 +136,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         configurationResult = try await deviceManager.generateTunnelConfiguration(
             resolvedSelectionMethod: serverSelectionMethod,
             excludeLocalNetworks: excludeLocalNetworks,
+            excludeCGNAT: excludeCGNAT,
             dnsSettings: dnsSettings,
             regenerateKey: false
         )

@@ -539,6 +539,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Connection failure loop detection for VPN
     /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
     case connectionFailureLoopDetection
+
+    /// Exclude Carrier-Grade NAT (100.64.0.0/10) from the VPN tunnel.
+    /// Keeps Wi-Fi calling, Visual Voicemail, and mesh VPNs (Tailscale/ZeroTier) working.
+    case excludeCGNAT
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

@@ -30,6 +30,17 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let selectedLocation: VPNSettings.SelectedLocation
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
+    let excludeCGNAT: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case registrationKeyValidity
+        case selectedEnvironment
+        case selectedServer
+        case selectedLocation
+        case dnsSettings
+        case excludeLocalNetworks
+        case excludeCGNAT
+    }
 
     /// Create a snapshot of the current VPN settings
     public init(from settings: VPNSettings) {
@@ -39,6 +50,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.selectedLocation = settings.selectedLocation
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
+        self.excludeCGNAT = settings.excludeCGNAT
     }
 
     /// Create a snapshot with explicit values
@@ -47,13 +59,27 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedServer: VPNSettings.SelectedServer,
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
-                excludeLocalNetworks: Bool) {
+                excludeLocalNetworks: Bool,
+                excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
         self.selectedLocation = selectedLocation
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
+        self.excludeCGNAT = excludeCGNAT
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.registrationKeyValidity = try container.decode(VPNSettings.RegistrationKeyValidity.self, forKey: .registrationKeyValidity)
+        self.selectedEnvironment = try container.decode(VPNSettings.SelectedEnvironment.self, forKey: .selectedEnvironment)
+        self.selectedServer = try container.decode(VPNSettings.SelectedServer.self, forKey: .selectedServer)
+        self.selectedLocation = try container.decode(VPNSettings.SelectedLocation.self, forKey: .selectedLocation)
+        self.dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
+        self.excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
+        // Tolerate snapshots written by older builds that lacked excludeCGNAT.
+        self.excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -64,6 +90,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.selectedLocation = selectedLocation
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
+        settings.excludeCGNAT = excludeCGNAT
     }
 }
 

@@ -59,6 +59,7 @@ struct VPNMetadata: Encodable {
         let includeAllNetworksEnabled: Bool
         let enforceRoutesEnabled: Bool
         let excludeLocalNetworksEnabled: Bool
+        let excludeCGNATEnabled: Bool
         let notifyStatusChangesEnabled: Bool
         let selectedServer: String
         let customDNS: Bool
@@ -240,6 +241,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             includeAllNetworksEnabled: settings.includeAllNetworks,
             enforceRoutesEnabled: settings.enforceRoutes,
             excludeLocalNetworksEnabled: settings.excludeLocalNetworks,
+            excludeCGNATEnabled: settings.excludeCGNAT,
             notifyStatusChangesEnabled: settings.notifyStatusChanges,
             selectedServer: settings.selectedServer.stringValue ?? "automatic",
             customDNS: settings.dnsSettings.usesCustomDNS

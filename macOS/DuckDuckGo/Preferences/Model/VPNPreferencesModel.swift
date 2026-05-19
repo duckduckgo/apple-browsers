@@ -54,6 +54,20 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
+    @Published var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+            settings.excludeCGNAT = excludeCGNAT
+            reloadVPN()
+        }
+    }
+
+    var isExcludeCGNATAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnExcludeCGNAT)
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -143,10 +157,17 @@ final class VPNPreferencesModel: ObservableObject {
         self.pinningManager = pinningManager
         self.featureFlagger = featureFlagger
 
+        // If the feature flag is off, force the stored value back to its default so the
+        // tunnel never honors a value set while the flag was on for this user.
+        if !featureFlagger.isFeatureOn(.vpnExcludeCGNAT), settings.excludeCGNAT != UserDefaults.excludeCGNATDefaultValue {
+            settings.excludeCGNAT = UserDefaults.excludeCGNATDefaultValue
+        }
+
         connectOnLogin = settings.connectOnLogin
         excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
+        excludeCGNAT = settings.excludeCGNAT
         notifyStatusChanges = settings.notifyStatusChanges
         showInMenuBar = settings.showInMenuBar
         showInBrowserToolbar = pinningManager.isPinned(.networkProtection)
@@ -163,6 +184,7 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToConnectOnLoginSettingChanges()
         subscribeToExcludedDomainsCountChanges()
         subscribeToExcludeLocalNetworksSettingChanges()
+        subscribeToExcludeCGNATSettingChanges()
         subscribeToShowInMenuBarSettingChanges()
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
@@ -206,6 +228,12 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToExcludeLocalNetworksSettingChanges() {
         settings.excludeLocalNetworksPublisher
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToExcludeCGNATSettingChanges() {
+        settings.excludeCGNATPublisher
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 

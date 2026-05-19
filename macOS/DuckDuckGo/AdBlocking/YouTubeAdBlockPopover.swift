@@ -81,9 +81,9 @@ enum YouTubeAdBlockSetting: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .alwaysOn: return "Always On"
-        case .disableUntilRelaunch: return "Disable Until Relaunch"
-        case .alwaysOff: return "Always Off"
+        case .alwaysOn: return UserText.youTubeAdBlockingPopoverAlwaysOn
+        case .disableUntilRelaunch: return UserText.youTubeAdBlockingPopoverDisableUntilRelaunch
+        case .alwaysOff: return UserText.youTubeAdBlockingPopoverAlwaysOff
         }
     }
 }
@@ -107,6 +107,10 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     let isRemotelyDisabled: Bool
     @Published var setting: YouTubeAdBlockSetting {
         didSet {
+            // No-op if the dropdown re-emits the current selection — the inner `apply` steps are
+            // already idempotent, but skipping the work avoids any redundant notification churn
+            // and makes the intent explicit.
+            guard setting != oldValue else { return }
             apply(setting)
         }
     }

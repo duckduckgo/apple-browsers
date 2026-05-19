@@ -48,6 +48,7 @@ public enum DuckAiNativeStorageEvent {
 
     // Parsing errors
     case lastUsedModelParseError(Error)
+    case lastUsedReasoningModeParseError(Error)
 }
 
 public protocol DuckAiNativeStoragePixelFiring {

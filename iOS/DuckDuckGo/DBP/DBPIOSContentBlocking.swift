@@ -22,17 +22,24 @@ import DataBrokerProtectionCore
 import TrackerRadarKit
 import WebKit
 
-/// iOS-side adapter that snapshots compiled rule lists and surrogate tracker data for the
-/// DBP broker job webview at job-start time.
+/// iOS-side adapter that reads compiled rule lists and surrogate tracker data fresh from
+/// `ContentBlocking.shared.contentBlockingManager` on every access. This provider is
+/// constructed once at app launch and reused across all background jobs, so TDS
+/// recompilations land in subsequent jobs without restarting the app.
 @MainActor
 struct DBPIOSContentBlocking: DBPWebViewContentBlocking {
-    let contentRuleLists: [WKContentRuleList]
-    let surrogateTrackerData: TrackerData?
+    private let contentBlockingManager: CompiledRuleListsSource
 
     init(contentBlockingManager: CompiledRuleListsSource) {
-        // Snapshot once; jobs are short-lived.
-        self.contentRuleLists = contentBlockingManager.currentRules.map { $0.rulesList }
-        self.surrogateTrackerData = DefaultTrackerProtectionDataSource(
+        self.contentBlockingManager = contentBlockingManager
+    }
+
+    var contentRuleLists: [WKContentRuleList] {
+        contentBlockingManager.currentRules.map { $0.rulesList }
+    }
+
+    var surrogateTrackerData: TrackerData? {
+        DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         ).surrogateFilteredTrackerData
     }

@@ -32,6 +32,7 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
+    @MainActor
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
@@ -71,6 +72,10 @@ final class DBPService: NSObject {
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
 
+            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isJobWebViewContentBlockingOn
+                ? DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
+                : nil
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -97,7 +102,8 @@ final class DBPService: NSObject {
                 eventsHandler: eventsHandler,
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
-                freeTrialConversionService: appDependencies.freeTrialConversionService)
+                freeTrialConversionService: appDependencies.freeTrialConversionService,
+                contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

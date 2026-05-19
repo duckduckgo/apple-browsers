@@ -46,6 +46,11 @@ struct ExclusiveTouchView: UIViewRepresentable {
     final class UIViewType: UIView {
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? { nil }
 
+        /// Walks the superview chain and bounces every gesture recognizer's `isEnabled` to force any in-flight recognizers to fail.
+        /// Needed because the EscapeHatch row lives inside the Search/Duck.ai switcher container, whose horizontal swipe
+        /// recognizer otherwise wins the horizontal pan and flips modes — dismissing the EscapeHatch mid-swipe.
+        /// Called when our own DragGesture begins so the enclosing recognizers drop the touch sequence and the row's
+        /// swipe-to-reveal action can complete uncontested.
         func cancelEnclosingGestures() {
             var current: UIView? = superview
             while let view = current {

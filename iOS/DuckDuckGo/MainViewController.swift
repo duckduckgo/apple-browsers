@@ -4645,6 +4645,8 @@ extension MainViewController: TabDelegate {
                     tab?.reload()
                     self?.presentYouTubeAdBlockBreakageReport()
                 case .alwaysOn:
+                    // No-op: the picker is only reachable when ad blocking is fully enabled,
+                    // so clearDisableUntilRelaunch() above is a no-op and no reload is needed.
                     break
                 }
             }

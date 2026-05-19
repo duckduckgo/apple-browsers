@@ -147,7 +147,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var shouldDisableAutocorrectOnEmpty: Bool {
-        unifiedToggleInputFeature.isAvailable || devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {

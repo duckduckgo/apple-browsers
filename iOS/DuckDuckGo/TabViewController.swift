@@ -148,6 +148,7 @@ class TabViewController: UIViewController {
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let aiChatDebugSettings: AIChatDebugSettingsHandling
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -454,6 +455,7 @@ class TabViewController: UIViewController {
                                    daxDialogsManager: DaxDialogsManaging,
                                    aiChatSettings: AIChatSettingsProvider,
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
+                                   aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                                    privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -491,6 +493,7 @@ class TabViewController: UIViewController {
                               daxDialogsManager: daxDialogsManager,
                               aiChatSettings: aiChatSettings,
                               productSurfaceTelemetry: productSurfaceTelemetry,
+                              aiChatDebugSettings: aiChatDebugSettings,
                               sharedSecureVault: sharedSecureVault,
                               privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper,
@@ -590,7 +593,8 @@ class TabViewController: UIViewController {
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            debugSettings: aiChatDebugSettings
         )
         coordinator.delegate = self
         return coordinator
@@ -629,6 +633,7 @@ class TabViewController: UIViewController {
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+                   aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -674,10 +679,12 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.aiChatDebugSettings = aiChatDebugSettings
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
-                                                         unifiedToggleInputFeature: unifiedToggleInputFeature)
+                                                         unifiedToggleInputFeature: unifiedToggleInputFeature,
+                                                         debugSettings: aiChatDebugSettings)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -2298,7 +2305,7 @@ extension TabViewController: WKNavigationDelegate {
         let sanitizedURL = AIChatURLParameters.updatingNativeInputURL(
             from: url,
             isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
-            isSupportedURL: url.isDuckAIURL || AIChatDebugSettings().matchesCustomURL(url)
+            isSupportedURL: url.isDuckAIURL || aiChatDebugSettings.matchesCustomURL(url)
         )
         guard sanitizedURL != url else { return nil }
 

@@ -455,7 +455,11 @@ def list_active_branches(within_hours: int, summary: RunSummary) -> list[Branch]
             author_name=author_name,
             author_email=author_email.strip("<>"),
         ))
-    branches.sort(key=lambda b: b.committer_iso, reverse=True)
+    # Sort by parsed datetime, not the raw ISO string. ``committer_iso``
+    # carries the committer's local timezone, so lex-sorting puts e.g.
+    # 12:00+02:00 (10:00 UTC) after 11:00+00:00 (11:00 UTC) even though
+    # it's earlier; ``committer_dt`` normalises to a tz-aware datetime.
+    branches.sort(key=lambda b: b.committer_dt, reverse=True)
     return branches
 
 
@@ -935,14 +939,6 @@ class AsanaClient:
             if not offset:
                 break
         return out
-
-    def get_task(self, gid: str) -> dict:
-        data = self._request(
-            "GET",
-            f"/tasks/{gid}",
-            params={"opt_fields": "name,completed,permalink_url"},
-        )
-        return data.get("data", {})
 
     def create_task(self, name: str, html_notes: str) -> dict:
         if self.dry_run:

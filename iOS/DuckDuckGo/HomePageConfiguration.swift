@@ -76,8 +76,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func remoteMessageToShow(openedAfterIdle: Bool) -> HomeMessage? {
-        let triggerFilter: TriggerFilter = openedAfterIdle ? .specific(.afterIdle) : .noTrigger
-        guard let remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: triggerFilter) else { return nil }
+        let remoteMessageToPresent: RemoteMessageModel?
+        if openedAfterIdle,
+           let idleMessage = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .specific(.afterIdle)) {
+            remoteMessageToPresent = idleMessage
+        } else {
+            remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .noTrigger)
+        }
+        guard let remoteMessageToPresent else { return nil }
         Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }

@@ -48,10 +48,12 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed with openedAfterIdle true, triggerFilter is .specific(.afterIdle)", .timeLimit(.minutes(1)))
-    func refreshWithOpenedAfterIdlePassesAfterIdleTrigger() {
+    @Test("When refreshed after idle and an idle message exists, triggerFilter is .specific(.afterIdle)", .timeLimit(.minutes(1)))
+    func refreshAfterIdleWithIdleMessageAvailable() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
+        storeMock.scheduledRemoteMessage = RemoteMessageModel(
+            id: "idle-msg", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
         let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         storeMock.capturedTriggerFilter = nil
 
@@ -60,6 +62,21 @@ struct HomePageConfigurationTests {
 
         // THEN
         #expect(storeMock.capturedTriggerFilter == .specific(.afterIdle))
+    }
+
+    @available(iOS 16, *)
+    @Test("When refreshed after idle and no idle message exists, falls back to .noTrigger", .timeLimit(.minutes(1)))
+    func refreshAfterIdleFallsBackToNoTrigger() {
+        // GIVEN
+        let storeMock = MockRemoteMessagingStore()
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        storeMock.capturedTriggerFilter = nil
+
+        // WHEN
+        sut.refresh(openedAfterIdle: true)
+
+        // THEN — no idle message found, so it falls back to .noTrigger
+        #expect(storeMock.capturedTriggerFilter == .noTrigger)
     }
 
     @available(iOS 16, *)

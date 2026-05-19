@@ -28,19 +28,21 @@ struct AfterInactivityOptionAdapterTests {
 
     private func makeSUT(initialOption: AfterInactivityOption) throws -> (sut: AfterInactivityOptionAdapter,
                                                                           store: MockKeyValueFileStore) {
-        let store = try MockKeyValueFileStore()
+        let store = MockKeyValueFileStore()
         let sut = AfterInactivityOptionAdapter(initialOption: initialOption, keyValueStore: store)
         return (sut, store)
     }
 
-    @Test("When initialised then afterInactivityOption returns the seeded option")
+    @available(iOS 16, *)
+    @Test("When initialised then afterInactivityOption returns the seeded option", .timeLimit(.minutes(1)))
     func whenInitialisedThenAfterInactivityOptionReturnsSeededOption() throws {
         let (sut, _) = try makeSUT(initialOption: .newTab)
 
         #expect(sut.afterInactivityOption == .newTab)
     }
 
-    @Test("When binding is set then afterInactivityOption reflects the new value")
+    @available(iOS 16, *)
+    @Test("When binding is set then afterInactivityOption reflects the new value", .timeLimit(.minutes(1)))
     func whenBindingIsSetThenAfterInactivityOptionReflectsNewValue() throws {
         let (sut, _) = try makeSUT(initialOption: .lastUsedTab)
 
@@ -49,7 +51,8 @@ struct AfterInactivityOptionAdapterTests {
         #expect(sut.afterInactivityOption == .newTab)
     }
 
-    @Test("When binding is set to newTab then storage holds the raw value")
+    @available(iOS 16, *)
+    @Test("When binding is set to newTab then storage holds the raw value", .timeLimit(.minutes(1)))
     func whenBindingIsSetToNewTabThenStorageHoldsRawValue() throws {
         let (sut, store) = try makeSUT(initialOption: .lastUsedTab)
 
@@ -60,7 +63,8 @@ struct AfterInactivityOptionAdapterTests {
         #expect(raw == AfterInactivityOption.newTab.rawValue)
     }
 
-    @Test("When binding is set to lastUsedTab then storage holds the raw value")
+    @available(iOS 16, *)
+    @Test("When binding is set to lastUsedTab then storage holds the raw value", .timeLimit(.minutes(1)))
     func whenBindingIsSetToLastUsedTabThenStorageHoldsRawValue() throws {
         let (sut, store) = try makeSUT(initialOption: .newTab)
 

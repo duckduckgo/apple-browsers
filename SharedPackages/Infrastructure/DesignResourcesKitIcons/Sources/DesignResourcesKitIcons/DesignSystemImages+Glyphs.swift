@@ -19,6 +19,7 @@
 public extension DesignSystemImages {
     enum Glyphs {
         public enum Size12 {
+            public static var accessibility: DesignSystemImage { .init(resource: .accessibility12) }
             public static var add: DesignSystemImage { .init(resource: .add12) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar12) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat12) }
@@ -59,6 +60,7 @@ public extension DesignSystemImages {
             public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
+            public static var emailDisabled: DesignSystemImage { .init(resource: .emailDisabled12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }
             public static var expand: DesignSystemImage { .init(resource: .expand12) }
             public static var export: DesignSystemImage { .init(resource: .export12) }
@@ -78,6 +80,7 @@ public extension DesignSystemImages {
             public static var help: DesignSystemImage { .init(resource: .help12) }
             public static var history: DesignSystemImage { .init(resource: .history12) }
             public static var home: DesignSystemImage { .init(resource: .home12) }
+            public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration12) }
             public static var images: DesignSystemImage { .init(resource: .images12) }
             public static var `import`: DesignSystemImage { .init(resource: .import12) }
             public static var info: DesignSystemImage { .init(resource: .info12) }
@@ -97,8 +100,10 @@ public extension DesignSystemImages {
             public static var pinRemove: DesignSystemImage { .init(resource: .pinRemove12) }
             public static var platform: DesignSystemImage { .init(resource: .platform12) }
             public static var policeBadge: DesignSystemImage { .init(resource: .policeBadge12) }
+            public static var print: DesignSystemImage { .init(resource: .print12) }
             public static var profile: DesignSystemImage { .init(resource: .profile12) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked12) }
+            public static var qr: DesignSystemImage { .init(resource: .QR_12) }
             public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }

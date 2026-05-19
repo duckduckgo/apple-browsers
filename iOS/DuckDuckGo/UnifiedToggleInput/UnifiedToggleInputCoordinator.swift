@@ -235,6 +235,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let toggleModeStorage: ToggleModeStoring
     private let stateStore: UnifiedInputStateStoring
+    private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private(set) var currentTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
@@ -346,11 +347,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        stateStore: UnifiedInputStateStoring? = nil
+        stateStore: UnifiedInputStateStoring? = nil,
+        switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
+        self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
@@ -1592,6 +1595,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         switch mode {
         case .search:
+            if !URL.isValidAddressBarURLInput(text) {
+                switchBarSubmissionMetrics.process(text, for: .search)
+            }
             clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
@@ -1605,6 +1611,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 presentAttachmentValidationError(validationMessage)
                 return
             }
+
+            switchBarSubmissionMetrics.process(text, for: .aiChat)
 
             let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload

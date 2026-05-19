@@ -640,7 +640,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow)))
         }
     }
 

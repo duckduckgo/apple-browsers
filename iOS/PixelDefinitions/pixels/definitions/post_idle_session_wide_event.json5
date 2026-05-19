@@ -85,6 +85,12 @@
                 "key": "feature.data.ext.back_pressed",
                 "type": "boolean",
                 "description": "Whether the user pressed back/cancel during the session."
+            },
+            {
+                "key": "feature.data.ext.ci_validation_probe",
+                "type": "string",
+                "description": "Temporary field to prove wide-event consistency validation fails on CI.",
+                "enum": ["intentional_failure"]
             }
         ]
     }

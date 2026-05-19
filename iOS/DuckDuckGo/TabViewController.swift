@@ -4190,6 +4190,14 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         contextualOnboardingLogic.setDaxDialogDismiss()
 
         dismissContextualOnboardingIfNeeded()
+
+        // Chat-first path: after the user taps "Got it" on the trackers-blocked dialog the
+        // phase transitions to .trackerToEOJ. Open a new tab so the NTP can surface the
+        // "You've got this!" end-of-journey dialog via presentChatPathOnboardingCompletionIfNeeded.
+        // setDaxDialogDismiss() does not affect chatPathPhase, so the check is still valid here.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
     func didNavigateAwayFromContextualOnboardingDialog() {
@@ -4199,6 +4207,11 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // once the page finishes loading, which depends on `lastShownDaxDialogType` /
         // `lastVisitedOnboardingWebsiteURL` not being cleared.
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+
+        // Chat-first path: open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
 }

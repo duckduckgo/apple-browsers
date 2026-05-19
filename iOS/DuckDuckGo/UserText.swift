@@ -2404,6 +2404,11 @@ public struct UserText {
         }
 
         enum DuckAIQueryExperiment {
+            public static let toggleAILabel = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.toggle.ai",
+                value: "Ask AI",
+                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding experiment screen."
+            )
             public static let title = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.title",
                 value: "Ready to get started?\nTry a search or AI chat!",

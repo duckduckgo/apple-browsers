@@ -38,6 +38,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
+    /// Applied to the next `OmniBarEditingStateViewController` at creation so the Dax logo
+    /// is never shown between the field activating and the chat-path completion dialog appearing.
+    private var pendingHideEditingStateLogo = false
 
     weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
 
@@ -192,6 +195,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         editingStateViewController?.dismissAnimated()
     }
 
+    override func setEditingStateLogoHidden(_ hidden: Bool) {
+        // Always update the pending flag so the next created editing-state VC picks it up,
+        // even if a stale weak `editingStateViewController` ref is currently being torn down.
+        pendingHideEditingStateLogo = hidden
+        editingStateViewController?.setLogoHidden(hidden)
+    }
+
     // MARK: - Layout
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
@@ -307,10 +317,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
+        let initialLogoHidden = pendingHideEditingStateLogo
+        pendingHideEditingStateLogo = false
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
-            escapeHatch: escapeHatch
+            escapeHatch: escapeHatch,
+            initialLogoHidden: initialLogoHidden
         )
         editingStateViewController.delegate = self
 

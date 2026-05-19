@@ -35,7 +35,8 @@ extension OnboardingRebranding {
         let message: AttributedString
         var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
         let blockedTrackersCTAAction: () -> Void
-        let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
+        /// When `nil` the X dismiss button is hidden (e.g. chat-path onboarding).
+        let onManualDismiss: ((_ isShowingNextScreen: Bool) -> Void)?
 
         var body: some View {
             ZStack(alignment: .top) {
@@ -74,7 +75,8 @@ extension OnboardingRebranding {
         var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
         @Binding var showNextScreen: Bool
         let blockedTrackersCTAAction: () -> Void
-        let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
+        /// When `nil` the X dismiss button is hidden (e.g. chat-path onboarding).
+        let onManualDismiss: ((_ isShowingNextScreen: Bool) -> Void)?
 
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-WingBottom",
@@ -84,16 +86,28 @@ extension OnboardingRebranding {
         )
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }
-            ) {
-                if showNextScreen {
-                    OnboardingRebranding.OnboardingFireDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
-                } else {
-                    trackersBlockedContent
+            if let onManualDismiss {
+                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }) {
+                    bubbleContent
                 }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
+                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            } else {
+                OnboardingBubbleView(tailPosition: nil) {
+                    bubbleContent
+                }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
+                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .padding(theme.contextualOnboardingMetrics.containerPadding)
-            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+        }
+
+        @ViewBuilder
+        private var bubbleContent: some View {
+            if showNextScreen {
+                OnboardingRebranding.OnboardingFireDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
+            } else {
+                trackersBlockedContent
+            }
         }
 
         private var trackersBlockedContent: some View {

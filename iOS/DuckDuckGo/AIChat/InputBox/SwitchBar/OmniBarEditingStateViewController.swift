@@ -145,6 +145,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Escape Hatch
     private var escapeHatchModel: EscapeHatchModel?
 
+    /// When true, the Dax logo view is not added to the hierarchy during `installDaxLogoView()`.
+    /// Used by the chat-path onboarding completion flow so the logo never flashes during the
+    /// editing-state transition. Cleared on the first `setLogoHidden(false)` call, which also
+    /// installs the view lazily so later visibility updates work as normal.
+    private var isDaxLogoInstallSuppressed = false
+
     private weak var contentAnimator: UIViewPropertyAnimator?
 
     // MARK: - Initialization
@@ -157,10 +163,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                  escapeHatch: EscapeHatchModel? = nil) {
+                  escapeHatch: EscapeHatchModel? = nil,
+                  initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.isDaxLogoInstallSuppressed = initialLogoHidden
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        if initialLogoHidden {
+            self.daxLogoManager.setForcedHidden(true)
+        }
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -242,6 +253,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        // If we suppressed the initial install (chat-path EOJ handoff), lazily install the Dax now
+        // so subsequent visibility updates can show it normally.
+        if !hidden && isDaxLogoInstallSuppressed {
+            isDaxLogoInstallSuppressed = false
+            if isViewLoaded {
+                installDaxLogoView()
+            }
+        }
         daxLogoManager.setForcedHidden(hidden)
     }
 
@@ -433,6 +452,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
+        // Chat-path EOJ handoff: skip the install entirely so nothing can render during the
+        // editing-state transition. The view is installed lazily in `setLogoHidden(false)`.
+        guard !isDaxLogoInstallSuppressed else { return }
         if switchBarHandler.isFireTab {
             let escapeHatchTap: (() -> Void)? = escapeHatchModel.map { model in
                 { [weak self] in self?.delegate?.onSwitchToTab(model.targetTab) }

@@ -376,6 +376,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         textField.resignFirstResponder()
     }
 
+    func setEditingStateLogoHidden(_ hidden: Bool) {
+        // Overridden in DefaultOmniBarViewController for the experimental editing state.
+    }
+
     func refreshText(forUrl url: URL?, forceFullURL: Bool) {
         guard !textField.isEditing else { return }
         guard let url = url else {

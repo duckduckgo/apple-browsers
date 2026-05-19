@@ -265,6 +265,8 @@ extension Pixel {
         case onboardingDuckAIExperimentFireDialogShownUnique
         case onboardingDuckAIExperimentFireButtonCTAPressed
         case onboardingDuckAIExperimentFinalDialogShownUnique
+        case onboardingChatPathTryVisitSiteUnique
+        case onboardingChatPathTrackersBlockedUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -2121,6 +2123,8 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
         case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
+        case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
+        case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"

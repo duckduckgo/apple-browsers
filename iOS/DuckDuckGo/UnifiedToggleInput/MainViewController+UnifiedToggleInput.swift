@@ -616,6 +616,7 @@ private extension MainViewController {
             coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             if hasExistingChat, let chatID = tab.webView.url?.duckAIChatID {
                 coordinator.restoreLastUsedModel(forChatID: chatID)
+                coordinator.restoreLastUsedReasoningMode(forChatID: chatID)
             }
             if let chatUpdatesPublisher = tab.userScripts?.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
                 coordinator.observeChatUpdates(chatUpdatesPublisher)

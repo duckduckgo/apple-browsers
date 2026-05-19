@@ -2425,6 +2425,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
         case .lastUsedModelParseError:
             break
+        case .lastUsedReasoningModeParseError:
+            break
         }
     }
 }

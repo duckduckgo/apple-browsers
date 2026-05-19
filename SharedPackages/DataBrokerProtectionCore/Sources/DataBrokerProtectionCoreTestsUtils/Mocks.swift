@@ -24,6 +24,8 @@ import Foundation
 import GRDB
 import SecureStorage
 import PixelKit
+import TrackerRadarKit
+import WebKit
 
 @testable import DataBrokerProtectionCore
 
@@ -210,13 +212,14 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
+    public var isFeatureEnabledCheck: ((PrivacyFeature) -> Bool)?
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
     }
 
     public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
-        false
+        return isFeatureEnabledCheck?(featureKey) ?? false
     }
 
     public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
@@ -2068,6 +2071,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public var isJobWebViewContentBlockingOn: Bool = false
     public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
@@ -3225,6 +3229,19 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
+    }
+}
+
+// MARK: - DBPWebViewContentBlockingMock
+
+@MainActor
+public final class DBPWebViewContentBlockingMock: DBPWebViewContentBlocking {
+    public var contentRuleLists: [WKContentRuleList]
+    public var surrogateTrackerData: TrackerData?
+
+    public init(contentRuleLists: [WKContentRuleList] = [], surrogateTrackerData: TrackerData? = nil) {
+        self.contentRuleLists = contentRuleLists
+        self.surrogateTrackerData = surrogateTrackerData
     }
 }
 

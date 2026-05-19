@@ -373,6 +373,12 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
+    @MainActor
+    private func makeContentBlocking() -> DBPWebViewContentBlocking? {
+        guard featureFlagger.isJobWebViewContentBlockingOn else { return nil }
+        return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    }
+
     private let contentScopeProperties: ContentScopeProperties
     private let emailConfirmationDataService: EmailConfirmationDataService
     private let debugEmailConfirmationStore: DebugEmailConfirmationStore
@@ -559,7 +565,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         applicationNameForUserAgent: nil,
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
-                        executionConfig: executionConfig
+                        executionConfig: executionConfig,
+                        contentBlocking: makeContentBlocking()
                     ) { true }
 
                     self.currentRunner = runner
@@ -692,7 +699,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .optOut
+                    actionsHandlerMode: .optOut,
+                    contentBlocking: makeContentBlocking()
                 ) { true }
                 
                 self.currentOptOutRunner = runner
@@ -865,7 +873,8 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .emailConfirmation(confirmationURL)
+                    actionsHandlerMode: .emailConfirmation(confirmationURL),
+                    contentBlocking: makeContentBlocking()
                 ) { true }
 
                 self.currentOptOutRunner = runner

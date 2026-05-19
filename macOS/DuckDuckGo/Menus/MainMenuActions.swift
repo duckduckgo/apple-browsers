@@ -1250,7 +1250,7 @@ extension MainViewController {
     }
 
     @objc func zoomIn(_ sender: Any) {
-        performZoomIn(entryPoint: .keyboard)
+        performZoomIn(entryPoint: .forMainMenuBarZoomAction)
     }
 
     func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
@@ -1259,7 +1259,7 @@ extension MainViewController {
     }
 
     @objc func zoomOut(_ sender: Any) {
-        performZoomOut(entryPoint: .keyboard)
+        performZoomOut(entryPoint: .forMainMenuBarZoomAction)
     }
 
     func performZoomOut(entryPoint: WebViewZoomEntryPoint) {

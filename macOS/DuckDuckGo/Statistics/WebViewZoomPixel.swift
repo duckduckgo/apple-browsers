@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import PixelKit
 
@@ -24,6 +25,12 @@ enum WebViewZoomEntryPoint: String {
     case popover
     case menu
     case actualSize = "actual-size"
+
+    /// Infers keyboard vs menu for main menu bar zoom actions (View → Zoom In/Out).
+    /// Key equivalents (⌘+/⌘−) arrive with a `keyDown` event; mouse clicks do not.
+    static var forMainMenuBarZoomAction: WebViewZoomEntryPoint {
+        NSApp.currentEvent?.type == .keyDown ? .keyboard : .menu
+    }
 }
 
 enum WebViewZoomPixel: PixelKitEvent {

@@ -4673,7 +4673,7 @@ https://duckduckgo.com/windows";
 "youtube.ad.blocking.disabled-until-relaunch" = "Disabled until relaunch";
 
 /* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
+"youtube.ad.blocking.explanation" = "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption.";
 
 /* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
 "youtube.ad.blocking.menu.enable" = "Enable YouTube Ad Blocking";

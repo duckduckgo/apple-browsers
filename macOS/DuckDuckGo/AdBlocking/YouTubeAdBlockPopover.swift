@@ -150,8 +150,11 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     }
 
     private func apply(_ setting: YouTubeAdBlockSetting) {
-        let wasEnabled = preferences.youTubeAdBlockingEnabled
-        let wasDisabledUntilRelaunch = adBlockingAvailability.isDisabledUntilRelaunch
+        // Anchor change detection on the composite `isEnabled` so transitions that flip
+        // individual flags but leave the effective state untouched (e.g. picking
+        // `.disableUntilRelaunch` while persistent is already off) are no-ops — no
+        // spurious page reload, no misleading breakage banner.
+        let wasEnabled = adBlockingAvailability.isEnabled
 
         switch setting {
         case .alwaysOn:
@@ -164,16 +167,13 @@ final class YouTubeAdBlockViewModel: ObservableObject {
             adBlockingAvailability.disableUntilRelaunch()
         }
 
-        let stateChanged = preferences.youTubeAdBlockingEnabled != wasEnabled
-            || adBlockingAvailability.isDisabledUntilRelaunch != wasDisabledUntilRelaunch
-        if stateChanged {
+        let isEnabled = adBlockingAvailability.isEnabled
+        if isEnabled != wasEnabled {
             reloadPage()
             // Show the breakage banner whenever the user has actively disabled ad blocking
             // (either persistently or just for this session) — iOS surfaces a breakage report
             // sheet in both cases too.
-            let isDisabled = !preferences.youTubeAdBlockingEnabled
-                || adBlockingAvailability.isDisabledUntilRelaunch
-            showBreakageReportBanner = isDisabled
+            showBreakageReportBanner = !isEnabled
             // Re-enabling ad blocking is a terminal action for the popover — auto-dismiss so the
             // user gets immediate visual confirmation rather than having to click outside.
             if setting == .alwaysOn {
@@ -195,7 +195,7 @@ struct YouTubeAdBlockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("YouTube.com")
+            Text(verbatim: "YouTube.com")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)

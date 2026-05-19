@@ -88548,6 +88548,42 @@
         }
       }
     },
+    "preferences.youtube-ad-blocking.popover.always-off" : {
+      "comment" : "YouTube Ad Block popover dropdown option that keeps ad blocking always off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Off"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.always-on" : {
+      "comment" : "YouTube Ad Block popover dropdown option that keeps ad blocking always on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always On"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.disable-until-relaunch" : {
+      "comment" : "YouTube Ad Block popover dropdown option that disables ad blocking for the current app session only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Until Relaunch"
+          }
+        }
+      }
+    },
     "preferences.youtube-ad-blocking.toggle" : {
       "comment" : "Toggle label for enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",

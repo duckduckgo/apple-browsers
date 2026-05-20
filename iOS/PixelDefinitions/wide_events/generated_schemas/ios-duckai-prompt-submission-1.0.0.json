@@ -62,8 +62,8 @@
                             "properties": {
                                 "cancellation_reason": {
                                     "type": "string",
-                                    "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight.",
-                                    "enum": ["stop_button", "tab_closed", "sheet_dismissed"]
+                                    "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight; `superseded_by_new_submission` = another prompt was submitted in the same tab or contextual sheet before this flow reached a terminal outcome.",
+                                    "enum": ["stop_button", "tab_closed", "sheet_dismissed", "superseded_by_new_submission"]
                                 },
                                 "last_step": {
                                     "type": "string",

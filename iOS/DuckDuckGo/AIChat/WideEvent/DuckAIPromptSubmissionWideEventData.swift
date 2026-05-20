@@ -150,6 +150,9 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         /// tapped delete-chat, or the fire-button workflow cleared it) while
         /// the response was still in flight.
         case sheetDismissed = "sheet_dismissed"
+        /// Another prompt submission started in the same tab or contextual
+        /// sheet before this flow reached a terminal outcome.
+        case supersededByNewSubmission = "superseded_by_new_submission"
     }
 
     enum InputMode: String, Codable {

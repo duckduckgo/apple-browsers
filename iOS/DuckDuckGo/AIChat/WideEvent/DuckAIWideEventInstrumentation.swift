@@ -21,10 +21,15 @@ import Foundation
 import AIChat
 import PixelKit
 
+enum DuckAIWideEventFlowScope: Hashable {
+    case tab(TabUID)
+    case contextual(UUID)
+}
+
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
-    func submissionStarted(sourceTabID: TabUID?,
+    func submissionStarted(scope: DuckAIWideEventFlowScope,
                            modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
@@ -39,21 +44,21 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// Native attempted to hand the prompt to the frontend. Records whether
     /// contextual delivery was queued and whether a user-script bridge message was sent.
-    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?)
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?)
 
     /// The Duck.ai frontend reported its prompt-submitted metric for the active flow.
-    func frontendSubmissionAcknowledged()
+    func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope)
 
     /// The Duck.ai chat status published a new value. The instrumentation
     /// completes the active flow as SUCCESS the first time `.ready` is observed
     /// after at least one non-`.ready` value during the flow's lifetime. A page-
     /// reported `.error` or `.blocked` status completes the flow as FAILURE.
-    func chatStatusChanged(_ status: AIChatStatusValue)
+    func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope)
 
     /// User tapped the stop-generating button. Completes the active flow as
     /// CANCELLED with `cancellation_reason = stop_button`. After this, any
     /// subsequent `.ready` status is ignored.
-    func stopGeneratingTapped()
+    func stopGeneratingTapped(scope: DuckAIWideEventFlowScope)
 
     /// User closed a Duck.ai tab while a response was still in flight.
     /// Completes the active flow as CANCELLED with
@@ -64,23 +69,26 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// delete-chat, or the fire-button workflow cleared it) while a response
     /// was still in flight. Completes the active flow as CANCELLED with
     /// `cancellation_reason = sheet_dismissed`. No-op if no flow is active.
-    func sheetDismissedDuringGeneration()
+    func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope)
 
     /// The Duck.ai webview's navigation failed (e.g. network error, DNS
     /// failure). If a submission is in flight, completes the active flow as
     /// FAILURE with `failing_step = navigation_failed` and attaches the
     /// `NSError` domain/code to the event's error data. No-op if no flow is in
     /// flight.
-    func pageLoadFailed(error: Error)
+    func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error)
 }
 
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
 
+    private struct ActiveFlow {
+        var data: DuckAIPromptSubmissionWideEventData
+        var hasObservedNonReady = false
+    }
+
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
-    private var activeFlow: DuckAIPromptSubmissionWideEventData?
-    private var activeFlowSourceTabID: TabUID?
-    private var hasObservedNonReady = false
+    private var activeFlows: [DuckAIWideEventFlowScope: ActiveFlow] = [:]
 
     init(wideEvent: WideEventManaging,
          completeOrphanedFlowsOnInit: Bool = false,
@@ -93,7 +101,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         }
     }
 
-    func submissionStarted(sourceTabID: TabUID?,
+    func submissionStarted(scope: DuckAIWideEventFlowScope,
                            modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
@@ -105,11 +113,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            hasPageContext: Bool,
                            toolsSelected: Bool,
                            attachmentsSelected: Bool) {
-        if let activeFlow {
-            wideEvent.discardFlow(activeFlow)
-            self.activeFlow = nil
-            activeFlowSourceTabID = nil
-        }
+        completeSupersededFlowIfNeeded(scope: scope)
 
         let data = DuckAIPromptSubmissionWideEventData(
             modelId: modelId,
@@ -125,76 +129,75 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             attachmentsSelected: attachmentsSelected,
             startedAt: dateProvider()
         )
-        activeFlow = data
-        activeFlowSourceTabID = sourceTabID
-        hasObservedNonReady = false
+        activeFlows[scope] = ActiveFlow(data: data)
         data.lastStep = .submitted
         wideEvent.startFlow(data)
     }
 
-    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
-        guard let activeFlow else { return }
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        guard let activeFlow = activeFlows[scope] else { return }
+        let data = activeFlow.data
 
         if let wasQueued {
-            activeFlow.frontendDeliveryQueued = wasQueued
+            data.frontendDeliveryQueued = wasQueued
         }
 
         if let didSendBridgeMessage {
-            activeFlow.didSendBridgeMessage = didSendBridgeMessage
+            data.didSendBridgeMessage = didSendBridgeMessage
         }
 
-        wideEvent.updateFlow(activeFlow)
+        wideEvent.updateFlow(data)
     }
 
-    func frontendSubmissionAcknowledged() {
-        guard let activeFlow,
-              activeFlow.frontendSubmissionAckInterval.end == nil else { return }
+    func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {
+        guard let activeFlow = activeFlows[scope],
+              activeFlow.data.frontendSubmissionAckInterval.end == nil else { return }
 
-        activeFlow.frontendSubmissionAckInterval.end = dateProvider()
-        wideEvent.updateFlow(activeFlow)
+        activeFlow.data.frontendSubmissionAckInterval.end = dateProvider()
+        wideEvent.updateFlow(activeFlow.data)
     }
 
-    func chatStatusChanged(_ status: AIChatStatusValue) {
-        guard let activeFlow else { return }
+    func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {
+        guard var activeFlow = activeFlows[scope] else { return }
+        let data = activeFlow.data
 
         if status == .ready {
-            guard hasObservedNonReady else { return }
+            guard activeFlow.hasObservedNonReady else { return }
             let now = dateProvider()
-            activeFlow.generatingCompletedInterval.end = now
-            activeFlow.endedInterval.end = now
+            data.generatingCompletedInterval.end = now
+            data.endedInterval.end = now
             // SUCCESS doesn't carry last_step.
-            activeFlow.lastStep = nil
-            wideEvent.completeFlow(activeFlow, status: .success(), onComplete: { _, _ in })
-            self.activeFlow = nil
-            activeFlowSourceTabID = nil
+            data.lastStep = nil
+            wideEvent.completeFlow(data, status: .success(), onComplete: { _, _ in })
+            activeFlows[scope] = nil
             return
         }
 
         // Map every non-`ready` status to a journey step so UNKNOWN orphans
         // (recovered from storage on next launch) report where the flow was
         // when the app died.
-        activeFlow.lastStep = Self.lastStep(for: status)
+        data.lastStep = Self.lastStep(for: status)
 
         let now = dateProvider()
-        if activeFlow.startThinkingInterval.end == nil {
-            activeFlow.startThinkingInterval.end = now
+        if data.startThinkingInterval.end == nil {
+            data.startThinkingInterval.end = now
         }
 
         if status == .error || status == .blocked {
-            activeFlow.endedInterval.end = now
-            wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
-            self.activeFlow = nil
-            activeFlowSourceTabID = nil
+            data.endedInterval.end = now
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            activeFlows[scope] = nil
             return
         }
 
-        hasObservedNonReady = true
-        if status == .streaming, activeFlow.startGeneratingInterval.end == nil {
-            activeFlow.startGeneratingInterval.end = now
+        activeFlow.hasObservedNonReady = true
+        if status == .streaming, data.startGeneratingInterval.end == nil {
+            data.startGeneratingInterval.end = now
         }
         // Persist the new step + intervals so orphan recovery sees the
         // latest progression after an app kill.
-        wideEvent.updateFlow(activeFlow)
+        activeFlows[scope] = activeFlow
+        wideEvent.updateFlow(data)
     }
 
     private static func lastStep(for status: AIChatStatusValue) -> DuckAIPromptSubmissionWideEventData.LastStep {
@@ -210,44 +213,40 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         }
     }
 
-    func stopGeneratingTapped() {
-        guard let activeFlow else { return }
-        activeFlow.cancellationReason = .stopButton
-        activeFlow.endedInterval.end = dateProvider()
-        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
-        self.activeFlow = nil
-        activeFlowSourceTabID = nil
+    func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {
+        cancelFlow(scope: scope, reason: .stopButton)
     }
 
     func tabClosedDuringGeneration(tabID: TabUID) {
-        guard let activeFlow, activeFlowSourceTabID == tabID else { return }
-        activeFlow.cancellationReason = .tabClosed
-        activeFlow.endedInterval.end = dateProvider()
-        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
-        self.activeFlow = nil
-        activeFlowSourceTabID = nil
+        cancelFlow(scope: .tab(tabID), reason: .tabClosed)
     }
 
-    func sheetDismissedDuringGeneration() {
-        guard let activeFlow else { return }
-        activeFlow.cancellationReason = .sheetDismissed
-        activeFlow.endedInterval.end = dateProvider()
-        wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
-        self.activeFlow = nil
-        activeFlowSourceTabID = nil
+    func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {
+        cancelFlow(scope: scope, reason: .sheetDismissed)
     }
 
-    func pageLoadFailed(error: Error) {
-        guard let activeFlow else { return }
-        activeFlow.lastStep = .navigationFailed
-        activeFlow.errorData = WideEventErrorData(error: error)
-        activeFlow.endedInterval.end = dateProvider()
-        wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
-        self.activeFlow = nil
-        activeFlowSourceTabID = nil
+    func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {
+        guard let activeFlow = activeFlows[scope] else { return }
+        activeFlow.data.lastStep = .navigationFailed
+        activeFlow.data.errorData = WideEventErrorData(error: error)
+        activeFlow.data.endedInterval.end = dateProvider()
+        wideEvent.completeFlow(activeFlow.data, status: .failure, onComplete: { _, _ in })
+        activeFlows[scope] = nil
     }
 
     // MARK: - Helpers
+
+    private func completeSupersededFlowIfNeeded(scope: DuckAIWideEventFlowScope) {
+        cancelFlow(scope: scope, reason: .supersededByNewSubmission)
+    }
+
+    private func cancelFlow(scope: DuckAIWideEventFlowScope, reason: DuckAIPromptSubmissionWideEventData.CancellationReason) {
+        guard let activeFlow = activeFlows[scope] else { return }
+        activeFlow.data.cancellationReason = reason
+        activeFlow.data.endedInterval.end = dateProvider()
+        wideEvent.completeFlow(activeFlow.data, status: .cancelled, onComplete: { _, _ in })
+        activeFlows[scope] = nil
+    }
 
     private func completeOrphanedFlowsFromPreviousAppSession() {
         for orphan in wideEvent.getAllFlowData(DuckAIPromptSubmissionWideEventData.self) {

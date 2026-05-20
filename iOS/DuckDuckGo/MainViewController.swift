@@ -4760,7 +4760,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
-        duckAIWideEventInstrumentation.pageLoadFailed(error: error)
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: .tab(tab.tabModel.uid), error: error)
     }
 
     var isAIChatEnabled: Bool {
@@ -5298,6 +5298,10 @@ extension MainViewController: TabSwitcherDelegate {
     private func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
         guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
         duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
+    }
+
+    fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
+        currentTab.map { .tab($0.tabModel.uid) }
     }
 
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController) {
@@ -6025,7 +6029,8 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
 }
 
@@ -6057,7 +6062,8 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {

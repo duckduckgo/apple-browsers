@@ -29,6 +29,7 @@ final class AIChatContextualUTIHost {
 
     private let coordinator: UnifiedToggleInputCoordinator
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
+    private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
     private let pageContextHandler: AIChatPageContextHandling
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let isAutoAttachEnabled: () -> Bool
@@ -62,7 +63,8 @@ final class AIChatContextualUTIHost {
             isToggleEnabled: false,
             isFireTab: isFireTab,
             lastUsedModelProvider: lastUsedModelProvider,
-            duckAIWideEventInstrumentation: wideEventInstrumentation
+            duckAIWideEventInstrumentation: wideEventInstrumentation,
+            duckAIWideEventFlowScope: duckAIWideEventFlowScope
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -202,19 +204,19 @@ final class AIChatContextualUTIHost {
     }
 
     func sheetDismissed() {
-        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration()
+        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)
     }
 
     func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
-        duckAIWideEventInstrumentation.promptDeliveryUpdated(wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+        duckAIWideEventInstrumentation.promptDeliveryUpdated(scope: duckAIWideEventFlowScope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     func frontendSubmissionAcknowledged() {
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged()
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: duckAIWideEventFlowScope)
     }
 
     func pageLoadFailed(error: Error) {
-        duckAIWideEventInstrumentation.pageLoadFailed(error: error)
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: duckAIWideEventFlowScope, error: error)
     }
 
     /// Called when the contextual sheet's native input submits the initial prompt of a chat,

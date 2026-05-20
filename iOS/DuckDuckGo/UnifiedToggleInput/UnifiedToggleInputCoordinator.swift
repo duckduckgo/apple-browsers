@@ -1680,6 +1680,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
+        if host == .omnibar {
+            Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed, withAdditionalParameters: ["mode": inputMode.rawValue])
+        }
         // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
         vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         contentViewController.onDismissRequested?()

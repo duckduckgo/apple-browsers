@@ -237,6 +237,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let aiChatSettings: AIChatSettingsProvider
+    private let sessionStateMetrics: SessionStateMetricsProviding
     private static var hasUsedSearchInSession = false
     private static var hasUsedAIChatInSession = false
     private var backgroundObserver: NSObjectProtocol?
@@ -354,12 +355,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore: UnifiedInputStateStoring? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard)
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
+        self.sessionStateMetrics = sessionStateMetrics
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
@@ -1595,6 +1598,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
+    // MARK: - Pixels
+
+    private func processSessionActivity(mode: TextEntryMode) {
+        guard host == .omnibar else { return }
+
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+
+        switch mode {
+        case .search:
+            Self.hasUsedSearchInSession = true
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+        case .aiChat:
+            Self.hasUsedAIChatInSession = true
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+        }
+
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
+        }
+    }
+
     private func fireModeSwitchedPixel(to mode: TextEntryMode) {
         let direction = mode == .search ? "to_search" : "to_duckai"
         let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1652,6 +1677,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if !URL.isValidAddressBarURLInput(text) {
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
+            processSessionActivity(mode: .search)
             clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
@@ -1667,6 +1693,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
+            processSessionActivity(mode: .aiChat)
 
             let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload

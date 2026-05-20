@@ -341,6 +341,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1214891763999617?focus=true
     case appRebranding
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true

@@ -35,6 +35,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
+    var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
@@ -42,6 +43,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -50,7 +52,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
-            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {})
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature
         )
     }
 
@@ -253,6 +256,100 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(url, mockSettings.aiChatURL)
+    }
+
+    func testBuildQueryURLWithNativeInputAvailableAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: nil)
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testBuildQueryURLWithNativeInputAvailableAndNilQueryAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: nil, autoSend: false, flowType: .default, tools: nil)
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let promptItem = components.queryItems?.first { $0.name == AIChatURLParameters.promptQueryName }
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertEqual(url, AIChatURLParameters.nativeInputURL(from: mockSettings.aiChatURL))
+        XCTAssertNil(promptItem)
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testBuildQueryURLWithNativeInputUnavailableRemovesStaleNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai?native-input=true")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+
+        let url = handler.buildQueryURL(query: nil, autoSend: false, flowType: .default, tools: nil)
+
+        XCTAssertEqual(url.absoluteString, "https://duck.ai")
+    }
+
+    func testBuildQueryURLWithNativeInputAvailableDoesNotAddNativeInputParameterToUnsupportedURL() throws {
+        mockSettings.aiChatURL = URL(string: "https://example.com")!
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: nil, autoSend: false, flowType: .default, tools: nil)
+
+        XCTAssertEqual(url, mockSettings.aiChatURL)
+    }
+
+    func testBuildQueryURLWithNativeInputAvailableAndEmptyQueryAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: "", autoSend: false, flowType: .default, tools: nil)
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let promptItem = components.queryItems?.first { $0.name == AIChatURLParameters.promptQueryName }
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertNil(promptItem)
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testBuildVoiceModeURLWithNativeInputAvailableAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        let url = handler.buildVoiceModeURL()
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let modeItem = components.queryItems?.first { $0.name == AIChatURLParameters.modeName }
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertEqual(modeItem?.value, AIChatURLParameters.voiceModeValue)
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testBuildVoiceModeURLWithNativeInputUnavailableRemovesStaleNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai?native-input=true")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+
+        let url = handler.buildVoiceModeURL()
+
+        XCTAssertEqual(url.absoluteString, "https://duck.ai?mode=voice")
     }
 
     func testBuildQueryURLReplacesExistingQueryParameters() throws {
@@ -569,6 +666,14 @@ final class AIChatContentHandlerTests: XCTestCase {
 final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
     func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
         true
+    }
+}
+
+final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
+    var isAvailable: Bool
+
+    init(isAvailable: Bool = false) {
+        self.isAvailable = isAvailable
     }
 }
 

@@ -201,9 +201,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                markEmailAddressRestoreAsFailure(data: restoreDataList)
+                return nil
+            }
             markEmailAddressRestoreAsSuccess(data: restoreDataList)
-            Logger.subscription.log("Subscription retrieved")
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
         } catch {
             markEmailAddressRestoreAsFailure(data: restoreDataList, with: error)
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -501,7 +505,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         Logger.subscription.log("[TierChange] Parsed - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
         switch effectivePlatform {

@@ -157,6 +157,8 @@ final class AIChatContextualWebViewController: UIViewController {
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
+            debugSettings: debugSettings,
             getPageContext: getPageContext
         )
 
@@ -173,7 +175,7 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
-        if isUTIEnabled, let utiHostInstaller {
+        if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
         aiChatContentHandler.fireAIChatTelemetry()
@@ -248,7 +250,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func loadChatURL(_ url: URL) {
-        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
+        let urlToLoad = chatURLForLoading(url)
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.absoluteString)")
         isPageReady = false
         isFrontendReady = false
         pendingPrompt = nil
@@ -256,7 +259,19 @@ final class AIChatContextualWebViewController: UIViewController {
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
-        webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: urlToLoad))
+    }
+
+    func loadDefaultChatURL() {
+        loadChatURL(defaultChatURL)
+    }
+
+    func chatURLForLoading(_ url: URL) -> URL {
+        AIChatURLParameters.updatingNativeInputURL(
+            from: url,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isSupportedURL: url.isDuckAIURL || debugSettings.matchesCustomURL(url)
+        )
     }
 
     // MARK: - Private Methods
@@ -293,14 +308,15 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private func loadAIChat() {
-        loadingView.startAnimating()
-        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-        Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
-        webView.load(URLRequest(url: contextualURL))
+        loadChatURL(defaultChatURL)
     }
 
-    private var isUTIEnabled: Bool {
-        unifiedToggleInputFeature.isFeatureFlagEnabled && utiHostInstaller != nil
+    private var shouldInstallUTIHost: Bool {
+        unifiedToggleInputFeature.isAvailable && utiHostInstaller != nil
+    }
+
+    private var defaultChatURL: URL {
+        aiChatSettings.aiChatURL.addingOrReplacing(URLQueryItem(name: "placement", value: "sidebar"))
     }
 
     private func setupDownloadHandler() {

@@ -208,7 +208,7 @@ extension TDSExperimentType: FeatureFlagDescribing {
     }
 
     public var source: FeatureFlagSource {
-        return .remoteReleasable(.subfeature(self.subfeature))
+        return .remoteReleasable(self.subfeature)
     }
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {

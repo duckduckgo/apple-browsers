@@ -129,6 +129,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let statisticsLoader: StatisticsLoader
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let debugSettings: AIChatDebugSettingsHandling
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -145,6 +147,8 @@ final class AIChatContentHandler: AIChatContentHandling {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
          statisticsLoader: StatisticsLoader = .shared,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
@@ -153,6 +157,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.statisticsLoader = statisticsLoader
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.debugSettings = debugSettings
         self.getPageContext = getPageContext
     }
 
@@ -173,42 +179,54 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
-        guard let query, var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
-            return aiChatSettings.aiChatURL
+        guard var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
+            return updatingNativeInputParameterIfNeeded(in: aiChatSettings.aiChatURL)
         }
 
         var queryItems = components.queryItems ?? []
 
-        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            queryItems.removeAll { $0.name == AIChatURLParameters.promptQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query))
-        }
+        if let query {
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                queryItems.removeAll { $0.name == AIChatURLParameters.promptQueryName }
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query))
+            }
 
-        if autoSend {
-            queryItems.removeAll { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue))
-        }
+            if autoSend {
+                queryItems.removeAll { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }
+                queryItems.append(URLQueryItem(
+                    name: AIChatURLParameters.autoSubmitPromptQueryName,
+                    value: AIChatURLParameters.autoSubmitPromptQueryValue
+                ))
+            }
 
-        if let flowValue = flowType.flowQueryValue {
-            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
-        } else {
-            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
-        }
+            if let flowValue = flowType.flowQueryValue {
+                queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
+            } else {
+                queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+            }
 
-        if let tools = tools, !tools.isEmpty {
-            queryItems.removeAll { $0.name == AIChatURLParameters.toolChoiceName }
-            for tool in tools {
-                queryItems.append(URLQueryItem(name: AIChatURLParameters.toolChoiceName, value: tool.rawValue))
+            if let tools = tools, !tools.isEmpty {
+                queryItems.removeAll { $0.name == AIChatURLParameters.toolChoiceName }
+                for tool in tools {
+                    queryItems.append(URLQueryItem(name: AIChatURLParameters.toolChoiceName, value: tool.rawValue))
+                }
             }
         }
 
-        components.queryItems = queryItems
-        return components.url ?? aiChatSettings.aiChatURL
+        if isNativeInputParameterSupported(for: aiChatSettings.aiChatURL) {
+            queryItems.removeAll { $0.name == AIChatURLParameters.nativeInputName }
+            if unifiedToggleInputFeature.isAvailable {
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.nativeInputName, value: AIChatURLParameters.nativeInputValue))
+            }
+        }
+
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url ?? updatingNativeInputParameterIfNeeded(in: aiChatSettings.aiChatURL)
     }
     
     func buildVoiceModeURL() -> URL {
-        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
+        updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
@@ -248,6 +266,18 @@ final class AIChatContentHandler: AIChatContentHandling {
         productSurfaceTelemetry.duckAIUsed()
         pixelMetricHandler?.fireOpenAIChat()
         featureDiscovery.setWasUsedBefore(.aiChat)
+    }
+
+    private func updatingNativeInputParameterIfNeeded(in url: URL) -> URL {
+        AIChatURLParameters.updatingNativeInputURL(
+            from: url,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isSupportedURL: isNativeInputParameterSupported(for: url)
+        )
+    }
+
+    private func isNativeInputParameterSupported(for url: URL) -> Bool {
+        url.isDuckAIURL || debugSettings.matchesCustomURL(url)
     }
 }
 

@@ -58,7 +58,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
     }
 
     public func performTierChange(to productId: String, changeType: String?, contextName: String) async -> PurchaseUpdate? {
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let fromPlan = currentSubscription?.productId ?? ""
         let resolvedChangeType = SubscriptionPlanChangeWideEventData.ChangeType.parse(string: changeType)
         return await executeAppStoreTierChange(to: productId, changeType: resolvedChangeType, fromPlan: fromPlan, contextName: contextName)

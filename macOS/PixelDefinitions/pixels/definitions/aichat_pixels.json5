@@ -112,6 +112,27 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_report_metric_decode_error": {
+        "description": "Fired when the Duck.ai frontend sends a reportMetric payload that native code cannot decode",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "failureReason",
+                "description": "The native decode failure category",
+                "type": "string",
+                "enum": ["key_not_found", "type_mismatch", "value_not_found", "data_corrupted", "unknown_decoding_error"]
+            }
+        ]
+    },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],

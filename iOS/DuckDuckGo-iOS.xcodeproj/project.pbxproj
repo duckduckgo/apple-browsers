@@ -1716,6 +1716,9 @@
 		B2258FABEA7BDFCEF297DCFE /* RebrandedOnboardingView+SearchExperienceContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */; };
 		B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */; };
 		B54C59B72FA91DF30072ECCE /* DuckAIToggleDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */; };
+		B572460F2FB7A00E004EB481 /* ExclusiveTouchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B572460E2FB7A00E004EB481 /* ExclusiveTouchView.swift */; };
+		B57246112FB7A33F004EB481 /* SwipeActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57246102FB7A33F004EB481 /* SwipeActionView.swift */; };
+		B57246132FB7AF3B004EB481 /* LeftCapsuleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57246122FB7AF3B004EB481 /* LeftCapsuleShape.swift */; };
 		B57702B52FAA6D89007CE868 /* NewAddressBarPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57702B42FAA6D89007CE868 /* NewAddressBarPickerViewModel.swift */; };
 		B59B16982FAB879900C1040A /* OmniBarFocuser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59B16972FAB879900C1040A /* OmniBarFocuser.swift */; };
 		B5E5F7432FB6362D00A318E7 /* EscapeHatchModel+Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E5F7422FB6362D00A318E7 /* EscapeHatchModel+Previews.swift */; };
@@ -4328,6 +4331,9 @@
 		AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
 		B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIToggleDebugView.swift; sourceTree = "<group>"; };
+		B572460E2FB7A00E004EB481 /* ExclusiveTouchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExclusiveTouchView.swift; sourceTree = "<group>"; };
+		B57246102FB7A33F004EB481 /* SwipeActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeActionView.swift; sourceTree = "<group>"; };
+		B57246122FB7AF3B004EB481 /* LeftCapsuleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftCapsuleShape.swift; sourceTree = "<group>"; };
 		B57702B42FAA6D89007CE868 /* NewAddressBarPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewModel.swift; sourceTree = "<group>"; };
 		B59B16972FAB879900C1040A /* OmniBarFocuser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarFocuser.swift; sourceTree = "<group>"; };
 		B5E5F7422FB6362D00A318E7 /* EscapeHatchModel+Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EscapeHatchModel+Previews.swift"; sourceTree = "<group>"; };
@@ -8882,6 +8888,16 @@
 			name = AppIcon;
 			sourceTree = "<group>";
 		};
+		B572460D2FB79FE6004EB481 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				B572460E2FB7A00E004EB481 /* ExclusiveTouchView.swift */,
+				B57246122FB7AF3B004EB481 /* LeftCapsuleShape.swift */,
+				B57246102FB7A33F004EB481 /* SwipeActionView.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
 		B652DF02287C01EE00C12A9C /* ContentBlocking */ = {
 			isa = PBXGroup;
 			children = (
@@ -10423,6 +10439,7 @@
 		F1386BA21E6846320062FC3C /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
+				B572460D2FB79FE6004EB481 /* Helpers */,
 				8026361D2F983C2A009FD281 /* TabSwitcherTitleBarView.swift */,
 				80EB2C4A2F56980700C5AE20 /* TabCountBadge.swift */,
 				80EB2C4C2F56980700C5AE21 /* TabSwitcherPill.swift */,
@@ -12356,6 +12373,7 @@
 				80F8207D2F4D4AC0007CA7C9 /* AutoconsentManagementProvider.swift in Sources */,
 				85BDC310243359040053DB07 /* FindInPageUserScript.swift in Sources */,
 				F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */,
+				B57246132FB7AF3B004EB481 /* LeftCapsuleShape.swift in Sources */,
 				6F2BB1A22F59D628004B1DBE /* SafariRedirectHandler.swift in Sources */,
 				B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */,
 				9710D4A12ED5B323006C14FF /* FadeOutContainerViewController.swift in Sources */,
@@ -12494,6 +12512,7 @@
 				F1970B5A2DF1F356008F18BC /* AdClickExternalOpenDetector.swift in Sources */,
 				F1970B5B2DF1F356008F18BC /* AdAttributionReporterStorage.swift in Sources */,
 				F1970B5C2DF1F356008F18BC /* AdAttributionFetcher.swift in Sources */,
+				B572460F2FB7A00E004EB481 /* ExclusiveTouchView.swift in Sources */,
 				C12B671E2EC0ABEB003B80DD /* AIChatContentHandler.swift in Sources */,
 				F1970B5D2DF1F356008F18BC /* AdAttributionPixelReporter.swift in Sources */,
 				6FBF0F8B2BD7C0A900136CF0 /* AllProtectedCell.swift in Sources */,
@@ -13395,6 +13414,7 @@
 				80879D572F7B5BA9000C2267 /* TabViewListCell.swift in Sources */,
 				FA58D524242AADCE97992F46 /* RebrandedOnboardingView+SkipOnboardingContent.swift in Sources */,
 				1AD965E390AC1B7FDE09D956 /* RebrandedOnboardingView+BrowsersComparisonContent.swift in Sources */,
+				B57246112FB7A33F004EB481 /* SwipeActionView.swift in Sources */,
 				9FFABF2A543E444D8A9127DE /* RebrandedOnboardingView+DaxAnimationOverlay.swift in Sources */,
 				7B621DE3CBE23A6D2777C4C8 /* RebrandedOnboardingView+AddToDockContent.swift in Sources */,
 				CBFF381B468220C1A97A5910 /* RebrandedOnboardingView+AppIconPickerContent.swift in Sources */,

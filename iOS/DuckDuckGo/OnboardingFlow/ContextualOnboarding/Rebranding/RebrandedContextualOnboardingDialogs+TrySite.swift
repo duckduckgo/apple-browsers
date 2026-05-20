@@ -31,14 +31,21 @@ extension OnboardingRebranding {
 
         var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASiteMessage
         let viewModel: OnboardingSiteSuggestionsViewModel
-        let onManualDismiss: () -> Void
+        let onManualDismiss: (() -> Void)?
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                if let onManualDismiss {
+                    OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                        OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
+                } else {
+                    OnboardingBubbleView(tailPosition: nil) {
+                        OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }

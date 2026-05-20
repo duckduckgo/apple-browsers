@@ -883,8 +883,7 @@ private extension AIChatContextualSheetViewController {
         case .nativeInput:
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
-                let defaultURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-                webVC.loadChatURL(defaultURL)
+                webVC.loadDefaultChatURL()
                 isWebViewVisible = false
             }
             fireButton.isHidden = true

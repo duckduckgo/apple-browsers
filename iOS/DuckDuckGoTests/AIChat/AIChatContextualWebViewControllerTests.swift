@@ -76,6 +76,46 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         XCTAssertNotNil(webView?.customUserAgent)
         XCTAssertFalse(webView?.customUserAgent?.isEmpty ?? true)
     }
+
+    @MainActor
+    func testChatURLForLoadingWhenNativeInputUnavailableRemovesStaleNativeInputParameter() {
+        let sut = AIChatContextualWebViewController(
+            aiChatSettings: MockAIChatSettingsProvider(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: MockFeatureFlagger(),
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false),
+            downloadHandler: StubDownloadHandler(),
+            getPageContext: nil,
+            pixelHandler: StubContextualModePixelHandler()
+        )
+        let restoreURL = URL(string: "https://duck.ai/chat?native-input=true")!
+
+        let url = sut.chatURLForLoading(restoreURL)
+
+        XCTAssertEqual(url.absoluteString, "https://duck.ai/chat")
+    }
+
+    @MainActor
+    func testChatURLForLoadingDoesNotRewriteNonDuckAIURL() {
+        let sut = AIChatContextualWebViewController(
+            aiChatSettings: MockAIChatSettingsProvider(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: MockFeatureFlagger(),
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+            downloadHandler: StubDownloadHandler(),
+            getPageContext: nil,
+            pixelHandler: StubContextualModePixelHandler()
+        )
+        let url = URL(string: "https://example.com/path")!
+
+        let result = sut.chatURLForLoading(url)
+
+        XCTAssertEqual(result, url)
+    }
 }
 
 // MARK: - Helpers

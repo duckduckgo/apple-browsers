@@ -26,6 +26,10 @@ public enum SubscriptionManagerError: DDGError {
 
     case confirmationHasInvalidSubscription
     case noProductsFound
+    /// The customer portal URL returned by the server could not be parsed as a valid URL
+    case invalidPortalURL
+    /// No subscription is available locally (cache is empty) and the remote fetch failed
+    case noLocalSubscription
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
@@ -33,7 +37,9 @@ public enum SubscriptionManagerError: DDGError {
             return String(describing: lhsError) == String(describing: rhsError)
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound),
-            (.noTokenAvailable, .noTokenAvailable):
+            (.noTokenAvailable, .noTokenAvailable),
+            (.invalidPortalURL, .invalidPortalURL),
+            (.noLocalSubscription, .noLocalSubscription):
             return true
         default:
             return false
@@ -46,6 +52,8 @@ public enum SubscriptionManagerError: DDGError {
         case .errorRetrievingTokenContainer(error: let error): "Error retrieving token container: \(String(describing: error))"
         case .confirmationHasInvalidSubscription: "Confirmation has an invalid subscription"
         case .noProductsFound: "No products found"
+        case .invalidPortalURL: "Invalid customer portal URL"
+        case .noLocalSubscription: "No local subscription available"
         }
     }
 
@@ -57,6 +65,8 @@ public enum SubscriptionManagerError: DDGError {
         case .errorRetrievingTokenContainer: 12001
         case .confirmationHasInvalidSubscription: 12002
         case .noProductsFound: 12003
+        case .invalidPortalURL: 12004
+        case .noLocalSubscription: 12005
         }
     }
 

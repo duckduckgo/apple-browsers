@@ -236,6 +236,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toggleModeStorage: ToggleModeStoring
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+    private let aiChatSettings: AIChatSettingsProvider
     private(set) var currentTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
@@ -349,11 +350,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         stateStore: UnifiedInputStateStoring? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.aiChatSettings = aiChatSettings
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
@@ -845,6 +848,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
         if isDismissingOmnibarNewPromptToolbar {
             viewController.prepareToolbarSubmitStyleForDismissal()
+        }
+
+        if didModeChange && host == .omnibar {
+            fireModeSwitchedPixel(to: effectiveMode)
         }
 
         inputMode = effectiveMode
@@ -1568,6 +1575,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
+    private func fireModeSwitchedPixel(to mode: TextEntryMode) {
+        let direction = mode == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText),
+            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
+    }
 }
 
 // MARK: - Tools Menu Selection

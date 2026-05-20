@@ -22,23 +22,30 @@ import SwiftUI
 import Onboarding
 import Subscription
 import Common
+import PrivacyConfig
 
 final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    private let onboardingFlowProvider: OnboardingFlowProviding
+    private let featureFlagger: FeatureFlagger
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+        onboardingFlowProvider: OnboardingFlowProviding = OnboardingManager(),
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.onboardingFlowProvider = onboardingFlowProvider
+        self.featureFlagger = featureFlagger
     }
 
     @ViewBuilder
@@ -237,7 +244,16 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
-        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
+        let message = switch onboardingFlowProvider.currentOnboardingFlow {
+        case .default:
+            if featureFlagger.isFeatureOn(.paidAIChat){
+                createSubscriptionPromoMessage()
+            } else {
+                createSubscriptionPromoMessageDeprecated()
+            }
+        case .duckAI:
+            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage)
+        }
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
         let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()

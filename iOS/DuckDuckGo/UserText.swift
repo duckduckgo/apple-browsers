@@ -2514,6 +2514,18 @@ public struct UserText {
                     comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
                 )
             }
+
+            public enum Contextual {
+                static let onboardingEndOfJourneyMessage = NotLocalizedString(
+                    "onboarding.duckai.contextual.end-of-journey.message",
+                    value: "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow.")
+                static let subscriptionMessage = NotLocalizedString(
+                    "onboarding.duckai.contextual.subscription.message",
+                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
+                    comment: "Body text of the subscription promo for Duck.ai flow."
+                )
+            }
         }
 
         enum ContextualOnboarding {

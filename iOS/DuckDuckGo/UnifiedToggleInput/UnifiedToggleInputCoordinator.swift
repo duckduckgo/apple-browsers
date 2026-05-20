@@ -426,14 +426,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             updateModelChipVisibility()
         }
 
-        backgroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.sessionStateMetrics.finalizeSession()
-                Self.resetSessionFlags()
+        if host == .omnibar {
+            backgroundObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didEnterBackgroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.sessionStateMetrics.finalizeSession()
+                    Self.resetSessionFlags()
+                }
             }
         }
     }

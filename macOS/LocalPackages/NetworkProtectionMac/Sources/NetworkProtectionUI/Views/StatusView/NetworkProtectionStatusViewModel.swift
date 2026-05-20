@@ -134,6 +134,8 @@ extension NetworkProtectionStatusView {
 
         // MARK: - Initialization & Deinitialization
 
+        private let subscribeButtonOrigin: String?
+
         public init(controller: TunnelController,
                     onboardingStatusPublisher: OnboardingStatusPublisher,
                     statusReporter: NetworkProtectionStatusReporter,
@@ -147,7 +149,8 @@ extension NetworkProtectionStatusView {
                     locationFormatter: VPNLocationFormatting,
                     uninstallHandler: @escaping UninstallHandler,
                     subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
-                    subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil) {
+                    subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
+                    subscribeButtonOrigin: String? = nil) {
 
             self.tunnelController = controller
             self.onboardingStatusPublisher = onboardingStatusPublisher
@@ -155,6 +158,7 @@ extension NetworkProtectionStatusView {
             self.menuItems = menuItems
             self.subscriptionExpiredViewAppearHandler = subscriptionExpiredViewAppearHandler
             self.subscriptionExpiredViewSubscribeButtonClickPixelHandler = subscriptionExpiredViewSubscribeButtonClickPixelHandler
+            self.subscribeButtonOrigin = subscribeButtonOrigin
             self.agentLoginItem = agentLoginItem
             self.isExtensionUpdateOffered = isExtensionUpdateOfferedPublisher.value
             self.isMenuBarStatusView = isMenuBarStatusView
@@ -217,7 +221,7 @@ extension NetworkProtectionStatusView {
         func openSubscription() {
             subscriptionExpiredViewSubscribeButtonClickPixelHandler?()
             Task {
-                await uiActionHandler.showSubscription()
+                await uiActionHandler.showSubscription(origin: subscribeButtonOrigin)
             }
         }
 

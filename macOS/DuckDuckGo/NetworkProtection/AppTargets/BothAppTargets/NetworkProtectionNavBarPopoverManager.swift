@@ -254,7 +254,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 },
                 subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
                     pixelHandler(.subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked)
-                })
+                },
+                subscribeButtonOrigin: SubscriptionFunnelOrigin.vpnToolbarRevoked.rawValue)
 
             let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,

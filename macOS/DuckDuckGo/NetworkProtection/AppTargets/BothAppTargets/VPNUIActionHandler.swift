@@ -93,8 +93,8 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
-    func showSubscription() async {
-        await vpnURLEventHandler.showSubscription(origin: SubscriptionFunnelOrigin.vpnToolbarRevoked.rawValue)
+    func showSubscription(origin: String?) async {
+        await vpnURLEventHandler.showSubscription(origin: origin)
     }
 
     @MainActor

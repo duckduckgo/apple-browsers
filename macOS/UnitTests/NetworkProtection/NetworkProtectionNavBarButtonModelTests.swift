@@ -230,13 +230,12 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
     func testWhenButtonBecomesVisibleAndUserIsNotInUpsell_ItFiresSubscribedButtonShownPixel() {
         // Given
         let upsellManager = createUpsellManager(shouldShowUpsell: false)
-        sut = createButtonModel(with: upsellManager)
         let expectation = XCTestExpectation(description: "subscribed button shown pixel should be fired")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .filter { $0 }
-            .sink { _ in expectation.fulfill() }
+        sut = createButtonModel(with: upsellManager, pixelHandler: { pixel in
+            if pixel.name == SubscriptionPixel.subscriptionToolbarVPNButtonShown.name {
+                expectation.fulfill()
+            }
+        })
 
         // When
         sut.updateVisibility()
@@ -289,7 +288,10 @@ extension NetworkProtectionNavBarButtonModelTests {
         return manager
     }
 
-    private func createButtonModel(with upsellManager: VPNUpsellVisibilityManager) -> NetworkProtectionNavBarButtonModel {
+    private func createButtonModel(
+        with upsellManager: VPNUpsellVisibilityManager,
+        pixelHandler: ((SubscriptionPixel) -> Void)? = nil
+    ) -> NetworkProtectionNavBarButtonModel {
         let popoverManager = NetPPopoverManagerMock()
         let pinningManager = TestPinningManager()
         let vpnGatekeeper = MockVPNFeatureGatekeeper(
@@ -310,6 +312,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             vpnUpsellVisibilityManager: upsellManager,
             pixelHandler: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
+                pixelHandler?(pixel)
             }
         )
     }

@@ -29,7 +29,11 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
     case showSettings
     case showVPNLocations
     case moveAppToApplications
-    case showSubscription
+    case showSubscription(origin: String? = nil)
+
+    /// The query parameter key used to carry the subscription funnel origin across the
+    /// agent → browser process boundary in the `showSubscription` command URL.
+    public static let showSubscriptionOriginQueryItem = "origin"
 
     var commandURL: String? {
         switch self {
@@ -51,8 +55,13 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
             return "networkprotection://show-settings/locations"
         case .moveAppToApplications:
             return "networkprotection://move-app-to-applications"
-        case .showSubscription:
-            return "networkprotection://show-privacy-pro"
+        case .showSubscription(let origin):
+            guard let origin else {
+                return "networkprotection://show-privacy-pro"
+            }
+            var components = URLComponents(string: "networkprotection://show-privacy-pro")
+            components?.queryItems = [URLQueryItem(name: Self.showSubscriptionOriginQueryItem, value: origin)]
+            return components?.url?.absoluteString
         }
     }
 

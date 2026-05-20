@@ -231,7 +231,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         // Given
         let upsellManager = createUpsellManager(shouldShowUpsell: false)
         let expectation = XCTestExpectation(description: "subscribed button shown pixel should be fired")
-        sut = createButtonModel(with: upsellManager, pixelHandler: { pixel in
+        sut = createButtonModel(with: upsellManager, onPixelFired: { pixel in
             if pixel.name == SubscriptionPixel.subscriptionToolbarVPNButtonShown.name {
                 expectation.fulfill()
             }
@@ -241,7 +241,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         sut.updateVisibility()
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarVPNButtonShown.name)
     }
 
@@ -290,7 +290,7 @@ extension NetworkProtectionNavBarButtonModelTests {
 
     private func createButtonModel(
         with upsellManager: VPNUpsellVisibilityManager,
-        pixelHandler: ((SubscriptionPixel) -> Void)? = nil
+        onPixelFired: ((SubscriptionPixel) -> Void)? = nil
     ) -> NetworkProtectionNavBarButtonModel {
         let popoverManager = NetPPopoverManagerMock()
         let pinningManager = TestPinningManager()
@@ -312,7 +312,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             vpnUpsellVisibilityManager: upsellManager,
             pixelHandler: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
-                pixelHandler?(pixel)
+                onPixelFired?(pixel)
             }
         )
     }

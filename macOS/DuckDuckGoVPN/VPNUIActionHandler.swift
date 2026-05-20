@@ -55,7 +55,7 @@ final class VPNUIActionHandler: VPNUIActionHandling {
     }
 
     public func showSubscription(origin: String?) async {
-        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSubscription)
+        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSubscription(origin: origin))
     }
 
     public func willStopVPN() async -> Bool {

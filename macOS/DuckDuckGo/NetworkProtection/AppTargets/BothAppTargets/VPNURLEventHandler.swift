@@ -33,7 +33,16 @@ final class VPNURLEventHandler {
     /// Handles VPN event URLs
     ///
     func handle(_ url: URL) async {
-        switch url {
+        // Strip query items before matching against command URLs so that
+        // `showSubscription` (which may carry an `?origin=...` query) still
+        // matches its canonical launch URL. Other commands don't currently
+        // use query parameters; the canonical form is identical.
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems
+        components?.queryItems = nil
+        let canonicalURL = components?.url ?? url
+
+        switch canonicalURL {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
             windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
@@ -48,8 +57,9 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showSubscription.launchURL:
-            showSubscription()
+        case VPNAppLaunchCommand.showSubscription(origin: nil).launchURL:
+            let origin = queryItems?.first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?.value
+            showSubscription(origin: origin)
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
         default:

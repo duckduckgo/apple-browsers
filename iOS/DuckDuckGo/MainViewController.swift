@@ -4807,16 +4807,23 @@ extension MainViewController: TabDelegate {
             }
         }
 
-        if currentTab == tab {
-            refreshControls()
-            themeColorManager.updateThemeColor()
-        }
+        guard currentTab == tab else { return }
+        refreshControls()
+        themeColorManager.updateThemeColor()
         _ = tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
     
+    func tabDidFinishNavigation(_ tab: TabViewController) {
+        // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
+        // already triggers a save, so skip here to avoid a redundant save in the same run loop.
+        guard currentTab != tab else { return }
+        _ = tabManager.save()
+        tabsBarController?.reloadCell(for: tab.tabModel)
+    }
+
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {
         previewsSource.update(preview: preview, forTab: tab.tabModel)
     }

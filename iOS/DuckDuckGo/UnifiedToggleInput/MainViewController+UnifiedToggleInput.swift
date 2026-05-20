@@ -1100,6 +1100,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         handleSuggestionSelected(suggestion)
     }
 
+    func unifiedInputEditingStateDidRequestTextUpdate(_ text: String) {
+        unifiedToggleInputCoordinator?.setText(text)
+    }
+
     func unifiedInputEditingStateDidSelectChatHistory(url: URL) {
         onChatHistorySelected(url: url)
     }

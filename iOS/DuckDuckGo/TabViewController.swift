@@ -1976,6 +1976,7 @@ extension TabViewController: WKNavigationDelegate {
 
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
+        delegate?.tabDidFinishNavigation(self)
 
         // Present the Dax dialog with a delay to mitigate issue where user script detec trackers after the dialog is show to the user
         // Debounce to avoid showing multiple animations on redirects. e.g. !image baby ducklings
@@ -2216,8 +2217,9 @@ extension TabViewController: WKNavigationDelegate {
             privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
-        
+
         self.delegate?.tabLoadingStateDidChange(tab: self)
+        self.delegate?.tabDidFinishNavigation(self)
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

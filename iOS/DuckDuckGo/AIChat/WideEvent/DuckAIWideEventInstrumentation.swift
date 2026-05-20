@@ -65,6 +65,11 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// `cancellation_reason = tab_closed`. No-op if no flow is active.
     func tabClosedDuringGeneration(tabID: TabUID)
 
+    /// User switched away from a Duck.ai tab while a response was still in
+    /// flight. Completes the active flow as CANCELLED with
+    /// `cancellation_reason = switched_tabs`. No-op if no flow is active.
+    func tabSwitchedAwayDuringGeneration(tabID: TabUID)
+
     /// The contextual chat sheet was explicitly dismissed (user tapped
     /// delete-chat, or the fire-button workflow cleared it) while a response
     /// was still in flight. Completes the active flow as CANCELLED with
@@ -219,6 +224,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
     func tabClosedDuringGeneration(tabID: TabUID) {
         cancelFlow(scope: .tab(tabID), reason: .tabClosed)
+    }
+
+    func tabSwitchedAwayDuringGeneration(tabID: TabUID) {
+        cancelFlow(scope: .tab(tabID), reason: .switchedTabs)
     }
 
     func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {

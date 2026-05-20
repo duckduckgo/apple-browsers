@@ -534,6 +534,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
             stateStore.update(snapshot, for: previous)
+            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previous)
         } else {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }

@@ -62,8 +62,14 @@
                             "properties": {
                                 "cancellation_reason": {
                                     "type": "string",
-                                    "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight; `superseded_by_new_submission` = another prompt was submitted in the same tab or contextual sheet before this flow reached a terminal outcome.",
-                                    "enum": ["stop_button", "tab_closed", "sheet_dismissed", "superseded_by_new_submission"]
+                                    "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight; `switched_tabs` = user switched away from the Duck.ai tab while the response was still in flight, breaking the current native UI status connection; `superseded_by_new_submission` = another prompt was submitted in the same tab or contextual sheet before this flow reached a terminal outcome.",
+                                    "enum": [
+                                        "stop_button",
+                                        "tab_closed",
+                                        "sheet_dismissed",
+                                        "switched_tabs",
+                                        "superseded_by_new_submission"
+                                    ]
                                 },
                                 "last_step": {
                                     "type": "string",

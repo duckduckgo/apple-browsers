@@ -278,7 +278,6 @@
     },
 
     // Subscription Funnel Entry-Point Pixels - App Store Distribution
-    // Defined in https://app.asana.com/1/137249556945/project/492600419927320/task/1213906049966919
     "m_mac_store_subscription_appmenu_impression": {
         "description": "Fired when the Subscription menu entry is rendered as a Privacy Pro promo in MoreOptionsMenu (non-signed-in users with App Store products available). App Store distribution.",
         "owners": ["hanyutang-sandra"],

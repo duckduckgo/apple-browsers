@@ -1124,6 +1124,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "browser_menu_data_broker_protection": {
+        "description": "Fires when the user clicks the Personal Information Removal entry in the More Options menu.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
         "owners": ["quanganhdo"],

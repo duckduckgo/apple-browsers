@@ -4,14 +4,14 @@
         "description": "Fires when the user opens the Email Protection settings pane.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "subscribed"]
     },
     "browser_menu_email_protection": {
         "description": "Fires when the user clicks the Email Protection submenu item in the browser overflow menu.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "subscribed"]
     },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {

@@ -654,7 +654,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             addItem(makeWinBackOfferMenuItem())
             subscriptionAppMenuStatus = .churned
             PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
-            PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: .churned))
+            if let status = subscriptionAppMenuStatus {
+                PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+            }
             return
         }
 
@@ -662,7 +664,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
-            let status: SubscriptionAppMenuEntryStatus
 
             if subscriptionManager.isUserEligibleForFreeTrial() &&
                !freeTrialBadgePersistor.hasReachedViewLimit {
@@ -674,18 +675,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                     image: moreOptionsMenuIconsProvider.subscriptionIcon,
                     menu: self
                 )
-                status = .freeEligible
+                subscriptionAppMenuStatus = .freeEligible
             } else {
                 subscriptionItem.target = self
                 subscriptionItem.action = #selector(openSubscriptionPurchasePage(_:))
-                status = .freeIneligible
+                subscriptionAppMenuStatus = .freeIneligible
             }
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
                 addItem(subscriptionItem)
-                subscriptionAppMenuStatus = status
-                PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+                if let status = subscriptionAppMenuStatus {
+                    PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+                }
             }
         } else {
             let subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
@@ -871,7 +873,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
     override func performActionForItem(at index: Int) {
         PixelKit.fire(
             MoreOptionsMenuPixel.emailProtectionActionClicked,
-            frequency: .daily,
+            frequency: .dailyAndStandard,
             withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
         )
         super.performActionForItem(at: index)

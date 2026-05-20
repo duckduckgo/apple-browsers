@@ -57,7 +57,7 @@ final class PreferencesSidebarModel: ObservableObject {
             case .emailProtection:
                 pixelFiring?.fire(
                     SettingsPixel.settingsPaneOpened(selectedPane),
-                    frequency: .daily,
+                    frequency: .dailyAndStandard,
                     withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
                 )
             default:

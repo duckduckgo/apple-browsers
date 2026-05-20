@@ -260,7 +260,6 @@
     },
 
     // Subscription Funnel Entry-Point Pixels (App Menu, App Settings)
-    // Defined in https://app.asana.com/1/137249556945/project/492600419927320/task/1213906049966919
     "m_subscription_appmenu_impression": {
         "description": "Fired when the VPN/subscription entry is rendered in the iOS overflow menu to a non-subscriber. Gated on the vpnMenuItem feature flag, App Store products availability, and non-subscribed status. Used to count subscription-funnel entry-point exposure.",
         "owners": ["hanyutang-sandra"],

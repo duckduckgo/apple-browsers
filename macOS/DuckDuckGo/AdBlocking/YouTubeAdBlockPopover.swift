@@ -253,7 +253,7 @@ struct YouTubeAdBlockRowView: View {
                     .frame(width: Layout.iconSize, height: Layout.iconSize)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                Text("YouTube Ad Blocking")
+                Text(UserText.youTubeAdBlockingPopoverRowTitle)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
@@ -264,7 +264,7 @@ struct YouTubeAdBlockRowView: View {
                 settingDropdown
             }
 
-            Text("If you encounter video playback issues, disabling Ad Blocking may fix the issue.")
+            Text(UserText.youTubeAdBlockingPopoverRowDescription)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
@@ -312,7 +312,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                     .frame(width: Layout.iconSize, height: Layout.iconSize)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                Text("YouTube Ad Blocking not working?")
+                Text(UserText.youTubeAdBlockingPopoverBreakageReportTitle)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
@@ -321,7 +321,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                 Spacer()
 
                 Button(action: onSendReport) {
-                    Text("Send Report")
+                    Text(UserText.youTubeAdBlockingPopoverBreakageReportSendButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .permissionReloadButtonText))
                         .padding(.horizontal, 12)
@@ -336,7 +336,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                 .buttonStyle(PlainButtonStyle())
             }
 
-            Text("Send an anonymous breakage report to DuckDuckGo. Help make Ad Blocking better for everyone!")
+            Text(UserText.youTubeAdBlockingPopoverBreakageReportDescription)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)

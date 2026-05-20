@@ -407,6 +407,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
+        subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
         viewController.isToolsButtonHidden = true

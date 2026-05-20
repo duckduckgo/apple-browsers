@@ -87,18 +87,18 @@ struct IdleReturnTabCountInstrumentationTests {
 
     @available(iOS 16, *)
     @Test("Fires expected parameter keys and bucket values", .timeLimit(.minutes(1)))
-    func paramsIncludeExpectedKeysAndBuckets() {
+    func paramsIncludeExpectedKeysAndBuckets() throws {
         let (sut, collector) = makeSUT(effectiveOption: .newTab)
         sut.recordAppForeground(tabs: [Tab(), Tab(), Tab()], browsingMode: "fire")
 
-        let params = try? #require(collector.fired.first?.params)
-        #expect(params?["tab_count"] == "2-5")
-        #expect(params?["new_tab_count"] == "2-10")
-        #expect(params?["tab_active_7d"] == "0")
-        #expect(params?["tab_inactive_1w"] == "0")
-        #expect(params?["tab_inactive_2w"] == "0")
-        #expect(params?["tab_inactive_3w"] == "0")
-        #expect(params?[PixelParameters.browsingMode] == "fire")
+        let params = try #require(collector.fired.first?.params)
+        #expect(params["tab_count"] == "2-5")
+        #expect(params["new_tab_count"] == "2-10")
+        #expect(params["tab_active_7d"] == "0")
+        #expect(params["tab_inactive_1w"] == "0")
+        #expect(params["tab_inactive_2w"] == "0")
+        #expect(params["tab_inactive_3w"] == "0")
+        #expect(params[PixelParameters.browsingMode] == "fire")
     }
 
     @available(iOS 16, *)

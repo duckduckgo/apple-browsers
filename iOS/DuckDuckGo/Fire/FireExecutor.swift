@@ -89,6 +89,9 @@ protocol FireExecuting {
     @MainActor func burn(request: FireRequest,
                          applicationState: DataStoreWarmup.ApplicationState) async
     var delegate: FireExecutorDelegate? { get set }
+
+    /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
+    var burnInProgress: Bool { get }
 }
 
 class FireExecutor: FireExecuting {
@@ -113,7 +116,7 @@ class FireExecutor: FireExecuting {
     private let fireModeStorageController: FireModeNativeStorageController?
 
     weak var delegate: FireExecutorDelegate?
-    private var burnInProgress = false
+    private(set) var burnInProgress = false
     private var dataStoreWarmupWorker: DataStoreWarmupWorker = .init()
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
@@ -211,6 +214,17 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
+        // Drops reentrant calls. Callers should gate on `burnInProgress`
+        if burnInProgress {
+            assertionFailure("Shouldn't get called multiple times")
+            return
+        }
+
+        burnInProgress = true
+        defer {
+            burnInProgress = false
+        }
+
         assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
 
         // Fire retrigger pixel at the start of burn to track rapid manual fire operations
@@ -401,12 +415,6 @@ class FireExecutor: FireExecuting {
     private func burnData(scope: FireRequest.Scope,
                           applicationState: DataStoreWarmup.ApplicationState,
                           domains: [String]?) async {
-        guard !burnInProgress else {
-            assertionFailure("Shouldn't get called multiple times")
-            return
-        }
-        burnInProgress = true
-
         await dataStoreWarmupWorker.setApplicationState(applicationState)
         await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
         
@@ -421,8 +429,6 @@ class FireExecutor: FireExecuting {
         }
         let params = dataClearingPixelParams(for: scope, domains: domains)
         pixel?.fire(withAdditionalParameters: params)
-
-        self.burnInProgress = false
     }
     
     private func dataClearingTimedPixel(for scope: FireRequest.Scope) -> TimedPixel? {

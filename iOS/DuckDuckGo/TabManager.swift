@@ -564,7 +564,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
-        let model = tabsModel ?? currentTabsModel
+        let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         _ = save()

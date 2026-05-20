@@ -189,7 +189,7 @@ public enum FeatureFlag: String, CaseIterable {
     case blurryAddressBarTahoeFix
 
     /// Prevents IME composition-confirm Return from submitting the address bar.
-    /// https://app.asana.com/1/137249556945/project/1199178362774117/task/1214960575971803?focus=true
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612

@@ -54,12 +54,8 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 56
-        /// Header sits flush with the table's top content inset — both the hatch and the promo carry their own internal
-        /// padding, and the surrounding inset already gives them breathing room from the input bar above.
         static let escapeHatchTopPadding: CGFloat = 0
-        /// 24pt gap below the header cards — matches Search-side breathing room around section title.
         static let headerBottomPadding: CGFloat = 24
-        /// 12pt gap between the hatch and the sync promo card when both are visible.
         static let syncPromoInterCardSpacing: CGFloat = 12
         static let recentChatsHeaderHeight: CGFloat = 48
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
@@ -182,23 +178,17 @@ final class DuckAISuggestionsViewController: UIViewController {
         Publishers.MergeMany([chatChanges, urlChanges])
             .debounce(for: .milliseconds(Self.reloadCoalesceMilliseconds), scheduler: DispatchQueue.main)
             .sink { [weak self] in
-                // Chat-count drives sync promo eligibility, so a transition from empty-to-non-empty (or back)
-                // must re-evaluate the header alongside the table reload.
                 self?.rebuildHeader()
                 self?.reload()
             }
             .store(in: &cancellables)
 
-        // Hide the sync promo the moment the user enables Sync elsewhere in the app — without this, the promo
-        // would linger until the next teardown/reinstall.
         syncService?.authStatePublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildHeader() }
             .store(in: &cancellables)
 
-        // Settle initial header state synchronously so the promo card is in place before viewDidLoad returns,
-        // rather than depending on the auth-state publisher's async delivery onto the main queue.
         rebuildHeader()
     }
 
@@ -284,7 +274,6 @@ final class DuckAISuggestionsViewController: UIViewController {
     }
 
     private func rebuildHeader() {
-        // Tear down the hatch hosting controller and rebuild from `currentEscapeHatch`.
         if let existing = escapeHatchHostingController {
             existing.willMove(toParent: nil)
             existing.view.removeFromSuperview()
@@ -300,7 +289,6 @@ final class DuckAISuggestionsViewController: UIViewController {
             hosting.didMove(toParent: self)
         }
 
-        // Tear down the sync promo hosting controller and rebuild from manager eligibility.
         if let existing = syncPromoHostingController {
             existing.willMove(toParent: nil)
             existing.view.removeFromSuperview()
@@ -345,7 +333,6 @@ final class DuckAISuggestionsViewController: UIViewController {
             let availableCardWidth = width - 2 * layoutConfiguration.escapeHatchHorizontalInset
             let cardWidth = layoutConfiguration.escapeHatchMaxWidth.map { min(availableCardWidth, $0) } ?? availableCardWidth
 
-            // Sizing pass: compute each card's intrinsic height by giving its hosting view a fixed width.
             var hatchHeight: CGFloat = 0
             if let hatchHosting {
                 hatchHeight = Constants.escapeHatchCardHeight

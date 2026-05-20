@@ -22,7 +22,6 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
-/// Sync promo card hosted above the Duck.ai recent chats list. Triggers the Chat Sync intro bottom sheet on CTA tap.
 struct AIChatSyncPromoView: View {
 
     let onCTATap: () -> Void
@@ -30,28 +29,24 @@ struct AIChatSyncPromoView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 8) {
+            VStack {
                 Image(.syncAIFeature96)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 48, height: 48)
 
                 Text(UserText.aiChatSyncPromoTitle)
                     .daxHeadline()
                     .multilineTextAlignment(.center)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 8)
 
                 Button(action: onCTATap) {
                     Text(UserText.aiChatSyncPromoButton)
                 }
                 .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
-                .padding(.top, 8)
-                .padding(.bottom, 8)
+                .padding(8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(8)
 
             Button(action: onCloseTap) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
@@ -70,6 +65,9 @@ struct AIChatSyncPromoView: View {
 
 #Preview {
     AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-        .padding(16)
-        .background(Color(designSystemColor: .background))
+}
+
+#Preview {
+    AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
+        .colorScheme(.dark)
 }

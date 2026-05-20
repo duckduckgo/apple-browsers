@@ -1663,6 +1663,9 @@ extension UnifiedToggleInputCoordinator {
 extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegate {
 
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController) {
+        if host == .omnibar {
+            delegate?.unifiedToggleInputDidTapToActivate()
+        }
         showExpanded(inputMode: inputMode)
     }
 

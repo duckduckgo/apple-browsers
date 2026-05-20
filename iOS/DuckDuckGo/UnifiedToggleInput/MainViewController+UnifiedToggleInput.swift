@@ -1021,6 +1021,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onExperimentalAddressBarClearPressed()
     }
 
+    func unifiedToggleInputDidTapToActivate() {
+        onExperimentalAddressBarTapped()
+    }
+
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
         handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)

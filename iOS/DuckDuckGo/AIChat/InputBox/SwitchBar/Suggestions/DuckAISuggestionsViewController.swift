@@ -57,12 +57,10 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Header sits flush with the table's top content inset — both the hatch and the promo carry their own internal
         /// padding, and the surrounding inset already gives them breathing room from the input bar above.
         static let escapeHatchTopPadding: CGFloat = 0
-        /// 24pt gap below the hatch — matches Search-side breathing room around section title.
-        static let escapeHatchBottomPadding: CGFloat = 24
+        /// 24pt gap below the header cards — matches Search-side breathing room around section title.
+        static let headerBottomPadding: CGFloat = 24
         /// 12pt gap between the hatch and the sync promo card when both are visible.
         static let syncPromoInterCardSpacing: CGFloat = 12
-        /// Bottom padding below the sync promo when it terminates the header (no hatch above it changes nothing).
-        static let syncPromoBottomPadding: CGFloat = 24
         static let recentChatsHeaderHeight: CGFloat = 48
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
         static let recentChatsHeaderBottomPadding: CGFloat = 24
@@ -368,7 +366,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             if hatchHeight > 0 { totalHeight += hatchHeight }
             if hatchHeight > 0 && promoHeight > 0 { totalHeight += Constants.syncPromoInterCardSpacing }
             if promoHeight > 0 { totalHeight += promoHeight }
-            totalHeight += Constants.escapeHatchBottomPadding
+            totalHeight += Constants.headerBottomPadding
 
             let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
             container.backgroundColor = UIColor(designSystemColor: .background)
@@ -403,8 +401,8 @@ final class DuckAISuggestionsViewController: UIViewController {
               syncPromoHostingController != nil,
               !syncPromoImpressionRecorded else { return }
         syncPromoImpressionRecorded = true
-        syncPromoManager?.recordImpressionFor(.aiChat)
         Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
+        syncPromoManager?.recordImpressionFor(.aiChat)
     }
 
     override func viewDidLayoutSubviews() {

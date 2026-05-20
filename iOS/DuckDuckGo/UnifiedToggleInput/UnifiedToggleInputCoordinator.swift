@@ -237,6 +237,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let aiChatSettings: AIChatSettingsProvider
+    private static var hasUsedSearchInSession = false
+    private static var hasUsedAIChatInSession = false
+    private var backgroundObserver: NSObjectProtocol?
     private(set) var currentTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
@@ -417,6 +420,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             hasSubmittedPrompt = true
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
+        }
+
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.sessionStateMetrics.finalizeSession()
+                Self.resetSessionFlags()
+            }
+        }
+    }
+
+    deinit {
+        if let backgroundObserver {
+            NotificationCenter.default.removeObserver(backgroundObserver)
         }
     }
 
@@ -1585,6 +1605,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         ]
         Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }
+
+    // MARK: - Session Management
+
+    @MainActor
+    private static func resetSessionFlags() {
+        hasUsedSearchInSession = false
+        hasUsedAIChatInSession = false
+    }
+
 }
 
 // MARK: - Tools Menu Selection

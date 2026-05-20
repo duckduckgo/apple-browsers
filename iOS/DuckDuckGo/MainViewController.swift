@@ -4793,6 +4793,9 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidFinishNavigation(_ tab: TabViewController) {
+        // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
+        // already triggers a save, so skip here to avoid a redundant save in the same run loop.
+        guard currentTab != tab else { return }
         _ = tabManager.save()
     }
 

@@ -853,6 +853,10 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
         webViewController?.markFrontendAsReady()
     }
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
+    }
 }
 
 // MARK: - ViewModel Binding

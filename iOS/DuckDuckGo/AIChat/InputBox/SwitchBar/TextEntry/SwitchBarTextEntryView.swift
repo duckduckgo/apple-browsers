@@ -350,6 +350,9 @@ class SwitchBarTextEntryView: UIView {
         textView.text = snapshot.text
         setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
         updatePlaceholderVisibility()
+        // Handler.buttonState lags the dismiss (text isn't cleared until completion), so clear/voice/
+        // shortcut buttons would otherwise linger and collide with the omnibar icons fading in.
+        buttonsView.alpha = 0
         buttonsView.fadeAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration,
                                                 horizontalOffset: Constants.dismissedChipHorizontalOffset)
     }
@@ -357,6 +360,7 @@ class SwitchBarTextEntryView: UIView {
     /// Restore the override applied by `applyDismissSnapshot` so the reused view re-presents
     /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
     func clearDismissSnapshot() {
+        buttonsView.alpha = 1
         buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
         setPlaceholderText(placeholderText(for: currentMode))
         if textView.text != handler.currentText {

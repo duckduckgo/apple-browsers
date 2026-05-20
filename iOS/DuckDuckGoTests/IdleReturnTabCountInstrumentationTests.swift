@@ -86,16 +86,14 @@ struct IdleReturnTabCountInstrumentationTests {
     // MARK: - Parameter content
 
     @available(iOS 16, *)
-    @Test("Fired params include bucketed tab_count, new_tab_count, staleness buckets and browsing_mode", .timeLimit(.minutes(1)))
+    @Test("Fires expected parameter keys and bucket values", .timeLimit(.minutes(1)))
     func paramsIncludeExpectedKeysAndBuckets() {
         let (sut, collector) = makeSUT(effectiveOption: .newTab)
-        // 3 tabs total, all blank (no link) → tab_count "2-5", new_tab_count "2-10".
         sut.recordAppForeground(tabs: [Tab(), Tab(), Tab()], browsingMode: "fire")
 
         let params = try? #require(collector.fired.first?.params)
         #expect(params?["tab_count"] == "2-5")
         #expect(params?["new_tab_count"] == "2-10")
-        // No tabs have a lastViewedDate, so all staleness buckets report "0".
         #expect(params?["tab_active_7d"] == "0")
         #expect(params?["tab_inactive_1w"] == "0")
         #expect(params?["tab_inactive_2w"] == "0")
@@ -119,8 +117,6 @@ struct IdleReturnTabCountInstrumentationTests {
         let (sut, collector) = makeSUT(effectiveOption: .newTab)
         sut.recordAppForeground(tabs: [Tab()], browsingMode: "normal")
         sut.recordAppForeground(tabs: [Tab()], browsingMode: "normal")
-        // Both calls hit the injected fireDaily closure — DailyPixel.fireDaily is what
-        // would dedupe per day in production. We verify the type doesn't add its own gate.
         #expect(collector.fired.count == 2)
     }
 }

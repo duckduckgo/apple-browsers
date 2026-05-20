@@ -19,17 +19,11 @@
 
 import Core
 
-/// Tab-count snapshot instrumentation for the NTP-after-idle Tab Bloat investigation.
-///
-/// Fires once per day on app foreground when the feature is available, emitting either
-/// `appOpenDailyTabCountIdleNTP` or `appOpenDailyTabCountIdleLastTab` based on the user's
-/// effective after-inactivity setting. Parameters mirror the existing
-/// `m_tab_manager_opened_daily` pixel (via `TabSwitcherOpenDailyPixel`) so the two
-/// distributions can be compared directly.
+/// Daily tab-count snapshot on app foreground, segmented by NTP-after-idle setting.
+/// Reuses `TabSwitcherOpenDailyPixel` buckets to be comparable with `m_tab_manager_opened_daily`.
 protocol IdleReturnTabCountInstrumentation: AnyObject {
 
-    /// Records a foreground event. No-op when the NTP-after-idle feature is unavailable.
-    /// Throttled to once-per-day per pixel by `DailyPixel`.
+    /// No-op when the feature is unavailable. Once-per-day throttled by `DailyPixel`.
     func recordAppForeground(tabs: [Tab], browsingMode: String)
 }
 

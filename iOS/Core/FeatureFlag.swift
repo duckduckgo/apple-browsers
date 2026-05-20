@@ -662,9 +662,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .onboardingRebranding:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.onboardingRebranding)))
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRebranding)))
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .embeddedExtension:

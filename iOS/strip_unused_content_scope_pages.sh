@@ -16,6 +16,14 @@
 
 set -euo pipefail
 
+# Skip during SwiftUI Preview builds. Previews write into the same .app bundle
+# this script mutates, which can leave previews in an inconsistent state.
+# Stripping is a release-size optimization, not required for correctness.
+if [[ "${ENABLE_PREVIEWS:-NO}" == "YES" || "${ENABLE_XOJIT_PREVIEWS:-NO}" == "YES" ]]; then
+    echo "Skipping ContentScopeScripts strip for SwiftUI Preview build."
+    exit 0
+fi
+
 # Pages to remove (macOS-only or unused)
 UNUSED_PAGES=("onboarding" "new-tab" "history" "release-notes" "errorpage")
 

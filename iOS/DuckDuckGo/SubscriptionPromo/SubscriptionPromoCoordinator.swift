@@ -32,7 +32,7 @@ protocol SubscriptionPromoCoordinating: AnyObject {
     func markLaunchPromptPresented()
     func promoTitle() -> String
     func proceedButtonText() -> String
-    func promoMessage() -> String
+    func promoMessage() -> AttributedString
     func handleCTAAction()
     func handleDismissAction()
 }
@@ -98,9 +98,9 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
             : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 
-    func promoMessage() -> String {
-        let text = UserText.SubscriptionPromotionOnboarding.Promo.self
-        return String(format: text.messageFormat, text.optionalSubscriptionBold, text.vpnBold, text.privateAIBold)
+    func promoMessage() -> AttributedString {
+        let markdown = UserText.SubscriptionPromotionOnboarding.Promo.reinstallerMessage
+        return (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
     }
 
     // MARK: - Actions

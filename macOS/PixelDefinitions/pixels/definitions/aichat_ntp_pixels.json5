@@ -27,14 +27,14 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_ntp_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the New Tab Page omnibar",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_new_voice_chat_omnibar_ntp": {
         "description": "Fired when user opens a new Duck.ai voice chat from the New Tab Page omnibar",

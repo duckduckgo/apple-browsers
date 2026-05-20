@@ -336,7 +336,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
-                                isOpenedAfterIdle: isOpenedAfterIdle)
+                                isOpenedAfterIdle: { isOpenedAfterIdle })
     }
 }
 

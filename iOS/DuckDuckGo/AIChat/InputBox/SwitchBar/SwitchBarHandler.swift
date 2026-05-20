@@ -56,6 +56,7 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
+    var usesExpandedAIChatTextEntryLayout: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
 
     /// Suppresses the in-pill voice button — used when an external flank already provides one.
@@ -94,6 +95,7 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var usesExpandedAIChatTextEntryLayout: Bool { false }
     var submitsAIChatOnKeyboardReturn: Bool { true }
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }

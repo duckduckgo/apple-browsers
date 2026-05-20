@@ -64,7 +64,7 @@ extension OnboardingRebranding {
         )
 
         var body: some View {
-            OnboardingBubbleView(tailPosition: OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : .bottom(offset: 0.2, direction: .leading)) {
+            OnboardingBubbleView(tailPosition: showsDaxAnimation && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
                 OnboardingRebranding.ContextualDaxDialogContent(
                     orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                     title: AttributedString(title),

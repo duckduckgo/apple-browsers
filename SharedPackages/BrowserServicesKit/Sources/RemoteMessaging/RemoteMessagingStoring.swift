@@ -26,7 +26,7 @@ public protocol RemoteMessagingStoring: RemoteMessagingStoringDebuggingSupport {
 
     func saveProcessedResult(_ processorResult: RemoteMessagingConfigProcessor.ProcessorResult) async
     func fetchRemoteMessagingConfig() -> RemoteMessagingConfig?
-    func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, trigger: MessageTrigger?) -> RemoteMessageModel?
+    func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter) -> RemoteMessageModel?
     func hasShownRemoteMessage(withID id: String) -> Bool
     func fetchShownRemoteMessageIDs() -> [String]
     func dismissRemoteMessage(withID id: String) async
@@ -37,6 +37,6 @@ public protocol RemoteMessagingStoring: RemoteMessagingStoringDebuggingSupport {
 
 public extension RemoteMessagingStoring {
     func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
-        fetchScheduledRemoteMessage(surfaces: surfaces, trigger: nil)
+        fetchScheduledRemoteMessage(surfaces: surfaces, triggerFilter: .noTrigger)
     }
 }

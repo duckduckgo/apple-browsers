@@ -300,6 +300,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
+    private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
         let cache = NSCache<NSString, NSString>()
         cache.countLimit = 64
@@ -340,6 +341,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
@@ -360,6 +362,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
+        self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
+            ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
@@ -453,6 +457,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 // Storage changed for this chat; drop the cached model so the next read reflects it.
                 self.lastUsedModelCache[activeChatID] = nil
                 self.restoreLastUsedModel(forChatID: activeChatID)
+                self.restoreLastUsedReasoningMode(forChatID: activeChatID)
             }
     }
 
@@ -485,6 +490,30 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
         modelStore.updateSelectedModel(modelID)
         handleModelsUpdated()
+    }
+
+    /// Reads the persisted `reasoningMode` for `chatID` from the chat payload in native
+    /// storage and applies it to the live reasoning picker. Mirrors `restoreLastUsedModel`.
+    /// Contract:
+    /// - Missing field → no-op (older chats keep current picker state).
+    /// - Unknown value → no-op (same as missing).
+    /// - Known value → live preferences updated + reasoning picker refreshed.
+    func restoreLastUsedReasoningMode(forChatID chatID: String) {
+        guard let lastUsedReasoningModeProvider else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no provider configured")
+            return
+        }
+        guard let rawValue = lastUsedReasoningModeProvider.reasoningMode(forChatId: chatID) else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: no reasoningMode in payload")
+            return
+        }
+        guard let mode = AIChatReasoningMode(rawValue: rawValue) else {
+            Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: unknown value '\(rawValue, privacy: .public)'")
+            return
+        }
+        Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: applying '\(rawValue, privacy: .public)'")
+        modelStore.applyChatPersistedReasoningMode(mode)
+        updateReasoningPicker()
     }
 
     // MARK: - Per-Tab State
@@ -912,20 +941,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel,
-                        openTabCount: Int,
-                        onTapped: @escaping () -> Void,
-                        onTabSwitcherTapped: @escaping () -> Void) {
-        contentViewController.setEscapeHatch(
-            model,
-            openTabCount: openTabCount,
-            onTapped: onTapped,
-            onTabSwitcherTapped: onTabSwitcherTapped
-        )
+    func setEscapeHatch(_ model: EscapeHatchModel) {
+        contentViewController.setEscapeHatch(model)
     }
 
     func clearEscapeHatch() {
-        contentViewController.setEscapeHatch(nil, openTabCount: 0, onTapped: nil, onTabSwitcherTapped: nil)
+        contentViewController.setEscapeHatch(nil)
     }
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
@@ -1978,8 +1999,10 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        guard hasSubmittedPrompt != hasExistingChat else { return }
-        hasSubmittedPrompt = hasExistingChat
+        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
+        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
+        guard hasExistingChat, !hasSubmittedPrompt else { return }
+        hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -1995,6 +2018,8 @@ private extension UnifiedToggleInputCoordinator {
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
+        viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
     }
 

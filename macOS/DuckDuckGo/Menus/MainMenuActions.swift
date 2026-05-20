@@ -1671,12 +1671,12 @@ extension MainViewController {
     @MainActor
     @objc func crashAllTabs() {
         let windowControllersManager = Application.appDelegate.windowControllersManager
-        let allTabViewModels = windowControllersManager.allTabViewModels
-
-        for tabViewModel in allTabViewModels {
-            let tab = tabViewModel.tab
-            if tab.canKillWebContentProcess {
-                tab.killWebContentProcess()
+        for tabCollectionViewModel in windowControllersManager.allTabCollectionViewModels {
+            for case let tabViewModel as TabViewModel in tabCollectionViewModel.tabViewModels.values {
+                let tab = tabViewModel.tab
+                if tab.canKillWebContentProcess {
+                    tab.killWebContentProcess()
+                }
             }
         }
     }

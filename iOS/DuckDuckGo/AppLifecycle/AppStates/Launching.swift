@@ -468,6 +468,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
         case .lastUsedModelParseError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageLastUsedModelParseError, error: error)
+        case .lastUsedReasoningModeParseError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError, error: error)
         }
     }
 }

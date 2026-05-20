@@ -2257,6 +2257,15 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
+    func subscribeToClearButtonTap() {
+        viewController.handler.clearButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self, host == .omnibar else { return }
+                delegate?.unifiedToggleInputDidTapClearText()
+            }
+            .store(in: &cancellables)
+    }
+
     func subscribeToSubscriptionChanges() {
         NotificationCenter.default.publisher(for: .subscriptionDidChange)
             .receive(on: DispatchQueue.main)

@@ -99,6 +99,7 @@ final class UnifiedToggleInputView: UIView {
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
+        static let dismissToggleFadeDuration: TimeInterval = 0.18
         static let toggleDisabledSearchTopPadding: CGFloat = 6
         static let toolbarHeight: CGFloat = 56
         static let expandedBorderWidth: CGFloat = 0.5
@@ -164,6 +165,14 @@ final class UnifiedToggleInputView: UIView {
     /// See `SwitchBarTextEntryView.applyDismissSnapshot`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
         textEntryView.applyDismissSnapshot(snapshot)
+        // Toggle pill fades over the full dismiss with easeOut, leaving the labels visible
+        // near the end; run a quick fade so they're gone well before UTI lands on the omnibar.
+        UIView.animate(withDuration: Constants.dismissToggleFadeDuration,
+                       delay: 0,
+                       options: [.curveEaseOut, .beginFromCurrentState],
+                       animations: { [weak self] in
+            self?.toggleView.alpha = 0
+        })
     }
 
     func refreshPlaceholderForCurrentMode() {

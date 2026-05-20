@@ -236,7 +236,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             self.tabSwitcherButton.tabCount = self.tabsCount
         }
     }
-    
+
+    func reloadCell(for tab: Tab) {
+        guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        let indexPath = IndexPath(item: index, section: 0)
+        guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
+        collectionView.reloadItems(at: [indexPath])
+    }
+
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
         longPressTabGesture.minimumPressDuration = 0.1

@@ -4542,6 +4542,7 @@ extension MainViewController: TabDelegate {
         // already triggers a save, so skip here to avoid a redundant save in the same run loop.
         guard currentTab != tab else { return }
         _ = tabManager.save()
+        tabsBarController?.reloadCell(for: tab.tabModel)
     }
 
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {

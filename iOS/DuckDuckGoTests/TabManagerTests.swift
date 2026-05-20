@@ -221,11 +221,9 @@ final class TabManagerTests: XCTestCase {
     }
 
     func testWhenRemovingFireTabWhileCurrentModeIsNormalThenFireTabIsRemovedFromFireModel() throws {
-        // Reproduces the escape-hatch burn-immediate crash: a normal-mode NTP user
-        // burns a fire tab via the cross-mode escape-hatch card. The pre-fix code
-        // defaulted `remove(tab:)` to `currentTabsModel` (normal) and tripped the
-        // `TabsModel.validateTabMode` assertion. Post-fix, the tab is removed from
-        // the fire model (its own `tab.mode`) regardless of which mode is current.
+        // Guards the escape-hatch burn-immediate crash: `remove(tab:)` must target
+        // the tab's own `tab.mode` model, not `currentTabsModel`, or
+        // `TabsModel.validateTabMode` asserts when burning a fire tab from normal mode.
         let fireTab = Tab(link: Link(title: "fire-target", url: URL(string: "https://fire-target.com")!), fireTab: true)
         let normalTab = Tab(link: Link(title: "normal-current", url: URL(string: "https://normal-current.com")!))
         let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)

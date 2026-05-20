@@ -355,6 +355,54 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenReturnKeyPressedDuringIMEComposition_customKeyDownDoesNotHandleEvent() throws {
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown,
+                                                   location: .zero,
+                                                   modifierFlags: [],
+                                                   timestamp: ProcessInfo.processInfo.systemUptime,
+                                                   windowNumber: window.windowNumber,
+                                                   context: nil,
+                                                   characters: "\r",
+                                                   charactersIgnoringModifiers: "\r",
+                                                   isARepeat: false,
+                                                   keyCode: UInt16(kVK_Return)))
+
+        XCTAssertFalse(mainViewController.customKeyDown(with: event))
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertEqual(tabViewModel.tab.content, .newtab)
+    }
+
+    @MainActor
+    func testWhenFieldEditorHasMarkedText_insertNewlineDelegatePathDoesNotSubmit() throws {
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        // Defensive coverage for input paths that reach the field delegate while composition is still active.
+        let handled = addressBarTextField.control(addressBarTextField, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
+
+        XCTAssertFalse(handled)
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertEqual(tabViewModel.tab.content, .newtab)
+    }
+
+    @MainActor
     func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() throws {
         throw XCTSkip("Flaky test")
 

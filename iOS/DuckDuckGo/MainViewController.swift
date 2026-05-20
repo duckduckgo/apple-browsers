@@ -597,6 +597,7 @@ class MainViewController: UIViewController {
             subscriptionDataReporting: subscriptionDataReporter,
             newTabDialogFactory: newTabDaxDialogFactory,
             newTabDaxDialogManager: daxDialogsManager,
+            onboardingFlowProvider: onboardingManager,
             faviconLoader: faviconLoader,
             faviconsCache: favicons,
             remoteMessagingActionHandler: remoteMessagingActionHandler,
@@ -1648,6 +1649,7 @@ class MainViewController: UIViewController {
                                                   subscriptionDataReporting: subscriptionDataReporter,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
+                                                  onboardingFlowProvider: onboardingManager,
                                                   faviconLoader: faviconLoader,
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
@@ -1691,9 +1693,7 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
-        DispatchQueue.main.async { [weak self] in
-            self?.presentChatPathOnboardingCompletionIfNeeded()
-        }
+        presentContextualOnboardingDialogIfNeeded()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -2184,6 +2184,17 @@ class MainViewController: UIViewController {
         // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
         // the caller having to remember.
         reconcileToolbarVisibilityForCurrentTab()
+    }
+
+    private func presentContextualOnboardingDialogIfNeeded() {
+        // In Duck.ai tailored the completion dialog is presented explicitly from `MainViewController.onboardingCompleted`.
+        // Without this gate, the flow would attempt to present the completion dialog
+        // twice — once from the post-fire tab switch and again on `onboardingCompleted`.
+        guard onboardingManager.currentOnboardingFlow == .default else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.presentChatPathOnboardingCompletionIfNeeded()
+        }
     }
 
     private func refreshMiddleButton() {
@@ -5903,9 +5914,26 @@ extension MainViewController: OnboardingDelegate {
             return
         }
 
+        // For Duck.ai tailored flow, the NTP completion dialog hosts inside `OmniBarEditingStateViewController`,
+        // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
+        // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
+        //
+        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
+        // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
+        // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its
+        // `guard isEnabled` and the EOJ → subscription transition would silently drop).
+        if onboardingManager.currentOnboardingFlow == .duckAI && !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
+
         controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true)
-        newTabPageViewController?.onboardingCompleted()
+        // The Duck.ai tailored flow's NTP completion dialog presents `OmniBarEditingStateViewController`.
+        // Wait for the OnboardingIntroViewController to be dismissed before presenting `OmniBarEditingStateViewController`
+        // otherwise `OmniBarEditingStateViewController` will not be presented while the onboarding is mid-dismissal.
+        controller.dismiss(animated: true) { [weak self] in
+            self?.newTabPageViewController?.onboardingCompleted()
+        }
     }
 
     func markOnboardingSeen() {

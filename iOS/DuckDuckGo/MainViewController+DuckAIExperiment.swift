@@ -189,10 +189,10 @@ extension MainViewController {
         daxDialogsManager.setSearchMessageSeen()
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-        ensureExperimentCompletionDialogPresentationPrerequisites()
+        ensureDuckAiCompletionDialogPresentationPrerequisites()
     }
 
-    private func ensureExperimentCompletionDialogPresentationPrerequisites() {
+    func ensureDuckAiCompletionDialogPresentationPrerequisites() {
         // Defer disabling dialogs when a subscription promo is still pending: the NTP's
         // showNextDaxDialogNew will call dialogProvider.dismiss() (equivalent) after the
         // promo is dismissed, so contextual dialogs are disabled at the right time.

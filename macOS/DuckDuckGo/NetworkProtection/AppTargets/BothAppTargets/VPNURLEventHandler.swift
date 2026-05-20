@@ -19,6 +19,7 @@
 import Foundation
 import LetsMove
 import PixelKit
+import Subscription
 import VPNAppLauncher
 
 @MainActor
@@ -33,16 +34,7 @@ final class VPNURLEventHandler {
     /// Handles VPN event URLs
     ///
     func handle(_ url: URL) async {
-        // Strip query items before matching against command URLs so that
-        // `showSubscription` (which may carry an `?origin=...` query) still
-        // matches its canonical launch URL. Other commands don't currently
-        // use query parameters; the canonical form is identical.
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        let queryItems = components?.queryItems
-        components?.queryItems = nil
-        let canonicalURL = components?.url ?? url
-
-        switch canonicalURL {
+        switch url {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
             windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
@@ -57,9 +49,8 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showSubscription(origin: nil).launchURL:
-            let origin = queryItems?.first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?.value
-            showSubscription(origin: origin)
+        case VPNAppLaunchCommand.showSubscription.launchURL:
+            showSubscription()
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
         default:
@@ -93,7 +84,13 @@ final class VPNURLEventHandler {
     }
 
     func showSubscription(origin: String? = nil) {
-        let url = Application.appDelegate.subscriptionManager.url(for: .purchase).appendingOriginParameterIfPresent(origin)
+        let url: URL
+        if let origin {
+            guard let originURL = SubscriptionURL.purchaseURLComponentsWithOrigin(origin)?.url else { return }
+            url = originURL
+        } else {
+            url = Application.appDelegate.subscriptionManager.url(for: .purchase)
+        }
         windowControllersManager.showTab(with: .subscription(url))
 
         PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))

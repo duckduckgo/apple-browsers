@@ -644,6 +644,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
         displayState = .aiTab(.expanded)
+        if host == .omnibar {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+        }
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
         viewController.handler.resetInteractionState()
@@ -702,6 +706,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
+        if host == .omnibar {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+        }
         // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
         setInitialInputMode(isToggleEnabled ? inputMode : .search)
         self.cardPosition = cardPosition

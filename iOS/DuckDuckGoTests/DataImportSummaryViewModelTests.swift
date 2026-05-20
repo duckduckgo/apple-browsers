@@ -380,7 +380,9 @@ private final class MockSyncPromoManager: SyncPromoManaging {
 
     func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
 
-    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {}
 
     func resetPromos() {}
 }

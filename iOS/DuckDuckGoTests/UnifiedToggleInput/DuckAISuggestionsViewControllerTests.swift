@@ -232,6 +232,22 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertTrue(harness.viewController.children.isEmpty,
                       "promo hosting controller is removed when typing starts")
     }
+
+    func test_syncPromo_recordsExactlyOneImpressionPerVCLifetime() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
+
+        harness.viewController.setQueryActive(true)
+        harness.viewController.setQueryActive(false)
+        harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
+    }
 }
 
 // MARK: - Test doubles
@@ -250,7 +266,8 @@ private extension EscapeHatchModel {
 private final class MockSyncPromoManager: SyncPromoManaging {
     var shouldPresentForTouchpoint: [SyncPromoManager.Touchpoint: Bool] = [:]
     var handledTouchpoints: [SyncPromoManager.Touchpoint] = []
-    var dismissedTouchpoints: [SyncPromoManager.Touchpoint] = []
+    var recordedImpressions: [SyncPromoManager.Touchpoint] = []
+    var dismissedTouchpoints: [(SyncPromoManager.Touchpoint, SyncPromoManager.DismissalReason)] = []
 
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
         shouldPresentForTouchpoint[touchpoint] ?? false
@@ -261,14 +278,19 @@ private final class MockSyncPromoManager: SyncPromoManaging {
         shouldPresentForTouchpoint[touchpoint] = false
     }
 
-    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) {
-        dismissedTouchpoints.append(touchpoint)
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {
+        recordedImpressions.append(touchpoint)
+    }
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoints.append((touchpoint, reason))
         markPromoHandledFor(touchpoint)
     }
 
     func resetPromos() {
         shouldPresentForTouchpoint.removeAll()
         handledTouchpoints.removeAll()
+        recordedImpressions.removeAll()
         dismissedTouchpoints.removeAll()
     }
 }

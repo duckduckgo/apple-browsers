@@ -108,6 +108,7 @@ public struct UserDefaultsWrapper<T> {
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
         case syncPromoDataImportDismissed = "com.duckduckgo.app.sync.PromoDataImportDismissed"
         case syncPromoAIChatDismissed = "com.duckduckgo.app.sync.PromoAIChatDismissed"
+        case syncPromoAIChatImpressions = "com.duckduckgo.app.sync.PromoAIChatImpressions"
 
         // .v2 suffix added to fix https://app.asana.com/0/547792610048271/1206524375402369/f
         case featureFlaggingDidVerifyInternalUser = "com.duckduckgo.app.featureFlaggingDidVerifyInternalUser.v2"

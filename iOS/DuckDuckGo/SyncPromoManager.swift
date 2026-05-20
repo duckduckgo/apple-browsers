@@ -28,7 +28,8 @@ import DDGSync
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
     func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint)
-    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint)
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint)
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason)
     func resetPromos()
 }
 
@@ -40,6 +41,13 @@ final class SyncPromoManager: SyncPromoManaging {
         case dataImport = "data_import"
         case aiChat = "ai_chat"
     }
+
+    enum DismissalReason: String {
+        case userTapped = "user_tapped"
+        case impressionCap = "impression_cap"
+    }
+
+    static let aiChatImpressionCap = 3
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
@@ -56,6 +64,9 @@ final class SyncPromoManager: SyncPromoManaging {
 
     @UserDefaultsWrapper(key: .syncPromoAIChatDismissed, defaultValue: nil)
     private var syncPromoAIChatDismissed: Date?
+
+    @UserDefaultsWrapper(key: .syncPromoAIChatImpressions, defaultValue: 0)
+    private var syncPromoAIChatImpressions: Int
 
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -96,6 +107,7 @@ final class SyncPromoManager: SyncPromoManaging {
                featureFlagger.isFeatureOn(.aiChatSyncPromo),
                privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckAiChatHistory),
                syncPromoAIChatDismissed == nil,
+               syncPromoAIChatImpressions < Self.aiChatImpressionCap,
                count > 0 {
                 return true
             }
@@ -117,10 +129,23 @@ final class SyncPromoManager: SyncPromoManaging {
         }
     }
 
-    func dismissPromoFor(_ touchpoint: Touchpoint) {
+    func recordImpressionFor(_ touchpoint: Touchpoint) {
+        switch touchpoint {
+        case .bookmarks, .passwords, .dataImport:
+            break
+        case .aiChat:
+            syncPromoAIChatImpressions += 1
+            if syncPromoAIChatImpressions >= Self.aiChatImpressionCap {
+                dismissPromoFor(.aiChat, reason: .impressionCap)
+            }
+        }
+    }
+
+    func dismissPromoFor(_ touchpoint: Touchpoint, reason: DismissalReason) {
         markPromoHandledFor(touchpoint)
 
-        Pixel.fire(.syncPromoDismissed, withAdditionalParameters: ["source": touchpoint.rawValue])
+        Pixel.fire(.syncPromoDismissed,
+                   withAdditionalParameters: ["source": touchpoint.rawValue, "reason": reason.rawValue])
     }
 
     func resetPromos() {
@@ -128,5 +153,6 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoPasswordsDismissed = nil
         syncPromoDataImportDismissed = nil
         syncPromoAIChatDismissed = nil
+        syncPromoAIChatImpressions = 0
     }
 }

@@ -329,7 +329,7 @@ class AutofillLoginListViewModel: ObservableObject {
     }
 
     func dismissSyncPromo() {
-        syncPromoManager.dismissPromoFor(.passwords)
+        syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
     }
 
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {

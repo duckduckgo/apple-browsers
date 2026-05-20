@@ -144,9 +144,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let syncPromoManager: SyncPromoManaging?
     private let syncService: DDGSyncing?
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
-    /// One displayed pixel per VC lifetime. Mirrors the bookmarks/passwords lazy-var pattern: an impression is logged
-    /// the first time the promo is installed, but repeated install/teardown cycles (e.g. typing → clearing) don't double-count.
-    private var syncPromoDisplayedPixelFired = false
+    private var syncPromoImpressionRecorded = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -389,9 +387,9 @@ final class DuckAISuggestionsViewController: UIViewController {
 
             tableView.tableHeaderView = container
 
-            // First-install of the promo within this VC's lifetime → log the displayed pixel.
-            if promoHosting != nil, !syncPromoDisplayedPixelFired {
-                syncPromoDisplayedPixelFired = true
+            if promoHosting != nil, !syncPromoImpressionRecorded {
+                syncPromoImpressionRecorded = true
+                syncPromoManager?.recordImpressionFor(.aiChat)
                 Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
             }
         }
@@ -417,7 +415,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     }
 
     private func handleSyncPromoClose() {
-        syncPromoManager?.dismissPromoFor(.aiChat)
+        syncPromoManager?.dismissPromoFor(.aiChat, reason: .userTapped)
         rebuildHeader()
     }
 

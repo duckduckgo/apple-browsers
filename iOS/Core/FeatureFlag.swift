@@ -299,7 +299,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
-    /// https://app.asana.com/0/0/1214424137958309/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214965000466711?focus=true
     case aiChatSyncPromo
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true

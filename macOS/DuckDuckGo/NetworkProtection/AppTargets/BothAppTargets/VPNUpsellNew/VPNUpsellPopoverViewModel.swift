@@ -147,7 +147,13 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
         onDismiss()
 
         let origin = SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue
-        guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(origin)?.url else { return }
+        guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin),
+              let url = components.url else {
+            // Fallback to original URL
+            let url = subscriptionManager.url(for: .purchase)
+            urlOpener(url)
+            return
+        }
         urlOpener(url)
         pixelHandler(.subscriptionOfferScreenImpression(origin: origin))
     }

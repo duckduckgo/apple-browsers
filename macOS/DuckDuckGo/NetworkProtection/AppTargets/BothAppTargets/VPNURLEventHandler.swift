@@ -86,7 +86,13 @@ final class VPNURLEventHandler {
     func showSubscription(origin: String? = nil) {
         let url: URL
         if let origin {
-            guard let originURL = SubscriptionURL.purchaseURLComponentsWithOrigin(origin)?.url else { return }
+            guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin),
+                  let originURL = components.url else {
+                // Fallback to original URL
+                let fallbackURL = Application.appDelegate.subscriptionManager.url(for: .purchase)
+                windowControllersManager.showTab(with: .subscription(fallbackURL))
+                return
+            }
             url = originURL
         } else {
             url = Application.appDelegate.subscriptionManager.url(for: .purchase)

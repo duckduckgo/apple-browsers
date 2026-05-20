@@ -3050,8 +3050,8 @@ class MainViewController: UIViewController {
         dismiss(animated: true) {
             self.present(alertController, animated: true) {
                 Pixel.fire(pixel: .vpnAccessRevokedAlertShown)
+                self.tunnelDefaults.showEntitlementAlert = false
             }
-            self.tunnelDefaults.showEntitlementAlert = false
         }
     }
 

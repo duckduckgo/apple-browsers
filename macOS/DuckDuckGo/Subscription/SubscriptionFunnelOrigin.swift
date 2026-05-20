@@ -50,10 +50,10 @@ enum SubscriptionFunnelOrigin: String {
     case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
 
     /// User entered the funnel via the VPN toolbar button upsell popover.
-    case vpnToolbarUpsell = "funnel_toolbar_macos__vpnupsell"
+    case vpnToolbarUpsell = "funnel_toolbar_macos__subscriptionvpnupsell"
 
     /// User entered the funnel via the VPN toolbar button popover when their subscription was revoked.
-    case vpnToolbarRevoked = "funnel_toolbar_macos__vpnrevoked"
+    case vpnToolbarRevoked = "funnel_toolbar_macos__subscriptionvpnrevoked"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

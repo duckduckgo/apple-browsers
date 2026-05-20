@@ -269,7 +269,8 @@ private extension RebrandedNewTabDaxDialogFactory {
                 proceedAction: { [weak self] in
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    let featurePage: OnboardingSubscriptionPromotionPage? = self?.onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .duckAI : nil
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents(featurePage: featurePage)
                     // Pass onDismiss as a post-presentation callback so it fires only after
                     // the settings sheet is fully on screen — keeping the promo dialog visible
                     // until the sheet covers it completely, avoiding an NTP flash.

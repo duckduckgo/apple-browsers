@@ -1042,10 +1042,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFirstPrompt: isFirstPrompt,
             frontendDeliveryPath: entryPoint == .contextualChat ? .contextualNativeInput : .urlAutoSubmit,
             hasPageContext: hasPageContext,
-            selectedTools: [],
-            imageAttachmentCount: 0,
-            fileAttachmentCount: 0,
-            invalidAttachmentCount: 0
+            toolsSelected: false,
+            attachmentsSelected: false
         )
     }
 
@@ -1070,10 +1068,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFirstPrompt: !hasSubmittedPrompt,
             frontendDeliveryPath: .userScript,
             hasPageContext: userScript.attachedPageContextProvider?() != nil,
-            selectedTools: [],
-            imageAttachmentCount: 0,
-            fileAttachmentCount: 0,
-            invalidAttachmentCount: 0
+            toolsSelected: false,
+            attachmentsSelected: false
         )
 
         hasSubmittedPrompt = true
@@ -1652,13 +1648,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         case .aiChat:
             let userScript = boundUserScript
             let tools = toolsController.selectedToolsForSubmission()
-            let attachmentCounts = viewController.currentAttachments.reduce(into: (image: 0, file: 0, invalid: 0)) { counts, attachment in
-                switch attachment {
-                case .image: counts.image += 1
-                case .file: counts.file += 1
-                case .invalidFile: counts.invalid += 1
-                }
-            }
 
             let entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint
             switch host {
@@ -1681,10 +1670,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 isFirstPrompt: !hasSubmittedPrompt,
                 frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
-                selectedTools: tools?.map(\.rawValue) ?? [],
-                imageAttachmentCount: attachmentCounts.image,
-                fileAttachmentCount: attachmentCounts.file,
-                invalidAttachmentCount: attachmentCounts.invalid
+                toolsSelected: !(tools?.isEmpty ?? true),
+                attachmentsSelected: !viewController.currentAttachments.isEmpty
             )
 
             let images = selectedModelSupportsImageUpload

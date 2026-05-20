@@ -33,10 +33,8 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            isFirstPrompt: Bool,
                            frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
-                           selectedTools: [String],
-                           imageAttachmentCount: Int,
-                           fileAttachmentCount: Int,
-                           invalidAttachmentCount: Int)
+                           toolsSelected: Bool,
+                           attachmentsSelected: Bool)
 
     /// Native attempted to hand the prompt to the frontend. Records whether
     /// contextual delivery was queued and whether a user-script bridge message was sent.
@@ -102,10 +100,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            isFirstPrompt: Bool,
                            frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
-                           selectedTools: [String],
-                           imageAttachmentCount: Int,
-                           fileAttachmentCount: Int,
-                           invalidAttachmentCount: Int) {
+                           toolsSelected: Bool,
+                           attachmentsSelected: Bool) {
         if let activeFlow {
             wideEvent.discardFlow(activeFlow)
             self.activeFlow = nil
@@ -121,10 +117,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             isFirstPrompt: isFirstPrompt,
             frontendDeliveryPath: frontendDeliveryPath,
             hasPageContext: hasPageContext,
-            selectedTools: selectedTools,
-            imageAttachmentCount: imageAttachmentCount,
-            fileAttachmentCount: fileAttachmentCount,
-            invalidAttachmentCount: invalidAttachmentCount,
+            toolsSelected: toolsSelected,
+            attachmentsSelected: attachmentsSelected,
             startedAt: dateProvider()
         )
         activeFlow = data

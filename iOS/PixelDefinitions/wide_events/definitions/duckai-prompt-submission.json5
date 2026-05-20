@@ -104,43 +104,17 @@
                         "type": "boolean",
                         "description": "Whether a page-context attachment was present at submit time (i.e. the user attached the current page's content to the prompt)."
                     },
-                    "selected_tools": {
-                        "type": "array",
-                        "description": "Identifiers of the tools the user had selected at submit time, as `AIChatRAGTool` raw values. Empty array when no tool was selected. The iOS UI currently only exposes `WebSearch` and `GenerateImage`; other values are reserved for cross-platform parity.",
-                        "items": {
-                            "type": "string",
-                            "enum": [
-                                "WebSearch",
-                                "NewsSearch",
-                                "VideosSearch",
-                                "LocalSearch",
-                                "RelatedSearchTerms",
-                                "WeatherForecast",
-                                "GenerateImage"
-                            ]
-                        }
+                    "tools_selected": {
+                        "type": "boolean",
+                        "description": "Whether the user had any tool selected at submit time. The iOS UI currently only exposes WebSearch and GenerateImage tools."
                     },
-                    "attachments": {
-                        "type": "object",
-                        "description": "Counts of attachments present in the composer at submit time, bucketed by kind. No filenames, sizes, MIME types, or content - just counts.",
-                        "properties": {
-                            "image_count": {
-                                "type": "integer",
-                                "description": "Number of image attachments."
-                            },
-                            "file_count": {
-                                "type": "integer",
-                                "description": "Number of valid file attachments (excludes ones rejected by validation)."
-                            },
-                            "invalid_count": {
-                                "type": "integer",
-                                "description": "Number of attachments that failed validation and remained in the composer as error rows. Non-zero suggests UX friction at submit time."
-                            }
-                        }
+                    "attachments_selected": {
+                        "type": "boolean",
+                        "description": "Whether the user had any attachment (image, file, or attachment that failed validation) in the composer at submit time."
                     },
                     "latency": {
                         "type": "object",
-                        "description": "Latency milestones measured in milliseconds from prompt submission. All values are bucketed (round-up): 0-500ms in 100ms buckets, 500ms-10s in 500ms buckets, 10s-30s collapses to 30000, 30s+ collapses to 60000.",
+                        "description": "Latency milestones measured in milliseconds from prompt submission. All values are bucketed (round-up) into one of: 100, 500, 1000, 2000, 3000, 5000, 10000, 30000. Any duration over 10s collapses into the 30000 bucket.",
                         "properties": {
                             "start_thinking_ms": {
                                 "type": "integer",

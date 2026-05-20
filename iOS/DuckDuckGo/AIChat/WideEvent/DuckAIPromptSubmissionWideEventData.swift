@@ -50,10 +50,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     var didSendBridgeMessage: Bool?
 
     var hasPageContext: Bool
-    var selectedTools: [String]
-    var imageAttachmentCount: Int
-    var fileAttachmentCount: Int
-    var invalidAttachmentCount: Int
+    var toolsSelected: Bool
+    var attachmentsSelected: Bool
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -84,10 +82,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
          isFirstPrompt: Bool,
          frontendDeliveryPath: FrontendDeliveryPath,
          hasPageContext: Bool,
-         selectedTools: [String],
-         imageAttachmentCount: Int,
-         fileAttachmentCount: Int,
-         invalidAttachmentCount: Int,
+         toolsSelected: Bool,
+         attachmentsSelected: Bool,
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
@@ -102,10 +98,8 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
         self.frontendDeliveryPath = frontendDeliveryPath
         self.frontendDeliveryQueued = false
         self.hasPageContext = hasPageContext
-        self.selectedTools = selectedTools
-        self.imageAttachmentCount = imageAttachmentCount
-        self.fileAttachmentCount = fileAttachmentCount
-        self.invalidAttachmentCount = invalidAttachmentCount
+        self.toolsSelected = toolsSelected
+        self.attachmentsSelected = attachmentsSelected
         self.startThinkingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.startGeneratingInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.generatingCompletedInterval = WideEvent.MeasuredInterval(start: startedAt)
@@ -188,16 +182,11 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
 
 extension DuckAIPromptSubmissionWideEventData {
 
-    /// Shared bucketing for all latency milestones in this event.
-    /// - 0-500ms: 100ms buckets
-    /// - 500ms-10s: 500ms buckets
-    /// - 10s-30s: 30s bucket
-    /// - 30s+: 60s bucket (overflow)
+    /// Shared bucketing for all latency milestones in this event. Each duration
+    /// is rounded up to the smallest bucket that contains it. Any duration over
+    /// 10s collapses into the 30000 bucket.
     static let latencyBucket: DurationBucket = .bucketed { ms in
-        if ms <= 500 { return ((ms + 99) / 100) * 100 }
-        if ms <= 10_000 { return ((ms + 499) / 500) * 500 }
-        if ms <= 30_000 { return 30_000 }
-        return 60_000
+        [100, 500, 1_000, 2_000, 3_000, 5_000, 10_000].first(where: { ms <= $0 }) ?? 30_000
     }
 
     func jsonParameters() -> [String: Encodable] {
@@ -223,10 +212,8 @@ extension DuckAIPromptSubmissionWideEventData {
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryQueued] = frontendDeliveryQueued
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.didReceiveBridgeMessage] = frontendSubmissionAckInterval.end != nil
         parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.selectedTools] = selectedTools
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.imageAttachmentCount] = imageAttachmentCount
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fileAttachmentCount] = fileAttachmentCount
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.invalidAttachmentCount] = invalidAttachmentCount
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.toolsSelected] = toolsSelected
+        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.attachmentsSelected] = attachmentsSelected
 
         return parameters
     }
@@ -249,10 +236,8 @@ extension WideEventParameter {
         static let didSendBridgeMessage = "feature.data.ext.delivery.did_send_bridge_message"
         static let didReceiveBridgeMessage = "feature.data.ext.delivery.did_receive_bridge_message"
         static let hasPageContext = "feature.data.ext.has_page_context"
-        static let selectedTools = "feature.data.ext.selected_tools"
-        static let imageAttachmentCount = "feature.data.ext.attachments.image_count"
-        static let fileAttachmentCount = "feature.data.ext.attachments.file_count"
-        static let invalidAttachmentCount = "feature.data.ext.attachments.invalid_count"
+        static let toolsSelected = "feature.data.ext.tools_selected"
+        static let attachmentsSelected = "feature.data.ext.attachments_selected"
         static let startThinkingMs = "feature.data.ext.latency.start_thinking_ms"
         static let startGeneratingMs = "feature.data.ext.latency.start_generating_ms"
         static let generatingCompletedMs = "feature.data.ext.latency.generating_completed_ms"

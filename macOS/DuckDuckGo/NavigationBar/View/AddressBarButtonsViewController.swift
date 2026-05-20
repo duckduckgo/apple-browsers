@@ -1957,6 +1957,11 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        PixelKit.fire(adBlockingAvailability.isEnabled
+                      ? WebExtensionPixel.adBlockingExtensionAddressBarActiveClicked
+                      : WebExtensionPixel.adBlockingExtensionAddressBarInactiveClicked,
+                      frequency: .dailyAndCount)
+
         _ = openYouTubeAdBlockPopover()
     }
 

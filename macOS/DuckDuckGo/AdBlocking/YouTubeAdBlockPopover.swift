@@ -118,16 +118,13 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     @Published var backgroundColor: NSColor = .clear
 
     init(adBlockingAvailability: AdBlockingAvailabilityProviding,
-         preferences: YouTubeAdBlockingPreferences? = nil,
          reloadPage: @escaping () -> Void = {}) {
         self.adBlockingAvailability = adBlockingAvailability
-        // Wire `pixelFiring: PixelKit.shared` so toggling ad blocking from the popover dropdown
-        // still fires the `adBlockingExtensionEnabled` / `adBlockingExtensionDisabled` daily
-        // pixel. Otherwise the sync path to the long-lived Settings instance suppresses pixels
-        // on its end (via `isHandlingExternalChange`), and this throwaway instance was
-        // constructed without a pixel firer — so the change would be invisible to analytics.
-        self.preferences = preferences ?? YouTubeAdBlockingPreferences(
-            pixelFiring: PixelKit.shared,
+        // Popover owns its own preferences with `pixelFiring: nil` — popover-driven toggles only
+        // fire the dedicated popover pixels. The `adBlockingExtensionEnabled` / `_Disabled` pair
+        // is the Settings-source signal, still wired through the Settings preferences instance.
+        self.preferences = YouTubeAdBlockingPreferences(
+            pixelFiring: nil,
             adBlockingAvailability: adBlockingAvailability
         )
         self.reloadPage = reloadPage
@@ -145,6 +142,7 @@ final class YouTubeAdBlockViewModel: ObservableObject {
     }
 
     func handleSendBreakageReport() {
+        PixelKit.fire(WebExtensionPixel.adBlockingExtensionBreakageReportEntered, frequency: .dailyAndCount)
         sendBreakageReport()
         showBreakageReportBanner = false
     }
@@ -160,11 +158,14 @@ final class YouTubeAdBlockViewModel: ObservableObject {
         case .alwaysOn:
             adBlockingAvailability.clearDisableUntilRelaunch()
             preferences.youTubeAdBlockingEnabled = true
+            PixelKit.fire(WebExtensionPixel.adBlockingExtensionPopoverAlwaysOn, frequency: .dailyAndCount)
         case .alwaysOff:
             adBlockingAvailability.clearDisableUntilRelaunch()
             preferences.youTubeAdBlockingEnabled = false
+            PixelKit.fire(WebExtensionPixel.adBlockingExtensionPopoverAlwaysOff, frequency: .dailyAndCount)
         case .disableUntilRelaunch:
             adBlockingAvailability.disableUntilRelaunch()
+            PixelKit.fire(WebExtensionPixel.adBlockingExtensionPopoverDisableUntilRelaunch, frequency: .dailyAndCount)
         }
 
         let isEnabled = adBlockingAvailability.isEnabled

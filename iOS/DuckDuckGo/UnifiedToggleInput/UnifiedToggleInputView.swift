@@ -850,6 +850,8 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.collapsed, animated: false, updateShadow: false)
         }
+        // applyCardLayout's collapse pose sets `.aiVoicePlain`, flickering mid-dismiss; force hidden.
+        textEntryView.setVoiceButtonAppearance(.hidden, animated: false)
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

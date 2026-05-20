@@ -150,6 +150,10 @@ final class DuckAISuggestionsCoordinator {
         viewController?.setAdditionalTopInset(inset)
     }
 
+    func setIsActiveContent(_ active: Bool) {
+        viewController?.setIsActiveContent(active)
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil

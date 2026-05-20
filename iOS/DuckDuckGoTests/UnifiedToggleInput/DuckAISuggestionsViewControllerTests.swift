@@ -239,12 +239,37 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let harness = makeHarness(syncPromoManager: mockManager)
         harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
         harness.viewController.view.layoutIfNeeded()
+        harness.viewController.setIsActiveContent(true)
 
         XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
 
         harness.viewController.setQueryActive(true)
         harness.viewController.setQueryActive(false)
         harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
+    }
+
+    func test_syncPromo_doesNotRecordImpressionWhilePageIsInactive() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertNotNil(try tableView(in: harness.viewController).tableHeaderView)
+        XCTAssertEqual(mockManager.recordedImpressions, [])
+    }
+
+    func test_syncPromo_recordsImpressionWhenPageBecomesActiveAfterInstall() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+        XCTAssertEqual(mockManager.recordedImpressions, [])
+
+        harness.viewController.setIsActiveContent(true)
 
         XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
     }

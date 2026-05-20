@@ -516,6 +516,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
         coordinator.setAdditionalTopInset(escapeHatchTopInset)
         coordinator.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        coordinator.setIsActiveContent(switchBarHandler.currentToggleState == .aiChat)
 
         duckAISuggestionsCoordinator = coordinator
     }
@@ -773,6 +774,7 @@ private extension UnifiedInputContentContainerViewController {
         // Duck.ai mode now renders chats / URLs / search-DDG inline via DuckAISuggestionsCoordinator,
         // so there's no fallback toggling to do here. Search mode is unchanged — the suggestion tray
         // decides its own visibility from query state.
+        duckAISuggestionsCoordinator?.setIsActiveContent(switchBarHandler.currentToggleState == .aiChat)
     }
 }
 

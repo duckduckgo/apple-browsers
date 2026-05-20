@@ -145,6 +145,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let syncService: DDGSyncing?
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
     private var syncPromoImpressionRecorded = false
+    private var isActiveContent = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -270,6 +271,12 @@ final class DuckAISuggestionsViewController: UIViewController {
         reload()
     }
 
+    func setIsActiveContent(_ active: Bool) {
+        guard active != isActiveContent else { return }
+        isActiveContent = active
+        recordSyncPromoImpressionIfNeeded()
+    }
+
     // MARK: - Header (escape hatch + sync promo)
 
     private var shouldShowSyncPromo: Bool {
@@ -387,12 +394,17 @@ final class DuckAISuggestionsViewController: UIViewController {
 
             tableView.tableHeaderView = container
 
-            if promoHosting != nil, !syncPromoImpressionRecorded {
-                syncPromoImpressionRecorded = true
-                syncPromoManager?.recordImpressionFor(.aiChat)
-                Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
-            }
+            recordSyncPromoImpressionIfNeeded()
         }
+    }
+
+    private func recordSyncPromoImpressionIfNeeded() {
+        guard isActiveContent,
+              syncPromoHostingController != nil,
+              !syncPromoImpressionRecorded else { return }
+        syncPromoImpressionRecorded = true
+        syncPromoManager?.recordImpressionFor(.aiChat)
+        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
     }
 
     override func viewDidLayoutSubviews() {

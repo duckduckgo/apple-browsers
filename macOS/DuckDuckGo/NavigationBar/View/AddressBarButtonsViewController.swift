@@ -660,7 +660,7 @@ final class AddressBarButtonsViewController: NSViewController {
     /// flag — mirrors how `QuickFeedbackTipController` is presented.
     private func scheduleYouTubeAdBlockUnavailableNoticeIfNeeded() {
         let url = tabViewModel?.tab.url
-        guard url?.isYoutube == true,
+        guard url?.isPlayableYoutubeVideoContent == true,
               adBlockingAvailability.isRemotelyDisabled,
               adBlockingAvailability.isEnabledByUser else {
             youTubeAdBlockUnavailableTipController.cancel()
@@ -1933,11 +1933,11 @@ final class AddressBarButtonsViewController: NSViewController {
         // don't compete with the URL the user is typing. Also keep the button completely off
         // when the feature itself isn't available (OS gate / feature flags) — otherwise users
         // without the underlying machinery would see a popover backed by nothing.
-        let isYoutube = tabViewModel?.tab.url?.isYoutube ?? false
+        let isPlayableYoutubeVideo = tabViewModel?.tab.url?.isPlayableYoutubeVideoContent ?? false
         let isEditingMode = controllerMode?.isEditing ?? false
         let isTextFieldValueText = textFieldValue?.isText ?? false
 
-        youTubeAdBlockButton.isShown = isYoutube
+        youTubeAdBlockButton.isShown = isPlayableYoutubeVideo
             && adBlockingAvailability.isFeatureAvailable
             && !isAIChatPanelActive
             && !isEditingMode

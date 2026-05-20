@@ -228,6 +228,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func aiComparisonAction() {
+        pixelReporter.measureAiComparisonCTAAction()
         makeNextViewState()
     }
 
@@ -519,7 +520,7 @@ private extension OnboardingIntroViewModel {
         case .browsersComparisonDialog:
             pixelReporter.measureBrowserComparisonImpression()
         case .aiComparisonDialog:
-            break
+            pixelReporter.measureAiComparisonImpression()
         case .addToDockPromoDialog:
             pixelReporter.measureAddToDockPromoImpression()
         case .chooseAppIconDialog:

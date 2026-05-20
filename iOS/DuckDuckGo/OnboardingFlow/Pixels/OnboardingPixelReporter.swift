@@ -85,6 +85,8 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureAutoRestoreOnboardingSkipCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
+    func measureAiComparisonImpression()
+    func measureAiComparisonCTAAction()
     func measureChooseAppIconImpression()
     func measureChooseAppIconColor(_ color: AppIcon)
     func measureAddressBarPositionSelectionImpression()
@@ -318,6 +320,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseBrowserCTAAction() {
         fire(event: .onboardingIntroChooseBrowserCTAPressed, unique: false)
         sharedPixelHandler.fire(.setDefault(.clicked(.engage)),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
+    func measureAiComparisonImpression() {
+        sharedPixelHandler.fire(.aiComparison(.shown),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
+    func measureAiComparisonCTAAction() {
+        sharedPixelHandler.fire(.aiComparison(.clicked(.engage)),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
     }

@@ -489,21 +489,15 @@ private extension MainViewController {
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
-            applyVoiceSessionTransition(active: active, to: coordinator)
+            coordinator.isVoiceSessionActive = active
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
         let current = stateStore.state(for: controller.tabModel.uid)
-        let updated = current.applyingVoiceSessionTransition(active: active)
+        var updated = current
+        updated.isVoiceSessionActive = active
         if updated != current {
             stateStore.update(updated, for: controller.tabModel.uid)
-        }
-    }
-
-    private func applyVoiceSessionTransition(active: Bool, to coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.isVoiceSessionActive = active
-        if !active, coordinator.aiChatInputBoxVisibility == .hidden {
-            coordinator.aiChatInputBoxVisibility = .visible
         }
     }
 
@@ -576,7 +570,7 @@ private extension MainViewController {
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
         // flash visible during the FE's "Connecting…" window. The FE's `hideChatInput` is
         // idempotent over this. Persisted per tab in `TabInputState`.
-        if tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested {
+        if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also

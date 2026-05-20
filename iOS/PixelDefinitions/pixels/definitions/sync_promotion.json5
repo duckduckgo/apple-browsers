@@ -1,0 +1,53 @@
+{
+    "sync_promotion_displayed": {
+        "description": "Fired when a Sync promotion is displayed.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface where the Sync promotion was displayed.",
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+            }
+        ]
+    },
+    "sync_promotion_confirmed": {
+        "description": "Fired when a user confirms a Sync promotion.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface where the Sync promotion was confirmed.",
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+            }
+        ]
+    },
+    "sync_promotion_dismissed": {
+        "description": "Fired when a Sync promotion is dismissed.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface where the Sync promotion was dismissed.",
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The reason the Sync promotion was dismissed.",
+                "enum": ["user_tapped", "impression_cap"]
+            }
+        ]
+    }
+}

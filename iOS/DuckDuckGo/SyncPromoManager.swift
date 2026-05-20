@@ -33,6 +33,16 @@ protocol SyncPromoManaging {
     func resetPromos()
 }
 
+enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
+    case aiChatDismissed = "sync-promo-ai-chat-dismissed"
+    case aiChatImpressions = "sync-promo-ai-chat-impressions"
+}
+
+struct SyncPromoStorageKeys: StoringKeys {
+    let aiChatDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.aiChatDismissed)
+    let aiChatImpressions = StorageKey<Int>(SyncPromoStorageKeyNames.aiChatImpressions)
+}
+
 final class SyncPromoManager: SyncPromoManaging {
 
     enum Touchpoint: String {
@@ -52,6 +62,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let storage: any KeyedStoring<SyncPromoStorageKeys>
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -62,18 +73,24 @@ final class SyncPromoManager: SyncPromoManaging {
     @UserDefaultsWrapper(key: .syncPromoDataImportDismissed, defaultValue: nil)
     private var syncPromoDataImportDismissed: Date?
 
-    @UserDefaultsWrapper(key: .syncPromoAIChatDismissed, defaultValue: nil)
-    private var syncPromoAIChatDismissed: Date?
+    private var syncPromoAIChatDismissed: Date? {
+        get { storage.aiChatDismissed }
+        set { storage.aiChatDismissed = newValue }
+    }
 
-    @UserDefaultsWrapper(key: .syncPromoAIChatImpressions, defaultValue: 0)
-    private var syncPromoAIChatImpressions: Int
+    private var syncPromoAIChatImpressions: Int {
+        get { storage.aiChatImpressions ?? 0 }
+        set { storage.aiChatImpressions = newValue }
+    }
 
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring()) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.storage = storage
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint, count: Int) -> Bool {
@@ -103,6 +120,7 @@ final class SyncPromoManager: SyncPromoManaging {
             }
         case .aiChat:
             if syncService.authState == .inactive,
+               featureFlagger.isFeatureOn(.sync),
                featureFlagger.isFeatureOn(.aiChatSync),
                featureFlagger.isFeatureOn(.aiChatSyncPromo),
                privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckAiChatHistory),

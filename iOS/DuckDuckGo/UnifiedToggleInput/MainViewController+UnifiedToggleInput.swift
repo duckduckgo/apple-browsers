@@ -41,6 +41,9 @@ extension MainViewController {
             isBottom ? 0.35 : 0.25
         }
 
+        /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
+        static let omnibarIconFadeInDurationMultiplier: Double = 1.2
+
         static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
         static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
@@ -882,6 +885,9 @@ private extension MainViewController {
             coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
         }
 
+        viewCoordinator.prepareOmnibarForInlineDismissReveal()
+        let omnibarIconsToReveal = viewCoordinator.omniBar?.barView.iconViewsForFadeIn ?? []
+
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -931,6 +937,18 @@ private extension MainViewController {
                 duration: duration
             )
         }
+
+        // Outer commits alpha=0 to the presentation layer before the fade animator captures `from`.
+        UIView.animate(withDuration: 0, animations: {
+            omnibarIconsToReveal.forEach { $0.alpha = 0 }
+        }, completion: { _ in
+            UIView.animate(
+                withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
+                delay: 0,
+                options: [.curveEaseIn, .allowUserInteraction],
+                animations: { omnibarIconsToReveal.forEach { $0.alpha = 1 } }
+            )
+        })
     }
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for

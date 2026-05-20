@@ -116,6 +116,15 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func refreshFireMode(fireMode: Bool)
     func prepareForMoveTransition()
     func moveTransitionCompleted()
+
+    /// Leaf icon subviews intended to fade in independently of the bar's pill and text field.
+    var iconViewsForFadeIn: [UIView] { get }
+
+    /// Hides the bar's pill background, shadow, and text field while leaving icon subviews intact.
+    func hideBarChrome()
+
+    /// Restores bar pill background, shadow, and text field. Idempotent.
+    func restoreBarChrome()
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

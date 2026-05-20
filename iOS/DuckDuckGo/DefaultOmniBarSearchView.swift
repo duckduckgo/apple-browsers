@@ -98,6 +98,22 @@ final class DefaultOmniBarSearchView: UIView {
 
         textField.alpha = 1
     }
+
+    /// Leaf icons (not containers) so alpha is set directly and can't be defeated by parent re-renders.
+    var iconViewsForFadeIn: [UIView] {
+        [
+            loupeIconView,
+            dismissButtonView,
+            privacyInfoContainer,
+            customIconView,
+            clearButton,
+            voiceSearchButton,
+            reloadButton,
+            cancelButton,
+            customizableButton,
+            aiChatButton,
+        ]
+    }
     
     func updateFireModeAppearance(fireMode: Bool) {
         textField.tintColor = fireMode

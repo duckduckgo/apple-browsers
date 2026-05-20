@@ -96,7 +96,6 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            viewModel.markYouTubeAdBlockingDisclosureHiddenIfExistingUser()
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }

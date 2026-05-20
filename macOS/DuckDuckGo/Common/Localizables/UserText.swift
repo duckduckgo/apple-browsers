@@ -1071,6 +1071,12 @@ struct UserText {
     static let locationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.location",
                                                                          value: "“%@“ website would like to use your current location.",
                                                                          comment: "Popover asking for domain %@ to use location")
+    static let microphonePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.microphone",
+                                                                           value: "“%@“ website would like to use your microphone.",
+                                                                           comment: "Popover asking for domain %@ to use the microphone")
+    static let duckAiVoiceChatMicrophonePrompt = NSLocalizedString("permission.authorization.microphone.duckai-voice-chat",
+                                                                   value: "Duck.ai voice chat requires microphone access.",
+                                                                   comment: "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai")
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
@@ -1146,6 +1152,8 @@ struct UserText {
     static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
     static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
     static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionSystemMicrophoneDisabled = NSLocalizedString("permission.system.microphone.disabled", value: "System microphone access disabled. Turn it on in ", comment: "Text shown when system microphone access was previously denied. Followed by a link to System Settings")
+    static let permissionSystemSettingsMicrophone = NSLocalizedString("permission.system.settings.microphone", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for microphone")
     static let permissionSystemNotificationEnable = NSLocalizedString("permission.system.notification.enable", value: "Enable System Notifications", comment: "Button to enable system notifications")
     static let permissionSystemNotificationWaiting = NSLocalizedString("permission.system.notification.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system notification permission dialog")
     static let permissionSystemNotificationEnabled = NSLocalizedString("permission.system.notification.enabled", value: "System notifications enabled!", comment: "Text shown after system notification permission has been granted")

@@ -136,7 +136,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
     }
 
     private func prefetchRemoteMessageImages() {
-        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases),
+        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any),
               let imageUrl = message.content?.imageUrl else {
             return
         }

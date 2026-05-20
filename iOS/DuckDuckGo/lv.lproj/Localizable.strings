@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopēt";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopēt tīru saiti";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopēt saiti";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL ir nokopēts";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Pēdējo reizi izmantotā Fire cilne";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Dzēst cilni";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Aizvērt cilni";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Atgriezties pie cilnes";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Citas iespējas";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Atgriezties pie %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Privātās cilnes";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2906,6 +2928,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Pārvietot adreses joslu uz leju";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Pārvietot adreses joslu uz augšu";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Pārvaldītie sīkfaili";
@@ -4219,6 +4247,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atjauno abonementu...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne tagad";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo piedāvā arī **pēc izvēles maksas abonementu** ar drošu **VPN** un **uzlabotu, privātu mākslīgo intelektu**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Noņemt no šīs ierīces";

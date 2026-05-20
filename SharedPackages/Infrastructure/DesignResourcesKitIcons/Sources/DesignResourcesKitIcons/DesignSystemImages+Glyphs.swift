@@ -95,6 +95,8 @@ public extension DesignSystemImages {
             public static var add: DesignSystemImage { .init(resource: .add16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
+            public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }
+            public static var addressBarBottom: DesignSystemImage { .init(resource: .addressBarPositionBottom16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
             public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
@@ -212,6 +214,7 @@ public extension DesignSystemImages {
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
             public static var keyboard: DesignSystemImage { .init(resource: .keyboard16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
+            public static var link: DesignSystemImage { .init(resource: .link16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }
             public static var location: DesignSystemImage { .init(resource: .location16) }
@@ -361,6 +364,8 @@ public extension DesignSystemImages {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility24) }
             public static var add: DesignSystemImage { .init(resource: .add24) }
             public static var addition: DesignSystemImage { .init(resource: .addition24) }
+            public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop24) }
+            public static var addressBarBottom: DesignSystemImage { .init(resource: .addressBarPositionBottom24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat24) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd24) }
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
@@ -460,6 +465,7 @@ public extension DesignSystemImages {
             public static var fontLarger: DesignSystemImage { .init(resource: .fontLarger24) }
             public static var gift: DesignSystemImage { .init(resource: .gift24) }
             public static var globe: DesignSystemImage { .init(resource: .globe24) }
+            public static var goBackCircle: DesignSystemImage { .init(resource: .goBackCircle24) }
             public static var goTo: DesignSystemImage { .init(resource: .goTo24) }
             public static var help: DesignSystemImage { .init(resource: .help24) }
             public static var history: DesignSystemImage { .init(resource: .history24) }
@@ -472,6 +478,7 @@ public extension DesignSystemImages {
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
             public static var lightning: DesignSystemImage { .init(resource: .lightning24) }
+            public static var link: DesignSystemImage { .init(resource: .link24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }
             public static var list: DesignSystemImage { .init(resource: .list24) }
             public static var location: DesignSystemImage { .init(resource: .location24) }

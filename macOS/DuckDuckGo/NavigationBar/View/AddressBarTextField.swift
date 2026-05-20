@@ -156,11 +156,11 @@ final class AddressBarTextField: NSTextField {
         suggestionResultCancellable = suggestionContainerViewModel?.suggestionContainer.$result
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
-                    self.performanceCoordinator?.markSuggestionsUpdated()
-                    self.showSuggestionWindow()
-                }
+                guard let self,
+                      let viewModel = self.suggestionContainerViewModel,
+                      viewModel.numberOfRows > 0 else { return }
+                self.performanceCoordinator?.markSuggestionsUpdated()
+                self.showSuggestionWindow()
             }
     }
 

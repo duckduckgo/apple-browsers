@@ -133,5 +133,99 @@
                 "enum": ["0", "60", "300", "600", "1800", "3600", "43200"]
             }
         ]
+    },
+    "m_app_open_daily_tab_count_idle_ntp": {
+        "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is New Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "expires": "2026-11-20",
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "tab_count",
+                "type": "string",
+                "description": "Bucketed total tab count at app foreground.",
+                "enum": ["1", "2-5", "6-10", "11-20", "21-40", "41-60", "61-80", "81+"]
+            },
+            {
+                "key": "new_tab_count",
+                "type": "string",
+                "description": "Bucketed count of tabs with no link (blank/new tab pages).",
+                "enum": ["0-1", "2-10", "11+"]
+            },
+            {
+                "key": "tab_active_7d",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed within the past 7 days.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_1w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 8-14 days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_2w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 15-21 days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_3w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 22+ days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            }
+        ]
+    },
+    "m_app_open_daily_tab_count_idle_last_tab": {
+        "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is Last Used Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "expires": "2026-11-20",
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "tab_count",
+                "type": "string",
+                "description": "Bucketed total tab count at app foreground.",
+                "enum": ["1", "2-5", "6-10", "11-20", "21-40", "41-60", "61-80", "81+"]
+            },
+            {
+                "key": "new_tab_count",
+                "type": "string",
+                "description": "Bucketed count of tabs with no link (blank/new tab pages).",
+                "enum": ["0-1", "2-10", "11+"]
+            },
+            {
+                "key": "tab_active_7d",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed within the past 7 days.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_1w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 8-14 days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_2w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 15-21 days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            },
+            {
+                "key": "tab_inactive_3w",
+                "type": "string",
+                "description": "Bucketed count of tabs last viewed 22+ days ago.",
+                "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+            }
+        ]
     }
 }

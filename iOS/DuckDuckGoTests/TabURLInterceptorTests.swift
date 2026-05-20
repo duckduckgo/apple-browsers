@@ -86,6 +86,21 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         }
     }
 
+    func testNotificationForInterceptedLegacyProPlansPath() {
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        let url = URL(string: "https://duckduckgo.com/pro/plans")!
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        XCTAssertFalse(canNavigate)
+
+        waitForExpectations(timeout: 1) { error in
+            if let error = error {
+                XCTFail("Notification expectation failed: \(error)")
+            }
+        }
+    }
+
     func testWhenURLIsSubscriptionAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?

@@ -1144,7 +1144,8 @@ extension MainViewController {
             return false
         }
 
-        if addressBarTextField.editor?.hasMarkedText() == true {
+        if featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+           addressBarTextField.editor?.hasMarkedText() == true {
             return false
         }
 

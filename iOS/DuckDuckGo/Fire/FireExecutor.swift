@@ -298,7 +298,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) {
         delegate?.willStartBurningTabs(fireRequest: request)
-        burnTabs(scope: request.scope, domains: domains)
+        burnTabs(request: request, domains: domains)
         delegate?.didFinishBurningTabs(fireRequest: request)
     }
     
@@ -339,8 +339,8 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
-        switch scope {
+    private func burnTabs(request: FireRequest, domains: [String]?) {
+        switch request.scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: nil)
             dataClearingWideEventService?.start(.clearTabs)
@@ -372,9 +372,10 @@ class FireExecutor: FireExecuting {
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            if dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab {
+            switch singleTabClosingBehavior(for: request, viewModel: viewModel) {
+            case .openNewChat:
                 tabManager.closeTabAndOpenNewChat(viewModel.tab, clearTabHistory: false)
-            } else {
+            case .navigateToHomepage:
                 tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
             }
 
@@ -383,7 +384,17 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }
-    
+
+    @MainActor
+    private func singleTabClosingBehavior(for request: FireRequest, viewModel: TabViewModel) -> SingleTabClosingBehavior {
+        if request.source == .escapeHatch {
+            return .navigateToHomepage
+        }
+
+        let mustOpenNewChat = dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab
+        return mustOpenNewChat ? .openNewChat : .navigateToHomepage
+    }
+
     // MARK: - Clear Data Helpers
     
     @MainActor
@@ -564,4 +575,9 @@ class FireExecutor: FireExecuting {
         }
     }
 
+}
+
+private enum SingleTabClosingBehavior {
+    case openNewChat
+    case navigateToHomepage
 }

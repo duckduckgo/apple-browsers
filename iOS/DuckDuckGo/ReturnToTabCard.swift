@@ -27,6 +27,11 @@ struct ReturnToTabCard: View {
 
     @ObservedObject var model: EscapeHatchModel
 
+    /// Frame of the three-dots menu button in the key window's coordinate space.
+    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter
+    /// expects window-space coordinates because it attaches the popover to the key window.
+    @State private var menuFrameInWindow: CGRect = .zero
+
     var body: some View {
         Group {
             if model.isActionsEnabled {
@@ -102,6 +107,7 @@ struct ReturnToTabCard: View {
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
         .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
     }
 
     @ViewBuilder
@@ -122,7 +128,7 @@ struct ReturnToTabCard: View {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                 }
             }
-            Button(role: .destructive, action: model.onBurnTab) {
+            Button(role: .destructive, action: { model.onBurnTab(menuFrameInWindow) }) {
                 Label {
                     Text(UserText.escapeHatchMenuBurnTab)
                 } icon: {
@@ -234,6 +240,13 @@ private struct DomainFaviconView: View {
 
     var body: some View {
         FaviconView(viewModel: viewModel)
+    }
+}
+
+private struct MenuFrameInWindowKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

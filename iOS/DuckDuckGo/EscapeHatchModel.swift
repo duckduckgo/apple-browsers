@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import CoreGraphics
 import Combine
 import SwiftUI
 import Persistence
@@ -42,7 +43,7 @@ extension TabManager: EscapeHatchTabsSource {
 protocol EscapeHatchActionRouter: AnyObject {
     func escapeHatchDidRequestSwitch(to tab: Tab)
     func escapeHatchDidRequestClose(_ tab: Tab)
-    func escapeHatchDidRequestBurn(_ tab: Tab)
+    func escapeHatchDidRequestBurn(_ tab: Tab, sourceRect: CGRect)
     func escapeHatchDidRequestTabSwitcher()
 }
 
@@ -74,7 +75,7 @@ final class EscapeHatchModel: ObservableObject {
     let onCardTap: () -> Void
     let onTabSwitcherTap: () -> Void
     let onCloseTab: () -> Void
-    let onBurnTab: () -> Void
+    let onBurnTab: (CGRect) -> Void
 
     init(title: String,
          subtitle: String,
@@ -87,7 +88,7 @@ final class EscapeHatchModel: ObservableObject {
          onCardTap: @escaping () -> Void,
          onTabSwitcherTap: @escaping () -> Void,
          onCloseTab: @escaping () -> Void,
-         onBurnTab: @escaping () -> Void) {
+         onBurnTab: @escaping (CGRect) -> Void) {
         self.title = title
         self.subtitle = subtitle
         self.tabType = tabType
@@ -125,8 +126,8 @@ final class EscapeHatchModel: ObservableObject {
             onCloseTab: { [weak router] in
                 router?.escapeHatchDidRequestClose(targetTab)
             },
-            onBurnTab: { [weak router] in
-                router?.escapeHatchDidRequestBurn(targetTab)
+            onBurnTab: { [weak router] sourceRect in
+                router?.escapeHatchDidRequestBurn(targetTab, sourceRect: sourceRect)
             }
         )
     }

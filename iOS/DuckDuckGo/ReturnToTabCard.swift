@@ -35,7 +35,7 @@ struct ReturnToTabCard: View {
     var body: some View {
         Group {
             if model.isActionsEnabled {
-                SwipeActionView(onCommit: model.onCloseTab) {
+                SwipeActionView(onCommit: model.primarySwipeAction.perform) {
                     contentView
                 } actions: {
                     swipeableActionsView
@@ -113,27 +113,32 @@ struct ReturnToTabCard: View {
     @ViewBuilder
     private var menuContentView: some View {
         Section(header: Text(model.subtitle)) {
-            Button(action: model.onCardTap) {
-                Label {
-                    Text(UserText.escapeHatchMenuReturnToTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.goBackCircle)
-                        .foregroundColor(Color(designSystemColor: .icons))
-                }
-            }
-            Button(role: .destructive, action: model.onCloseTab) {
-                Label {
-                    Text(UserText.escapeHatchMenuCloseTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                }
-            }
-            Button(role: .destructive, action: { model.onBurnTab(menuFrameInWindow) }) {
-                Label {
-                    Text(UserText.escapeHatchMenuBurnTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
-                }
+            MenuActionButton(
+                text: UserText.escapeHatchMenuReturnToTab,
+                icon: DesignSystemImages.Glyphs.Size24.goBackCircle,
+                role: .none,
+                action: model.onCardTap
+            )
+            if model.isFireTab {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuBurnTab,
+                    icon: DesignSystemImages.Glyphs.Size24.fire,
+                    role: .destructive,
+                    action: model.onBurnTabImmediately
+                )
+            } else {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuCloseTab,
+                    icon: DesignSystemImages.Glyphs.Size24.close,
+                    role: .destructive,
+                    action: model.onCloseTab
+                )
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuBurnTab,
+                    icon: DesignSystemImages.Glyphs.Size24.fire,
+                    role: .destructive,
+                    action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
+                )
             }
             Picker(selection: model.afterInactivityOptionBinding) {
                 ForEach(AfterInactivityOption.allCases, id: \.self) { option in
@@ -158,7 +163,7 @@ struct ReturnToTabCard: View {
         ZStack(alignment: .center) {
             Color(designSystemColor: .destructivePrimary)
 
-            Text(UserText.escapeHatchMenuCloseTab)
+            Text(model.primarySwipeAction.label)
                 .daxSubheadRegular()
                 .foregroundColor(.white)
                 .lineLimit(1)
@@ -240,6 +245,27 @@ private struct DomainFaviconView: View {
 
     var body: some View {
         FaviconView(viewModel: viewModel)
+    }
+}
+
+/// One-line menu row: icon glyph on the leading side, text on the trailing side (Apple's standard `Label` layout).
+/// Captures the icon-coloring asymmetry: non-destructive rows apply the `icons` design token explicitly;
+/// destructive rows inherit SwiftUI's auto-tint from `role: .destructive`.
+private struct MenuActionButton: View {
+    let text: String
+    let icon: UIImage
+    let role: ButtonRole?
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) {
+            Label {
+                Text(text)
+            } icon: {
+                Image(uiImage: icon)
+                    .foregroundColor(role == nil ? Color(designSystemColor: .icons) : nil)
+            }
+        }
     }
 }
 

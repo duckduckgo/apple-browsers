@@ -61,7 +61,8 @@ extension EscapeHatchModel {
             onCardTap: {},
             onTabSwitcherTap: {},
             onCloseTab: {},
-            onBurnTab: { _ in }
+            onBurnTabWithConfirmation: { _ in },
+            onBurnTabImmediately: {}
         )
     }
 }

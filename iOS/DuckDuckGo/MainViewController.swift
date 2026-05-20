@@ -185,6 +185,7 @@ class MainViewController: UIViewController {
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -484,6 +485,7 @@ class MainViewController: UIViewController {
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
@@ -1827,7 +1829,9 @@ class MainViewController: UIViewController {
         fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
-        fireIdleReturnTabCountDailyPixel()
+        idleReturnTabCountInstrumentation.recordAppForeground(
+            tabs: tabManager.allTabsModel.tabs,
+            browsingMode: tabManager.currentBrowsingMode.pixelParamValue)
         skipSERPFlow = true
 
         /// Dismiss any keyboard restored by WKWebView when returning to foreground
@@ -1856,30 +1860,6 @@ class MainViewController: UIViewController {
 
         let toolbarButton = customizationState.currentToolbarButton.rawValue
         DailyPixel.fireDaily(.temporaryTelemetrySettingsCustomizedToolbarButton(button: toolbarButton))
-    }
-
-    /// Fires a daily snapshot of tab count + staleness on app foreground, segmented by the
-    /// user's effective "after inactivity" setting (New Tab vs Last Used Tab).
-    ///
-    /// Supports the Tab Bloat investigation: by comparing distributions across the two
-    /// pixels we can tell whether defaulting users to a New Tab on idle return is causing
-    /// tabs to accumulate. Reuses `TabSwitcherOpenDailyPixel` so buckets match the existing
-    /// `m_tab_manager_opened_daily` pixel and the data is directly comparable.
-    ///
-    /// Gated on `isFeatureAvailable()` so we only measure users for whom the setting
-    /// actually controls app behavior; `DailyPixel.fireDaily` handles once-per-day throttling.
-    private func fireIdleReturnTabCountDailyPixel() {
-        guard idleReturnEligibilityManager.isFeatureAvailable() else { return }
-
-        let pixel: Pixel.Event
-        switch idleReturnEligibilityManager.effectiveAfterInactivityOption() {
-        case .newTab: pixel = .appOpenDailyTabCountIdleNTP
-        case .lastUsedTab: pixel = .appOpenDailyTabCountIdleLastTab
-        }
-
-        var params = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
-        params[PixelParameters.browsingMode] = tabManager.currentBrowsingMode.pixelParamValue
-        DailyPixel.fireDaily(pixel, withAdditionalParameters: params)
     }
 
     /// Represents the policy for reusing existing tabs for a query or URL being opened.

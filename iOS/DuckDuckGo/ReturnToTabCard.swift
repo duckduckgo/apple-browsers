@@ -28,6 +28,27 @@ struct ReturnToTabCard: View {
     let model: EscapeHatchModel
 
     var body: some View {
+        Group {
+            if model.isActionsEnabled {
+                SwipeActionView(onCommit: model.onCloseTab) {
+                    contentView
+                } actions: {
+                    swipeableActionsView
+                }
+                .contextMenu {
+                    menuContentView
+                }
+                // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
+                .clipShape(LeftCapsuleShape())
+            } else {
+                contentView
+            }
+        }
+        .id(model.targetTab.uid)
+        .frame(height: Metrics.height)
+    }
+
+    private var contentView: some View {
         HStack(spacing: Metrics.innerSpacing) {
             mainView
             if model.isActionsEnabled {
@@ -41,9 +62,6 @@ struct ReturnToTabCard: View {
             Capsule()
                 .fill(Color(designSystemColor: .controlsFillSecondary))
         )
-        .if(model.isActionsEnabled) {
-            $0.contextMenu { menuContentView }
-        }
     }
 
     private var mainView: some View {
@@ -111,6 +129,19 @@ struct ReturnToTabCard: View {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
                 }
             }
+        }
+    }
+
+    private var swipeableActionsView: some View {
+        ZStack(alignment: .center) {
+            Color(designSystemColor: .destructivePrimary)
+
+            Text(UserText.escapeHatchMenuCloseTab)
+                .daxSubheadRegular()
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.horizontal, Metrics.horizontalPadding)
         }
     }
 

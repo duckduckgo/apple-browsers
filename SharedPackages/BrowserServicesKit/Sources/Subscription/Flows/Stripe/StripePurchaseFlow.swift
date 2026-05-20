@@ -126,7 +126,7 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
     }
 
     private func isSubscriptionExpired() async -> Bool? {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst) else {
+        guard let subscription = try? await subscriptionManager.getSubscription(forceRefresh: true) else {
             return nil
         }
         return !subscription.isActive

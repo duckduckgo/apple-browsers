@@ -2018,6 +2018,9 @@
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tilbage til %1$@, %2$@";
 
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Private faner";
+
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
 

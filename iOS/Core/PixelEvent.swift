@@ -270,6 +270,8 @@ extension Pixel {
         case onboardingDuckAIExperimentFireDialogShownUnique
         case onboardingDuckAIExperimentFireButtonCTAPressed
         case onboardingDuckAIExperimentFinalDialogShownUnique
+        case onboardingChatPathTryVisitSiteUnique
+        case onboardingChatPathTrackersBlockedUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1258,8 +1260,6 @@ extension Pixel {
         case ddgSubscriptionManagementRemoval
         case subscriptionSuccessfulSubscriptionAttribution
         case subscriptionKeychainAccessError
-        // Auth
-        case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -2135,6 +2135,8 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
         case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
+        case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
+        case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -3051,11 +3053,7 @@ extension Pixel.Event {
         case .ddgSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .subscriptionSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .subscriptionKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-            // Auth
-        case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
-
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
-
         case .subscriptionActivatingRestoreErrorMissingAccountOrTransactions: return "m_privacy-pro_activating_restore_error_missing_account_or_transactions"
         case .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError: return "m_privacy-pro_activating_restore_error_past_transaction_authentication_error"
         case .subscriptionActivatingRestoreErrorFailedToObtainAccessToken: return "m_privacy-pro_activating_restore_error_failed_to_obtain_access_token"

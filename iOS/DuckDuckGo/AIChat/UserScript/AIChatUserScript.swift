@@ -44,7 +44,6 @@ protocol AIChatUserScriptDelegate: AnyObject {
 // MARK: - AIChatUserScript Class
 
 final class AIChatUserScript: NSObject, Subfeature {
-
     // MARK: - Push Message Enum
 
     enum AIChatPushMessage {
@@ -187,6 +186,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
+        case .openSummarizationSourceLink:
+            return handler.openSummarizationSourceLink
+        case .openTranslationSourceLink:
+            return handler.openTranslationSourceLink
+        case .openAIChatLink:
+            return handler.openAIChatLink
         case .hideChatInput:
             return handler.hideChatInput
         case .showChatInput:
@@ -234,6 +239,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         handler.setPayloadHandler(payloadHandler)
+    }
+
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
+        handler.setOpenLinkHandler(openLinkHandler)
     }
 
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {

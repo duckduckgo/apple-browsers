@@ -231,6 +231,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard active != isContentActive else { return }
         isContentActive = active
         markNeedsVisibleRefresh()
+        updateDuckAISuggestionsActiveState()
+    }
+
+    private func updateDuckAISuggestionsActiveState() {
+        duckAISuggestionsCoordinator?.setIsVisibleContent(
+            isContentActive && switchBarHandler.currentToggleState == .aiChat
+        )
     }
 
     func refreshVisibleContentIfNeeded() {
@@ -516,9 +523,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
         coordinator.setAdditionalTopInset(escapeHatchTopInset)
         coordinator.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
-        coordinator.setIsActiveContent(switchBarHandler.currentToggleState == .aiChat)
 
         duckAISuggestionsCoordinator = coordinator
+        updateDuckAISuggestionsActiveState()
     }
 
     private func installDaxLogoView() {
@@ -774,7 +781,7 @@ private extension UnifiedInputContentContainerViewController {
         // Duck.ai mode now renders chats / URLs / search-DDG inline via DuckAISuggestionsCoordinator,
         // so there's no fallback toggling to do here. Search mode is unchanged — the suggestion tray
         // decides its own visibility from query state.
-        duckAISuggestionsCoordinator?.setIsActiveContent(switchBarHandler.currentToggleState == .aiChat)
+        updateDuckAISuggestionsActiveState()
     }
 }
 

@@ -145,7 +145,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let syncService: DDGSyncing?
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
     private var syncPromoImpressionRecorded = false
-    private var isActiveContent = false
+    private var isVisibleContent = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -271,9 +271,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         reload()
     }
 
-    func setIsActiveContent(_ active: Bool) {
-        guard active != isActiveContent else { return }
-        isActiveContent = active
+    func setIsVisibleContent(_ visible: Bool) {
+        guard visible != isVisibleContent else { return }
+        isVisibleContent = visible
         recordSyncPromoImpressionIfNeeded()
     }
 
@@ -399,7 +399,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     }
 
     private func recordSyncPromoImpressionIfNeeded() {
-        guard isActiveContent,
+        guard isVisibleContent,
               syncPromoHostingController != nil,
               !syncPromoImpressionRecorded else { return }
         syncPromoImpressionRecorded = true

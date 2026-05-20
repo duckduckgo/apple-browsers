@@ -34,7 +34,7 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 
     private func makeHarness(query: String = "",
                              layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard,
-							 syncPromoManager: SyncPromoManaging? = nil) -> Harness {
+                             syncPromoManager: SyncPromoManaging? = nil) -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
         let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         let vc = DuckAISuggestionsViewController(
@@ -239,7 +239,7 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let harness = makeHarness(syncPromoManager: mockManager)
         harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
         harness.viewController.view.layoutIfNeeded()
-        harness.viewController.setIsActiveContent(true)
+        harness.viewController.setIsVisibleContent(true)
 
         XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
 
@@ -269,9 +269,26 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         harness.viewController.view.layoutIfNeeded()
         XCTAssertEqual(mockManager.recordedImpressions, [])
 
-        harness.viewController.setIsActiveContent(true)
+        harness.viewController.setIsVisibleContent(true)
 
         XCTAssertEqual(mockManager.recordedImpressions, [.aiChat])
+    }
+
+    func test_syncPromo_doesNotRecordWhenPromoReappearsAfterPageBecomesInactive() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        harness.viewController.setQueryActive(true)
+        harness.viewController.setIsVisibleContent(true)
+        harness.viewController.setIsVisibleContent(false)
+        harness.viewController.setQueryActive(false)
+        harness.viewController.view.layoutIfNeeded()
+
+        XCTAssertNotNil(try tableView(in: harness.viewController).tableHeaderView)
+        XCTAssertEqual(mockManager.recordedImpressions, [])
     }
 }
 

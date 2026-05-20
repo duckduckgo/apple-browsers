@@ -150,8 +150,8 @@ final class DuckAISuggestionsCoordinator {
         viewController?.setAdditionalTopInset(inset)
     }
 
-    func setIsActiveContent(_ active: Bool) {
-        viewController?.setIsActiveContent(active)
+    func setIsVisibleContent(_ visible: Bool) {
+        viewController?.setIsVisibleContent(visible)
     }
 
     func tearDown() {

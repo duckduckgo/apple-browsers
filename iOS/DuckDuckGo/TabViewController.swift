@@ -2340,6 +2340,22 @@ extension TabViewController: WKNavigationDelegate {
             delegate?.tabDidRequestNavigationToDifferentSite(tab: self)
         }
 
+        switch Self.aiChatNewWindowDecision(currentURL: webView.url, navigationAction: navigationAction) {
+        case .loadInTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            load(url: aiChatNewWindowURL)
+            return
+        case .openInNewTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: aiChatNewWindowURL,
+                          openedByPage: true,
+                          inheritingAttribution: adClickAttributionLogic.state)
+            return
+        case .ignore:
+            break
+        }
+
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
         // which would skip link rewrites.
         if navigationAction.navigationType != .backForward,

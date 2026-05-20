@@ -2875,7 +2875,6 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let interceptedURL = notification.userInfo?[TabURLInterceptorParameter.interceptedURL] as? URL
                 let payload = notification.object as? AIChatPayload
-                
                 var query: String?
                 var shouldAutoSend = false
                 if let url = interceptedURL,
@@ -6031,6 +6030,11 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
+    }
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
+        loadUrlInNewTab(url, inheritedAttribution: nil)
+        currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
     }
 
     private func closeCurrentTab() {

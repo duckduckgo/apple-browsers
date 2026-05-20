@@ -58,7 +58,8 @@ struct EscapeHatchModelTests {
         )
     }
 
-    @Test("Convenience init wires onBurnTabImmediately to the router's no-confirmation method")
+    @available(iOS 16, *)
+    @Test("Convenience init wires onBurnTabImmediately to the router's no-confirmation method", .timeLimit(.minutes(1)))
     func convenienceInitWiresBurnImmediatelyClosure() {
         let targetTab = Tab(uid: "target-tab")
         let router = SpyRouter()
@@ -70,7 +71,8 @@ struct EscapeHatchModelTests {
         #expect(router.burnImmediatelyCalls.first === targetTab)
     }
 
-    @Test("primarySwipeAction for a fire tab burns immediately with the burn label")
+    @available(iOS 16, *)
+    @Test("primarySwipeAction for a fire tab burns immediately with the burn label", .timeLimit(.minutes(1)))
     func primarySwipeActionForFireTabBurnsImmediately() {
         let targetTab = Tab(fireTab: true)
         let router = SpyRouter()
@@ -84,7 +86,8 @@ struct EscapeHatchModelTests {
         #expect(router.closeCalls.isEmpty)
     }
 
-    @Test("primarySwipeAction for a regular tab closes with the close label")
+    @available(iOS 16, *)
+    @Test("primarySwipeAction for a regular tab closes with the close label", .timeLimit(.minutes(1)))
     func primarySwipeActionForRegularTabCloses() {
         let targetTab = Tab(uid: "regular-tab")
         let router = SpyRouter()

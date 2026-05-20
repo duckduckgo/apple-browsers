@@ -24,7 +24,8 @@ import PixelKit
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
-    func submissionStarted(modelId: String?,
+    func submissionStarted(sourceTabID: TabUID?,
+                           modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
@@ -57,7 +58,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// User closed a Duck.ai tab while a response was still in flight.
     /// Completes the active flow as CANCELLED with
     /// `cancellation_reason = tab_closed`. No-op if no flow is active.
-    func tabClosedDuringGeneration()
+    func tabClosedDuringGeneration(tabID: TabUID)
 
     /// The contextual chat sheet was explicitly dismissed (user tapped
     /// delete-chat, or the fire-button workflow cleared it) while a response
@@ -78,6 +79,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
     private var activeFlow: DuckAIPromptSubmissionWideEventData?
+    private var activeFlowSourceTabID: TabUID?
     private var hasObservedNonReady = false
 
     init(wideEvent: WideEventManaging,
@@ -91,7 +93,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         }
     }
 
-    func submissionStarted(modelId: String?,
+    func submissionStarted(sourceTabID: TabUID?,
+                           modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
@@ -105,6 +108,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         if let activeFlow {
             wideEvent.discardFlow(activeFlow)
             self.activeFlow = nil
+            activeFlowSourceTabID = nil
         }
 
         let data = DuckAIPromptSubmissionWideEventData(
@@ -122,6 +126,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             startedAt: dateProvider()
         )
         activeFlow = data
+        activeFlowSourceTabID = sourceTabID
         hasObservedNonReady = false
         data.lastStep = .submitted
         wideEvent.startFlow(data)
@@ -161,6 +166,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             activeFlow.lastStep = nil
             wideEvent.completeFlow(activeFlow, status: .success(), onComplete: { _, _ in })
             self.activeFlow = nil
+            activeFlowSourceTabID = nil
             return
         }
 
@@ -178,6 +184,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             activeFlow.endedInterval.end = now
             wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
             self.activeFlow = nil
+            activeFlowSourceTabID = nil
             return
         }
 
@@ -209,14 +216,16 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
+        activeFlowSourceTabID = nil
     }
 
-    func tabClosedDuringGeneration() {
-        guard let activeFlow else { return }
+    func tabClosedDuringGeneration(tabID: TabUID) {
+        guard let activeFlow, activeFlowSourceTabID == tabID else { return }
         activeFlow.cancellationReason = .tabClosed
         activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
+        activeFlowSourceTabID = nil
     }
 
     func sheetDismissedDuringGeneration() {
@@ -225,6 +234,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .cancelled, onComplete: { _, _ in })
         self.activeFlow = nil
+        activeFlowSourceTabID = nil
     }
 
     func pageLoadFailed(error: Error) {
@@ -234,6 +244,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         activeFlow.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow, status: .failure, onComplete: { _, _ in })
         self.activeFlow = nil
+        activeFlowSourceTabID = nil
     }
 
     // MARK: - Helpers

@@ -1033,6 +1033,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                        isFirstPrompt: Bool,
                                        hasPageContext: Bool) {
         duckAIWideEventInstrumentation?.submissionStarted(
+            sourceTabID: currentTabUID,
             modelId: persistedModelId,
             userTier: subscriptionState.userTier,
             reasoningEffort: persistedReasoningEffort,
@@ -1059,6 +1060,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         duckAIWideEventInstrumentation?.submissionStarted(
+            sourceTabID: currentTabUID,
             modelId: configuration.modelId,
             userTier: subscriptionState.userTier,
             reasoningEffort: configuration.reasoningEffort,
@@ -1661,6 +1663,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
 
             duckAIWideEventInstrumentation?.submissionStarted(
+                sourceTabID: currentTabUID,
                 modelId: persistedModelId,
                 userTier: subscriptionState.userTier,
                 reasoningEffort: persistedReasoningEffort,

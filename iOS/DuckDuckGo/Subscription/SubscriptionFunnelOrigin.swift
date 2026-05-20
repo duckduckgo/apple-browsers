@@ -55,6 +55,9 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User triggered a plan change by cancelling a pending downgrade
     case cancelDowngrade = "funnel_canceldowngrade_ios"
+
+    /// User entered the funnel via the VPN access-revoked alert when their subscription was revoked.
+    case vpnAccessRevokedAlert = "funnel_vpnalert_ios__vpnrevoked"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

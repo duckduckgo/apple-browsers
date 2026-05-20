@@ -290,6 +290,22 @@
         "parameters": ["appVersion"]
     },
 
+    // VPN Access-Revoked Alert Pixels
+    "m_vpn_access_revoked_alert_shown": {
+        "description": "Fired when the VPN access-revoked alert is presented to the user after their subscription expired. Used to count exposure of the revoked-subscription funnel entry-point on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_vpn_access_revoked_alert_subscribe_button_clicked": {
+        "description": "Fired when the user taps the Subscribe button in the VPN access-revoked alert. Used to count revoked-subscription funnel click-through on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Onboarding Subscription Promotion Pixels
     "m_privacy-pro_onboarding_promotion_impression": {
         "description": "Fired when the subscription promotion is shown during onboarding",

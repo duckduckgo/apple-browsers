@@ -1336,6 +1336,10 @@ extension Pixel {
         case subscriptionEntrySettingsImpression
         case subscriptionEntrySettingsSubscriptionClick
 
+        // VPN Access-Revoked Alert (subscription expired)
+        case vpnAccessRevokedAlertShown
+        case vpnAccessRevokedAlertSubscribeButtonClicked
+
         // Free Trial Journey
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
@@ -3090,6 +3094,10 @@ extension Pixel.Event {
         case .subscriptionEntryAppMenuSubscriptionClick: return "m_subscription_appmenu_subscription_click"
         case .subscriptionEntrySettingsImpression: return "m_subscription_settings_impression"
         case .subscriptionEntrySettingsSubscriptionClick: return "m_subscription_settings_subscription_click"
+
+        // VPN Access-Revoked Alert
+        case .vpnAccessRevokedAlertShown: return "m_vpn_access_revoked_alert_shown"
+        case .vpnAccessRevokedAlertSubscribeButtonClicked: return "m_vpn_access_revoked_alert_subscribe_button_clicked"
 
         // Free Trial Journey
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"

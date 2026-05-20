@@ -3044,10 +3044,13 @@ class MainViewController: UIViewController {
 
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert { [weak self] in
-            self?.segueToDuckDuckGoSubscription()
+            Pixel.fire(pixel: .vpnAccessRevokedAlertSubscribeButtonClicked)
+            self?.segueToDuckDuckGoSubscription(origin: SubscriptionFunnelOrigin.vpnAccessRevokedAlert.rawValue)
         }
         dismiss(animated: true) {
-            self.present(alertController, animated: true, completion: nil)
+            self.present(alertController, animated: true) {
+                Pixel.fire(pixel: .vpnAccessRevokedAlertShown)
+            }
             self.tunnelDefaults.showEntitlementAlert = false
         }
     }

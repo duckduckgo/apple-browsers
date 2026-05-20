@@ -552,8 +552,8 @@ final class MainCoordinator {
 
     // MARK: - Public API
 
-    func segueToDuckDuckGoSubscription() {
-        controller.segueToDuckDuckGoSubscription()
+    func segueToDuckDuckGoSubscription(origin: String? = nil) {
+        controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
     func presentNetworkProtectionStatusSettingsModal() {

@@ -26,15 +26,6 @@ extension UIViewController {
         return view.frame.height <= 568
     }
 
-    /// Topmost VC in the presentation chain; safe target for `present(…)`.
-    var topmostPresentedViewController: UIViewController {
-        var top: UIViewController = self
-        while let presented = top.presentedViewController {
-            top = presented
-        }
-        return top
-    }
-
     var isPad: Bool {
         return UIDevice.current.userInterfaceIdiom == .pad
     }

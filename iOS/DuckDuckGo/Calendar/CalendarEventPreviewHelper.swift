@@ -22,6 +22,7 @@ import EventKit
 import EventKitUI
 import ICSParser
 import UIKit
+import UIKitExtensions
 
 /// Owner must keep a strong reference until `onDismiss` fires — the editor's delegate is weak.
 final class CalendarEventPreviewHelper: NSObject, FilePreview {
@@ -34,6 +35,9 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
 
     /// Fires after the editor dismisses, or immediately when we fall back to QuickLook.
     var onDismiss: (() -> Void)?
+
+    /// Fires after the editor dismisses with the user having tapped Add.
+    var onSaved: (() -> Void)?
 
     /// Fires after QuickLook is presented for the fallback cases; never on iOS <17.
     var onFailure: ((Failure) -> Void)?
@@ -75,10 +79,11 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
 
     @available(iOS 17.0, *)
     private func presentEventEditor(for icsEvent: ICSEvent) {
-        guard let presenter = viewController?.topmostPresentedViewController else {
+        guard let viewController else {
             onDismiss?()
             return
         }
+        let presenter = viewController.topMostPresentedViewController() ?? viewController
         let store = EKEventStore()
         let editor = EKEventEditViewController()
         editor.event = Self.makeEKEvent(from: icsEvent, in: store)
@@ -86,6 +91,18 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         editor.editViewDelegate = self
         Pixel.fire(pixel: .icsCalendarEditorPresented)
         presenter.present(editor, animated: true)
+    }
+
+    @available(iOS 17.0, *)
+    static func firePixel(for action: EKEventEditViewAction) {
+        switch action {
+        case .saved:
+            Pixel.fire(pixel: .icsCalendarEditorSaved)
+        case .canceled, .deleted:
+            Pixel.fire(pixel: .icsCalendarEditorCancelled)
+        @unknown default:
+            break
+        }
     }
 
     @available(iOS 17.0, *)
@@ -135,15 +152,11 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
 extension CalendarEventPreviewHelper: EKEventEditViewDelegate {
 
     func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
-        switch action {
-        case .saved:
-            Pixel.fire(pixel: .icsCalendarEditorSaved)
-        case .canceled, .deleted:
-            Pixel.fire(pixel: .icsCalendarEditorCancelled)
-        @unknown default:
-            break
-        }
+        CalendarEventPreviewHelper.firePixel(for: action)
         controller.dismiss(animated: true) { [weak self] in
+            if action == .saved {
+                self?.onSaved?()
+            }
             self?.onDismiss?()
         }
     }

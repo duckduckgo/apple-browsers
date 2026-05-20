@@ -33,6 +33,7 @@ struct PreparedCalendarEvent {
 struct CalendarEventEditView: UIViewControllerRepresentable {
 
     let preparedEvent: PreparedCalendarEvent
+    let onSaved: () -> Void
     let onDismiss: () -> Void
 
     func makeUIViewController(context: Context) -> EKEventEditViewController {
@@ -47,26 +48,24 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: EKEventEditViewController, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onDismiss: onDismiss)
+        Coordinator(onSaved: onSaved, onDismiss: onDismiss)
     }
 
     final class Coordinator: NSObject, EKEventEditViewDelegate {
+        private let onSaved: () -> Void
         private let onDismiss: () -> Void
 
-        init(onDismiss: @escaping () -> Void) {
+        init(onSaved: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+            self.onSaved = onSaved
             self.onDismiss = onDismiss
         }
 
         func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
-            switch action {
-            case .saved:
-                Pixel.fire(pixel: .icsCalendarEditorSaved)
-            case .canceled, .deleted:
-                Pixel.fire(pixel: .icsCalendarEditorCancelled)
-            @unknown default:
-                break
-            }
-            controller.dismiss(animated: true) { [onDismiss] in
+            CalendarEventPreviewHelper.firePixel(for: action)
+            controller.dismiss(animated: true) { [onSaved, onDismiss] in
+                if action == .saved {
+                    onSaved()
+                }
                 onDismiss()
             }
         }

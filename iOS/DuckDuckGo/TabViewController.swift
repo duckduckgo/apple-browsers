@@ -3060,9 +3060,19 @@ extension TabViewController {
         calendarHandler.onDismiss = { [weak self] in
             self?.pendingCalendarPreview = nil
         }
+        calendarHandler.onSaved = { [weak self] in
+            self?.showCalendarAddedToast()
+        }
         calendarHandler.onFailure = { [weak self] failure in
             self?.showCalendarAddFailureToast(for: failure)
         }
+    }
+
+    private func showCalendarAddedToast() {
+        ActionMessageView.present(
+            message: UserText.icsEventAddedToCalendar,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
     }
 
     private func showCalendarAddFailureToast(for failure: CalendarEventPreviewHelper.Failure) {

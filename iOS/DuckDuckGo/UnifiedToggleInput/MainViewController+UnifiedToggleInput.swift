@@ -1062,14 +1062,16 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
-        let preferredMode = preferredTextEntryModeForCurrentTab() ?? .search
         let tab = tabManager.currentTabsModel.currentTab
-        // AI tab reuses the same textView for the flanked input — text here bleeds past the
-        // collapse. AI-mode tabs likewise show a placeholder rather than the URL.
-        let isAIDestination = tab?.isAITab == true || preferredMode == .aiChat
-        let placeholderMode: TextEntryMode = isAIDestination ? .aiChat : preferredMode
-        let text = isAIDestination ? "" : AddressDisplayHelper.plainDisplayString(for: tab?.link?.url)
-        return UTIDismissSnapshot(text: text, placeholderMode: placeholderMode)
+        // AI tab reuses the same textView for the flanked input — populating it with the URL
+        // would bleed past the collapse, so match the AI chrome (empty + aiChat placeholder).
+        if tab?.isAITab == true {
+            return UTIDismissSnapshot(text: "", placeholderMode: .aiChat)
+        }
+        return UTIDismissSnapshot(
+            text: AddressDisplayHelper.plainDisplayString(for: tab?.link?.url),
+            placeholderMode: preferredTextEntryModeForCurrentTab() ?? .search
+        )
     }
 }
 

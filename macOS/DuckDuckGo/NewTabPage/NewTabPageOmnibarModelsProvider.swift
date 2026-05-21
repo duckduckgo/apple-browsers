@@ -77,8 +77,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private func resolveUserTier() async -> AIChatUserTier {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive else { return .free }
+            guard let subscription = try await subscriptionManager.getSubscription(),
+                  subscription.isActive else { return .free }
             switch subscription.tier {
             case .plus: return .plus
             case .pro: return .pro

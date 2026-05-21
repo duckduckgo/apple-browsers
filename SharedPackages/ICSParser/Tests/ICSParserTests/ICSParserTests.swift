@@ -20,13 +20,13 @@ import Foundation
 import Testing
 @testable import ICSParser
 
-@Suite("ICSParser integration")
+@Suite("ICSParser API")
 struct ICSParserTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Parses a single timed UTC event", .timeLimit(.minutes(1)))
     func parsesSingleTimedEvent() throws {
-        let events = try ICSParser.parse(data: fixture("single-event"))
+        let events = try ICSParser.parse(data: fixture("single-event")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.title == "Single Event Test")
@@ -41,7 +41,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Parses an all-day event with VALUE=DATE", .timeLimit(.minutes(1)))
     func parsesAllDayEvent() throws {
-        let events = try ICSParser.parse(data: fixture("all-day"))
+        let events = try ICSParser.parse(data: fixture("all-day")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.title == "All Day Event")
@@ -54,7 +54,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Unescapes commas, semicolons, and newlines in text values", .timeLimit(.minutes(1)))
     func unescapesTextValues() throws {
-        let events = try ICSParser.parse(data: fixture("multi-line-description"))
+        let events = try ICSParser.parse(data: fixture("multi-line-description")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.notes == "Line one.\nLine two with a comma, and a semicolon; included.\nLine three.")
@@ -64,7 +64,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Returns every parsed event when the file has multiple VEVENTs", .timeLimit(.minutes(1)))
     func returnsAllEventsForMultiVEvent() throws {
-        let events = try ICSParser.parse(data: fixture("multi-vevent"))
+        let events = try ICSParser.parse(data: fixture("multi-vevent")).events
         #expect(events.count == 3)
         #expect(events.map(\.title) == ["First Event", "Second Event", "Third Event"])
     }
@@ -80,7 +80,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Resolves IANA TZID to the correct UTC instant", .timeLimit(.minutes(1)))
     func resolvesIANATZID() throws {
-        let events = try ICSParser.parse(data: fixture("timezone-iana"))
+        let events = try ICSParser.parse(data: fixture("timezone-iana")).events
         try #require(events.count == 1)
         let event = events[0]
         // DTSTART = 2026-06-01 14:00 in America/New_York. June is EDT (UTC-4), so 18:00 UTC.
@@ -91,7 +91,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Resolves Outlook-style TZID via the CLDR mapping", .timeLimit(.minutes(1)))
     func resolvesOutlookTZID() throws {
-        let events = try ICSParser.parse(data: fixture("timezone-outlook"))
+        let events = try ICSParser.parse(data: fixture("timezone-outlook")).events
         try #require(events.count == 1)
         let event = events[0]
         // "Eastern Standard Time" maps to America/New_York. Same UTC instant as the IANA fixture.
@@ -110,7 +110,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Derives endDate from DURATION when DTEND is missing", .timeLimit(.minutes(1)))
     func usesDurationWhenDTEndIsMissing() throws {
-        let events = try ICSParser.parse(data: fixture("duration-timed"))
+        let events = try ICSParser.parse(data: fixture("duration-timed")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.startDate == iso("2026-06-01T14:00:00Z"))
@@ -121,7 +121,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Derives endDate from DURATION for all-day Outlook-style events", .timeLimit(.minutes(1)))
     func usesDurationForAllDayEvents() throws {
-        let events = try ICSParser.parse(data: fixture("duration-allday"))
+        let events = try ICSParser.parse(data: fixture("duration-allday")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.isAllDay == true)
@@ -132,7 +132,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Defaults to a 1-hour event when DTEND and DURATION are both missing", .timeLimit(.minutes(1)))
     func defaultsToOneHourWhenDurationMissing() throws {
-        let events = try ICSParser.parse(data: fixture("duration-missing"))
+        let events = try ICSParser.parse(data: fixture("duration-missing")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.endDate.timeIntervalSince(event.startDate) == 3_600)
@@ -141,7 +141,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Parses weekly RRULE with COUNT and BYDAY (with COUNT→UNTIL conversion)", .timeLimit(.minutes(1)))
     func parsesWeeklyRecurrenceWithCountConversion() throws {
-        let events = try ICSParser.parse(data: fixture("recurring-weekly"))
+        let events = try ICSParser.parse(data: fixture("recurring-weekly")).events
         try #require(events.count == 1)
         let event = events[0]
         let rule = try #require(event.recurrenceRule)
@@ -157,7 +157,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Parses daily RRULE with explicit UNTIL", .timeLimit(.minutes(1)))
     func parsesDailyRecurrenceWithUntil() throws {
-        let events = try ICSParser.parse(data: fixture("recurring-daily-until"))
+        let events = try ICSParser.parse(data: fixture("recurring-daily-until")).events
         try #require(events.count == 1)
         let event = events[0]
         let rule = try #require(event.recurrenceRule)
@@ -168,7 +168,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Parses monthly RRULE with positional BYDAY (first Monday)", .timeLimit(.minutes(1)))
     func parsesMonthlyPositionalRecurrence() throws {
-        let events = try ICSParser.parse(data: fixture("recurring-monthly-positional"))
+        let events = try ICSParser.parse(data: fixture("recurring-monthly-positional")).events
         try #require(events.count == 1)
         let event = events[0]
         let rule = try #require(event.recurrenceRule)
@@ -186,7 +186,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Parses yearly RRULE with BYMONTH and BYMONTHDAY", .timeLimit(.minutes(1)))
     func parsesYearlyRecurrence() throws {
-        let events = try ICSParser.parse(data: fixture("recurring-yearly"))
+        let events = try ICSParser.parse(data: fixture("recurring-yearly")).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.isAllDay == true)
@@ -200,7 +200,7 @@ struct ICSParserTests {
     @available(iOS 16, macOS 13, *)
     @Test("Strips a leading UTF-8 BOM before parsing", .timeLimit(.minutes(1)))
     func stripsLeadingBOM() throws {
-        let events = try ICSParser.parse(data: fixture("bom-prefixed"))
+        let events = try ICSParser.parse(data: fixture("bom-prefixed")).events
         try #require(events.count == 1)
         #expect(events[0].title == "BOM-Prefixed File")
     }
@@ -302,7 +302,7 @@ struct ICSParserTests {
         END:VEVENT
         END:VCALENDAR
         """
-        let events = try ICSParser.parse(string: raw)
+        let events = try ICSParser.parse(string: raw).events
         try #require(events.count == 1)
         #expect(events[0].title == "Has unknown props")
     }
@@ -325,7 +325,7 @@ struct ICSParserTests {
         END:VEVENT
         END:VCALENDAR
         """
-        let events = try ICSParser.parse(string: raw)
+        let events = try ICSParser.parse(string: raw).events
         try #require(events.count == 1)
         #expect(events[0].url == nil)
         #expect(events[0].title == "Empty URL")
@@ -348,12 +348,42 @@ struct ICSParserTests {
         END:VEVENT
         END:VCALENDAR
         """
-        let events = try ICSParser.parse(string: raw)
+        let events = try ICSParser.parse(string: raw).events
         try #require(events.count == 1)
         let event = events[0]
         #expect(event.isAllDay == false)
         #expect(event.startDate == iso("2026-06-01T14:00:00Z"))
         #expect(event.endDate == iso("2026-06-01T15:00:00Z"))
+    }
+
+    /// RRULE parts the parser ignores (BYSETPOS etc.) surface as an `unsupportedRRulePart`
+    /// warning on the parse result, without failing the parse.
+    @available(iOS 16, macOS 13, *)
+    @Test("Surfaces unsupportedRRulePart warning for ignored RRULE parts", .timeLimit(.minutes(1)))
+    func surfacesUnsupportedRRuleWarning() throws {
+        let raw = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//Test//EN
+        BEGIN:VEVENT
+        UID:bysetpos@example.com
+        DTSTART:20260601T090000Z
+        SUMMARY:Has BYSETPOS
+        RRULE:FREQ=MONTHLY;BYDAY=MO;BYSETPOS=1;COUNT=4
+        END:VEVENT
+        END:VCALENDAR
+        """
+        let result = try ICSParser.parse(string: raw)
+        #expect(result.events.count == 1)
+        #expect(result.warnings == [.unsupportedRRulePart])
+    }
+
+    /// A parse with no ignored content surfaces an empty warnings array.
+    @available(iOS 16, macOS 13, *)
+    @Test("Reports no warnings for fully-supported input", .timeLimit(.minutes(1)))
+    func reportsNoWarningsForSupportedInput() throws {
+        let result = try ICSParser.parse(data: fixture("single-event"))
+        #expect(result.warnings.isEmpty)
     }
 
     // MARK: - Helpers

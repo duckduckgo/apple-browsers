@@ -90026,55 +90026,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "YouTube-Werbeblockierung nicht verfügbar"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Block Unavailable"
+            "value" : "YouTube Ad Blocking Unavailable"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "El bloqueo de anuncios en YouTube no está disponible"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blocage des publicités sur YouTube indisponible"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blocco degli annunci di YouTube non disponibile"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "YouTube-advertentieblokkering niet beschikbaar"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blokowanie reklam w serwisie YouTube jest niedostępne"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bloqueio de anúncios do YouTube indisponível"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Блокировка рекламы на YouTube недоступна"
           }
         }
@@ -107159,6 +107159,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новую вкладку"
+          }
+        }
+      }
+    },
+    "tooltip.youtube-ad-blocking.show" : {
+      "comment" : "Tooltip for the YouTube Ad Blocking address bar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking"
           }
         }
       }

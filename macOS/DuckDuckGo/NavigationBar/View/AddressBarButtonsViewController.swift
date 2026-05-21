@@ -406,7 +406,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         youTubeAdBlockButton.sendAction(on: .leftMouseDown)
         youTubeAdBlockButton.setAccessibilityIdentifier("AddressBarButtonsViewController.youTubeAdBlockButton")
-        youTubeAdBlockButton.toolTip = "YouTube Ad Block"
+        youTubeAdBlockButton.toolTip = UserText.youTubeAdBlockingTooltip
 
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")

@@ -525,7 +525,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpFreemiumPIR:
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
         case .dbpContentBlocking:
-            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.contentBlocking)))
+            Config(source: .remoteReleasable(DBPSubfeature.contentBlocking))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:

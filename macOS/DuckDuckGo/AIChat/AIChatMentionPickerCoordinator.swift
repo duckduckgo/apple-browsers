@@ -76,6 +76,13 @@ final class AIChatMentionPickerCoordinator {
     /// last refreshed), but we keep this around as a fallback.
     private var lastTokenRange: NSRange?
     private var windowObservers: [NSObjectProtocol] = []
+    /// `true` while `accept(attachment:)` is splicing the `@token` out of the text view.
+    /// The splice posts `NSText.didChangeNotification` synchronously, which cascades into
+    /// `updateMentionTokenDetection → dismiss(reason: .tokenGone)`. That re-entrant dismiss
+    /// must be a no-op: tearing the panel down mid-accept clears `anchoredTextView` /
+    /// `lastTokenRange` before the splice can use them, and would fire `mention_picker_canceled`
+    /// even though the user just accepted a row.
+    private var isSplicing = false
 
     /// `true` once the panel is on screen and attached as a child of the omnibar window.
     var isPresented: Bool { panel?.isVisible == true }
@@ -163,6 +170,11 @@ final class AIChatMentionPickerCoordinator {
     /// counts as a cancel.
     @MainActor
     func dismiss(reason: DismissReason) {
+        // Suppress the re-entrant dismiss that the splice's `didChangeText` triggers
+        // (textDidChange → updateMentionTokenDetection → dismiss(reason: .tokenGone)).
+        // `accept(attachment:)` clears `isSplicing` and then explicitly fires
+        // `dismiss(reason: .accept)` itself.
+        guard !isSplicing else { return }
         guard let panel else { return }
         // No-op dismisses (panel never shown) must not count as a cancel.
         let wasPresented = panel.isVisible
@@ -220,18 +232,20 @@ final class AIChatMentionPickerCoordinator {
     /// dismisses the picker.
     @MainActor
     private func accept(attachment: AIChatTabAttachment) {
-        // The splice's `didChangeText` posts `NSText.didChangeNotification` synchronously,
-        // which cascades into `updateMentionTokenDetection → dismiss(reason: .tokenGone)`.
-        // Dismiss the picker explicitly with `.accept` first so that re-entrant dismiss
-        // becomes a no-op (panel already torn down) instead of firing the canceled pixel.
+        // Read attached state before the toggle flips it so the pixel describes the user's
+        // action (chosen vs removed). The splice runs inside the `isSplicing` window so
+        // its re-entrant `dismiss(reason: .tokenGone)` is a no-op; we then dismiss
+        // explicitly with `.accept` to tear the panel down and skip the canceled pixel.
         let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == attachment.id })
-        dismiss(reason: .accept)
+        isSplicing = true
         spliceTokenFromTextView()
+        isSplicing = false
         omnibarController.toggleTabAttachment(attachment)
         let pixel: AIChatPixel = wasAttached
             ? .aiChatAddressBarMentionTabRemoved
             : .aiChatAddressBarMentionTabChosen
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        dismiss(reason: .accept)
     }
 
     /// Removes the `@token` substring (including the leading `@`) from the omnibar input

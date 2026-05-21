@@ -1827,8 +1827,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
     }
 
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment) {
         removeAttachment(id: id)
+        fireAttachmentRemovedPixel(for: attachment)
     }
 
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
@@ -2354,6 +2355,17 @@ private extension UnifiedToggleInputCoordinator {
                 self?.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Pixels
+    
+    private func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment) {
+        switch attachment {
+        case .image:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageRemoved)
+        case .file, .invalidFile:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileRemoved)
+        }
     }
 }
 

@@ -79,4 +79,33 @@
             }
         ]
     },
+    "m_aichat_unified_input_image_attached": {
+        "description": "Fires when the user attaches an image (camera or photo library) in the Unified Toggle Input.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Source of the attached image.",
+                "type": "string",
+                "enum": ["camera", "photo_library"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_image_removed": {
+        "description": "Fires when the user removes an attached image from the Unified Toggle Input (tap on thumbnail close button).",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_unified_input_file_removed": {
+        "description": "Fires when the user removes an attached file (or invalid file) from the Unified Toggle Input.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
 }

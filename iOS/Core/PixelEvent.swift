@@ -1707,6 +1707,9 @@ extension Pixel {
         case unifiedToggleInputWebSearchSubmitted
         case unifiedToggleInputModelSelected
         case unifiedToggleInputReasoningEffortSelected
+        case unifiedToggleInputImageAttached
+        case unifiedToggleInputImageRemoved
+        case unifiedToggleInputFileRemoved
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -3454,6 +3457,9 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
+        case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
+        case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"

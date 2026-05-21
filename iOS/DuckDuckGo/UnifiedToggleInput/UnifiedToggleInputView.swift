@@ -694,7 +694,7 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true, updateCornerRadius: Bool = true) {
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
@@ -758,13 +758,11 @@ final class UnifiedToggleInputView: UIView {
 
         textEntryView.isExpandable = expanded
 
-        if updateShadow {
-            let useCompositeShadow = expanded || layout == .flanked
-            // In-place mutation preserves the in-flight cornerRadius CAAnimation.
-            expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
-            expandedShadowView.isHidden = !useCompositeShadow
-            cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
-        }
+        let useCompositeShadow = expanded || layout == .flanked
+        // In-place mutation preserves the in-flight cornerRadius CAAnimation.
+        expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
+        expandedShadowView.isHidden = !useCompositeShadow
+        cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
             cardPinnedHeightConstraint.constant = pinned
@@ -780,9 +778,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         let changes = {
             self.setCardFlanked(layout == .flanked)
-            if updateCornerRadius {
-                self.cardView.layer.cornerRadius = dimensions.cornerRadius
-            }
+            self.cardView.layer.cornerRadius = dimensions.cornerRadius
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
@@ -844,17 +840,11 @@ final class UnifiedToggleInputView: UIView {
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
             applyCardLayout(.collapsed, animated: false)
-            // Skip cornerRadius so it stays at the collapsed value and `applyToggleRevealChanges`
-            // can animate it inside the surrounding `UIView.animate`.
-            applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false, updateCornerRadius: false)
+            applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
         }
-        // Start the composite shadow at the omnibar's shape so the surrounding `UIView.animate`
-        // morphs it to UTI-expanded.
-        expandedShadowView.updateShadows(omnibarMatchingShadows)
-        expandedShadowView.isHidden = false
-        cardView.layer.shadowOpacity = 0
+        alignWithOmnibarChrome()
     }
 
     /// Active editing pose. Call inside a UIView.animate block.
@@ -878,9 +868,21 @@ final class UnifiedToggleInputView: UIView {
             applyToggleHideChanges()
             layoutIfNeeded()
         case (_, _):
-            applyCardLayout(.collapsed, animated: false, updateShadow: false)
+            applyCardLayout(.collapsed, animated: false)
         }
+        alignWithOmnibarChrome()
+    }
+
+    /// Matches the UTI's chrome (top margin, corner radius, composite shadow) to the standard
+    /// omnibar so the UTI ↔ omnibar transition has no visible chrome snap at hand-off.
+    private func alignWithOmnibarChrome() {
+        if cardPosition == .top {
+            cardTopConstraint.constant = Constants.cardVerticalMargin
+        }
+        cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         expandedShadowView.updateShadows(omnibarMatchingShadows)
+        expandedShadowView.isHidden = false
+        cardView.layer.shadowOpacity = 0
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

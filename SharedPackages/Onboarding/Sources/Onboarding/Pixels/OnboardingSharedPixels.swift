@@ -290,7 +290,7 @@ private extension OnboardingSharedPixelEvent {
         case .welcome: return "welcome"
         case .skipOnboarding: return "skip-onboarding"
         case .setDefault: return "set-default"
-        case .aiComparison: return "ai-comparison"
+        case .aiComparison: return "ai-intro"
         case .addToDock: return "add-to-dock"
         case .appIconColor: return "app-icon-color"
         case .addressBarPosition: return "address-bar-position"

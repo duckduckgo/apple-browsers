@@ -138,30 +138,38 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let featureDiscovery = self.featureDiscovery()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            subscriptionPurchasePlatform = subscription.platform.rawValue
-            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
+            if let subscription = try await subscriptionManager.getSubscription() {
+                subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+                subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+                subscriptionPurchasePlatform = subscription.platform.rawValue
+                subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
-            switch subscription.status {
-            case .autoRenewable, .gracePeriod:
-                isSubscriptionActive = true
-            case .notAutoRenewable:
-                isSubscriptionActive = true
-                isSubscriptionExpiring = true
-            case .expired, .inactive:
-                isSubscriptionExpired = true
-            case .unknown:
-                break // Not supported in RMF
+                switch subscription.status {
+                case .autoRenewable, .gracePeriod:
+                    isSubscriptionActive = true
+                case .notAutoRenewable:
+                    isSubscriptionActive = true
+                    isSubscriptionExpiring = true
+                case .expired, .inactive:
+                    isSubscriptionExpired = true
+                case .unknown:
+                    break // Not supported in RMF
+                }
+
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: subscription,
+                    autofillUsageStore: autofillUsageStore
+                )
+            } else {
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: nil,
+                    autofillUsageStore: autofillUsageStore
+                )
             }
-
-            surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
-                statisticsStore: statisticsStore,
-                vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscriptionDataProvider: subscription,
-                autofillUsageStore: autofillUsageStore
-            )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,

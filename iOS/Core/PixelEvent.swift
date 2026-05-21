@@ -196,6 +196,11 @@ extension Pixel {
         case addressBarClearPressedOnSERP
         case addressBarClearPressedOnAIChat
         case addressBarGestureDismiss
+        case longPressBarOpen
+        case longPressBarActionShare
+        case longPressBarActionCopy
+        case longPressBarActionMove
+        case longPressBarActionCloseTab
 
         case shareSheetResultSuccess
         case shareSheetResultFail
@@ -265,6 +270,8 @@ extension Pixel {
         case onboardingDuckAIExperimentFireDialogShownUnique
         case onboardingDuckAIExperimentFireButtonCTAPressed
         case onboardingDuckAIExperimentFinalDialogShownUnique
+        case onboardingChatPathTryVisitSiteUnique
+        case onboardingChatPathTrackersBlockedUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1253,8 +1260,6 @@ extension Pixel {
         case ddgSubscriptionManagementRemoval
         case subscriptionSuccessfulSubscriptionAttribution
         case subscriptionKeychainAccessError
-        // Auth
-        case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -1590,6 +1595,7 @@ extension Pixel {
         case duckAiNativeStorageFileListError
         case duckAiNativeStorageFileDeleteError
         case duckAiNativeStorageLastUsedModelParseError
+        case duckAiNativeStorageLastUsedReasoningModeParseError
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -1601,6 +1607,10 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
+        case aiChatTabDidTerminate
+
+        case aiChatReportMetricDecodeError
+        case aiChatResponseStateDecodeError
 
         // MARK: AI Chat Sync
 
@@ -1862,6 +1872,9 @@ extension Pixel {
         case linkLongPressNewTab
         case linkLongPressBackgroundTab
         case linkLongPressFireTab
+
+        // MARK: - Custom Product Page
+        case customProductPageDuckAIOpenedAIChat
     }
 
 }
@@ -2041,6 +2054,11 @@ extension Pixel.Event {
         case .addressBarClearPressedOnSERP: return "m_addressbar_focus_clear_entry_serp"
         case .addressBarClearPressedOnAIChat: return "m_addressbar_focus_clear_entry_aichat"
         case .addressBarGestureDismiss: return "m_addressbar_focus_dismiss_gesture"
+        case .longPressBarOpen: return "m_longpress_bar_open"
+        case .longPressBarActionShare: return "m_longpress_bar_action_share"
+        case .longPressBarActionCopy: return "m_longpress_bar_action_copy"
+        case .longPressBarActionMove: return "m_longpress_bar_action_move"
+        case .longPressBarActionCloseTab: return "m_longpress_bar_action_close_tab"
 
         case .shareSheetResultSuccess: return "m_sharesheet_result_success"
         case .shareSheetResultFail: return "m_sharesheet_result_fail"
@@ -2117,6 +2135,8 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
         case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
+        case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
+        case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -3033,11 +3053,7 @@ extension Pixel.Event {
         case .ddgSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .subscriptionSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .subscriptionKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-            // Auth
-        case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
-
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
-
         case .subscriptionActivatingRestoreErrorMissingAccountOrTransactions: return "m_privacy-pro_activating_restore_error_missing_account_or_transactions"
         case .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError: return "m_privacy-pro_activating_restore_error_past_transaction_authentication_error"
         case .subscriptionActivatingRestoreErrorFailedToObtainAccessToken: return "m_privacy-pro_activating_restore_error_failed_to_obtain_access_token"
@@ -3326,6 +3342,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
         case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
         case .duckAiNativeStorageLastUsedModelParseError: return "m_duck-ai_native-storage_last-used-model-parse_error"
+        case .duckAiNativeStorageLastUsedReasoningModeParseError: return "m_duck-ai_native-storage_last-used-reasoning-mode-parse_error"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -3337,6 +3354,10 @@ extension Pixel.Event {
             
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
+        case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
+
+        case .aiChatReportMetricDecodeError: return "m_aichat_report_metric_decode_error"
+        case .aiChatResponseStateDecodeError: return "m_aichat_response_state_decode_error"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
@@ -3650,6 +3671,8 @@ extension Pixel.Event {
         case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
         case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
+        // MARK: - Custom Product Page
+        case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
         }
     }
 }

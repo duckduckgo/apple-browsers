@@ -176,6 +176,7 @@ public enum RemoteMessageResponse {
         case pir = "PIR"
         case subscription = "Subscription"
         case veryCriticalUpdate = "VeryCriticalUpdate"
+        case youtubeNew = "YoutubeNew"
     }
 
     public enum StatusError: Error {

@@ -145,6 +145,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Escape Hatch
     private var escapeHatchModel: EscapeHatchModel?
 
+    /// When true, the Dax logo view is not added to the hierarchy during `installDaxLogoView()`.
+    /// Used by the chat-path onboarding completion flow so the logo never flashes during the
+    /// editing-state transition. Cleared on the first `setLogoHidden(false)` call, which also
+    /// installs the view lazily so later visibility updates work as normal.
+    private var isDaxLogoInstallSuppressed = false
+
     private weak var contentAnimator: UIViewPropertyAnimator?
 
     // MARK: - Initialization
@@ -157,17 +163,22 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                  escapeHatch: EscapeHatchModel? = nil) {
+                  escapeHatchModel: EscapeHatchModel? = nil,
+                  initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.isDaxLogoInstallSuppressed = initialLogoHidden
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        if initialLogoHidden {
+            self.daxLogoManager.setForcedHidden(true)
+        }
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
-        self.escapeHatchModel = escapeHatch
+        self.escapeHatchModel = escapeHatchModel
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -238,10 +249,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.containerYCenterConstraint?.constant = offset
+        daxLogoManager.setLogoYOffset(offset)
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        // If we suppressed the initial install (chat-path EOJ handoff), lazily install the Dax now
+        // so subsequent visibility updates can show it normally.
+        if !hidden && isDaxLogoInstallSuppressed {
+            isDaxLogoInstallSuppressed = false
+            if isViewLoaded {
+                installDaxLogoView()
+            }
+        }
         daxLogoManager.setForcedHidden(hidden)
     }
 
@@ -366,8 +385,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
         let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        let openTabCount = dependencies.tabsModelProvider().count
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch, openTabCount: openTabCount)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: suggestionTrayEscapeHatch)
         suggestionTrayManager = manager
     }
 
@@ -394,19 +412,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
         aiChatHistoryManager = manager
 
-        if let escapeHatchModel {
-            let count = suggestionTrayDependencies?.tabsModelProvider().count ?? 0
-            manager.setEscapeHatch(
-                escapeHatchModel,
-                openTabCount: count,
-                onTapped: { [weak self] in
-                    self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
-                },
-                onTabSwitcherTapped: { [weak self] in
-                    self?.delegate?.onTabSwitcherRequested()
-                }
-            )
-        }
+        manager.setEscapeHatch(escapeHatchModel)
     }
     
     /// Creates ad configured for the current tab.
@@ -433,16 +439,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
+        // Chat-path EOJ handoff: skip the install entirely so nothing can render during the
+        // editing-state transition. The view is installed lazily in `setLogoHidden(false)`.
+        guard !isDaxLogoInstallSuppressed else { return }
         if switchBarHandler.isFireTab {
-            let escapeHatchTap: (() -> Void)? = escapeHatchModel.map { model in
-                { [weak self] in self?.delegate?.onSwitchToTab(model.targetTab) }
-            }
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
                                                    anchorView: switchBarVC.view,
                                                    isTopBarPosition: isUsingTopBarPosition,
-                                                   escapeHatch: escapeHatchModel,
-                                                   onEscapeHatchTap: escapeHatchTap)
+                                                   escapeHatch: escapeHatchModel)
         } else if let view = switchBarVC.segmentedPickerView {
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,

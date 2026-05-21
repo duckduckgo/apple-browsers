@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopeeri";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopeeri puhas link";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopeeri link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL on kopeeritud";
 
@@ -1996,6 +2002,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Kustuta vaheleht";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Sulge vaheleht";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Tagasi vahelehele";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Veel valikuid";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
 
@@ -2004,6 +2023,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Tagasi %1$@, %2$@ juurde";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Privaatsed vahekaardid";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2912,6 +2934,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Liiguta aadressiriba alla";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Liiguta aadressiriba üles";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallatavad küpsised";
@@ -4225,6 +4253,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Tellimuse taastamine...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Mitte praegu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGol on ka **valikuline tasuline tellimus**, millel on turvaline **VPN** ja **täiustatud privaatne tehisintellekt**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eemalda sellest seadmest";

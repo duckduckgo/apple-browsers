@@ -56,6 +56,7 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
+    var usesExpandedAIChatTextEntryLayout: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
 
     /// Suppresses the in-pill voice button — used when an external flank already provides one.
@@ -94,6 +95,7 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var usesExpandedAIChatTextEntryLayout: Bool { false }
     var submitsAIChatOnKeyboardReturn: Bool { true }
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
@@ -107,7 +109,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
-    private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
@@ -138,14 +140,14 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+        guard unifiedToggleInputFeature.isAvailable else {
             return devicePlatform.isIphone
         }
         return false
     }
 
     var shouldDisableAutocorrectOnEmpty: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) || devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -206,7 +208,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          initialToggleState: TextEntryMode? = nil,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
@@ -215,7 +217,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.toggleModeStorage = toggleModeStorage
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
-        self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
         self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab

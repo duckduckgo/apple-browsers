@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiraj";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiraj samo poveznicu";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiraj poveznicu";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL je kopiran";
 
@@ -1996,6 +2002,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zadnje korištena Fire kartica";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Zatvori i izbriši podatke kartice";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zatvori karticu";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Povratak na karticu";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Više opcija";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Povratak na %@";
 
@@ -2004,6 +2023,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vrati se na %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Privatne kartice";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2912,6 +2934,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Premjesti adresnu traku na dno";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Premjesti adresnu traku na vrh";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Upravlja se kolačićima";
@@ -4225,6 +4253,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje pretplate...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne sada";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo također nudi mogućnost **izborne plaćene pretplate**, sa sigurnim **VPN-om** i **naprednom, privatnom umjetnom inteligencijom**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ukloni s ovog uređaja";

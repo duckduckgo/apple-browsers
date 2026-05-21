@@ -26,6 +26,9 @@ import Suggestions
 import UIKit
 import WebKit
 
+/// Snapshot of the `canGoBack` / `canGoForward` values WebKit reports for a tab at a given
+/// instant. Modelled as a value type so it can be captured at one moment (e.g. pre-Back-tap)
+/// and consulted later without being affected by WebKit's mid-flight state.
 struct AIChatTabChatHeaderNavigationAvailability: Equatable {
     static let unavailable = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: false)
 
@@ -33,13 +36,43 @@ struct AIChatTabChatHeaderNavigationAvailability: Equatable {
     let canGoForward: Bool
 }
 
+/// Pre-tap navigation snapshot pinned to a specific tab. The Duck.ai header keeps
+/// displaying `availability` for `tabUID` until that tab's next navigation settles, so
+/// transient WebKit reports during the in-flight back/forward navigation cannot flip the
+/// visible arrow direction. The tab UUID prevents the snapshot from leaking into other
+/// tabs whose `refreshControls()` may run before settle.
 private struct AIChatTabChatHeaderNavigationLock {
+    /// UUID of the tab the snapshot was captured from. A lock only applies while the header
+    /// is being rendered for this same tab; any other tab passes through to live availability.
     let tabUID: TabUID
+    /// Pre-tap `canGoBack` / `canGoForward` to keep displaying until navigation settles.
     let availability: AIChatTabChatHeaderNavigationAvailability
 }
 
+/// Suppresses two distinct Duck.ai header flicker windows during WebKit's settle-time.
+///
+/// - `reservedTabUID` covers the *before-Back-exists* gap. Set when Unified Input submits a
+///   Duck.ai prompt from a non-AI tab; reserves the Back-button slot in layout before WebKit
+///   reports `canGoBack = true`. Layout-only — it never overrides the live
+///   `canGoBack`/`canGoForward` values.
+///
+/// - `lock` covers the *after-Back/Forward-tap* gap. Stores the pre-tap availability
+///   snapshot so transient WebKit reports during the in-flight navigation cannot flip the
+///   visible arrow direction. The two states have independent lifetimes and meanings, so
+///   they live in separate slots.
+///
+/// Both states are scoped to a specific tab UUID: `refreshControls()` can fire for any tab
+/// (or none), and a reservation/lock from one tab must not leak into another.
 struct AIChatTabChatHeaderNavigationState {
+    /// Pre-tap availability snapshot pinned to a tab. Non-nil only while we want the header
+    /// to ignore WebKit's mid-flight `canGoBack` / `canGoForward` reports for that tab.
+    /// Cleared on settle (`tabDidFinishNavigation` / `tabDidInterruptProvisionalNavigation`),
+    /// when a refresh runs for a different tab UUID, or when there is no current tab.
     private var lock: AIChatTabChatHeaderNavigationLock?
+    /// UUID of the tab whose Back-button slot is being reserved in layout. Non-nil only
+    /// during the gap between a prompt submission on a non-AI tab and WebKit reporting
+    /// `canGoBack = true` for the resulting Duck.ai navigation. Carries no availability
+    /// data — it influences layout only.
     private var reservedTabUID: TabUID?
 
     init() {}
@@ -80,11 +113,16 @@ struct AIChatTabChatHeaderNavigationState {
         return true
     }
 
+    /// First-write-wins: a relock for the same tab is a no-op so rapid taps keep the original
+    /// pre-tap snapshot instead of overwriting it with mid-flight WebKit state.
     mutating func lockAvailability(for tabUID: TabUID, availability: AIChatTabChatHeaderNavigationAvailability) {
         guard lock?.tabUID != tabUID else { return }
         lock = AIChatTabChatHeaderNavigationLock(tabUID: tabUID, availability: availability)
     }
 
+    /// Clears both the lock and the reservation for `tabUID` — both temporary states drop
+    /// once a navigation settles. Returns true if either changed, so callers can decide
+    /// whether a refresh is needed.
     mutating func clearLock(for tabUID: TabUID) -> Bool {
         let didClearLock = lock?.tabUID == tabUID
         let didClearReservation = reservedTabUID == tabUID

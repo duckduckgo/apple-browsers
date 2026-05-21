@@ -877,12 +877,18 @@ final class UnifiedToggleInputView: UIView {
     /// omnibar so the UTI ↔ omnibar transition has no visible chrome snap at hand-off.
     private func alignWithOmnibarChrome() {
         if cardPosition == .top {
+            // Match the omnibar's symmetric 8pt nav-bar insets; otherwise the top override alone
+            // would stretch the pinned 44pt height to 46pt (defaultHigh priority loses to bottom).
             cardTopConstraint.constant = Constants.cardVerticalMargin
+            cardBottomConstraint.constant = -Constants.cardVerticalMargin
         }
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         expandedShadowView.updateShadows(omnibarMatchingShadows)
         expandedShadowView.isHidden = false
         cardView.layer.shadowOpacity = 0
+        // The prior applyCardLayout committed the frame with the .collapsed margins; commit
+        // again so our cardVerticalMargin overrides propagate to the cardView's actual frame.
+        layoutIfNeeded()
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

@@ -692,7 +692,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube ohne gezielte Werbung abspielen"
+            "value" : "YouTube-Videos ohne Werbung abspielen"
           }
         },
         "el" : {
@@ -710,7 +710,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reproduce YouTube sin anuncios segmentados"
+            "value" : "Reproduce vídeos de YouTube sin anuncios"
           }
         },
         "et" : {
@@ -728,7 +728,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profitez de YouTube sans publicités ciblées"
+            "value" : "Lecture de vidéos YouTube sans publicités"
           }
         },
         "hr" : {
@@ -746,7 +746,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guarda YouTube senza annunci mirati"
+            "value" : "Riproduci video di YouTube senza annunci"
           }
         },
         "ja" : {
@@ -776,19 +776,19 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Speel YouTube af zonder gerichte advertentie"
+            "value" : "Speel YouTube-video's af zonder advertenties"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odtwarzanie treści w serwisie YouTube bez spersonalizowanych reklam"
+            "value" : "Odtwarzaj filmy w serwisie YouTube bez reklam"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vê YouTube sem anúncios segmentados"
+            "value" : "Reproduz vídeos do YouTube sem anúncios"
           }
         },
         "ro" : {
@@ -800,7 +800,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Позволяет смотреть YouTube без целевой рекламы"
+            "value" : "Смотрите видео на YouTube без рекламы"
           }
         },
         "sk" : {

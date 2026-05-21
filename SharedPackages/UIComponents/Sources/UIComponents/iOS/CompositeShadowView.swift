@@ -63,6 +63,12 @@ public class CompositeShadowView: UIView {
         shadowView.layer.applyShadowProperties(shadow, in: self)
     }
 
+    /// Updates each shadow by `id` — see `updateShadow(_:)`. Callers without `id`s should use
+    /// `shadows = …` instead.
+    public func updateShadows(_ shadows: [Shadow]) {
+        shadows.forEach(updateShadow)
+    }
+
     /// Applies an opacity multiplier to all configured shadow layers.
     /// Useful when gradually revealing/hiding shadows during animated transitions.
     public func applyShadowOpacityMultiplier(_ multiplier: Float) {

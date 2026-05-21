@@ -215,59 +215,53 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheFirst)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(forceRefresh: false)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: false,
                                                                                                  loadingIndicator: false)
             let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
             // Reload remote subscription and email state
-            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
-            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .remoteFirst,
+            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
+            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: true,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
             _ = await (reloadedEmail, reloadedSubscription)
         }
     }
 
-    private func fetchAndUpdateSubscriptionDetails(cachePolicy: SubscriptionCachePolicy, loadingIndicator: Bool) async -> Bool {
+    @MainActor
+    private func fetchAndUpdateSubscriptionDetails(forceRefresh: Bool, loadingIndicator: Bool) async -> Bool {
         Logger.subscription.log("Fetch and update subscription details")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        if loadingIndicator { self.displaySubscriptionLoader(true) }
+        state.isLoadingSubscriptionInfo = loadingIndicator
 
         do {
-            let subscription = try await self.subscriptionManager.getSubscription(cachePolicy: cachePolicy)
-            if loadingIndicator {
-                Task { @MainActor in
-                    self.displaySubscriptionLoader(false)
-                }
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
+                Logger.subscription.log("No subscription available — resetting subscription state")
+                state.isLoadingSubscriptionInfo = false
+                state.subscriptionInfo = nil
+                state.subscriptionDetails = ""
+                state.cancelPendingDowngradeDetails = nil
+                return false
             }
-
-            await updateSubscriptionsStatusMessage(subscription: subscription,
-                                                   date: subscription.expiresOrRenewsAt,
-                                                   product: subscription.productId,
-                                                   billingPeriod: subscription.billingPeriod)
+            state.isLoadingSubscriptionInfo = false
+            updateSubscriptionsStatusMessage(subscription: subscription,
+                                             date: subscription.expiresOrRenewsAt,
+                                             product: subscription.productId,
+                                             billingPeriod: subscription.billingPeriod)
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
-            Task { @MainActor in
-                if loadingIndicator { self.displaySubscriptionLoader(true) }
-            }
+            Logger.subscription.error("Failed to fetch subscription details: \(error, privacy: .public)")
+            state.isLoadingSubscriptionInfo = false
             return false
         }
     }
 
-    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .cacheFirst) async -> Bool {
+    func fetchAndUpdateAccountEmail(forceRefresh: Bool = false) async -> Bool {
         Logger.subscription.log("Fetch and update account email")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        let tokensPolicy: AuthTokensCachePolicy
-
-        switch cachePolicy {
-        case .remoteFirst:
-            tokensPolicy = .localForceRefresh
-        case .cacheFirst:
-            tokensPolicy = .localValid
-        }
+        let tokensPolicy: AuthTokensCachePolicy = forceRefresh ? .localForceRefresh : .localValid
 
         do {
             let tokenContainer = try await subscriptionManager.getTokenContainer(policy: tokensPolicy)
@@ -276,19 +270,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
+            Logger.subscription.error("Failed to fetch account email: \(error, privacy: .public)")
             return false
         }
     }
 
-    private func displaySubscriptionLoader(_ show: Bool) {
-        DispatchQueue.main.async {
-            self.state.isLoadingSubscriptionInfo = show
-        }
-    }
-
     func manageSubscription() {
-        Logger.subscription.log("User action: \(#function)")
+        Logger.subscription.log("User action: manageSubscription")
 
         guard let platform = state.subscriptionInfo?.platform else {
             assertionFailure("Invalid subscription platform")
@@ -410,7 +398,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] _ in
             Task { [weak self] in
-                _ = await self?.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst, loadingIndicator: false)
+                _ = await self?.fetchAndUpdateSubscriptionDetails(forceRefresh: false, loadingIndicator: false)
             }
         }
     }
@@ -564,7 +552,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Logger.subscription.error("\(error.localizedDescription)")
+            Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
         }
         Task { @MainActor in
             self.displayStripeView(true)

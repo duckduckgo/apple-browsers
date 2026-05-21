@@ -566,6 +566,10 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
+        aiChatUserScript?.setOpenLinkHandler { [weak self] url in
+            guard let self, let chatViewController = self.chatViewController else { return }
+            self.aiChatViewController(chatViewController, didRequestToLoad: url)
+        }
         aiChatUserScript?.webView = chatViewController?.webView
     }
 }

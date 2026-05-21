@@ -79,7 +79,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self else { return }
-                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases) != nil else {
+                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
                 Task {
@@ -213,7 +213,7 @@ extension RemoteMessagingStore {
 
 extension RemoteMessagingStore {
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, trigger: MessageTrigger? = nil) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .noTrigger) -> RemoteMessageModel? {
 
         func predicateForSurfaces(_ surfaces: RemoteMessageSurfaceType) -> NSPredicate {
             // Match any message whose surfaces bitmask overlaps with the requested surfaces
@@ -260,9 +260,7 @@ extension RemoteMessagingStore {
                     continue
                 }
 
-                if let messageTrigger = remoteMessage.displayConditions?.trigger, messageTrigger != trigger {
-                    continue
-                }
+                guard triggerFilter.matches(remoteMessage.displayConditions?.trigger) else { continue }
 
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,

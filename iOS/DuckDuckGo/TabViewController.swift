@@ -147,7 +147,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
-    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature()
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -585,6 +585,7 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
@@ -627,6 +628,7 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -671,9 +673,11 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         productSurfaceTelemetry: productSurfaceTelemetry)
+                                                         productSurfaceTelemetry: productSurfaceTelemetry,
+                                                         unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -1972,6 +1976,7 @@ extension TabViewController: WKNavigationDelegate {
 
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
+        delegate?.tabDidFinishNavigation(self)
 
         // Present the Dax dialog with a delay to mitigate issue where user script detec trackers after the dialog is show to the user
         // Debounce to avoid showing multiple animations on redirects. e.g. !image baby ducklings
@@ -2212,8 +2217,9 @@ extension TabViewController: WKNavigationDelegate {
             privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
-        
+
         self.delegate?.tabLoadingStateDidChange(tab: self)
+        self.delegate?.tabDidFinishNavigation(self)
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -2332,6 +2338,22 @@ extension TabViewController: WKNavigationDelegate {
 
         if navigationAction.navigationType != .reload, webView.url != navigationAction.request.mainDocumentURL {
             delegate?.tabDidRequestNavigationToDifferentSite(tab: self)
+        }
+
+        switch Self.aiChatNewWindowDecision(currentURL: webView.url, navigationAction: navigationAction) {
+        case .loadInTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            load(url: aiChatNewWindowURL)
+            return
+        case .openInNewTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: aiChatNewWindowURL,
+                          openedByPage: true,
+                          inheritingAttribution: adClickAttributionLogic.state)
+            return
+        case .ignore:
+            break
         }
 
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
@@ -4190,6 +4212,14 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         contextualOnboardingLogic.setDaxDialogDismiss()
 
         dismissContextualOnboardingIfNeeded()
+
+        // Chat-first path: after the user taps "Got it" on the trackers-blocked dialog the
+        // phase transitions to .trackerToEOJ. Open a new tab so the NTP can surface the
+        // "You've got this!" end-of-journey dialog via presentChatPathOnboardingCompletionIfNeeded.
+        // setDaxDialogDismiss() does not affect chatPathPhase, so the check is still valid here.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
     func didNavigateAwayFromContextualOnboardingDialog() {
@@ -4199,6 +4229,11 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // once the page finishes loading, which depends on `lastShownDaxDialogType` /
         // `lastVisitedOnboardingWebsiteURL` not being cleared.
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+
+        // Chat-first path: open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
 }

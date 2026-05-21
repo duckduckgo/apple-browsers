@@ -37,25 +37,15 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableO
         self.isEnabledByUserProvider = isEnabledByUserProvider
     }
 
-    var isFeatureAvailable: Bool {
+    var isFeatureSupported: Bool {
         guard #available(iOS 18.4, *) else { return false }
         return featureFlagger.isFeatureOn(.webExtensions)
-            && featureFlagger.isFeatureOn(.adBlockingExtension)
     }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
-    // TODO: Replace this UserDefaults-backed placeholder with the real derivation
-    // (likely `!isFeatureAvailable && wasRolledOutByDefault`, or a dedicated
-    // privacy-config flag — to be confirmed with privacy/growth).
-    // When wiring the real flag, also observe its `true -> false` transition and
-    // clear `YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown` so that
-    // a subsequent re-disable surfaces the "YouTube Ad Block Unavailable" sheet
-    // again for users who kept the app alive across the incident cycle.
     var isRemotelyDisabled: Bool {
-        UserDefaults.standard.bool(forKey: Self.remotelyDisabledOverrideKey)
+        isFeatureSupported && !featureFlagger.isFeatureOn(.adBlockingExtension)
     }
-
-    static let remotelyDisabledOverrideKey = "com.duckduckgo.ios.adBlocking.remotelyDisabledOverride"
 
     func disableUntilRelaunch() {
         guard !isDisabledUntilRelaunch else { return }

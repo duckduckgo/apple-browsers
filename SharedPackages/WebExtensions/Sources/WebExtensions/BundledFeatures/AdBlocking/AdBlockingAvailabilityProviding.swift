@@ -22,17 +22,20 @@ import Foundation
 /// Implemented by platform-specific classes (iOS and macOS) to determine
 /// whether the ad-blocking extension feature is available and enabled by the user.
 public protocol AdBlockingAvailabilityProviding {
-    /// Whether the ad-blocking extension feature flag is enabled
-    var isFeatureAvailable: Bool { get }
+    /// Whether the underlying platform supports the ad-blocking extension at all
+    /// (OS version + web-extensions feature flag). Independent of the rollout flag —
+    /// stays `true` even while the feature is in contingency mode.
+    var isFeatureSupported: Bool { get }
 
     /// Whether the user has enabled ad-blocking in settings
     var isEnabledByUser: Bool { get }
 
-    /// Whether ad-blocking is fully enabled (feature available AND user opted in)
+    /// Whether ad-blocking is fully enabled (platform supports, not remotely disabled,
+    /// user opted in, and not disabled until relaunch).
     var isEnabled: Bool { get }
 
-    /// Whether the feature has been remotely disabled (e.g. via privacy config) for users
-    /// that previously had it rolled out. UI surfaces should hide the feature when true.
+    /// Whether the feature has been remotely disabled via privacy config. Drives the
+    /// "Unavailable" contingency UI; assumed to surface for every supported user.
     var isRemotelyDisabled: Bool { get }
 
     /// Whether the user has disabled ad-blocking for the current app session via the
@@ -52,7 +55,7 @@ public protocol AdBlockingAvailabilityProviding {
 
 extension AdBlockingAvailabilityProviding {
     public var isEnabled: Bool {
-        isFeatureAvailable && isEnabledByUser && !isRemotelyDisabled && !isDisabledUntilRelaunch
+        isFeatureSupported && !isRemotelyDisabled && isEnabledByUser && !isDisabledUntilRelaunch
     }
     public var isRemotelyDisabled: Bool { false }
     public var isDisabledUntilRelaunch: Bool { false }

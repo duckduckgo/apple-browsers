@@ -25,7 +25,6 @@ struct AdBlockingDebugView: View {
 
     private let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys>
 
-    @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
     @State private var youTubeAnalyticsEnabled: TriState = .unset
     @State private var shouldHideDisclosure: TriState = .unset
     @State private var unavailableNoticeShown: Bool?
@@ -43,19 +42,13 @@ struct AdBlockingDebugView: View {
                 triStatePicker(title: "shouldHideDisclosure",
                                selection: $shouldHideDisclosure,
                                key: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-            } header: {
-                Text(verbatim: "Flags")
-            }
-
-            Section {
-                Toggle(isOn: $isRemotelyDisabled) { Text(verbatim: "Remotely Disabled") }
                 resettableStatusRow(title: "Unavailable notice shown",
                                     value: unavailableNoticeShown,
                                     key: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
             } header: {
-                Text(verbatim: "Remote Disable Override")
+                Text(verbatim: "Flags")
             } footer: {
-                Text(verbatim: "Simulates the YouTube Ad Block feature being remotely disabled. Placeholder — replace once the real derivation lands.")
+                Text(verbatim: "Override the `adBlockingExtension` feature flag from the Feature Flags debug screen to simulate the YouTube Ad Blocking remote-disable contingency state.")
             }
 
             Section {

@@ -1084,7 +1084,7 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: !adBlockingAvailability.isFeatureAvailable && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
+            duckPlayerEnabled: !adBlockingAvailability.isFeatureSupported && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
@@ -1092,7 +1092,7 @@ extension SettingsViewModel {
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
-            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
+            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureSupported,
             youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
             youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )

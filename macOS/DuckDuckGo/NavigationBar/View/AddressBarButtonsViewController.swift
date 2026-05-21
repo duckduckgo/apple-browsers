@@ -2078,7 +2078,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let isTextFieldValueText = textFieldValue?.isText ?? false
 
         youTubeAdBlockButton.isShown = isPlayableYoutubeVideo
-            && adBlockingAvailability.isFeatureAvailable
+            && adBlockingAvailability.isFeatureSupported
             && !isAIChatPanelActive
             && !isEditingMode
             && !isTextFieldValueText

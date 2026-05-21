@@ -22,10 +22,7 @@ import DataBrokerProtectionCore
 import TrackerRadarKit
 import WebKit
 
-/// iOS-side adapter that reads compiled rule lists and surrogate tracker data fresh from
-/// `ContentBlocking.shared.contentBlockingManager` on every access. This provider is
-/// constructed once at app launch and reused across all background jobs, so TDS
-/// recompilations land in subsequent jobs without restarting the app.
+/// Rules etc are read from contentBlockingManager on every access, so any updates are propagated
 struct DBPIOSContentBlocking: DBPWebViewContentBlocking {
     private let contentBlockingManager: CompiledRuleListsSource
 

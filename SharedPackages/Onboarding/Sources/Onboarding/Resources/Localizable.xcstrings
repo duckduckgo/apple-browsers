@@ -782,11 +782,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-<<<<<<< michal/ad-block-macos-menu
-            "value" : "Odtwarzaj filmy w serwisie YouTube bez reklam"
-=======
             "value" : "Odtwarzaj filmy na YouTube bez reklam"
->>>>>>> michal/ad-block-ios-menu
           }
         },
         "pt" : {

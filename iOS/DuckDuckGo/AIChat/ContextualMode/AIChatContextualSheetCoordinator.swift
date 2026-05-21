@@ -191,7 +191,7 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
-        if unifiedToggleInputFeature.isFeatureFlagEnabled { return }
+        if unifiedToggleInputFeature.isAvailable { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {
@@ -292,6 +292,7 @@ private extension AIChatContextualSheetCoordinator {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
             isFireTab: isFireTab,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             downloadHandler: downloadHandler,

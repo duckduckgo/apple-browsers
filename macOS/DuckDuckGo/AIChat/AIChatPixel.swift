@@ -205,6 +205,7 @@ enum AIChatPixel: PixelKitEvent {
 
     case aiChatTermsAcceptedDuplicateSyncOff
     case aiChatTermsAcceptedDuplicateSyncOn
+    case aiChatReportMetricDecodeError(NSError?, failureReason: AIChatUserScriptErrorFailureReason)
 
     // MARK: - Image Attachments
 
@@ -224,8 +225,44 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User attaches a file (PDF etc.) via the file picker in the duck.ai omnibar.
     case aiChatAddressBarFileAttached
 
+    /// Event Trigger: User removes an attached file (PDF etc.) in the duck.ai omnibar by clicking
+    /// the × on the carousel card.
+    case aiChatAddressBarFileRemoved
+
     /// Event Trigger: User submits a prompt that includes one or more file attachments.
     case aiChatAddressBarSubmitWithFiles(fileCount: Int)
+
+    // MARK: - Tab Attachments
+
+    /// Event Trigger: User opens the duck.ai omnibar attach menu's "Add Page Content" submenu.
+    case aiChatAddressBarAttachTabsPickerShown
+
+    /// Event Trigger: User toggles a tab ON inside the "Add Page Content" submenu, adding
+    /// that tab's page content as an attachment.
+    case aiChatAddressBarAttachTabChosen
+
+    /// Event Trigger: User toggles a tab OFF inside the "Add Page Content" submenu, removing
+    /// that tab's page content attachment.
+    case aiChatAddressBarAttachTabRemoved
+
+    /// Event Trigger: User dismisses the "Add Page Content" submenu without toggling any tab
+    /// during that open session (no chosen / removed events fired between open and close).
+    case aiChatAddressBarAttachPickerCanceled
+
+    /// Event Trigger: The duck.ai omnibar's `@`-mention tab picker appears — user typed `@`
+    /// and the picker transitioned from hidden to visible.
+    case aiChatAddressBarMentionPickerShown
+
+    /// Event Trigger: User picks a previously-unattached tab in the `@`-mention picker.
+    case aiChatAddressBarMentionTabChosen
+
+    /// Event Trigger: User picks an already-attached tab in the `@`-mention picker, removing
+    /// that tab's page-content attachment.
+    case aiChatAddressBarMentionTabRemoved
+
+    /// Event Trigger: User dismisses the `@`-mention picker without accepting any row
+    /// (Esc, click outside, caret leaves the `@`-token, etc.).
+    case aiChatAddressBarMentionPickerCanceled
 
     // MARK: - Model Picker
 
@@ -367,6 +404,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
     case aiChatIsEnabled(isEnabled: Bool)
 
+    /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
+    /// to start a voice chat. `reason` distinguishes the case we acted on (`mic_os_denied`)
+    /// from anything else (`other`) — useful for measuring how often the FE hook fires for
+    /// unrelated WebKit failures and for sizing the OS-deny remediation funnel.
+    case aiChatVoiceChatStartFailed(reason: AIChatVoiceChatStartFailedReason)
+
     // MARK: -
 
     var name: String {
@@ -490,6 +533,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_terms_accepted_duplicate_sync_off"
         case .aiChatTermsAcceptedDuplicateSyncOn:
             return "aichat_terms_accepted_duplicate_sync_on"
+        case .aiChatReportMetricDecodeError:
+            return "aichat_report_metric_decode_error"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -508,8 +553,26 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_tabs"
         case .aiChatAddressBarFileAttached:
             return "aichat_addressbar_file_attached"
+        case .aiChatAddressBarFileRemoved:
+            return "aichat_addressbar_file_removed"
         case .aiChatAddressBarSubmitWithFiles:
             return "aichat_addressbar_submit_with_files"
+        case .aiChatAddressBarAttachTabsPickerShown:
+            return "aichat_addressbar_attach_tabs_picker_shown"
+        case .aiChatAddressBarAttachTabChosen:
+            return "aichat_addressbar_attach_tab_chosen"
+        case .aiChatAddressBarAttachTabRemoved:
+            return "aichat_addressbar_attach_tab_removed"
+        case .aiChatAddressBarAttachPickerCanceled:
+            return "aichat_addressbar_attach_picker_canceled"
+        case .aiChatAddressBarMentionPickerShown:
+            return "aichat_addressbar_mention_picker_shown"
+        case .aiChatAddressBarMentionTabChosen:
+            return "aichat_addressbar_mention_tab_chosen"
+        case .aiChatAddressBarMentionTabRemoved:
+            return "aichat_addressbar_mention_tab_removed"
+        case .aiChatAddressBarMentionPickerCanceled:
+            return "aichat_addressbar_mention_picker_canceled"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
@@ -582,6 +645,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_tab_did_terminate"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
+        case .aiChatVoiceChatStartFailed:
+            return "aichat_voice_chat_start_failed"
         }
     }
 
@@ -638,6 +703,15 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarFileAttached,
+                .aiChatAddressBarFileRemoved,
+                .aiChatAddressBarAttachTabsPickerShown,
+                .aiChatAddressBarAttachTabChosen,
+                .aiChatAddressBarAttachTabRemoved,
+                .aiChatAddressBarAttachPickerCanceled,
+                .aiChatAddressBarMentionPickerShown,
+                .aiChatAddressBarMentionTabChosen,
+                .aiChatAddressBarMentionTabRemoved,
+                .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarImageGenerationActivated,
@@ -708,6 +782,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncDecryptionError(let reason),
                 .aiChatSyncHistoryEnabledError(let reason):
             return ["reason": reason]
+        case .aiChatReportMetricDecodeError(_, let failureReason):
+            return ["failureReason": failureReason.rawValue]
+        case .aiChatVoiceChatStartFailed(let reason):
+            return ["reason": reason.rawValue]
         }
     }
 
@@ -777,7 +855,16 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarSubmitWithTabs,
                 .aiChatAddressBarFileAttached,
+                .aiChatAddressBarFileRemoved,
                 .aiChatAddressBarSubmitWithFiles,
+                .aiChatAddressBarAttachTabsPickerShown,
+                .aiChatAddressBarAttachTabChosen,
+                .aiChatAddressBarAttachTabRemoved,
+                .aiChatAddressBarAttachPickerCanceled,
+                .aiChatAddressBarMentionPickerShown,
+                .aiChatAddressBarMentionTabChosen,
+                .aiChatAddressBarMentionTabRemoved,
+                .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatNtpSubmitWithImage,
@@ -793,6 +880,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatReportMetricDecodeError,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
@@ -815,6 +903,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled,
+                .aiChatVoiceChatStartFailed,
                 .aiChatTabDidTerminate:
             return [.pixelSource]
         }
@@ -845,4 +934,13 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
     case sidebarCloseButton = "sidebar-close-button"
     case contextMenu = "context-menu"
     case tabbarButton = "tabbar-button"
+}
+
+/// Reason associated with a Duck.ai voice-chat start failure reported by the FE
+enum AIChatVoiceChatStartFailedReason: String, CaseIterable {
+    /// FE reported `NotAllowedError` and the OS has denied microphone access to the app —
+    /// the remediation surface was shown.
+    case micOsDenied = "mic_os_denied"
+    /// Any other reason (transient WebKit error, hardware unavailable, etc.) — no action taken.
+    case other
 }

@@ -90,7 +90,7 @@ extension MainViewController {
     // MARK: Fire dialog triggering
 
     func showExperimentFireDialogAfterAIChatResponseIfReady() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
             if experimentDuckAIFireOnboardingFlow.state != .completed {
                 experimentDuckAIFireOnboardingFlow.state = .idle
             }
@@ -109,7 +109,9 @@ extension MainViewController {
         onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
-        showFireButtonPulse()
+        if presentedViewController == nil {
+            showFireButtonPulse()
+        }
         currentTab?.presentExperimentContextualDaxFireDialog()
     }
 
@@ -164,9 +166,15 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.state = .completed
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
+        // Dismiss it explicitly now that the fire step is complete.
+        ViewHighlighter.hideAll()
+        daxDialogsManager.setAsChatFirstPath()
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
-        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
         } else {
@@ -174,19 +182,6 @@ extension MainViewController {
         }
         refreshOmniBar()
         restorePostFireAddressBarPickerIfNeeded()
-    }
-
-    func presentPendingExperimentCompletionDialogIfNeeded() {
-        guard experimentDuckAIFireOnboardingFlow.state == .completed,
-              let message = experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage,
-              let newTabPageViewController else {
-            return
-        }
-
-        ensureExperimentCompletionDialogPresentationPrerequisites()
-        DispatchQueue.main.async {
-            newTabPageViewController.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
-        }
     }
 
     func markSearchContextualOnboardingAsSeenForExperiment() {
@@ -198,7 +193,12 @@ extension MainViewController {
     }
 
     private func ensureExperimentCompletionDialogPresentationPrerequisites() {
-        daxDialogsManager.disableContextualDaxDialogs()
+        // Defer disabling dialogs when a subscription promo is still pending: the NTP's
+        // showNextDaxDialogNew will call dialogProvider.dismiss() (equivalent) after the
+        // promo is dismissed, so contextual dialogs are disabled at the right time.
+        if !daxDialogsManager.subscriptionPromotionPending {
+            daxDialogsManager.disableContextualDaxDialogs()
+        }
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
@@ -231,7 +231,7 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
             // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
             if [.duckAIAnswerStep, .duckAIQuerySelection].contains(onboardingResumeStepStore.resumeStep) {
                 OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)

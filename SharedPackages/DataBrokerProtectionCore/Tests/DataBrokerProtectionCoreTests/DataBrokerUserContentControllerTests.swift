@@ -42,7 +42,7 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     override func tearDown() async throws {
         if let ruleList {
-            WKContentRuleListStore.default()?.removeContentRuleList(forIdentifier: ruleList.identifier) { _ in }
+            try? await WKContentRuleListStore.default()?.removeContentRuleList(forIdentifier: ruleList.identifier)
         }
         ruleList = nil
         try await super.tearDown()

@@ -200,16 +200,7 @@ final class AIChatPreferences: ObservableObject {
     /// Opens duck.ai in a new tab and triggers the Duck.ai Settings modal once the page
     /// has wired up its message subscriptions.
     @MainActor func openDuckAiSettings() {
-        guard let windowController = windowControllersManager.lastKeyMainWindowController else {
-            // No window to host the tab — fall back to a plain open of duck.ai.
-            windowControllersManager.show(url: URL.duckAi, source: .ui, newTab: true, selected: true)
-            return
-        }
-        let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-        let tab = Tab(content: .url(URL.duckAi, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
-        tab.aiChat?.requestOpenSettings()
-        tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
-        windowController.window?.makeKeyAndOrderFront(self)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .openSettings, behavior: .newTab(selected: true))
     }
 
     private func subscribeToDuckAIChromeButtonsVisibilityChanges() {

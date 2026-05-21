@@ -1716,6 +1716,16 @@ extension Pixel {
         case unifiedToggleInputStopGenerationTapped
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
+        // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
+        case autocompleteDuckAIClickWebsite
+        case autocompleteDuckAIClickBookmark
+        case autocompleteDuckAIClickFavorite
+        case autocompleteDuckAIClickHistorySearch
+        case autocompleteDuckAIClickHistorySite
+        case autocompleteDuckAIClickSwitchToTab
+        case autocompleteDuckAIClickChatHistory
+        case autocompleteDuckAIClickSearchDuckDuckGo
+
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -3472,6 +3482,15 @@ extension Pixel.Event {
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
+        case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
+        case .autocompleteDuckAIClickFavorite: return "m_autocomplete_duckai_click_favorite"
+        case .autocompleteDuckAIClickHistorySearch: return "m_autocomplete_duckai_click_history_search"
+        case .autocompleteDuckAIClickHistorySite: return "m_autocomplete_duckai_click_history_site"
+        case .autocompleteDuckAIClickSwitchToTab: return "m_autocomplete_duckai_click_switch_to_tab"
+        case .autocompleteDuckAIClickChatHistory: return "m_autocomplete_duckai_click_chat_history"
+        case .autocompleteDuckAIClickSearchDuckDuckGo: return "m_autocomplete_duckai_click_search_duckduckgo"
+
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"

@@ -192,4 +192,60 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_autocomplete_duckai_click_website": {
+        "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_bookmark": {
+        "description": "Fires when user clicks on a bookmark suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_favorite": {
+        "description": "Fires when user clicks on a favorite suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_history_search": {
+        "description": "Fires when user clicks on a search-based history item in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_history_site": {
+        "description": "Fires when user clicks on a site-based history item in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_switch_to_tab": {
+        "description": "Fires when user taps an open-tab suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_chat_history": {
+        "description": "Fires when user taps a previous Duck.ai conversation in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_search_duckduckgo": {
+        "description": "Fires when user taps the 'Search DuckDuckGo: X' exit row in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
 }

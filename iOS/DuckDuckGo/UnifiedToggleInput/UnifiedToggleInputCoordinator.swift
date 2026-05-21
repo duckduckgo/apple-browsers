@@ -1634,6 +1634,48 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }
 
+    // MARK: - Unified Toggle Input Tool Pixels
+
+    private func fireToolSelectedPixel(for tool: AIChatRAGTool) {
+        switch tool {
+        case .imageGeneration:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationSelected)
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSelected)
+        default:
+            break
+        }
+    }
+
+    private func fireToolDeselectedPixel(for tool: AIChatRAGTool) {
+        switch tool {
+        case .imageGeneration:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationDeselected)
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchDeselected)
+        default:
+            break
+        }
+    }
+    private func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?) {
+        guard let selectedTool else { return }
+        switch selectedTool {
+        case .imageGeneration:
+            let hasReferenceImage = viewController.currentAttachments.contains { attachment in
+                if case .image = attachment { return true }
+                return false
+            }
+            DailyPixel.fireDailyAndCount(
+                pixel: .unifiedToggleInputImageGenerationSubmitted,
+                withAdditionalParameters: ["has_reference_image": hasReferenceImage ? "true" : "false"]
+            )
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSubmitted)
+        default:
+            break
+        }
+    }
+
     // MARK: - Session Management
 
     @MainActor
@@ -1649,14 +1691,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 extension UnifiedToggleInputCoordinator {
     
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        let previousTool = toolsController.selectedTool
         switch identifier {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
         case .imageGeneration:
             toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
         }
+        let currentTool = toolsController.selectedTool
+        fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
         refreshToolsPresentation()
         recordUserChoiceToStore()
+    }
+
+    private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
+        guard previous != current else { return }
+        if let previous, current == nil || current != previous {
+            fireToolDeselectedPixel(for: previous)
+        }
+        if let current {
+            fireToolSelectedPixel(for: current)
+        }
     }
 }
 
@@ -1700,6 +1755,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
             processSessionActivity(mode: .aiChat)
+            fireToolSubmittedPixelIfNeeded(selectedTool: toolsController.selectedTool)
 
             let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload
@@ -1749,7 +1805,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
+        let previousTool = toolsController.selectedTool
         clearSelectedTool()
+        if let previousTool {
+            fireToolDeselectedPixel(for: previousTool)
+        }
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {

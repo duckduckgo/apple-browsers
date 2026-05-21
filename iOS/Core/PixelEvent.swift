@@ -1698,6 +1698,13 @@ extension Pixel {
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
 
+        // MARK: Unified Toggle Input (UTI)
+        case unifiedToggleInputImageGenerationSelected
+        case unifiedToggleInputImageGenerationDeselected
+        case unifiedToggleInputImageGenerationSubmitted
+        case unifiedToggleInputWebSearchSelected
+        case unifiedToggleInputWebSearchDeselected
+        case unifiedToggleInputWebSearchSubmitted
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -3436,6 +3443,13 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
 
+        // MARK: Unified Toggle Input (UTI)
+        case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
+        case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
+        case .unifiedToggleInputImageGenerationSubmitted: return "m_aichat_unified_input_image_generation_submitted"
+        case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
+        case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
+        case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"

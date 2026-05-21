@@ -996,9 +996,22 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
            let failingUrl = error.failingUrl ?? content.urlForWebView,
            failingUrl.isHttp || failingUrl.isHttps {
 
-            // Use location.replace to retry the failed URL in-place without adding a back/forward entry.
+            // Use location.replace to retry the failed URL in-place without adding a back/forward
+            // entry. Invoke without user gesture so the resulting navigation arrives at the policy
+            // chain as user-initiated=false .other — PopupHandlingTabExtension would otherwise
+            // classify a user-initiated .other as a link activation and (for pinned, cross-origin
+            // navigations) cancel it.
+            let script = "location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')"
             self.content = .url(failingUrl, credential: nil, source: .reload)
-            webView.evaluateJavaScript("location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')", in: nil, in: .defaultClient)
+            if featureFlagger.isFeatureOn(.newErrorPageReload),
+               webView.evaluateJavaScriptWithoutUserGesture(script) {
+                return nil
+            }
+            // Kill-switch fallback: legacy `javascript:` URL trampoline. Reintroduces the
+            // transient address-bar flash but preserves all the navigation semantics.
+            if let redirectUrl = URL(string: "javascript:\(script)") {
+                webView.load(URLRequest(url: redirectUrl))
+            }
             return nil
         }
 

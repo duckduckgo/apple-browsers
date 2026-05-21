@@ -50,6 +50,22 @@ extension Preferences {
                                                        image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
+
+                            if model.shouldShowDuckAiSettingsLink {
+                                Button {
+                                    model.openDuckAiSettings()
+                                } label: {
+                                    HStack {
+                                        Text(UserText.duckAiSettingsLink)
+                                        Image(.externalAppScheme)
+                                    }
+                                    .foregroundColor(Color.linkBlue)
+                                    .cursor(.pointingHand)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 6)
+                                .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+                            }
                         }
 
                         Button(model.isAIFeaturesEnabled ? UserText.aiChatDisableButton : UserText.aiChatEnableButton) {

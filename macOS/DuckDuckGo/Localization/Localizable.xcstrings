@@ -27764,6 +27764,18 @@
         }
       }
     },
+    "duckai.duckai-settings.link" : {
+      "comment" : "Button to open the Duck.ai Settings in a new tab from Settings → AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        }
+      }
+    },
     "duckai.enable.button" : {
       "comment" : "Button to enable Duck.ai feature",
       "extractionState" : "extracted_with_value",

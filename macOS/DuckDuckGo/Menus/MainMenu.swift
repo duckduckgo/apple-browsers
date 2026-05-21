@@ -629,6 +629,8 @@ final class MainMenu: NSMenu {
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
         updateDuckAIChromeButtonMenuItems()
+
+        alignItemTextWithIconsRecursively()
     }
 
     private func updateAlwaysShowFirstTimeQuitSurvey() {

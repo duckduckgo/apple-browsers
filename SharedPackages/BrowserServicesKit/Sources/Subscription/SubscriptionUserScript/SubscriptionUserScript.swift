@@ -126,7 +126,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) else {
+        guard let subscription = try? await subscriptionManager.getSubscription() else {
             return .notSubscribed
         }
         return .init(subscription)

@@ -13,7 +13,8 @@
                 "enum": ["about", "more_options", "main_menu"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_notification_shown": {
@@ -38,30 +39,7 @@
         "description": "Fired when the network request to fetch latest release information fails",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": [
-            {
-                "key": "e",
-                "type": "integer",
-                "description": "Error code of the LatestReleaseError enum"
-            },
-            {
-                "key": "d",
-                "type": "string",
-                "description": "Error description of the LatestReleaseError enum"
-            },
-            {
-                "key": "ud",
-                "type": "string",
-                "description": "Error domain of the LatestReleaseError enum"
-            },
-            {
-                "key": "ud2",
-                "type": "string",
-                "description": "Underlying error of the LatestReleaseError enum"
-            },
-            "appVersion",
-            "pixelSource"
-        ]
+        "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain", "appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_notes_loading_error": {
         "description": "Fires when the release notes page shows a loading error (no update info available after update cycle completes or hasn't started). Debounced by 1 second.",

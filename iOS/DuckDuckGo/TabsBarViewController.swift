@@ -190,22 +190,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
-        
+
         tabSwitcherButton.isAccessibilityElement = true
         tabSwitcherButton.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
         tabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabsCount)
 
-        let availableWidth = collectionView.frame.size.width
-        let maxVisibleItems = min(maxItems, tabsCount)
-        
-        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
-        itemWidth = max(itemWidth, Constants.minItemWidth)
-        itemWidth = min(itemWidth, availableWidth / 2)
-
-        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
-        }
-        
+        recomputeItemSize()
         reloadData()
 
         if scrollToSelected {
@@ -218,6 +208,20 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     }
 
+    private func recomputeItemSize() {
+        let availableWidth = collectionView.frame.size.width
+        let maxVisibleItems = min(maxItems, tabsCount)
+        guard maxVisibleItems > 0 else { return }
+
+        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
+        itemWidth = max(itemWidth, Constants.minItemWidth)
+        itemWidth = min(itemWidth, availableWidth / 2)
+
+        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+        }
+    }
+
     private func reloadData() {
         collectionView.reloadData()
         tabSwitcherButton.tabCount = tabsCount
@@ -226,12 +230,20 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     func backgroundTabAdded() {
+        recomputeItemSize()
         reloadData()
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount
         }
     }
-    
+
+    func reloadCell(for tab: Tab) {
+        guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        let indexPath = IndexPath(item: index, section: 0)
+        guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
+        collectionView.reloadItems(at: [indexPath])
+    }
+
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
         longPressTabGesture.minimumPressDuration = 0.1

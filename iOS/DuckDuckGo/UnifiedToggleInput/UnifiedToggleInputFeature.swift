@@ -24,12 +24,11 @@ import PrivacyConfig
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
-    var isFeatureFlagEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
+    private static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
 
     /// Evaluate the feature flag once and persist the result for the session.
     /// Must be called early in the app launch sequence, before any consumer
@@ -45,7 +44,7 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         self.devicePlatform = devicePlatform
     }
 
-    var isFeatureFlagEnabled: Bool {
+    private var isFeatureFlagEnabled: Bool {
         UserDefaults.app.bool(forKey: Self.isFeatureFlagEnabledKey)
     }
 

@@ -564,7 +564,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,
-            windowControllersManager: Application.appDelegate.windowControllersManager
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
         return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, origin: .moreOptionsMenu)
     }
@@ -1425,7 +1426,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     private func addMenuItems() async {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217
-        let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
+        let features = (try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)) ?? []
 
         if features.contains(.networkProtection) {
             addItem(networkProtectionItem)

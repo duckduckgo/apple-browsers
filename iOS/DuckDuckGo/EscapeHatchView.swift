@@ -27,15 +27,18 @@ struct EscapeHatchView: View {
         HStack(spacing: model.isTargetTabPresent ? Metrics.spacing : 0) {
             ReturnToTabCard(model: model)
                 .frame(maxWidth: model.isTargetTabPresent ? .infinity : 0)
-                .opacity(model.isTargetTabPresent ? 1 : 0)
                 .clipped()
+                .opacity(model.isTargetTabPresent ? 1 : 0)
                 .allowsHitTesting(model.isTargetTabPresent)
 
-            TabSwitcherPill(count: model.openTabCount, onTap: model.onTabSwitcherTap)
+            TabSwitcherPill(count: model.openTabCount,
+                            isExpanded: !model.isTargetTabPresent,
+                            onTap: model.onTabSwitcherTap)
                 .frame(maxWidth: model.isTargetTabPresent ? TabSwitcherPill.compactSize : .infinity)
                 .frame(height: TabSwitcherPill.compactSize)
         }
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isTargetTabPresent)
+        .frame(height: TabSwitcherPill.compactSize)
     }
 
     private enum Metrics {

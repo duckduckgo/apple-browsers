@@ -386,6 +386,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Duck.ai query experiment during onboarding
     case onboardingDuckAIQueryExperiment
 
+    /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
+    case onboardingDuckAIQueryTrackersDemoExperiment
+
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
@@ -493,6 +496,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
+
+    /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
+    /// auto-grants per-site mic permission at launch, locks the Permission Center row,
+    /// surfaces a "System microphone disabled" warning when the OS has denied access, and
+    /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
+    case nativeVoicePermissionFlow
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -538,10 +547,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
-
-    /// Connection failure loop detection for VPN
-    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
-    case connectionFailureLoopDetection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

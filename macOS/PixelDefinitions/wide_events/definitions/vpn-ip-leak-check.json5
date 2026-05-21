@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "macos-vpn-ip-leak-check",
-            "version": "0.1"
+            "version": "2.0"
         },
         "feature": {
             "name": "vpn-ip-leak-check",
@@ -29,6 +29,10 @@
                     "egress_server_name": {
                         "type": "string",
                         "description": "Name of the VPN egress server the cycle ran against"
+                    },
+                    "os_version": {
+                        "type": "string",
+                        "description": "Operating system major/minor version at the time of the leak check, for example 13.7 or 26.4"
                     },
                     "ipv4": {
                         "type": "object",

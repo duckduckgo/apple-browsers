@@ -158,7 +158,7 @@
 "ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "YouTube Ad Blocking";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Bottom";

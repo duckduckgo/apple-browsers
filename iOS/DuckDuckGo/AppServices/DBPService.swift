@@ -152,7 +152,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     }
 
     var isContentBlockingOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpJobWebViewContentBlocking)
+        appDependencies.featureFlagger.isFeatureOn(.dbpContentBlocking)
     }
 
     var isFreemiumPIREnabled: Bool {

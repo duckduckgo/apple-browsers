@@ -32,6 +32,7 @@ final class SyncPromoManagerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
+        PixelFiringMock.tearDown()
         customSuite = UserDefaults(suiteName: testGroupName)
         customSuite.removePersistentDomain(forName: testGroupName)
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
@@ -39,6 +40,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        PixelFiringMock.tearDown()
         UserDefaults.app = .standard
         syncService = nil
 
@@ -384,6 +386,48 @@ final class SyncPromoManagerTests: XCTestCase {
         }
 
         XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+    }
+
+    // MARK: - Pixels
+
+    func testDismissPromoFiresDismissedPixelWithTouchpointAndReason() {
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                pixelFiring: PixelFiringMock.self)
+
+        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat] {
+            PixelFiringMock.tearDown()
+
+            syncPromoManager.dismissPromoFor(touchpoint, reason: .userTapped)
+
+            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.syncPromoDismissed.name)
+            XCTAssertEqual(PixelFiringMock.lastParams, [
+                "source": touchpoint.rawValue,
+                "reason": SyncPromoManager.DismissalReason.userTapped.rawValue
+            ])
+        }
+    }
+
+    func testRecordImpressionForAIChatWhenCapReachedFiresDismissedPixelWithImpressionCapReason() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true),
+                                                pixelFiring: PixelFiringMock.self)
+        syncPromoManager.resetPromos()
+
+        for _ in 0..<SyncPromoManager.aiChatImpressionCap {
+            syncPromoManager.recordImpressionFor(.aiChat)
+        }
+
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.syncPromoDismissed.name)
+        XCTAssertEqual(PixelFiringMock.lastParams, [
+            "source": SyncPromoManager.Touchpoint.aiChat.rawValue,
+            "reason": SyncPromoManager.DismissalReason.impressionCap.rawValue
+        ])
     }
 
     // MARK: - Mock Creation

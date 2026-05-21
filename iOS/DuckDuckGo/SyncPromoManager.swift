@@ -63,6 +63,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private let syncService: DDGSyncing
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<SyncPromoStorageKeys>
+    private let pixelFiring: any PixelFiring.Type
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -86,11 +87,13 @@ final class SyncPromoManager: SyncPromoManaging {
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring()) {
+         storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring(),
+         pixelFiring: any PixelFiring.Type = Pixel.self) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = storage
+        self.pixelFiring = pixelFiring
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint, count: Int) -> Bool {
@@ -162,8 +165,8 @@ final class SyncPromoManager: SyncPromoManaging {
     func dismissPromoFor(_ touchpoint: Touchpoint, reason: DismissalReason) {
         markPromoHandledFor(touchpoint)
 
-        Pixel.fire(.syncPromoDismissed,
-                   withAdditionalParameters: ["source": touchpoint.rawValue, "reason": reason.rawValue])
+        pixelFiring.fire(.syncPromoDismissed,
+                         withAdditionalParameters: ["source": touchpoint.rawValue, "reason": reason.rawValue])
     }
 
     func resetPromos() {

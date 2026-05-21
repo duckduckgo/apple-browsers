@@ -20,21 +20,9 @@ import Foundation
 import TrackerRadarKit
 import WebKit
 
-/// Source of content-blocking assets the DBP broker job webview installs.
-///
-/// Implementations MUST return fresh values on each access — the same provider
-/// instance is reused across many jobs over the app's lifetime (it lives on
-/// `BrokerProfileJobDependencies`), so cached values would prevent TDS updates from
-/// ever reaching the job webview. Reads happen on the main actor from
-/// `DataBrokerUserContentController.init` at job-start time.
 @MainActor
 public protocol DBPWebViewContentBlocking {
-    /// Compiled WKContentRuleLists to install on `DataBrokerUserContentController`.
-    /// Re-evaluated on every read so rule recompilations are picked up by future jobs.
+    /// DBP expects both of these to be reevaluated on every read so rule recompilations are picked up by future jobs.
     var contentRuleLists: [WKContentRuleList] { get }
-
-    /// Surrogate-filtered tracker data passed to the non-isolated `ContentScopeUserScript`
-    /// so C-S-S can inject surrogates for blocked third-party scripts.
-    /// Re-evaluated on every read.
     var surrogateTrackerData: TrackerData? { get }
 }

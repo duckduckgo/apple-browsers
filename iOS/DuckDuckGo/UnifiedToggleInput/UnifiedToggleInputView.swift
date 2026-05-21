@@ -418,10 +418,7 @@ final class UnifiedToggleInputView: UIView {
 
     private var flankedShadows: [CompositeShadowView.Shadow] {
         [
-            .init(id: ShadowID.outer,
-                  color: UIColor(designSystemColor: .shadowSecondary),
-                  radius: 12,
-                  offset: CGSize(width: 0, height: 4)),
+            CompositeShadowView.Shadow.defaultLayer1.withID(ShadowID.outer),
             .init(id: ShadowID.rim,
                   color: flankedHaloColor,
                   radius: 6,
@@ -853,10 +850,12 @@ final class UnifiedToggleInputView: UIView {
         case (.top, true):
             applyToggleRevealChanges()
             layoutIfNeeded()
+            // applyCardLayout's `(_, _)` case applies expandedShadows internally; the toggle-reveal
+            // path bypasses it, so morph the omnibar-matching pre-stage shadows back here.
+            expandedShadowView.updateShadows(expandedShadows)
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
-        expandedShadowView.updateShadows(expandedShadows)
     }
 
     /// Inactive editing pose. Call inside a UIView.animate block.

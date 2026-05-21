@@ -59,8 +59,7 @@ extension CompositeShadowView.Shadow {
 }
 
 public extension CompositeShadowView.Shadow {
-    /// Returns a copy with a different `id` so a shadow definition can be reused across
-    /// `CompositeShadowView`s that key their sublayers under different naming schemes.
+    /// Copy with overridden `id` — reuse a shadow under a different sublayer key.
     func withID(_ id: String) -> Self {
         Self(id: id, color: color, opacity: opacity, radius: radius, offset: offset)
     }

@@ -270,37 +270,22 @@ class SwitchBarButtonsView: UIView {
         separatorView.isHidden = !buttonState.showsSeparator
     }
 
-    /// Hides every button except the duck.ai chip so the chip can solo-animate to the omnibar's
-    /// chat-icon position without clear/voice/stop lingering and colliding with the omnibar icons
-    /// fading in. Iterates the stack so newly-added buttons are auto-covered.
-    func hideNonChipButtonsForDismissCollapse() {
+    /// Iterates the stack so newly-added buttons are auto-covered — the duck.ai chip stays
+    /// visible so it can solo-animate to the omnibar's chat-icon position via
+    /// `setAIChatShortcutDismissed`.
+    func setNonChipButtonsAlpha(_ alpha: CGFloat) {
         for view in stack.arrangedSubviews where view !== aiChatShortcutButton {
-            view.alpha = 0
+            view.alpha = alpha
         }
     }
 
-    func restoreNonChipButtonsAfterDismissCollapse() {
-        for view in stack.arrangedSubviews where view !== aiChatShortcutButton {
-            view.alpha = 1
-        }
-    }
-
-    /// Slides the duck.ai chip to the omnibar's chat-icon resting position and fades it out so
-    /// it crossfades with the omnibar's aiChat button (which fades in at its own X) — avoids the
-    /// two-icons-visible-at-once moment when the chip's final X doesn't exactly match.
-    func fadeAIChatShortcutForDismiss(duration: TimeInterval, horizontalOffset: CGFloat) {
+    /// Slides + fades the duck.ai chip so it crossfades with the omnibar's aiChat button (which
+    /// fades in at its own X) — avoids the two-icons-visible-at-once moment when the chip's
+    /// landing X doesn't exactly match. Restore via `setAIChatShortcutDismissed(false, …)`.
+    func setAIChatShortcutDismissed(_ dismissed: Bool, duration: TimeInterval, horizontalOffset: CGFloat = 0) {
         UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
-            self.aiChatShortcutButton.transform = CGAffineTransform(translationX: horizontalOffset, y: 0)
-            self.aiChatShortcutButton.alpha = 0
-        }
-    }
-
-    /// Restores the override applied by `fadeAIChatShortcutForDismiss` so the reused chip
-    /// re-presents in sync — back at its resting position, fully opaque.
-    func restoreAIChatShortcutAfterDismiss(duration: TimeInterval) {
-        UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
-            self.aiChatShortcutButton.transform = .identity
-            self.aiChatShortcutButton.alpha = 1
+            self.aiChatShortcutButton.transform = dismissed ? CGAffineTransform(translationX: horizontalOffset, y: 0) : .identity
+            self.aiChatShortcutButton.alpha = dismissed ? 0 : 1
         }
     }
 

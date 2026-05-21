@@ -63,8 +63,7 @@ public class CompositeShadowView: UIView {
         shadowView.layer.applyShadowProperties(shadow, in: self)
     }
 
-    /// Updates each shadow by `id` — see `updateShadow(_:)`. Callers without `id`s should use
-    /// `shadows = …` instead.
+    /// Batch variant of `updateShadow(_:)`.
     public func updateShadows(_ shadows: [Shadow]) {
         shadows.forEach(updateShadow)
     }

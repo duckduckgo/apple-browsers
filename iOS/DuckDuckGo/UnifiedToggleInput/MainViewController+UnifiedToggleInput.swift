@@ -938,17 +938,18 @@ private extension MainViewController {
             )
         }
 
-        // Outer commits alpha=0 to the presentation layer before the fade animator captures `from`.
-        UIView.animate(withDuration: 0, animations: {
+        // Snap alpha to 0 outside the surrounding dismiss animate so the fade animator captures
+        // `from = 0`. Without `performWithoutAnimation`, the alpha set would interpolate with
+        // the dismiss transaction and the icons would briefly become visible mid-collapse.
+        UIView.performWithoutAnimation {
             revealBarView?.setIconContainersAlpha(0)
-        }, completion: { _ in
-            UIView.animate(
-                withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
-                delay: 0,
-                options: [.curveEaseIn, .allowUserInteraction],
-                animations: { revealBarView?.setIconContainersAlpha(1) }
-            )
-        })
+        }
+        UIView.animate(
+            withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
+            delay: 0,
+            options: [.curveEaseIn, .allowUserInteraction],
+            animations: { revealBarView?.setIconContainersAlpha(1) }
+        )
     }
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for

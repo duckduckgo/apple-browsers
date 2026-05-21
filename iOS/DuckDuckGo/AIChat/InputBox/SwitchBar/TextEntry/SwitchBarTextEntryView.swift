@@ -350,19 +350,19 @@ class SwitchBarTextEntryView: UIView {
         textView.text = snapshot.text
         setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
         updatePlaceholderVisibility()
-        // Handler.buttonState lags the dismiss (text isn't cleared until completion), so clear/voice/
-        // stop would otherwise linger and collide with the omnibar icons fading in. The chip stays
-        // animatable so it can slide+fade and crossfade with the omnibar's aiChat icon.
-        buttonsView.hideNonChipButtonsForDismissCollapse()
-        buttonsView.fadeAIChatShortcutForDismiss(duration: Constants.buttonStateAnimationDuration,
-                                                  horizontalOffset: Constants.dismissedChipHorizontalOffset)
+        // State lags dismiss — hide non-chip buttons explicitly so they don't collide with the
+        // omnibar icons fading in. Chip stays animatable to crossfade with the omnibar's aiChat.
+        buttonsView.setNonChipButtonsAlpha(0)
+        buttonsView.setAIChatShortcutDismissed(true,
+                                                duration: Constants.buttonStateAnimationDuration,
+                                                horizontalOffset: Constants.dismissedChipHorizontalOffset)
     }
 
     /// Restore the override applied by `applyDismissSnapshot` so the reused view re-presents
     /// in sync with the handler — chip visible at its resting position.
     func clearDismissSnapshot() {
-        buttonsView.restoreNonChipButtonsAfterDismissCollapse()
-        buttonsView.restoreAIChatShortcutAfterDismiss(duration: Constants.buttonStateAnimationDuration)
+        buttonsView.setNonChipButtonsAlpha(1)
+        buttonsView.setAIChatShortcutDismissed(false, duration: Constants.buttonStateAnimationDuration)
         setPlaceholderText(placeholderText(for: currentMode))
         if textView.text != handler.currentText {
             textView.text = handler.currentText

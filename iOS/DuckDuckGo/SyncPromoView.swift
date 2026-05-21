@@ -31,7 +31,7 @@ struct SyncPromoView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    Image(viewModel.image)
+                    Image(rebrandable: viewModel.image)
                         .scaledToFit()
                         .accessibilityHidden(true)
                     

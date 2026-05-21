@@ -257,6 +257,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
+    case appRebranding
+
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 

@@ -19,6 +19,7 @@
 import AppKit
 import Carbon
 import Combine
+import Common
 import SwiftUI
 import PixelKit
 
@@ -33,6 +34,7 @@ final class BookmarkListViewController: NSViewController {
 
     fileprivate enum Constants {
         static let preferredContentSize = CGSize(width: 420, height: 500)
+        static var panelInset: CGFloat { AppVersion.isLiquidGlassSupported ? 14 : 0 }
     }
 
     weak var delegate: BookmarkListViewControllerDelegate?
@@ -277,6 +279,7 @@ final class BookmarkListViewController: NSViewController {
         manageBookmarksButton.imageHugsTitle = true
 
         scrollView.borderType = .noBorder
+        scrollView.focusRingType = .none
         scrollView.drawsBackground = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasHorizontalScroller = false
@@ -286,11 +289,16 @@ final class BookmarkListViewController: NSViewController {
         scrollView.autohidesScrollers = true
         scrollView.automaticallyAdjustsContentInsets = false
         scrollView.scrollerInsets = NSEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
-        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 12)
+        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: AppVersion.isLiquidGlassSupported ? 20 : 6, right: 0)
 
         let column = NSTableColumn()
-        column.width = scrollView.frame.width - (showSyncPromo ? 44 : 32)
+        column.width = scrollView.frame.width - (showSyncPromo ? 44 : 32) - 2 * Constants.panelInset
+        column.minWidth = column.width
+        column.maxWidth = column.width
+        column.resizingMask = []
         outlineView.addTableColumn(column)
+        outlineView.columnAutoresizingStyle = .noColumnAutoresizing
+        outlineView.focusRingType = .none
         outlineView.translatesAutoresizingMaskIntoConstraints = showSyncPromo ? false : true
         if showSyncPromo {
             outlineView.translatesAutoresizingMaskIntoConstraints = false
@@ -378,8 +386,8 @@ final class BookmarkListViewController: NSViewController {
 
             scrollView.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.panelInset),
+            view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: Constants.panelInset),
 
             emptyStateHostingView.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
             emptyStateHostingView.centerXAnchor.constraint(equalTo: boxDivider.centerXAnchor),
@@ -429,7 +437,7 @@ final class BookmarkListViewController: NSViewController {
         let availableHeightAbove = screenFrame.maxY - screenPosRect.maxY - bookmarkHeaderHeight
         let availableHeight = max(availableHeightAbove, availableHeightBelow)
 
-        let totalHeightForRootBookmarks = (CGFloat(outlineView.numberOfRows) * BookmarkOutlineCellView.rowHeight) + bookmarkHeaderHeight + 12.0
+        let totalHeightForRootBookmarks = (CGFloat(outlineView.numberOfRows) * BookmarkOutlineCellView.rowHeight) + bookmarkHeaderHeight + 12.0 + Constants.panelInset
         var contentSize = Constants.preferredContentSize
 
         if totalHeightForRootBookmarks > availableHeight {
@@ -929,11 +937,11 @@ extension BookmarkListViewController {
                                         documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
                                         documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
                                         documentView.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.contentView.trailingAnchor),
-                                        documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor, constant: -12),
+                                        documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
 
-                                        syncPromoViewHostingView.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 8),
-                                        syncPromoViewHostingView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: 8),
-                                        syncPromoViewHostingView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: -8),
+                                        syncPromoViewHostingView.topAnchor.constraint(equalTo: documentView.topAnchor, constant: AppVersion.isLiquidGlassSupported ? 14 : 8),
+                                        syncPromoViewHostingView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: AppVersion.isLiquidGlassSupported ? 0 : 8),
+                                        syncPromoViewHostingView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: AppVersion.isLiquidGlassSupported ? 0 : -8),
 
                                         outlineView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
                                         outlineView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),

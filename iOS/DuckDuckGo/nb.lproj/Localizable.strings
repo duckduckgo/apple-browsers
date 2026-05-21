@@ -116,8 +116,7 @@
 "action.title.newFireTabAction" = "Ny Fire-fane";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Åpne i Fire-fanen";
-
+"action.title.newFireTabForUrl" = "Åpne i en Fire-fane";
 /* Create New Tab action */
 "action.title.newTabAction" = "Ny fane";
 
@@ -214,53 +213,10 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-funksjoner";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
-"aichat.attachment.file.count.limit" = "Du kan bare legge ved %d filer per samtale.";
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
 
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.encrypted" = "Vi kan ikke lese de vedlagte filene, da minst én av dem er kryptert.";
-
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
-"aichat.attachment.file.exceeds.conversation.limit" = "De vedlagte filene overskrider den totale størrelsesgrensen på %d MB.";
-
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
-"aichat.attachment.file.too.large" = "Filen er for stor. Maksimal filstørrelse er %d MB.";
-
-/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
-"aichat.attachment.file.too.many.pages" = "En av de vedlagte filene har flere sider enn vi støtter. Last opp filer med maksimalt %d sider.";
-
-/* Error message displayed when one or more attached files cannot be read */
-"aichat.attachment.file.unreadable" = "En av de vedlagte filene kan ikke leses. Kontroller at den ikke er ødelagt, og prøv igjen.";
-
-/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
-"aichat.attachment.image.count.limit" = "Du kan bare legge ved %d bilder per samtale.";
-
-/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
-"aichat.attachment.image.turn.limit" = "Du kan bare legge ved %d bilder av gangen.";
-
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Legg ved fil";
-
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Legg ved bilde";
-
-/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Ta bilde";
-
-/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
-"aichat.attachment.prompt.too.long" = "Den meldingen er for lang til å sendes med vedlegg.";
-
-/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
-"aichat.attachment.unavailable" = "Vedlegg er midlertidig utilgjengelige. Prøv igjen senere.";
-
-/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
-"aichat.attachment.unsupported.file.type" = "Denne filtypen støttes ikke.";
-
-/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
-"aichat.attachment.unsupported.file.type.multiple" = "Denne filtypen støttes ikke. Legg heller ved en %1$@ eller %2$@.";
-
-/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "Denne filtypen støttes ikke. Legg heller ved en %@.";
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ta et bilde";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
@@ -1570,6 +1526,9 @@
 /* No comment provided by engineer. */
 "Debug" = "Feilsøke";
 
+/* No comment provided by engineer. */
+"Delete" = "Slett";
+
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhet";
 
@@ -1681,11 +1640,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
-/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
-"duckai.quick.action.ask.about.page" = "Spør om siden";
-
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Legg ved sideinnhold";
+
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Spør om siden";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Oppsummer denne siden";
@@ -2037,7 +1996,6 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Sist brukte Fire-fane";
-
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tilbake til %@";
 
@@ -2388,7 +2346,6 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-fane";
-
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrøm";
 
@@ -3414,7 +3371,6 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Vil du slette Fire-faner og dataene i dem?";
-
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Vil du slette faner og nettstedsdata?";
 
@@ -4500,7 +4456,6 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Lukk fane";
-
 /* Accessibility label on remove button */
 "tab.close.home" = "Lukk hjem-fane";
 
@@ -4512,7 +4467,6 @@
 
 /* New tab title */
 "tab.new.title" = "Ny fane";
-
 /* Accessibility label on tab cell */
 "tab.open.home" = "Åpne hjem-fane";
 
@@ -4521,7 +4475,6 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Åpne Fire-fane";
-
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Åpne \"%1$@\" på %2$@";
 

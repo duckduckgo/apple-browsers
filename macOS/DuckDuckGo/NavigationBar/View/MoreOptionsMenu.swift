@@ -1202,6 +1202,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
         exportBookmarItem.isEnabled = bookmarkManager.list?.totalBookmarks != 0
         addItem(exportBookmarItem)
 
+        alignItemTextWithIcons()
     }
 
     @MainActor

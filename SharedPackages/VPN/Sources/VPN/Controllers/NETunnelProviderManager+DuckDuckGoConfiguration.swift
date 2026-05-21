@@ -34,11 +34,17 @@ extension NETunnelProviderManager {
         localizedDescription = "DuckDuckGo VPN"
         isEnabled = true
 
+        // Preserve the existing providerBundleIdentifier so this works when called from
+        // the widget/shortcut extension processes — iOS only auto-resolves the provider
+        // against the calling app's bundle, and extensions don't host packet tunnels.
+        let existingProviderBundleIdentifier = (protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier
+
         protocolConfiguration = {
             let protocolConfiguration = NETunnelProviderProtocol()
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
             protocolConfiguration.providerConfiguration = [:]
             protocolConfiguration.disconnectOnSleep = false
+            protocolConfiguration.providerBundleIdentifier = existingProviderBundleIdentifier
 
             protocolConfiguration.enforceRoutes = settings.enforceRoutes
             protocolConfiguration.includeAllNetworks = settings.includeAllNetworks

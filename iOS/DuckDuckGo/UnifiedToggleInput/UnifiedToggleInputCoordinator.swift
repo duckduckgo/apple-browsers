@@ -2301,6 +2301,7 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToStopGeneratingTap() {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
+                Pixel.fire(pixel: .unifiedToggleInputStopGenerationTapped)
                 self?.didPressStopGeneratingButton.send()
             }
             .store(in: &cancellables)

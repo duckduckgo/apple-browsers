@@ -145,4 +145,11 @@
             }
         ]
     },
+    "m_aichat_unified_input_stop_generation_tapped": {
+        "description": "Fires when the user taps the stop button during Duck.ai stream in the Unified Toggle Input.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
 }

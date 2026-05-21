@@ -32,7 +32,6 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    @MainActor
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {

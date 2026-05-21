@@ -249,6 +249,7 @@ public extension DesignSystemImages {
             public static var fileIssue: DesignSystemImage { .init(resource: .fileIssue128) }
             public static var bringStuff: DesignSystemImage { .init(resource: .bringStuff128) }
             public static var fire: DesignSystemImage { .init(resource: .fire128) }
+            public static var youTubeAdBlockWarning: DesignSystemImage { .init(resource: .youTubeWarningFeature128) }
         }
     }
 }

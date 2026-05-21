@@ -31,11 +31,31 @@ public protocol AdBlockingAvailabilityProviding {
     /// Whether ad-blocking is fully enabled (feature available AND user opted in)
     var isEnabled: Bool { get }
 
+    /// Whether the feature has been remotely disabled (e.g. via privacy config) for users
+    /// that previously had it rolled out. UI surfaces should hide the feature when true.
+    var isRemotelyDisabled: Bool { get }
+
+    /// Whether the user has disabled ad-blocking for the current app session via the
+    /// browsing-menu picker. Resets on cold launch.
+    var isDisabledUntilRelaunch: Bool { get }
+
+    /// Mark ad-blocking as disabled until the next app launch.
+    func disableUntilRelaunch()
+
+    /// Clear the disable-until-relaunch override (called when the user re-enables explicitly).
+    func clearDisableUntilRelaunch()
+
     /// Whether the ad-block animation should be shown for the given URL.
     /// Platform conformances use this to add URL-specific checks (e.g., YouTube video pages).
     func shouldShowAnimation(for url: URL) -> Bool
 }
 
 extension AdBlockingAvailabilityProviding {
-    public var isEnabled: Bool { isFeatureAvailable && isEnabledByUser }
+    public var isEnabled: Bool {
+        isFeatureAvailable && isEnabledByUser && !isRemotelyDisabled && !isDisabledUntilRelaunch
+    }
+    public var isRemotelyDisabled: Bool { false }
+    public var isDisabledUntilRelaunch: Bool { false }
+    public func disableUntilRelaunch() {}
+    public func clearDisableUntilRelaunch() {}
 }

@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SettingsYouTubeAdBlockingView: View {
@@ -58,21 +59,20 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
-                if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                if viewModel.isYouTubeAdBlockingRemotelyDisabled {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                        remotelyDisabledRow
+                            .listRowBackground(Color(designSystemColor: .surface))
+                    }
+                } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(UserText.youTubeAdBlockingExplanation)) {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                        adBlockingToggleCell
                     }
                 } else {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(footerAttributedString)) {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                        adBlockingToggleCell
                     }
                 }
             }
@@ -106,10 +106,36 @@ struct SettingsYouTubeAdBlockingView: View {
         }
     }
 
+    private var adBlockingToggleCell: some View {
+        SettingsCellView(
+            label: UserText.youTubeAdBlockingToggle,
+            subtitle: viewModel.isYouTubeAdBlockingDisabledUntilRelaunch ? UserText.youTubeAdBlockingDisabledUntilRelaunch : nil,
+            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+        )
+    }
+
+    private var remotelyDisabledRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(uiImage: DesignSystemImages.Color.Size24.exclamationMedium)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(UserText.youTubeAdBlockingToggle)
+                    .daxHeadline()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(UserText.youTubeAdBlockingUnavailableMessage)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
     private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
 
     private var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
+        var base = AttributedString(UserText.youTubeAdBlockingExplanation)
+        base.append(AttributedString("\n\n"))
+        base.append(AttributedString(UserText.youTubeAdBlockingToggleFooter))
         base.append(AttributedString(" "))
         var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
         link.foregroundColor = Color(designSystemColor: .accent)

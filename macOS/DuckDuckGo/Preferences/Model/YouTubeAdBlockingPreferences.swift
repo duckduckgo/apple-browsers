@@ -24,11 +24,13 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 import SwiftUI
+import WebExtensions
 
 struct YouTubeAdBlockingSettings: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(.youTubeAdBlockingEnabled)
     let youTubeAnalyticsEnabled = StorageKey<Bool>(.youTubeAnalyticsEnabled)
     let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(.shouldHideYouTubeAdBlockingDisclosure)
+    let youTubeAdBlockUnavailableNoticeShown = StorageKey<Bool>(.youTubeAdBlockUnavailableNoticeShown)
 }
 
 final class YouTubeAdBlockingPreferences: ObservableObject {
@@ -37,7 +39,19 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings>
     private let pixelFiring: PixelFiring?
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding?
     private var cancellables = Set<AnyCancellable>()
+
+    /// Mirrors `adBlockingAvailability.isDisabledUntilRelaunch` (when injected), updated via the
+    /// shared change notification. Exposed as `@Published` so SwiftUI views observing this model
+    /// (e.g. the Preferences pane) re-render the "Disabled until relaunch" sub-line on changes.
+    @Published private(set) var isDisabledUntilRelaunch: Bool = false
+
+    /// Mirrors `adBlockingAvailability.isRemotelyDisabled`, updated via the shared change
+    /// notification. Drives the "YouTube Ad Block Unavailable" card in the Preferences pane.
+    @Published private(set) var isRemotelyDisabled: Bool = false
+
+    private var isHandlingExternalChange = false
 
     @Published
     var youTubeAdBlockingEnabled: Bool {
@@ -47,6 +61,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             if !youTubeAdBlockingEnabled {
                 youTubeAnalyticsEnabled = false
             }
+            guard !isHandlingExternalChange else { return }
             pixelFiring?.fire(
                 youTubeAdBlockingEnabled ? WebExtensionPixel.adBlockingExtensionEnabled : WebExtensionPixel.adBlockingExtensionDisabled,
                 frequency: .dailyAndCount)
@@ -134,18 +149,61 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
-         pixelFiring: PixelFiring? = nil) {
+         pixelFiring: PixelFiring? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding? = nil) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
+        self.adBlockingAvailability = adBlockingAvailability
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled ?? false
         isDisclosureHidden = resolvedSettings.shouldHideYouTubeAdBlockingDisclosure == true
+        isDisabledUntilRelaunch = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
+        isRemotelyDisabled = adBlockingAvailability?.isRemotelyDisabled ?? false
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default
+            .publisher(for: Self.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                self?.syncFromStore()
+                self?.syncDisableUntilRelaunchFromAvailability()
+                self?.syncRemotelyDisabledFromAvailability()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Forwards the user-initiated Settings/popover toggle clear to the shared availability
+    /// instance. No-op when no availability was injected (e.g. test fixtures).
+    func clearDisableUntilRelaunch() {
+        adBlockingAvailability?.clearDisableUntilRelaunch()
+    }
+
+    private func syncDisableUntilRelaunchFromAvailability() {
+        let current = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
+        guard current != isDisabledUntilRelaunch else { return }
+        isDisabledUntilRelaunch = current
+    }
+
+    private func syncRemotelyDisabledFromAvailability() {
+        let current = adBlockingAvailability?.isRemotelyDisabled ?? false
+        guard current != isRemotelyDisabled else { return }
+        isRemotelyDisabled = current
+    }
+
+    /// Re-reads the persisted value when another instance posts the change notification, so
+    /// multiple `YouTubeAdBlockingPreferences` instances (e.g. Settings pane + address-bar
+    /// popover) stay in sync. Gated by `isHandlingExternalChange` to keep the pixel + notification
+    /// from firing on the sync path.
+    private func syncFromStore() {
+        let stored = settings.youTubeAdBlockingEnabled ?? false
+        guard stored != youTubeAdBlockingEnabled else { return }
+        isHandlingExternalChange = true
+        youTubeAdBlockingEnabled = stored
+        isHandlingExternalChange = false
     }
 }

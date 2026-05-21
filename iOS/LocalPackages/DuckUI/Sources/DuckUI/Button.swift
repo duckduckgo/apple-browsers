@@ -48,6 +48,32 @@ private struct PrimaryButtonColors {
     )
 }
 
+// MARK: - Typography helpers
+//
+// All button typography is Dynamic-Type-aware: the font is built from a
+// `TextStyle`, the frame uses `minHeight` (not `maxHeight`) so the button
+// grows with the label, and `.dynamicTypeSize(...accessibility3)` caps
+// runaway growth at the third accessibility step (a common UX cap).
+
+private extension View {
+    /// Cap Dynamic Type growth so button layouts don't break at the largest
+    /// accessibility sizes. Apply once per ButtonStyle body.
+    func ddgButtonDynamicTypeCap() -> some View {
+        dynamicTypeSize(...DynamicTypeSize.accessibility3)
+    }
+}
+
+private func legacyButtonFont() -> Font {
+    // Bold subheadline; scales with Dynamic Type via `daxButton()`.
+    Font(UIFont.daxButton())
+}
+
+private func rebrandedButtonFont(compact: Bool) -> Font {
+    // Figma "iOS Buttons" specifies SF Pro Medium 17pt (Large) / 15pt (Small).
+    // 17pt = `.body` default at .large Dynamic Type; 15pt = `.subheadline`.
+    .system(compact ? .subheadline : .body).weight(.medium)
+}
+
 // MARK: - Legacy body builder
 
 @ViewBuilder
@@ -65,13 +91,14 @@ private func makeLegacyPrimaryBody(
         .fixedSize(horizontal: false, vertical: true)
         .multilineTextAlignment(.center)
         .lineLimit(nil)
-        .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+        .font(legacyButtonFont())
         .foregroundColor(foregroundColor)
         .padding(.vertical)
         .padding(.horizontal, fullWidth ? nil : 24)
-        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
         .background(configuration.isPressed ? colors.pressed : backgroundColor)
         .cornerRadius(Consts.legacyCornerRadius)
+        .ddgButtonDynamicTypeCap()
 }
 
 // MARK: - Rebranded body builder
@@ -95,13 +122,14 @@ private func makeRebrandedPrimaryBody(
         .fixedSize(horizontal: false, vertical: true)
         .multilineTextAlignment(.center)
         .lineLimit(nil)
-        .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+        .font(rebrandedButtonFont(compact: compact))
         .foregroundColor(foregroundColor)
         .padding(.vertical)
         .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
-        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
         .background(configuration.isPressed ? colors.pressed : backgroundColor)
         .clipShape(Capsule())
+        .ddgButtonDynamicTypeCap()
 }
 
 // MARK: - Primary
@@ -246,11 +274,11 @@ public struct SecondaryDestructiveButtonStyleLegacy: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+            .font(legacyButtonFont())
             .foregroundColor(foregroundColor)
             .padding(.vertical)
             .padding(.horizontal, fullWidth ? nil : 24)
-            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .background(configuration.isPressed ? pressedBackgroundColor : Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: Consts.legacyCornerRadius)
@@ -258,6 +286,7 @@ public struct SecondaryDestructiveButtonStyleLegacy: ButtonStyle {
             )
             .cornerRadius(Consts.legacyCornerRadius)
             .contentShape(RoundedRectangle(cornerRadius: Consts.legacyCornerRadius))
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -292,15 +321,16 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+            .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(foregroundColor)
             .padding(.vertical)
             .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
-            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(configuration.isPressed ? pressedBackgroundColor : backgroundColor)
             .clipShape(Capsule())
             .contentShape(Capsule())
             .opacity(disabled ? 0.36 : 1)
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -336,11 +366,12 @@ public struct SecondaryButtonStyleLegacy: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         compactPadding(view: configuration.label)
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+            .font(legacyButtonFont())
             .foregroundColor(configuration.isPressed ? foregroundColor.opacity(Consts.pressedOpacity) : foregroundColor.opacity(1))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .cornerRadius(Consts.legacyCornerRadius)
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -366,11 +397,12 @@ public struct SecondaryButtonStyle: ButtonStyle {
         // transparent background, accent-primary label, pill hit area.
         let accent = Color(designSystemColor: .accent)
         return configuration.label
-            .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+            .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(configuration.isPressed ? accent.opacity(Consts.pressedOpacity) : accent)
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .contentShape(Capsule())
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -404,16 +436,17 @@ public struct SecondaryFillButtonStyleLegacy: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+            .font(legacyButtonFont())
             .foregroundColor(configuration.isPressed ? defaultForegroundColor : foregroundColor)
             .if(!isFreeform) { view in
                 view
                     .padding(.vertical)
                     .padding(.horizontal, fullWidth ? nil : 24)
-                    .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+                    .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             }
             .background(configuration.isPressed ? pressedBackgroundColor : backgroundColor)
             .cornerRadius(Consts.legacyCornerRadius)
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -453,16 +486,17 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+            .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(configuration.isPressed ? defaultForegroundColor : foregroundColor)
             .if(!isFreeform) { view in
                 view
                     .padding(.vertical)
                     .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
-                    .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+                    .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             }
             .background(configuration.isPressed ? pressedBackgroundColor : backgroundColor)
             .clipShape(Capsule())
+            .ddgButtonDynamicTypeCap()
     }
 }
 
@@ -478,13 +512,14 @@ public struct GhostButtonStyleLegacy: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+            .font(legacyButtonFont())
             .foregroundColor(foregroundColor(configuration.isPressed))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .background(backgroundColor(configuration.isPressed))
             .cornerRadius(Consts.legacyCornerRadius)
             .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+            .ddgButtonDynamicTypeCap()
     }
 
     private func foregroundColor(_ isPressed: Bool) -> Color {
@@ -515,13 +550,14 @@ public struct GhostButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+            .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(foregroundColor(configuration.isPressed))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(configuration.isPressed))
             .clipShape(Capsule())
             .contentShape(Capsule())
+            .ddgButtonDynamicTypeCap()
     }
 
     private func foregroundColor(_ isPressed: Bool) -> Color {
@@ -545,13 +581,14 @@ public struct GhostAltButtonStyleLegacy: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.legacyFontSize)))
+            .font(legacyButtonFont())
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .background(backgroundColor(configuration.isPressed))
             .cornerRadius(Consts.legacyCornerRadius)
             .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+            .ddgButtonDynamicTypeCap()
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
@@ -578,13 +615,14 @@ public struct GhostAltButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: compact ? Consts.rebrandedFontSizeSmall : Consts.rebrandedFontSizeLarge, weight: .medium))
+            .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(configuration.isPressed))
             .clipShape(Capsule())
             .contentShape(Capsule())
+            .ddgButtonDynamicTypeCap()
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {

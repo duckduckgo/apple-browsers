@@ -1712,6 +1712,7 @@ extension Pixel {
         case unifiedToggleInputFileAttached
         case unifiedToggleInputFileRemoved
         case unifiedToggleInputFileValidationFailed
+        case unifiedToggleInputVoiceTapped
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -3464,6 +3465,7 @@ extension Pixel.Event {
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
         case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
+        case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"

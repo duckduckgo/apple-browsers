@@ -2346,7 +2346,13 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToAIVoiceChatTap() {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
-                self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                guard let self else { return }
+                let source = self.inputMode == .aiChat ? "duck_ai" : "ntp"
+                DailyPixel.fireDailyAndCount(
+                    pixel: .unifiedToggleInputVoiceTapped,
+                    withAdditionalParameters: ["source": source]
+                )
+                self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
     }

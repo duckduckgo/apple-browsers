@@ -130,4 +130,19 @@
             }
         ]
     },
+    "m_aichat_unified_input_voice_tapped": {
+        "description": "Fires when the user taps the voice waveform button in the Unified Toggle Input.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Surface from which voice chat was triggered, based on input mode at the time of tap.",
+                "type": "string",
+                "enum": ["ntp", "duck_ai"]
+            }
+        ]
+    },
 }

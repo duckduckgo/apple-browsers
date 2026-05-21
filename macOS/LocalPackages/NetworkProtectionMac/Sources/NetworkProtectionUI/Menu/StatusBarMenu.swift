@@ -55,6 +55,7 @@ public final class StatusBarMenu: NSObject {
     private let popoverShownHandler: (() -> Void)?
     private let subscriptionExpiredViewAppearHandler: (() -> Void)?
     private let subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)?
+    private let subscribeButtonOrigin: String?
 
     // MARK: - NetP Icon publisher
 
@@ -87,7 +88,8 @@ public final class StatusBarMenu: NSObject {
                 buttonClickedHandler: (() -> Void)? = nil,
                 popoverShownHandler: (() -> Void)? = nil,
                 subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
-                subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil) {
+                subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
+                subscribeButtonOrigin: String? = nil) {
 
         self.model = model
         let statusItem = statusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -110,6 +112,7 @@ public final class StatusBarMenu: NSObject {
         self.popoverShownHandler = popoverShownHandler
         self.subscriptionExpiredViewAppearHandler = subscriptionExpiredViewAppearHandler
         self.subscriptionExpiredViewSubscribeButtonClickPixelHandler = subscriptionExpiredViewSubscribeButtonClickPixelHandler
+        self.subscribeButtonOrigin = subscribeButtonOrigin
 
         super.init()
 
@@ -203,7 +206,8 @@ public final class StatusBarMenu: NSObject {
                 locationFormatter: locationFormatter,
                 uninstallHandler: uninstallHandler,
                 subscriptionExpiredViewAppearHandler: subscriptionExpiredViewAppearHandler,
-                subscriptionExpiredViewSubscribeButtonClickPixelHandler: subscriptionExpiredViewSubscribeButtonClickPixelHandler)
+                subscriptionExpiredViewSubscribeButtonClickPixelHandler: subscriptionExpiredViewSubscribeButtonClickPixelHandler,
+                subscribeButtonOrigin: subscribeButtonOrigin)
 
             popover = NetworkProtectionPopover(
                 statusViewModel: statusViewModel,

@@ -478,7 +478,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             },
             subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
                 PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked)
-            }
+            },
+            // Mirrors `SubscriptionFunnelOrigin.vpnMenuBarRevoked` in the browser target,
+            // which is not a member of the DuckDuckGoVPN target so we can't reference the enum here.
+            subscribeButtonOrigin: "funnel_menubar_macos__subscriptionvpnrevoked"
         )
     }
 

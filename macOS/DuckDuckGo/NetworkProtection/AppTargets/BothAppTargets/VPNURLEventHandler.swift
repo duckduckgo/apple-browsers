@@ -34,7 +34,17 @@ final class VPNURLEventHandler {
     /// Handles VPN event URLs
     ///
     func handle(_ url: URL) async {
-        switch url {
+        // Strip query items before matching against command URLs so commands that carry
+        // parameters (e.g. showSubscription's `origin`) still match by path.
+        let strippedURL: URL = {
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                return url
+            }
+            components.queryItems = nil
+            return components.url ?? url
+        }()
+
+        switch strippedURL {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
             windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
@@ -49,14 +59,12 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showSubscription.launchURL:
-            // The only producer of this launch URL today is the agent's menu-bar
-            // expired view's Subscribe button (see VPNUIActionHandler in DuckDuckGoVPN).
-            // The agent has no way to send `origin` across this IPC boundary, so we
-            // hard-code the funnel origin here at the receiver. If a new agent
-            // surface starts emitting this command, this assumption breaks — switch
-            // to a per-surface VPNAppLaunchCommand case at that point.
-            showSubscription(origin: SubscriptionFunnelOrigin.vpnMenuBarRevoked.rawValue)
+        case VPNAppLaunchCommand.showSubscription().launchURL:
+            let origin = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?
+                .value
+            showSubscription(origin: origin)
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
         default:

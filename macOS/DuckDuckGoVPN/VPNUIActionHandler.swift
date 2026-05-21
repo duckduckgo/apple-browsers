@@ -54,14 +54,8 @@ final class VPNUIActionHandler: VPNUIActionHandling {
         try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showVPNLocations)
     }
 
-    // The `origin` parameter is intentionally discarded here. The browser-side
-    // VPNURLEventHandler hard-codes `SubscriptionFunnelOrigin.vpnMenuBarRevoked`
-    // when it receives this launch URL, because today the menu-bar expired view
-    // is the only producer. If you add another agent surface that opens the
-    // subscription page, switch to per-surface VPNAppLaunchCommand cases (or
-    // ship `origin` via a URL query) so the receiver can disambiguate.
-    public func showSubscription(origin _: String?) async {
-        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSubscription)
+    public func showSubscription(origin: String?) async {
+        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSubscription(origin: origin))
     }
 
     public func willStopVPN() async -> Bool {

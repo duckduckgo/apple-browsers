@@ -457,6 +457,7 @@
 		5B6D651A2FB4BB8000BDCF4D /* ICSFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65192FB4BB7E00BDCF4D /* ICSFileReader.swift */; };
 		5B6D651D2FB4D2EB00BDCF4D /* ICSFileReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D651C2FB4D2E900BDCF4D /* ICSFileReaderTests.swift */; };
 		5B6D651F2FB4D30A00BDCF4D /* CompleteDownloadRowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D651E2FB4D30700BDCF4D /* CompleteDownloadRowViewModelTests.swift */; };
+		5B6D65212FBA000000BDCF4D /* FilePreviewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65202FBA000000BDCF4D /* FilePreviewHelperTests.swift */; };
 		5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */ = {isa = PBXBuildFile; productRef = 5B7CA46A2FAE693000D69C83 /* ICSParser */; };
 		5B941E722FA29A2C00AF2CE7 /* QuickActionsMediumWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */; };
 		5B941E752FA29FC800AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
@@ -3006,6 +3007,7 @@
 		5B6D65192FB4BB7E00BDCF4D /* ICSFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICSFileReader.swift; sourceTree = "<group>"; };
 		5B6D651C2FB4D2E900BDCF4D /* ICSFileReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICSFileReaderTests.swift; sourceTree = "<group>"; };
 		5B6D651E2FB4D30700BDCF4D /* CompleteDownloadRowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteDownloadRowViewModelTests.swift; sourceTree = "<group>"; };
+		5B6D65202FBA000000BDCF4D /* FilePreviewHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewHelperTests.swift; sourceTree = "<group>"; };
 		5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsMediumWidgetTests.swift; sourceTree = "<group>"; };
 		5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOption.swift; sourceTree = "<group>"; };
 		5BCF854D2F7D774A0053B95E /* AddressBarURLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarURLFilter.swift; sourceTree = "<group>"; };
@@ -6031,6 +6033,7 @@
 			isa = PBXGroup;
 			children = (
 				5B6D651E2FB4D30700BDCF4D /* CompleteDownloadRowViewModelTests.swift */,
+				5B6D65202FBA000000BDCF4D /* FilePreviewHelperTests.swift */,
 				5B6D651B2FB4D2DC00BDCF4D /* Calendar */,
 				31C138B027A4096C00FFD4B2 /* Helper */,
 				31C138AD27A408B800FFD4B2 /* Mocks */,
@@ -13731,6 +13734,7 @@
 				98E563EC2DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				C1EA266A2EB572E1006A863C /* AutofillExtensionSettingsViewModelTests.swift in Sources */,
 				5B6D651F2FB4D30A00BDCF4D /* CompleteDownloadRowViewModelTests.swift in Sources */,
+				5B6D65212FBA000000BDCF4D /* FilePreviewHelperTests.swift in Sources */,
 				98E563ED2DE8B32D00E6E75F /* OnboardingFirePixelMock.swift in Sources */,
 				98E563EE2DE8B32D00E6E75F /* MockFaviconStore.swift in Sources */,
 				98E563EF2DE8B32D00E6E75F /* MockFireproofing.swift in Sources */,

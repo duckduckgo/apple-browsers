@@ -61,18 +61,28 @@ struct FilePreviewHelper {
     }
 
     /// ICS files must persist so the user can retry from Downloads when auto-add fails.
-    static func shouldPersistInDownloads(mimeType: MIMEType, url: URL?, featureFlagger: FeatureFlagger) -> Bool {
+    static func shouldPersistInDownloads(mimeType: MIMEType,
+                                         url: URL?,
+                                         filename: String?,
+                                         featureFlagger: FeatureFlagger) -> Bool {
         guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
-        return mimeType == .calendar || url?.pathExtension.lowercased() == "ics"
+        return isICS(mimeType: mimeType, url: url, filename: filename)
     }
 
     /// File types we hand off to a native handler instead of the generic download UI; used
     /// to suppress the download started/finished toasts. Add new natively-handled types here.
-    static func handlesDownloadNatively(mimeType: MIMEType, url: URL?, featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.icsCalendarLinks),
-           mimeType == .calendar || url?.pathExtension.lowercased() == "ics" {
-            return true
-        }
+    static func handlesDownloadNatively(mimeType: MIMEType,
+                                        url: URL?,
+                                        filename: String?,
+                                        featureFlagger: FeatureFlagger) -> Bool {
+        guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
+        return isICS(mimeType: mimeType, url: url, filename: filename)
+    }
+
+    private static func isICS(mimeType: MIMEType, url: URL?, filename: String?) -> Bool {
+        if mimeType == .calendar { return true }
+        if url?.pathExtension.lowercased() == "ics" { return true }
+        if filename?.lowercased().hasSuffix(".ics") == true { return true }
         return false
     }
 }

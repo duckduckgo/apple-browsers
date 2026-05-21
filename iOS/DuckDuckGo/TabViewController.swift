@@ -2798,6 +2798,7 @@ extension TabViewController {
             let persistICS = FilePreviewHelper.shouldPersistInDownloads(
                 mimeType: MIMEType(from: navigationResponse.response.mimeType),
                 url: navigationResponse.response.url,
+                filename: navigationResponse.response.suggestedFilename,
                 featureFlagger: featureFlagger
             )
             do {
@@ -3004,7 +3005,8 @@ extension TabViewController {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download,
               !download.temporary,
               !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
-                                                         url: download.location,
+                                                         url: download.url,
+                                                         filename: download.filename,
                                                          featureFlagger: featureFlagger)
         else { return }
 
@@ -3040,6 +3042,7 @@ extension TabViewController {
         DispatchQueue.main.async {
             let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                                             url: download.location,
+                                                                            filename: download.filename,
                                                                             featureFlagger: self.featureFlagger)
             if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)

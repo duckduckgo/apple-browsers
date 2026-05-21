@@ -299,7 +299,6 @@ final class BookmarkListViewController: NSViewController {
         outlineView.addTableColumn(column)
         outlineView.columnAutoresizingStyle = .noColumnAutoresizing
         outlineView.focusRingType = .none
-        outlineView.translatesAutoresizingMaskIntoConstraints = showSyncPromo ? false : true
         if showSyncPromo {
             outlineView.translatesAutoresizingMaskIntoConstraints = false
         } else {
@@ -437,7 +436,7 @@ final class BookmarkListViewController: NSViewController {
         let availableHeightAbove = screenFrame.maxY - screenPosRect.maxY - bookmarkHeaderHeight
         let availableHeight = max(availableHeightAbove, availableHeightBelow)
 
-        let totalHeightForRootBookmarks = (CGFloat(outlineView.numberOfRows) * BookmarkOutlineCellView.rowHeight) + bookmarkHeaderHeight + 12.0 + Constants.panelInset
+        let totalHeightForRootBookmarks = (CGFloat(outlineView.numberOfRows) * BookmarkOutlineCellView.rowHeight) + bookmarkHeaderHeight + 12.0
         var contentSize = Constants.preferredContentSize
 
         if totalHeightForRootBookmarks > availableHeight {

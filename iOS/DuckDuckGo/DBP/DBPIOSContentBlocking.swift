@@ -26,7 +26,6 @@ import WebKit
 /// `ContentBlocking.shared.contentBlockingManager` on every access. This provider is
 /// constructed once at app launch and reused across all background jobs, so TDS
 /// recompilations land in subsequent jobs without restarting the app.
-@MainActor
 struct DBPIOSContentBlocking: DBPWebViewContentBlocking {
     private let contentBlockingManager: CompiledRuleListsSource
 

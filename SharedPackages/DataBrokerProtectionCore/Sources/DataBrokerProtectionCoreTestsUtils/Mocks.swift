@@ -3235,7 +3235,6 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
 
 // MARK: - DBPWebViewContentBlockingMock
 
-@MainActor
 public final class DBPWebViewContentBlockingMock: DBPWebViewContentBlocking {
     public var contentRuleLists: [WKContentRuleList]
     public var surrogateTrackerData: TrackerData?

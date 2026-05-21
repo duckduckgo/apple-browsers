@@ -20,7 +20,6 @@ import Foundation
 import TrackerRadarKit
 import WebKit
 
-@MainActor
 public protocol DBPWebViewContentBlocking {
     /// DBP expects both of these to be reevaluated on every read so rule recompilations are picked up by future jobs.
     var contentRuleLists: [WKContentRuleList] { get }

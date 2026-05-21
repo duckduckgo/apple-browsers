@@ -127,8 +127,11 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
                 forIdentifier: identifier,
                 encodedContentRuleList: json
             ) { list, error in
-                if let list { continuation.resume(returning: list) }
-                else { continuation.resume(throwing: error ?? NSError(domain: "test", code: -1)) }
+                if let list {
+                    continuation.resume(returning: list)
+                } else {
+                    continuation.resume(throwing: error ?? NSError(domain: "test", code: -1))
+                }
             }
         }
     }

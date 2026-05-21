@@ -537,7 +537,14 @@ private extension OnboardingIntroViewModel {
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
         case .duckAIQueryExperimentDialog:
-            pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
+            // Both the experiment and the Duck.ai tailored flow reach this view state. Only the
+            // experiment cohort should fire experiment-flavoured pixels; tailored-flow users get
+            // the plain shared toggle-shown pixel.
+            if resolveDuckAIQueryExperimentCohortID() != nil {
+                pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
+            } else {
+                pixelReporter.measureDuckAIQuerySelectionImpression()
+            }
         }
     }
 

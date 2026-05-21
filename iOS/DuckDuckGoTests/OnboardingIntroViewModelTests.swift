@@ -1184,7 +1184,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
     }
 
-    func testWhenStateChangesToDuckAIQueryExperimentDialogThenImpressionPixelFires() {
+    func testWhenStateChangesToDuckAIQueryExperimentDialog_AndCohortEnrolled_ThenExperimentImpressionPixelFires() {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
@@ -1202,6 +1202,24 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
+    }
+
+    func testWhenStateChangesToDuckAIQueryExperimentDialog_AndDuckAITailoredFlow_ThenOnlyPlainImpressionPixelFires() {
+        // GIVEN: Duck.ai tailored flow reuses the same view state but the user is NOT in the
+        // experiment cohort — experiment-flavoured pixels would pollute the experiment funnel.
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
+        onboardingManagerMock.currentOnboardingFlow = .duckAI
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN: only the plain selection-impression fires; experiment pixels must NOT fire.
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
     }
 
     func testWhenStateChangesToAiComparisonDialogThenImpressionPixelFires() {

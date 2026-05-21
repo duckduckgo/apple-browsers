@@ -89,6 +89,7 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {}
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity) {}
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {}
+    func unifiedInputEditingStateDidRequestTextUpdate(_ text: String) {}
     func unifiedInputEditingStateDidSelectChatHistory(url: URL) {}
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {}
     func unifiedInputEditingStateDidRequestTabSwitcher() {}

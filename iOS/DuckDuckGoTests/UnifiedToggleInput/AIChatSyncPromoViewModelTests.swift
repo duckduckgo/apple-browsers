@@ -33,7 +33,8 @@ final class AIChatSyncPromoViewModelTests {
         PixelFiringMock.tearDown()
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func shouldShowPromo_whenQueryActive_returnsFalseWithoutAskingManager() {
         let manager = MockSyncPromoManager()
         manager.shouldPresentForTouchpoint[.aiChat] = true
@@ -43,7 +44,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(manager.shouldPresentRequests.isEmpty)
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func shouldShowPromo_whenQueryInactive_usesManagerWithChatCount() {
         let manager = MockSyncPromoManager()
         manager.shouldPresentForTouchpoint[.aiChat] = true
@@ -55,7 +57,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(manager.shouldPresentRequests.first?.count == 2)
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_whenVisibleAndPromoVisible_firesDisplayedPixelAndRecordsImpression() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
@@ -68,7 +71,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(PixelFiringMock.lastParams == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_recordsOnlyOnce() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
@@ -80,7 +84,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(PixelFiringMock.allPixelsFired.compactMap(\.pixelName) == [Pixel.Event.syncPromoDisplayed.name])
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_whenNotVisibleOrPromoHidden_doesNothing() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
@@ -92,7 +97,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(PixelFiringMock.allPixelsFired.isEmpty)
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func handleCTATap_firesConfirmedPixelMarksPromoHandledAndRequestsSyncSetup() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
@@ -106,7 +112,8 @@ final class AIChatSyncPromoViewModelTests {
         #expect(PixelFiringMock.lastParams == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
     }
 
-    @Test
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func handleCloseTap_dismissesPromoAsUserTapped() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager)

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
@@ -92,5 +93,289 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
         UnifiedToggleInputFeature.resolve(using: flagger)
         XCTAssertFalse(feature.isAvailable,
                        "After re-resolving the snapshot must flip — otherwise resolve isn't doing its job")
+    }
+}
+
+final class AIChatTabChatHeaderNavigationStateTests: XCTestCase {
+
+    func test_displayedAvailability_usesLockedAvailabilityUntilLockClears() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let preTapAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+        let webKitAvailabilityAfterBackTap = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: true)
+
+        state.lockAvailability(for: "tab-1", availability: preTapAvailability)
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: webKitAvailabilityAfterBackTap),
+            preTapAvailability
+        )
+
+        XCTAssertTrue(state.clearLock(for: "tab-1"))
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: webKitAvailabilityAfterBackTap),
+            webKitAvailabilityAfterBackTap
+        )
+    }
+
+    func test_displayedAvailability_clearsLockWhenTabChanges() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let lockedAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+        let currentAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: true)
+
+        state.lockAvailability(for: "tab-1", availability: lockedAvailability)
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-2", currentAvailability: currentAvailability),
+            currentAvailability
+        )
+    }
+
+    func test_displayedAvailability_clearsLockWhenThereIsNoTab() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let lockedAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+
+        state.lockAvailability(for: "tab-1", availability: lockedAvailability)
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: nil, currentAvailability: lockedAvailability),
+            .unavailable
+        )
+    }
+
+    func test_lockAvailability_keepsEarliestSnapshotDuringRapidTaps() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let firstTapAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+        let secondTapAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: true)
+
+        state.lockAvailability(for: "tab-1", availability: firstTapAvailability)
+        state.lockAvailability(for: "tab-1", availability: secondTapAvailability)
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: secondTapAvailability),
+            firstTapAvailability
+        )
+    }
+
+    func test_lockAvailability_canRelockSameTabAfterClear() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let firstTapAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+        let secondTapAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: true)
+
+        state.lockAvailability(for: "tab-1", availability: firstTapAvailability)
+        XCTAssertTrue(state.clearLock(for: "tab-1"))
+        state.lockAvailability(for: "tab-1", availability: secondTapAvailability)
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: firstTapAvailability),
+            secondTapAvailability
+        )
+    }
+
+    func test_displayedAvailability_doesNotClearReservationWhenThereIsNoTab() {
+        var state = AIChatTabChatHeaderNavigationState()
+        let liveAvailability = AIChatTabChatHeaderNavigationAvailability(canGoBack: true, canGoForward: false)
+
+        state.reserveNavigationControls(for: "tab-1")
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: nil, currentAvailability: .unavailable),
+            .unavailable
+        )
+        XCTAssertFalse(state.reservesNavigationControls(for: nil))
+        XCTAssertTrue(state.reservesNavigationControls(for: "tab-1"))
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: liveAvailability),
+            liveAvailability
+        )
+    }
+
+    func test_displayedAvailability_doesNotClearReservationForSameTabRead() {
+        var state = AIChatTabChatHeaderNavigationState()
+
+        state.reserveNavigationControls(for: "tab-1")
+
+        XCTAssertEqual(
+            state.displayedAvailability(for: "tab-1", currentAvailability: .unavailable),
+            .unavailable
+        )
+        XCTAssertTrue(state.reservesNavigationControls(for: "tab-1"))
+    }
+
+    func test_reservesNavigationControls_clearsReservationWhenTabChanges() {
+        var state = AIChatTabChatHeaderNavigationState()
+
+        state.reserveNavigationControls(for: "tab-1")
+
+        XCTAssertTrue(state.reservesNavigationControls(for: "tab-1"))
+        XCTAssertFalse(state.reservesNavigationControls(for: "tab-2"))
+        XCTAssertFalse(state.reservesNavigationControls(for: "tab-1"))
+    }
+}
+
+@MainActor
+final class AIChatTabChatHeaderViewNavigationSlotTests: XCTestCase {
+
+    func test_navigationButtonsAreHiddenWhenNavigationIsUnavailableAndNotReserved() {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setNavAvailable(canGoBack: false, canGoForward: false)
+        sut.layoutIfNeeded()
+
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel).count, 1)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderRecentChatsAccessibilityLabel).count, 1)
+    }
+
+    func test_navigationButtonsReserveBackSlotWithoutShowingForwardWhenNavigationIsReserved() {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setReservesNavigationControls(true)
+        sut.setNavAvailable(canGoBack: false, canGoForward: false)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel).isEmpty)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderRecentChatsAccessibilityLabel).count, 1)
+    }
+
+    func test_navigationButtonsReserveBackSlotWithoutShowingForwardWhenForwardNavigationIsAvailable() {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setReservesNavigationControls(true)
+        sut.setNavAvailable(canGoBack: false, canGoForward: true)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).isEmpty)
+        XCTAssertTrue(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel).isEmpty)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderRecentChatsAccessibilityLabel).count, 1)
+    }
+
+    func test_navigationButtonsReserveBackSlotWithoutShowingNavPairWhenBackAndForwardNavigationAreAvailable() {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setReservesNavigationControls(true)
+        sut.setNavAvailable(canGoBack: true, canGoForward: true)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertTrue(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+    }
+
+    func test_navigationButtonsShowNavPairWhenBackAndForwardNavigationAreAvailableAndNotReserved() {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setNavAvailable(canGoBack: true, canGoForward: true)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertEqual(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).count, 1)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).count, 1)
+        XCTAssertEqual(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).count, 1)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel).isEmpty)
+    }
+
+    func test_reservedBackSlotBecomesVisibleWhenBackNavigationBecomesAvailable() throws {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setReservesNavigationControls(true)
+        sut.setNavAvailable(canGoBack: false, canGoForward: false)
+        sut.layoutIfNeeded()
+
+        let reservedBackButton = try XCTUnwrap(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).first)
+
+        sut.setNavAvailable(canGoBack: true, canGoForward: false)
+        sut.layoutIfNeeded()
+
+        let enabledBackButton = try XCTUnwrap(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).first)
+
+        XCTAssertTrue(reservedBackButton === enabledBackButton)
+        XCTAssertTrue(enabledBackButton.isEnabled)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+    }
+
+    func test_reservedBackSlotRemainsStableWhenReservationClearsAfterBackNavigationBecomesAvailable() throws {
+        let sut = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+
+        sut.setReservesNavigationControls(true)
+        sut.setNavAvailable(canGoBack: false, canGoForward: false)
+        sut.layoutIfNeeded()
+
+        let reservedBackButton = try XCTUnwrap(layoutSlotButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).first)
+
+        sut.setNavAvailable(canGoBack: true, canGoForward: false)
+        sut.setReservesNavigationControls(false)
+        sut.layoutIfNeeded()
+
+        let visibleBackButton = try XCTUnwrap(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserBack).first)
+
+        XCTAssertTrue(reservedBackButton === visibleBackButton)
+        XCTAssertTrue(visibleBackButton.isEnabled)
+        XCTAssertTrue(visibleButtons(in: sut, accessibilityLabel: UserText.keyCommandBrowserForward).isEmpty)
+    }
+
+    private func visibleButtons(in view: UIView, accessibilityLabel: String) -> [UIButton] {
+        var result: [UIButton] = []
+        collectVisibleButtons(in: view, accessibilityLabel: accessibilityLabel, result: &result)
+        return result
+    }
+
+    private func collectVisibleButtons(in view: UIView, accessibilityLabel: String, result: inout [UIButton]) {
+        if let button = view as? UIButton,
+           button.accessibilityLabel == accessibilityLabel,
+           isEffectivelyVisible(button) {
+            result.append(button)
+        }
+
+        view.subviews.forEach {
+            collectVisibleButtons(in: $0, accessibilityLabel: accessibilityLabel, result: &result)
+        }
+    }
+
+    private func layoutSlotButtons(in view: UIView, accessibilityLabel: String) -> [UIButton] {
+        var result: [UIButton] = []
+        collectLayoutSlotButtons(in: view, accessibilityLabel: accessibilityLabel, result: &result)
+        return result
+    }
+
+    private func collectLayoutSlotButtons(in view: UIView, accessibilityLabel: String, result: inout [UIButton]) {
+        if let button = view as? UIButton,
+           button.accessibilityLabel == accessibilityLabel,
+           isInVisibleLayout(button) {
+            result.append(button)
+        }
+
+        view.subviews.forEach {
+            collectLayoutSlotButtons(in: $0, accessibilityLabel: accessibilityLabel, result: &result)
+        }
+    }
+
+    private func isEffectivelyVisible(_ view: UIView) -> Bool {
+        var currentView: UIView? = view
+        while let view = currentView {
+            if view.isHidden || view.alpha <= 0.01 {
+                return false
+            }
+            currentView = view.superview
+        }
+        return true
+    }
+
+    private func isInVisibleLayout(_ view: UIView) -> Bool {
+        var currentView: UIView? = view
+        while let view = currentView {
+            if view.isHidden {
+                return false
+            }
+            currentView = view.superview
+        }
+        return true
     }
 }

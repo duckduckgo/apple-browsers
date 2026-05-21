@@ -236,6 +236,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toggleModeStorage: ToggleModeStoring
     private let stateStore: UnifiedInputStateStoring
     private(set) var currentTabUID: TabUID?
+    var aiChatTabChatHeaderNavigationState = AIChatTabChatHeaderNavigationState()
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
     /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;

@@ -68,6 +68,8 @@ protocol TabDelegate: AnyObject {
     /// after a navigation resolves, not on every loading-state tick.
     func tabDidFinishNavigation(_ tab: TabViewController)
 
+    func tabDidInterruptProvisionalNavigation(_ tab: TabViewController)
+
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage)
 
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?)
@@ -172,5 +174,7 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tabDidInterruptProvisionalNavigation(_ tab: TabViewController) {}
 
 }

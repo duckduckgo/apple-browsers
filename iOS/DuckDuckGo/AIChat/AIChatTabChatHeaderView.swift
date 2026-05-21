@@ -58,12 +58,13 @@ final class AIChatTabChatHeaderView: UIView {
         var canGoForward: Bool = false
         /// Renders the back arrow even when there's no web history, so the user always has an exit.
         var forceBackButtonVisible: Bool = false
+        var reservesNavigationControls: Bool = false
 
         var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }
-        var showsNavPair: Bool { effectiveCanGoBack && canGoForward }
-        var showsStandaloneBack: Bool { effectiveCanGoBack && !canGoForward }
-        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack }
-        var isNavigationVisible: Bool { effectiveCanGoBack || canGoForward }
+        var showsNavigationControls: Bool { reservesNavigationControls || effectiveCanGoBack || canGoForward }
+        var showsNavPair: Bool { effectiveCanGoBack && canGoForward && !reservesNavigationControls }
+        var showsStandaloneBack: Bool { reservesNavigationControls || (effectiveCanGoBack && !canGoForward) }
+        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack && !reservesNavigationControls }
     }
 
     private var state = ViewState() {
@@ -312,6 +313,10 @@ final class AIChatTabChatHeaderView: UIView {
         state.forceBackButtonVisible = visible
     }
 
+    func setReservesNavigationControls(_ reserved: Bool) {
+        state.reservesNavigationControls = reserved
+    }
+
     /// Hides the chats / new-chat pill while a voice session is in progress for this tab.
     /// Back/forward arrows remain so the user can exit.
     func setVoiceSessionActive(_ active: Bool) {
@@ -324,14 +329,19 @@ final class AIChatTabChatHeaderView: UIView {
         // Voice session locks the user in — hide every left-side pill so they can only exit via
         // the in-page mic dismiss (which triggers FE → voiceSessionEnded → chrome restores).
         let hideLeft = state.isVoiceSessionActive
-        // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
+        let showsNavigationControls = state.showsNavigationControls
         titleHolder.isHidden = state.showsNavPair || hideLeft
         backPill.isHidden = hideLeft || !state.showsStandaloneBack
         forwardPill.isHidden = hideLeft || !state.showsStandaloneForward
         navPairPill.isHidden = hideLeft || !state.showsNavPair
         leftPairPill.isHidden = hideLeft
-        // Compose suppressed when nav arrows are visible — the row gets cluttered.
-        newChatButton.isHidden = state.isNavigationVisible
+        backPill.alpha = state.effectiveCanGoBack ? 1.0 : 0.0
+        backButton.isEnabled = state.effectiveCanGoBack
+        backButton.isAccessibilityElement = state.effectiveCanGoBack
+        forwardButton.isEnabled = state.canGoForward
+        navBackButton.isEnabled = state.effectiveCanGoBack
+        navForwardButton.isEnabled = state.canGoForward
+        newChatButton.isHidden = showsNavigationControls
         // When the title slot is hidden the left stack needs the freed width — otherwise the
         // greater/less-than inequalities keep reserving the center and squeeze the nav-pair pill.
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }

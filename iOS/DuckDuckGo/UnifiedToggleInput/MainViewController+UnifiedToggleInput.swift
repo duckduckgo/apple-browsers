@@ -26,6 +26,78 @@ import Suggestions
 import UIKit
 import WebKit
 
+struct AIChatTabChatHeaderNavigationAvailability: Equatable {
+    static let unavailable = AIChatTabChatHeaderNavigationAvailability(canGoBack: false, canGoForward: false)
+
+    let canGoBack: Bool
+    let canGoForward: Bool
+}
+
+private struct AIChatTabChatHeaderNavigationLock {
+    let tabUID: TabUID
+    let availability: AIChatTabChatHeaderNavigationAvailability
+}
+
+struct AIChatTabChatHeaderNavigationState {
+    private var lock: AIChatTabChatHeaderNavigationLock?
+    private var reservedTabUID: TabUID?
+
+    init() {}
+
+    mutating func displayedAvailability(
+        for tabUID: TabUID?,
+        currentAvailability: AIChatTabChatHeaderNavigationAvailability
+    ) -> AIChatTabChatHeaderNavigationAvailability {
+        guard let tabUID else {
+            lock = nil
+            return .unavailable
+        }
+
+        if lock?.tabUID != tabUID {
+            lock = nil
+        }
+        if reservedTabUID != tabUID {
+            reservedTabUID = nil
+        }
+
+        return lock?.availability ?? currentAvailability
+    }
+
+    mutating func reserveNavigationControls(for tabUID: TabUID) {
+        reservedTabUID = tabUID
+    }
+
+    mutating func reservesNavigationControls(for tabUID: TabUID?) -> Bool {
+        guard let tabUID else {
+            return false
+        }
+
+        if reservedTabUID != tabUID {
+            reservedTabUID = nil
+            return false
+        }
+
+        return true
+    }
+
+    mutating func lockAvailability(for tabUID: TabUID, availability: AIChatTabChatHeaderNavigationAvailability) {
+        guard lock?.tabUID != tabUID else { return }
+        lock = AIChatTabChatHeaderNavigationLock(tabUID: tabUID, availability: availability)
+    }
+
+    mutating func clearLock(for tabUID: TabUID) -> Bool {
+        let didClearLock = lock?.tabUID == tabUID
+        let didClearReservation = reservedTabUID == tabUID
+        if didClearLock {
+            lock = nil
+        }
+        if didClearReservation {
+            reservedTabUID = nil
+        }
+        return didClearLock || didClearReservation
+    }
+}
+
 // MARK: - Unified Toggle Input Setup
 
 extension MainViewController {
@@ -704,6 +776,43 @@ private extension MainViewController {
 
 extension MainViewController {
 
+    func displayedAIChatTabChatHeaderNavigationAvailability(for tab: TabViewController?) -> AIChatTabChatHeaderNavigationAvailability {
+        let currentAvailability = tab.map {
+            AIChatTabChatHeaderNavigationAvailability(canGoBack: $0.canGoBack, canGoForward: $0.canGoForward)
+        } ?? .unavailable
+
+        guard let unifiedToggleInputCoordinator else { return currentAvailability }
+        return unifiedToggleInputCoordinator.aiChatTabChatHeaderNavigationState.displayedAvailability(
+            for: tab?.tabModel.uid,
+            currentAvailability: currentAvailability
+        )
+    }
+
+    func shouldReserveAIChatTabChatHeaderNavigationControls(for tab: TabViewController?) -> Bool {
+        guard let unifiedToggleInputCoordinator else { return false }
+        return unifiedToggleInputCoordinator.aiChatTabChatHeaderNavigationState.reservesNavigationControls(for: tab?.tabModel.uid)
+    }
+
+    func reserveAIChatTabChatHeaderNavigationControlsForCurrentTabIfNeeded() {
+        guard let currentTab,
+              currentTab.isAITab != true,
+              currentTab.canGoBack || currentTab.canGoForward || currentTab.webView.url != nil else {
+            return
+        }
+        unifiedToggleInputCoordinator?.aiChatTabChatHeaderNavigationState.reserveNavigationControls(for: currentTab.tabModel.uid)
+    }
+
+    func lockAIChatTabChatHeaderNavigationAvailability(for tab: TabViewController) {
+        unifiedToggleInputCoordinator?.aiChatTabChatHeaderNavigationState.lockAvailability(
+            for: tab.tabModel.uid,
+            availability: AIChatTabChatHeaderNavigationAvailability(canGoBack: tab.canGoBack, canGoForward: tab.canGoForward)
+        )
+    }
+
+    func clearAIChatTabChatHeaderNavigationLock(for tab: TabViewController) -> Bool {
+        unifiedToggleInputCoordinator?.aiChatTabChatHeaderNavigationState.clearLock(for: tab.tabModel.uid) ?? false
+    }
+
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
         updateUnifiedInputContentVisibility(for: coordinator, renderState: coordinator.computeRenderState())
     }
@@ -1003,6 +1112,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        reserveAIChatTabChatHeaderNavigationControlsForCurrentTabIfNeeded()
         openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
@@ -1143,7 +1253,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapBack() {
-        if currentTab?.canGoBack == true {
+        if let currentTab, currentTab.canGoBack {
+            lockAIChatTabChatHeaderNavigationAvailability(for: currentTab)
             onBackPressed()
         } else {
             presentFocusedOmnibarFromAITab()
@@ -1151,6 +1262,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapForward() {
+        guard let currentTab, currentTab.canGoForward else { return }
+        lockAIChatTabChatHeaderNavigationAvailability(for: currentTab)
         onForwardPressed()
     }
 

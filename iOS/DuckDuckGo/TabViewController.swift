@@ -2235,6 +2235,7 @@ extension TabViewController: WKNavigationDelegate {
 
         // Ignore Frame Load Interrupted that will be caused when a download starts
         if error.code == 102 && error.domain == "WebKitErrorDomain" {
+            delegate?.tabDidInterruptProvisionalNavigation(self)
             return
         }
 

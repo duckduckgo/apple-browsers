@@ -2160,8 +2160,10 @@ class MainViewController: UIViewController {
         refreshBackForwardMenuItems()
         updateChromeForDuckPlayer()
         refreshMiddleButton()
-        aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
-                                                  canGoForward: currentTab?.canGoForward ?? false)
+        let aiChatTabHeaderNavAvailability = displayedAIChatTabChatHeaderNavigationAvailability(for: currentTab)
+        aiChatTabChatHeaderView?.setNavAvailable(canGoBack: aiChatTabHeaderNavAvailability.canGoBack,
+                                                  canGoForward: aiChatTabHeaderNavAvailability.canGoForward)
+        aiChatTabChatHeaderView?.setReservesNavigationControls(shouldReserveAIChatTabChatHeaderNavigationControls(for: currentTab))
         reconcileBackArrowForceVisibility()
         // Belt-and-braces reconciliation. Most explicit transitions also call this directly
         // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
@@ -4816,11 +4818,25 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidFinishNavigation(_ tab: TabViewController) {
+        let didClearAIChatTabHeaderNavigationLock = clearAIChatTabChatHeaderNavigationLock(for: tab)
+        if currentTab == tab {
+            if didClearAIChatTabHeaderNavigationLock {
+                refreshControls()
+            }
+            return
+        }
+
         // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
         // already triggers a save, so skip here to avoid a redundant save in the same run loop.
-        guard currentTab != tab else { return }
         _ = tabManager.save()
         tabsBarController?.reloadCell(for: tab.tabModel)
+    }
+
+    func tabDidInterruptProvisionalNavigation(_ tab: TabViewController) {
+        let didClearAIChatTabHeaderNavigationLock = clearAIChatTabChatHeaderNavigationLock(for: tab)
+        if currentTab == tab, didClearAIChatTabHeaderNavigationLock {
+            refreshControls()
+        }
     }
 
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {

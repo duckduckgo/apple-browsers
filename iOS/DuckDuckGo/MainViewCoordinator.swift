@@ -347,7 +347,7 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
             omniBar?.barView.restoreBarChrome()
-            omniBar?.barView.iconViewsForFadeIn.forEach { $0.alpha = 1 }
+            omniBar?.barView.setIconContainersAlpha(1)
         }
     }
 

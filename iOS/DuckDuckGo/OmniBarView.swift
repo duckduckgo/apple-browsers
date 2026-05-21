@@ -117,8 +117,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func prepareForMoveTransition()
     func moveTransitionCompleted()
 
-    /// Leaf icon subviews intended to fade in independently of the bar's pill and text field.
-    var iconViewsForFadeIn: [UIView] { get }
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat)
 
     /// Hides the bar's pill background, shadow, and text field while leaving icon subviews intact.
     func hideBarChrome()

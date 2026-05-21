@@ -1155,7 +1155,7 @@ extension DefaultOmniBarView {
         searchAreaView.revealButtons()
     }
 
-    var iconViewsForFadeIn: [UIView] { searchAreaView.iconViewsForFadeIn }
+    func setIconContainersAlpha(_ alpha: CGFloat) { searchAreaView.setIconContainersAlpha(alpha) }
 
     func hideBarChrome() {
         if savedBarChromeBackgroundColor == nil {

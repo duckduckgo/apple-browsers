@@ -99,20 +99,11 @@ final class DefaultOmniBarSearchView: UIView {
         textField.alpha = 1
     }
 
-    /// Leaf icons (not containers) so alpha is set directly and can't be defeated by parent re-renders.
-    var iconViewsForFadeIn: [UIView] {
-        [
-            loupeIconView,
-            dismissButtonView,
-            privacyInfoContainer,
-            customIconView,
-            clearButton,
-            voiceSearchButton,
-            reloadButton,
-            cancelButton,
-            customizableButton,
-            aiChatButton,
-        ]
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat) {
+        leftIconContainerPlaceholder.alpha = alpha
+        privacyInfoContainer.alpha = alpha
+        trailingItemsContainer.alpha = alpha
     }
     
     func updateFireModeAppearance(fireMode: Bool) {

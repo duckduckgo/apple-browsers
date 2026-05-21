@@ -28,7 +28,8 @@ struct FilePreviewHelperTests {
 
     // MARK: - handlesDownloadNatively
 
-    @Test("Returns true for text/calendar MIME regardless of URL/filename")
+    @available(iOS 16, *)
+    @Test("Returns true for text/calendar MIME regardless of URL/filename", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByMIME() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
@@ -39,7 +40,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Returns true when URL ends in .ics")
+    @available(iOS 16, *)
+    @Test("Returns true when URL ends in .ics", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByURLExtension() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
@@ -50,7 +52,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Returns true when filename ends in .ics (dynamic URL via Content-Disposition)")
+    @available(iOS 16, *)
+    @Test("Returns true when filename ends in .ics (dynamic URL via Content-Disposition)", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByFilenameExtension() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
@@ -61,7 +64,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Returns false when no signal indicates ICS")
+    @available(iOS 16, *)
+    @Test("Returns false when no signal indicates ICS", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyRejectsUnrelatedDownloads() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(!FilePreviewHelper.handlesDownloadNatively(
@@ -72,7 +76,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Returns false when feature flag is off, even with all positive signals")
+    @available(iOS 16, *)
+    @Test("Returns false when feature flag is off, even with all positive signals", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyRespectsFeatureFlag() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
         #expect(!FilePreviewHelper.handlesDownloadNatively(
@@ -83,7 +88,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Matches URL extension case-insensitively")
+    @available(iOS 16, *)
+    @Test("Matches URL extension case-insensitively", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesUppercaseExtension() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
@@ -96,7 +102,8 @@ struct FilePreviewHelperTests {
 
     // MARK: - shouldPersistInDownloads
 
-    @Test("Persists when MIME is text/calendar")
+    @available(iOS 16, *)
+    @Test("Persists when MIME is text/calendar", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByMIME() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
@@ -107,7 +114,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Persists when filename ends in .ics even if URL doesn't")
+    @available(iOS 16, *)
+    @Test("Persists when filename ends in .ics even if URL doesn't", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByFilenameExtension() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
@@ -118,7 +126,8 @@ struct FilePreviewHelperTests {
         ))
     }
 
-    @Test("Does not persist when feature flag is off")
+    @available(iOS 16, *)
+    @Test("Does not persist when feature flag is off", .timeLimit(.minutes(1)))
     func shouldPersistRespectsFeatureFlag() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
         #expect(!FilePreviewHelper.shouldPersistInDownloads(

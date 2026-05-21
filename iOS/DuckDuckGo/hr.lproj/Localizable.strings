@@ -116,7 +116,8 @@
 "action.title.newFireTabAction" = "Nova Fire kartica";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Otvori na Fire kartici";
+"action.title.newFireTabForUrl" = "Otvori na kartici Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nova kartica";
 
@@ -177,6 +178,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "YouTube";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Dno";
 
@@ -207,10 +214,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI značajke";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Možeš priložiti samo %d datoteke/a po razgovoru.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Ne možemo pročitati priložene datoteke jer je barem jedna od njih šifrirana.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Priložene datoteke prelaze ukupno ograničenje veličine od %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Ova je datoteka prevelika. Maksimalna veličina datoteke je %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Jedna od priloženih datoteka ima više stranica nego što podržavamo. Prenesite datoteke s najviše %d stranica.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Ne možemo pročitati jednu od priloženih datoteka. Provjeri je li datoteka oštećena i pokušaj ponovno.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Možeš priložiti samo %d slike/a po razgovoru.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Možeš priložiti samo %d slike/a odjednom.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Priloži datoteku";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Priloži fotografiju";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Snimi fotografiju";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Ta je poruka predugačka za slanje s prilozima.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Prilozi su privremeno nedostupni. Pokušaj ponovno nešto kasnije.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Ova vrsta datoteke nije podržana.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Ova vrsta datoteke nije podržana; priloži %1$@ ili %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Ova vrsta datoteke nije podržana, priloži %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitičke zadatke";
@@ -1520,9 +1570,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Ispravi pogreške";
 
-/* No comment provided by engineer. */
-"Delete" = "Izbriši";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "uređaj";
 
@@ -1634,11 +1681,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI značajke privatne su i neobavezne. Tvoji podaci se ne koriste za obuku AI-a.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Priloži sadržaj stranice";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Pitaj o stranici";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Priloži sadržaj stranice";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sažmi ovu stranicu";
@@ -1990,6 +2037,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zadnje korištena Fire kartica";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Povratak na %@";
 
@@ -2340,6 +2388,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire kartica";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
 
@@ -3365,6 +3414,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Želiš li izbrisati Fire kartice i njihove podatke?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Izbrisati kartice i podatke mrežne lokacije?";
 
@@ -4450,6 +4500,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Zatvori kartica";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvori početnu karticu";
 
@@ -4461,6 +4512,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nova kartica";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvori početnu karticu";
 
@@ -4469,6 +4521,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Otvori Fire karticu";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvorite „%1$@” na %2$@";
 
@@ -4883,11 +4936,41 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo uklanja video oglase na YouTubeu, tako da možeš gledati videozapise bez prekida.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Pošalji anonimnu prijavu kvara DuckDuckGou. Pomozi nam da poboljšamo blokiranje oglasa za sve!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "Blokiranje YouTube oglasa";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Pošalji izvješće o problemu";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "Blokiranje oglasa na YouTubeu ne radi?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Onemogućeno do ponovnog pokretanja";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo blokira video oglase na YouTubeu, tako da možeš gledati videozapise bez prekida.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Omogući blokiranje YouTube oglasa";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Onemogući blokiranje oglasa na YouTubeu";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Uvijek isključeno";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Uvijek uključeno";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Onemogući do ponovnog pokretanja";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "Blokiranje oglasa na YouTubeu";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Blokiranje oglasa";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTubeu";
@@ -4897,6 +4980,15 @@
 
 /* Learn More link appended after the YouTube ad blocking toggle description */
 "youtube.ad.blocking.toggle.footer.learn-more" = "Saznaj više";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Shvatio/la sam";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "Blokiranje oglasa pogođeno je nedavnim promjenama YouTubea. Radimo na rješavanju ovih problema i cijenimo tvoje razumijevanje.";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "Blokiranje oglasa na YouTubeu nije dostupno";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Knjižne oznake";

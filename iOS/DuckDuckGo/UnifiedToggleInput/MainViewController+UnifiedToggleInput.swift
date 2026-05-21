@@ -886,7 +886,7 @@ private extension MainViewController {
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
-        let omnibarIconsToReveal = viewCoordinator.omniBar?.barView.iconViewsForFadeIn ?? []
+        let revealBarView = viewCoordinator.omniBar?.barView
 
         UIView.animate(
             withDuration: duration,
@@ -903,7 +903,7 @@ private extension MainViewController {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 0
                 }
                 if let omnibarPlaceholderWindowX {
-                    coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                    coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
             },
             completion: { [weak self] _ in
@@ -940,13 +940,13 @@ private extension MainViewController {
 
         // Outer commits alpha=0 to the presentation layer before the fade animator captures `from`.
         UIView.animate(withDuration: 0, animations: {
-            omnibarIconsToReveal.forEach { $0.alpha = 0 }
+            revealBarView?.setIconContainersAlpha(0)
         }, completion: { _ in
             UIView.animate(
                 withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
                 delay: 0,
                 options: [.curveEaseIn, .allowUserInteraction],
-                animations: { omnibarIconsToReveal.forEach { $0.alpha = 1 } }
+                animations: { revealBarView?.setIconContainersAlpha(1) }
             )
         })
     }

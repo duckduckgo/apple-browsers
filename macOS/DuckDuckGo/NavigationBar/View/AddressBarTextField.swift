@@ -1120,12 +1120,15 @@ extension AddressBarTextField {
                 }
             case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
-            case .unknown, .askAIChat:
+            case .askAIChat:
+                self = Suffix.aiChat
+            case .unknown:
                 self = Suffix.search
             }
         }
 
         case search
+        case aiChat
         case visit(host: String)
         case url(URL)
         case title(String)
@@ -1141,6 +1144,7 @@ extension AddressBarTextField {
         }
 
         static let searchSuffix = " – \(UserText.searchDuckDuckGoSuffix)"
+        static let aiChatSuffix = " – \(UserText.aiChatAddressBarTrustedIndicator)"
         static let searchOpenTabSuffix = " – \(UserText.duckDuckGoSearchSuffix)"
         static let internalPageOpenTabSuffix = " – \(UserText.duckDuckGo)"
         static let visitSuffix = " – \(UserText.addressBarVisitSuffix)"
@@ -1149,6 +1153,8 @@ extension AddressBarTextField {
             switch self {
             case .search:
                 return Self.searchSuffix
+            case .aiChat:
+                return Self.aiChatSuffix
             case .visit(host: let host):
                 return "\(Self.visitSuffix) \(host)"
             case .openTab(let url) where url.isDuckDuckGoSearch:

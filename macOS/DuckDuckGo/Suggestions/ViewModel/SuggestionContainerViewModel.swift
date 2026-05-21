@@ -373,6 +373,16 @@ final class SuggestionContainerViewModel {
     private func updateSelectedSuggestionViewModel() {
         if let selectionIndex {
             selectedSuggestionViewModel = suggestionViewModel(at: selectionIndex)
+        } else if selectedRowContent == .aiChatCell, let userStringValue, !userStringValue.isEmpty {
+            // Synthesize an .askAIChat view model so the address bar renders the
+            // " – Duck.ai" context clue when the synthetic Ask-privately row is selected.
+            selectedSuggestionViewModel = SuggestionViewModel(
+                isHomePage: isHomePage,
+                suggestion: .askAIChat(value: userStringValue),
+                userStringValue: userStringValue,
+                themeManager: themeManager,
+                featureFlagger: featureFlagger
+            )
         } else {
             selectedSuggestionViewModel = nil
         }

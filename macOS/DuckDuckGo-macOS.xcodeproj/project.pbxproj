@@ -3830,6 +3830,7 @@
 		C167D9032DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C167D9042DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C167D9052DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
+		C167D9062DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C168B9AC2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C168B9AB2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift */; };
 		C168B9AD2B31DC7F001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C168B9AB2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift */; };
 		C172E72F2C9329D300521D9A /* FlippedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C172E72E2C9329D300521D9A /* FlippedView.swift */; };
@@ -16702,6 +16703,7 @@
 				4BF0E5152AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift in Sources */,
 				7B7BD9482DFBDC780074633C /* VPNNotificationsObserver.swift in Sources */,
 				F1DA51992BF6083B00CF29FA /* SubscriptionPixel.swift in Sources */,
+				C167D9062DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */,
 				F1C70D812BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
 				7BA7CC5C2AD120C30042E5CE /* EventMapping+NetworkProtectionError.swift in Sources */,
 				B65DA5F02A77CC3C00CBEE8D /* Bundle+NetworkProtectionExtensions.swift in Sources */,

@@ -2347,7 +2347,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let source = self.inputMode == .aiChat ? "duck_ai" : "ntp"
+                let source = self.isAITabState ? "duck_ai" : "ntp"
                 DailyPixel.fireDailyAndCount(
                     pixel: .unifiedToggleInputVoiceTapped,
                     withAdditionalParameters: ["source": source]

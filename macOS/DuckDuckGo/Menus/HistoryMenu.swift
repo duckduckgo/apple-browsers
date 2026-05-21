@@ -122,6 +122,8 @@ final class HistoryMenu: NSMenu {
         clearOldVariableMenuItems()
         addRecentlyVisited()
         addClearAllAndShowHistoryOnTheBottom()
+
+        alignItemTextWithIcons()
     }
 
     private func clearOldVariableMenuItems() {

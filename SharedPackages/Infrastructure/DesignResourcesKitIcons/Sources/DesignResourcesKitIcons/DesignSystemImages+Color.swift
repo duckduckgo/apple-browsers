@@ -298,6 +298,8 @@ public extension DesignSystemImages {
                     ? .init(resource: .fire128)
                     : .init(resource: .fire128Legacy)
             }
+            public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
+            public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }
         }
     }
 }

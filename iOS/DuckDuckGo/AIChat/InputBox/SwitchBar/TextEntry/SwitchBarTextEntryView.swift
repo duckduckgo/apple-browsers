@@ -646,15 +646,11 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self else { return }
-
-                if self.handler.isUsingFadeOutAnimation {
-                    self.window?.layoutIfNeeded()
+                // Snap — animating the buttonsView-driven width change reveals the new placeholder
+                // tail progressively. Pose Y is animated by `setInputMode`'s outer UIView.animate.
+                UIView.performWithoutAnimation {
                     self.updateForCurrentMode()
-                    UIView.animate(withDuration: 0.25) {
-                        self.window?.layoutIfNeeded()
-                    }
-                } else {
-                    self.updateForCurrentMode()
+                    self.layoutIfNeeded()
                 }
             }
             .store(in: &cancellables)

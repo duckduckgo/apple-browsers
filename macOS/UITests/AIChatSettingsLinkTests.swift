@@ -63,9 +63,9 @@ class AIChatSettingsLinkTests: UITestCase {
         //    and the button only exists while the modal is open.
         //
         // 2. The modal container itself, labeled "Duck.ai Settings". The dialog is an
-        //    AXGroup with AXApplicationDialog subrole — XCUI surfaces this under
-        //    `.otherElements` on current macOS. If a future macOS or WebKit revision
-        //    maps it to `.groups` instead, swap `.otherElements` for `.groups` below.
+        //    AXGroup with AXApplicationDialog subrole — XCUI surfaces it under `.groups`
+        //    on current macOS. If a future macOS or WebKit revision moves it to
+        //    `.otherElements`, swap `.groups` for `.otherElements` below.
         let closeDialogButton = app.webViews.buttons["close dialog"]
         XCTAssertTrue(closeDialogButton.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "Duck.ai Settings modal's close button should be visible after clicking the link")

@@ -37,30 +37,19 @@ final class DataBrokerUserContentController: WKUserContentController {
          contentBlocking: DBPWebViewContentBlocking?) throws {
         super.init()
 
-        // Gate on the un-overridden privacy config. Skip both rule-list install and
-        // non-isolated tracker-protection script if the global contentBlocking feature
-        // is off (kill switch parity with UserContentController.installGlobalContentRuleLists).
-        let effectiveContentBlocking: DBPWebViewContentBlocking?
-        if let contentBlocking,
-           privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
-            effectiveContentBlocking = contentBlocking
-        } else {
-            effectiveContentBlocking = nil
-        }
-
         dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager,
                                                          prefs: prefs,
                                                          delegate: delegate,
                                                          executionConfig: executionConfig,
                                                          shouldContinueActionHandler: shouldContinueActionHandler,
-                                                         contentBlocking: effectiveContentBlocking)
+                                                         contentBlocking: contentBlocking)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])
         }
 
-        if let effectiveContentBlocking {
-            for ruleList in effectiveContentBlocking.contentRuleLists {
+        if let contentBlocking {
+            for ruleList in contentBlocking.contentRuleLists {
                 self.add(ruleList)
             }
         }

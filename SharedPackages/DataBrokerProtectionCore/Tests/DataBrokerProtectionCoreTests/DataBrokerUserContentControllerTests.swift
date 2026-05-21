@@ -51,18 +51,18 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
     // MARK: - contentBlocking == nil
 
     func testWhenContentBlockingIsNil_thenOnlyIsolatedScriptIsInstalledAndNoRuleLists() async throws {
-        let sut = try makeSUT(contentBlocking: nil, contentBlockingFeatureEnabled: true)
+        let sut = try makeSUT(contentBlocking: nil)
 
         XCTAssertTrue(sut.installedContentRuleLists.isEmpty)
         XCTAssertEqual(sut.dataBrokerUserScripts?.userScripts.count, 1)
         XCTAssertNil(sut.dataBrokerUserScripts?.contentScopeUserScriptForTrackerProtection)
     }
 
-    // MARK: - contentBlocking != nil, feature enabled
+    // MARK: - contentBlocking != nil
 
-    func testWhenContentBlockingIsProvidedAndFeatureEnabled_thenInstallsRuleListsAndAddsNonIsolatedScript() async throws {
+    func testWhenContentBlockingIsProvided_thenInstallsRuleListsAndAddsNonIsolatedScript() async throws {
         let mock = DBPWebViewContentBlockingMock(contentRuleLists: [ruleList])
-        let sut = try makeSUT(contentBlocking: mock, contentBlockingFeatureEnabled: true)
+        let sut = try makeSUT(contentBlocking: mock)
 
         XCTAssertEqual(sut.installedContentRuleLists.count, 1)
         XCTAssertEqual(sut.installedContentRuleLists.first?.identifier, ruleList.identifier)
@@ -70,22 +70,11 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
         XCTAssertNotNil(sut.dataBrokerUserScripts?.contentScopeUserScriptForTrackerProtection)
     }
 
-    // MARK: - contentBlocking != nil, feature disabled
-
-    func testWhenContentBlockingFeatureIsDisabledInPrivacyConfig_thenInstallIsInert() async throws {
-        let mock = DBPWebViewContentBlockingMock(contentRuleLists: [ruleList])
-        let sut = try makeSUT(contentBlocking: mock, contentBlockingFeatureEnabled: false)
-
-        XCTAssertTrue(sut.installedContentRuleLists.isEmpty)
-        XCTAssertEqual(sut.dataBrokerUserScripts?.userScripts.count, 1)
-        XCTAssertNil(sut.dataBrokerUserScripts?.contentScopeUserScriptForTrackerProtection)
-    }
-
     // MARK: - cleanup
 
     func testWhenCleanUpBeforeClosingCalled_thenRuleListsAndScriptsAreCleared() async throws {
         let mock = DBPWebViewContentBlockingMock(contentRuleLists: [ruleList])
-        let sut = try makeSUT(contentBlocking: mock, contentBlockingFeatureEnabled: true)
+        let sut = try makeSUT(contentBlocking: mock)
         XCTAssertEqual(sut.installedContentRuleLists.count, 1)
 
         sut.cleanUpBeforeClosing()
@@ -96,14 +85,8 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeSUT(contentBlocking: DBPWebViewContentBlocking?,
-                         contentBlockingFeatureEnabled: Bool) throws -> DataBrokerUserContentController {
+    private func makeSUT(contentBlocking: DBPWebViewContentBlocking?) throws -> DataBrokerUserContentController {
         let privacyConfigManager = PrivacyConfigurationManagingMock()
-        if let mockConfig = privacyConfigManager.privacyConfig as? PrivacyConfigurationMock {
-            mockConfig.isFeatureEnabledCheck = { feature in
-                feature == .contentBlocking ? contentBlockingFeatureEnabled : false
-            }
-        }
         let prefs = ContentScopeProperties(
             gpcEnabled: false,
             sessionKey: UUID().uuidString,

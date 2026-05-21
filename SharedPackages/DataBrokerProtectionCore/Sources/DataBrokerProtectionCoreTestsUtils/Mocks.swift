@@ -212,14 +212,9 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
-    public var isFeatureEnabledCheck: ((PrivacyFeature) -> Bool)?
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
-    }
-
-    public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
-        return isFeatureEnabledCheck?(featureKey) ?? false
     }
 
     public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {

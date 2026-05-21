@@ -32,6 +32,11 @@ struct ReturnToTabCard: View {
     /// expects window-space coordinates because it attaches the popover to the key window.
     @State private var menuFrameInWindow: CGRect = .zero
 
+    /// Frame of the three-dots menu button in the key window's coordinate space.
+    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter
+    /// expects window-space coordinates because it attaches the popover to the key window.
+    @State private var menuFrameInWindow: CGRect = .zero
+
     var body: some View {
         Group {
             if model.isActionsEnabled {

@@ -64,6 +64,7 @@ extension Preferences {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.top, 6)
+                                .accessibilityIdentifier("Preferences.AIChat.duckAiSettingsLink")
                                 .visibility(model.shouldShowAIFeatures ? .visible : .gone)
                             }
                         }

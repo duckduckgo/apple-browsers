@@ -524,6 +524,10 @@ class TabViewController: UIViewController {
                 Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     guard let self else { return }
+                    // Re-check the URL after the delay so the dialog doesn't
+                    // present if the user navigated away from a playable
+                    // YouTube video during the 2-second wait.
+                    guard self.webView.url?.isPlayableYoutubeVideoContent == true else { return }
                     self.delegate?.tabDidRequestYouTubeAdBlockUnavailableDialog(tab: self)
                 }
             }

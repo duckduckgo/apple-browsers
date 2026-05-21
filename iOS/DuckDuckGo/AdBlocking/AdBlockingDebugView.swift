@@ -48,19 +48,21 @@ struct AdBlockingDebugView: View {
             }
 
             Section {
-                Toggle("Remotely Disabled", isOn: $isRemotelyDisabled)
+                Toggle(isOn: $isRemotelyDisabled) { Text(verbatim: "Remotely Disabled") }
                 resettableStatusRow(title: "Unavailable notice shown",
                                     value: unavailableNoticeShown,
                                     key: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
             } header: {
-                Text("Remote Disable Override")
+                Text(verbatim: "Remote Disable Override")
             } footer: {
-                Text("Simulates the YouTube Ad Block feature being remotely disabled. Placeholder — replace once the real derivation lands.")
+                Text(verbatim: "Simulates the YouTube Ad Block feature being remotely disabled. Placeholder — replace once the real derivation lands.")
             }
 
             Section {
-                Button("Clear today's detection-pixel stamps") {
+                Button {
                     clearDetectionPixelDailyStamps()
+                } label: {
+                    Text(verbatim: "Clear today's detection-pixel stamps")
                 }
             } header: {
                 Text(verbatim: "Detection pixels")
@@ -68,7 +70,7 @@ struct AdBlockingDebugView: View {
                 Text(verbatim: "Clears today's last-fired stamps for the five m_web_extension_adblocking_detected_*_daily pixels so they can fire again today.")
             }
         }
-        .navigationTitle("Ad Blocking")
+        .navigationTitle(Text(verbatim: "Ad Blocking"))
         .onAppear(perform: refresh)
     }
 
@@ -111,9 +113,11 @@ struct AdBlockingDebugView: View {
             Spacer()
             Text(string(for: value))
                 .foregroundColor(.secondary)
-            Button("Reset") {
+            Button {
                 try? storage.removeValue(for: key)
                 refresh()
+            } label: {
+                Text(verbatim: "Reset")
             }
             .buttonStyle(.borderless)
         }

@@ -109,7 +109,7 @@ struct YouTubeAdBlockBreakageReportView: View {
 
 private extension YouTubeAdBlockBreakageReportView {
     enum Constants {
-        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 0, trailing: 24)
         static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8

@@ -682,6 +682,17 @@ final class MainViewController: NSViewController {
         wireToggleReferenceToAIChatTextContainer()
         wireAIChatOmnibarHeightUpdates()
         wireAIChatOmnibarHitTesting()
+        wireAIChatOmnibarEscapeHandling()
+    }
+
+    /// When the duck.ai omnibar's `@`-mention picker is open, Esc should dismiss only the
+    /// picker — without touching the omnibar's focus or duck.ai mode. The address bar's
+    /// `escapeKeyDown()` consults the closure we install here BEFORE running its own
+    /// focus-resign logic; returning `true` short-circuits all of that.
+    private func wireAIChatOmnibarEscapeHandling() {
+        navigationBarViewController.addressBarViewController?.aiChatOmnibarHandledEscape = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.dismissMentionPickerIfPresented() ?? false
+        }
     }
 
     @objc private func windowDidResize() {

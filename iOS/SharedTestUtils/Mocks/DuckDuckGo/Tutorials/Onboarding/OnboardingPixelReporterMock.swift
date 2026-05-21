@@ -33,6 +33,8 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureAutoRestoreOnboardingSkipTapped = false
     private(set) var didCallMeasureBrowserComparisonImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
+    private(set) var didCallMeasureAiComparisonImpression = false
+    private(set) var didCallMeasureAiComparisonCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
     private(set) var didCallMeasureChooseAppIconColor = false
     private(set) var didCaptureAppIconColorSelection: AppIcon?
@@ -69,7 +71,11 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDuckAIQueryExperimentChooseAIChat = false
     private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
     private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
-    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryExperimentMode?
+    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryMode?
+    private(set) var didCallMeasureDuckAIQuerySelectionImpression = false
+    private(set) var didCallMeasureDuckAIQuerySubmission = false
+    private(set) var capturedDuckAIQuerySubmissionPromptSourceValue: String?
+    private(set) var capturedDuckAIQuerySubmissionSelection: DuckAIQueryMode?
     private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
     private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
     private(set) var didCallMeasureDuckAIExperimentFinalDialogCTAAction = false
@@ -141,6 +147,14 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureChooseBrowserCTAAction() {
         didCallMeasureChooseBrowserCTAAction = true
+    }
+
+    func measureAiComparisonImpression() {
+        didCallMeasureAiComparisonImpression = true
+    }
+
+    func measureAiComparisonCTAAction() {
+        didCallMeasureAiComparisonCTAAction = true
     }
 
     func measureChooseAppIconImpression() {
@@ -263,10 +277,20 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureDuckAIQueryExperimentChooseAIChat = true
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
         didCallMeasureDuckAIQueryExperimentQuerySubmission = true
         didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
         didCaptureDuckAIQueryExperimentSelection = selection
+    }
+
+    func measureDuckAIQuerySelectionImpression() {
+        didCallMeasureDuckAIQuerySelectionImpression = true
+    }
+
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
+        didCallMeasureDuckAIQuerySubmission = true
+        capturedDuckAIQuerySubmissionPromptSourceValue = promptSource.rawValue
+        capturedDuckAIQuerySubmissionSelection = selection
     }
 
     func measureTrySearchDialogSuggestedSearchTapped() {

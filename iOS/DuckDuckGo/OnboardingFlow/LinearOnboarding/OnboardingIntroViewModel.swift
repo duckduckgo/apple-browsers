@@ -266,7 +266,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryExperimentMode) {
+    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryMode) {
         switch selection {
         case .duckAI:
             pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
@@ -288,11 +288,18 @@ final class OnboardingIntroViewModel: ObservableObject {
         onSearchFromOnboarding?(query)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
-        pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
-            selection: selection,
-            promptSource: promptSource
-        )
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
+        if resolveDuckAIQueryExperimentCohortID() != nil {
+            pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
+                selection: selection,
+                promptSource: promptSource
+            )
+        } else {
+            pixelReporter.measureDuckAIQuerySubmission(
+                selection: selection,
+                promptSource: promptSource
+            )
+        }
     }
 
     func restoreSyncAccountAction() {
@@ -402,7 +409,7 @@ private extension OnboardingIntroViewModel {
             case .duckAIQuerySelection:
                 let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
                 // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
-                let duckAIQueryMode: DuckAIQueryExperimentMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
+                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
                 // Duck.ai Tailored flow shows step counter while experiment does not.
                 let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
@@ -545,7 +552,7 @@ private extension OnboardingIntroViewModel {
         introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryMode {
         switch resolveDuckAIQueryExperimentCohortID() {
         case .treatmentB:
             .search

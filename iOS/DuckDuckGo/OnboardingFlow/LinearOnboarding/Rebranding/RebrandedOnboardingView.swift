@@ -582,7 +582,7 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 content: content,
                 defaultMode: defaultMode,
@@ -590,7 +590,7 @@ extension OnboardingRebranding {
                 onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,
                 openSearchAction: model.searchFromOnboarding,
-                measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+                measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
                 startExitTransitionAction: {
                     beginExperimentExitTransition()
                 }
@@ -756,7 +756,7 @@ private extension OnboardingRebranding.OnboardingView.BubbleBackedDialogConfigur
     init(tailOffset: CGFloat, tailDirection: OnboardingRebranding.OnboardingView.BubbleTail.Direction, additionalTopMargin: CGFloat = 0, isVisible: Bool) {
         self.init(tail: .init(offset: tailOffset, direction: tailDirection), additionalTopMargin: additionalTopMargin, isVisible: isVisible)
     }
-    
+
 }
 
 // MARK: - Bubble Visibility Typing Modifier

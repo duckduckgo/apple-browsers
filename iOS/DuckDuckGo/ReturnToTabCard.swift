@@ -49,7 +49,6 @@ struct ReturnToTabCard: View {
                 contentView
             }
         }
-        .id(model.targetTab.uid)
         .frame(height: Metrics.height)
     }
 

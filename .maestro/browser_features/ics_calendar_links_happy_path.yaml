@@ -26,15 +26,12 @@ tags:
 - inputText: "https://privacy-test-pages.site/features/download/calendar-single.ics"
 - pressKey: Enter
 
-# EKEventEditViewController's nav bar shows "Cancel" and "Add" buttons. Asserting on those
-# avoids matching anything in our app chrome.
+# EKEventEditViewController shows "New Event" as the nav title across iOS versions.
+# Avoids the iOS 26 change that replaced "Cancel"/"Add" text buttons with icons.
 - extendedWaitUntil:
-    visible: "Add"
+    visible: "New Event"
     timeout: 10000
-- assertVisible: "Cancel"
 
 # No fallback toast for a happy-path single event.
 - assertNotVisible: "Multiple events aren't supported"
 - assertNotVisible: "This file can't be processed"
-
-- tapOn: "Cancel"

@@ -54,9 +54,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 56
-        static let escapeHatchTopPadding: CGFloat = 0
+        static let escapeHatchTopPadding: CGFloat = 8
         static let headerBottomPadding: CGFloat = 24
-        static let syncPromoInterCardSpacing: CGFloat = 12
+        static let syncPromoInterCardSpacing: CGFloat = 20
         static let recentChatsHeaderHeight: CGFloat = 48
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
         static let recentChatsHeaderBottomPadding: CGFloat = 24
@@ -74,7 +74,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         )
 
         static let unifiedToggleInput = LayoutConfiguration(
-            tableHorizontalInset: 10,
+            tableHorizontalInset: 0,
             escapeHatchHorizontalInset: Constants.horizontalInset,
             escapeHatchMaxWidth: nil
         )
@@ -135,10 +135,9 @@ final class DuckAISuggestionsViewController: UIViewController {
     /// Hatch is hidden while typing — mirrors Search-side, where the autocomplete view covers the NTP+hatch.
     private var isQueryActive = false
 
-    private let syncPromoManager: SyncPromoManaging?
     private let syncService: DDGSyncing?
+    private let syncPromoViewModel: AIChatSyncPromoViewModel?
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
-    private var syncPromoImpressionRecorded = false
     private var isVisibleContent = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
@@ -146,13 +145,15 @@ final class DuckAISuggestionsViewController: UIViewController {
          queryProvider: @escaping () -> String,
          layoutConfiguration: LayoutConfiguration = .standard,
          syncPromoManager: SyncPromoManaging? = nil,
-         syncService: DDGSyncing? = nil) {
+         syncService: DDGSyncing? = nil,
+         syncPromoViewModel: AIChatSyncPromoViewModel? = nil) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
         self.layoutConfiguration = layoutConfiguration
-        self.syncPromoManager = syncPromoManager
         self.syncService = syncService
+        self.syncPromoViewModel = syncPromoViewModel
+            ?? syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -268,9 +269,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Header (escape hatch + sync promo)
 
     private var shouldShowSyncPromo: Bool {
-        guard !isQueryActive,
-              let syncPromoManager else { return false }
-        return syncPromoManager.shouldPresentPromoFor(.aiChat, count: chats.count)
+        syncPromoViewModel?.shouldShowPromo(isQueryActive: isQueryActive, chatCount: chats.count) ?? false
     }
 
     private func rebuildHeader() {
@@ -384,12 +383,10 @@ final class DuckAISuggestionsViewController: UIViewController {
     }
 
     private func recordSyncPromoImpressionIfNeeded() {
-        guard isVisibleContent,
-              syncPromoHostingController != nil,
-              !syncPromoImpressionRecorded else { return }
-        syncPromoImpressionRecorded = true
-        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
-        syncPromoManager?.recordImpressionFor(.aiChat)
+        syncPromoViewModel?.recordImpressionIfNeeded(
+            isVisibleContent: isVisibleContent,
+            isPromoVisible: syncPromoHostingController != nil
+        )
     }
 
     override func viewDidLayoutSubviews() {
@@ -405,14 +402,14 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Sync promo callbacks
 
     private func handleSyncPromoCTATap() {
-        Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
-        syncPromoManager?.markPromoHandledFor(.aiChat)
-        delegate?.duckAISuggestionsDidRequestSyncSetup()
+        if syncPromoViewModel?.handleCTATap() == .requestSyncSetup {
+            delegate?.duckAISuggestionsDidRequestSyncSetup()
+        }
         rebuildHeader()
     }
 
     private func handleSyncPromoClose() {
-        syncPromoManager?.dismissPromoFor(.aiChat, reason: .userTapped)
+        syncPromoViewModel?.handleCloseTap()
         rebuildHeader()
     }
 

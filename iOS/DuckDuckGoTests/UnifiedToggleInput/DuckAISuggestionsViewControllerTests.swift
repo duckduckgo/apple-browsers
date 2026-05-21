@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import Suggestions
 import UIKit
 import XCTest
@@ -25,6 +26,16 @@ import XCTest
 
 @MainActor
 final class DuckAISuggestionsViewControllerTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        PixelFiringMock.tearDown()
+    }
+
+    override func tearDown() {
+        PixelFiringMock.tearDown()
+        super.tearDown()
+    }
 
     private struct Harness {
         let viewController: DuckAISuggestionsViewController
@@ -37,13 +48,16 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
                              syncPromoManager: SyncPromoManaging? = nil) -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
         let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
+        let syncPromoViewModel = syncPromoManager.map {
+            AIChatSyncPromoViewModel(syncPromoManager: $0, pixelFiring: PixelFiringMock.self)
+        }
         let vc = DuckAISuggestionsViewController(
             chatViewModel: viewModel,
             urlLoader: loader,
             queryProvider: { query },
             layoutConfiguration: layoutConfiguration,
-            syncPromoManager: syncPromoManager,
-            syncService: nil
+            syncService: nil,
+            syncPromoViewModel: syncPromoViewModel
         )
         vc.loadViewIfNeeded()
         return Harness(viewController: vc, chatViewModel: viewModel, urlLoader: loader)
@@ -88,7 +102,7 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, 0, accuracy: 0.5)
     }
 
-    func test_unifiedToggleInputLayout_matchesRecentChatsHorizontalInset() throws {
+    func test_unifiedToggleInputLayout_matchesSearchHorizontalInset() throws {
         let vc = makeViewController(layoutConfiguration: .unifiedToggleInput)
         vc.view.frame = CGRect(x: 0, y: 0, width: 430, height: 800)
         vc.view.layoutIfNeeded()
@@ -100,8 +114,8 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let header = try XCTUnwrap(table.tableHeaderView)
         let hatchView = try XCTUnwrap(header.subviews.first)
         let hatchFrame = hatchView.convert(hatchView.bounds, to: vc.view)
-        let expectedTableInset: CGFloat = 10
-        let expectedHatchInset: CGFloat = 26
+        let expectedTableInset: CGFloat = 0
+        let expectedHatchInset: CGFloat = 16
 
         XCTAssertEqual(table.frame.minX, expectedTableInset, accuracy: 0.5)
         XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, expectedTableInset, accuracy: 0.5)
@@ -200,6 +214,26 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let header = try XCTUnwrap(table.tableHeaderView, "promo eligibility → table header is installed")
         XCTAssertGreaterThan(header.bounds.height, 0)
         XCTAssertEqual(harness.viewController.children.count, 1, "promo hosting controller is added as a child")
+    }
+
+    func test_syncPromo_withEscapeHatch_usesExpectedInterCardSpacing() throws {
+        let mockManager = MockSyncPromoManager()
+        mockManager.shouldPresentForTouchpoint[.aiChat] = true
+        let harness = makeHarness(syncPromoManager: mockManager)
+        harness.viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        harness.viewController.view.layoutIfNeeded()
+
+        harness.viewController.setEscapeHatch(.testFixture)
+        harness.viewController.view.layoutIfNeeded()
+
+        let table = try tableView(in: harness.viewController)
+        let header = try XCTUnwrap(table.tableHeaderView)
+        XCTAssertEqual(header.subviews.count, 2)
+
+        let hatchFrame = header.subviews[0].frame
+        let promoFrame = header.subviews[1].frame
+
+        XCTAssertEqual(promoFrame.minY - hatchFrame.maxY, 20, accuracy: 0.5)
     }
 
     func test_syncPromo_whenManagerDeclinesToPresent_doesNotInstallHeader() throws {

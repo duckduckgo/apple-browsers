@@ -29,7 +29,6 @@ import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
-import SwiftUI
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -90,12 +89,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
-    private lazy var syncPromoManager: SyncPromoManaging? = {
-        guard let syncService else { return nil }
-        return SyncPromoManager(syncService: syncService,
-                                featureFlagger: featureFlagger,
-                                privacyConfigurationManager: privacyConfigurationManager)
-    }()
+    private let syncPromoManager: SyncPromoManaging?
+    private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
 
     // MARK: - Manager Components
 
@@ -122,7 +117,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         syncService: DDGSyncing? = nil) {
+         syncService: DDGSyncing? = nil,
+         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.daxLogoManager.usesLottieTransition = true
@@ -132,6 +128,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.syncService = syncService
+        self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
+                                                                  featureFlagger: featureFlagger,
+                                                                  privacyConfigurationManager: privacyConfigurationManager) }
+        self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -903,25 +903,8 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {
-        presentAIChatSyncIntroSheet()
-    }
-
-    private func presentAIChatSyncIntroSheet() {
-        let sheet = AIChatSyncIntroSheetView(
-            onScanTap: { [weak self] in
-                self?.dismiss(animated: true) {
-                    self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
-                }
-            },
-            onNotNowTap: { [weak self] in
-                self?.dismiss(animated: true)
-            }
-        )
-        let hosting = UIHostingController(rootView: sheet)
-        if let presentation = hosting.sheetPresentationController {
-            presentation.detents = [.medium()]
-            presentation.prefersGrabberVisible = true
+        aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
+            self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
         }
-        present(hosting, animated: true)
     }
 }

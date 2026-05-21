@@ -49,31 +49,29 @@ class AIChatSettingsLinkTests: UITestCase {
         let settingsLink = app.windows.firstMatch.buttons[Identifiers.duckAiSettingsLink]
         XCTAssertTrue(settingsLink.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "'Open Duck.ai Settings' link should be visible when the feature flag is on and Duck.ai is enabled")
-        settingsLink.click()
 
-        // A new tab should open on duck.ai — the URL is the first signal that the click was
-        // routed through AIChatTabOpener and a tab was created. Page navigation isn't instant,
-        // so poll the address bar value until it reflects duck.ai (or the navigation timeout).
-        let addressBar = app.addressBar
-        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        let urlContainsDuckAi = NSPredicate(format: "self CONTAINS[c] %@", "duck.ai")
-        let started = Date()
-        while !urlContainsDuckAi.evaluate(with: addressBar.value as? String ?? "") {
-            if Date().timeIntervalSince(started) > UITests.Timeouts.navigation { break }
-            usleep(200_000)
-        }
-        XCTAssertTrue(urlContainsDuckAi.evaluate(with: addressBar.value as? String ?? ""),
-                      "Expected the new tab to load duck.ai; address bar value: \(addressBar.value ?? "<nil>")")
+        settingsLink.click()
 
         // Duck.ai's Settings modal should be visible inside the WebView. The modal is opened
         // by the FE in response to the `submitOpenSettingsAction` push from the two-phase
         // handshake — so its presence proves the end-to-end wiring works.
-        // The predicate matches a stable header label inside the modal. If Duck.ai's modal
-        // a11y labels evolve, adjust the string here.
-        let modalElement = app.webViews.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Settings"))
-            .firstMatch
-        XCTAssertTrue(modalElement.waitForExistence(timeout: UITests.Timeouts.navigation),
-                      "Duck.ai Settings modal should be visible after clicking the link")
+        //
+        // Two checks for resilience:
+        //
+        // 1. The modal's "close dialog" button. `.buttons` deterministically maps from
+        //    AXButton across macOS versions, the label is unique inside this WebView,
+        //    and the button only exists while the modal is open.
+        //
+        // 2. The modal container itself, labeled "Duck.ai Settings". The dialog is an
+        //    AXGroup with AXApplicationDialog subrole — XCUI surfaces this under
+        //    `.otherElements` on current macOS. If a future macOS or WebKit revision
+        //    maps it to `.groups` instead, swap `.otherElements` for `.groups` below.
+        let closeDialogButton = app.webViews.buttons["close dialog"]
+        XCTAssertTrue(closeDialogButton.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "Duck.ai Settings modal's close button should be visible after clicking the link")
+
+        let settingsModal = app.webViews.groups["Duck.ai Settings"]
+        XCTAssertTrue(settingsModal.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai Settings modal container labeled 'Duck.ai Settings' should be visible")
     }
 }

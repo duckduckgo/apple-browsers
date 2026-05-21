@@ -355,6 +355,9 @@ final class UnifiedToggleInputView: UIView {
         return button
     }()
 
+    /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
+    var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
+
     private lazy var aiTabCollapsedVoiceButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice, traitCollection: traitCollection)
         button.isHidden = true
@@ -511,6 +514,19 @@ final class UnifiedToggleInputView: UIView {
             config.cornerStyle = .capsule
             button.configuration = config
         }
+    }
+
+    // MARK: - Onboarding
+
+    /// Dims the input bar during the fire-education onboarding step while keeping the fire button
+    /// fully visible and the text entry non-interactive.
+    func setOnboardingDimmed(_ dimmed: Bool) {
+        // Dim all direct subviews except the fire accessory button — it must stay visually active.
+        subviews.filter { $0 !== aiTabCollapsedFireButton }.forEach {
+            $0.alpha = dimmed ? 0.5 : 1
+        }
+        // Block the text view from directly becoming first responder when the user taps the pill.
+        textEntryView.isUserInteractionEnabled = !dimmed
     }
 
     // MARK: - Fire Mode

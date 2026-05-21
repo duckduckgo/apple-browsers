@@ -937,12 +937,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.activateInput()
     }
 
+    /// The collapsed AI-tab fire button. Exposed for `ViewHighlighter` targeting during onboarding.
+    var aiTabFireButton: UIButton { viewController.aiTabFireButton }
+
     /// Locks or unlocks the input bar during the Duck.ai onboarding experiment path.
     /// When locked the text field cannot be activated and the collapsed bar ignores taps.
     func setOnboardingControlsLocked(_ locked: Bool) {
         isOnboardingLocked = locked
-        viewController.view.isUserInteractionEnabled = !locked
-        viewController.view.alpha = locked ? 0.5 : 1
+        viewController.setOnboardingDimmed(locked)
     }
 
     func dismissOmnibarKeyboard() {
@@ -1712,6 +1714,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
+        guard !isOnboardingLocked else { return }
         delegate?.unifiedToggleInputDidRequestDuckAIVoiceMode()
     }
 }

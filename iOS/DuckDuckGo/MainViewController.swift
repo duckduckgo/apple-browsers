@@ -5500,7 +5500,11 @@ extension MainViewController {
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
-        if viewCoordinator.toolbar.isHidden { // This is the iPad case
+        if let utiCoordinator = unifiedToggleInputCoordinator, !utiCoordinator.aiTabFireButton.isHidden {
+            // In the AI-tab collapsed pose the fire button is the flanking pill button on the
+            // left of the UTI input bar — use it instead of the (hidden) legacy toolbar.
+            fireButtonView = utiCoordinator.aiTabFireButton
+        } else if viewCoordinator.toolbar.isHidden { // This is the iPad case
             fireButtonView = tabsBarController?.fireButton
         } else {
             fireButtonView = findFireButton()

@@ -1277,8 +1277,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
 
         if model.entityHasAccess {
+            let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
             updateSelectedModel(modelId)
+            if isNewSelection {
+                Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
+            }
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId

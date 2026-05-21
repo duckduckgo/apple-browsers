@@ -1705,6 +1705,7 @@ extension Pixel {
         case unifiedToggleInputWebSearchSelected
         case unifiedToggleInputWebSearchDeselected
         case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputModelSelected
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -3450,6 +3451,7 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
         case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"

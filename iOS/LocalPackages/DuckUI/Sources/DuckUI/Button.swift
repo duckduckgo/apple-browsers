@@ -287,3 +287,83 @@ private enum Consts {
     static let pressedOpacity: CGFloat = 0.7
     static let ghostPressedBackgroundOpacity: CGFloat = 0.09
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private struct ButtonStylesGallery: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                section("PrimaryButtonStyle") {
+                    Button("Default") {}.buttonStyle(PrimaryButtonStyle())
+                    Button("Disabled") {}.buttonStyle(PrimaryButtonStyle(disabled: true))
+                    Button("Compact") {}.buttonStyle(PrimaryButtonStyle(compact: true))
+                    Button("Hug content") {}.buttonStyle(PrimaryButtonStyle(fullWidth: false))
+                }
+
+                section("PrimaryDestructiveButtonStyle") {
+                    Button("Default") {}.buttonStyle(PrimaryDestructiveButtonStyle())
+                    Button("Disabled") {}.buttonStyle(PrimaryDestructiveButtonStyle(disabled: true))
+                    Button("Compact") {}.buttonStyle(PrimaryDestructiveButtonStyle(compact: true))
+                    Button("Hug content") {}.buttonStyle(PrimaryDestructiveButtonStyle(fullWidth: false))
+                }
+
+                section("SecondaryDestructiveButtonStyle") {
+                    Button("Default") {}.buttonStyle(SecondaryDestructiveButtonStyle())
+                    Button("Disabled") {}.buttonStyle(SecondaryDestructiveButtonStyle(disabled: true))
+                    Button("Compact") {}.buttonStyle(SecondaryDestructiveButtonStyle(compact: true))
+                    Button("Hug content") {}.buttonStyle(SecondaryDestructiveButtonStyle(fullWidth: false))
+                }
+
+                section("SecondaryButtonStyle (deprecated)") {
+                    Button("Default") {}.buttonStyle(SecondaryButtonStyle())
+                    Button("Compact") {}.buttonStyle(SecondaryButtonStyle(compact: true))
+                }
+
+                section("SecondaryFillButtonStyle") {
+                    Button("Default") {}.buttonStyle(SecondaryFillButtonStyle())
+                    Button("Disabled") {}.buttonStyle(SecondaryFillButtonStyle(disabled: true))
+                    Button("Compact") {}.buttonStyle(SecondaryFillButtonStyle(compact: true))
+                    Button("Hug content") {}.buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
+                }
+
+                section("GhostButtonStyle") {
+                    Button("Default") {}.buttonStyle(GhostButtonStyle())
+                    Button("Compact") {}.buttonStyle(GhostButtonStyle(compact: true))
+                }
+
+                section("GhostAltButtonStyle") {
+                    Button("Default") {}.buttonStyle(GhostAltButtonStyle())
+                    Button("Compact") {}.buttonStyle(GhostAltButtonStyle(compact: true))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 24)
+        }
+        .background(Color(designSystemColor: .background))
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+            content()
+        }
+    }
+}
+
+#Preview("Buttons / Light") {
+    ButtonStylesGallery()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Buttons / Dark") {
+    ButtonStylesGallery()
+        .preferredColorScheme(.dark)
+}
+
+#endif

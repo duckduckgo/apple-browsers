@@ -1,5 +1,5 @@
 {
-  "originHash" : "feddf2f2adffc7a40d53729e7a0bc91a2f27f51855b1bc5e87b9a8e5291a6d51",
+  "originHash" : "5634a6367460e97823627a354aad3704fa4b87362342cb9cf2eed32cade4c75a",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "4d35a8c3e8e613bc4f5217c9ff3238e6857e1ad7",
-        "version" : "14.7.0"
+        "revision" : "c3d43a3f971d8c21ba3624e0e1c2ee2598ddfd1c",
+        "version" : "14.9.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "c8ce2e7cdcca4226c96350dcd49323298b941592",
-        "version" : "19.0.0"
+        "revision" : "84b5e3019b2c7b3c90e8d296f30fcfd53768bcd8",
+        "version" : "19.1.0"
       }
     },
     {

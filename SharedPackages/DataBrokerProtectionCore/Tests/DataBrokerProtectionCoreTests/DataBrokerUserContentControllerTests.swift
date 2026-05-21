@@ -33,6 +33,9 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
+        // Install the WKUserContentController rule-list swizzle so installedContentRuleLists
+        // mirrors the real WebKit-side state. Idempotent — safe to read on every setUp.
+        _ = WKUserContentController.swizzleContentRuleListsMethodsOnce
         // Compile a minimal rule list so we can install a real WKContentRuleList in tests.
         ruleList = try await Self.compileMinimalRuleList(identifier: "DBPUCCTests-\(UUID().uuidString)")
     }

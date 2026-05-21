@@ -28,10 +28,6 @@ final class DataBrokerUserContentController: WKUserContentController {
     @MainActor
     var dataBrokerUserScripts: DataBrokerUserScript?
 
-    /// Rule lists this controller installed at init. Used by tests and by no production code.
-    @MainActor
-    private(set) var installedContentRuleLists: [WKContentRuleList] = []
-
     @MainActor
     init(with privacyConfigurationManager: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
@@ -66,7 +62,6 @@ final class DataBrokerUserContentController: WKUserContentController {
         if let effectiveContentBlocking {
             for ruleList in effectiveContentBlocking.contentRuleLists {
                 self.add(ruleList)
-                installedContentRuleLists.append(ruleList)
             }
         }
     }
@@ -89,7 +84,6 @@ final class DataBrokerUserContentController: WKUserContentController {
         self.removeAllScriptMessageHandlers()
 
         self.removeAllContentRuleLists()
-        installedContentRuleLists.removeAll()
         dataBrokerUserScripts = nil
     }
 

@@ -58,10 +58,8 @@ final class AIChatTabChatHeaderView: UIView {
         var canGoForward: Bool = false
         /// Renders the back arrow even when there's no web history, so the user always has an exit.
         var forceBackButtonVisible: Bool = false
-        /// Layout-only Back-slot placeholder for the gap between a Duck.ai prompt submission
-        /// and WebKit reporting `canGoBack = true`. Keeps the Back pill in the layout (alpha
-        /// driven to 0 in `applyState`), while Forward and Compose stay hidden so no slot
-        /// shifts when the real Back arrow appears.
+        /// Layout-only Back-slot placeholder used between prompt submission and `canGoBack`.
+        /// Holds the slot via `backPill` with `alpha = 0` (see `applyState`).
         var reservesNavigationControls: Bool = false
 
         var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }

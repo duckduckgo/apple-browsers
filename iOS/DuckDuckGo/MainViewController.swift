@@ -4818,11 +4818,8 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidFinishNavigation(_ tab: TabViewController) {
-        // Clear the AI-chat header reservation/lock on settle, not in
-        // `tabLoadingStateDidChange`: `TabViewController.url.didSet` can call
-        // tabLoadingStateDidChange synchronously before WebKit starts loading the new URL,
-        // which would drop a reservation set during prompt submission before it ever gets
-        // to bridge the canGoBack delay it exists to bridge.
+        // Clear on settle, not in tabLoadingStateDidChange: `url.didSet` can fire that
+        // synchronously and drop the reservation before it can bridge the canGoBack delay.
         let didClearAIChatTabHeaderNavigationLock = clearAIChatTabChatHeaderNavigationLock(for: tab)
         if currentTab == tab {
             if didClearAIChatTabHeaderNavigationLock {

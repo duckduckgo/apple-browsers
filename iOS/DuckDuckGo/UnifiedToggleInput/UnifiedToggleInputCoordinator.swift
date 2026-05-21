@@ -1392,6 +1392,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         pendingGatedReasoningSelection = nil
         updateSelectedReasoningMode(pendingSelection.mode)
+        fireReasoningEffortSelectedPixel(mode: pendingSelection.mode)
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
@@ -1405,18 +1406,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
             pendingGatedReasoningSelection = nil
             updateSelectedReasoningMode(mode)
+            fireReasoningEffortSelectedPixel(mode: mode)
             return
         }
 
         if canSelectReasoningModeRequiringTier(requiredPublicTier) {
             pendingGatedReasoningSelection = nil
             updateSelectedReasoningMode(mode)
+            fireReasoningEffortSelectedPixel(mode: mode)
         } else {
             if routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier) {
                 pendingGatedReasoningSelection = (selectedModel.id, mode)
             }
             refreshReasoningPickerMenuAfterRejectedSelection()
         }
+    }
+
+    private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
+        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue])
     }
 
     // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access

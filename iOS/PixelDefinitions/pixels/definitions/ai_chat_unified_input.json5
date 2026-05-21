@@ -64,4 +64,19 @@
             }
         ]
     },
+    "m_aichat_unified_input_reasoning_effort_selected": {
+        "description": "Fires when the user selects a reasoning effort level in the Unified Toggle Input reasoning picker. Does not fire for gated/rejected selections.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "effort_level",
+                "description": "The reasoning effort level selected.",
+                "type": "string",
+                "enum": ["fast", "reasoning", "extended_reasoning"]
+            }
+        ]
+    },
 }

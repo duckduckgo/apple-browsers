@@ -72,7 +72,7 @@ final class DBPService: NSObject {
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
 
-            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isJobWebViewContentBlockingOn
+            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isContentBlockingOn
                 ? DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
                 : nil
 
@@ -151,7 +151,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         false
     }
 
-    var isJobWebViewContentBlockingOn: Bool {
+    var isContentBlockingOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpJobWebViewContentBlocking)
     }
 

@@ -53,8 +53,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isJobWebViewContentBlockingOn: Bool {
-        // Job-webview content blocking is iOS-only.
+    var isContentBlockingOn: Bool {
+        // content blocking is iOS-only.
         false
     }
 

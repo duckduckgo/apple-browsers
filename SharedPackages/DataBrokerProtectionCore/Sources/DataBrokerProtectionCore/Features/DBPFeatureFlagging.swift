@@ -23,7 +23,7 @@ public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
     & ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
     & WebViewUserAgentFeatureFlagging
-    & JobWebViewContentBlockingFeatureFlagging
+    & ContentBlockingFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
     var isRemoteBrokerDeliveryFeatureOn: Bool { get }
@@ -46,8 +46,8 @@ public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
 }
 
-public protocol JobWebViewContentBlockingFeatureFlagging {
-    var isJobWebViewContentBlockingOn: Bool { get }
+public protocol ContentBlockingFeatureFlagging {
+    var isContentBlockingOn: Bool { get }
 }
 
 public protocol FreemiumPIRFeatureFlagging {

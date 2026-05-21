@@ -375,7 +375,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
     @MainActor
     private func makeContentBlocking() -> DBPWebViewContentBlocking? {
-        guard featureFlagger.isJobWebViewContentBlockingOn else { return nil }
+        guard featureFlagger.isContentBlockingOn else { return nil }
         return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
     }
 

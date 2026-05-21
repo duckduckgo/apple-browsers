@@ -152,6 +152,39 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_unified_input_subscription_upsell_triggered": {
+        "description": "Fires when the user taps a gated model or reasoning level in the Unified Toggle Input and the native subscription/upgrade flow is triggered.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Surface that triggered the upsell.",
+                "type": "string",
+                "enum": ["model_picker", "reasoning_picker"]
+            },
+            {
+                "key": "current_tier",
+                "description": "Current subscription tier of the user.",
+                "type": "string",
+                "enum": ["free", "plus"]
+            },
+            {
+                "key": "required_tier",
+                "description": "Subscription tier required for the gated feature.",
+                "type": "string",
+                "enum": ["plus", "pro"]
+            },
+            {
+                "key": "flow_type",
+                "description": "Type of subscription flow.",
+                "type": "string",
+                "enum": ["purchase", "upgrade"]
+            }
+        ]
+    },
     "m_aichat_unified_input_chat_header_upgrade_tapped": {
         "description": "Fires when the user taps the Upgrade label in the AI Chat tab header. The header is only shown to users without an active subscription.",
         "owners": ["pikorddg"],

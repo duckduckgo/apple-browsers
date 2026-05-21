@@ -165,6 +165,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case reasoningPicker
     }
 
+    private enum UpsellFlowType: String {
+        case purchase
+        case upgrade
+    }
+
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
             attachmentLimits: modelStore.attachmentLimits,
@@ -1308,11 +1313,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            fireSubscriptionUpsellTriggeredPixel(source: .modelPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .purchase)
             presentPurchaseFlow(source: .modelPicker)
             return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
+            fireSubscriptionUpsellTriggeredPixel(source: .modelPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .upgrade)
             presentUpgradeFlow(source: .modelPicker)
             return true
         }
@@ -1463,11 +1470,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
+            fireSubscriptionUpsellTriggeredPixel(source: .reasoningPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .purchase)
             presentPurchaseFlow(source: .reasoningPicker)
             return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
+            fireSubscriptionUpsellTriggeredPixel(source: .reasoningPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .upgrade)
             presentUpgradeFlow(source: .reasoningPicker)
             return true
         }
@@ -2073,10 +2082,10 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func metadataValidationMessage(for attachment: UnifiedToggleInputInvalidFileAttachment) -> String? {
-        attachmentPolicy.fileMetadataValidationMessage(
+        attachmentPolicy.fileMetadataValidationError(
             mimeType: attachment.mimeType,
             fileSizeBytes: attachment.fileSizeBytes > 0 ? attachment.fileSizeBytes : nil
-        )
+        )?.message
     }
 
     func fileMetadata(for attachment: UnifiedToggleInputInvalidFileAttachment) -> UnifiedToggleInputAttachmentPresenter.FileMetadata? {
@@ -2282,7 +2291,7 @@ private extension UnifiedToggleInputCoordinator {
         selectedModel?.resolvedReasoningMode(from: persistedReasoningMode)
     }
 
-    // MARK: Subscriptions
+    // MARK: - Subscriptions
 
     func subscribeToGeneratingState() {
         $aiChatStatus
@@ -2385,6 +2394,22 @@ private extension UnifiedToggleInputCoordinator {
         case .file, .invalidFile:
             DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileRemoved)
         }
+    }
+
+    private func fireSubscriptionUpsellTriggeredPixel(
+        source: SubscriptionFlowSource,
+        currentTier: AIChatUserTier,
+        requiredTier: AIChatModelPublicAccessTier,
+        flowType: UpsellFlowType
+    ) {
+        Pixel.fire(pixel: .unifiedToggleInputSubscriptionUpsellTriggered,
+                   withAdditionalParameters: [
+                    "source": source == .modelPicker ? "model_picker" : "reasoning_picker",
+                    "current_tier": currentTier.rawValue,
+                    "required_tier": requiredTier == .pro ? "pro" : "plus",
+                    "flow_type": flowType.rawValue
+                   ]
+        )
     }
 }
 

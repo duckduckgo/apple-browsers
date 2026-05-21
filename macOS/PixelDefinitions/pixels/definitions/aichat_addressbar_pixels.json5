@@ -195,7 +195,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_mention_picker_canceled": {
-        "description": "Fired when user dismisses the duck.ai omnibar's @-mention picker without accepting any row (Esc, click outside, caret leaves the @-token, etc.)",
+        "description": "Fired when user dismisses the duck.ai omnibar's @-mention picker without accepting any row (Esc, click outside, caret leaves the @-token, etc.). Pressing Enter while the picker shows the empty-state row also counts here: it falls through to the omnibar's prompt submit, the panel dismisses on focus loss, and the user never picked a tab — semantically a cancel.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],

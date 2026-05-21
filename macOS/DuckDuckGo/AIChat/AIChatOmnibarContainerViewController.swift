@@ -1233,12 +1233,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         return menu
     }
 
-    /// Tracker installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
+    /// Observer installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
     /// fire the picker-shown / picker-canceled pixels exactly once per open/close cycle. The
-    /// row's `onToggle` callback below flips the tracker's `didMutateDuringSession` flag so
+    /// row's `onToggle` callback below flips the observer's `didMutateDuringSession` flag so
     /// the canceled pixel is only fired when nothing was toggled during the session.
     /// Retained on the VC because `NSMenu.delegate` is weak.
-    private var attachTabsSubmenuTracker: AttachTabsSubmenuTracker?
+    private var attachTabsSubmenuObserver: AttachTabsSubmenuObserver?
 
     /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
     /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
@@ -1249,12 +1249,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        // Tracker fires the picker-shown pixel on willOpen and the picker-canceled pixel on
+        // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
         // didClose when no row was toggled in between. Stored on the VC so its lifetime
         // covers the menu's lifetime (NSMenu's delegate ref is weak).
-        let tracker = AttachTabsSubmenuTracker()
-        attachTabsSubmenuTracker = tracker
-        menu.delegate = tracker
+        let observer = AttachTabsSubmenuObserver()
+        attachTabsSubmenuObserver = observer
+        menu.delegate = observer
 
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
         let candidates = omnibarController.openTabsForOmnibarPicker()
@@ -1279,7 +1279,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 attachment: candidate,
                 isAttached: attachedIds.contains(candidate.id),
                 isCurrentTab: candidate.id == currentTabId,
-                onToggle: { [weak omnibarController, weak tracker] in
+                onToggle: { [weak omnibarController, weak observer] in
                     guard let omnibarController else { return }
                     // Read state BEFORE toggle so we know which pixel to fire — the toggle
                     // flips it, so post-toggle we'd see the opposite of "what just happened".
@@ -1289,7 +1289,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                         ? .aiChatAddressBarAttachTabRemoved
                         : .aiChatAddressBarAttachTabChosen
                     PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                    tracker?.markDidMutate()
+                    observer?.markDidMutate()
                 }
             )
             item.view = row
@@ -1470,6 +1470,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         attachmentsCarouselView.setAttachments(filtered)
         guard !isDeferringCarouselLayout else { return }
         updateAttachmentsLayout()
+        // The height constraint just flipped to `expandedHeight` (when the carousel went
+        // from zero → some attachments). Force layout to settle on the new frame before
+        // scrolling, otherwise `scrollToVisible` reads the still-zero carousel height.
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
     }
 
     /// Re-applies the active tab's saved panel attachments through the carousel filter — used
@@ -1795,16 +1800,18 @@ extension AIChatOmnibarContainerViewController: NSMenuDelegate {
         guard isDeferringCarouselLayout else { return }
         isDeferringCarouselLayout = false
         updateAttachmentsLayout()
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
     }
 }
 
-// MARK: - "Add Page Content" submenu tracker
+// MARK: - "Add Page Content" submenu observer
 
-/// Tracks one open/close cycle of the "Add Page Content" submenu so the picker-shown and
+/// Observes one open/close cycle of the "Add Page Content" submenu so the picker-shown and
 /// picker-canceled pixels fire exactly once per session. Sits as the submenu's
 /// `NSMenuDelegate` (the VC's own conformance already handles the top-level attach menu's
 /// `menuDidClose`, so we keep this submenu-only logic separate to avoid mixing concerns).
-private final class AttachTabsSubmenuTracker: NSObject, NSMenuDelegate {
+private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
 
     /// `true` once any row's `onToggle` fired during the current open session. Reset on the
     /// next `menuWillOpen` so each open/close pair is evaluated independently.

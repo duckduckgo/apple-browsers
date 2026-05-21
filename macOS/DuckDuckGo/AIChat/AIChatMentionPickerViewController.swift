@@ -61,7 +61,7 @@ final class AIChatMentionPickerViewController: NSViewController {
     private let backgroundView = NSVisualEffectView()
     private let headerLabel = NSTextField(labelWithString: UserText.aiChatAttachMenuRecentTabsHeader)
     private let scrollView = NSScrollView()
-    private let rowStack = HoverTrackingStackView()
+    private let rowStack = HoverObservingStackView()
     private var rowViews: [AIChatMentionPickerRowView] = []
     private var emptyRowView: AIChatMentionPickerEmptyRowView?
     private(set) var highlightedIndex: Int?
@@ -330,7 +330,7 @@ final class AIChatMentionPickerViewController: NSViewController {
     /// adapts to the longest title currently shown. The empty-state row uses `minWidth`.
     var fittingContentSize: NSSize {
         let isEmpty = rowViews.isEmpty
-        let effectiveCount = isEmpty && isShowingEmptyState ? 1 : rowViews.count
+        let effectiveCount = isShowingEmptyState ? 1 : rowViews.count
         let contentWidth: CGFloat
         if isEmpty {
             contentWidth = Layout.minWidth
@@ -363,12 +363,8 @@ final class AIChatMentionPickerViewController: NSViewController {
         rowStack.onMouseMoved = { [weak self] pointInStack in
             self?.updateHighlightFromMousePosition(pointInStack)
         }
-        rowStack.onMouseExited = { [weak self] in
-            // Don't clear the highlight on exit — keyboard nav may want to leave the
-            // current highlight in place even as the cursor moves off the panel. The
-            // highlight only resets when the picker's content changes via `setTabs(...)`.
-            _ = self
-        }
+        // No `onMouseExited` — keyboard nav may want to keep the current highlight after
+        // the cursor leaves the panel. Highlight only resets via `setTabs(...)`.
     }
 
     private func updateHighlightFromMousePosition(_ pointInStack: NSPoint) {
@@ -389,7 +385,7 @@ final class AIChatMentionPickerViewController: NSViewController {
 /// tracking here (rather than per-row) eliminates the multi-row-highlighted artifact that
 /// happens when fast trackpad scroll fires `mouseEntered:` on several rows in succession
 /// without the matching `mouseExited:` deliveries.
-private final class HoverTrackingStackView: NSStackView {
+private final class HoverObservingStackView: NSStackView {
 
     var onMouseMoved: ((NSPoint) -> Void)?
     var onMouseExited: (() -> Void)?

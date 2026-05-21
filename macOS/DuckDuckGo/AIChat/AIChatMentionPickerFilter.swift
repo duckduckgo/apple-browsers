@@ -81,9 +81,6 @@ enum AIChatMentionPickerFilter {
               currentIndex != 0 else {
             return result
         }
-        var reordered = result
-        let current = reordered.remove(at: currentIndex)
-        reordered.insert(current, at: 0)
-        return reordered
+        return [result[currentIndex]] + result.prefix(currentIndex) + result.suffix(from: currentIndex + 1)
     }
 }

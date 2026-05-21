@@ -68,7 +68,8 @@ enum AIChatMentionTokenDetector {
 
         // Within that line range, scan backwards from the caret looking for an `@` whose
         // preceding character is start-of-input OR whitespace. Whichever we find first is
-        // the active token's trigger.
+        // the active token's trigger. Worst-case O(line length) — bounded by `lineStart`
+        // above; fine for prompt-sized input.
         var index = caret - 1
         while index >= lineStart {
             if nsString.character(at: index) == Self.atSign {

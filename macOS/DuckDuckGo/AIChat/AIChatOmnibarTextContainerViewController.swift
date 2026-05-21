@@ -321,7 +321,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func textDidEndEditing(_ notification: Notification) {
         // `?.` — skip the lazy allocation when the user never typed `@`. The coordinator
         // would no-op anyway, but avoiding the alloc keeps the omnibar's idle path cheap.
-        mentionPickerCoordinator?.dismiss()
+        mentionPickerCoordinator?.dismiss(reason: .textEndedEditing)
     }
 
     /// Called by `AddressBarViewController.escapeKeyDown()` (via the wiring set up in
@@ -330,7 +330,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// focus-resign behavior so the user can keep typing in the omnibar.
     func dismissMentionPickerIfPresented() -> Bool {
         guard let coordinator = mentionPickerCoordinator, coordinator.isPresented else { return false }
-        coordinator.dismiss()
+        coordinator.dismiss(reason: .userEscape)
         return true
     }
 
@@ -346,12 +346,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         // dismiss-only paths below don't lazy-allocate the coordinator when it was never
         // needed (user typing without `@`, flag off, etc.).
         guard omnibarController.isOmnibarTabPickerEnabled else {
-            mentionPickerCoordinator?.dismiss()
+            mentionPickerCoordinator?.dismiss(reason: .featureFlagOff)
             return
         }
-        let caret = textView.selectedRange.location
+        let selection = textView.selectedRange
+        // Use the selection's upper bound when the user has selected text, so the splice
+        // sweeps the full `@token` (matching the "Enter collapses selection" intuition).
+        // Collapsed selections degenerate to `location == upperBound`.
+        let caret = selection.length > 0 ? selection.upperBound : selection.location
         guard let token = AIChatMentionTokenDetector.token(in: textView.string, caret: caret) else {
-            mentionPickerCoordinator?.dismiss()
+            mentionPickerCoordinator?.dismiss(reason: .tokenGone)
             return
         }
         guard let window = view.window else {
@@ -392,38 +396,31 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on
-        // screen with a real (non-empty-state) selection. Anything it doesn't claim
-        // falls through to the regular omnibar handling below. The picker only matters
-        // when it has already been instantiated and presented — bind once via `if let`
-        // so we don't lazy-allocate the coordinator on every keystroke.
-        if let coordinator = mentionPickerCoordinator, coordinator.canHandleKeyCommands {
+        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on screen.
+        // The arrow / Enter cases need a real (non-empty-state) selection, so they're gated
+        // on `canHandleKeyCommands`; Esc dismisses regardless so the user can keep typing
+        // without the panel covering content. The picker only matters when it has already
+        // been instantiated and presented — bind once via `if let` so we don't lazy-allocate
+        // the coordinator on every keystroke.
+        if let coordinator = mentionPickerCoordinator, coordinator.isPresented {
             switch commandSelector {
-            case #selector(NSResponder.moveDown(_:)):
+            case #selector(NSResponder.cancelOperation(_:)):
+                coordinator.dismiss(reason: .userEscape)
+                return true
+            case #selector(NSResponder.moveDown(_:)) where coordinator.canHandleKeyCommands:
                 coordinator.moveHighlightDown()
                 return true
-            case #selector(NSResponder.moveUp(_:)):
+            case #selector(NSResponder.moveUp(_:)) where coordinator.canHandleKeyCommands:
                 coordinator.moveHighlightUp()
                 return true
-            case #selector(NSResponder.cancelOperation(_:)):
-                coordinator.dismiss()
-                return true
-            case #selector(insertNewline(_:)),
-                 #selector(insertNewlineIgnoringFieldEditor(_:)):
-                if coordinator.acceptHighlighted() {
+            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)):
+                if coordinator.canHandleKeyCommands, coordinator.acceptHighlighted() {
                     return true
                 }
                 // No real selection — fall through to the normal Enter path below.
             default:
                 break
             }
-        } else if let coordinator = mentionPickerCoordinator,
-                  coordinator.isPresented,
-                  commandSelector == #selector(NSResponder.cancelOperation(_:)) {
-            // Picker is showing the empty-state row. Esc should still dismiss it so the
-            // user can keep typing without the panel covering content.
-            coordinator.dismiss()
-            return true
         }
 
         if commandSelector == #selector(insertNewline(_:)) || commandSelector == #selector(insertNewlineIgnoringFieldEditor(_:)) {

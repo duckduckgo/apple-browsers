@@ -44,6 +44,25 @@ final class AIChatMentionPickerCoordinator {
         static let minimumLeadingMargin: CGFloat = 8
     }
 
+    /// Why the picker is being dismissed. Read by `dismiss(reason:)` to decide whether the
+    /// `mention_picker_canceled` pixel should fire: every value except `.accept` counts as
+    /// a cancel.
+    enum DismissReason {
+        /// The user picked a row (click or Enter). Suppresses the canceled pixel because
+        /// `accept(attachment:)` already fires `mention_tab_chosen` / `mention_tab_removed`.
+        case accept
+        /// The user pressed Esc.
+        case userEscape
+        /// `NSTextView` resigned first responder (click outside, sibling control, etc.).
+        case textEndedEditing
+        /// The omnibar window itself resigned key (Cmd-Tab to another app).
+        case windowResignKey
+        /// The caret left the `@`-token (e.g. user backspaced past the `@`).
+        case tokenGone
+        /// The feature flag flipped off remotely while the picker was on screen.
+        case featureFlagOff
+    }
+
     private let omnibarController: AIChatOmnibarController
     private var panel: AIChatMentionPickerPanel?
     private var viewController: AIChatMentionPickerViewController?
@@ -57,11 +76,6 @@ final class AIChatMentionPickerCoordinator {
     /// last refreshed), but we keep this around as a fallback.
     private var lastTokenRange: NSRange?
     private var windowObservers: [NSObjectProtocol] = []
-    /// `true` once `accept(attachment:)` fires during the current open session — used to
-    /// decide between `mention_tab_chosen`/`mention_tab_removed` (already fired by accept)
-    /// and the `mention_picker_canceled` pixel (fired by `dismiss` only when no accept ran).
-    /// Reset to `false` on each hidden→visible transition in `presentIfNeeded`.
-    private var didAcceptDuringPresentation = false
 
     /// `true` once the panel is on screen and attached as a child of the omnibar window.
     var isPresented: Bool { panel?.isVisible == true }
@@ -79,11 +93,9 @@ final class AIChatMentionPickerCoordinator {
     }
 
     deinit {
-        // Drop the notification-center registrations synchronously — they don't touch UI.
-        // The panel itself is owned by its parent window (via `addChildWindow`); when the
-        // parent window closes, AppKit tears the child down. We deliberately avoid calling
-        // `dismiss()` here because it's `@MainActor` and would require an extra Task hop
-        // that captures `self` after deinit has started.
+        // After `removeObserver`, the observer blocks won't fire again, so no MainActor
+        // dismiss hop is needed here. The panel itself is owned by its parent window (via
+        // `addChildWindow`); when the parent closes, AppKit tears the child down.
         let center = NotificationCenter.default
         windowObservers.forEach { center.removeObserver($0) }
     }
@@ -113,9 +125,6 @@ final class AIChatMentionPickerCoordinator {
             currentTabId: currentTabId,
             attachedTabIds: attachedIds
         )
-        viewController.onAccept = { [weak self] attachment in
-            self?.accept(attachment: attachment)
-        }
         anchoredTextView = textView
         lastTokenRange = token.range
 
@@ -139,10 +148,8 @@ final class AIChatMentionPickerCoordinator {
         panel.orderFront(nil)
 
         if !wasPresented {
-            // Fresh open: reset the per-session accept flag and fire the shown pixel.
-            // Subsequent calls to `presentIfNeeded` within the same session (re-position on
-            // each keystroke) intentionally don't re-fire.
-            didAcceptDuringPresentation = false
+            // Fire the shown pixel on the fresh hidden→visible transition. Subsequent
+            // re-positions during the same open session intentionally don't re-fire.
             PixelKit.fire(
                 AIChatPixel.aiChatAddressBarMentionPickerShown,
                 frequency: .dailyAndCount,
@@ -151,15 +158,15 @@ final class AIChatMentionPickerCoordinator {
         }
     }
 
-    /// Hides the panel and detaches it from the omnibar window.
+    /// Hides the panel and detaches it from the omnibar window. The `reason` decides
+    /// whether the `mention_picker_canceled` pixel fires — every value except `.accept`
+    /// counts as a cancel.
     @MainActor
-    func dismiss() {
+    func dismiss(reason: DismissReason) {
         guard let panel else { return }
-        // Capture pre-dismiss state so the canceled pixel only fires for a real
-        // hidden→visible→hidden cycle that wrapped no accept. A no-op dismiss (panel never
-        // shown, or accept just fired) must not count as a cancel.
+        // No-op dismisses (panel never shown) must not count as a cancel.
         let wasPresented = panel.isVisible
-        let shouldFireCanceled = wasPresented && !didAcceptDuringPresentation
+        let shouldFireCanceled = wasPresented && reason != .accept
 
         if let parent = attachedToWindow {
             parent.removeChildWindow(panel)
@@ -213,24 +220,18 @@ final class AIChatMentionPickerCoordinator {
     /// dismisses the picker.
     @MainActor
     private func accept(attachment: AIChatTabAttachment) {
-        // Read attached state BEFORE the toggle so we know which pixel describes the
-        // user's action (chosen vs removed) — the toggle flips it, so post-toggle the
-        // signal would be inverted.
+        // The splice's `didChangeText` posts `NSText.didChangeNotification` synchronously,
+        // which cascades into `updateMentionTokenDetection → dismiss(reason: .tokenGone)`.
+        // Dismiss the picker explicitly with `.accept` first so that re-entrant dismiss
+        // becomes a no-op (panel already torn down) instead of firing the canceled pixel.
         let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == attachment.id })
-        // Set the accept flag BEFORE `spliceTokenFromTextView()` — the splice's
-        // `didChangeText` posts `NSText.didChangeNotification` synchronously, which
-        // cascades into the omnibar's `textDidChange → updateMentionTokenDetection →
-        // dismiss()` path. If the flag isn't already set when that re-entrant `dismiss`
-        // runs, it sees `didAcceptDuringPresentation == false` and erroneously fires the
-        // `mention_picker_canceled` pixel alongside the chosen/removed pixel below.
-        didAcceptDuringPresentation = true
+        dismiss(reason: .accept)
         spliceTokenFromTextView()
         omnibarController.toggleTabAttachment(attachment)
         let pixel: AIChatPixel = wasAttached
             ? .aiChatAddressBarMentionTabRemoved
             : .aiChatAddressBarMentionTabChosen
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        dismiss()
     }
 
     /// Removes the `@token` substring (including the leading `@`) from the omnibar input
@@ -239,7 +240,11 @@ final class AIChatMentionPickerCoordinator {
     @MainActor
     private func spliceTokenFromTextView() {
         guard let textView = anchoredTextView else { return }
-        let caret = textView.selectedRange.location
+        // If the user has a selection spanning the token, treat the selection end as the
+        // caret so the splice sweeps the full `@token` (Enter's "collapse selection"
+        // intuition); collapsed selections degenerate to `location == upperBound`.
+        let selection = textView.selectedRange
+        let caret = selection.length > 0 ? selection.upperBound : selection.location
         let rangeToRemove: NSRange
         if let liveToken = AIChatMentionTokenDetector.token(in: textView.string, caret: caret) {
             rangeToRemove = liveToken.range
@@ -263,9 +268,13 @@ final class AIChatMentionPickerCoordinator {
 
     // MARK: - Lazy construction
 
+    @MainActor
     private func ensureViewController() -> AIChatMentionPickerViewController {
         if let viewController { return viewController }
         let vc = AIChatMentionPickerViewController()
+        vc.onAccept = { [weak self] attachment in
+            self?.accept(attachment: attachment)
+        }
         // Force-load the view so `fittingContentSize` is computable before the panel is shown.
         _ = vc.view
         self.viewController = vc
@@ -316,7 +325,7 @@ final class AIChatMentionPickerCoordinator {
         // dismiss the picker. We don't try to keep it floating around while attention is
         // elsewhere — it's tied to active typing.
         let resignKey = center.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.dismiss() }
+            Task { @MainActor in self?.dismiss(reason: .windowResignKey) }
         }
         // When the omnibar window moves or resizes (e.g. the panel grows as suggestions
         // appear), reposition the picker so it stays anchored to the `@`. We re-fetch the
@@ -325,13 +334,13 @@ final class AIChatMentionPickerCoordinator {
         let didMove = center.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main) { [weak self, weak textView] _ in
             Task { @MainActor in
                 guard let self, let textView else { return }
-                self.repositionIfStillTracking(textView: textView)
+                self.repositionIfStillAnchored(textView: textView)
             }
         }
         let didResize = center.addObserver(forName: NSWindow.didResizeNotification, object: window, queue: .main) { [weak self, weak textView] _ in
             Task { @MainActor in
                 guard let self, let textView else { return }
-                self.repositionIfStillTracking(textView: textView)
+                self.repositionIfStillAnchored(textView: textView)
             }
         }
         windowObservers = [resignKey, didMove, didResize]
@@ -344,11 +353,13 @@ final class AIChatMentionPickerCoordinator {
     }
 
     @MainActor
-    private func repositionIfStillTracking(textView: NSTextView) {
+    private func repositionIfStillAnchored(textView: NSTextView) {
         // If the caret is no longer inside an @-token, the next text-change callback will
         // dismiss us anyway; here we just keep the existing panel aligned with the @.
+        let selection = textView.selectedRange
+        let caret = selection.length > 0 ? selection.upperBound : selection.location
         guard isPresented,
-              let token = AIChatMentionTokenDetector.token(in: textView.string, caret: textView.selectedRange.location)
+              let token = AIChatMentionTokenDetector.token(in: textView.string, caret: caret)
         else { return }
         repositionPanel(textView: textView, tokenRange: token.range)
     }

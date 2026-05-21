@@ -466,6 +466,18 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     // Intentional no-op: we already anonymously track VPN uninstallation failures using
                     // pixels within the vpn uninstaller.
                 }
+            },
+            buttonClickedHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNButtonClicked)
+            },
+            popoverShownHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverShown)
+            },
+            subscriptionExpiredViewAppearHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewShown)
+            },
+            subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked)
             }
         )
     }

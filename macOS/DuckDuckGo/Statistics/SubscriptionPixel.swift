@@ -107,6 +107,11 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionToolbarVPNPopoverShown
     case subscriptionToolbarVPNPopoverExpiredViewShown
     case subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked
+    // Menu Bar Agent - Subscribed VPN
+    case subscriptionMenuBarVPNButtonClicked
+    case subscriptionMenuBarVPNPopoverShown
+    case subscriptionMenuBarVPNPopoverExpiredViewShown
+    case subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked
     // Win-back Offer
     case subscriptionWinBackOfferLaunchPromptShown
     case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -217,6 +222,11 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionToolbarVPNPopoverShown: return "m_mac_subscription_toolbar_vpn_popover_shown"
         case .subscriptionToolbarVPNPopoverExpiredViewShown: return "m_mac_subscription_toolbar_vpn_popover_expired_view_shown"
         case .subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked: return "m_mac_subscription_toolbar_vpn_popover_expired_view_subscribe_button_clicked"
+            // Menu Bar Agent - Subscribed VPN
+        case .subscriptionMenuBarVPNButtonClicked: return "m_mac_subscription_menu_bar_vpn_button_clicked"
+        case .subscriptionMenuBarVPNPopoverShown: return "m_mac_subscription_menu_bar_vpn_popover_shown"
+        case .subscriptionMenuBarVPNPopoverExpiredViewShown: return "m_mac_subscription_menu_bar_vpn_popover_expired_view_shown"
+        case .subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked: return "m_mac_subscription_menu_bar_vpn_popover_expired_view_subscribe_button_clicked"
             // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_cta_clicked"
@@ -354,6 +364,10 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionToolbarButtonPopoverProceedButtonClicked,
                 .subscriptionToolbarVPNPopoverExpiredViewShown,
                 .subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked,
+                .subscriptionMenuBarVPNButtonClicked,
+                .subscriptionMenuBarVPNPopoverShown,
+                .subscriptionMenuBarVPNPopoverExpiredViewShown,
+                .subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked,
                 .subscriptionWinBackOfferLaunchPromptShown,
                 .subscriptionWinBackOfferLaunchPromptCTAClicked,
                 .subscriptionWinBackOfferLaunchPromptDismissed,

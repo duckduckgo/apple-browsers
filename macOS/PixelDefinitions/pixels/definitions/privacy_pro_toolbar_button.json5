@@ -63,5 +63,33 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_subscription_menu_bar_vpn_button_clicked": {
+        "description": "Fired when a subscribed user clicks the VPN status item in the macOS menu bar (with either an active subscription or in the subscription-revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_subscription_menu_bar_vpn_popover_shown": {
+        "description": "Fired when the subscription VPN menu-bar popover is displayed to a subscribed user (either active subscription or revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_subscription_menu_bar_vpn_popover_expired_view_shown": {
+        "description": "Fired when the subscription-expired view is displayed inside the subscription VPN menu-bar popover (revoked subscription case)",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_subscription_menu_bar_vpn_popover_expired_view_subscribe_button_clicked": {
+        "description": "Fired when the subscribe button is clicked in the subscription-expired view inside the subscription VPN menu-bar popover",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

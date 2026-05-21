@@ -20,7 +20,6 @@
 #if os(iOS)
 import Foundation
 import NetworkExtension
-import os.log
 
 extension NETunnelProviderManager {
 
@@ -59,36 +58,6 @@ extension NETunnelProviderManager {
 
         self.protocolConfiguration = protocolConfiguration
         onDemandRules = [NEOnDemandRuleConnect()]
-
-        // Diagnostic dump — compare what's in the configuration from each calling process
-        // (host app vs widget extension). Filter in Console.app on
-        // subsystem:"Network protection" category:"VPN Configuration".
-        let logger = Logger(subsystem: "Network protection", category: "VPN Configuration")
-        let proto = self.protocolConfiguration as? NETunnelProviderProtocol
-        logger.log("🔍 applyDuckDuckGoConfiguration — process=\(ProcessInfo.processInfo.processName, privacy: .public) bundle=\(Bundle.main.bundleIdentifier ?? "nil", privacy: .public)")
-        logger.log("🔍   providerBundleIdentifier=\(proto?.providerBundleIdentifier ?? "nil", privacy: .public)")
-        logger.log("🔍   serverAddress=\(proto?.serverAddress ?? "nil", privacy: .public)")
-        logger.log("🔍   username=\(proto?.username ?? "nil", privacy: .public)")
-        logger.log("🔍   passwordReference=\(String(describing: proto?.passwordReference), privacy: .public)")
-        logger.log("🔍   identityReference=\(String(describing: proto?.identityReference), privacy: .public)")
-        logger.log("🔍   identityData=\(String(describing: proto?.identityData), privacy: .public)")
-        logger.log("🔍   proxySettings=\(String(describing: proto?.proxySettings), privacy: .public)")
-        logger.log("🔍   disconnectOnSleep=\(proto?.disconnectOnSleep ?? false, privacy: .public)")
-        logger.log("🔍   enforceRoutes=\(proto?.enforceRoutes ?? false, privacy: .public)")
-        logger.log("🔍   includeAllNetworks=\(proto?.includeAllNetworks ?? false, privacy: .public)")
-        logger.log("🔍   excludeLocalNetworks=\(proto?.excludeLocalNetworks ?? false, privacy: .public)")
-        if #available(iOS 16.4, *) {
-            logger.log("🔍   excludeAPNs=\(proto?.excludeAPNs ?? false, privacy: .public)")
-            logger.log("🔍   excludeCellularServices=\(proto?.excludeCellularServices ?? false, privacy: .public)")
-        }
-        if #available(iOS 17.4, *) {
-            logger.log("🔍   excludeDeviceCommunication=\(proto?.excludeDeviceCommunication ?? false, privacy: .public)")
-        }
-        logger.log("🔍   isEnabled=\(self.isEnabled, privacy: .public)")
-        logger.log("🔍   isOnDemandEnabled=\(self.isOnDemandEnabled, privacy: .public)")
-        logger.log("🔍   onDemandRules.count=\(self.onDemandRules?.count ?? 0, privacy: .public)")
-        logger.log("🔍   manager.description=\(self.description, privacy: .public)")
-        logger.log("🔍   protocolConfiguration.description=\(String(describing: self.protocolConfiguration), privacy: .public)")
     }
 }
 #endif

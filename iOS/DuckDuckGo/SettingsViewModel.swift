@@ -1567,84 +1567,73 @@ extension SettingsViewModel {
 // MARK: Subscriptions
 extension SettingsViewModel {
 
+    /// Fetches the current subscription from the backend and updates `state.subscription` and the cache.
+    /// Handles three outcomes: active subscription (populates entitlements), nil/no subscription, and no token (unauthenticated).
     @MainActor
     private func setupSubscriptionEnvironment() async {
-        // Create a temporary subscription state to batch all updates
-        var updatedSubscription: SettingsState.Subscription
+        // 1. Start from cached state or defaults
+        var updatedSubscriptionState = subscriptionStateCache.get() ?? SettingsState.defaults.subscription
 
-        // If there's cached data use it by default
-        if let cachedSubscription = subscriptionStateCache.get() {
-            updatedSubscription = cachedSubscription
-        // Otherwise use defaults and setup purchase availability
-        } else {
-            updatedSubscription = SettingsState.defaults.subscription
-        }
-
-        // Update if can purchase based on App Store product availability
-        updatedSubscription.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
-
-        // Update if user is signed in based on the presence of token
-        updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
-
-        // Active subscription check
-        guard (try? await subscriptionManager.getAccessToken()) != nil else {
-            // Reset state in case cache was outdated
-            updatedSubscription.hasSubscription = false
-            updatedSubscription.hasActiveSubscription = false
-            updatedSubscription.entitlements = []
-            updatedSubscription.platform = .unknown
-            updatedSubscription.isActiveTrialOffer = false
-
-            updatedSubscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
-
-            state.subscription = updatedSubscription
-            // Sync cache
-            subscriptionStateCache.set(state.subscription)
-            return
-        }
+        // 2. Set store availability, auth status, and offer eligibility (independent of backend subscription)
+        updatedSubscriptionState.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
+        updatedSubscriptionState.isSignedIn = subscriptionManager.isUserAuthenticated
+        updatedSubscriptionState.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+        updatedSubscriptionState.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            updatedSubscription.platform = subscription.platform
-            updatedSubscription.hasSubscription = true
-            updatedSubscription.hasActiveSubscription = subscription.isActive
-            updatedSubscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
+            // 3. Fetch subscription from backend (returns nil if no subscription exists)
+            guard let subscription = try await subscriptionManager.getSubscription() else {
+                // 3a. No subscription on backend — reset subscription fields and exit early
+                Logger.subscription.debug("No subscription data available")
+                applyNoSubscriptionState(&updatedSubscriptionState)
+                DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
+                state.subscription = updatedSubscriptionState
+                subscriptionStateCache.set(state.subscription)
+                return
+            }
 
-            // Check entitlements and update state
-            var currentEntitlements: [SubscriptionEntitlement] = []
-            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            // 4. Populate subscription details from backend response
+            updatedSubscriptionState.platform = subscription.platform
+            updatedSubscriptionState.hasSubscription = true
+            updatedSubscriptionState.hasActiveSubscription = subscription.isActive
+            updatedSubscriptionState.isActiveTrialOffer = subscription.hasActiveTrialOffer
 
-            for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
-                    hasEntitlement {
-                    currentEntitlements.append(entitlement)
+            // 5. Check which features are enabled for the user (entitlements present in the access token)
+            let featuresToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var enabledFeatures: [SubscriptionEntitlement] = []
+            for feature in featuresToCheck {
+                if let isEnabled = try? await subscriptionManager.isFeatureEnabled(feature),
+                    isEnabled {
+                    enabledFeatures.append(feature)
                 }
             }
 
-            updatedSubscription.entitlements = currentEntitlements
-            updatedSubscription.subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
-        } catch SubscriptionEndpointServiceError.noData {
-            Logger.subscription.debug("No subscription data available")
-            updatedSubscription.hasSubscription = false
-            updatedSubscription.hasActiveSubscription = false
-            updatedSubscription.entitlements = []
-            updatedSubscription.platform = .unknown
-            updatedSubscription.isActiveTrialOffer = false
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
-
-            DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
+            // 6. Set enabled features and plan-included features
+            updatedSubscriptionState.entitlements = enabledFeatures
+            updatedSubscriptionState.subscriptionFeatures = subscription.features ?? []
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // 3b. User is not authenticated — reset subscription fields (no pixel: user has no account)
+            Logger.subscription.debug("No subscription data available - user not authenticated")
+            updatedSubscriptionState.isSignedIn = false
+            applyNoSubscriptionState(&updatedSubscriptionState)
         } catch {
+            // 3c. Transient error — keep cached state as-is
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
         }
 
-        // Apply all updates at once
-        state.subscription = updatedSubscription
-
-        // Sync Cache
+        // 7. Persist updated state
+        state.subscription = updatedSubscriptionState
         subscriptionStateCache.set(state.subscription)
+    }
+
+    /// Resets subscription-dependent fields to their "no subscription" defaults.
+    private func applyNoSubscriptionState(_ subscription: inout SettingsState.Subscription) {
+        subscription.hasSubscription = false
+        subscription.hasActiveSubscription = false
+        subscription.entitlements = []
+        subscription.platform = .unknown
+        subscription.isActiveTrialOffer = false
+        subscription.subscriptionFeatures = []
     }
     
     private func setupNotificationObservers() {
@@ -1743,6 +1732,17 @@ extension SettingsViewModel {
 // Deeplink notification handling
 extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
+}
+
+enum SettingsDeepLinkUserInfoKey {
+    static let onPresented = "onPresented"
+}
+
+/// Typed wrapper for the post-presentation callback passed via `settingsDeepLinkNotification`
+/// userInfo. Using a concrete type instead of a bare closure makes signature mismatches a
+/// build error rather than a silent runtime nil.
+struct SettingsDeepLinkCallback {
+    let onPresented: () -> Void
 }
 
 // MARK: - AI Chat

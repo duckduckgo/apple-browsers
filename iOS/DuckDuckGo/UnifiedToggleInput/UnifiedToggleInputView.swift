@@ -414,7 +414,7 @@ final class UnifiedToggleInputView: UIView {
                   radius: 12,
                   offset: CGSize(width: 0, height: 4)),
             .init(id: ShadowID.rim,
-                  color: flankedHaloColor,
+                  color: UIColor(designSystemColor: .shadowSecondary),
                   radius: 6,
                   offset: CGSize(width: 0, height: 2)),
         ]
@@ -425,14 +425,6 @@ final class UnifiedToggleInputView: UIView {
     private enum ShadowID {
         static let outer = "outer"
         static let rim = "rim"
-    }
-
-    private var flankedHaloColor: UIColor {
-        UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor.white.withAlphaComponent(0.18)
-                : UIColor.black.withAlphaComponent(0.10)
-        }
     }
 
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {

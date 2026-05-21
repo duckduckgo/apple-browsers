@@ -55,6 +55,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
+    private var didHideBarsForChatPathVisitSiteDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -263,6 +264,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
+        }
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -280,6 +285,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String) {
+        // Note: the editing-state Dax suppression and NTP `view.alpha = 0` are pre-armed
+        // synchronously in `MainViewController.tabDidRequestNewTab` /
+        // `presentChatPathOnboardingCompletionIfNeeded` BEFORE this async hop runs, so
+        // we don't repeat them here — re-setting the pending flag at this point would
+        // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
+        // editing state (e.g. after the subscription promo's "No, Thanks").
         chromeDelegate?.omniBar.beginEditing(animated: true)
         DispatchQueue.main.async { [weak self] in
             self?.showDuckAIOnboardingCompletionDialog(message: message)
@@ -323,6 +334,7 @@ extension NewTabPageViewController {
         let presentedHostViewController = parent?.presentedViewController ?? parent
         guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
             isShowingDuckAICompletionDialog = false
+            view.alpha = 1
             return
         }
 
@@ -332,10 +344,30 @@ extension NewTabPageViewController {
         let onDismiss = { [weak self, weak editingController] in
             guard let self else { return }
             let finishDismissal = {
-                editingController?.setLogoHidden(false)
-                self.daxDialogsManager.dismiss()
-                self.dismissHostingController(didFinishNTPOnboarding: true)
-                ViewHighlighter.hideAll()
+                // Mark EOJ as seen before peeking the next spec so that
+                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
+                // branch and can return .subscriptionPromotion. Without this the
+                // chat-path branch returns nil and dismiss() is called immediately,
+                // making isEnabled = false and blocking the promo forever (r3257196584).
+                self.daxDialogsManager.setFinalOnboardingDialogSeen()
+                // Check for subscription promo before ending onboarding, mirroring
+                // the same check in showNextDaxDialogNew's onDismiss.
+                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    // Editing state is about to be dismissed for the subscription promo —
+                    // keep the suppressed Dax non-installed so the dismiss animation can't
+                    // slide it in along with the editing state's logo Y-offset animation.
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    self.chromeDelegate?.omniBar.endEditing()
+                    self.showNextDaxDialog()
+                } else {
+                    // Staying in the editing state — lazily install/restore the Dax so
+                    // it's visible normally for subsequent visibility updates.
+                    editingController?.setLogoHidden(false)
+                    self.daxDialogsManager.dismiss()
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    ViewHighlighter.hideAll()
+                }
             }
 
             guard let hostingView = self.hostingController?.view else {
@@ -423,8 +455,22 @@ extension NewTabPageViewController {
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
-
         hostingController.view.backgroundColor = .clear
+
+        // For the chat-path "try visiting a site" dialog, hide both the address bar and toolbar
+        // so the user can only choose from the preset suggestions. Showing the bars lets users
+        // bypass the onboarding step (by typing a search or switching tabs), causing edge-cases.
+        // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
+        // (which calls hideKeyboard internally).
+        if spec == .subsequent,
+           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            didHideBarsForChatPathVisitSiteDialog = true
+            DispatchQueue.main.async { [weak self] in
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            }
+        }
+
+
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -450,7 +496,14 @@ extension NewTabPageViewController {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
         isShowingDuckAICompletionDialog = false
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        }
         if didDismissDuckAICompletionDialog {
+            // Restore NTP visibility that was muted during the chat-path handoff so the
+            // empty-state Dax doesn't flash through the editing-state transition.
+            view.alpha = 1
             delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
         }
         if didFinishNTPOnboarding {
@@ -460,13 +513,20 @@ extension NewTabPageViewController {
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
         guard isShowingDuckAICompletionDialog else { return }
-        daxDialogsManager.dismiss()
+        let promoPending = daxDialogsManager.subscriptionPromotionPending
         dismissHostingController(didFinishNTPOnboarding: true)
+        if !promoPending {
+            daxDialogsManager.dismiss()
+        }
+        // When promoPending, the state machine is left intact: the subscription promo
+        // will surface naturally on the next NTP open via viewDidAppear → presentNextDaxDialog().
+        ViewHighlighter.hideAll()
     }
 
     private func notifyDuckAICompletionDismissedIfNeeded() {
         guard isShowingDuckAICompletionDialog else { return }
         isShowingDuckAICompletionDialog = false
+        view.alpha = 1
         delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
     }
 }

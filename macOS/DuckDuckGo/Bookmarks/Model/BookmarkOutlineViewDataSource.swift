@@ -325,11 +325,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         }
 
         let index = {
-            // for folders-only calculate new real index based on the nearest folder index
+            // for folders-only and clipped-items menus the outline doesn‘t show every sibling,
+            // so translate the visible outline index into a real index in the parent folder.
             if contentMode == .foldersOnly || representedObject is PseudoFolder,
                index > -1,
-               // get folder before the insertion point (or the first one)
-               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BookmarkFolder,
+               // get the entity before the insertion point (or the first one)
+               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BaseBookmarkEntity,
                // get all the children of a new parent folder (take actual bookmark list for the root)
                let siblings = ((representedObject is PseudoFolder ? nil : representedObject) as? BookmarkFolder)?.children ?? bookmarkManager.list?.topLevelEntities {
 

@@ -91,6 +91,8 @@ extension Pixel {
         case tabLongPressMenuNewFireTab
         case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
+        case appOpenTabCountIdleNTPDaily
+        case appOpenTabCountIdleLastTabDaily
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
         case tabManagerCloseAITab
@@ -270,6 +272,8 @@ extension Pixel {
         case onboardingDuckAIExperimentFireDialogShownUnique
         case onboardingDuckAIExperimentFireButtonCTAPressed
         case onboardingDuckAIExperimentFinalDialogShownUnique
+        case onboardingChatPathTryVisitSiteUnique
+        case onboardingChatPathTrackersBlockedUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -382,6 +386,15 @@ extension Pixel {
         case downloadStartedDueToUnhandledMIMEType
         case downloadTriedToPresentPreviewWithoutTab
         case downloadsListOpened
+
+        case icsCalendarEditorPresented
+        case icsCalendarEditorSaved
+        case icsCalendarEditorCancelled
+        case icsCalendarFallbackMultipleEvents
+        case icsCalendarFallbackUnrecognizedTimeZone
+        case icsCalendarFallbackParseFailure
+        case icsCalendarRoutedByExtension
+        case icsCalendarUnsupportedRRule
         
         case downloadsListOngoingDownloadCancelled
         case downloadsListCompleteDownloadDeleted
@@ -1258,8 +1271,6 @@ extension Pixel {
         case ddgSubscriptionManagementRemoval
         case subscriptionSuccessfulSubscriptionAttribution
         case subscriptionKeychainAccessError
-        // Auth
-        case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -1961,6 +1972,8 @@ extension Pixel.Event {
         case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
         case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
+        case .appOpenTabCountIdleNTPDaily: return "m_app_open_tab_count_idle_ntp_daily"
+        case .appOpenTabCountIdleLastTabDaily: return "m_app_open_tab_count_idle_last_tab_daily"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
         case .tabManagerCloseAITab: return "m_tab_manager_close_ai_tab"
@@ -2135,6 +2148,8 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
         case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
+        case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
+        case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2207,6 +2222,15 @@ extension Pixel.Event {
         case .downloadStartedDueToUnhandledMIMEType: return "m_download_started_due_to_unhandled_mime_type"
         case .downloadTriedToPresentPreviewWithoutTab: return "m_download_tried_to_present_preview_without_tab"
         case .downloadsListOpened: return "m_downloads_list_opened"
+
+        case .icsCalendarEditorPresented: return "m_ics_calendar_editor_presented"
+        case .icsCalendarEditorSaved: return "m_ics_calendar_editor_saved"
+        case .icsCalendarEditorCancelled: return "m_ics_calendar_editor_cancelled"
+        case .icsCalendarFallbackMultipleEvents: return "m_ics_calendar_fallback_multiple_events"
+        case .icsCalendarFallbackUnrecognizedTimeZone: return "m_ics_calendar_fallback_unrecognized_time_zone"
+        case .icsCalendarFallbackParseFailure: return "m_ics_calendar_fallback_parse_failure"
+        case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
+        case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
             
         case .downloadsListOngoingDownloadCancelled: return "m_downloads_list_ongoing_download_cancelled"
         case .downloadsListCompleteDownloadDeleted: return "m_downloads_list_complete_download_deleted"
@@ -3051,11 +3075,7 @@ extension Pixel.Event {
         case .ddgSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .subscriptionSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .subscriptionKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-            // Auth
-        case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
-
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
-
         case .subscriptionActivatingRestoreErrorMissingAccountOrTransactions: return "m_privacy-pro_activating_restore_error_missing_account_or_transactions"
         case .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError: return "m_privacy-pro_activating_restore_error_past_transaction_authentication_error"
         case .subscriptionActivatingRestoreErrorFailedToObtainAccessToken: return "m_privacy-pro_activating_restore_error_failed_to_obtain_access_token"

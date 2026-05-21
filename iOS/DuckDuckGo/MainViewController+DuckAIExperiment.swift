@@ -90,7 +90,7 @@ extension MainViewController {
     // MARK: Fire dialog triggering
 
     func showExperimentFireDialogAfterAIChatResponseIfReady() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
             if experimentDuckAIFireOnboardingFlow.state != .completed {
                 experimentDuckAIFireOnboardingFlow.state = .idle
             }
@@ -247,7 +247,7 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
             // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
             if [.duckAIAnswerStep, .duckAIQuerySelection].contains(onboardingResumeStepStore.resumeStep) {
                 OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)

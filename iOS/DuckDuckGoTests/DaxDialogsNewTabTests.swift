@@ -25,9 +25,11 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     var daxDialogs: DaxDialogs!
     var settings: DaxDialogsSettings!
+    var mockSettings: MockDaxDialogsSettings!
 
     override func setUp() {
-        settings = MockDaxDialogsSettings()
+        mockSettings = MockDaxDialogsSettings()
+        settings = mockSettings
         let mockVariantManager = MockVariantManager(isSupportedReturns: true)
         daxDialogs = DaxDialogs(
             settings: settings,
@@ -38,6 +40,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
     }
 
     override func tearDown() {
+        mockSettings = nil
         settings = nil
         daxDialogs = nil
     }
@@ -126,9 +129,10 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
     func testWhenFireShownAndNoBrowsingAndChatPathVisitSiteNotSeen_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
         // GIVEN – chat path: fire was seen before visiting any site
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = false
+        mockSettings.isChatFirstPath = true
+        mockSettings.fireMessageExperimentShown = true
+        mockSettings.chatPathVisitSiteSeen = false
+        mockSettings.chatPathPhase = .visitSite
         // nonDDGBrowsingMessageSeen = false by default
 
         // WHEN
@@ -138,36 +142,38 @@ final class DaxDialogsNewTabTests: XCTestCase {
         XCTAssertEqual(homeScreenMessage, .subsequent)
     }
 
-    func testWhenFireShownAndChatPathVisitSiteSeen_AndNoBrowsing_OnNextHomeScreenMessageNew_ReturnsNil() {
-        // GIVEN – chat path: visit-site dialog was shown; waiting for user to browse
-        settings.isChatFirstPath = true
-        settings.fireMessageExperimentShown = true
-        settings.chatPathVisitSiteSeen = true
-        // nonDDGBrowsingMessageSeen = false by default
+    func testWhenFireShownAndChatPathVisitSiteSeenAndNoBrowsing_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
+        // GIVEN – chat path: visit-site dialog was shown but user hasn't browsed to a non-DDG site yet.
+        // Production: DefaultDaxDialogsSettings.chatPathPhase stays .visitSite until seenBrowsingDialog
+        // is true, so the NTP keeps returning .subsequent to keep prompting the user.
+        mockSettings.isChatFirstPath = true
+        mockSettings.fireMessageExperimentShown = true
+        mockSettings.chatPathVisitSiteSeen = true
+        mockSettings.chatPathPhase = .visitSite // production computed value in this state
 
         // WHEN
         let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
 
-        // THEN – no NTP dialog; tracker dialog will surface when user browses
-        XCTAssertNil(homeScreenMessage)
+        // THEN
+        XCTAssertEqual(homeScreenMessage, .subsequent)
     }
 
     // MARK: - Chat Path – chatPathPhase
 
     func testWhenChatPathPhaseIsNone_DaxDialogsReturnsNone() {
-        settings.chatPathPhase = .none
+        mockSettings.chatPathPhase = .none
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .none)
     }
 
     func testWhenChatPathPhaseIsVisitSite_DaxDialogsReturnsVisitSite() {
-        settings.chatPathPhase = .visitSite
+        mockSettings.chatPathPhase = .visitSite
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .visitSite)
     }
 
     func testWhenChatPathPhaseIsTrackerToEOJ_DaxDialogsReturnsTrackerToEOJ() {
-        settings.chatPathPhase = .trackerToEOJ
+        mockSettings.chatPathPhase = .trackerToEOJ
 
         XCTAssertEqual(daxDialogs.chatPathPhase, .trackerToEOJ)
     }

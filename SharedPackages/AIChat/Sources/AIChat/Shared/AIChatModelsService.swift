@@ -223,15 +223,22 @@ extension AIChatModel {
 
 extension AIChatModel.ModelProvider {
     public static func from(id: String, providerString: String) -> AIChatModel.ModelProvider {
-        if id.hasPrefix("meta-llama/") || id.hasPrefix("meta-llama_") || providerString == "azure" {
+        let normalizedProviderString = providerString.lowercased()
+        let isMetaProvider = id.hasPrefix("meta-llama/") || id.hasPrefix("meta-llama_") || normalizedProviderString == "azure"
+        let isMistralProvider = id.hasPrefix("mistralai/")
+            || id.hasPrefix("mistralai_")
+            || normalizedProviderString == "mistral"
+            || normalizedProviderString == "mistralai"
+
+        if isMetaProvider {
             return .meta
-        } else if id.hasPrefix("mistralai/") || id.hasPrefix("mistralai_") {
+        } else if isMistralProvider {
             return .mistral
         } else if id.contains("gpt-oss") {
             return .oss
-        } else if providerString == "anthropic" {
+        } else if normalizedProviderString == "anthropic" {
             return .anthropic
-        } else if providerString == "openai" {
+        } else if normalizedProviderString == "openai" {
             return .openAI
         } else {
             return .unknown

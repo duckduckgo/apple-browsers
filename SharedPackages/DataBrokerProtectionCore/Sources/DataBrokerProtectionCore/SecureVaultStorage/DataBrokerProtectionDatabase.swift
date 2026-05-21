@@ -75,6 +75,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
+    func hasScanHistoryEvents() throws -> Bool
     func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
@@ -387,6 +388,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             }
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.add historyEvent")
+            throw error
+        }
+    }
+
+    public func hasScanHistoryEvents() throws -> Bool {
+        do {
+            return try vault.hasScanHistoryEvents()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.hasScanHistoryEvents")
             throw error
         }
     }

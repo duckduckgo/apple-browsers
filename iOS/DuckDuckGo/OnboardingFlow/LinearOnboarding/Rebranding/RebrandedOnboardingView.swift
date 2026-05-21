@@ -363,6 +363,7 @@ extension OnboardingRebranding {
                     content: content.restorePromptStepContent,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     restoreAction: {
                         model.restoreSyncAccountAction()
                         animateContentTransition {
@@ -382,6 +383,7 @@ extension OnboardingRebranding {
                     content: content,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     continueAction: {
                         animateContentTransition {
                             model.startOnboardingAction(isResumingOnboarding: false)
@@ -403,6 +405,18 @@ extension OnboardingRebranding {
                 cancelAction: {
                     animateContentTransition {
                         model.cancelSetDefaultBrowserAction()
+                    }
+                }
+            )
+        }
+
+        private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
+            AIComparisonContent(
+                content: content,
+                showContent: $showBubbleContent,
+                continueAction: {
+                    animateContentTransition {
+                        model.aiComparisonAction()
                     }
                 }
             )
@@ -475,6 +489,8 @@ extension OnboardingRebranding {
                 introView(content: content, dialogType: dialogType)
             case let .browsersComparisonDialog(content):
                 browsersComparisonView(content: content)
+            case let .aiComparisonDialog(content):
+                aiComparisonView(content: content)
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):
@@ -500,14 +516,7 @@ extension OnboardingRebranding {
                     isVisible: model.introState.showIntroViewContent,
                     showsStepCounter: false
                 )
-            case .chooseAppIconDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .trailing,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .browsersComparisonDialog:
+            case .browsersComparisonDialog, .aiComparisonDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
@@ -518,6 +527,13 @@ extension OnboardingRebranding {
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAppIconDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: tailLeadingOffset,
+                    tailDirection: .trailing,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -633,7 +649,7 @@ extension OnboardingRebranding {
             // `lockedIntroBubbleHeight` (not the live value) keeps Dax stable across intro
             // bubble content swaps.
             case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: lockedIntroBubbleHeight)
-            case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
+            case .browsersComparisonDialog, .aiComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
             case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
@@ -643,7 +659,7 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 content: content,
                 defaultMode: defaultMode,
@@ -666,7 +682,6 @@ extension OnboardingRebranding {
         ///   and bubble resize). `nil` for the initial fade-in.
         private func animateContentTransition(action: (() -> Void)? = nil) {
             showBubbleContent = false
-            skipTypingAnimation = false
 
             // Read the currently-displayed animation (not the model-derived one) so e.g. the
             // add-to-dock promo→tutorial in-place swap, where the overlay is already cleared,
@@ -680,7 +695,8 @@ extension OnboardingRebranding {
             )
 
             if action == nil {
-                // Initial appearance: pin the overlay to the current step.
+                // Initial appearance: pin the overlay.
+                skipTypingAnimation = false
                 currentDaxAnimation = activeDaxAnimation
                 daxPlayForward = true
                 daxAnimationID += 1
@@ -691,6 +707,7 @@ extension OnboardingRebranding {
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
+                    skipTypingAnimation = false
                     if hasAnyDaxExit {
                         // Don't update `currentDaxAnimation` yet — the old animation must stay
                         // rendered while its exit plays, even after `model.state` moves on.

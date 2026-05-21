@@ -167,6 +167,7 @@ class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromot
     var nextHomeScreenMessageCalled = false
     var nextHomeScreenMessageNewCalled = false
     var dismissCalled = false
+    var setFinalOnboardingDialogSeenCalled = false
     var specToReturn: DaxDialogs.HomeScreenSpec?
     var isShowingSubscriptionPromotion = false
     var subscriptionPromotionDialogSeen = false
@@ -180,6 +181,10 @@ class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromot
     func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
         nextHomeScreenMessageNewCalled = true
         return specToReturn
+    }
+
+    func setFinalOnboardingDialogSeen() {
+        setFinalOnboardingDialogSeenCalled = true
     }
 
     func dismiss() {

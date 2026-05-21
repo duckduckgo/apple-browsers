@@ -27,8 +27,9 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - SwitchBarHandling — Fixed Values
 
-    var isTopBarPosition: Bool = false
+    private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
+    let usesExpandedAIChatTextEntryLayout: Bool = true
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
@@ -43,9 +44,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
+    @Published var submitsAIChatOnKeyboardReturn: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
+    }
+
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> {
+        $submitsAIChatOnKeyboardReturn.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {
@@ -139,11 +145,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
-    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
-        searchGoToButtonTappedSubject.eraseToAnyPublisher()
-    }
-
     private let stopGeneratingButtonTappedSubject = PassthroughSubject<Void, Never>()
     var stopGeneratingButtonTappedPublisher: AnyPublisher<Void, Never> {
         stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
@@ -218,10 +219,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.send()
     }
 
-    func searchGoToButtonTapped() {
-        searchGoToButtonTappedSubject.send()
-    }
-
     func stopGeneratingButtonTapped() {
         stopGeneratingButtonTappedSubject.send()
     }
@@ -230,7 +227,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         customizeResponsesButtonTappedSubject.send()
     }
 
-    func updateBarPosition(isTop: Bool) {}
+    func updateBarPosition(isTop: Bool) {
+        guard isTopBarPosition != isTop else { return }
+        isTopBarPosition = isTop
+        updateButtonState()
+    }
 
     // MARK: - Private
 
@@ -239,17 +240,12 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
-        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
-            nextButtonState = .stopGeneratingAndSearchGoTo
-        } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat {
             nextButtonState = .stopGeneratingOnly
         } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat {
-            // Search-go-to is the only escape hatch back to search when the toggle is off.
-            nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
         } else if voiceAvailable {

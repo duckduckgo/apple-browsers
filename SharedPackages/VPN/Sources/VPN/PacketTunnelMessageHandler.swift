@@ -25,12 +25,15 @@ import os.log
 protocol TunnelStateProviding: AnyObject {
     @MainActor var connectionStatus: ConnectionStatus { get }
     @MainActor var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod { get }
+    @MainActor var lastSelectedServer: NetworkProtectionServer? { get }
     @MainActor var lastSelectedServerInfo: NetworkProtectionServerInfo? { get }
+    @MainActor var tunnelInterfaceName: String? { get }
+    @MainActor var excludeLocalNetworks: Bool { get }
 }
 
 protocol TunnelLifecycleManaging: AnyObject {
     @MainActor func cancelTunnel(with error: Error) async
-    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool) async throws
+    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, attemptSource: PacketTunnelProvider.ConnectionAttemptSource) async throws
     @MainActor func restartAdapter() async throws
     @MainActor func resetRegistrationKey()
     @MainActor func removeToken() async throws
@@ -254,7 +257,8 @@ final class PacketTunnelMessageHandler {
                        let currentMethod = tunnelState?.currentServerSelectionMethod {
                         try? await tunnelLifecycle?.updateTunnelConfiguration(
                             updateMethod: .selectServer(currentMethod),
-                            reassert: true)
+                            reassert: true,
+                            attemptSource: .serverChange)
                     }
                 }
                 completionHandler?(nil)
@@ -270,7 +274,8 @@ final class PacketTunnelMessageHandler {
             if case .connected = tunnelState?.connectionStatus {
                 try? await tunnelLifecycle?.updateTunnelConfiguration(
                     updateMethod: .selectServer(.preferredServer(serverName: serverName)),
-                    reassert: true)
+                    reassert: true,
+                    attemptSource: .serverChange)
             }
             completionHandler?(nil)
         }

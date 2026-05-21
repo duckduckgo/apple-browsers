@@ -156,5 +156,19 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_last-used-model-parse_error": {
+        "description": "Fires when decoding the persisted chat JSON to read the last-used model fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_last-used-reasoning-mode-parse_error": {
+        "description": "Fires when decoding the persisted chat JSON to read the last-used reasoning mode fails",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
     }
 }

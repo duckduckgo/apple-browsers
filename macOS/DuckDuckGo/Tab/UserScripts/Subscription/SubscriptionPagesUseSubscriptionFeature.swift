@@ -74,6 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let notificationCenter: NotificationCenter
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
+    private let dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let aiChatURL: URL
     private let requestValidator: any ScriptRequestValidator
 
@@ -95,6 +96,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
+                dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = PixelKit.shared.map { DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS) },
                 aiChatURL: URL,
                 wideEvent: WideEventManaging,
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
@@ -110,6 +112,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
+        self.dataBrokerProtectionSharedPixelHandler = dataBrokerProtectionSharedPixelHandler
         self.wideEvent = wideEvent
         self.subscriptionEventReporter = subscriptionEventReporter
         self.pendingTransactionHandler = pendingTransactionHandler
@@ -198,9 +201,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                markEmailAddressRestoreAsFailure(data: restoreDataList)
+                return nil
+            }
             markEmailAddressRestoreAsSuccess(data: restoreDataList)
-            Logger.subscription.log("Subscription retrieved")
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
         } catch {
             markEmailAddressRestoreAsFailure(data: restoreDataList, with: error)
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -498,7 +505,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         Logger.subscription.log("[TierChange] Parsed - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
         switch effectivePlatform {
@@ -897,6 +904,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
+            dataBrokerProtectionSharedPixelHandler?.fire(.freemiumUpsell)
         }
     }
 

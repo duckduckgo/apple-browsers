@@ -213,33 +213,16 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         }
     }
 
-    // MARK: - Chat Path – Final Dialog
+    // MARK: - Final Dialog
 
-    func testWhenChatPathEOJState_AndFinalDialogAppears_ThenFiresDuckAIExperimentFinalDialogPixel() {
-        // GIVEN
-        contextualOnboardingLogicMock.chatPathPhase = .trackerToEOJ
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIExperimentFinalDialogImpression)
-
-        // WHEN
-        waitForDialogDefinedBy(spec: .final) {
-            // THEN
-            XCTAssertTrue(self.pixelReporterMock.didCallMeasureDuckAIExperimentFinalDialogImpression)
-            XCTAssertFalse(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
-        }
-    }
-
-    func testWhenNotChatPathEOJState_AndFinalDialogAppears_ThenFiresStandardEOJPixel() {
-        // GIVEN
-        contextualOnboardingLogicMock.chatPathPhase = .none
+    func testWhenFinalDialogAppears_ThenFiresStandardEOJPixel() {
         let spec = DaxDialogs.HomeScreenSpec.final
         let pixelEvent = Pixel.Event.daxDialogsEndOfJourneyNewTabUnique
-        // TEST
         testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
     }
 
-    func testWhenChatPathEOJState_AndFinalDialogAppears_ThenSetsFinalOnboardingDialogSeen() {
+    func testWhenFinalDialogAppears_ThenSetsFinalOnboardingDialogSeen() {
         // GIVEN
-        contextualOnboardingLogicMock.chatPathPhase = .trackerToEOJ
         contextualOnboardingLogicMock.expectation = expectation(description: "setFinalOnboardingDialogSeen called")
 
         // WHEN
@@ -270,7 +253,7 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
         switch event {
         case .onboardingContextualTrySearchUnique:
             return .search(.shown)
-        case .onboardingContextualTryVisitSiteUnique:
+        case .onboardingContextualTryVisitSiteUnique, .onboardingChatPathTryVisitSiteUnique:
             return .visitSite(.shown)
         case .daxDialogsEndOfJourneyNewTabUnique:
             return .end(.shown)

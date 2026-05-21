@@ -88,6 +88,10 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryView.refreshFireMode(fireMode: fireMode)
     }
 
+    func refreshPlaceholderForCurrentMode() {
+        textEntryView.refreshPlaceholderForCurrentMode()
+    }
+
     func focusTextField() {
         textEntryView.becomeFirstResponder()
     }

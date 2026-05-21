@@ -132,16 +132,8 @@ final class DuckAISuggestionsCoordinator {
         viewController = vc
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?,
-                        openTabCount: Int,
-                        onTapped: (() -> Void)?,
-                        onTabSwitcherTapped: (() -> Void)?) {
-        viewController?.setEscapeHatch(
-            model,
-            openTabCount: openTabCount,
-            onTapped: onTapped,
-            onTabSwitcherTapped: onTabSwitcherTapped
-        )
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        viewController?.setEscapeHatch(model)
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {

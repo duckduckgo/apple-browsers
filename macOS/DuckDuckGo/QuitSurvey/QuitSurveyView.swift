@@ -166,7 +166,7 @@ private struct QuitSurveyInitialView: View {
             Text(UserText.quitSurveyCloseAndQuit)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 8, bottomPadding: 8))
         .padding([.leading, .trailing], 24)
         .padding(.bottom, 16)
     }
@@ -314,7 +314,7 @@ private struct QuitSurveyPositiveView: View {
                 Text(UserText.quitSurveyQuitNow)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 8, bottomPadding: 8))
             .padding([.leading, .trailing], 24)
             .padding(.bottom, 16)
         }

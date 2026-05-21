@@ -275,7 +275,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
     }
 
-    func testWhenFloatingSubmitHasFileAttachmentWithoutTextThenFileIsSubmitted() {
+    func testWhenToolbarSubmitHasFileAttachmentWithoutTextThenFileIsSubmitted() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -284,7 +284,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.delegate = delegate
         sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
 
-        sut.submitCurrentInputFromFloatingSubmit()
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
         flushMainQueue()
 
         XCTAssertEqual(delegate.submittedPrompt, "")
@@ -420,7 +420,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.attachmentValidationMessage, validationMessage)
     }
 
-    func testWhenFloatingSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
+    func testWhenToolbarSubmitHasInvalidAttachmentThenPromptDoesNotSubmit() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -429,7 +429,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.delegate = delegate
         sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
 
-        sut.submitCurrentInputFromFloatingSubmit()
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
 
         XCTAssertNil(delegate.submittedPrompt)
         XCTAssertNil(delegate.submittedFiles)

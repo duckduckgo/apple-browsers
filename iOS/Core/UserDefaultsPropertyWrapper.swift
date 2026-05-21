@@ -57,8 +57,6 @@ public struct UserDefaultsWrapper<T> {
         case privacyButtonPulseShown = "com.duckduckgo.ios.privacyButtonPulseShown"
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
         case daxSubscriptionPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
-        case daxChatPathVisitSiteSeen = "com.duckduckgo.ios.daxOnboardingChatPathVisitSiteSeen"
-        case daxIsChatFirstPath = "com.duckduckgo.ios.daxOnboardingIsChatFirstPath"
 
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
         case faviconTabsCacheNeedsCleanup = "com.duckduckgo.ios.favicons.tabsCacheNeedsCleanup"

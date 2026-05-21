@@ -38,13 +38,17 @@ public struct DuckAiChat: Equatable {
     /// UUIDs of files referenced by this chat, stored in the native file store.
     public let fileRefs: [String]
 
+    /// Raw FE-supplied reasoning-mode string for this chat.
+    public let reasoningMode: String?
+
     public init(
         chatId: String,
         title: String,
         model: String,
         lastEdit: String,
         pinned: Bool,
-        fileRefs: [String] = []
+        fileRefs: [String] = [],
+        reasoningMode: String? = nil
     ) {
         self.chatId = chatId
         self.title = title
@@ -52,6 +56,7 @@ public struct DuckAiChat: Equatable {
         self.lastEdit = lastEdit
         self.pinned = pinned
         self.fileRefs = fileRefs
+        self.reasoningMode = reasoningMode
     }
 }
 
@@ -60,12 +65,10 @@ public struct DuckAiChat: Equatable {
 extension DuckAiChat {
 
     /// Decodes a `DuckAiChat` and its first user message content from a raw JSON data blob
-    /// as stored in the native data store's `duck_ai_chats` table.
-    /// - Parameter data: The raw JSON data.
-    /// - Returns: A tuple of the decoded chat and the optional first user message content,
-    ///   or `nil` if decoding fails.
-    static func decode(from data: Data) -> (chat: DuckAiChat, firstUserMessageContent: String?)? {
-        guard let blob = try? JSONDecoder().decode(ChatBlob.self, from: data) else { return nil }
+    /// as stored in the native data store's `duck_ai_chats` table. Throws when the data is
+    /// not valid JSON or is missing required fields (e.g. `chatId`).
+    public static func decode(from data: Data) throws -> (chat: DuckAiChat, firstUserMessageContent: String?) {
+        let blob = try JSONDecoder().decode(ChatBlob.self, from: data)
 
         let chat = DuckAiChat(
             chatId: blob.chatId,
@@ -73,7 +76,8 @@ extension DuckAiChat {
             model: blob.model ?? "",
             lastEdit: blob.lastEdit ?? "",
             pinned: blob.pinned ?? false,
-            fileRefs: blob.fileRefs ?? []
+            fileRefs: blob.fileRefs ?? [],
+            reasoningMode: blob.reasoningMode
         )
 
         let firstUserMessage = blob.messages?
@@ -94,6 +98,7 @@ private struct ChatBlob: Decodable {
     let pinned: Bool?
     let fileRefs: [String]?
     let messages: [MessageBlob]?
+    let reasoningMode: String?
 }
 
 private struct MessageBlob: Decodable {

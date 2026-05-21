@@ -29,12 +29,17 @@ import Subscription
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
+        guard !newTabPageViewModel.isLogoHidden else { return false }
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             let isLandscape = view.bounds.width > view.bounds.height
             return !isLandscape
         }
         return true
+    }
+
+    func setLogoHidden(_ hidden: Bool) {
+        newTabPageViewModel.isLogoHidden = hidden
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -73,7 +78,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -95,13 +99,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
+        let viewModel = newTabPageViewModel
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: hasEscapeHatch)
+                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -119,25 +124,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
-        if let model {
-            let targetTab = model.targetTab
-            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
-            }
-            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestTabSwitcher(self)
-            }
-        } else {
-            newTabPageViewModel.onEscapeHatchTap = nil
-            newTabPageViewModel.onTabSwitcherTap = nil
-        }
+        messagesModel.refresh()
         updateBorderView()
-    }
-
-    func setOpenTabCount(_ count: Int) {
-        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
@@ -287,8 +275,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
-            chromeDelegate?.setNavigationBarHidden(false)
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
         }
         delegate = nil
         chromeDelegate = nil
@@ -375,6 +362,12 @@ extension NewTabPageViewController {
         let onDismiss = { [weak self, weak editingController] in
             guard let self else { return }
             let finishDismissal = {
+                // Mark EOJ as seen before peeking the next spec so that
+                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
+                // branch and can return .subscriptionPromotion. Without this the
+                // chat-path branch returns nil and dismiss() is called immediately,
+                // making isEnabled = false and blocking the promo forever (r3257196584).
+                self.daxDialogsManager.setFinalOnboardingDialogSeen()
                 // Check for subscription promo before ending onboarding, mirroring
                 // the same check in showNextDaxDialogNew's onDismiss.
                 let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
@@ -542,19 +535,16 @@ extension NewTabPageViewController {
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
 
-        // For the chat-path "try visiting a site" dialog hide the address bar and lock toolbar
-        // controls so the user can only choose from the preset suggestions. Showing the address
-        // bar or leaving controls interactive lets users bypass the onboarding step (by typing a
-        // search or switching tabs), causing edge-cases.
-        // Defer the bar hide to the next run loop so that any pending beginEditing() call in
-        // onboardingCompleted() finishes activating the keyboard before we hide the bar
-        // (setNavigationBarHidden calls hideKeyboard internally).
-        if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
-            guard (parent as? MainViewController)?.currentTab?.isLoading != true else { return }
+        // For the chat-path "try visiting a site" dialog, hide both the address bar and toolbar
+        // so the user can only choose from the preset suggestions. Showing the bars lets users
+        // bypass the onboarding step (by typing a search or switching tabs), causing edge-cases.
+        // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
+        // (which calls hideKeyboard internally).
+        if spec == .subsequent,
+           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
             didHideBarsForChatPathVisitSiteDialog = true
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(true)
             DispatchQueue.main.async { [weak self] in
-                self?.chromeDelegate?.setNavigationBarHidden(true)
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
             }
         }
 
@@ -679,8 +669,7 @@ extension NewTabPageViewController {
         isShowingDuckAICompletionDialog = false
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
-            chromeDelegate?.setNavigationBarHidden(false)
-            (parent as? MainViewController)?.setChatPathVisitSiteControlsLocked(false)
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
         }
         if didDismissDuckAICompletionDialog {
             // Restore NTP visibility that was muted during the chat-path handoff so the

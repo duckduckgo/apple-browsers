@@ -50,7 +50,13 @@ final class VPNURLEventHandler {
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
         case VPNAppLaunchCommand.showSubscription.launchURL:
-            showSubscription()
+            // The only producer of this launch URL today is the agent's menu-bar
+            // expired view's Subscribe button (see VPNUIActionHandler in DuckDuckGoVPN).
+            // The agent has no way to send `origin` across this IPC boundary, so we
+            // hard-code the funnel origin here at the receiver. If a new agent
+            // surface starts emitting this command, this assumption breaks — switch
+            // to a per-surface VPNAppLaunchCommand case at that point.
+            showSubscription(origin: SubscriptionFunnelOrigin.vpnMenuBarRevoked.rawValue)
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
         default:

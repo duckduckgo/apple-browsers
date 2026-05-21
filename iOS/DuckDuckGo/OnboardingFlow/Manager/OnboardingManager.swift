@@ -148,6 +148,15 @@ enum OnboardingIntroStep: Equatable {
     ///
     /// Unlike the other cases, an interlude step does not render a view state in the onboarding view.
     case interlude(Interlude)
+
+    var isInterlude: Bool {
+        switch self {
+        case .interlude:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 extension OnboardingIntroStep {

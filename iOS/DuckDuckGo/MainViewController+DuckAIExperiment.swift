@@ -253,9 +253,10 @@ extension MainViewController {
         }
         // `.duckAIAnswerStep` (experiment flow) and `.interludeDuckAI` (tailored flow) describe the same
         // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
-        let resumeStep = onboardingResumeStepStore.resumeStep
-        guard resumeStep == .duckAIAnswerStep || resumeStep == .interludeDuckAI,
-              currentTab?.isAITab == true else {
+        guard
+            [.duckAIAnswerStep, .interludeDuckAI].contains(onboardingResumeStepStore.resumeStep),
+            currentTab?.isAITab == true
+        else {
             return
         }
 

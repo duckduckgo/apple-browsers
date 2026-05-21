@@ -289,7 +289,7 @@ final class BookmarkListViewController: NSViewController {
         scrollView.autohidesScrollers = true
         scrollView.automaticallyAdjustsContentInsets = false
         scrollView.scrollerInsets = NSEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
-        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: AppVersion.isLiquidGlassSupported ? 20 : 6, right: 0)
+        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: AppVersion.isLiquidGlassSupported ? 4 : -2, right: 0)
 
         let column = NSTableColumn()
         column.width = scrollView.frame.width - (showSyncPromo ? 44 : 32) - 2 * Constants.panelInset

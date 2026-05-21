@@ -1095,11 +1095,16 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         // Republish when YouTube Ad Block state changes (including the in-memory
-        // disable-until-relaunch override on `adBlockingAvailability`).
+        // disable-until-relaunch override on `adBlockingAvailability`). Refresh
+        // `state.youTubeAdBlockingEnabled` from storage so the toggle binding
+        // reflects writes made by other surfaces (e.g. the browsing menu).
         NotificationCenter.default.publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.objectWillChange.send()
+                guard let self else { return }
+                self.state.youTubeAdBlockingEnabled =
+                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+                self.objectWillChange.send()
             }
             .store(in: &cancellables)
 

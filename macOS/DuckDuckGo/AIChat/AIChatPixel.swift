@@ -205,6 +205,7 @@ enum AIChatPixel: PixelKitEvent {
 
     case aiChatTermsAcceptedDuplicateSyncOff
     case aiChatTermsAcceptedDuplicateSyncOn
+    case aiChatReportMetricDecodeError(NSError?, failureReason: AIChatUserScriptErrorFailureReason)
 
     // MARK: - Image Attachments
 
@@ -359,10 +360,19 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User taps "View All Chats..." from the more options menu
     case aiChatViewAllChatsMoreOptionsMenu
 
+    /// Event Trigger: Duck.ai tab WebKit process terminates
+    case aiChatTabDidTerminate(error: Error)
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
     case aiChatIsEnabled(isEnabled: Bool)
+
+    /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
+    /// to start a voice chat. `reason` distinguishes the case we acted on (`mic_os_denied`)
+    /// from anything else (`other`) — useful for measuring how often the FE hook fires for
+    /// unrelated WebKit failures and for sizing the OS-deny remediation funnel.
+    case aiChatVoiceChatStartFailed(reason: AIChatVoiceChatStartFailedReason)
 
     // MARK: -
 
@@ -487,6 +497,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_terms_accepted_duplicate_sync_off"
         case .aiChatTermsAcceptedDuplicateSyncOn:
             return "aichat_terms_accepted_duplicate_sync_on"
+        case .aiChatReportMetricDecodeError:
+            return "aichat_report_metric_decode_error"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -575,8 +587,12 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_main_menu"
         case .aiChatViewAllChatsMoreOptionsMenu:
             return "aichat_view_all_chats_more_options_menu"
+        case .aiChatTabDidTerminate:
+            return "aichat_tab_did_terminate"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
+        case .aiChatVoiceChatStartFailed:
+            return "aichat_voice_chat_start_failed"
         }
     }
 
@@ -667,7 +683,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
-                .aiChatViewAllChatsMoreOptionsMenu:
+                .aiChatViewAllChatsMoreOptionsMenu,
+                .aiChatTabDidTerminate:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -702,6 +719,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncDecryptionError(let reason),
                 .aiChatSyncHistoryEnabledError(let reason):
             return ["reason": reason]
+        case .aiChatReportMetricDecodeError(_, let failureReason):
+            return ["failureReason": failureReason.rawValue]
+        case .aiChatVoiceChatStartFailed(let reason):
+            return ["reason": reason.rawValue]
         }
     }
 
@@ -787,6 +808,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatReportMetricDecodeError,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
@@ -808,7 +830,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
-                .aiChatIsEnabled:
+                .aiChatIsEnabled,
+                .aiChatVoiceChatStartFailed,
+                .aiChatTabDidTerminate:
             return [.pixelSource]
         }
     }
@@ -838,4 +862,13 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
     case sidebarCloseButton = "sidebar-close-button"
     case contextMenu = "context-menu"
     case tabbarButton = "tabbar-button"
+}
+
+/// Reason associated with a Duck.ai voice-chat start failure reported by the FE
+enum AIChatVoiceChatStartFailedReason: String, CaseIterable {
+    /// FE reported `NotAllowedError` and the OS has denied microphone access to the app —
+    /// the remediation surface was shown.
+    case micOsDenied = "mic_os_denied"
+    /// Any other reason (transient WebKit error, hardware unavailable, etc.) — no action taken.
+    case other
 }

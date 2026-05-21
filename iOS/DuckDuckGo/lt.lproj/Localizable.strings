@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopijuoti";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopijuoti švarią nuorodą";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopijuoti nuorodą";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL nukopijuotas";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Sunaikinti kortelę";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Uždaryti kortelę";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Grįžti į kortelę";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Daugiau parinkčių";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Privačios kortelės";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2906,6 +2928,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Perkelti adreso juostą į apačią";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Perkelti adreso juostą į viršų";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Slapukai valdomi";
@@ -4219,6 +4247,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atkuriama prenumerata...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ne dabar";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "„DuckDuckGo“ taip pat siūlo **pasirenkamą mokamą prenumeratą** su saugiu **VPN** ir **pažangiu, privačiu DI (dirbtiniu intelektu)**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Pašalinti iš šio įrenginio";

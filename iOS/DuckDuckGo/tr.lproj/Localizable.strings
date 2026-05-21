@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopyala";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Temiz Bağlantıyı Kopyala";
+
+/* Copy link action */
+"action.title.copy.link" = "Bağlantıyı Kopyala";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL kopyalandı";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "En son kullanılan Fire Sekmesi";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Sekmeyi kapat ve temizle";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Sekmeyi kapat";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Sekmeye geri dön";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Diğer seçenekler";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@, %2$@ bölümüne dönün";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Gizli Sekmeler";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2906,6 +2928,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Adres Çubuğunu Alta Taşı";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Adres Çubuğunu Üste Taşı";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
@@ -4219,6 +4247,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Abonelik geri yükleniyor...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Şimdi Değil";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo ayrıca güvenli **VPN** ve **gelişmiş, gizli yapay zeka** ile **isteğe bağlı ücretli abonelik** sunuyor.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";

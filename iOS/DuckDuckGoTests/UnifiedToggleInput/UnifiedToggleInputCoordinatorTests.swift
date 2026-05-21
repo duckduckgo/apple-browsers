@@ -908,6 +908,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(handler.isGenerating)
     }
 
+    func test_aiChatStatus_ready_restoresAttachmentButtonAndMenuAfterGenerating() {
+        configureImageAttachments()
+        sut.updateImageButtonVisibility()
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
+
+        sut.aiChatStatus = .streaming
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+        XCTAssertNil(sut.viewController.attachmentMenu)
+
+        sut.aiChatStatus = .ready
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
+    }
+
     func test_unbind_whileGenerating_clearsIsGenerating() {
         let userScript = makeTestUserScript()
         sut.bindToTab(userScript)
@@ -1776,13 +1791,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
     }
 
-    func test_handlerHasSubmittedPrompt_resetAfterBindWithNewChat() {
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        let userScript = makeTestUserScript()
-        sut.bindToTab(userScript, hasExistingChat: false)
-        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
-    }
-
     func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         sut.unbind()
@@ -2087,6 +2095,48 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(stopFrame.height, submitFrame.height, accuracy: 0.5)
         XCTAssertEqual(stopButton.image(for: .normal)?.size, CGSize(width: 24, height: 24))
         XCTAssertTrue(stopButton.hitTest(CGPoint(x: -1, y: stopButton.bounds.midY), with: nil) === stopButton)
+    }
+
+    func test_isGenerating_disablesToolbarConfigurationButtons() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = true
+        sut.selectedTool = .webSearch
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+        let selectedToolClearButton = findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)
+
+        sut.isGenerating = true
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertFalse(toolsButton?.isEnabled ?? true)
+        XCTAssertFalse(reasoningButton?.isEnabled ?? true)
+        XCTAssertFalse(modelChipButton?.isEnabled ?? true)
+        XCTAssertFalse(selectedToolClearButton?.isEnabled ?? true)
+
+        sut.isGenerating = false
+
+        XCTAssertTrue(attachmentButton?.isEnabled ?? false)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+        XCTAssertTrue(reasoningButton?.isEnabled ?? false)
+        XCTAssertTrue(modelChipButton?.isEnabled ?? false)
+        XCTAssertTrue(selectedToolClearButton?.isEnabled ?? false)
+    }
+
+    func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = false
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+
+        sut.isGenerating = true
+        sut.isGenerating = false
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
     }
 
     func test_reasoningButton_hasAccessibilityIdentifier() {

@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiuj";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiuj czysty link";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiuj link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Skopiowano adres URL";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Ostatnio używana karta Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Zakładka czyszczenia";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zamknij zakładkę";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Powrót do zakładki";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Więcej opcji";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Wróć do karty %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Karty prywatne";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2906,6 +2928,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Przenieś pasek adresowy na dół";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Przenieś pasek adresowy na górę";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Zarządzane pliki cookie";
@@ -4219,6 +4247,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Przywracanie subskrypcji...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Nie teraz";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo oferuje również **opcjonalną płatną subskrypcję**, z bezpieczną **siecią VPN** i **zaawansowaną, prywatną sztuczną inteligencją**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Usuń z tego urządzenia";

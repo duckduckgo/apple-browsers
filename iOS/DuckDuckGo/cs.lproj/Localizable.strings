@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopírovat";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopírovat čistý odkaz";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopírovat odkaz";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Adrese URL zkopírována";
 
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Smazat kartu";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zavřít kartu";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Zpět na kartu";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Další možnosti";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Zpět na %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zpět na %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Soukromé karty";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2906,6 +2928,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Přesunout adresní řádek dolů";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Přesunout adresní řádek nahoru";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "O cookies je postaráno!";
@@ -4219,6 +4247,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnovování předplatného...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Teď ne";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo má také **volitelné placené předplatné** s bezpečnou **VPN** a **pokročilou, soukromou umělou inteligencí**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odebrat z tohohle zařízení";

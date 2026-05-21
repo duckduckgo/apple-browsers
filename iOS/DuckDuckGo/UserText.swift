@@ -1619,6 +1619,11 @@ public struct UserText {
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
     public static let escapeHatchFireTabTitle = NSLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
+    public static let escapeHatchMoreButtonAccessibilityLabel = NSLocalizedString("escapeHatch.moreButton.accessibility.label", value: "More options", comment: "Accessibility label for the more options button on the escape hatch card")
+    public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToTab", value: "Return to Tab", comment: "Menu item that returns the user to the open tab from the escape hatch card")
+    public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeTab", value: "Close Tab", comment: "Menu item that closes the open tab referenced by the escape hatch card")
+    public static let escapeHatchMenuBurnTab = NSLocalizedString("escapeHatch.menu.burnTab", value: "Burn Tab", comment: "Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card")
+    public static let escapeHatchTabSwitcherPrivateTabsLabel = NSLocalizedString("escapeHatch.tabSwitcher.privateTabs.label", value: "Private Tabs", comment: "Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
@@ -2404,6 +2409,11 @@ public struct UserText {
         }
 
         enum DuckAIQueryExperiment {
+            public static let toggleAILabel = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.toggle.ai",
+                value: "Ask AI",
+                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding experiment screen."
+            )
             public static let title = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.title",
                 value: "Ready to get started?\nTry a search or AI chat!",
@@ -2699,6 +2709,12 @@ public struct UserText {
                 comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."
             )
 
+            static let reinstallerMessage = NSLocalizedString(
+                "subscription.promo.reinstaller.message",
+                value: "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.",
+                comment: "Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations."
+            )
+
             static let messageFormatDeprecated = NSLocalizedString(
                 "onboarding.subscription.promo.message",
                 value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
@@ -2763,6 +2779,8 @@ public struct UserText {
             static let learnMore =  NSLocalizedString("onboarding.privacypro.promo.buttons.learnMore", value: "Learn More", comment: "Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall.")
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
+            static let notNow = NSLocalizedString("subscription.promo.reinstaller.buttons.notNow", value: "Not Now", comment: "Dismiss button on the reinstaller subscription promo.")
+
             public enum Rebranding {
                 static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
                 static let tryItFree = NSLocalizedString("onboarding.subscription.promo.buttons.rebranding.tryItFree", value: "Try it free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
@@ -2803,4 +2821,10 @@ public struct UserText {
     public static let icsAddToCalendarUnrecognizedTimeZone = NotLocalizedString("ics.add-to-calendar.unrecognized-time-zone", value: "Unsupported time zone. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve")
     public static let icsAddToCalendarParseFailure = NotLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
     public static let icsEventAddedToCalendar = NotLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
+
+    // MARK: - OmniBar Long Press Menu
+    public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
+    public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")
+    public static let actionCopyLink = NSLocalizedString("action.title.copy.link", value: "Copy Link", comment: "Copy link action")
+    public static let actionCopyCleanLink = NSLocalizedString("action.title.copy.clean.link", value: "Copy Clean Link", comment: "Copy clean link action")
 }

@@ -33,6 +33,7 @@ class SubscriptionManagerTests: XCTestCase {
     var subscriptionManager: DefaultSubscriptionManager!
     var mockOAuthClient: MockOAuthClient!
     var mockSubscriptionEndpointService: SubscriptionEndpointServiceMock!
+    var mockSubscriptionCachingService: SubscriptionCachingServiceMock!
     var mockStorePurchaseManager: StorePurchaseManagerMock!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMock!
     fileprivate var mockPixelHandler: MockSubscriptionPixelHandler!
@@ -43,6 +44,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         mockOAuthClient = MockOAuthClient()
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMock()
+        mockSubscriptionCachingService = SubscriptionCachingServiceMock()
         mockStorePurchaseManager = StorePurchaseManagerMock()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
         mockPixelHandler = MockSubscriptionPixelHandler()
@@ -52,6 +54,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: mockPixelHandler
         )
@@ -74,6 +77,7 @@ class SubscriptionManagerTests: XCTestCase {
         subscriptionManager = nil
         mockOAuthClient = nil
         mockSubscriptionEndpointService = nil
+        mockSubscriptionCachingService = nil
         mockStorePurchaseManager = nil
         mockPixelHandler = nil
         super.tearDown()
@@ -188,15 +192,17 @@ class SubscriptionManagerTests: XCTestCase {
             pendingPlans: nil
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .success(tokenContainer)
         mockOAuthClient.internalCurrentTokenContainer = tokenContainer
 
-        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-        XCTAssertTrue(subscription.isActive)
+        let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNotNil(subscription)
+        XCTAssertTrue(subscription!.isActive)
     }
 
-    func testRefreshCachedSubscription_ExpiredSubscription() async {
+    func testRefreshCachedSubscription_ExpiredSubscription() async throws {
         let expiredSubscription = DuckDuckGoSubscription(
             productId: "testProduct",
             name: "Test Subscription",
@@ -211,14 +217,158 @@ class SubscriptionManagerTests: XCTestCase {
             pendingPlans: nil
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        do {
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-        } catch SubscriptionEndpointServiceError.noData {
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
 
-        } catch {
-            XCTFail("Unexpected error: \(error)")
+        let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNotNil(subscription, "Expired subscription should still be returned")
+        XCTAssertFalse(subscription!.isActive, "Expired subscription should not be active")
+        XCTAssertEqual(subscription!.status, .expired)
+    }
+
+    func testGetSubscription_NoDataOnBackend_ReturnsNil() async throws {
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(.noData)
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNil(subscription)
+    }
+
+    func testGetSubscription_TransientError_ReturnsCachedSubscription() async throws {
+        // Populate the cache with an active subscription
+        let cachedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(cachedSubscription)
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        _ = try await subscriptionManager.getSubscription(forceRefresh: true)
+
+        // Now simulate a transient backend error on the next forceRefresh
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(.invalidResponseCode(.internalServerError))
+
+        let result = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNotNil(result, "Should fall back to the cached subscription on transient error")
+        XCTAssertEqual(result?.productId, cachedSubscription.productId)
+        XCTAssertTrue(result!.isActive)
+    }
+
+    func testGetSubscription_TierFeaturesError_ReturnsCachedSubscription() async throws {
+        // Populate the cache with an active subscription
+        let cachedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(cachedSubscription)
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        _ = try await subscriptionManager.getSubscription(forceRefresh: true)
+
+        // Subscription endpoint succeeds but tier-features endpoint fails
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
+
+        let result = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNotNil(result, "Should fall back to the cached subscription when tier-features fails")
+        XCTAssertEqual(result?.productId, cachedSubscription.productId)
+        XCTAssertTrue(result!.isActive)
+    }
+
+    /// When the token is unavailable, the cache must be cleared but no `.subscriptionDidChange`
+    /// notification is posted — even if a subscription was previously cached.
+    /// This documents a known asymmetry: the `noData` path posts a notification on state change,
+    /// while the `noToken` path does not, which can leave the UI stale until the next refresh.
+    func testGetSubscription_NoToken_WithCachedSubscription_ClearsCacheButDoesNotPostNotification() async throws {
+        let cachedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionCachingService.cachedSubscription = cachedSubscription
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = nil
+
+        let notificationExpectation = XCTestExpectation(description: "subscriptionDidChange must NOT fire")
+        notificationExpectation.isInverted = true
+        let observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: nil) { _ in
+            notificationExpectation.fulfill()
         }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        do {
+            _ = try await subscriptionManager.getSubscription(forceRefresh: true)
+            XCTFail("Expected SubscriptionManagerError.noTokenAvailable")
+        } catch SubscriptionManagerError.noTokenAvailable {}
+
+        await fulfillment(of: [notificationExpectation], timeout: 0.1)
+        XCTAssertTrue(mockSubscriptionCachingService.resetCalled, "Cache must be cleared when token is unavailable")
+        XCTAssertNil(mockSubscriptionCachingService.cachedSubscription, "Cached subscription must be nil after token loss")
+    }
+
+    func testGetSubscription_CachedSubscription_ReturnsCachedWithoutRefresh() async throws {
+        // First, populate the cache with an active subscription
+        let activeSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        _ = try await subscriptionManager.getSubscription(forceRefresh: true)
+
+        // Now request without force refresh — should return cached
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(.noData)
+        let cached = try await subscriptionManager.getSubscription()
+        XCTAssertNotNil(cached)
+        XCTAssertTrue(cached!.isActive)
     }
 
     // MARK: - URL Generation Tests
@@ -242,6 +392,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: environment,
             pixelHandler: MockPixelHandler()
         )
@@ -261,6 +412,39 @@ class SubscriptionManagerTests: XCTestCase {
             XCTFail("Error expected")
         } catch {
             XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
+        }
+    }
+
+    func testConfirmPurchase_TierFeaturesError_SubscriptionStillPresent() async throws {
+        // Regression test: a transient tier-features failure must not clear the cache.
+        // A user who just paid should still see a subscription even if enrichment fails.
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        let purchasedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-1)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionEndpointService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: nil, subscription: purchasedSubscription))
+        mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
+
+        do {
+            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", additionalParams: nil)
+            XCTFail("Error expected from tier-features failure")
+        } catch {
+            // The cache must hold the raw (unenriched) subscription — not be empty.
+            XCTAssertTrue(subscriptionManager.isSubscriptionPresent(), "isSubscriptionPresent() must be true after a tier-features failure post-purchase")
+            XCTAssertNotNil(mockSubscriptionCachingService.cachedSubscription, "Cache must contain the raw subscription when enrichment fails")
         }
     }
 
@@ -300,6 +484,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: productionEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -320,6 +505,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: stagingEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -336,7 +522,6 @@ class SubscriptionManagerTests: XCTestCase {
     func testDeadTokenRecoverySuccess() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(OAuthRequest.TokenStatus.expired))
         overrideTokenResponseInRecoveryHandler = .success(OAuthTokensFactory.makeValidTokenContainer())
-        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
         XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
@@ -359,7 +544,6 @@ class SubscriptionManagerTests: XCTestCase {
     /// Dead token error loop detector: this case shouldn't be possible, but if the BE starts to send back expired tokens we risk to enter in an infinite loop.
     func testDeadTokenRecoveryLoop() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(OAuthRequest.TokenStatus.expired))
-        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -392,6 +576,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: stripeEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -413,6 +598,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -434,6 +620,7 @@ class SubscriptionManagerTests: XCTestCase {
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
         )

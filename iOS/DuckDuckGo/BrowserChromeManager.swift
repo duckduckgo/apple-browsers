@@ -35,12 +35,6 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
-
-    /// Embeds `viewController` in the unified-toggle-input content area when it is active in
-    /// omnibar-editing mode, making it visible above the keyboard. Returns `true` if the
-    /// embedding was handled; `false` when the caller should fall back to its own embedding.
-    @discardableResult
-    func embedInUnifiedInputEditingAreaIfActive(_ viewController: UIViewController) -> Bool
 }
 
 class BrowserChromeManager: NSObject, UIScrollViewDelegate {

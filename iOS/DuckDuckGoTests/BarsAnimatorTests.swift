@@ -228,6 +228,4 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
     }()
 
     var tabBarContainer: UIView = UIView()
-
-    func embedInUnifiedInputEditingAreaIfActive(_ viewController: UIViewController) -> Bool { false }
 }

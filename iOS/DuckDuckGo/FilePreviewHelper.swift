@@ -54,10 +54,14 @@ struct FilePreviewHelper {
         }
     }
 
-    /// Auto-preview .ics by extension when the MIME type is wrong. Flag-gated.
-    static func canAutoPreviewICSByExtension(_ url: URL?, featureFlagger: FeatureFlagger) -> Bool {
+    /// Auto-preview .ics by URL or filename extension when the MIME type is wrong.
+    static func canAutoPreviewICSByExtension(url: URL?,
+                                             filename: String?,
+                                             featureFlagger: FeatureFlagger) -> Bool {
         guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
-        return url?.pathExtension.lowercased() == "ics"
+        if url?.pathExtension.lowercased() == "ics" { return true }
+        if filename?.lowercased().hasSuffix(".ics") == true { return true }
+        return false
     }
 
     /// ICS files must persist so the user can retry from Downloads when auto-add fails.
@@ -69,8 +73,7 @@ struct FilePreviewHelper {
         return isICS(mimeType: mimeType, url: url, filename: filename)
     }
 
-    /// File types we hand off to a native handler instead of the generic download UI; used
-    /// to suppress the download started/finished toasts. Add new natively-handled types here.
+    /// File types handed off to a native handler; download started/finished toasts are suppressed for these.
     static func handlesDownloadNatively(mimeType: MIMEType,
                                         url: URL?,
                                         filename: String?,

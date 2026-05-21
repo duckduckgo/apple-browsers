@@ -101,11 +101,33 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_unified_input_file_attached": {
+        "description": "Fires when the user attaches a file in the Unified Toggle Input (post-validation).",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_unified_input_file_removed": {
         "description": "Fires when the user removes an attached file (or invalid file) from the Unified Toggle Input.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_unified_input_file_validation_failed": {
+        "description": "Fires when an attached file is rejected by the Unified Toggle Input attachment policy.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            }
+        ]
     },
 }

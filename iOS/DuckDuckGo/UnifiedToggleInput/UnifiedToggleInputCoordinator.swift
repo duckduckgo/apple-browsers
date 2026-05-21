@@ -394,10 +394,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.addFileAttachment(attachment, sourceURL: metadata.url)
         }
         attachmentPresenter.onFileValidationFailed = { [weak self] message, metadata in
-            self?.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
+            guard let self else { return }
+            let reason = self.attachmentPolicy
+                .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.reason ?? .other
+            DailyPixel.fireDailyAndCount(
+                pixel: .unifiedToggleInputFileValidationFailed,
+                withAdditionalParameters: ["reason": reason.rawValue]
+            )
+            self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
         }
         attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
-            self?.attachmentPolicy.fileMetadataValidationMessage(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)
+            self?.attachmentPolicy.fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.message
         }
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
@@ -1563,23 +1570,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil) {
-        if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
+        if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
+            DailyPixel.fireDailyAndCount(
+                pixel: .unifiedToggleInputFileValidationFailed,
+                withAdditionalParameters: ["reason": validationError.reason.rawValue]
+            )
             viewController.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
                     fileName: fileAttachment.fileName,
                     mimeType: fileAttachment.mimeType,
                     fileSizeBytes: fileAttachment.fileSizeBytes,
-                    validationMessage: validationMessage,
+                    validationMessage: validationError.message,
                     sourceURL: sourceURL
                 )
             ))
-            presentAttachmentValidationError(validationMessage)
+            presentAttachmentValidationError(validationError.message)
             persistDraftToStore()
             updateAttachButtonPresentation()
             return
         }
 
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached)
         viewController.addAttachment(.file(fileAttachment))
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()

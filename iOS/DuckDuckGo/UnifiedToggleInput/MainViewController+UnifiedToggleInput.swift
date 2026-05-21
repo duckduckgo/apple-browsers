@@ -41,6 +41,9 @@ extension MainViewController {
             isBottom ? 0.35 : 0.25
         }
 
+        /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
+        static let omnibarIconFadeInDurationMultiplier: Double = 1.2
+
         static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
         static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
@@ -882,6 +885,9 @@ private extension MainViewController {
             coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
         }
 
+        viewCoordinator.prepareOmnibarForInlineDismissReveal()
+        let revealBarView = viewCoordinator.omniBar?.barView
+
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -897,7 +903,7 @@ private extension MainViewController {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 0
                 }
                 if let omnibarPlaceholderWindowX {
-                    coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                    coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
             },
             completion: { [weak self] _ in
@@ -931,6 +937,19 @@ private extension MainViewController {
                 duration: duration
             )
         }
+
+        // Snap alpha to 0 outside the surrounding dismiss animate so the fade animator captures
+        // `from = 0`. Without `performWithoutAnimation`, the alpha set would interpolate with
+        // the dismiss transaction and the icons would briefly become visible mid-collapse.
+        UIView.performWithoutAnimation {
+            revealBarView?.setIconContainersAlpha(0)
+        }
+        UIView.animate(
+            withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
+            delay: 0,
+            options: [.curveEaseIn, .allowUserInteraction],
+            animations: { revealBarView?.setIconContainersAlpha(1) }
+        )
     }
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for
@@ -1044,14 +1063,16 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
-        let preferredMode = preferredTextEntryModeForCurrentTab() ?? .search
         let tab = tabManager.currentTabsModel.currentTab
-        // AI tab reuses the same textView for the flanked input — text here bleeds past the
-        // collapse. AI-mode tabs likewise show a placeholder rather than the URL.
-        let isAIDestination = tab?.isAITab == true || preferredMode == .aiChat
-        let placeholderMode: TextEntryMode = isAIDestination ? .aiChat : preferredMode
-        let text = isAIDestination ? "" : AddressDisplayHelper.plainDisplayString(for: tab?.link?.url)
-        return UTIDismissSnapshot(text: text, placeholderMode: placeholderMode)
+        // AI tab reuses the same textView for the flanked input — populating it with the URL
+        // would bleed past the collapse, so match the AI chrome (empty + aiChat placeholder).
+        if tab?.isAITab == true {
+            return UTIDismissSnapshot(text: "", placeholderMode: .aiChat)
+        }
+        return UTIDismissSnapshot(
+            text: AddressDisplayHelper.plainDisplayString(for: tab?.link?.url),
+            placeholderMode: preferredTextEntryModeForCurrentTab() ?? .search
+        )
     }
 }
 

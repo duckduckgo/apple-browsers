@@ -314,6 +314,14 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    func prepareOmnibarForInlineDismissReveal() {
+        guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
+        barView.hideBarChrome()
+        navigationBarCollectionView.alpha = 1
+        navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
@@ -334,10 +342,12 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
-            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(1)
         }
     }
 

@@ -45,8 +45,8 @@ final class DefaultIdleReturnTabCountInstrumentation: IdleReturnTabCountInstrume
 
         let pixel: Pixel.Event
         switch eligibilityManager.effectiveAfterInactivityOption() {
-        case .newTab: pixel = .appOpenDailyTabCountIdleNTP
-        case .lastUsedTab: pixel = .appOpenDailyTabCountIdleLastTab
+        case .newTab: pixel = .appOpenTabCountIdleNTPDaily
+        case .lastUsedTab: pixel = .appOpenTabCountIdleLastTabDaily
         }
 
         var params = TabSwitcherOpenDailyPixel().parameters(with: tabs)

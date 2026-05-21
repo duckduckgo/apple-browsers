@@ -71,7 +71,7 @@ struct IdleReturnTabCountInstrumentationTests {
         let (sut, collector) = makeSUT(effectiveOption: .newTab)
         sut.recordAppForeground(tabs: [Tab()], browsingMode: "normal")
         #expect(collector.fired.count == 1)
-        #expect(collector.fired.first?.name == Pixel.Event.appOpenDailyTabCountIdleNTP.name)
+        #expect(collector.fired.first?.name == Pixel.Event.appOpenTabCountIdleNTPDaily.name)
     }
 
     @available(iOS 16, *)
@@ -80,7 +80,7 @@ struct IdleReturnTabCountInstrumentationTests {
         let (sut, collector) = makeSUT(effectiveOption: .lastUsedTab)
         sut.recordAppForeground(tabs: [Tab()], browsingMode: "normal")
         #expect(collector.fired.count == 1)
-        #expect(collector.fired.first?.name == Pixel.Event.appOpenDailyTabCountIdleLastTab.name)
+        #expect(collector.fired.first?.name == Pixel.Event.appOpenTabCountIdleLastTabDaily.name)
     }
 
     // MARK: - Parameter content

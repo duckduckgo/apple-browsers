@@ -134,7 +134,7 @@
             }
         ]
     },
-    "m_app_open_daily_tab_count_idle_ntp": {
+    "m_app_open_tab_count_idle_ntp_daily": {
         "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is New Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
@@ -181,7 +181,7 @@
             }
         ]
     },
-    "m_app_open_daily_tab_count_idle_last_tab": {
+    "m_app_open_tab_count_idle_last_tab_daily": {
         "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is Last Used Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],

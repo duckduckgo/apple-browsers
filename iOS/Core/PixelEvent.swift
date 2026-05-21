@@ -91,8 +91,8 @@ extension Pixel {
         case tabLongPressMenuNewFireTab
         case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
-        case appOpenDailyTabCountIdleNTP
-        case appOpenDailyTabCountIdleLastTab
+        case appOpenTabCountIdleNTPDaily
+        case appOpenTabCountIdleLastTabDaily
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
         case tabManagerCloseAITab
@@ -1960,8 +1960,8 @@ extension Pixel.Event {
         case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
         case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
-        case .appOpenDailyTabCountIdleNTP: return "m_app_open_daily_tab_count_idle_ntp"
-        case .appOpenDailyTabCountIdleLastTab: return "m_app_open_daily_tab_count_idle_last_tab"
+        case .appOpenTabCountIdleNTPDaily: return "m_app_open_tab_count_idle_ntp_daily"
+        case .appOpenTabCountIdleLastTabDaily: return "m_app_open_tab_count_idle_last_tab_daily"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
         case .tabManagerCloseAITab: return "m_tab_manager_close_ai_tab"

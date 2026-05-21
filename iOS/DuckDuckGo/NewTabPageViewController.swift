@@ -267,7 +267,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private func launchNewSearch() {
         // If we are displaying a Subscription promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
-        chromeDelegate?.omniBar.beginEditing(animated: true)
+        if let mainVC = parent as? MainViewController,
+           let coordinator = mainVC.unifiedToggleInputCoordinator,
+           coordinator.isOmnibarSession {
+            // UTI mode: expand the UTI pill so the address bar is ready for a new search.
+            coordinator.activateInput()
+        } else {
+            chromeDelegate?.omniBar.beginEditing(animated: true)
+        }
     }
 
     func dismiss() {
@@ -477,11 +484,19 @@ extension NewTabPageViewController {
         let container = mainVC.viewCoordinator.unifiedInputContentContainer!
         mainVC.addChild(hostingController)
         container.addSubview(hostingController.view)
+        // In top-bar mode the UTI bar is above the content area: pin the dialog below the bar.
+        // In bottom-bar mode the UTI bar is at the bottom: pin the dialog above the bar so it
+        // fills the visible content area instead of collapsing to zero height.
+        let isBottomBar = coordinator.cardPosition.isBottom
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
+            isBottomBar
+                ? hostingController.view.topAnchor.constraint(equalTo: container.topAnchor)
+                : hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
             hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            isBottomBar
+                ? hostingController.view.bottomAnchor.constraint(equalTo: coordinator.viewController.view.topAnchor)
+                : hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         hostingController.didMove(toParent: mainVC)
     }

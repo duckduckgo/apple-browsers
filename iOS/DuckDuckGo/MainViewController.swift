@@ -4712,9 +4712,12 @@ extension MainViewController: TabDelegate {
     private func setYouTubeAdBlockingEnabled(_ enabled: Bool) {
         adBlockingAvailability.clearDisableUntilRelaunch()
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let disclosureVisibleAtToggle = (try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) != true
         try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
         if !enabled {
             try? storage.set(false, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        } else if disclosureVisibleAtToggle {
+            try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
         }
         DailyPixel.fireDailyAndCount(
             pixel: enabled ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,

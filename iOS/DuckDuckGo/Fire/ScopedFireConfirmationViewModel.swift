@@ -169,9 +169,12 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return []
         case .singleTab:
             // Single "Delete Tab" button burning only the target tab
+            let isDuckAI = tabViewModel?.tab.isAITab == true
+            let options: FireRequest.Options = isDuckAI ? [.aiChats, .tabs] : [.all]
+
             return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteTabButton,
                                style: .primary,
-                               action: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                               action: { burnTab(tabViewModel: tabViewModel, options: options, source: source, onConfirm: onConfirm) },
                                accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
         case .default:
             break

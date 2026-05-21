@@ -185,6 +185,7 @@ class MainViewController: UIViewController {
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
@@ -485,6 +486,7 @@ class MainViewController: UIViewController {
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1843,6 +1845,9 @@ class MainViewController: UIViewController {
         fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
+        idleReturnTabCountInstrumentation.recordAppForeground(
+            tabs: tabManager.allTabsModel.tabs,
+            browsingMode: tabManager.currentBrowsingMode.pixelParamValue)
         skipSERPFlow = true
 
         /// Dismiss any keyboard restored by WKWebView when returning to foreground

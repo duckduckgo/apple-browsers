@@ -341,6 +341,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
+    case appRebranding
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
 
@@ -400,6 +403,10 @@ public enum FeatureFlag: String {
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// Failsafe feature flag. Routes tapped .ics calendar links through EKEventEditViewController.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214740849233380
+    case icsCalendarLinks
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -660,6 +667,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingRebranding))
+        case .appRebranding:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .embeddedExtension:
@@ -700,6 +709,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .icsCalendarLinks:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
         }
     }
 

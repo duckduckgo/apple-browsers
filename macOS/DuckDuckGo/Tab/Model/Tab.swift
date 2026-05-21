@@ -994,14 +994,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps,
-           // navigate in-place to preserve back-forward history
-           // launch navigation using javascript: URL navigation to prevent WebView from
-            // interpreting the action as user-initiated link navigation causing a new tab opening when Cmd is pressed
-            let redirectUrl = URL(string: "javascript:location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')") {
+           failingUrl.isHttp || failingUrl.isHttps {
 
+            // Use location.replace to retry the failed URL in-place without adding a back/forward entry.
             self.content = .url(failingUrl, credential: nil, source: .reload)
-            webView.load(URLRequest(url: redirectUrl))
+            webView.evaluateJavaScript("location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')", in: nil, in: .defaultClient)
             return nil
         }
 

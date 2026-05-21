@@ -217,6 +217,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
     }
 
+    public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
+        false
+    }
+
     public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         .disabled(.disabledInConfig)
     }

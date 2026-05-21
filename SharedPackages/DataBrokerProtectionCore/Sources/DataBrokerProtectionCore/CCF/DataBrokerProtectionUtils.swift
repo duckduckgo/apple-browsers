@@ -110,8 +110,6 @@ final class DataBrokerUserScript: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dataBrokerFeature)
 
         if let contentBlocking {
-            // Built against the un-overridden privacy config — the DBP override only
-            // mutates the brokerProtection feature, which doesn't apply here.
             contentScopeUserScriptForTrackerProtection = try ContentScopeUserScript(
                 privacyConfig,
                 properties: prefs,

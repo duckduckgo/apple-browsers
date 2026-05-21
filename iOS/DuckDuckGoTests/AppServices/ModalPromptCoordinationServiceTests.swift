@@ -195,8 +195,7 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
-            switchBarHandler: MockSwitchBarHandler(),
-            escapeHatch: nil
+            switchBarHandler: MockSwitchBarHandler()
         )
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,

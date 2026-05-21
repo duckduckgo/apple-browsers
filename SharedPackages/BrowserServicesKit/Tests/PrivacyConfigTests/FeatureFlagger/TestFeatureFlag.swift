@@ -56,13 +56,13 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
     var source: FeatureFlagSource {
         switch self {
         case .nonOverridableFlag:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+            return .remoteReleasable(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)
         case .overridableFlagDisabledByDefault:
             return .disabled
         case .overridableFlagInternalByDefault:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+            return .remoteReleasable(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)
         case .overridableExperimentFlagWithCohortBByDefault:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+            return .remoteReleasable(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)
         }
     }
 

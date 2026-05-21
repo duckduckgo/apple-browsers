@@ -1022,6 +1022,42 @@
         "triggers": ["scheduled"],
         "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
+    "m_mac_dbp_interaction_dau": {
+        "description": "Fired daily when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_interaction_wau": {
+        "description": "Fired weekly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_interaction_mau": {
+        "description": "Fired monthly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_dashboard_open": {
+        "description": "Fired every time a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_first_scan_u": {
+        "description": "Fired once when a user starts their first scan",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_freemium_upsell_u": {
+        "description": "Fired once when a freemium PIR user activates a paid subscription. Replaces legacy dbp-free_subscription_u (dual-fired during transition).",
+        "owners": ["quanganhdo", "jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
         "owners": ["quanganhdo"],

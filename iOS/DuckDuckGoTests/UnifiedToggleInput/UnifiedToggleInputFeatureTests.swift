@@ -29,15 +29,27 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
         static var isIphone: Bool = false
     }
 
+    // MARK: - Setup
+
+    override func setUp() {
+        super.setUp()
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: []))
+        MockDevicePlatform.isIphone = false
+    }
+
+    override func tearDown() {
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: []))
+        MockDevicePlatform.isIphone = false
+        super.tearDown()
+    }
+
     // MARK: - Helpers
 
     private func makeFeature(flagEnabled: Bool, isIphone: Bool) -> UnifiedToggleInputFeature {
         MockDevicePlatform.isIphone = isIphone
         let flags: [FeatureFlag] = flagEnabled ? [.unifiedToggleInput] : []
-        return UnifiedToggleInputFeature(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),
-            devicePlatform: MockDevicePlatform.self
-        )
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: flags))
+        return UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
     }
 
     // MARK: - Tests
@@ -56,5 +68,29 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
 
     func test_isNotAvailable_whenFlagOffAndNotIphone() {
         XCTAssertFalse(makeFeature(flagEnabled: false, isIphone: false).isAvailable)
+    }
+
+    // MARK: - Snapshot semantics
+
+    /// Mid-session flag flips must not change availability. Resolve writes the launch-time flag
+    /// value into UserDefaults, while readers still apply the device availability gate.
+    func test_isAvailable_usesLaunchResolvedFlagSnapshot() {
+        MockDevicePlatform.isIphone = true
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInput])
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+        XCTAssertTrue(feature.isAvailable, "Precondition: availability is ON after resolve")
+
+        flagger.enabledFeatureFlags = []
+        XCTAssertFalse(flagger.isFeatureOn(.unifiedToggleInput),
+                       "Sanity: the live flagger now reports the flag as off")
+        XCTAssertTrue(feature.isAvailable,
+                      "Snapshot must ignore the post-resolve mutation on the same instance")
+        XCTAssertTrue(UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self).isAvailable,
+                      "A fresh instance must read the same snapshot, not the mutated live flagger")
+
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        XCTAssertFalse(feature.isAvailable,
+                       "After re-resolving the snapshot must flip — otherwise resolve isn't doing its job")
     }
 }

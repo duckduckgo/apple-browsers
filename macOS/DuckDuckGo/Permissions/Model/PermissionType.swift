@@ -153,6 +153,23 @@ extension PermissionType {
         }
     }
 
+    /// Whether the permission center should query the OS-level authorization state for this
+    /// type and surface a "System X disabled" warning when the user has denied access at the
+    /// system level. Decoupled from `requiresSystemPermission` (which gates the two-step
+    /// authorization flow) so we can light up the warning UI without changing the prompt flow.
+    ///
+    /// `.microphone` is *not* included here — duck.ai's mic warning is surfaced via a synthetic
+    /// row built by `PermissionCenterViewModel` and gated behind `aiChatNativeVoicePermissionFlow`,
+    /// so non-duck.ai mic rows keep their previous Permission Center behavior.
+    var surfacesSystemDisabledWarning: Bool {
+        switch self {
+        case .geolocation, .notification:
+            return true
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+            return false
+        }
+    }
+
 }
 
 extension Array where Element == PermissionType {

@@ -45,3 +45,12 @@ public struct AIChatFileAttachment: Identifiable, Sendable {
         self.isEncrypted = isEncrypted
     }
 }
+
+extension AIChatFileAttachment: Equatable {
+    /// File attachments compare by `id` only. Files are immutable post-init, so an id match
+    /// implies content match; structural comparison would needlessly compare the file's
+    /// `data` bytes (potentially many MB on every change-detection pass).
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
+    }
+}

@@ -783,6 +783,9 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
+        let rekeyCompleted = expectation(description: "rekey leak check completes after debounce")
+        wideEvent.onCompleteFlow = { rekeyCompleted.fulfill() }
+
         let config = LeakCheckConfiguration(
             host: "leakcheck.netp.duckduckgo.com",
             httpPort: 80, httpsPort: 443, stunPort: 3478,
@@ -801,11 +804,10 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
 
         await service.scheduleCheck(trigger: .rekey)
-        try? await Task.sleep(nanoseconds: 100_000_000)
         await service.runCheck(trigger: .periodic)
-        XCTAssertEqual(wideEvent.startedFlows.count, 0, "periodic timer should not sample during a path-change debounce")
+        XCTAssertEqual(wideEvent.startedFlows.count, 0, "periodic should be skipped while a path-change check is pending")
 
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        await fulfillment(of: [rekeyCompleted], timeout: 5.0)
         XCTAssertEqual(wideEvent.startedFlows.count, 1)
         XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .rekey)
     }
@@ -958,6 +960,24 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         XCTAssertEqual(wideEvent.completedWithReason.count, 1)
         XCTAssertEqual(wideEvent.completedWithReason.first, "check_interrupted")
+    }
+
+    // MARK: - shouldScheduleCheckAfterRekey
+
+    func testShouldScheduleCheckAfterRekey_returnsFalseWhenPostRekeyIsNil() {
+        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        XCTAssertFalse(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: pre, postRekey: nil))
+    }
+
+    func testShouldScheduleCheckAfterRekey_returnsFalseWhenPreAndPostAreEqual() {
+        let info = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        XCTAssertFalse(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: info, postRekey: info))
+    }
+
+    func testShouldScheduleCheckAfterRekey_returnsTrueWhenEgressChanged() {
+        let pre = LeakCheckEgressInfo(ipAddress: "1.2.3.4", name: "us-east")
+        let post = LeakCheckEgressInfo(ipAddress: "5.6.7.8", name: "eu-west")
+        XCTAssertTrue(VPNLeakCheckService.shouldScheduleCheckAfterRekey(preRekey: pre, postRekey: post))
     }
 }
 
@@ -1112,6 +1132,7 @@ final class MockWideEventManager: WideEventManaging, @unchecked Sendable {
     var lastCompletedData: VPNIPLeakCheckWideEventData?
     var lastCompletedStatus: WideEventStatus?
     var discardedCount = 0
+    var onCompleteFlow: (() -> Void)?
 
     func startFlow<T: WideEventData>(_ data: T) {
         startedFlows.append(data)
@@ -1123,6 +1144,7 @@ final class MockWideEventManager: WideEventManaging, @unchecked Sendable {
             lastCompletedData = data
             lastCompletedStatus = status
         }
+        onCompleteFlow?()
         onComplete(true, nil)
     }
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool {

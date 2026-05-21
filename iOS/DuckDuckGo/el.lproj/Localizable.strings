@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Αντιγραφή";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Αντιγραφή καθαρού συνδέσμου";
+
+/* Copy link action */
+"action.title.copy.link" = "Αντιγραφή συνδέσμου";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Η διεύθυνση URL αντιγράφτηκε";
 
@@ -1996,6 +2002,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Τελευταία χρήση καρτέλας Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Κάψιμο καρτέλας";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Κλείσιμο καρτέλας";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Επιστροφή στην καρτέλα";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
 
@@ -2004,6 +2023,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Ιδιωτικές καρτέλες";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2912,6 +2934,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Μετακίνηση της γραμμής διευθύνσεων στο κάτω μέρος";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Μετακίνηση της γραμμής διευθύνσεων στην κορυφή";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
@@ -4225,6 +4253,12 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Όχι τώρα";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "Το DuckDuckGo διαθέτει επίσης μια **προαιρετική επί πληρωμή συνδρομή**, με ασφαλές **VPN** και **προηγμένη, ιδιωτική τεχνητή νοημοσύνη**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";

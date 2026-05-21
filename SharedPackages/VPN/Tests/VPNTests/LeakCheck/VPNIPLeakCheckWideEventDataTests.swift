@@ -113,9 +113,26 @@ final class VPNIPLeakCheckWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.status_reason"] as? String, "checks_errored")
     }
 
+    func testJSONParameters_diagnosticMetadata() {
+        let data = VPNIPLeakCheckWideEventData(trigger: .tunnelStart, osVersion: "13.7")
+
+        let params = data.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.os_version"] as? String, "13.7")
+    }
+
+    func testJSONParameters_defaultOSVersionIsMajorMinorOnly() {
+        let data = makeEventData()
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+        let params = data.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.os_version"] as? String, "\(osVersion.majorVersion).\(osVersion.minorVersion)")
+    }
+
     func testMetadata() {
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.featureName, "vpn-ip-leak-check")
-        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.1.0")
+        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.2.0")
         #if os(iOS)
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.type, "ios-vpn-ip-leak-check")
         #elseif os(macOS)

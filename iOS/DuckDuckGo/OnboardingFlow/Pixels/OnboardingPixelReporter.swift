@@ -243,7 +243,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     private func fireExperimentScreenImpressionPixel(value: DuckAIQueryExperimentMetric.ScreenImpressionValue) {
         for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
             experimentPixel.fireExperimentPixel(
-                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                for: AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
                 metric: DuckAIQueryExperimentMetric.Name.screenImpression.rawValue,
                 conversionWindowDays: window,
                 value: value.rawValue
@@ -254,7 +254,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     private func fireExperimentCTAPressedPixel(value: DuckAIQueryExperimentMetric.CTAPressedValue) {
         for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
             experimentPixel.fireExperimentPixel(
-                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                for: AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
                 metric: DuckAIQueryExperimentMetric.Name.ctaPressed.rawValue,
                 conversionWindowDays: window,
                 value: value.rawValue
@@ -409,7 +409,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
         for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
             experimentPixel.fireExperimentPixel(
-                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                for: AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
                 metric: metricName.rawValue,
                 conversionWindowDays: window,
                 value: promptSource.rawValue

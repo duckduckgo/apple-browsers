@@ -82,6 +82,14 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.text = newValue }
     }
 
+    func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        inputBarView.applyDismissSnapshot(snapshot)
+    }
+
+    func refreshPlaceholderForCurrentMode() {
+        inputBarView.refreshPlaceholderForCurrentMode()
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }
@@ -376,7 +384,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
-        view.window?.layoutIfNeeded()
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }

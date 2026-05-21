@@ -429,19 +429,12 @@ final class UnifiedToggleInputView: UIView {
         ]
     }
 
-    /// Shadow values that match `CompositeShadowView.applyDefaultShadow()` (used by the standard
-    /// omnibar). Applied during dismiss so the UTI's composite shadow morphs to the omnibar's
-    /// shadow shape by the time the omnibar takes over — no visible "shadow swap" at hand-off.
+    /// Mirrors `CompositeShadowView.applyDefaultShadow()` (used by the standard omnibar) so the
+    /// UTI's composite shadow can morph to the omnibar's shape without a visible swap.
     private var omnibarMatchingShadows: [CompositeShadowView.Shadow] {
         [
-            .init(id: ShadowID.outer,
-                  color: UIColor(designSystemColor: .shadowSecondary),
-                  radius: 24,
-                  offset: CGSize(width: 0, height: 8)),
-            .init(id: ShadowID.rim,
-                  color: UIColor(designSystemColor: .shadowSecondary),
-                  radius: 12,
-                  offset: CGSize(width: 0, height: 4)),
+            CompositeShadowView.Shadow.defaultLayer2.withID(ShadowID.outer),
+            CompositeShadowView.Shadow.defaultLayer1.withID(ShadowID.rim),
         ]
     }
 
@@ -701,7 +694,7 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true, updateCornerRadius: Bool = true) {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
@@ -768,9 +761,7 @@ final class UnifiedToggleInputView: UIView {
         if updateShadow {
             let useCompositeShadow = expanded || layout == .flanked
             // In-place mutation preserves the in-flight cornerRadius CAAnimation.
-            for shadow in (layout == .flanked ? flankedShadows : expandedShadows) {
-                expandedShadowView.updateShadow(shadow)
-            }
+            expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
             expandedShadowView.isHidden = !useCompositeShadow
             cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         }
@@ -789,7 +780,9 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         let changes = {
             self.setCardFlanked(layout == .flanked)
-            self.cardView.layer.cornerRadius = dimensions.cornerRadius
+            if updateCornerRadius {
+                self.cardView.layer.cornerRadius = dimensions.cornerRadius
+            }
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
@@ -851,15 +844,15 @@ final class UnifiedToggleInputView: UIView {
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
             applyCardLayout(.collapsed, animated: false)
-            applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+            // Skip cornerRadius so it stays at the collapsed value and `applyToggleRevealChanges`
+            // can animate it inside the surrounding `UIView.animate`.
+            applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false, updateCornerRadius: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
         }
-        // Pre-stage the composite shadow to match the omnibar's shape so the show animation
-        // morphs from omnibar-shape to UTI-expanded inside the surrounding `UIView.animate`.
-        for shadow in omnibarMatchingShadows {
-            expandedShadowView.updateShadow(shadow)
-        }
+        // Start the composite shadow at the omnibar's shape so the surrounding `UIView.animate`
+        // morphs it to UTI-expanded.
+        expandedShadowView.updateShadows(omnibarMatchingShadows)
         expandedShadowView.isHidden = false
         cardView.layer.shadowOpacity = 0
     }
@@ -873,9 +866,7 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
-        for shadow in expandedShadows {
-            expandedShadowView.updateShadow(shadow)
-        }
+        expandedShadowView.updateShadows(expandedShadows)
     }
 
     /// Inactive editing pose. Call inside a UIView.animate block.
@@ -889,9 +880,7 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.collapsed, animated: false, updateShadow: false)
         }
-        for shadow in omnibarMatchingShadows {
-            expandedShadowView.updateShadow(shadow)
-        }
+        expandedShadowView.updateShadows(omnibarMatchingShadows)
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

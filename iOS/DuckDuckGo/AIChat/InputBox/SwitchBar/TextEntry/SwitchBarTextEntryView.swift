@@ -830,9 +830,8 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.transform = transform
     }
 
-    /// Horizontally shifts text content so the leading edge of the first glyph lands at `windowX`.
-    /// Uses the visible surface's actual glyph leading (textView's `firstRect` vs placeholderLabel
-    /// origin) because UITextView's caret sits 1pt left of its glyph (`lineFragmentPadding`).
+    /// Shifts text so its first glyph (not caret) lands at `windowX` — UITextView's caret sits
+    /// 1pt left of its glyph (`lineFragmentPadding`).
     @discardableResult
     func alignVisibleTextLeadingEdge(toWindowX windowX: CGFloat) -> CGFloat {
         setTextHorizontalShift(0)

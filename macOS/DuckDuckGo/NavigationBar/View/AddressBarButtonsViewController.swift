@@ -29,6 +29,8 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import DuckPlayer
+import Persistence
 import SwiftUI
 import WebExtensions
 
@@ -108,6 +110,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var permissionCenterPopover: PermissionCenterPopover?
 
+    private var youTubeAdBlockPopover: YouTubeAdBlockPopover?
+    private var youTubeAdBlockViewModel: YouTubeAdBlockViewModel?
+
     private var popupBlockedPopover: PopupBlockedPopover?
     private var systemDisabledInfoPopover: NSPopover?
 
@@ -129,6 +134,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var permissionCenterButton: AddressBarButton!
+    @IBOutlet weak var youTubeAdBlockButton: AddressBarButton!
     @IBOutlet private weak var trailingButtonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
     @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
@@ -162,6 +168,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var askAIChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var permissionCenterButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var youTubeAdBlockButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var youTubeAdBlockButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var askAIChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
@@ -245,6 +253,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionsCancellables = Set<AnyCancellable>()
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var youtubeAdBlockAnimationTriggerCancellable: AnyCancellable?
+    private let youTubeAdBlockUnavailableTipController = YouTubeAdBlockUnavailableTipController()
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
@@ -343,6 +352,7 @@ final class AddressBarButtonsViewController: NSViewController {
         setupSearchModeToggleControl()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
+        subscribeToAdBlockingStateChanges()
         subscribeToEffectiveAppearance()
         subscribeToIsMouseOverAnimationVisible()
         updateBookmarkButtonVisibility()
@@ -385,6 +395,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         permissionCenterButton.sendAction(on: .leftMouseDown)
         permissionCenterButton.setAccessibilityIdentifier("AddressBarButtonsViewController.permissionCenterButton")
+
+        youTubeAdBlockButton.sendAction(on: .leftMouseDown)
+        youTubeAdBlockButton.setAccessibilityIdentifier("AddressBarButtonsViewController.youTubeAdBlockButton")
+        youTubeAdBlockButton.toolTip = "YouTube Ad Block"
 
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")
@@ -621,6 +635,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 configureAIChatButton()
                 subscribeToTrackerAnimationTrigger()
                 subscribeToYouTubeAdBlockAnimationTrigger()
+                scheduleYouTubeAdBlockUnavailableNoticeIfNeeded()
             }
     }
 
@@ -636,6 +651,24 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink { [weak self] _ in
                 self?.showBadgeNotification(.youTubeAdBlockOn)
             }
+    }
+
+    /// On each navigation, asks the tip controller to schedule the "YouTube Ad Block Unavailable"
+    /// popover when the current URL is YouTube AND ad blocking is remotely disabled AND the user
+    /// had ad blocking enabled. The controller debounces with a small delay (so the popover
+    /// button has time to lay out) and gates on the one-shot `youTubeAdBlockUnavailableNoticeShown`
+    /// flag — mirrors how `QuickFeedbackTipController` is presented.
+    private func scheduleYouTubeAdBlockUnavailableNoticeIfNeeded() {
+        let url = tabViewModel?.tab.url
+        guard url?.isYoutube == true,
+              adBlockingAvailability.isRemotelyDisabled,
+              adBlockingAvailability.isEnabledByUser else {
+            youTubeAdBlockUnavailableTipController.cancel()
+            return
+        }
+        youTubeAdBlockUnavailableTipController.scheduleIfNeeded { [weak self] in
+            self?.openYouTubeAdBlockPopover() ?? false
+        }
     }
 
     private func subscribeToPermissions() {
@@ -676,6 +709,19 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink { [weak self] _ in
                 self?.updatePermissionCenterButton()
             }
+    }
+
+    /// Refresh the address-bar button's icon + tint whenever the ad-blocking state changes from
+    /// any surface (Settings toggle, popover dropdown, debug menu remote-disable override) — even
+    /// without a navigation that would otherwise trigger `updateButtons()`.
+    private func subscribeToAdBlockingStateChanges() {
+        NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateYouTubeAdBlockButtonAppearance()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToBookmarkList() {
@@ -1107,6 +1153,7 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButton.setCornerRadius(cornerRadius)
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
+        youTubeAdBlockButton.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {
@@ -1125,10 +1172,27 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButtonHeightConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
+        youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
+        youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
     }
 
     private func setupButtonIcons() {
         updatePermissionCenterButtonIcon()
+        updateYouTubeAdBlockButtonAppearance()
+    }
+
+    /// Switches the YouTube ad-block address-bar button between two visual states:
+    /// - **On** (ad blocking actively running): `videoPlayerBlocked` glyph in the primary icon color.
+    /// - **Off** (disabled by user, disabled-until-relaunch, or remotely disabled): `videoPlayer`
+    ///   glyph in the tertiary icon color so it visually reads as muted.
+    private func updateYouTubeAdBlockButtonAppearance() {
+        let isAdBlockingActive = adBlockingAvailability.isEnabled
+        youTubeAdBlockButton.image = isAdBlockingActive
+            ? DesignSystemImages.Glyphs.Size16.videoPlayerBlocked
+            : DesignSystemImages.Glyphs.Size16.videoPlayer
+        youTubeAdBlockButton.normalTintColor = isAdBlockingActive
+            ? theme.colorsProvider.iconsColor
+            : theme.palette.iconsTertiary
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -1735,6 +1799,8 @@ final class AddressBarButtonsViewController: NSViewController {
         updateImageButton()
         updatePrivacyDashboardButton()
         updatePermissionCenterButton()
+        updateYouTubeAdBlockButtonVisibility()
+        updateYouTubeAdBlockButtonAppearance()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         if !isToggleFeatureEnabled {
@@ -1859,6 +1925,78 @@ final class AddressBarButtonsViewController: NSViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
 
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
+    }
+
+    private func updateYouTubeAdBlockButtonVisibility() {
+        // Mirror the zoom / permission button rules: hide while the address bar is being edited
+        // (focused or in editing mode, or holding pending typed text) so the left-side icons
+        // don't compete with the URL the user is typing. Also keep the button completely off
+        // when the feature itself isn't available (OS gate / feature flags) — otherwise users
+        // without the underlying machinery would see a popover backed by nothing.
+        let isYoutube = tabViewModel?.tab.url?.isYoutube ?? false
+        let isEditingMode = controllerMode?.isEditing ?? false
+        let isTextFieldValueText = textFieldValue?.isText ?? false
+
+        youTubeAdBlockButton.isShown = isYoutube
+            && adBlockingAvailability.isFeatureAvailable
+            && !isAIChatPanelActive
+            && !isEditingMode
+            && !isTextFieldValueText
+            && !isTextFieldEditorFirstResponder
+
+        if !youTubeAdBlockButton.isShown, let popover = youTubeAdBlockPopover, popover.isShown {
+            popover.close()
+            youTubeAdBlockPopover = nil
+        }
+    }
+
+    @IBAction func youTubeAdBlockButtonAction(_ sender: Any) {
+        if let existingPopover = youTubeAdBlockPopover, existingPopover.isShown {
+            existingPopover.close()
+            youTubeAdBlockPopover = nil
+            return
+        }
+
+        _ = openYouTubeAdBlockPopover()
+    }
+
+    /// Returns `true` if the popover was shown (i.e. the button is visible and could anchor it),
+    /// `false` if the call was a no-op. Lets the caller decide whether to retry later.
+    @discardableResult
+    private func openYouTubeAdBlockPopover() -> Bool {
+        guard youTubeAdBlockButton.isShown else { return false }
+        // If a popover is already up (e.g. the user clicked the button manually during the tip
+        // controller's delay window), treat the request as already-fulfilled. Returning `true`
+        // lets the tip controller record its one-shot flag without orphaning the existing
+        // popover behind a second instance.
+        if let existingPopover = youTubeAdBlockPopover, existingPopover.isShown {
+            return true
+        }
+
+        let viewModel = YouTubeAdBlockViewModel(
+            adBlockingAvailability: adBlockingAvailability,
+            reloadPage: { [weak tabViewModel] in
+                tabViewModel?.reload()
+            }
+        )
+        let popover = YouTubeAdBlockPopover(viewModel: viewModel)
+        popover.delegate = self
+        youTubeAdBlockViewModel = viewModel
+        youTubeAdBlockPopover = popover
+
+        viewModel.sendBreakageReport = { [weak popover] in
+            popover?.close()
+            NSApp.delegateTyped.openReportBrokenSite(nil)
+        }
+        viewModel.dismissPopover = { [weak popover] in
+            popover?.close()
+        }
+
+        youTubeAdBlockButton.backgroundColor = .buttonMouseDown
+        youTubeAdBlockButton.mouseOverColor = .buttonMouseDown
+
+        popover.show(positionedBelow: youTubeAdBlockButton.bounds.insetFromLineOfDeath(flipped: youTubeAdBlockButton.isFlipped), in: youTubeAdBlockButton)
+        return true
     }
 
     // MARK: - Notification Animation
@@ -2520,6 +2658,11 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
             permissionCenterButton.mouseOverColor = .buttonMouseOver
+        case is YouTubeAdBlockPopover:
+            youTubeAdBlockButton.backgroundColor = .clear
+            youTubeAdBlockButton.mouseOverColor = .buttonMouseOver
+            youTubeAdBlockPopover = nil
+            youTubeAdBlockViewModel = nil
         default:
             break
         }

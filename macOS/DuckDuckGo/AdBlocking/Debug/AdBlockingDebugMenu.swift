@@ -31,6 +31,9 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
     private let flagsItem = NSMenuItem(title: "Flags", action: nil, keyEquivalent: "")
     private let analyticsItem = NSMenuItem(title: "youTubeAnalyticsEnabled", action: nil, keyEquivalent: "")
     private let disclosureItem = NSMenuItem(title: "shouldHideDisclosure", action: nil, keyEquivalent: "")
+    private let remoteDisableItem = NSMenuItem(title: "Remote Disable Override", action: nil, keyEquivalent: "")
+    private let remoteDisableToggleItem = NSMenuItem(title: "Remotely Disabled", action: nil, keyEquivalent: "")
+    private let unavailableNoticeItem = NSMenuItem(title: "Unavailable notice shown", action: nil, keyEquivalent: "")
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -79,6 +82,21 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
         flagsItem.submenu = flagsSubmenu
         menu.addItem(flagsItem)
 
+        let remoteDisableSubmenu = NSMenu(title: "Remote Disable Override")
+        remoteDisableToggleItem.action = #selector(toggleRemotelyDisabled)
+        remoteDisableToggleItem.target = self
+        remoteDisableSubmenu.addItem(remoteDisableToggleItem)
+
+        let noticeSubmenu = NSMenu(title: "Unavailable notice shown")
+        noticeSubmenu.addItem(NSMenuItem(title: "Reset (delete key)",
+                                         action: #selector(resetUnavailableNoticeShown),
+                                         target: self))
+        unavailableNoticeItem.submenu = noticeSubmenu
+        remoteDisableSubmenu.addItem(unavailableNoticeItem)
+
+        remoteDisableItem.submenu = remoteDisableSubmenu
+        menu.addItem(remoteDisableItem)
+
         return menu
     }
 
@@ -122,6 +140,24 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
         settings.removeValue(for: \.youTubeAnalyticsEnabled)
     }
 
+    @objc private func toggleRemotelyDisabled() {
+        let key = AdBlockingAvailability.remotelyDisabledOverrideKey
+        let newValue = !UserDefaults.standard.bool(forKey: key)
+        UserDefaults.standard.set(newValue, forKey: key)
+        // Post the same change notification the toggle / availability methods use, so listeners
+        // (Settings pane, popover view models, AppDelegate's embedded-extensions sync) react to
+        // the override flip in the same code path.
+        NotificationCenter.default.post(
+            name: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func resetUnavailableNoticeShown() {
+        var settings = self.settings
+        settings.removeValue(for: \.youTubeAdBlockUnavailableNoticeShown)
+    }
+
     // MARK: - Scriptlets submenu
 
     private func updateScriptletsSubmenu() {
@@ -163,6 +199,11 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
         let settings = self.settings
         analyticsItem.title = "youTubeAnalyticsEnabled: \(string(for: settings.youTubeAnalyticsEnabled))"
         disclosureItem.title = "shouldHideDisclosure: \(string(for: settings.shouldHideYouTubeAdBlockingDisclosure))"
+
+        let isRemotelyDisabled = UserDefaults.standard.bool(forKey: AdBlockingAvailability.remotelyDisabledOverrideKey)
+        remoteDisableToggleItem.state = isRemotelyDisabled ? .on : .off
+
+        unavailableNoticeItem.title = "Unavailable notice shown: \(string(for: settings.youTubeAdBlockUnavailableNoticeShown))"
     }
 
     private func string(for value: Bool?) -> String {

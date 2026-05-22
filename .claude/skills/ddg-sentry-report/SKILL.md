@@ -45,7 +45,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 ### 1.0 Load MCP tools (via ToolSearch)
 
 - Sentry: `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`, `mcp__sentry__get_sentry_resource`
-- Asana: `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`, `mcp__plugin_asana_asana__asana_search_tasks`, `mcp__plugin_asana_asana__asana_create_task`, `mcp__plugin_asana_asana__asana_add_task_followers`
+- Asana: `asana_get_task`, `asana_update_task`, `asana_search_tasks`, `asana_create_task`, `asana_add_task_followers` — the namespace prefix varies by environment: `mcp__asana__` (Claude Agent SDK / direct Asana MCP) or `mcp__plugin_asana_asana__` (Claude Code with the Asana plugin). Pass whichever full name `ToolSearch` surfaces in the current session to `select:`; the rest of this skill refers to the short names only.
 
 ### 1.1 Resolve `<TIME_RANGE>`
 

@@ -478,6 +478,7 @@ extension MainViewController {
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                  afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,

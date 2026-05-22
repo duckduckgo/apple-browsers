@@ -19,7 +19,9 @@
 
 import AIChat
 import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 import XCTest
 import UIKit
 import UniformTypeIdentifiers
@@ -439,6 +441,21 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertGreaterThan(callbacks, 0)
     }
 
+    func test_flankedAIChatShadowUsesTransparentBlackTokenInDarkMode() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.overrideUserInterfaceStyle = .dark
+        sut.applyCardLayout(.flanked, animated: false)
+        prepareForFitting(sut, width: 402, height: 80)
+
+        let shadowView = try XCTUnwrap(firstDescendant(of: CompositeShadowView.self, in: sut))
+        let rimShadowLayer = try XCTUnwrap(shadowView.subviews.first { $0.layer.name == "rim" }?.layer)
+        let expectedShadowColor = UIColor(designSystemColor: .shadowSecondary).resolvedColor(with: sut.traitCollection)
+
+        XCTAssertFalse(shadowView.isHidden)
+        assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
@@ -526,6 +543,30 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         }
 
         return nil
+    }
+
+    private func assertColor(_ actualColor: CGColor?, equals expectedColor: UIColor, file: StaticString = #filePath, line: UInt = #line) {
+        guard let actualColor else {
+            XCTFail("Expected color", file: file, line: line)
+            return
+        }
+
+        let actualComponents = rgbaComponents(of: UIColor(cgColor: actualColor))
+        let expectedComponents = rgbaComponents(of: expectedColor)
+
+        XCTAssertEqual(actualComponents.red, expectedComponents.red, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.green, expectedComponents.green, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.blue, expectedComponents.blue, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.alpha, expectedComponents.alpha, accuracy: 0.001, file: file, line: line)
+    }
+
+    private func rgbaComponents(of color: UIColor) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return (red, green, blue, alpha)
     }
 }
 

@@ -180,6 +180,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
+            afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: keyValueStore),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,

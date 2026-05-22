@@ -1,0 +1,65 @@
+{
+    "m_ics_calendar_editor_presented": {
+        "description": "Fired when EKEventEditViewController is presented for a downloaded .ics file containing a single VEVENT",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_editor_saved": {
+        "description": "Fired when the user taps Add in the EKEventEditViewController shown for a downloaded .ics file",
+        "owners": ["edulpn"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_editor_cancelled": {
+        "description": "Fired when the user taps Cancel or Delete in the EKEventEditViewController shown for a downloaded .ics file",
+        "owners": ["edulpn"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_fallback_multiple_events": {
+        "description": "Fired when an .ics file contains more than one VEVENT and we fall back to QuickLook with a toast",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_fallback_unrecognized_time_zone": {
+        "description": "Fired when an .ics file references a TZID we can't resolve and we fall back to QuickLook with a toast",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_fallback_parse_failure": {
+        "description": "Fired when an .ics file fails to parse (malformed content) and we fall back to QuickLook with a toast",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_routed_by_extension": {
+        "description": "Fired when a downloaded file is routed through the .ics handler based on its file extension because the MIME type wasn't text/calendar",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_ics_calendar_unsupported_rrule": {
+        "description": "Fired when an .ics RRULE contains parts the parser ignores (BYSETPOS, BYWEEKNO, BYYEARDAY, BYHOUR, BYMINUTE, BYSECOND, WKST)",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

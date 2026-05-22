@@ -3393,6 +3393,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Удалить Fire-вкладки и их данные?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Удалить вкладку и данные сайта?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Удалить вкладки и данные сайтов?";
 
@@ -3401,6 +3405,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Удалить все";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Удалить вкладку";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Удалить этот чат";

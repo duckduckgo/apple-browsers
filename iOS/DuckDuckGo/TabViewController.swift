@@ -254,6 +254,7 @@ class TabViewController: UIViewController {
     
     var temporaryDownloadForPreviewedFile: Download?
     var mostRecentAutoPreviewDownloadID: UUID?
+    private var pendingCalendarPreview: CalendarEventPreviewHelper?
     private var blobDownloadTargetFrame: WKFrameInfo?
 
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
@@ -1810,7 +1811,10 @@ extension TabViewController: WKNavigationDelegate {
                 // First we need to trigger download to handle it then in webView:navigationAction:didBecomeDownload
                 return .download
             }
-        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) {
+        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) ||
+                    FilePreviewHelper.canAutoPreviewICSByExtension(url: navigationResponse.response.url,
+                                                                   filename: navigationResponse.response.suggestedFilename,
+                                                                   featureFlagger: featureFlagger) {
             // 2. For this MIME type we are able to provide a better custom preview via FilePreviewHelper so it takes priority
             let (policy, download) = await startDownload(with: navigationResponse)
             mostRecentAutoPreviewDownloadID = download?.id
@@ -2792,8 +2796,17 @@ extension TabViewController {
         if case .blob = SchemeHandler.schemeType(for: url) {
             return (.download, nil)
         } else {
+            // ICS files must persist; other auto-previewable types stay temporary.
+            let persistICS = FilePreviewHelper.shouldPersistInDownloads(
+                mimeType: MIMEType(from: navigationResponse.response.mimeType),
+                url: navigationResponse.response.url,
+                filename: navigationResponse.response.suggestedFilename,
+                featureFlagger: featureFlagger
+            )
             do {
-                if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse, cookieStore: cookieStore) {
+                if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse,
+                                                                    cookieStore: cookieStore,
+                                                                    temporary: persistICS ? false : nil) {
                     downloadManager.startDownload(download)
                     return (.cancel, download)
                 }
@@ -2992,7 +3005,11 @@ extension TabViewController {
 
     @objc private func downloadDidStart(_ notification: Notification) {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download,
-              !download.temporary
+              !download.temporary,
+              !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                         url: download.url,
+                                                         filename: download.filename,
+                                                         featureFlagger: featureFlagger)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3025,7 +3042,11 @@ extension TabViewController {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download else { return }
 
         DispatchQueue.main.async {
-            if !download.temporary {
+            let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                                            url: download.location,
+                                                                            filename: download.filename,
+                                                                            featureFlagger: self.featureFlagger)
+            if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: attributedMessage, numberOfLines: 2, actionTitle: UserText.actionGenericShow,
@@ -3042,19 +3063,77 @@ extension TabViewController {
     }
 
     private func previewDownloadedFileIfNecessary(_ download: Download) {
+        let canAutoPreview = FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType) ||
+            FilePreviewHelper.canAutoPreviewICSByExtension(url: download.location,
+                                                           filename: download.filename,
+                                                           featureFlagger: featureFlagger)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
-              FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType),
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
+              canAutoPreview,
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {
+            retainCalendarPreviewIfNeeded(fileHandler)
             fileHandler.preview()
         } else {
             let pixelParameters = [PixelParameters.mimeType: download.mimeType.rawValue,
                                    PixelParameters.downloadListCount: "\(AppDependencyProvider.shared.downloadManager.downloadList.count)"]
             Pixel.fire(pixel: .downloadTriedToPresentPreviewWithoutTab, withAdditionalParameters: pixelParameters)
         }
+    }
+
+    private func retainCalendarPreviewIfNeeded(_ fileHandler: FilePreview) {
+        guard let calendarHandler = fileHandler as? CalendarEventPreviewHelper else { return }
+        pendingCalendarPreview = calendarHandler
+        calendarHandler.onDismiss = { [weak self] in
+            self?.pendingCalendarPreview = nil
+        }
+        calendarHandler.onSaved = { [weak self] in
+            self?.showCalendarAddedToast()
+        }
+        calendarHandler.onFailure = { [weak self] failure in
+            self?.showCalendarAddFailureToast(for: failure)
+        }
+    }
+
+    private func showCalendarAddedToast() {
+        ActionMessageView.present(
+            message: UserText.icsEventAddedToCalendar,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
+    }
+
+    private func showCalendarAddFailureToast(for failure: CalendarEventPreviewHelper.Failure) {
+        let message: String
+        switch failure {
+        case .multipleEvents:
+            message = UserText.icsAddToCalendarMultipleEvents
+        case .unrecognizedTimeZone:
+            message = UserText.icsAddToCalendarUnrecognizedTimeZone
+        case .parseFailure:
+            message = UserText.icsAddToCalendarParseFailure
+        }
+        ActionMessageView.present(
+            message: message,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
+            duration: 10,
+            onAction: { [weak self] in
+                guard let self else { return }
+                Pixel.fire(pixel: .downloadsListOpened,
+                           withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+                let openDownloads = { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabDidRequestDownloads(tab: self)
+                }
+                if let presented = self.presentedViewController {
+                    presented.dismiss(animated: true, completion: openDownloads)
+                } else {
+                    openDownloads()
+                }
+            }
+        )
     }
 }
 

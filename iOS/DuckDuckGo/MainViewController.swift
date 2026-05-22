@@ -184,7 +184,9 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -403,6 +405,7 @@ class MainViewController: UIViewController {
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -482,8 +485,10 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
@@ -1529,7 +1534,8 @@ class MainViewController: UIViewController {
                     targetTab: targetTab,
                     tabsSource: tabManager,
                     router: self,
-                    featureFlagger: featureFlagger
+                    featureFlagger: featureFlagger,
+                    afterInactivityOptionAdapter: afterInactivityOptionAdapter
                 )
             }
             return nil
@@ -1543,7 +1549,8 @@ class MainViewController: UIViewController {
                 targetTab: targetTab,
                 tabsSource: tabManager,
                 router: self,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                afterInactivityOptionAdapter: afterInactivityOptionAdapter
             )
         }
         if let link = targetTab.link {
@@ -1556,7 +1563,8 @@ class MainViewController: UIViewController {
                 targetTab: targetTab,
                 tabsSource: tabManager,
                 router: self,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                afterInactivityOptionAdapter: afterInactivityOptionAdapter
             )
         }
         return nil
@@ -1838,6 +1846,9 @@ class MainViewController: UIViewController {
         fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
+        idleReturnTabCountInstrumentation.recordAppForeground(
+            tabs: tabManager.allTabsModel.tabs,
+            browsingMode: tabManager.currentBrowsingMode.pixelParamValue)
         skipSERPFlow = true
 
         /// Dismiss any keyboard restored by WKWebView when returning to foreground
@@ -2191,8 +2202,16 @@ class MainViewController: UIViewController {
         aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
-    private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
-        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
+    func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
+        let resolved: TextEntryMode
+        if tab.isHomeTab {
+            resolved = aiChatSettings.defaultOmnibarMode
+                .resolvedTextEntryMode { self.toggleModeStorage.restore() }
+        } else {
+            resolved = tab.isAITab ? .aiChat : .search
+        }
+        return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func refreshOmniBar() {
@@ -2206,7 +2225,7 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tabModel))
                 // Only activate from the model when there's no TabViewController to drive
                 // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
                 // a second time for the same uid, causing redundant attachment teardown.
@@ -2245,7 +2264,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab.tabModel))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab.tabModel))
         }
 
         restorePostFireAddressBarPickerIfNeeded()
@@ -2857,7 +2876,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    if redirectURLComponents.path == "/subscriptions/plans" {
+                    if redirectURLComponents.path == "/subscriptions/plans" || redirectURLComponents.path == "/pro/plans" {
                         deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
                     } else {
                         deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
@@ -4316,7 +4335,7 @@ extension MainViewController: OmniBarDelegate {
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
         if let tab = tabManager.currentTabsModel.currentTab {
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
     }
 
@@ -4546,11 +4565,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
-        tabManager.currentTabsModel.currentTab.map { displayedTextEntryMode(for: $0) }
+        tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
     }
 
-    /// Saves the current omnibar toggle state to the tab on submission,
-    /// and persists it globally so "Last Used" mode picks it up for new tabs.
+    /// Persists the current omnibar toggle state globally so "Last Used" mode picks it up
+    /// for new tabs. No per-tab persistence — existing tabs read from URL on next omnibar tap.
     private func commitToggleStateToCurrentTab() {
         guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
         commitToggleMode(omniBarVC.selectedTextEntryMode)
@@ -4558,7 +4577,6 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     
@@ -4664,6 +4682,7 @@ extension MainViewController: EscapeHatchActionRouter {
     func escapeHatchDidRequestClose(_ tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
+            clearEscapeHatch()
             return
         }
 
@@ -4679,9 +4698,47 @@ extension MainViewController: EscapeHatchActionRouter {
         dismissOmniBar()
     }
 
-    func escapeHatchDidRequestBurn(_ tab: Tab) {
-        // TODO: Wire FireConfirmationPresenter — currently falls back to a plain close.
-        escapeHatchDidRequestClose(tab)
+    func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
+            clearEscapeHatch()
+            return
+        }
+
+        let tabViewModel = tabManager.viewModel(for: tab)
+        let presenter = FireConfirmationPresenter()
+        presenter.presentFireConfirmation(
+            on: topPresentedViewController,
+            sourceRect: sourceRect,
+            tabViewModel: tabViewModel,
+            pixelSource: .escapeHatch,
+            fireContext: .singleTab,
+            browsingMode: tab.mode,
+            onConfirm: { [weak self] fireRequest in
+                self?.forgetAllWithAnimation(request: fireRequest) {}
+                self?.clearEscapeHatch()
+            },
+            onCancel: { }
+        )
+    }
+
+    func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
+            clearEscapeHatch()
+            return
+        }
+
+        let tabViewModel = tabManager.viewModel(for: tab)
+        let request = FireRequest(
+            options: .all,
+            trigger: .manualFire,
+            scope: .tab(viewModel: tabViewModel),
+            source: .escapeHatch
+        )
+
+        forgetAllWithAnimation(request: request) {}
+        clearEscapeHatch()
     }
 
     func escapeHatchDidRequestTabSwitcher() {
@@ -5592,6 +5649,13 @@ extension MainViewController {
 extension MainViewController: TabManagerFireModeDelegate {
 
     func tabManagerDidCloseLastFireTab() {
+        // # Prevent re-entrant calls
+        // Burn Fire Tab, triggered from the Escape Hatch, effectively triggers a Burn sequence.
+        // When burning the last Tab, we'd end up here. Purpose of this safety check is to prevent re-entrant Burn sequences
+        if fireExecutor.burnInProgress {
+            return
+        }
+
         DailyPixel.fireDailyAndCount(pixel: .fireModeLastTabClosedBurn)
         Task {
             let request = FireRequest(options: [.data, .aiChats],

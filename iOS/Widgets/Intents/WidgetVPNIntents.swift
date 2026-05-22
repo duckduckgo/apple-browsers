@@ -98,7 +98,7 @@ struct WidgetEnableVPNIntent: AppIntent {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectAttempt)
 
             let controller = VPNWidgetTunnelController()
-            try await controller.start()
+            try await controller.start(settings: VPNSettings(defaults: .networkProtectionGroupDefaults))
 
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()

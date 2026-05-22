@@ -32,8 +32,12 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidRequestDuckAIVoiceMode()
     /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
+    func unifiedToggleInputDidTapClearText()
+    func unifiedToggleInputDidTapToActivate()
 }
 
 extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
+    func unifiedToggleInputDidTapClearText() {}
+    func unifiedToggleInputDidTapToActivate() {}
 }

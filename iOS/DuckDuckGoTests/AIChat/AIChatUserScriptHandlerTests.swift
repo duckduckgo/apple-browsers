@@ -249,6 +249,126 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         await fulfillment(of: [expectation])
     }
 
+    @MainActor
+    func testOpenAIChatLinkCallsOpenLinkHandler() async {
+        let urlString = "https://duckduckgo.com/?q=cat%20breeds&t=duck_ai"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresUnusedTargetAndNameFields() async {
+        let urlString = "https://duckduckgo.com/?q=cat%20breeds&t=duck_ai"
+        let params: [String: Any] = [
+            "url": urlString,
+            "target": "external-app",
+            "name": "future-source"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenSummarizationSourceLinkCallsOpenLinkHandler() async {
+        let urlString = "https://example.com/source"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openSummarizationSourceLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenTranslationSourceLinkCallsOpenLinkHandler() async {
+        let urlString = "https://example.com/source"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openTranslationSourceLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresInvalidURL() async {
+        let params: [String: Any] = [
+            "url": "invalid"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertNil(openedURL)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresNonHTTPURL() async {
+        let params: [String: Any] = [
+            "url": "intent://example.com/path"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertNil(openedURL)
+    }
+
     func testResponseReceivedPostsNotification() async {
         // Given
         let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil)

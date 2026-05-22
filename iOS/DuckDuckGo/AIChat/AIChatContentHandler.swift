@@ -32,6 +32,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
@@ -69,6 +70,8 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -117,6 +120,7 @@ extension AIChatContentHandling {
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
     func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -167,6 +171,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
+        self.userScript?.setOpenLinkHandler { [weak self] url in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didRequestToOpen: url)
+        }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
     }

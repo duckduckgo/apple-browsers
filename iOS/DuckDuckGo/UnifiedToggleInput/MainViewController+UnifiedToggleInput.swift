@@ -980,12 +980,14 @@ private extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
         }
-        onExperimentalAddressBarTapped()
+        if tapped {
+            onExperimentalAddressBarTapped()
+        }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
         let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()

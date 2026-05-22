@@ -241,7 +241,6 @@ class MainViewCoordinator {
 
     func updateUnifiedToggleInputColors(inputView: UIView?) {
         inputView?.backgroundColor = .clear
-        unifiedToggleInputContainer.backgroundColor = .clear
     }
 
     @MainActor
@@ -498,9 +497,7 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            // Match the AI chat header's `.surfaceTertiary` background so the safe-area inset
-            // above it doesn't show as a different colour band.
-            UIColor(designSystemColor: .surfaceTertiary)
+            UIColor(designSystemColor: .surface)
         }
     }
 

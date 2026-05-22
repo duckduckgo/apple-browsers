@@ -114,17 +114,14 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     }
 
     func escapeHatchCloseTabTapped() {
-        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(.ntpAfterIdleEscapeHatchCloseTabTapped)
     }
 
     func escapeHatchBurnTapped(requiredConfirmation: Bool) {
-        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(requiredConfirmation ? .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped : .ntpAfterIdleEscapeHatchBurnImmediatelyTapped)
     }
 
     func escapeHatchOptionChanged(to option: AfterInactivityOption) {
-        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab : .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab)
     }
 }

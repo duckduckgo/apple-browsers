@@ -133,10 +133,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
 
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }

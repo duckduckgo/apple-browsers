@@ -114,6 +114,23 @@ class DataImportSummaryViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.completeCalled)
     }
 
+    func testDismissSyncPromo_DismissesDataImportPromoWithUserTappedReasonAndNotifiesDelegate() {
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        viewModel = DataImportSummaryViewModel(
+            summary: createSummary(),
+            importScreen: .bookmarks,
+            syncService: mockSyncService,
+            syncPromoManager: syncPromoManager
+        )
+        viewModel.delegate = mockDelegate
+
+        viewModel.dismissSyncPromo()
+
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .dataImport)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+        XCTAssertTrue(mockDelegate.completeCalled)
+    }
+
     func testInit_WithCreditCardsSummary_SetsCreditCardsProperty() {
         let summary = createSummary(creditCards: true)
         viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
@@ -369,6 +386,8 @@ private class MockDataImportSummaryViewModelDelegate: DataImportSummaryViewModel
 
 private final class MockSyncPromoManager: SyncPromoManaging {
     private let shouldPresentPromo: Bool
+    private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var dismissalReason: SyncPromoManager.DismissalReason?
 
     init(shouldPresentPromo: Bool) {
         self.shouldPresentPromo = shouldPresentPromo
@@ -378,7 +397,14 @@ private final class MockSyncPromoManager: SyncPromoManaging {
         shouldPresentPromo
     }
 
-    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoint = touchpoint
+        dismissalReason = reason
+    }
 
     func resetPromos() {}
 }

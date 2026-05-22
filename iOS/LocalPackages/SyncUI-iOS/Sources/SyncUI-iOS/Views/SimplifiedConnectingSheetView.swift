@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 
 public struct SimplifiedConnectingSheetView: View {
@@ -27,7 +28,7 @@ public struct SimplifiedConnectingSheetView: View {
 
     public var body: some View {
         VStack(spacing: 24) {
-            Image("Sync-128")
+            Image(rebrandable: "Sync-128")
                 .padding(.top, 40)
 
             Text(UserText.simplifiedConnectingTitle)

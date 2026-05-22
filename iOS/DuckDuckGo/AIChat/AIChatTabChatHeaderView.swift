@@ -45,6 +45,8 @@ final class AIChatTabChatHeaderView: UIView {
         static let pillInnerHorizontalPadding: CGFloat = 6
         static let pillInnerIconSpacing: CGFloat = 20
         static let pillButtonSize: CGFloat = 36
+        static let paidIconSize: CGFloat = 16
+        static let paidIconTitleSpacing: CGFloat = 6
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -181,8 +183,8 @@ final class AIChatTabChatHeaderView: UIView {
         return container
     }()
 
-    /// Wraps both `titleContainer` (free upgrade plate) and `titleLabel` (paid nav title) so the
-    /// "row crowded by back+forward arrows" rule can hide the title slot via a single
+    /// Wraps both `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title)
+    /// so the "row crowded by back+forward arrows" rule can hide the title slot via a single
     /// `isHidden` toggle on this wrapper, leaving `configure(isSubscriptionActive:)` to swap
     /// just the two children inside.
     private lazy var titleHolder: UIView = {
@@ -230,6 +232,22 @@ final class AIChatTabChatHeaderView: UIView {
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
         return label
+    }()
+
+    private lazy var paidIconView: UIImageView = {
+        let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private lazy var paidTitleStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [paidIconView, titleLabel])
+        stack.axis = .horizontal
+        stack.spacing = Constants.paidIconTitleSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     private lazy var freePlanRow: UIStackView = {
@@ -320,7 +338,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
-        titleLabel.isHidden = state.isSubscriptionActive != true
+        paidTitleStack.isHidden = state.isSubscriptionActive != true
         // Voice session locks the user in — hide every left-side pill so they can only exit via
         // the in-page mic dismiss (which triggers FE → voiceSessionEnded → chrome restores).
         let hideLeft = state.isVoiceSessionActive
@@ -349,7 +367,7 @@ final class AIChatTabChatHeaderView: UIView {
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)
-        titleHolder.addSubview(titleLabel)
+        titleHolder.addSubview(paidTitleStack)
         titleHolder.addSubview(titleContainer)
         addSubview(bottomSeparator)
 
@@ -444,10 +462,13 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
 
-            titleLabel.centerXAnchor.constraint(equalTo: titleHolder.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: titleHolder.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
+            paidTitleStack.centerXAnchor.constraint(equalTo: titleHolder.centerXAnchor),
+            paidTitleStack.centerYAnchor.constraint(equalTo: titleHolder.centerYAnchor),
+            paidTitleStack.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
+            paidTitleStack.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
+
+            paidIconView.widthAnchor.constraint(equalToConstant: Constants.paidIconSize),
+            paidIconView.heightAnchor.constraint(equalToConstant: Constants.paidIconSize),
 
             freeChevronView.widthAnchor.constraint(equalToConstant: Constants.chevronSize),
             freeChevronView.heightAnchor.constraint(equalToConstant: Constants.chevronSize),

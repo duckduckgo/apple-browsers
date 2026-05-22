@@ -273,7 +273,10 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func getSubscriptionDetails() {
         Task {
             do {
-                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+                guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                    showAlert(title: "Subscription info", message: "No subscription available")
+                    return
+                }
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")

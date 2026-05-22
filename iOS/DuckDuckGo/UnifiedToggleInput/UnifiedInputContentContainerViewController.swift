@@ -35,6 +35,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity)
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity)
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
+    func unifiedInputEditingStateDidRequestTextUpdate(_ text: String)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
@@ -815,7 +816,7 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
     }
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
-        switchBarHandler.updateCurrentText(text)
+        delegate?.unifiedInputEditingStateDidRequestTextUpdate(text)
     }
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity) {
@@ -863,6 +864,9 @@ extension UnifiedInputContentContainerViewController: VoiceSearchViewControllerD
 extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinatorDelegate {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
     }

@@ -3017,7 +3017,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ustawienia > Funkcje AI.";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Przełączanie między\nwyszukiwaniem a Ask AI";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Przełączanie między\nwyszukiwaniem a Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Tylko wyszukiwanie";
@@ -3393,6 +3393,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Usunąć karty Fire i ich dane?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Usunąć kartę i dane witryny?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Usunąć karty i dane witryny?";
 
@@ -3401,6 +3405,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Usuń kartę";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Usuń ten czat";

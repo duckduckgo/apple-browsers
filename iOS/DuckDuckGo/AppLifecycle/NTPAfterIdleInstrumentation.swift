@@ -125,6 +125,6 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
 
     func escapeHatchOptionChanged(to option: AfterInactivityOption) {
         guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
-        firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchOptionChangedToNewTab : .ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab)
+        firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab : .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab)
     }
 }

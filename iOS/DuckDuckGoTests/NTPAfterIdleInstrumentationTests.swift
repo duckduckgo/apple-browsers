@@ -281,14 +281,14 @@ struct NTPAfterIdleInstrumentationTests {
     func whenEscapeHatchOptionChangedToNewTabThenFiresCorrectPixel() {
         let (sut, collector) = makeSUT()
         sut.escapeHatchOptionChanged(to: .newTab)
-        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchOptionChangedToNewTab.name])
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab.name])
     }
 
     @Test("When escape hatch option changed to lastUsedTab then fires the last_used_tab pixel")
     func whenEscapeHatchOptionChangedToLastUsedTabThenFiresCorrectPixel() {
         let (sut, collector) = makeSUT()
         sut.escapeHatchOptionChanged(to: .lastUsedTab)
-        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab.name])
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab.name])
     }
 
     // MARK: - Multiple calls accumulate

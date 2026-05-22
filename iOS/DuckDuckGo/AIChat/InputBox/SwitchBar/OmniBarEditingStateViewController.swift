@@ -446,8 +446,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
                                                    anchorView: switchBarVC.view,
-                                                   isTopBarPosition: isUsingTopBarPosition,
-                                                   escapeHatch: escapeHatchModel)
+                                                   isTopBarPosition: isUsingTopBarPosition)
         } else if let view = switchBarVC.segmentedPickerView {
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,

@@ -25,13 +25,15 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
         case noStubSet
     }
 
-    public var spyGenerateTunnelConfiguration: (
-        selectionMethod: VPN.NetworkProtectionServerSelectionMethod,
-        excludeLocalNetworks: Bool,
-        excludeCGNAT: Bool,
-        dnsSettings: NetworkProtectionDNSSettings,
-        regenerateKey: Bool
-    )?
+    public struct GenerateTunnelConfigurationCall {
+        public let selectionMethod: VPN.NetworkProtectionServerSelectionMethod
+        public let excludeLocalNetworks: Bool
+        public let excludeCGNAT: Bool
+        public let dnsSettings: NetworkProtectionDNSSettings
+        public let regenerateKey: Bool
+    }
+
+    public var spyGenerateTunnelConfiguration: GenerateTunnelConfigurationCall?
 
     public var stubGenerateTunnelConfiguration: (
         tunnelConfiguration: VPN.TunnelConfiguration,
@@ -48,13 +50,13 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
         excludeCGNAT: Bool = false,
         dnsSettings: NetworkProtectionDNSSettings,
         regenerateKey: Bool) async throws -> (tunnelConfiguration: VPN.TunnelConfiguration, server: VPN.NetworkProtectionServer) {
-            spyGenerateTunnelConfiguration = (
+            spyGenerateTunnelConfiguration = GenerateTunnelConfigurationCall(
                 selectionMethod: resolvedSelectionMethod,
                 excludeLocalNetworks: excludeLocalNetworks,
                 excludeCGNAT: excludeCGNAT,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
-                )
+            )
             if let stubGenerateTunnelConfiguration {
                 return stubGenerateTunnelConfiguration
             } else if let stubGenerateTunnelConfigurationError {

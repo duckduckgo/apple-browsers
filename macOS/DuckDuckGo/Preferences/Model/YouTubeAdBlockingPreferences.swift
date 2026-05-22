@@ -196,6 +196,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             .sink { [weak self] in
                 self?.syncFromStore()
                 self?.syncDisclosureIfNoExplicitChoice()
+                self?.syncRemotelyDisabledFromAvailability()
             }
             .store(in: &cancellables)
     }

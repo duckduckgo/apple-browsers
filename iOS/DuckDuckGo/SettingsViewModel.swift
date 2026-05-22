@@ -1145,13 +1145,17 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
+                // Refresh the UI for every flag flip so the contingency notice
+                // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
+                // re-renders even for users with explicit storage who skip the
+                // disclosure re-pin below.
+                defer { self.objectWillChange.send() }
                 guard (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) == nil else { return }
                 let resolvedDefault = self.adBlockingAvailability.defaultYouTubeAdBlockingEnabled
                 try? self.youTubeAdBlockingStorage.set(resolvedDefault, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
                 self.state.youTubeAdBlockingEnabled = resolvedDefault
                 self.state.youTubeAdBlockingDisclosureHidden =
                     (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
-                self.objectWillChange.send()
             }
             .store(in: &cancellables)
 

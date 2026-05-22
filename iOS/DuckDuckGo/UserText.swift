@@ -2380,8 +2380,8 @@ public struct UserText {
 
             public static let searchAndDuckAIOption = NSLocalizedString(
                 "onboarding.highlights.searchExperience.searchAndDuckAI",
-                value: "Toggle between\nSearch and Ask AI",
-                comment: "Title for the search and Ask AI option in onboarding picker."
+                value: "Toggle between\nSearch and Duck.ai",
+                comment: "Title for the search and Duck.ai option in onboarding picker."
             )
             
             static func footerAttributed() -> NSAttributedString {

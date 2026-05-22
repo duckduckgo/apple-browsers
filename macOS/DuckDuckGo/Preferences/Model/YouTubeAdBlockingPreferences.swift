@@ -95,7 +95,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
                 settings.shouldHideYouTubeAdBlockingDisclosure = storageEnabled
             }
         } else {
-            settings.shouldHideYouTubeAdBlockingDisclosure = youTubeAdBlockingEnabled
+            settings.shouldHideYouTubeAdBlockingDisclosure = adBlockingAvailability?.defaultYouTubeAdBlockingEnabled ?? false
         }
         isDisclosureHidden = settings.shouldHideYouTubeAdBlockingDisclosure == true
     }
@@ -202,7 +202,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     private func syncDisclosureIfNoExplicitChoice() {
         guard settings.youTubeAdBlockingEnabled == nil else { return }
-        settings.shouldHideYouTubeAdBlockingDisclosure = youTubeAdBlockingEnabled
+        settings.shouldHideYouTubeAdBlockingDisclosure = adBlockingAvailability?.defaultYouTubeAdBlockingEnabled ?? false
         isDisclosureHidden = settings.shouldHideYouTubeAdBlockingDisclosure == true
     }
 

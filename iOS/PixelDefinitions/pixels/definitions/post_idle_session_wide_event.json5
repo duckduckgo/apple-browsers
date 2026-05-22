@@ -56,6 +56,9 @@
                     "app_backgrounded",
                     "favorite_selected",
                     "chat_selected",
+                    "close_tab_tapped",
+                    "burn_tab_tapped",
+                    "tab_switcher_tapped",
                     "app_terminated"
                 ]
             },
@@ -85,6 +88,11 @@
                 "key": "feature.data.ext.back_pressed",
                 "type": "boolean",
                 "description": "Whether the user pressed back/cancel during the session."
+            },
+            {
+                "key": "feature.data.ext.opening_screen_changed",
+                "type": "boolean",
+                "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."
             }
         ]
     }

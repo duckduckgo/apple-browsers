@@ -105,6 +105,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -251,7 +252,9 @@ final class SettingsViewModel: ObservableObject {
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
-    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    var afterInactivityOption: AfterInactivityOption {
+        afterInactivityOptionAdapter.afterInactivityOption
+    }
     @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
 
     // MARK: Bindings
@@ -402,11 +405,11 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
-        Binding<AfterInactivityOption>(
-            get: { self.afterInactivityOption },
+        let upstream = afterInactivityOptionAdapter.afterInactivityOptionBinding
+        return Binding<AfterInactivityOption>(
+            get: { upstream.wrappedValue },
             set: { newValue in
-                self.afterInactivityOption = newValue
-                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                upstream.wrappedValue = newValue
                 let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
@@ -937,6 +940,7 @@ final class SettingsViewModel: ObservableObject {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -976,7 +980,7 @@ final class SettingsViewModel: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
-        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
@@ -993,6 +997,7 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
     deinit {
@@ -1085,6 +1090,17 @@ extension SettingsViewModel {
 
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOption` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    private func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        adapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateRecentlyVisitedSitesVisibility() {

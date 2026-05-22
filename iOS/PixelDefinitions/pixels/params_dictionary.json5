@@ -290,7 +290,7 @@
         "key": "source",
         "type": "string",
         "description": "Source of the burn action",
-        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "escapeHatch"]
     },
     "tabType": {
         "key": "tabType",

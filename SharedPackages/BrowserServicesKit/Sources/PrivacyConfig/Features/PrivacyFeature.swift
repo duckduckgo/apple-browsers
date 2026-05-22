@@ -430,6 +430,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
+    case settingsLinkInAiFeatures
+
     case sidebarResizable
 
     case sidebarFloating
@@ -576,6 +579,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
 }

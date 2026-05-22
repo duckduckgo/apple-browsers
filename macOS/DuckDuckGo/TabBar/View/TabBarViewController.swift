@@ -2156,10 +2156,15 @@ extension TabBarViewController: NSCollectionViewDelegate {
 extension TabBarViewController: TabBarViewItemDelegate {
 
     func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {
-        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
         tabCollectionViewModel.select(at: tabIndex)
     }
 
@@ -2264,11 +2269,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemDuplicateAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
-        duplicateTab(at: tabIndex)
+
+        duplicateTab(at: isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item))
     }
 
     func tabBarViewItemCanBePinned(_ tabBarViewItem: TabBarViewItem) -> Bool {
@@ -2396,11 +2405,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCloseAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
 
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
         if tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: tabIndex) {
             return
         }
@@ -2556,11 +2569,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
         guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
 
-        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
 
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
         if tabBarViewItem.tabViewModel is UnloadedTabViewModel {
             tabCollectionViewModel.resumeTab(at: tabIndex)
         } else {
@@ -2569,8 +2586,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
-        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem),
-              let tab = tabCollectionViewModel.materialize(at: tabIndex) else { return }
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else { return }
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        guard let tab = tabCollectionViewModel.materialize(at: tabIndex) else { return }
 
         if let url = URL.makeURL(from: stringValue) {
             tab.setContent(.url(url, credential: nil, source: .userEntered(stringValue, downloadRequested: false)))

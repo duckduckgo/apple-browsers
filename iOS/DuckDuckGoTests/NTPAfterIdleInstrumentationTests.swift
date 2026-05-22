@@ -112,6 +112,14 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames.isEmpty)
     }
 
+    @Test("When not eligible then escapeHatchOptionChanged fires no pixel")
+    func whenNotEligibleThenEscapeHatchOptionChangedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.escapeHatchOptionChanged(to: .newTab)
+        sut.escapeHatchOptionChanged(to: .lastUsedTab)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
     @Test("When not eligible then tabSwitcherSelectedFromNTP fires no pixel")
     func whenNotEligibleThenTabSwitcherFiresNothing() {
         let (sut, collector) = makeSUT(eligible: false)
@@ -265,6 +273,22 @@ struct NTPAfterIdleInstrumentationTests {
         let (sut, collector) = makeSUT()
         sut.escapeHatchBurnTapped(requiredConfirmation: false)
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTapped.name])
+    }
+
+    // MARK: - escapeHatchOptionChanged
+
+    @Test("When escape hatch option changed to newTab then fires the new_tab pixel")
+    func whenEscapeHatchOptionChangedToNewTabThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchOptionChanged(to: .newTab)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchOptionChangedToNewTab.name])
+    }
+
+    @Test("When escape hatch option changed to lastUsedTab then fires the last_used_tab pixel")
+    func whenEscapeHatchOptionChangedToLastUsedTabThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchOptionChanged(to: .lastUsedTab)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab.name])
     }
 
     // MARK: - Multiple calls accumulate

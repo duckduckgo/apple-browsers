@@ -1462,6 +1462,8 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchCloseTabTapped
         case ntpAfterIdleEscapeHatchBurnWithConfirmationTapped
         case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
+        case ntpAfterIdleEscapeHatchOptionChangedToNewTab
+        case ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
@@ -3222,6 +3224,8 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchCloseTabTapped: return "m_ntp_after_idle_escape_hatch_close_tab_tapped"
         case .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped"
         case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"
+        case .ntpAfterIdleEscapeHatchOptionChangedToNewTab: return "m_ntp_after_idle_escape_hatch_option_changed_to_new_tab"
+        case .ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_option_changed_to_last_used_tab"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"

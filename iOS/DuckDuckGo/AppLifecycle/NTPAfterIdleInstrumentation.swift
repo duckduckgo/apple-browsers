@@ -57,6 +57,9 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// The user tapped the burn-tab action on the escape hatch card.
     /// - Parameter requiredConfirmation: `true` when the burn flow shows the fire confirmation prompt, `false` when the tab is burned immediately.
     func escapeHatchBurnTapped(requiredConfirmation: Bool)
+
+    /// The user changed the Opening Screen option from the escape hatch's settings menu.
+    func escapeHatchOptionChanged(to option: AfterInactivityOption)
 }
 
 final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
@@ -118,5 +121,10 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     func escapeHatchBurnTapped(requiredConfirmation: Bool) {
         guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(requiredConfirmation ? .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped : .ntpAfterIdleEscapeHatchBurnImmediatelyTapped)
+    }
+
+    func escapeHatchOptionChanged(to option: AfterInactivityOption) {
+        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
+        firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchOptionChangedToNewTab : .ntpAfterIdleEscapeHatchOptionChangedToLastUsedTab)
     }
 }

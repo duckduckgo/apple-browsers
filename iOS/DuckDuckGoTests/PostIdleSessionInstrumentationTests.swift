@@ -77,6 +77,7 @@ struct PostIdleSessionInstrumentationTests {
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
+        sut.openingScreenChanged()
         #expect(wideEvent.updates.isEmpty)
     }
 
@@ -153,6 +154,19 @@ struct PostIdleSessionInstrumentationTests {
         sut.backPressed()
         let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
         #expect(last?.backPressed == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
+    func openingScreenChangedSetsFlagsAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.75)
+        sut.openingScreenChanged()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.openingScreenChanged == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
     }
 
     @available(iOS 16, *)

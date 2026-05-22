@@ -33,7 +33,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.featureName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.type == "ios-post-idle-session")
-        #expect(PostIdleSessionWideEventData.metadata.version == "1.1.0")
+        #expect(PostIdleSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters
@@ -51,6 +51,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == false)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == false)
+        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == false)
     }
 
     @available(iOS 16, *)
@@ -102,6 +103,30 @@ struct PostIdleSessionWideEventDataTests {
     }
 
     @available(iOS 16, *)
+    @Test("Close tab tapped reason emits status_reason", .timeLimit(.minutes(1)))
+    func closeTabTappedReasonEmitsStatusReason() {
+        let data = PostIdleSessionWideEventData(surface: .ntp)
+        data.statusReason = .closeTabTapped
+        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "close_tab_tapped")
+    }
+
+    @available(iOS 16, *)
+    @Test("Burn tab tapped reason emits status_reason", .timeLimit(.minutes(1)))
+    func burnTabTappedReasonEmitsStatusReason() {
+        let data = PostIdleSessionWideEventData(surface: .ntp)
+        data.statusReason = .burnTabTapped
+        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "burn_tab_tapped")
+    }
+
+    @available(iOS 16, *)
+    @Test("Tab switcher tapped reason emits status_reason", .timeLimit(.minutes(1)))
+    func tabSwitcherTappedReasonEmitsStatusReason() {
+        let data = PostIdleSessionWideEventData(surface: .ntp)
+        data.statusReason = .tabSwitcherTapped
+        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "tab_switcher_tapped")
+    }
+
+    @available(iOS 16, *)
     @Test("LUT surface emits lut", .timeLimit(.minutes(1)))
     func lutSurfaceEmitsLut() {
         let data = PostIdleSessionWideEventData(surface: .lut)
@@ -114,11 +139,13 @@ struct PostIdleSessionWideEventDataTests {
         let data = PostIdleSessionWideEventData(surface: .ntp,
                                                 pageEngaged: true,
                                                 toggleUsed: true,
-                                                backPressed: true)
+                                                backPressed: true,
+                                                openingScreenChanged: true)
         let params = data.jsonParameters()
         #expect(params["feature.data.ext.page_engaged"] as? Bool == true)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == true)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == true)
+        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == true)
     }
 
     // MARK: - Durations
@@ -220,6 +247,7 @@ struct PostIdleSessionWideEventDataTests {
         original.pageEngaged = true
         original.toggleUsed = true
         original.backPressed = true
+        original.openingScreenChanged = true
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(PostIdleSessionWideEventData.self, from: encoded)
@@ -233,5 +261,6 @@ struct PostIdleSessionWideEventDataTests {
         #expect(decoded.pageEngaged == true)
         #expect(decoded.toggleUsed == true)
         #expect(decoded.backPressed == true)
+        #expect(decoded.openingScreenChanged == true)
     }
 }

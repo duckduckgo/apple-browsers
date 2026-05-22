@@ -2248,8 +2248,7 @@ public struct UserText {
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
-    public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green.")
-    public static let aiChatWelcomePrivateWord = NSLocalizedString("duckai.welcome.private.word", value: "private", comment: "The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message.")
+    public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon.")
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionAskAboutPage = NSLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")

@@ -400,8 +400,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         attachmentPresenter.onFileValidationFailed = { [weak self] message, metadata in
             guard let self else { return }
-            let reason = self.attachmentPolicy
-                .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.reason ?? .other
+            let reason: UTIAttachmentPolicy.FileValidationFailureReason
+            if let metadataError = self.attachmentPolicy
+                .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes) {
+                reason = metadataError.reason
+            } else if message == UserText.aiChatAttachmentFileUnreadable {
+                reason = .unreadable
+            } else {
+                reason = .other
+            }
             DailyPixel.fireDailyAndCount(
                 pixel: .unifiedToggleInputFileValidationFailed,
                 withAdditionalParameters: ["reason": reason.rawValue]

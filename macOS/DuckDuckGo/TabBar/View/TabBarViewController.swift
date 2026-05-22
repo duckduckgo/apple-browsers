@@ -2535,47 +2535,22 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemFireproofSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let url = tabCollection?.tabs[safe: indexPath.item]?.url
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
+        guard let url = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.url else {
+            assertionFailure("TabBarViewController: Failed to get URL for tab bar view item")
             return
         }
-
         fireproof(url: url)
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
-            return
-        }
-
-        tab.muteUnmuteTab()
+        (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.muteUnmuteTab()
     }
 
     func tabBarViewItemRemoveFireproofing(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let url = tabCollection?.tabs[safe: indexPath.item]?.url
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
+        guard let url = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.url else {
+            assertionFailure("TabBarViewController: Failed to get URL for tab bar view item")
             return
         }
-
         removeFireproofing(url: url)
     }
 

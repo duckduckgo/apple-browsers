@@ -1137,6 +1137,24 @@ extension SettingsViewModel {
             }
             .store(in: &cancellables)
 
+        // Re-pin the disclosure and refresh the resolved YouTube Ad Blocking
+        // state when the feature flagger emits — covers mid-session rollout
+        // flips while Settings is open. Skips users with explicit storage so
+        // their conscious decision is preserved.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                guard (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) == nil else { return }
+                let resolvedDefault = self.adBlockingAvailability.defaultYouTubeAdBlockingEnabled
+                try? self.youTubeAdBlockingStorage.set(resolvedDefault, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+                self.state.youTubeAdBlockingEnabled = resolvedDefault
+                self.state.youTubeAdBlockingDisclosureHidden =
+                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
+                self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
         updateRecentlyVisitedSitesVisibility()
 
         if #available(iOS 18.2, *) {

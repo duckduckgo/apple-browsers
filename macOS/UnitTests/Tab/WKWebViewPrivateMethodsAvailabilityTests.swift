@@ -39,6 +39,10 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")))
     }
 
+    func testWebViewRespondsTo_evaluateJavaScriptWithoutUserGesture() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_evaluateJavaScriptWithoutUserGesture:completionHandler:")))
+    }
+
     func testWebViewRespondsTo_immediateActionAnimationControllerForHitTestResult() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_immediateActionAnimationControllerForHitTestResult:withType:userData:")))
     }

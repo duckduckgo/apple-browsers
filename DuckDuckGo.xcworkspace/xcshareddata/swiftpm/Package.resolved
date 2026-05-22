@@ -1,5 +1,5 @@
 {
-  "originHash" : "fb11111876d78d27218c7674a138bd05cd9a7cc7b64bb1c114a9b97c88865cdd",
+  "originHash" : "32a99156e386eef243e4ffa05beea5ad7dae6b44cb18be7c19ef1276b791b3d1",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "c8ce2e7cdcca4226c96350dcd49323298b941592",
-        "version" : "19.0.0"
+        "revision" : "84b5e3019b2c7b3c90e8d296f30fcfd53768bcd8",
+        "version" : "19.1.0"
       }
     },
     {

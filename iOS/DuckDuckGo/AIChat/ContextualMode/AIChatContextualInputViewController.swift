@@ -278,7 +278,7 @@ private extension AIChatContextualInputViewController {
             .paragraphStyle: paragraphStyle
         ]
 
-        let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
+        let shieldImage = DesignSystemImages.Color.Size32.shieldUtility
         let iconAttachment = NSTextAttachment()
         iconAttachment.image = shieldImage
         let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2

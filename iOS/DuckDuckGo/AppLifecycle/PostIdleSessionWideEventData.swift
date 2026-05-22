@@ -32,7 +32,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         mobileMetaType: "ios-post-idle-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-post-idle-session",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     enum Surface: String, Codable, CaseIterable {
@@ -47,6 +47,9 @@ final class PostIdleSessionWideEventData: WideEventData {
         case appBackgrounded = "app_backgrounded"
         case favoriteSelected = "favorite_selected"
         case chatSelected = "chat_selected"
+        case closeTabTapped = "close_tab_tapped"
+        case burnTabTapped = "burn_tab_tapped"
+        case tabSwitcherTapped = "tab_switcher_tapped"
     }
 
     var globalData: WideEventGlobalData
@@ -61,6 +64,7 @@ final class PostIdleSessionWideEventData: WideEventData {
     var pageEngaged: Bool
     var toggleUsed: Bool
     var backPressed: Bool
+    var openingScreenChanged: Bool
 
     init(surface: Surface,
          startedAt: Date = Date(),
@@ -68,6 +72,7 @@ final class PostIdleSessionWideEventData: WideEventData {
          pageEngaged: Bool = false,
          toggleUsed: Bool = false,
          backPressed: Bool = false,
+         openingScreenChanged: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -78,6 +83,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         self.pageEngaged = pageEngaged
         self.toggleUsed = toggleUsed
         self.backPressed = backPressed
+        self.openingScreenChanged = openingScreenChanged
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -111,6 +117,7 @@ extension PostIdleSessionWideEventData {
             (WideEventParameter.PostIdleSessionFeature.pageEngaged, pageEngaged),
             (WideEventParameter.PostIdleSessionFeature.toggleUsed, toggleUsed),
             (WideEventParameter.PostIdleSessionFeature.backPressed, backPressed),
+            (WideEventParameter.PostIdleSessionFeature.openingScreenChanged, openingScreenChanged),
         ])
     }
 }
@@ -124,5 +131,6 @@ extension WideEventParameter {
         static let pageEngaged = "feature.data.ext.page_engaged"
         static let toggleUsed = "feature.data.ext.toggle_used"
         static let backPressed = "feature.data.ext.back_pressed"
+        static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
     }
 }

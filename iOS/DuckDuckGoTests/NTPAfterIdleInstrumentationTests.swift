@@ -97,13 +97,6 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames.isEmpty)
     }
 
-    @Test("When not eligible then escapeHatchSwitchToTabTapped fires no pixel")
-    func whenNotEligibleThenEscapeHatchSwitchToTabTappedFiresNothing() {
-        let (sut, collector) = makeSUT(eligible: false)
-        sut.escapeHatchSwitchToTabTapped()
-        #expect(collector.firedPixelNames.isEmpty)
-    }
-
     @Test("When not eligible then escapeHatchCloseTabTapped fires no pixel")
     func whenNotEligibleThenEscapeHatchCloseTabTappedFiresNothing() {
         let (sut, collector) = makeSUT(eligible: false)
@@ -247,15 +240,6 @@ struct NTPAfterIdleInstrumentationTests {
         let (sut, collector) = makeSUT()
         sut.escapeHatchTabSwitcherTapped()
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle.name])
-    }
-
-    // MARK: - escapeHatchSwitchToTabTapped
-
-    @Test("When escape hatch switch-to-tab tapped then fires the switch_to_tab pixel")
-    func whenEscapeHatchSwitchToTabTappedThenFiresCorrectPixel() {
-        let (sut, collector) = makeSUT()
-        sut.escapeHatchSwitchToTabTapped()
-        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchSwitchToTabTapped.name])
     }
 
     // MARK: - escapeHatchCloseTabTapped

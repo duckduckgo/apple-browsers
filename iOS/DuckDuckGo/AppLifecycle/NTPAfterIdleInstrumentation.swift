@@ -51,9 +51,6 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// (The escape hatch is only shown after idle return, so no user-initiated variant is needed.)
     func escapeHatchTabSwitcherTapped()
 
-    /// The user tapped the Return-to-page card on the escape hatch (switch-to-tab action).
-    func escapeHatchSwitchToTabTapped()
-
     /// The user tapped the close-tab action on the escape hatch card.
     func escapeHatchCloseTabTapped()
 
@@ -111,11 +108,6 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     func escapeHatchTabSwitcherTapped() {
         guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle)
-    }
-
-    func escapeHatchSwitchToTabTapped() {
-        guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
-        firePixel(.ntpAfterIdleEscapeHatchSwitchToTabTapped)
     }
 
     func escapeHatchCloseTabTapped() {

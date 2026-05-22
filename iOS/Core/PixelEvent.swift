@@ -1459,7 +1459,6 @@ extension Pixel {
         case ntpAfterIdleTabSwitcherSelectedAfterIdle
         case ntpAfterIdleTabSwitcherSelectedUserInitiated
         case ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle
-        case ntpAfterIdleEscapeHatchSwitchToTabTapped
         case ntpAfterIdleEscapeHatchCloseTabTapped
         case ntpAfterIdleEscapeHatchBurnWithConfirmationTapped
         case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
@@ -3220,7 +3219,6 @@ extension Pixel.Event {
         case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
         case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
         case .ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle: return "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle"
-        case .ntpAfterIdleEscapeHatchSwitchToTabTapped: return "m_ntp_after_idle_escape_hatch_switch_to_tab_tapped"
         case .ntpAfterIdleEscapeHatchCloseTabTapped: return "m_ntp_after_idle_escape_hatch_close_tab_tapped"
         case .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped"
         case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"

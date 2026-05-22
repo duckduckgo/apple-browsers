@@ -105,13 +105,6 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_ntp_after_idle_escape_hatch_switch_to_tab_tapped": {
-        "description": "Fires when the user taps the Return-to-page card on the NTP escape hatch (switch-to-tab action).",
-        "owners": ["jleandroperez"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "m_ntp_after_idle_escape_hatch_close_tab_tapped": {
         "description": "Fires when the user taps the close-tab action on the NTP escape hatch card.",
         "owners": ["jleandroperez"],

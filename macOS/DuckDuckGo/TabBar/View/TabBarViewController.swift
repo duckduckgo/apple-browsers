@@ -2169,11 +2169,19 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashAction(_ tabBarViewItem: TabBarViewItem) {
-        (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.killWebContentProcess()
+        guard let tab = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab else {
+            assertionFailure("TabBarViewController: Failed to get tab for tab bar view item")
+            return
+        }
+        tab.killWebContentProcess()
     }
 
     func tabBarViewItemCrashMultipleTimesAction(_ tabBarViewItem: TabBarViewItem) {
-        (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.killWebContentProcessMultipleTimes()
+        guard let tab = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab else {
+            assertionFailure("TabBarViewController: Failed to get tab for tab bar view item")
+            return
+        }
+        tab.killWebContentProcessMultipleTimes()
     }
 
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {

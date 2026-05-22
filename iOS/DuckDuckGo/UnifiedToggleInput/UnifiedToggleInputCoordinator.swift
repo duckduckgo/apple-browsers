@@ -1637,113 +1637,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
-    // MARK: - Pixels
-
-    private func processSessionActivity(mode: TextEntryMode) {
-        guard host == .omnibar else { return }
-
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-            sessionStateMetrics.incrementActivity(.searchSubmitted)
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-            sessionStateMetrics.incrementActivity(.promptSubmitted)
-        }
-
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
-    }
-
-    private func fireModeSwitchedPixel(to mode: TextEntryMode) {
-        let direction = mode == .search ? "to_search" : "to_duckai"
-        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let parameters = [
-            "direction": direction,
-            "had_text": String(hadText),
-            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
-        ]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
-    }
-
-    // MARK: - Unified Toggle Input Tool Pixels
-
-    private func fireToolSelectedPixel(for tool: AIChatRAGTool) {
-        switch tool {
-        case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationSelected)
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSelected)
-        default:
-            break
-        }
-    }
-
-    private func fireToolDeselectedPixel(for tool: AIChatRAGTool) {
-        switch tool {
-        case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationDeselected)
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchDeselected)
-        default:
-            break
-        }
-    }
-
-    private func fireUnifiedPromptSubmittedPixel(text: String) {
-        let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: toolsController.selectedTool).rawValue
-
-        let hasImageAttachment = viewController.currentAttachments.contains { attachment in
-            if case .image = attachment { return true }
-            return false
-        }
-        let hasFileAttachment = viewController.currentAttachments.contains { attachment in
-            switch attachment {
-            case .file, .invalidFile: return true
-            case .image: return false
-            }
-        }
-        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let reasoningEffort = resolvedSelectedReasoningMode?.rawValue ?? "none"
-        let modelId = modelStore.persistedModelId ?? ""
-
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputPromptSubmitted,
-            withAdditionalParameters: [
-                "selected_tool": selectedToolValue,
-                "model_id": modelId,
-                "reasoning_effort": reasoningEffort,
-                "has_image_attachment": hasImageAttachment ? "true" : "false",
-                "has_file_attachment": hasFileAttachment ? "true" : "false",
-                "has_text": hasText ? "true" : "false"
-            ]
-        )
-    }
-
-    private func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?) {
-        guard let selectedTool else { return }
-        switch selectedTool {
-        case .imageGeneration:
-            let hasReferenceImage = viewController.currentAttachments.contains { attachment in
-                if case .image = attachment { return true }
-                return false
-            }
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputImageGenerationSubmitted,
-                withAdditionalParameters: ["has_reference_image": hasReferenceImage ? "true" : "false"]
-            )
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSubmitted)
-        default:
-            break
-        }
-    }
-
     // MARK: - Session Management
 
     @MainActor
@@ -2486,6 +2379,109 @@ private extension UnifiedToggleInputCoordinator {
                     "flow_type": flowType.rawValue
                    ]
         )
+    }
+
+    private func processSessionActivity(mode: TextEntryMode) {
+        guard host == .omnibar else { return }
+
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+
+        switch mode {
+        case .search:
+            Self.hasUsedSearchInSession = true
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+        case .aiChat:
+            Self.hasUsedAIChatInSession = true
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+        }
+
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
+        }
+    }
+
+    private func fireModeSwitchedPixel(to mode: TextEntryMode) {
+        let direction = mode == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText),
+            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
+    }
+
+    private func fireToolSelectedPixel(for tool: AIChatRAGTool) {
+        switch tool {
+        case .imageGeneration:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationSelected)
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSelected)
+        default:
+            break
+        }
+    }
+
+    private func fireToolDeselectedPixel(for tool: AIChatRAGTool) {
+        switch tool {
+        case .imageGeneration:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationDeselected)
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchDeselected)
+        default:
+            break
+        }
+    }
+
+    private func fireUnifiedPromptSubmittedPixel(text: String) {
+        let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: toolsController.selectedTool).rawValue
+
+        let hasImageAttachment = viewController.currentAttachments.contains { attachment in
+            if case .image = attachment { return true }
+            return false
+        }
+        let hasFileAttachment = viewController.currentAttachments.contains { attachment in
+            switch attachment {
+            case .file, .invalidFile: return true
+            case .image: return false
+            }
+        }
+        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        let reasoningEffort = resolvedSelectedReasoningMode?.rawValue ?? "none"
+        let modelId = modelStore.persistedModelId ?? ""
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputPromptSubmitted,
+            withAdditionalParameters: [
+                "selected_tool": selectedToolValue,
+                "model_id": modelId,
+                "reasoning_effort": reasoningEffort,
+                "has_image_attachment": hasImageAttachment ? "true" : "false",
+                "has_file_attachment": hasFileAttachment ? "true" : "false",
+                "has_text": hasText ? "true" : "false"
+            ]
+        )
+    }
+
+    private func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?) {
+        guard let selectedTool else { return }
+        switch selectedTool {
+        case .imageGeneration:
+            let hasReferenceImage = viewController.currentAttachments.contains { attachment in
+                if case .image = attachment { return true }
+                return false
+            }
+            DailyPixel.fireDailyAndCount(
+                pixel: .unifiedToggleInputImageGenerationSubmitted,
+                withAdditionalParameters: ["has_reference_image": hasReferenceImage ? "true" : "false"]
+            )
+        case .webSearch:
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSubmitted)
+        default:
+            break
+        }
     }
 }
 

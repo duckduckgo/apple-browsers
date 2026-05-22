@@ -2162,15 +2162,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashAction(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
-
-        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
         tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.killWebContentProcess()
     }
 
@@ -2280,23 +2275,20 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
 
         clearSelection()
 
-        if isPinned {
-            tabCollectionViewModel.unpinTab(at: indexPath.item)
-        } else {
-            tabCollectionViewModel.pinTab(at: indexPath.item)
+        switch tabIndex {
+        case .pinned(let index):
+            tabCollectionViewModel.unpinTab(at: index)
+        case .unpinned(let index):
+            tabCollectionViewModel.pinTab(at: index)
             presentPinnedTabsDiscoveryPopoverIfNecessary()
         }
-
     }
 
     func cell(forPinnedTabAt index: Int) -> NSView? {

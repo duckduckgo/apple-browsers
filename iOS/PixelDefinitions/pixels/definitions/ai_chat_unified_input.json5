@@ -24,8 +24,7 @@
             {
                 "key": "has_reference_image",
                 "description": "Whether a reference image attachment was present in the input at submission time.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -275,20 +274,17 @@
             {
                 "key": "has_image_attachment",
                 "description": "Whether an image attachment was present at submission time.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "has_file_attachment",
                 "description": "Whether a file attachment (valid or invalid) was present at submission time.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "has_text",
                 "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     }

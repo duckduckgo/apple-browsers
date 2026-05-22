@@ -1407,6 +1407,8 @@ extension TabBarViewItem: NSMenuDelegate {
             addCrashMenuItem(to: menu)
             addCrashMultipleTimesMenuItem(to: menu)
         }
+
+        menu.alignItemTextWithIconsRecursively()
     }
 
     private func addCrashMenuItem(to menu: NSMenu) {

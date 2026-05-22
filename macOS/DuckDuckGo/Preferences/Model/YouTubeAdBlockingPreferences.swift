@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
 import DuckPlayer
 import Foundation
@@ -40,6 +41,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings>
     private let pixelFiring: PixelFiring?
     private let adBlockingAvailability: AdBlockingAvailabilityProviding?
+    private let featureFlagger: FeatureFlagger?
     private var cancellables = Set<AnyCancellable>()
 
     /// Mirrors `adBlockingAvailability.isDisabledUntilRelaunch` (when injected), updated via the
@@ -52,12 +54,15 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     @Published private(set) var isRemotelyDisabled: Bool = false
 
     private var isHandlingExternalChange = false
+    private var isApplyingRolloutDefault = false
 
     @Published
     var youTubeAdBlockingEnabled: Bool {
         didSet {
             guard youTubeAdBlockingEnabled != oldValue else { return }
-            settings.youTubeAdBlockingEnabled = youTubeAdBlockingEnabled
+            if !isApplyingRolloutDefault {
+                settings.youTubeAdBlockingEnabled = youTubeAdBlockingEnabled
+            }
             if !youTubeAdBlockingEnabled {
                 youTubeAnalyticsEnabled = false
             }
@@ -150,13 +155,17 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
          pixelFiring: PixelFiring? = nil,
-         adBlockingAvailability: AdBlockingAvailabilityProviding? = nil) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding? = nil,
+         featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
         self.adBlockingAvailability = adBlockingAvailability
-        youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled ?? false
+        self.featureFlagger = featureFlagger
+        youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled
+            ?? adBlockingAvailability?.defaultYouTubeAdBlockingEnabled
+            ?? false
         isDisclosureHidden = resolvedSettings.shouldHideYouTubeAdBlockingDisclosure == true
         isDisabledUntilRelaunch = adBlockingAvailability?.isDisabledUntilRelaunch ?? false
         isRemotelyDisabled = adBlockingAvailability?.isRemotelyDisabled ?? false
@@ -173,6 +182,13 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
                 self?.syncFromStore()
                 self?.syncDisableUntilRelaunchFromAvailability()
                 self?.syncRemotelyDisabledFromAvailability()
+            }
+            .store(in: &cancellables)
+
+        featureFlagger?.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.syncFromStore()
             }
             .store(in: &cancellables)
     }
@@ -200,10 +216,19 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     /// popover) stay in sync. Gated by `isHandlingExternalChange` to keep the pixel + notification
     /// from firing on the sync path.
     private func syncFromStore() {
-        let stored = settings.youTubeAdBlockingEnabled ?? false
-        guard stored != youTubeAdBlockingEnabled else { return }
-        isHandlingExternalChange = true
-        youTubeAdBlockingEnabled = stored
-        isHandlingExternalChange = false
+        if let stored = settings.youTubeAdBlockingEnabled {
+            guard stored != youTubeAdBlockingEnabled else { return }
+            isHandlingExternalChange = true
+            youTubeAdBlockingEnabled = stored
+            isHandlingExternalChange = false
+        } else {
+            let resolved = adBlockingAvailability?.defaultYouTubeAdBlockingEnabled ?? false
+            guard resolved != youTubeAdBlockingEnabled else { return }
+            isApplyingRolloutDefault = true
+            isHandlingExternalChange = true
+            youTubeAdBlockingEnabled = resolved
+            isHandlingExternalChange = false
+            isApplyingRolloutDefault = false
+        }
     }
 }

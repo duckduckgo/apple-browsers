@@ -1048,7 +1048,8 @@ extension SettingsViewModel {
         // view's `onAppear` — so the resulting `@Published` change can't
         // race with a push transition and pop the screen on iPad.
         if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
-            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+                ?? adBlockingAvailability.defaultYouTubeAdBlockingEnabled
             try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
         }
 
@@ -1093,7 +1094,8 @@ extension SettingsViewModel {
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
             youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureSupported,
-            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+                ?? adBlockingAvailability.defaultYouTubeAdBlockingEnabled,
             youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )
 
@@ -1114,7 +1116,8 @@ extension SettingsViewModel {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.state.youTubeAdBlockingEnabled =
-                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+                    ?? self.adBlockingAvailability.defaultYouTubeAdBlockingEnabled
                 self.objectWillChange.send()
             }
             .store(in: &cancellables)

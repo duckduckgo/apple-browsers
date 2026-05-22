@@ -47,6 +47,10 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableO
         isFeatureSupported && !featureFlagger.isFeatureOn(.adBlockingExtension)
     }
 
+    var areAdBlockingDefaultsActive: Bool {
+        featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+    }
+
     func disableUntilRelaunch() {
         guard !isDisabledUntilRelaunch else { return }
         isDisabledUntilRelaunch = true

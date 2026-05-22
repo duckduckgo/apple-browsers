@@ -42,6 +42,16 @@ public protocol AdBlockingAvailabilityProviding {
     /// browsing-menu picker. Resets on cold launch.
     var isDisabledUntilRelaunch: Bool { get }
 
+    /// Whether the `adBlockingExtensionEnabledByDefault` rollout has activated the new
+    /// defaults regime for this user. Temporary helper for the rollout window —
+    /// consumers compose this into their nil-fallbacks to derive the correct
+    /// `youTubeAdBlockingEnabled` / `duckPlayerMode` defaults.
+    var areAdBlockingDefaultsActive: Bool { get }
+
+    /// Default value for `youTubeAdBlockingEnabled` when the user has no stored choice.
+    /// Mirrors `areAdBlockingDefaultsActive`.
+    var defaultYouTubeAdBlockingEnabled: Bool { get }
+
     /// Mark ad-blocking as disabled until the next app launch.
     func disableUntilRelaunch()
 
@@ -59,6 +69,8 @@ extension AdBlockingAvailabilityProviding {
     }
     public var isRemotelyDisabled: Bool { false }
     public var isDisabledUntilRelaunch: Bool { false }
+    public var areAdBlockingDefaultsActive: Bool { false }
+    public var defaultYouTubeAdBlockingEnabled: Bool { areAdBlockingDefaultsActive }
     public func disableUntilRelaunch() {}
     public func clearDisableUntilRelaunch() {}
 }

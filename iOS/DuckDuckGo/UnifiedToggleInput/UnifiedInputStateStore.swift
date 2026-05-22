@@ -54,7 +54,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             Logger.unifiedInputState.debug("state(for:) hit for tab [\(uid)]: \(existing.summary)")
             return existing
         }
-        let seeded = seededState(toggleMode: trackedLastUsed.toggleMode)
+        let seeded = seededState()
         Logger.unifiedInputState.debug("state(for:) miss for tab [\(uid)] — returning fresh seed: \(seeded.summary)")
         return seeded
     }
@@ -127,7 +127,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: inputState.preferredTextEntryMode,
+            toggleMode: trackedLastUsed.toggleMode,
             attachments: [],
             selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
             selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
@@ -135,10 +135,10 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         )
     }
 
-    private func seededState(toggleMode: TextEntryMode) -> TabInputState {
+    private func seededState() -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: toggleMode,
+            toggleMode: trackedLastUsed.toggleMode,
             attachments: [],
             selectedModelID: trackedLastUsed.selectedModelID,
             selectedReasoningMode: trackedLastUsed.selectedReasoningMode,

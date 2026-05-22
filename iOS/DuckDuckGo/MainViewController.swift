@@ -1701,7 +1701,13 @@ class MainViewController: UIViewController {
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !daxDialogsManager.subscriptionPromotionPending {
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending {
             omniBar.beginEditing(animated: true)
         }
 
@@ -2229,6 +2235,12 @@ class MainViewController: UIViewController {
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
             } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
+                // An active omnibar session means the address bar was just activated (e.g. by
+                // launchNewSearch after a subscription promo dismissal on a tab with no VC yet).
+                // Hiding the coordinator here would tear it down before the keyboard can appear.
+                // refreshUnifiedToggleInput carries its own preserveOmnibarSession guard; mirror
+                // that protection for this nil-tab path.
+                guard !coordinator.isOmnibarSession else { return }
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()

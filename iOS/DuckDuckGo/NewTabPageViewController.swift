@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import DesignResourcesKit
 import Onboarding
 import RemoteMessaging
 import Subscription
@@ -45,7 +46,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding
-    private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+    private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating & ContextualOnboardingLogic
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
@@ -72,7 +73,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProviding,
-         daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
+         daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating & ContextualOnboardingLogic,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -111,6 +112,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
+                                            layoutConfiguration: UnifiedToggleInputFeature().isAvailable ? .unifiedToggleInput : .standard,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
@@ -442,27 +444,59 @@ extension NewTabPageViewController {
         message: String
     ) {
         isShowingDuckAICompletionDialog = true
+        // The NTP view is about to become visible (view.alpha = 1 below) but
+        // finishOnboarding() has already set isOnboarding = false, so SwiftUI
+        // would render the Dax logo on the next frame.  Hide both the NTP logo
+        // and the UTI/omnibar logo (shown by the beginEditing transition) so
+        // neither flashes through the transparent completion dialog hosting view.
+        // Both are restored once the dialog is dismissed.
+        setLogoHidden(true)
+        coordinator.contentViewController.setLogoHidden(true)
         view.alpha = 1
 
         let onDismiss = { [weak self, weak mainVC, weak coordinator] in
             guard let self else { return }
             // Collapse the UTI bar explicitly rather than going through omniBar.endEditing()
             // (which only resigns the legacy text field and does not drive the UTI state machine).
-            let collapseUTI = {
+            // Takes an optional completion so the subscription promo can be deferred until after
+            // the animation finishes (ensuring coordinator.deactivateToOmnibar() has run).
+            let collapseUTI = { (completion: (() -> Void)?) in
                 if let mainVC, let coordinator = coordinator ?? mainVC.unifiedToggleInputCoordinator {
-                    mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+                    mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
+                } else {
+                    completion?()
                 }
             }
             let finishDismissal = {
+                // Mirror the OmniBar path: mark EOJ seen before peeking so that
+                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
+                // branch and can return .subscriptionPromotion (r3257196584).
+                self.daxDialogsManager.setFinalOnboardingDialogSeen()
                 let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
+                    // Zero the UTI content container alpha so the UTI Dax can't flash
+                    // during the collapse animation.  Restored to 1 by
+                    // dismissUnifiedToggleInputToOmnibar's animation completion block.
+                    if let mainVC = self.parent as? MainViewController {
+                        mainVC.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                    }
                     self.dismissHostingController(didFinishNTPOnboarding: true)
-                    collapseUTI()
-                    self.showNextDaxDialog()
+                    // Defer showNextDaxDialog to the collapse completion so that
+                    // coordinator.deactivateToOmnibar() has already run before the
+                    // promo appears.  Without this, tapping "No thanks" quickly
+                    // while the collapse animation is still running causes
+                    // launchNewSearch() to find isOmnibarSession = true and call
+                    // activateInput() instead of omniBar.beginEditing(); the collapse
+                    // completion then cancels that session, leaving an empty NTP.
+                    collapseUTI { [weak self] in
+                        self?.showNextDaxDialog()
+                    }
                 } else {
                     self.daxDialogsManager.dismiss()
                     self.dismissHostingController(didFinishNTPOnboarding: true)
-                    collapseUTI()
+                    self.setLogoHidden(false)
+                    coordinator?.contentViewController.setLogoHidden(false)
+                    collapseUTI(nil)
                     ViewHighlighter.hideAll()
                 }
             }
@@ -471,8 +505,19 @@ extension NewTabPageViewController {
                 return
             }
             hostingView.isUserInteractionEnabled = false
-            UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },
-                           completion: { _ in finishDismissal() })
+            // Mark EOJ as seen now (idempotent — finishDismissal also calls it) so we
+            // can check subscriptionPromotionPending before deciding whether to animate.
+            self.daxDialogsManager.setFinalOnboardingDialogSeen()
+            if self.daxDialogsManager.subscriptionPromotionPending {
+                // Skip the 0.2s fade: the UTI Dax would appear through the fading dialog
+                // before the subscription promo covers it.  An instant dismiss avoids the
+                // blink and matches the desired UX ("should disappear right away").
+                hostingView.alpha = 0
+                finishDismissal()
+            } else {
+                UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },
+                               completion: { _ in finishDismissal() })
+            }
         }
 
         let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
@@ -505,7 +550,15 @@ extension NewTabPageViewController {
         dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
-            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            // When the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+            // is about to fire, it drives its own overlay state.  Un-suppressing here while the
+            // UTI is active from the premature beginEditing would cause a visual flash of the
+            // NTP Dax logo before the completion dialog appears.
+            let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ
+                && daxDialogsManager.isAIChatEnabled
+            if !chatPathCompletionPending {
+                chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            }
             return
         }
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
@@ -515,8 +568,17 @@ extension NewTabPageViewController {
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .subscriptionPromotion else {
+                // Hide the NTP logo before the promo fades in so it doesn't blink through
+                // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI
+                // deactivates after the user acts on the promo ("No thanks" / proceed).
+                self.setLogoHidden(true)
                 chromeDelegate?.omniBar.endEditing()
                 showNextDaxDialog()
+                // UIHostingController starts with a clear UIKit background; SwiftUI renders
+                // the promo's opaque ContextualBackgroundStyle backdrop asynchronously.
+                // Matching the backing view's colour immediately prevents the one-frame gap
+                // where whatever is behind the promo (NTP background, logo) shows through.
+                self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                 return
             }
 
@@ -534,8 +596,11 @@ extension NewTabPageViewController {
             if spec == .final {
                 let nextSpec = dialogProvider.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
+                    // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
+                    self?.setLogoHidden(true)
                     self?.chromeDelegate?.omniBar.endEditing()
                     self?.showNextDaxDialog()
+                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                     return
                 }
                 dialogProvider.dismiss()
@@ -578,99 +643,6 @@ extension NewTabPageViewController {
         hostingController.didMove(toParent: self)
 
         newTabPageViewModel.startOnboarding()
-    }
-
-    private func embedDialogInEditingState(_ hostingController: UIHostingController<AnyView>) {
-        guard let editingController = parent?.presentedViewController as? OmniBarEditingStateViewController else {
-            // In UTI mode the editing state is handled by the unified toggle input coordinator.
-            // Add the dialog directly to unifiedInputContentContainer (the sibling container that
-            // holds the UTI content VC, not inside the content VC itself).  The top anchor is
-            // pinned to coordinator.viewController.view.bottomAnchor — the physical bottom edge of
-            // the UTI bar — because the content VC's own safeAreaLayoutGuide does NOT account for
-            // the UTI bar height (that offset is applied via additionalSafeAreaInsets only on the
-            // inner swipe-container child VC).  Being a sibling added after contentVC.view, the
-            // dialog is automatically in front and receives touches without needing bringSubviewToFront.
-            if let mainVC = parent as? MainViewController,
-               let coordinator = mainVC.unifiedToggleInputCoordinator,
-               coordinator.isOmnibarSession {
-                let container = mainVC.viewCoordinator.unifiedInputContentContainer!
-                mainVC.addChild(hostingController)
-                hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-                container.addSubview(hostingController.view)
-                NSLayoutConstraint.activate([
-                    hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
-                    hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-                    hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-                    hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-                ])
-                hostingController.didMove(toParent: mainVC)
-                newTabPageViewModel.startOnboarding()
-                return
-            }
-
-            // Fallback: embed directly on the NTP if neither editing state materialised.
-            addChild(hostingController)
-            view.addSubview(hostingController.view)
-            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
-                hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-            ])
-            hostingController.didMove(toParent: self)
-            newTabPageViewModel.startOnboarding()
-            return
-        }
-
-        editingController.addChild(hostingController)
-        let container = editingController.contentStackContainerView
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(hostingController.view)
-        NSLayoutConstraint.activate([
-            editingController.isUsingTopBarPositionForLayout
-                ? hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
-                                                              constant: editingController.addressBarToToggleSpacing)
-                : hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            editingController.isUsingTopBarPositionForLayout
-                ? hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor)
-                : hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        ])
-        hostingController.didMove(toParent: editingController)
-        container.bringSubviewToFront(editingController.switchBarVC.view)
-        newTabPageViewModel.startOnboarding()
-
-        // When the keyboard is dismissed (editing state dismissed by user), rescue the dialog
-        // back to the NTP so it remains visible rather than disappearing with the editing state.
-        // Exception: if the editing state is dismissing because navigation started (tab is already
-        // loading), detach the dialog entirely — rescuing it onto the NTP would leave it frozen on
-        // screen while transitionTo keeps the NTP visible until tab.link becomes non-nil.
-        editingController.onViewWillDisappear = { [weak self, weak editingController, weak hostingController] in
-            guard let self, let hostingController, hostingController.parent === editingController else { return }
-            hostingController.willMove(toParent: nil)
-            hostingController.view.removeFromSuperview()
-            hostingController.removeFromParent()
-
-            // Navigation started: complete the parent-change bookkeeping and discard the dialog
-            // rather than rescuing it to the NTP where it would stay frozen while the page loads.
-            if let mainVC = self.parent as? MainViewController, mainVC.currentTab?.isLoading == true {
-                hostingController.didMove(toParent: nil)
-                return
-            }
-
-            self.addChild(hostingController)
-            self.view.addSubview(hostingController.view)
-            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                hostingController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-                hostingController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-                hostingController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-                hostingController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-            ])
-            hostingController.didMove(toParent: self)
-        }
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool, updateUnifiedInputContentOverlaySuppression: Bool = true) {

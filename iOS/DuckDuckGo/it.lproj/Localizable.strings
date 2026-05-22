@@ -123,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Apri in una scheda Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nuova scheda";
 
@@ -187,7 +188,7 @@
 "ad.blocking.description" = "Blocca i sistemi di tracciamento prima che vengano caricati, eliminando di fatto gli annunci che si basano sul tracciamento";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Blocco degli annunci su YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Parte inferiore";
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funzionalità IA";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Puoi allegare solo %d file per conversazione.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Non possiamo leggere i file allegati perché almeno uno di essi è crittografato.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "I file allegati superano il limite totale di dimensione di %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Questo file è troppo grande. La dimensione massima del file è %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Uno dei file allegati ha più pagine di quante ne supportiamo. Carica file con %d pagine o meno.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Non riusciamo a leggere uno dei file allegati. Verifica che non sia danneggiato e riprova.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Puoi allegare solo %d immagini per conversazione.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Puoi allegare solo %d immagini alla volta.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Allega file";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Allega una foto";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Scatta una foto";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Il messaggio è troppo lungo per essere inviato con allegati.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Gli allegati non sono al momento disponibili. Riprova in seguito.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Questo tipo di file non è supportato.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Questo tipo di file non è supportato, allega un %1$@ o %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Questo tipo di file non è supportato, allega un %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Per attività analitiche";
@@ -1532,9 +1576,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Debug";
 
-/* No comment provided by engineer. */
-"Delete" = "Elimina";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispositivo";
 
@@ -1646,11 +1687,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Allega il contenuto della pagina";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Richiedi informazioni sulla pagina";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Allega il contenuto della pagina";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Riassumi questa pagina";
@@ -2368,6 +2409,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Scheda Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Aria";
 
@@ -3399,6 +3441,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Eliminare le schede di Fire e i relativi dati?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Eliminare schede e dati del sito?";
 
@@ -4258,7 +4301,7 @@
 "subscription.promo.reinstaller.buttons.notNow" = "Non adesso";
 
 /* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
-"subscription.promo.reinstaller.message" = "DuckDuckGo offre anche un **abbonamento a pagamento facoltativo**, con **VPN** sicura e **AI avanzata e privata**.";
+"subscription.promo.reinstaller.message" = "DuckDuckGo offre anche un **abbonamento a pagamento facoltativo**, con **VPN ** sicura e **AI avanzata e privata**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Rimuovi da questo dispositivo";
@@ -4490,6 +4533,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Chiudi scheda";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Chiudi la scheda Home";
 
@@ -4501,6 +4545,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nuova scheda";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Apri la scheda Home";
 
@@ -4509,6 +4554,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Apri scheda Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Apri \"%1$@\" all'indirizzo %2$@";
 
@@ -4942,7 +4988,7 @@
 "youtube.ad.blocking.menu.enable" = "Abilita il blocco degli annunci su YouTube";
 
 /* Browsing menu row that opens the YouTube ad-block mode picker */
-"youtube.ad.blocking.menu.toggle" = "Disattiva il blocco annunci di YouTube";
+"youtube.ad.blocking.menu.toggle" = "Disattiva il blocco annunci su YouTube";
 
 /* Picker option keeping YouTube ad blocking always off */
 "youtube.ad.blocking.mode.always-off" = "Sempre disattivato";
@@ -4954,7 +5000,7 @@
 "youtube.ad.blocking.mode.disable-until-relaunch" = "Disattiva fino al rilancio";
 
 /* Title of the YouTube ad-block mode picker bottom sheet */
-"youtube.ad.blocking.picker.title" = "Blocco degli annunci di YouTube";
+"youtube.ad.blocking.picker.title" = "Blocco degli annunci su YouTube";
 
 /* Settings screen title for Ad Blocking */
 "youtube.ad.blocking.title" = "Blocco degli annunci";
@@ -4975,7 +5021,7 @@
 "youtube.ad.blocking.unavailable.message" = "Il blocco degli annunci è stato influenzato dalle recenti modifiche a YouTube. Stiamo lavorando per risolvere questi problemi. Grazie per la comprensione";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.title" = "Blocco degli annunci di YouTube non disponibile";
+"youtube.ad.blocking.unavailable.title" = "Blocco degli annunci su YouTube non disponibile";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Segnalibri";

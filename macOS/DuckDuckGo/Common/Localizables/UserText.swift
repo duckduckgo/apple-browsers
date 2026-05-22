@@ -655,6 +655,7 @@ struct UserText {
     static let hideAIGeneratedImagesSettings = NSLocalizedString("duckai.hide-ai-generated-images-settings", value: "Hide AI-Generated Images", comment: "The section name in preferences for Hide AI-Generated Images Settings")
     static let hideAIGeneratedImagesSettingsDescription = NSLocalizedString("duckai.hide-ai-generated-images-settings.description", value: "Filter out AI-generated images from image search results", comment: "Description of the section in Settings")
     static let searchAIFeaturesSettingsLink = NSLocalizedString("duckai.search-ai-features-settings.link", value: "Open Search AI Features", comment: "Button to open the Search AI Features Settings")
+    static let duckAiSettingsLink = NSLocalizedString("duckai.duckai-settings.link", value: "Open Duck.ai Settings", comment: "Button to open the Duck.ai Settings in a new tab from Settings → AI Features")
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarDetachButtonTooltip = NSLocalizedString("aichat.sidebar.detach-button.tooltip", value: "Move to separate window", comment: "Tooltip for button to detach the duck.ai sidebar into a floating window")

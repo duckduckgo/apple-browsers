@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Get the directory where the script is stored
 script_dir=$(dirname "$(readlink -f "$0")")
@@ -23,8 +24,21 @@ update_localizable_strings() {
 
 	echo "Processing ${source_dir}"
 	mkdir -p "${tmp_output_dir}"
-	find "${source_dir}/" -name "*.swift" -print0 | xargs -0 xcrun extractLocStrings -o "${tmp_output_dir}"
-	iconv -f UTF-16 -t UTF8 "${generated_strings}" > "${tmp_utf8_strings}"
+	if ! find "${source_dir}/" -name "*.swift" -print0 | xargs -0 xcrun extractLocStrings -o "${tmp_output_dir}"; then
+		echo "error: Failed to extract localization strings from ${source_dir}" >&2
+		return 1
+	fi
+
+	if [ ! -f "${generated_strings}" ]; then
+		echo "error: extractLocStrings did not generate ${generated_strings}" >&2
+		return 1
+	fi
+
+	if ! iconv -f UTF-16 -t UTF8 "${generated_strings}" > "${tmp_utf8_strings}"; then
+		rm -f "${tmp_utf8_strings}"
+		echo "error: Failed to convert ${generated_strings} to UTF-8" >&2
+		return 1
+	fi
 
 	if [ -f "${target_strings}" ] && cmp -s "${tmp_utf8_strings}" "${target_strings}"; then
 		echo "  Localizable.strings unchanged"

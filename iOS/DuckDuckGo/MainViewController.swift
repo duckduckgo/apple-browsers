@@ -4725,12 +4725,12 @@ extension MainViewController: EscapeHatchActionRouter {
             onConfirm: { [weak self] fireRequest in
                 self?.forgetAllWithAnimation(request: fireRequest) {}
                 self?.clearEscapeHatch()
+                self?.postIdleSessionInstrumentation.sessionEnded(reason: .burnTabTapped)
             },
             onCancel: { }
         )
 
         ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: true)
-        postIdleSessionInstrumentation.sessionEnded(reason: .burnTabTapped)
     }
 
     func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {

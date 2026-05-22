@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "originHash" : "f957c795a60434942624adcf3792b554b92fa37f36116edd6a942bf9381b9cb5",
-=======
   "originHash" : "1650ab56857d33f66667990afa9689a03b4876a0cb596e1e54d9a6f6a1dd3b82",
->>>>>>> lantean/fix-ipad-tabbar-not-refreshing
   "pins" : [
     {
       "identity" : "apple-toolbox",

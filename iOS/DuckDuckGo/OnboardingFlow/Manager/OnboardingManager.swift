@@ -132,21 +132,13 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 
 // MARK: - Onboarding Steps Provider
 
+/// Represent a single step in the linear-onboarding sequence.
 enum OnboardingIntroStep: Equatable {
-    case introDialog(isReturningUser: Bool)
-    case browserComparison
-    case aiComparison
-    case appIconSelection
-    case addToDockPromo
-    case addressBarPositionSelection
-    case searchExperienceSelection
-    case duckAIQuerySelection
+    /// A step that render a `ViewState` in the onboarding view. Maps to a dialog in the linear onboarding sequence.
+    case renderable(RenderableStep)
 
-    /// A step that pauses the linear onboarding to hand control to the host
-    /// (e.g. for a short, contextual browsing session), then expects the host
-    /// to resume the linear flow once it completes.
-    ///
-    /// Unlike the other cases, an interlude step does not render a view state in the onboarding view.
+    /// A step that pauses the linear onboarding to hand control to the host (e.g. for a short, contextual browsing session), then expects the host to resume the linear flow once it completes.
+    /// Unlike renderable cases, an interlude step does not render a view state in the onboarding view.
     case interlude(Interlude)
 
     var isInterlude: Bool {
@@ -159,7 +151,34 @@ enum OnboardingIntroStep: Equatable {
     }
 }
 
+// Ergonomic factories so call sites can write `.browserComparison` instead of `.renderable(.browserComparison)`.
+// Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
+    static let browserComparison: Self = .renderable(.browserComparison)
+    static let aiComparison: Self = .renderable(.aiComparison)
+    static let addToDockPromo: Self = .renderable(.addToDockPromo)
+    static let appIconSelection: Self = .renderable(.appIconSelection)
+    static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
+    static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
+    static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
+
+    static func introDialog(isReturningUser: Bool) -> Self {
+        .renderable(.introDialog(isReturningUser: isReturningUser))
+    }
+}
+
+extension OnboardingIntroStep {
+
+    enum RenderableStep: Equatable {
+        case introDialog(isReturningUser: Bool)
+        case browserComparison
+        case aiComparison
+        case appIconSelection
+        case addToDockPromo
+        case addressBarPositionSelection
+        case searchExperienceSelection
+        case duckAIQuerySelection
+    }
 
     /// Identifies which interlude experience the host should run.
     ///
@@ -177,14 +196,14 @@ extension OnboardingIntroStep {
     /// The resume checkpoint that should be persisted when this step is reached, or `nil` if no checkpoint is needed.
     var resumeStep: OnboardingResumeStep? {
         switch self {
-        case .introDialog: return nil
-        case .browserComparison: return .browserComparison
-        case .aiComparison: return .aiComparison
-        case .addToDockPromo: return .addToDockPromo
-        case .appIconSelection: return .appIconSelection
-        case .addressBarPositionSelection: return .addressBarPositionSelection
-        case .searchExperienceSelection: return .searchExperienceSelection
-        case .duckAIQuerySelection: return .duckAIQuerySelection
+        case .renderable(.introDialog): return nil
+        case .renderable(.browserComparison): return .browserComparison
+        case .renderable(.aiComparison): return .aiComparison
+        case .renderable(.addToDockPromo): return .addToDockPromo
+        case .renderable(.appIconSelection): return .appIconSelection
+        case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
+        case .renderable(.searchExperienceSelection): return .searchExperienceSelection
+        case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
         case .interlude(.duckAI): return .interludeDuckAI
         }
     }

@@ -346,72 +346,79 @@ private extension OnboardingIntroViewModel {
             return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
         }
 
+        func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingView.ViewState {
+            switch renderableStep {
+            case .introDialog(let isReturningUser):
+                return .onboarding(
+                    .init(
+                        type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)),
+                        step: .hidden
+                    )
+                )
+            case .browserComparison:
+                return .onboarding(
+                    .init(
+                        type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent),
+                        step: stepInfo()
+                    )
+                )
+            case .aiComparison:
+                return .onboarding(
+                    .init(
+                        type: .aiComparisonDialog(content: contentProvider.aiComparisonContent),
+                        step: stepInfo()
+                    )
+                )
+            case .addToDockPromo:
+                return .onboarding(
+                    .init(
+                        type: .addToDockPromoDialog(content: contentProvider.addToDockContent),
+                        step: stepInfo()
+                    )
+                )
+            case .appIconSelection:
+                return .onboarding(
+                    .init(
+                        type: .chooseAppIconDialog(content: contentProvider.appIconColorContent),
+                        step: stepInfo()
+                    )
+                )
+            case .addressBarPositionSelection:
+                return .onboarding(
+                    .init(
+                        type: .chooseAddressBarPositionDialog(content: contentProvider.addressBarPositionContent),
+                        step: stepInfo()
+                    )
+                )
+            case .searchExperienceSelection:
+                return .onboarding(
+                    .init(
+                        type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent),
+                        step: stepInfo()
+                    )
+                )
+            case .duckAIQuerySelection:
+                let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
+                // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
+                let duckAIQueryMode: DuckAIQueryExperimentMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
+                // Duck.ai Tailored flow shows step counter while experiment does not.
+                let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                return .onboarding(
+                    .init(
+                        type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        step: progressStep
+                    )
+                )
+            }
+        }
+
         switch introStep {
-        case .introDialog(let isReturningUser):
-            state = .onboarding(
-                .init(
-                    type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)),
-                    step: .hidden
-                )
-            )
-        case .browserComparison:
-            state = .onboarding(
-                .init(
-                    type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent),
-                    step: stepInfo()
-                )
-            )
-        case .aiComparison:
-            state = .onboarding(
-                .init(
-                    type: .aiComparisonDialog(content: contentProvider.aiComparisonContent),
-                    step: stepInfo()
-                )
-            )
-        case .addToDockPromo:
-            state = .onboarding(
-                .init(
-                    type: .addToDockPromoDialog(content: contentProvider.addToDockContent),
-                    step: stepInfo()
-                )
-            )
-        case .appIconSelection:
-            state = .onboarding(
-                .init(
-                    type: .chooseAppIconDialog(content: contentProvider.appIconColorContent),
-                    step: stepInfo()
-                )
-            )
-        case .addressBarPositionSelection:
-            state = .onboarding(
-                .init(
-                    type: .chooseAddressBarPositionDialog(content: contentProvider.addressBarPositionContent),
-                    step: stepInfo()
-                )
-            )
-        case .searchExperienceSelection:
-            state = .onboarding(
-                .init(
-                    type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent),
-                    step: stepInfo()
-                )
-            )
-        case .duckAIQuerySelection:
-            let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
-            // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
-            let duckAIQueryMode: DuckAIQueryExperimentMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
-            // Duck.ai Tailored flow shows step counter while experiment does not.
-            let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
-            state = .onboarding(
-                .init(
-                    type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
-                    step: progressStep
-                )
-            )
-        case .interlude(let interlude):
+        case let .interlude(interlude):
             // Interlude steps don't render a view state. They inform the delegate that an interlude is starting.
             // The delegate will resume the onboarding by calling `resumeOnboardingFromInterlude()` when finished.
             onOnboardingInterlude?(interlude)
+        case let .renderable(renderable):
+            state = mapToViewState(renderableStep: renderable)
         }
     }
 

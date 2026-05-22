@@ -26,23 +26,25 @@ import Testing
 @Suite("DuckAI Wide Event Instrumentation")
 struct DuckAIWideEventInstrumentationTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test("Closing a different tab does not cancel the active prompt submission", .timeLimit(.minutes(1)))
     func closingDifferentTabDoesNotCancelActiveSubmission() {
         let (sut, wideEvent) = makeSUT()
 
         startPromptSubmission(on: "active-tab", sut: sut)
-        sut.chatStatusChanged(.loading)
+        sut.chatStatusChanged(.loading, scope: .tab("active-tab"))
         sut.tabClosedDuringGeneration(tabID: "other-tab")
 
         #expect(wideEvent.completions.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Closing the active tab cancels the active prompt submission", .timeLimit(.minutes(1)))
     func closingActiveTabCancelsActiveSubmission() {
         let (sut, wideEvent) = makeSUT()
 
         startPromptSubmission(on: "active-tab", sut: sut)
-        sut.chatStatusChanged(.loading)
+        sut.chatStatusChanged(.loading, scope: .tab("active-tab"))
         sut.tabClosedDuringGeneration(tabID: "active-tab")
 
         guard let completion = wideEvent.completions.last,
@@ -62,7 +64,7 @@ struct DuckAIWideEventInstrumentationTests {
 
     private func startPromptSubmission(on tabID: TabUID, sut: DefaultDuckAIWideEventInstrumentation) {
         sut.submissionStarted(
-            sourceTabID: tabID,
+            scope: .tab(tabID),
             modelId: nil,
             userTier: .free,
             reasoningEffort: nil,

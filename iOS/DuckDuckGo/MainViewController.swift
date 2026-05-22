@@ -2202,8 +2202,20 @@ class MainViewController: UIViewController {
         aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
-    private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
-        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    private func refreshTabBar() {
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+    }
+
+    /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
+    func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
+        let resolved: TextEntryMode
+        if tab.isHomeTab {
+            resolved = aiChatSettings.defaultOmnibarMode
+                .resolvedTextEntryMode { self.toggleModeStorage.restore() }
+        } else {
+            resolved = tab.isAITab ? .aiChat : .search
+        }
+        return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func refreshOmniBar() {
@@ -2217,7 +2229,7 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tabModel))
                 // Only activate from the model when there's no TabViewController to drive
                 // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
                 // a second time for the same uid, causing redundant attachment teardown.
@@ -2256,7 +2268,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab.tabModel))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab.tabModel))
         }
 
         restorePostFireAddressBarPickerIfNeeded()
@@ -4327,7 +4339,7 @@ extension MainViewController: OmniBarDelegate {
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
         if let tab = tabManager.currentTabsModel.currentTab {
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
     }
 
@@ -4557,11 +4569,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
-        tabManager.currentTabsModel.currentTab.map { displayedTextEntryMode(for: $0) }
+        tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
     }
 
-    /// Saves the current omnibar toggle state to the tab on submission,
-    /// and persists it globally so "Last Used" mode picks it up for new tabs.
+    /// Persists the current omnibar toggle state globally so "Last Used" mode picks it up
+    /// for new tabs. No per-tab persistence — existing tabs read from URL on next omnibar tap.
     private func commitToggleStateToCurrentTab() {
         guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
         commitToggleMode(omniBarVC.selectedTextEntryMode)
@@ -4569,7 +4581,6 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     
@@ -4681,6 +4692,7 @@ extension MainViewController: EscapeHatchActionRouter {
 
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
+        refreshTabBar()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4860,7 +4872,7 @@ extension MainViewController: TabDelegate {
         refreshControls()
         themeColorManager.updateThemeColor()
         _ = tabManager.save()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
@@ -5303,7 +5315,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
 
         updateCurrentTab()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
@@ -5533,7 +5545,7 @@ extension MainViewController {
         }
         showBars()
         attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
 
         if !autoClearInProgress {
             // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet

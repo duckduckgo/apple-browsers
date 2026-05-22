@@ -252,12 +252,10 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
-                // is the same tone as the card. The card defines itself via its halo rim shadow.
-                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                rootBackgroundColor = UIColor(designSystemColor: .surface)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = .clear
+                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surface)
+                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }
 
@@ -1004,7 +1002,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
+        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
         coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
@@ -1018,7 +1016,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
+        // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
+        // The app-wide last-used is written through `UnifiedInputStateStore.recordUserChoice` on submission.
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {

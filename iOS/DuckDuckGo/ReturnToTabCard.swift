@@ -115,27 +115,27 @@ struct ReturnToTabCard: View {
         Section(header: Text(model.subtitle)) {
             MenuActionButton(
                 text: UserText.escapeHatchMenuReturnToTab,
-                icon: DesignSystemImages.Glyphs.Size24.goBackCircle,
+                icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
                 role: .none,
                 action: model.onCardTap
             )
             if model.isFireTab {
                 MenuActionButton(
                     text: UserText.escapeHatchMenuBurnTab,
-                    icon: DesignSystemImages.Glyphs.Size24.fire,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
                     role: .destructive,
                     action: model.onBurnTabImmediately
                 )
             } else {
                 MenuActionButton(
                     text: UserText.escapeHatchMenuCloseTab,
-                    icon: DesignSystemImages.Glyphs.Size24.close,
+                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
                     role: .destructive,
                     action: model.onCloseTab
                 )
                 MenuActionButton(
                     text: UserText.escapeHatchMenuBurnTab,
-                    icon: DesignSystemImages.Glyphs.Size24.fire,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
                     role: .destructive,
                     action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
                 )
@@ -151,7 +151,7 @@ struct ReturnToTabCard: View {
                     .foregroundColor(.secondary)
                     .font(.subheadline)
 
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
                     .foregroundColor(Color(designSystemColor: .icons))
 
             }

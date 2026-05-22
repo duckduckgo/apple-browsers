@@ -388,6 +388,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to fall back to the
     /// trampoline if the SPI ever misbehaves.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215026874168279
     case newErrorPageReload
 }
 

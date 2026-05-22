@@ -99,6 +99,7 @@ final class UnifiedToggleInputView: UIView {
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
+        static let dismissToggleFadeDuration: TimeInterval = 0.18
         static let toggleDisabledSearchTopPadding: CGFloat = 6
         static let toolbarHeight: CGFloat = 56
         static let expandedBorderWidth: CGFloat = 0.5
@@ -164,6 +165,14 @@ final class UnifiedToggleInputView: UIView {
     /// See `SwitchBarTextEntryView.applyDismissSnapshot`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
         textEntryView.applyDismissSnapshot(snapshot)
+        // Toggle pill fades over the full dismiss with easeOut, leaving the labels visible
+        // near the end; run a quick fade so they're gone well before UTI lands on the omnibar.
+        UIView.animate(withDuration: Constants.dismissToggleFadeDuration,
+                       delay: 0,
+                       options: [.curveEaseOut, .beginFromCurrentState],
+                       animations: { [weak self] in
+            self?.toggleView.alpha = 0
+        })
     }
 
     func refreshPlaceholderForCurrentMode() {
@@ -409,14 +418,20 @@ final class UnifiedToggleInputView: UIView {
 
     private var flankedShadows: [CompositeShadowView.Shadow] {
         [
-            .init(id: ShadowID.outer,
-                  color: UIColor(designSystemColor: .shadowSecondary),
-                  radius: 12,
-                  offset: CGSize(width: 0, height: 4)),
+            CompositeShadowView.Shadow.defaultLayer1.withID(ShadowID.outer),
             .init(id: ShadowID.rim,
-                  color: flankedHaloColor,
+                  color: UIColor(designSystemColor: .shadowSecondary),
                   radius: 6,
                   offset: CGSize(width: 0, height: 2)),
+        ]
+    }
+
+    /// Mirrors `CompositeShadowView.applyDefaultShadow()` (used by the standard omnibar) so the
+    /// UTI's composite shadow can morph to the omnibar's shape without a visible swap.
+    private var omnibarMatchingShadows: [CompositeShadowView.Shadow] {
+        [
+            CompositeShadowView.Shadow.defaultLayer2.withID(ShadowID.outer),
+            CompositeShadowView.Shadow.defaultLayer1.withID(ShadowID.rim),
         ]
     }
 
@@ -425,14 +440,6 @@ final class UnifiedToggleInputView: UIView {
     private enum ShadowID {
         static let outer = "outer"
         static let rim = "rim"
-    }
-
-    private var flankedHaloColor: UIColor {
-        UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor.white.withAlphaComponent(0.18)
-                : UIColor.black.withAlphaComponent(0.10)
-        }
     }
 
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
@@ -583,8 +590,8 @@ final class UnifiedToggleInputView: UIView {
     }
 
     @discardableResult
-    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
-        textEntryView.alignPlaceholderHorizontally(toWindowX: windowX)
+    func alignVisibleTextLeadingEdge(toWindowX windowX: CGFloat) -> CGFloat {
+        textEntryView.alignVisibleTextLeadingEdge(toWindowX: windowX)
     }
 
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
@@ -603,6 +610,10 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
+        // Drive textView pose synchronously inside the caller's UIView.animate so the
+        // placeholder constraint switch animates rather than snapping when the publisher
+        // subscriber fires after the animation transaction has already committed.
+        textEntryView.updatePoseForCurrentState()
         updateToolbarVisibility(for: mode, animated: animated)
         updateToggleDisabledSearchPadding(for: mode)
     }
@@ -672,7 +683,7 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
@@ -736,15 +747,11 @@ final class UnifiedToggleInputView: UIView {
 
         textEntryView.isExpandable = expanded
 
-        if updateShadow {
-            let useCompositeShadow = expanded || layout == .flanked
-            // In-place mutation preserves the in-flight cornerRadius CAAnimation.
-            for shadow in (layout == .flanked ? flankedShadows : expandedShadows) {
-                expandedShadowView.updateShadow(shadow)
-            }
-            expandedShadowView.isHidden = !useCompositeShadow
-            cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
-        }
+        let useCompositeShadow = expanded || layout == .flanked
+        // In-place mutation preserves the in-flight cornerRadius CAAnimation.
+        expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
+        expandedShadowView.isHidden = !useCompositeShadow
+        cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
             cardPinnedHeightConstraint.constant = pinned
@@ -826,6 +833,7 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
         }
+        alignWithOmnibarChrome()
     }
 
     /// Active editing pose. Call inside a UIView.animate block.
@@ -834,6 +842,9 @@ final class UnifiedToggleInputView: UIView {
         case (.top, true):
             applyToggleRevealChanges()
             layoutIfNeeded()
+            // applyCardLayout's `(_, _)` case applies expandedShadows internally; the toggle-reveal
+            // path bypasses it, so morph the omnibar-matching pre-stage shadows back here.
+            expandedShadowView.updateShadows(expandedShadows)
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
@@ -848,8 +859,27 @@ final class UnifiedToggleInputView: UIView {
             applyToggleHideChanges()
             layoutIfNeeded()
         case (_, _):
-            applyCardLayout(.collapsed, animated: false, updateShadow: false)
+            applyCardLayout(.collapsed, animated: false)
         }
+        alignWithOmnibarChrome()
+    }
+
+    /// Matches the UTI's chrome (top margin, corner radius, composite shadow) to the standard
+    /// omnibar so the UTI ↔ omnibar transition has no visible chrome snap at hand-off.
+    private func alignWithOmnibarChrome() {
+        if cardPosition == .top {
+            // Match the omnibar's symmetric 8pt nav-bar insets; otherwise the top override alone
+            // would stretch the pinned 44pt height to 46pt (defaultHigh priority loses to bottom).
+            cardTopConstraint.constant = Constants.cardVerticalMargin
+            cardBottomConstraint.constant = -Constants.cardVerticalMargin
+        }
+        cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
+        expandedShadowView.updateShadows(omnibarMatchingShadows)
+        expandedShadowView.isHidden = false
+        cardView.layer.shadowOpacity = 0
+        // The prior applyCardLayout committed the frame with the .collapsed margins; commit
+        // again so our cardVerticalMargin overrides propagate to the cardView's actual frame.
+        layoutIfNeeded()
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

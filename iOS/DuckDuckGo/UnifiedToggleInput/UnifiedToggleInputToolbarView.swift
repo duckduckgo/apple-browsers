@@ -65,6 +65,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private var isFireTab: Bool = false
     private var preservesSubmitStyleDuringDismissal = false
+    private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
@@ -73,7 +74,10 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isGenerating: Bool = false {
-        didSet { updateGeneratingVisibility() }
+        didSet {
+            updateGeneratingVisibility()
+            updateToolbarControlsEnabledState()
+        }
     }
 
     func prepareForToolbarVisibilityChange(showToolbar: Bool) {
@@ -160,7 +164,10 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }
-        set { imageButton.isEnabled = newValue }
+        set {
+            isImageButtonAvailable = newValue
+            updateToolbarControlsEnabledState()
+        }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -372,6 +379,7 @@ private extension UnifiedToggleInputToolbarView {
 
         updateChipVisibility()
         updateSubmitButtonState()
+        updateToolbarControlsEnabledState()
     }
 
     func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector?) -> UIButton {
@@ -458,6 +466,15 @@ private extension UnifiedToggleInputToolbarView {
             stopButton.isHidden = true
             submitButton.isHidden = false
         }
+    }
+
+    func updateToolbarControlsEnabledState() {
+        let controlsAreEnabled = !isGenerating
+        imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
+        toolsButton.isEnabled = controlsAreEnabled
+        reasoningButton.isEnabled = controlsAreEnabled
+        modelChipButton.isEnabled = controlsAreEnabled
+        selectedToolClearButton.isEnabled = controlsAreEnabled
     }
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }

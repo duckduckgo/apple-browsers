@@ -607,7 +607,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .aiComparison, featureFlagger: featureFlagger)
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
@@ -1046,7 +1046,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.control
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider,
@@ -1067,7 +1067,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider,
@@ -1091,7 +1091,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentB
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider,
@@ -1115,7 +1115,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider,
@@ -1166,7 +1166,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider,
@@ -1321,7 +1321,7 @@ extension OnboardingIntroViewModelTests {
         let store = MockKeyValueStore()
         setResumeStep(.duckAIQuerySelection, in: store)
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(featureFlagger: featureFlagger, resumeStepStore: store)
         sut.onAppear()

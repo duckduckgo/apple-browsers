@@ -73,6 +73,7 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
+    private var userScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
     private var syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
@@ -91,6 +92,7 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
+            aiChatUserScriptErrorEventMapper: userScriptErrorEventMapper,
             freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
@@ -853,6 +855,43 @@ struct AIChatUserScriptHandlerTests {
         #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("When reportMetric cannot decode payload, user-script error event is fired", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenReportMetricDecodeFailsThenUserScriptErrorEventIsFired() async {
+        _ = await handler.reportMetric(params: "not-a-dictionary", message: WKScriptMessage.mock())
+
+        guard case .reportMetricDecodingFailed(let error, let failureReason) = userScriptErrorEventMapper.events.first else {
+            Issue.record("Expected reportMetricDecodingFailed event")
+            return
+        }
+        #expect(error == nil)
+        #expect(failureReason == .typeMismatch)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("AIChatUserScriptErrorEventMapper maps reportMetric decode failures to pixels", .timeLimit(.minutes(1)))
+    @MainActor
+    func testUserScriptErrorEventMapperMapsReportMetricDecodeFailureToPixel() {
+        let error = DecodingError.typeMismatch(
+            AIChatMetricName.self,
+            DecodingError.Context(codingPath: [], debugDescription: "Expected metric name")
+        )
+        let nsError = error as NSError
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
+
+        mapper.fire(.reportMetricDecodingFailed(error: error, failureReason: .typeMismatch))
+
+        #expect(pixelFiring.actualFireCalls.count == 1)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.name == AIChatPixel.aiChatReportMetricDecodeError(
+            nsError,
+            failureReason: .typeMismatch
+        ).name)
+        #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.error == nsError)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["failureReason": "type_mismatch"])
+    }
+
     // MARK: - AIChatMessageHandler config values
 
     @available(iOS 16, macOS 13, *)
@@ -1025,6 +1064,18 @@ final class MockDuckAiVoiceChatFailureHandling: DuckAiVoiceChatFailureHandling {
     @MainActor
     func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?) {
         handleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
+    }
+}
+
+private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
+
+    private(set) var events: [AIChatUserScriptErrorEvent] = []
+
+    init() {
+        super.init { _, _, _, _ in }
+        eventMapper = { [weak self] event, _, _, _ in
+            self?.events.append(event)
+        }
     }
 }
 // swiftlint:enable inclusive_language

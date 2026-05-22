@@ -75,6 +75,7 @@ final class MockOmniBar: OmniBar {
     func refreshFireMode(fireMode: Bool) { }
     func prepareForMoveTransition() { }
     func moveTransitionCompleted() { }
+    func setEditingStateLogoHidden(_ hidden: Bool) { }
 
     final class MockOmniBarView: UIView, OmniBarView {
         required init?(coder: NSCoder) {
@@ -121,6 +122,9 @@ final class MockOmniBar: OmniBar {
         func refreshLongPressMenuAvailability() { }
         func prepareForMoveTransition() { }
         func moveTransitionCompleted() { }
+        func setIconContainersAlpha(_ alpha: CGFloat) { }
+        func hideBarChrome() { }
+        func restoreBarChrome() { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?

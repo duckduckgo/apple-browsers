@@ -306,8 +306,8 @@ final class AIChatOmnibarController {
 
     private func resolveUserTier() async throws -> AIChatUserTier {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive else { return .free }
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: false),
+                  subscription.isActive else { return .free }
             switch subscription.tier {
             case .plus: return .plus
             case .pro: return .pro

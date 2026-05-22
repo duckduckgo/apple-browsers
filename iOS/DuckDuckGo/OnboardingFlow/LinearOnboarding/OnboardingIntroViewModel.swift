@@ -397,7 +397,7 @@ private extension OnboardingIntroViewModel {
             // The step is reachable either as an experimental insertion in the default flow,
             // or as a standard step in the Duck.ai tailored flow — the two flags are independent.
             guard
-                featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) ||
+                featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) ||
                     onboardingManager.currentOnboardingFlow == .duckAI
             else {
                 OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
@@ -462,7 +462,9 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+        guard case .introDialog(isReturningUser: false) = introSteps.first,
+              !restorePromptHandler.isEligibleForRestorePrompt(),
+              let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
               let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
               !introSteps.contains(.duckAIQuerySelection) else {
             return
@@ -483,8 +485,8 @@ private extension OnboardingIntroViewModel {
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
         // Do not enroll users experiencing Duck.ai tailored flow in the experiment
-        guard onboardingManager.currentOnboardingFlow == .default && featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
+        guard onboardingManager.currentOnboardingFlow == .default && featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else { return nil }
+        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryTrackersDemoExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }
 
     func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {

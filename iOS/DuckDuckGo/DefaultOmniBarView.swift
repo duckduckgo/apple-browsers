@@ -407,6 +407,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
+    fileprivate var savedBarChromeBackgroundColor: UIColor?
+    fileprivate var savedBarViewBackgroundColor: UIColor?
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
@@ -1151,6 +1153,34 @@ extension DefaultOmniBarView {
     func revealButtons() {
         privacyInfoContainer.alpha = 1
         searchAreaView.revealButtons()
+    }
+
+    func setIconContainersAlpha(_ alpha: CGFloat) { searchAreaView.setIconContainersAlpha(alpha) }
+
+    func hideBarChrome() {
+        if savedBarChromeBackgroundColor == nil {
+            savedBarChromeBackgroundColor = searchAreaContainerView.backgroundColor
+        }
+        if savedBarViewBackgroundColor == nil {
+            savedBarViewBackgroundColor = backgroundColor
+        }
+        searchAreaContainerView.backgroundColor = .clear
+        searchAreaContainerView.applyShadowOpacityMultiplier(0)
+        backgroundColor = .clear
+        textField.alpha = 0
+    }
+
+    func restoreBarChrome() {
+        if let saved = savedBarChromeBackgroundColor {
+            searchAreaContainerView.backgroundColor = saved
+            savedBarChromeBackgroundColor = nil
+        }
+        if let saved = savedBarViewBackgroundColor {
+            backgroundColor = saved
+            savedBarViewBackgroundColor = nil
+        }
+        searchAreaContainerView.applyShadowOpacityMultiplier(1)
+        textField.alpha = 1
     }
 
     /// Configures the omnibar UI for AI Chat mode. Shows AI Chat buttons, hides search elements.

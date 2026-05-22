@@ -363,7 +363,7 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        backgroundColor = UIColor(designSystemColor: .surface)
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)

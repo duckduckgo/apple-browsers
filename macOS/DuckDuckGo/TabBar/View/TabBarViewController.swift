@@ -2543,7 +2543,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
-        (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.muteUnmuteTab()
+        guard let tab = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab else {
+            assertionFailure("TabBarViewController: Failed to get tab for tab bar view item")
+            return
+        }
+        tab.muteUnmuteTab()
     }
 
     func tabBarViewItemRemoveFireproofing(_ tabBarViewItem: TabBarViewItem) {

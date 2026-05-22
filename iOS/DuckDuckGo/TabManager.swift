@@ -564,7 +564,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
-        let model = tabsModel ?? currentTabsModel
+        // Always ensure we're removing the Tab from its owner. This allows us to remove Fire Tabs, while in normal mode
+        let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         _ = save()

@@ -57,6 +57,8 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [
+        InterceptedURLInfo(id: .subscription, path: "/pro"),
+        InterceptedURLInfo(id: .subscription, path: "/pro/plans"),
         InterceptedURLInfo(id: .subscription, path: "/subscriptions"),
         InterceptedURLInfo(id: .subscription, path: "/subscriptions/plans")
     ]

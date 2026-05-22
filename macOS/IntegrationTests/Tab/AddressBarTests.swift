@@ -25,6 +25,7 @@ import MaliciousSiteProtection
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
+import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities

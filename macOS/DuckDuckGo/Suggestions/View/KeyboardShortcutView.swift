@@ -29,7 +29,9 @@ final class KeyboardShortcutView: NSView {
         static let normalBackgroundColor = NSColor.black.withAlphaComponent(0.08)
         static let selectedBackgroundColor = NSColor.white.withAlphaComponent(0.15)
         static let normalTextColor = NSColor.suggestionText
-        static let selectedTextColor = NSColor.selectedSuggestionTint
+        // Match the chip label and arrow next to the key caps so the whole
+        // "Ask privately" chip reads as one element when the row is highlighted.
+        static let selectedTextColor = NSColor(designSystemColor: .accentContentSecondary)
     }
 
     private let stackView: NSStackView = {

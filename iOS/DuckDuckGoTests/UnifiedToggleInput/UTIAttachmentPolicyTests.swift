@@ -189,6 +189,47 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
     }
 
+    // MARK: - fileMetadataValidationError reason mapping
+
+    func test_fileMetadataValidationError_whenModelDoesNotSupportFiles_returnsUnsupportedTypeReason() {
+        let policy = makePolicy(model: makeModel(supportedFileTypes: []))
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .unsupportedType)
+    }
+
+    func test_fileMetadataValidationError_whenLimitsAreMissing_returnsSizeExceededReason() {
+        let policy = makePolicy(includeAttachmentLimits: false)
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .sizeExceeded)
+    }
+
+    func test_fileMetadataValidationError_whenMimeTypeNotSupported_returnsUnsupportedTypeReason() {
+        let policy = makePolicy()
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "text/plain", fileSizeBytes: 100)?.reason, .unsupportedType)
+    }
+
+    func test_fileMetadataValidationError_whenFileCountExceeded_returnsCountExceededReason() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+        )
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .countExceeded)
+    }
+
+    func test_fileMetadataValidationError_whenFileTooLarge_returnsSizeExceededReason() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 5_242_881)?.reason, .sizeExceeded)
+    }
+
+    func test_fileMetadataValidationError_whenMetadataIsValid_returnsNil() {
+        let policy = makePolicy()
+
+        XCTAssertNil(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: nil))
+    }
+
     func test_fileValidation_rejectsFileAboveRemainingTotalSize() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxTotalFileSizeBytes: 5_242_880),

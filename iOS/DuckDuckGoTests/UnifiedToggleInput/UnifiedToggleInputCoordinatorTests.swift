@@ -1093,6 +1093,41 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(toolsController.selectedTool)
     }
 
+    func test_handleToolsMenuSelection_selectsWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_handleToolsMenuSelection_togglesOffSelectedWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_handleToolsMenuSelection_replacesPreviousToolSelection() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch, .imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
+    }
+
     func test_updateSelectedModel_clearsSelectedToolWhenNewModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [

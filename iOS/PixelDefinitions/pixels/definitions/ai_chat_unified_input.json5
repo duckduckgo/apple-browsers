@@ -248,4 +248,48 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_unified_input_prompt_submitted": {
+        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence).",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "selected_tool",
+                "description": "Selected tool at submission time.",
+                "type": "string",
+                "enum": ["none", "image_generation", "web_search"]
+            },
+            {
+                "key": "model_id",
+                "description": "Identifier of the selected model at submission time.",
+                "type": "string"
+            },
+            {
+                "key": "reasoning_effort",
+                "description": "Reasoning effort at submission time. Sends 'none' when the reasoning picker is hidden (e.g. image generation active, or model has no reasoning picker)",
+                "type": "string",
+                "enum": ["fast", "reasoning", "extended_reasoning", "none"]
+            },
+            {
+                "key": "has_image_attachment",
+                "description": "Whether an image attachment was present at submission time.",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "has_file_attachment",
+                "description": "Whether a file attachment (valid or invalid) was present at submission time.",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "has_text",
+                "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    }
 }

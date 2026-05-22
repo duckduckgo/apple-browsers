@@ -1693,6 +1693,38 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             break
         }
     }
+
+    private func fireUnifiedPromptSubmittedPixel(text: String) {
+        let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: toolsController.selectedTool).rawValue
+
+        let hasImageAttachment = viewController.currentAttachments.contains { attachment in
+            if case .image = attachment { return true }
+            return false
+        }
+        let hasFileAttachment = viewController.currentAttachments.contains { attachment in
+            switch attachment {
+            case .file, .invalidFile: return true
+            case .image: return false
+            }
+        }
+        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        let reasoningEffort = resolvedSelectedReasoningMode?.rawValue ?? "none"
+        let modelId = modelStore.persistedModelId ?? ""
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputPromptSubmitted,
+            withAdditionalParameters: [
+                "selected_tool": selectedToolValue,
+                "model_id": modelId,
+                "reasoning_effort": reasoningEffort,
+                "has_image_attachment": hasImageAttachment ? "true" : "false",
+                "has_file_attachment": hasFileAttachment ? "true" : "false",
+                "has_text": hasText ? "true" : "false"
+            ]
+        )
+    }
+
     private func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?) {
         guard let selectedTool else { return }
         switch selectedTool {
@@ -1720,6 +1752,49 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         hasUsedAIChatInSession = false
     }
 
+}
+
+private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
+    case webSearch = "web_search"
+    case imageGeneration = "image_generation"
+    case none
+
+    init(selectedTool: AIChatRAGTool?) {
+        guard let selectedTool else {
+            self = .none
+            return
+        }
+
+        guard let identifier = UTIToolsMenu.Item.Identifier(tool: selectedTool) else {
+            self = .none
+            return
+        }
+
+        self = Self(identifier: identifier)
+    }
+
+    private init(identifier: UTIToolsMenu.Item.Identifier) {
+        switch identifier {
+        case .webSearch:
+            self = .webSearch
+        case .imageGeneration:
+            self = .imageGeneration
+        }
+    }
+}
+
+private extension UTIToolsMenu.Item.Identifier {
+    init?(tool: AIChatRAGTool) {
+        switch tool {
+        case .webSearch:
+            self = .webSearch
+        case .imageGeneration:
+            self = .imageGeneration
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            assertionFailure("Unsupported UTI selected tool: \(tool.rawValue)")
+            return nil
+        }
+    }
 }
 
 // MARK: - Tools Menu Selection
@@ -1791,6 +1866,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
             processSessionActivity(mode: .aiChat)
+            fireUnifiedPromptSubmittedPixel(text: text)
             fireToolSubmittedPixelIfNeeded(selectedTool: toolsController.selectedTool)
 
             let tools = toolsController.selectedToolsForSubmission()

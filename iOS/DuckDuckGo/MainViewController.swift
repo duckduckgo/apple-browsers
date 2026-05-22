@@ -1701,7 +1701,11 @@ class MainViewController: UIViewController {
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !daxDialogsManager.subscriptionPromotionPending {
+        // Also skip when the editing state is already presented (idle-return path) — re-triggering
+        // beginEditing causes the main omnibar's textField to briefly steal first responder,
+        // visibly bouncing the keyboard in bottom-bar mode.
+        let isEditingStateAlreadyPresented = presentedViewController is OmniBarEditingStateViewController
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !daxDialogsManager.subscriptionPromotionPending && !isEditingStateAlreadyPresented {
             omniBar.beginEditing(animated: true)
         }
 

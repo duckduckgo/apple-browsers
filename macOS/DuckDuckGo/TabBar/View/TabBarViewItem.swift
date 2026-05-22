@@ -1126,11 +1126,16 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.closeButton.isShown = false
             cell.faviconView.isShown = true
             cell.titleView.isShown = false
+            cell.permissionButton.isShown = false
         } else {
             let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
             cell.closeButton.isShown = showCloseButton
             cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
             cell.titleView.isShown = !widthStage.isTitleHidden
+            cell.permissionButton.isShown = usedPermissions.camera.isActive
+                || usedPermissions.microphone.isActive
+                || usedPermissions.camera.isPaused
+                || usedPermissions.microphone.isPaused
         }
 
         updateSeparatorView()

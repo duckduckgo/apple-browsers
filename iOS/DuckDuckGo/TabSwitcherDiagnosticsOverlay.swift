@@ -40,28 +40,24 @@ enum TabSwitcherDiagnosticsOverlay {
     /// Sliding window over which `tapThreshold` is measured.
     static let tapWindow: TimeInterval = 5
 
-    /// Shared mutable state used by `MainViewController` to track tap timestamps, recent
-    /// request outcomes, and avoid re-presenting the overlay while it's already on screen.
-    final class State {
-        static let shared = State()
-        var tapTimestamps: [Date] = []
-        var overlayVisible = false
-        /// Ring buffer of the last `maxRecentEvents` outcomes from the tab-switcher launch
-        /// pipeline (entered → guard hit / presenting / present completion / dismissed).
-        /// This is the trace you actually need to tell whether the bug is "guard rejected
-        /// the tap", "present silently failed", or "nothing at all reached the chain".
-        var recentEvents: [(Date, String)] = []
-        static let maxRecentEvents = 12
-        private init() {}
-    }
+    // MARK: Module-level mutable state (main-actor isolated by the enclosing enum)
+
+    private static var tapTimestamps: [Date] = []
+    private static var overlayVisible = false
+    /// Ring buffer of the last `maxRecentEvents` outcomes from the tab-switcher launch
+    /// pipeline (entered → guard hit / presenting / present completion / dismissed). This
+    /// is the trace that tells whether the bug is "guard rejected the tap", "present
+    /// silently failed", or "nothing at all reached the chain".
+    private static var recentEvents: [(Date, String)] = []
+    private static let maxRecentEvents = 12
 
     /// Append an event to the per-request outcome trace. Cheap; safe to call from any
     /// point in the tab-switcher launch chain.
     static func recordEvent(_ label: String) {
-        State.shared.recentEvents.append((Date(), label))
-        let overflow = State.shared.recentEvents.count - State.maxRecentEvents
+        recentEvents.append((Date(), label))
+        let overflow = recentEvents.count - maxRecentEvents
         if overflow > 0 {
-            State.shared.recentEvents.removeFirst(overflow)
+            recentEvents.removeFirst(overflow)
         }
     }
 
@@ -80,35 +76,34 @@ enum TabSwitcherDiagnosticsOverlay {
     /// view, in the wrong window, etc.
     static func recordTapAndShouldShow() -> Bool {
         guard isEnabled else { return false }
-        let state = State.shared
         let now = Date()
-        state.tapTimestamps = state.tapTimestamps.filter { now.timeIntervalSince($0) <= tapWindow }
-        state.tapTimestamps.append(now)
-        if state.overlayVisible { return false }
-        return state.tapTimestamps.count >= tapThreshold
+        tapTimestamps = tapTimestamps.filter { now.timeIntervalSince($0) <= tapWindow }
+        tapTimestamps.append(now)
+        if overlayVisible { return false }
+        return tapTimestamps.count >= tapThreshold
     }
 
     /// Clear the tap counter — call from the `present` completion when the tab switcher
     /// actually appears, so a subsequent tap doesn't carry stale history.
     static func clearTapHistory() {
-        State.shared.tapTimestamps.removeAll()
+        tapTimestamps.removeAll()
     }
 
     /// Show the diagnostic overlay over the supplied MainViewController's key window.
     /// Logs the same content via `Logger.lifecycle.error` so it also appears in device logs.
     static func show(from mainVC: MainViewController) {
         guard isEnabled else { return }
-        guard !State.shared.overlayVisible, let window = mainVC.view.window else { return }
+        guard !overlayVisible, let window = mainVC.view.window else { return }
         let snapshot = collect(from: mainVC)
         Logger.lifecycle.error("[TabSwitcherDiagnostics]\n\(snapshot, privacy: .public)")
         let overlay = OverlayView(text: snapshot) {
-            State.shared.overlayVisible = false
-            State.shared.tapTimestamps.removeAll()
+            overlayVisible = false
+            tapTimestamps.removeAll()
         }
         overlay.frame = window.bounds
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         window.addSubview(overlay)
-        State.shared.overlayVisible = true
+        overlayVisible = true
     }
 
     // MARK: - Diagnostics
@@ -121,89 +116,127 @@ enum TabSwitcherDiagnosticsOverlay {
 
     static func collect(from mainVC: MainViewController) -> String {
         var lines: [String] = []
+        lines.append(contentsOf: collectRecentRequests())
+        lines.append(contentsOf: collectTabSwitcherVC(mainVC))
+        lines.append(contentsOf: collectMainVC(mainVC))
+        lines.append(contentsOf: collectPresentationChain(mainVC))
+        lines.append(contentsOf: collectFullVCTree(mainVC))
+        lines.append(contentsOf: collectToolbarTSButton(mainVC))
+        lines.append(contentsOf: collectHeaderTSButton(mainVC))
+        lines.append(contentsOf: collectFirstResponder(mainVC))
+        lines.append(contentsOf: collectToolbarContainerGestures(mainVC))
+        lines.append(contentsOf: collectCurrentTab(mainVC))
+        lines.append(contentsOf: collectExperimentState(mainVC))
+        lines.append(contentsOf: collectWindows(mainVC))
 
-        // Per-request timeline — most actionable signal. Tells us whether each recent
-        // tap reached `present`, was rejected by a guard, or completed presentation.
-        lines.append("[RECENT REQUESTS] (last \(State.maxRecentEvents))")
-        if State.shared.recentEvents.isEmpty {
+        // Recent in-process log entries pulled from OSLogStore. Limited to our own
+        // subsystems and the last few minutes so the dump stays readable. Lets us see
+        // assertion-style errors, warning logs, and lifecycle traces that ran in the
+        // run-up to the user mashing the button. Cannot capture stderr (UIKit constraint
+        // warnings, NSLog) — those go through a separate sink and aren't reachable.
+        lines.append("[RECENT LOGS]")
+        let logLines = collectRecentLogs(lookbackSeconds: 60, maxEntries: 60)
+        if logLines.isEmpty {
+            lines.append("(none captured)")
+        } else {
+            lines.append(contentsOf: logLines)
+        }
+        lines.append("")
+
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Section collectors
+
+    /// Per-request timeline — most actionable signal. Tells us whether each recent tap
+    /// reached `present`, was rejected by a guard, or completed presentation.
+    private static func collectRecentRequests() -> [String] {
+        var lines: [String] = ["[RECENT REQUESTS] (last \(maxRecentEvents))"]
+        if recentEvents.isEmpty {
             lines.append("(none recorded)")
         } else {
             let now = Date()
-            for (ts, label) in State.shared.recentEvents {
+            for (ts, label) in recentEvents {
                 let age = String(format: "%6.2fs ago", now.timeIntervalSince(ts))
                 lines.append("\(age)  \(label)")
             }
         }
         lines.append("")
+        return lines
+    }
 
-        // Tab switcher VC state
-        lines.append("[TAB SWITCHER VC]")
-        if let tsvc = mainVC.tabSwitcherController {
-            lines.append("ref: live(\(addr(tsvc)))")
-            lines.append("isViewLoaded: \(tsvc.isViewLoaded)")
-            if let view = tsvc.viewIfLoaded {
-                lines.append("view.window: \(view.window != nil ? "in-window(level=\(view.window!.windowLevel.rawValue))" : "no-window")")
-                lines.append("view.alpha: \(view.alpha)")
-                lines.append("view.isHidden: \(view.isHidden)")
-                lines.append("view.frame: \(stringify(view.frame))")
-                lines.append("view.bounds: \(stringify(view.bounds))")
-                // Walk superview ancestry — if the view is detached or buried under
-                // some unexpected container, this shows where it lives now.
-                lines.append("view ancestry (innermost → outermost):")
-                var cursor: UIView? = view
-                var ancestryDepth = 0
-                while let v = cursor, ancestryDepth < 14 {
-                    let indent = String(repeating: "  ", count: ancestryDepth + 1)
-                    let alphaTag = v.alpha < 1 ? " α=\(v.alpha)" : ""
-                    let hiddenTag = v.isHidden ? " HIDDEN" : ""
-                    let interactiveTag = v.isUserInteractionEnabled ? "" : " NO-UI"
-                    lines.append("\(indent)- \(type(of: v))(\(addr(v))) frame=\(stringify(v.frame))\(alphaTag)\(hiddenTag)\(interactiveTag)")
-                    cursor = v.superview
-                    ancestryDepth += 1
-                }
-                // Sibling z-order — if the TSVC view is in a window but covered by a sibling
-                // with a higher index, we want to see the sibling on top.
-                if let parent = view.superview {
-                    lines.append("siblings in superview (back → front, * = TSVC view):")
-                    for (idx, sib) in parent.subviews.enumerated() {
-                        let marker = sib === view ? " *" : ""
-                        let alphaTag = sib.alpha < 1 ? " α=\(sib.alpha)" : ""
-                        let hiddenTag = sib.isHidden ? " HIDDEN" : ""
-                        lines.append("  [\(idx)]\(marker) \(type(of: sib))(\(addr(sib))) frame=\(stringify(sib.frame))\(alphaTag)\(hiddenTag)")
-                    }
-                }
-                // Hit-test sample at center to see what UIKit would route a tap to if
-                // someone tried to interact with where the TSVC should be.
-                if let window = view.window {
-                    let centerInWindow = view.convert(CGPoint(x: view.bounds.midX, y: view.bounds.midY), to: window)
-                    if let hit = window.hitTest(centerInWindow, with: nil) {
-                        lines.append("hitTest @ tsvc-center: \(type(of: hit))(\(addr(hit))) frame=\(stringify(hit.frame))")
-                    } else {
-                        lines.append("hitTest @ tsvc-center: nil")
-                    }
-                }
-            }
-            lines.append("isBeingPresented: \(tsvc.isBeingPresented)")
-            lines.append("isBeingDismissed: \(tsvc.isBeingDismissed)")
-            lines.append("parent: \(tsvc.parent.map { String(describing: type(of: $0)) } ?? "nil")")
-            lines.append("presentingVC: \(tsvc.presentingViewController.map { String(describing: type(of: $0)) } ?? "nil")")
-        } else {
+    private static func collectTabSwitcherVC(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[TAB SWITCHER VC]"]
+        guard let tsvc = mainVC.tabSwitcherController else {
             lines.append("ref: nil (weak — never presented, or fully released)")
+            lines.append("")
+            return lines
         }
+        lines.append("ref: live(\(addr(tsvc)))")
+        lines.append("isViewLoaded: \(tsvc.isViewLoaded)")
+        if let view = tsvc.viewIfLoaded {
+            lines.append(contentsOf: describeTSVCView(view))
+        }
+        lines.append("isBeingPresented: \(tsvc.isBeingPresented)")
+        lines.append("isBeingDismissed: \(tsvc.isBeingDismissed)")
+        lines.append("parent: \(tsvc.parent.map { String(describing: type(of: $0)) } ?? "nil")")
+        lines.append("presentingVC: \(tsvc.presentingViewController.map { String(describing: type(of: $0)) } ?? "nil")")
         lines.append("")
+        return lines
+    }
 
-        // MainVC state
-        lines.append("[MAIN VC]")
-        lines.append("presentedVC: \(describe(vc: mainVC.presentedViewController))")
-        lines.append("presentingVC: \(describe(vc: mainVC.presentingViewController))")
-        lines.append("isBeingPresented: \(mainVC.isBeingPresented)")
-        lines.append("isBeingDismissed: \(mainVC.isBeingDismissed)")
-        lines.append("transitionCoordinator: \(mainVC.transitionCoordinator != nil ? "ACTIVE" : "nil")")
-        lines.append("view.window: \(mainVC.view.window != nil ? "in-window" : "no-window")")
-        lines.append("")
+    /// Walk the TSVC view's superview ancestry + sibling z-order + hit-test sample.
+    private static func describeTSVCView(_ view: UIView) -> [String] {
+        var lines: [String] = []
+        let windowTag = view.window.map { "in-window(level=\($0.windowLevel.rawValue))" } ?? "no-window"
+        lines.append("view.window: \(windowTag)")
+        lines.append("view.alpha: \(view.alpha)")
+        lines.append("view.isHidden: \(view.isHidden)")
+        lines.append("view.frame: \(stringify(view.frame))")
+        lines.append("view.bounds: \(stringify(view.bounds))")
+        lines.append("view ancestry (innermost → outermost):")
+        var cursor: UIView? = view
+        var depth = 0
+        while let v = cursor, depth < 14 {
+            lines.append(ancestryLine(for: v, depth: depth, includeGestures: false))
+            cursor = v.superview
+            depth += 1
+        }
+        if let parent = view.superview {
+            lines.append("siblings in superview (back → front, * = TSVC view):")
+            for (idx, sib) in parent.subviews.enumerated() {
+                let marker = sib === view ? " *" : ""
+                let alphaTag = sib.alpha < 1 ? " α=\(sib.alpha)" : ""
+                let hiddenTag = sib.isHidden ? " HIDDEN" : ""
+                lines.append("  [\(idx)]\(marker) \(type(of: sib))(\(addr(sib))) frame=\(stringify(sib.frame))\(alphaTag)\(hiddenTag)")
+            }
+        }
+        if let window = view.window {
+            let centerInWindow = view.convert(CGPoint(x: view.bounds.midX, y: view.bounds.midY), to: window)
+            if let hit = window.hitTest(centerInWindow, with: nil) {
+                lines.append("hitTest @ tsvc-center: \(type(of: hit))(\(addr(hit))) frame=\(stringify(hit.frame))")
+            } else {
+                lines.append("hitTest @ tsvc-center: nil")
+            }
+        }
+        return lines
+    }
 
-        // Presentation chain
-        lines.append("[PRESENTATION CHAIN]")
+    private static func collectMainVC(_ mainVC: MainViewController) -> [String] {
+        return [
+            "[MAIN VC]",
+            "presentedVC: \(describe(vc: mainVC.presentedViewController))",
+            "presentingVC: \(describe(vc: mainVC.presentingViewController))",
+            "isBeingPresented: \(mainVC.isBeingPresented)",
+            "isBeingDismissed: \(mainVC.isBeingDismissed)",
+            "transitionCoordinator: \(mainVC.transitionCoordinator != nil ? "ACTIVE" : "nil")",
+            "view.window: \(mainVC.view.window != nil ? "in-window" : "no-window")",
+            ""
+        ]
+    }
+
+    private static func collectPresentationChain(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[PRESENTATION CHAIN]"]
         var current: UIViewController? = mainVC.view.window?.rootViewController
         var depth = 0
         while let vc = current, depth < 12 {
@@ -216,48 +249,54 @@ enum TabSwitcherDiagnosticsOverlay {
             depth += 1
         }
         lines.append("")
+        return lines
+    }
 
-        // Full VC tree — children + presentedVC at every level. Catches container VCs
-        // (nav controllers, custom containers) and child VCs that the linear presentation
-        // chain would miss. Capped at 80 lines / depth 12 to keep the dump readable.
-        lines.append("[FULL VC TREE]")
-        if let key = mainVC.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow }),
-           let root = key.rootViewController {
-            var emitted = 0
-            func walk(_ vc: UIViewController, depth: Int) {
-                guard emitted < 80, depth < 12 else { return }
-                let indent = String(repeating: "  ", count: depth)
-                let viewTag: String
-                if let v = vc.viewIfLoaded {
-                    let attached = v.window != nil ? "win" : "no-win"
-                    viewTag = " view=\(attached) frame=\(stringify(v.frame))"
-                } else {
-                    viewTag = " view-not-loaded"
-                }
-                let bP = vc.isBeingPresented ? " [bP]" : ""
-                let bD = vc.isBeingDismissed ? " [bD]" : ""
-                let tc = vc.transitionCoordinator != nil ? " [TC]" : ""
-                lines.append("\(indent)- \(type(of: vc))(\(addr(vc)))\(viewTag)\(bP)\(bD)\(tc)")
-                emitted += 1
-                for child in vc.children {
-                    walk(child, depth: depth + 1)
-                }
-                if let presented = vc.presentedViewController {
-                    lines.append("\(indent)  ↳ presents:")
-                    walk(presented, depth: depth + 1)
-                }
-            }
-            walk(root, depth: 0)
-            if emitted >= 80 {
-                lines.append("… (truncated at 80 entries)")
-            }
-        } else {
+    /// children + presentedVC at every level. Catches container VCs (nav controllers, custom
+    /// containers) and child VCs that the linear presentation chain would miss.
+    private static func collectFullVCTree(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[FULL VC TREE]"]
+        guard let key = mainVC.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow }),
+              let root = key.rootViewController else {
             lines.append("(no key window)")
+            lines.append("")
+            return lines
+        }
+        var emitted = 0
+        walkVCTree(root, depth: 0, emitted: &emitted, lines: &lines)
+        if emitted >= 80 {
+            lines.append("… (truncated at 80 entries)")
         }
         lines.append("")
+        return lines
+    }
 
-        // Toolbar tab switcher button
-        lines.append("[TOOLBAR TS BUTTON]")
+    private static func walkVCTree(_ vc: UIViewController, depth: Int, emitted: inout Int, lines: inout [String]) {
+        guard emitted < 80, depth < 12 else { return }
+        let indent = String(repeating: "  ", count: depth)
+        let viewTag: String
+        if let v = vc.viewIfLoaded {
+            let attached = v.window != nil ? "win" : "no-win"
+            viewTag = " view=\(attached) frame=\(stringify(v.frame))"
+        } else {
+            viewTag = " view-not-loaded"
+        }
+        let bP = vc.isBeingPresented ? " [bP]" : ""
+        let bD = vc.isBeingDismissed ? " [bD]" : ""
+        let tc = vc.transitionCoordinator != nil ? " [TC]" : ""
+        lines.append("\(indent)- \(type(of: vc))(\(addr(vc)))\(viewTag)\(bP)\(bD)\(tc)")
+        emitted += 1
+        for child in vc.children {
+            walkVCTree(child, depth: depth + 1, emitted: &emitted, lines: &lines)
+        }
+        if let presented = vc.presentedViewController {
+            lines.append("\(indent)  ↳ presents:")
+            walkVCTree(presented, depth: depth + 1, emitted: &emitted, lines: &lines)
+        }
+    }
+
+    private static func collectToolbarTSButton(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[TOOLBAR TS BUTTON]"]
         if let customView = mainVC.viewCoordinator.toolbarTabSwitcherButton.customView {
             lines.append("type: \(type(of: customView))")
             lines.append("alpha: \(customView.alpha)")
@@ -275,87 +314,102 @@ enum TabSwitcherDiagnosticsOverlay {
         }
         lines.append("barButton.isEnabled: \(mainVC.viewCoordinator.toolbarTabSwitcherButton.isEnabled)")
         lines.append("")
+        return lines
+    }
 
-        // Header tab switcher button (Duck.ai chrome)
-        if let header = mainVC.aiChatTabChatHeaderView {
-            lines.append("[HEADER TS BUTTON]")
-            let btn = header.tabSwitcherButton
-            lines.append("alpha: \(btn.alpha)")
-            lines.append("isHidden: \(btn.isHidden)")
-            lines.append("isEnabled: \(btn.isEnabled)")
-            lines.append("isUserInteractionEnabled: \(btn.isUserInteractionEnabled)")
-            lines.append("frame: \(stringify(btn.frame))")
-            lines.append("bounds: \(stringify(btn.bounds))")
-            lines.append("window: \(btn.window != nil ? "in-window" : "no-window")")
-            lines.append("gestureRecognizers on button: \(btn.gestureRecognizers?.count ?? 0)")
-            for r in btn.gestureRecognizers ?? [] {
-                lines.append("  - \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled)")
-            }
-            // Hit-test sample at the button's center, from the window down. If hit-test
-            // returns anything OTHER than this button (or a descendant that forwards to
-            // it), some other view is sitting on top and stealing the touch — exactly the
-            // case where `touchesBegan` would never fire and this overlay would never appear.
-            if let window = btn.window {
-                let centerInWindow = btn.convert(CGPoint(x: btn.bounds.midX, y: btn.bounds.midY), to: window)
-                if let hit = window.hitTest(centerInWindow, with: nil) {
-                    let isSelfOrDescendant = hit === btn || hit.isDescendant(of: btn)
-                    let routingTag = isSelfOrDescendant ? "OK (routes to button)" : "INTERCEPTED — touch would NOT reach the button"
-                    lines.append("hitTest @ button-center: \(type(of: hit))(\(addr(hit))) — \(routingTag)")
-                } else {
-                    lines.append("hitTest @ button-center: nil")
-                }
-            }
-            // Ancestry: walk button → … → window. Any ancestor with isHidden=true,
-            // alpha < 0.01, or isUserInteractionEnabled=false blocks the touch from
-            // reaching the button regardless of the button's own state. Per-ancestor
-            // gestures show recognizers that might cancel touches mid-flight.
-            lines.append("button ancestry (innermost → outermost):")
-            var cursor: UIView? = btn
-            var depth = 0
-            while let v = cursor, depth < 14 {
-                let indent = String(repeating: "  ", count: depth + 1)
-                let alphaTag = v.alpha < 1 ? " α=\(v.alpha)" : ""
-                let hiddenTag = v.isHidden ? " HIDDEN" : ""
-                let interactiveTag = v.isUserInteractionEnabled ? "" : " NO-UI"
-                let grCount = v.gestureRecognizers?.count ?? 0
-                let grTag = grCount > 0 ? " gestures=\(grCount)" : ""
-                lines.append("\(indent)- \(type(of: v))(\(addr(v))) frame=\(stringify(v.frame))\(alphaTag)\(hiddenTag)\(interactiveTag)\(grTag)")
-                for r in v.gestureRecognizers ?? [] {
-                    lines.append("\(indent)    · \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled) cancels=\(r.cancelsTouchesInView)")
-                }
-                cursor = v.superview
-                depth += 1
-            }
-            lines.append("")
+    /// Duck.ai chrome's tab switcher button — the one the bug has been reported against.
+    /// Includes ancestry + hit-test routing to surface "touch can't reach button" cases.
+    private static func collectHeaderTSButton(_ mainVC: MainViewController) -> [String] {
+        guard let header = mainVC.aiChatTabChatHeaderView else { return [] }
+        let btn = header.tabSwitcherButton
+        var lines: [String] = ["[HEADER TS BUTTON]"]
+        lines.append("alpha: \(btn.alpha)")
+        lines.append("isHidden: \(btn.isHidden)")
+        lines.append("isEnabled: \(btn.isEnabled)")
+        lines.append("isUserInteractionEnabled: \(btn.isUserInteractionEnabled)")
+        lines.append("frame: \(stringify(btn.frame))")
+        lines.append("bounds: \(stringify(btn.bounds))")
+        lines.append("window: \(btn.window != nil ? "in-window" : "no-window")")
+        lines.append("gestureRecognizers on button: \(btn.gestureRecognizers?.count ?? 0)")
+        for r in btn.gestureRecognizers ?? [] {
+            lines.append("  - \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled)")
         }
-
-        // First responder — useful if the keyboard or a text field is holding focus and
-        // diverting touches/events. Walk the responder chain from the key window.
-        lines.append("[FIRST RESPONDER]")
-        if let key = mainVC.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow }) {
-            if let fr = findFirstResponder(in: key) {
-                lines.append("type: \(type(of: fr))(\(addr(fr)))")
-                if let v = fr as? UIView {
-                    lines.append("inWindow: \(v.window != nil)")
-                    lines.append("frame: \(stringify(v.frame))")
-                }
-            } else {
-                lines.append("none")
+        lines.append(headerHitTestLine(for: btn))
+        lines.append("button ancestry (innermost → outermost):")
+        var cursor: UIView? = btn
+        var depth = 0
+        while let v = cursor, depth < 14 {
+            lines.append(ancestryLine(for: v, depth: depth, includeGestures: true))
+            let indent = String(repeating: "  ", count: depth + 1)
+            for r in v.gestureRecognizers ?? [] {
+                lines.append("\(indent)    · \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled) cancels=\(r.cancelsTouchesInView)")
             }
-        } else {
-            lines.append("no key window")
+            cursor = v.superview
+            depth += 1
         }
         lines.append("")
+        return lines
+    }
 
-        // Gesture recognizers on the toolbar container (UnifiedInputSwipeTabsPanGestureRecognizer etc.)
-        lines.append("[TOOLBAR CONTAINER GESTURES]")
+    private static func headerHitTestLine(for btn: UIView) -> String {
+        guard let window = btn.window else { return "hitTest @ button-center: (no window)" }
+        let centerInWindow = btn.convert(CGPoint(x: btn.bounds.midX, y: btn.bounds.midY), to: window)
+        guard let hit = window.hitTest(centerInWindow, with: nil) else {
+            return "hitTest @ button-center: nil"
+        }
+        let isSelfOrDescendant = hit === btn || hit.isDescendant(of: btn)
+        let routingTag = isSelfOrDescendant ? "OK (routes to button)" : "INTERCEPTED — touch would NOT reach the button"
+        return "hitTest @ button-center: \(type(of: hit))(\(addr(hit))) — \(routingTag)"
+    }
+
+    /// Renders one ancestry line; `includeGestures` controls whether the gesture-count
+    /// tag is appended (the per-ancestor list is rendered separately by the caller).
+    private static func ancestryLine(for v: UIView, depth: Int, includeGestures: Bool) -> String {
+        let indent = String(repeating: "  ", count: depth + 1)
+        let alphaTag = v.alpha < 1 ? " α=\(v.alpha)" : ""
+        let hiddenTag = v.isHidden ? " HIDDEN" : ""
+        let interactiveTag = v.isUserInteractionEnabled ? "" : " NO-UI"
+        let grTag: String
+        if includeGestures {
+            let count = v.gestureRecognizers?.count ?? 0
+            grTag = count > 0 ? " gestures=\(count)" : ""
+        } else {
+            grTag = ""
+        }
+        return "\(indent)- \(type(of: v))(\(addr(v))) frame=\(stringify(v.frame))\(alphaTag)\(hiddenTag)\(interactiveTag)\(grTag)"
+    }
+
+    private static func collectFirstResponder(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[FIRST RESPONDER]"]
+        guard let key = mainVC.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow }) else {
+            lines.append("no key window")
+            lines.append("")
+            return lines
+        }
+        if let fr = findFirstResponder(in: key) {
+            lines.append("type: \(type(of: fr))(\(addr(fr)))")
+            if let v = fr as? UIView {
+                lines.append("inWindow: \(v.window != nil)")
+                lines.append("frame: \(stringify(v.frame))")
+            }
+        } else {
+            lines.append("none")
+        }
+        lines.append("")
+        return lines
+    }
+
+    private static func collectToolbarContainerGestures(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[TOOLBAR CONTAINER GESTURES]"]
         for r in mainVC.viewCoordinator.toolbar.gestureRecognizers ?? [] {
             lines.append("  - \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled) cancels=\(r.cancelsTouchesInView)")
         }
         lines.append("")
+        return lines
+    }
 
-        // Current tab context
-        lines.append("[CURRENT TAB]")
+    private static func collectCurrentTab(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[CURRENT TAB]"]
         if let tabVC = mainVC.currentTab {
             lines.append("isAITab: \(tabVC.isAITab)")
             lines.append("link.url.host: \(tabVC.link?.url.host ?? "nil")")
@@ -364,15 +418,20 @@ enum TabSwitcherDiagnosticsOverlay {
         }
         lines.append("browsingMode: \(mainVC.tabManager.currentBrowsingMode.pixelParamValue)")
         lines.append("")
+        return lines
+    }
 
-        // Experiment lock — separate code path that disables the button entirely
-        lines.append("[EXPERIMENT FIRE-ONBOARDING]")
-        lines.append("controlsLocked: \(mainVC.experimentDuckAIFireOnboardingFlow.controlsLocked)")
-        lines.append("state: \(mainVC.experimentDuckAIFireOnboardingFlow.state)")
-        lines.append("")
+    private static func collectExperimentState(_ mainVC: MainViewController) -> [String] {
+        return [
+            "[EXPERIMENT FIRE-ONBOARDING]",
+            "controlsLocked: \(mainVC.experimentDuckAIFireOnboardingFlow.controlsLocked)",
+            "state: \(mainVC.experimentDuckAIFireOnboardingFlow.state)",
+            ""
+        ]
+    }
 
-        // Windows summary
-        lines.append("[WINDOWS]")
+    private static func collectWindows(_ mainVC: MainViewController) -> [String] {
+        var lines: [String] = ["[WINDOWS]"]
         if let scene = mainVC.view.window?.windowScene {
             for (i, window) in scene.windows.enumerated() {
                 let key = window.isKeyWindow ? "key" : "   "
@@ -382,22 +441,7 @@ enum TabSwitcherDiagnosticsOverlay {
             }
         }
         lines.append("")
-
-        // Recent in-process log entries pulled from OSLogStore. Limited to our own
-        // subsystems and the last few minutes so the dump stays readable. Lets us see
-        // assertion-style errors, warning logs, and lifecycle traces that ran in the
-        // run-up to the user mashing the button. Cannot capture stderr (UIKit constraint
-        // warnings, NSLog) — those go through a separate sink and aren't reachable.
-        lines.append("[RECENT LOGS]")
-        let logLines = collectRecentLogs(lookbackSeconds: 60, maxEntries: 60)
-        if logLines.isEmpty {
-            lines.append("(none captured)")
-        } else {
-            lines.append(contentsOf: logLines)
-        }
-        lines.append("")
-
-        return lines.joined(separator: "\n")
+        return lines
     }
 
     private static let interestingLogSubsystems: Set<String> = [

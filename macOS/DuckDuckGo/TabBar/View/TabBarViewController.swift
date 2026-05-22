@@ -2246,16 +2246,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+        guard let tabViewModel = tabBarViewItem.tabViewModel else {
+            assertionFailure("TabBarViewController: Failed to get tab view model for tab bar view item")
             return false
         }
-
-        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeDuplicated ?? false
+        return tabViewModel.tabContent.canBeDuplicated
     }
 
     func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2276,16 +2271,12 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBePinned(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        guard !isPinned else {
+        guard let tabViewModel = tabBarViewItem.tabViewModel else {
+            assertionFailure("TabBarViewController: Failed to get tab view model for tab bar view item")
             return false
         }
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
-            return false
-        }
-
-        return tabCollectionViewModel.tabBarViewModel(at: .unpinned(indexPath.item))?.tabContent.canBePinned ?? false
+        guard !tabViewModel.isPinned else { return false }
+        return tabViewModel.tabContent.canBePinned
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2352,16 +2343,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBeBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+        guard let tabViewModel = tabBarViewItem.tabViewModel else {
+            assertionFailure("TabBarViewController: Failed to get tab view model for tab bar view item")
             return false
         }
-
-        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeBookmarked ?? false
+        return tabViewModel.tabContent.canBeBookmarked
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {

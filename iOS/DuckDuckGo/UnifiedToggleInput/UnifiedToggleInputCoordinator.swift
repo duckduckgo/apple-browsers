@@ -136,6 +136,16 @@ enum ExternalSubmissionType {
     case prompt
 }
 
+enum SubscriptionFlowSource {
+    case modelPicker
+    case reasoningPicker
+}
+
+enum UpsellFlowType: String {
+    case purchase
+    case upgrade
+}
+
 private struct PromptSubmissionConfiguration {
     let modelId: String?
     let reasoningEffort: AIChatReasoningEffort?
@@ -158,16 +168,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private enum Constants {
         static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
         static let subscriptionFeaturePage = "duckai"
-    }
-
-    private enum SubscriptionFlowSource {
-        case modelPicker
-        case reasoningPicker
-    }
-
-    private enum UpsellFlowType: String {
-        case purchase
-        case upgrade
     }
 
     private var attachmentPolicy: UTIAttachmentPolicy {
@@ -1313,13 +1313,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            fireSubscriptionUpsellTriggeredPixel(source: .modelPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .purchase)
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .modelPicker,
+                currentTier: userTier,
+                requiredTier: requiredPublicTier,
+                flowType: .purchase
+            )
             presentPurchaseFlow(source: .modelPicker)
             return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
-            fireSubscriptionUpsellTriggeredPixel(source: .modelPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .upgrade)
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .modelPicker,
+                currentTier: userTier,
+                requiredTier: requiredPublicTier,
+                flowType: .upgrade
+            )
             presentUpgradeFlow(source: .modelPicker)
             return true
         }
@@ -1470,13 +1480,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let userTier = subscriptionState.userTier
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            fireSubscriptionUpsellTriggeredPixel(source: .reasoningPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .purchase)
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .reasoningPicker,
+                currentTier: userTier,
+                requiredTier: requiredPublicTier,
+                flowType: .purchase
+            )
             presentPurchaseFlow(source: .reasoningPicker)
             return true
         }
 
         if userTier == .plus, requiredPublicTier == .pro {
-            fireSubscriptionUpsellTriggeredPixel(source: .reasoningPicker, currentTier: userTier, requiredTier: requiredPublicTier, flowType: .upgrade)
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .reasoningPicker,
+                currentTier: userTier,
+                requiredTier: requiredPublicTier,
+                flowType: .upgrade
+            )
             presentUpgradeFlow(source: .reasoningPicker)
             return true
         }
@@ -1647,49 +1667,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
 }
 
-private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
-    case webSearch = "web_search"
-    case imageGeneration = "image_generation"
-    case none
-
-    init(selectedTool: AIChatRAGTool?) {
-        guard let selectedTool else {
-            self = .none
-            return
-        }
-
-        guard let identifier = UTIToolsMenu.Item.Identifier(tool: selectedTool) else {
-            self = .none
-            return
-        }
-
-        self = Self(identifier: identifier)
-    }
-
-    private init(identifier: UTIToolsMenu.Item.Identifier) {
-        switch identifier {
-        case .webSearch:
-            self = .webSearch
-        case .imageGeneration:
-            self = .imageGeneration
-        }
-    }
-}
-
-private extension UTIToolsMenu.Item.Identifier {
-    init?(tool: AIChatRAGTool) {
-        switch tool {
-        case .webSearch:
-            self = .webSearch
-        case .imageGeneration:
-            self = .imageGeneration
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            assertionFailure("Unsupported UTI selected tool: \(tool.rawValue)")
-            return nil
-        }
-    }
-}
-
 // MARK: - Tools Menu Selection
 
 extension UnifiedToggleInputCoordinator {
@@ -1711,10 +1688,10 @@ extension UnifiedToggleInputCoordinator {
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
         guard previous != current else { return }
         if let previous, current == nil || current != previous {
-            fireToolDeselectedPixel(for: previous)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous)
         }
         if let current {
-            fireToolSelectedPixel(for: current)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current)
         }
     }
 }
@@ -1759,8 +1736,17 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
             processSessionActivity(mode: .aiChat)
-            fireUnifiedPromptSubmittedPixel(text: text)
-            fireToolSubmittedPixelIfNeeded(selectedTool: toolsController.selectedTool)
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+                text: text,
+                selectedTool: toolsController.selectedTool,
+                attachments: viewController.currentAttachments,
+                reasoningMode: resolvedSelectedReasoningMode,
+                modelId: modelStore.persistedModelId
+            )
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
+                selectedTool: toolsController.selectedTool,
+                attachments: viewController.currentAttachments
+            )
 
             let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload
@@ -1813,13 +1799,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let previousTool = toolsController.selectedTool
         clearSelectedTool()
         if let previousTool {
-            fireToolDeselectedPixel(for: previousTool)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool)
         }
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment) {
         removeAttachment(id: id)
-        fireAttachmentRemovedPixel(for: attachment)
+        UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
     }
 
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
@@ -2355,31 +2341,6 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     // MARK: - Pixels
-    
-    private func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment) {
-        switch attachment {
-        case .image:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageRemoved)
-        case .file, .invalidFile:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileRemoved)
-        }
-    }
-
-    private func fireSubscriptionUpsellTriggeredPixel(
-        source: SubscriptionFlowSource,
-        currentTier: AIChatUserTier,
-        requiredTier: AIChatModelPublicAccessTier,
-        flowType: UpsellFlowType
-    ) {
-        Pixel.fire(pixel: .unifiedToggleInputSubscriptionUpsellTriggered,
-                   withAdditionalParameters: [
-                    "source": source == .modelPicker ? "model_picker" : "reasoning_picker",
-                    "current_tier": currentTier.rawValue,
-                    "required_tier": requiredTier == .pro ? "pro" : "plus",
-                    "flow_type": flowType.rawValue
-                   ]
-        )
-    }
 
     private func processSessionActivity(mode: TextEntryMode) {
         guard host == .omnibar else { return }
@@ -2410,78 +2371,6 @@ private extension UnifiedToggleInputCoordinator {
             "default_position": aiChatSettings.defaultOmnibarMode.rawValue
         ]
         Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
-    }
-
-    private func fireToolSelectedPixel(for tool: AIChatRAGTool) {
-        switch tool {
-        case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationSelected)
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSelected)
-        default:
-            break
-        }
-    }
-
-    private func fireToolDeselectedPixel(for tool: AIChatRAGTool) {
-        switch tool {
-        case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationDeselected)
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchDeselected)
-        default:
-            break
-        }
-    }
-
-    private func fireUnifiedPromptSubmittedPixel(text: String) {
-        let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: toolsController.selectedTool).rawValue
-
-        let hasImageAttachment = viewController.currentAttachments.contains { attachment in
-            if case .image = attachment { return true }
-            return false
-        }
-        let hasFileAttachment = viewController.currentAttachments.contains { attachment in
-            switch attachment {
-            case .file, .invalidFile: return true
-            case .image: return false
-            }
-        }
-        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let reasoningEffort = resolvedSelectedReasoningMode?.rawValue ?? "none"
-        let modelId = modelStore.persistedModelId ?? ""
-
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputPromptSubmitted,
-            withAdditionalParameters: [
-                "selected_tool": selectedToolValue,
-                "model_id": modelId,
-                "reasoning_effort": reasoningEffort,
-                "has_image_attachment": hasImageAttachment ? "true" : "false",
-                "has_file_attachment": hasFileAttachment ? "true" : "false",
-                "has_text": hasText ? "true" : "false"
-            ]
-        )
-    }
-
-    private func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?) {
-        guard let selectedTool else { return }
-        switch selectedTool {
-        case .imageGeneration:
-            let hasReferenceImage = viewController.currentAttachments.contains { attachment in
-                if case .image = attachment { return true }
-                return false
-            }
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputImageGenerationSubmitted,
-                withAdditionalParameters: ["has_reference_image": hasReferenceImage ? "true" : "false"]
-            )
-        case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSubmitted)
-        default:
-            break
-        }
     }
 }
 

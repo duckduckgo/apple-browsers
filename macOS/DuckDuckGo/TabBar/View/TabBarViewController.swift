@@ -1565,13 +1565,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
         guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController) }) != true,
               let collectionView,
-              let indexPath = collectionView.indexPath(for: tabBarViewItem)
+              let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem)
         else {
             Logger.general.error("TabBarViewController: Showing tab preview window failed - cannot determine index path for tab")
             return
         }
-
-        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
         guard let previewable = tabCollectionViewModel.tabBarViewModel(at: tabIndex) as? Previewable else {
             Logger.general.error("TabBarViewController: Showing tab preview window failed - previewable not found for index \(String(reflecting: tabIndex))")

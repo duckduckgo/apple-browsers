@@ -251,12 +251,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         registerForNotifications()
     }
 
-    private func resolvedTextEntryMode() -> TextEntryMode {
-        aiChatSettings.defaultOmnibarMode
-            .resolvedTextEntryMode { toggleModeStorage.restore() }
-            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
-    }
-
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
     }
@@ -410,12 +404,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             configCopy.webExtensionController = webExtensionManager.controller
         }
 
-        let preferredMode = resolvedTextEntryMode()
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab)
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
+            tab = Tab(fireTab: shouldCreateFireTab)
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -476,7 +469,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
+        let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         _ = save()
     }
@@ -535,7 +528,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
+        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 

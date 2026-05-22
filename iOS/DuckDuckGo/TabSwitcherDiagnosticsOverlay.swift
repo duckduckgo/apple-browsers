@@ -38,7 +38,7 @@ enum TabSwitcherDiagnosticsOverlay {
     /// user is tap-mashing the button, so the team can capture full state.
     static let tapThreshold = 3
     /// Sliding window over which `tapThreshold` is measured.
-    static let tapWindow: TimeInterval = 6
+    static let tapWindow: TimeInterval = 5
 
     /// Shared mutable state used by `MainViewController` to track tap timestamps, recent
     /// request outcomes, and avoid re-presenting the overlay while it's already on screen.

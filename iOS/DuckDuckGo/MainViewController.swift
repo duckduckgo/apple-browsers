@@ -2898,7 +2898,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    if redirectURLComponents.path == "/subscriptions/plans" || redirectURLComponents.path == "/pro/plans" {
+                    if SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
                         deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
                     } else {
                         deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)

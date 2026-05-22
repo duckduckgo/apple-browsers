@@ -27,6 +27,7 @@ import Combine
 import DataBrokerProtectionCore
 import os.log
 import PrivacyConfig
+import Subscription
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
@@ -197,7 +198,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
             return false
         }
 
-        return url.path == "/subscriptions" || url.path == "/subscriptions/plans"
+        return SubscriptionPurchaseFlowPath.contains(url.path)
     }
 }
 

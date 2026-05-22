@@ -24,6 +24,7 @@ import Common
 import BrowserServicesKit
 import PixelKit
 import Networking
+import Subscription
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -81,7 +82,7 @@ final class DBPService: NSObject {
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
                     if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                       components.path == "/subscriptions" || components.path == "/subscriptions/plans" {
+                       SubscriptionPurchaseFlowPath.contains(components.path) {
                         let urlInterceptor = TabURLInterceptorDefault(featureFlagger: appDependencies.featureFlagger) {
                             appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
                         }

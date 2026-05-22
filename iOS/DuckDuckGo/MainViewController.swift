@@ -6096,6 +6096,13 @@ extension MainViewController: AIChatContentHandlingDelegate {
         // No action needed for full mode - notification handles metrics
     }
 
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        DispatchQueue.main.async { [weak self] in
+            self?.unifiedToggleInputCoordinator?.startNewChat()
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
+    }
+
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
         loadUrlInNewTab(url, inheritedAttribution: nil)
         currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()

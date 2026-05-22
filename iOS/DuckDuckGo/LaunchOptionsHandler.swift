@@ -47,6 +47,8 @@ public final class LaunchOptionsHandler {
         /// Launch param format: experiment.<featureFlagRawValue>=<cohortID>
         /// Example: -experiment.onboardingDuckAIQueryExperiment treatmentA
         static let experimentCohortPrefix = "experiment."
+
+        static let internalUserKey = "isInternalUser"
     }
 
     private let environment: [String: String]
@@ -210,6 +212,13 @@ extension LaunchOptionsHandler {
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
             let key = String(arg.dropFirst()) // Remove leading "-"
+
+            if key == UITestOverrides.internalUserKey {
+                if userDefaults.string(forKey: key)?.lowercased() == "true" {
+                    internalUserStore.isInternalUser = true
+                }
+                continue
+            }
 
             // Feature flag: ff.<flagName>
             // Read as string (same approach as experiment which works)

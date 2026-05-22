@@ -15,6 +15,7 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.iPadAIToggle: "true"
 

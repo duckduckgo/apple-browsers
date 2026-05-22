@@ -1175,7 +1175,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             return
         }
 
-        guard !isPinned else {
+        guard isPinned else {
             cell.permissionButton.isHidden = true
             return
         }

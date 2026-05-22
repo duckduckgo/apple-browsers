@@ -26,7 +26,7 @@ import Testing
 @Suite("DuckAI Wide Event Instrumentation")
 struct DuckAIWideEventInstrumentationTests {
 
-    @Test("Closing a different tab does not cancel the active prompt submission")
+    @Test("Closing a different tab does not cancel the active prompt submission", .timeLimit(.minutes(1)))
     func closingDifferentTabDoesNotCancelActiveSubmission() {
         let (sut, wideEvent) = makeSUT()
 
@@ -37,7 +37,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
-    @Test("Closing the active tab cancels the active prompt submission")
+    @Test("Closing the active tab cancels the active prompt submission", .timeLimit(.minutes(1)))
     func closingActiveTabCancelsActiveSubmission() {
         let (sut, wideEvent) = makeSUT()
 

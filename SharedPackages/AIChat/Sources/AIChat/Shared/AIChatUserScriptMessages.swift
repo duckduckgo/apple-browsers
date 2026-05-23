@@ -65,5 +65,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case sendToSetupSync
     case setAIChatHistoryEnabled
     case submitSyncStatusChanged
+
+    /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
+    case submitOpenSettingsAction
 }
 // swiftlint:enable inclusive_language

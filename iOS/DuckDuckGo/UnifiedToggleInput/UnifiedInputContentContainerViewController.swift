@@ -864,6 +864,9 @@ extension UnifiedInputContentContainerViewController: VoiceSearchViewControllerD
 extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinatorDelegate {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
     }

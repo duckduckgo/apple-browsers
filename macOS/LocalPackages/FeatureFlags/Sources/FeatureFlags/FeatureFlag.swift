@@ -384,6 +384,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214684208036378
     case bookmarksBarMenusCustomWindow
+
+    /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
+    /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to fall back to the
+    /// trampoline if the SPI ever misbehaves.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215026874168279
+    case newErrorPageReload
+
+    /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
+    /// https://app.asana.com/1/137249556945/task/1214533186882448
+    case aiChatSettingsLinkInAiFeatures
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -647,6 +657,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
+        case .newErrorPageReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
+        case .aiChatSettingsLinkInAiFeatures:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.settingsLinkInAiFeatures), category: .duckAI)
         }
     }
 

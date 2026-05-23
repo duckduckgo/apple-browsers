@@ -48,7 +48,7 @@ struct SettingsYouTubeAdBlockingView: View {
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 Section {
                     VStack(alignment: .center, spacing: 16) {
-                        Image(.settingsYoutubeHero)
+                        Image(rebrandable: "SettingsDuckPlayerHero")
                             .padding(.top, 8)
 
                         Text(UserText.youTubeAdBlockingTitle)

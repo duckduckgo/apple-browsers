@@ -246,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Vytvořit obrázek";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Hledání aktuálních informací";
+"aichat.toolbar.tools.websearch.subtitle" = "Vyhledávat odpovědi na webu";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webové vyhledávání";
@@ -2429,7 +2429,7 @@
 "input.field.placeholder.duckai" = "Zeptej se soukromě na cokoli";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Zeptej se na navazující otázku...";
+"input.field.placeholder.duckai.followup" = "Odpovědět...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Nainstalovat rozšíření";
@@ -4954,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Přidat soubor";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Přidat obrázek";

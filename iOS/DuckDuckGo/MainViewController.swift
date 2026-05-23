@@ -2202,6 +2202,10 @@ class MainViewController: UIViewController {
         aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
+    private func refreshTabBar() {
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+    }
+
     /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
     func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
         let resolved: TextEntryMode
@@ -4688,6 +4692,7 @@ extension MainViewController: EscapeHatchActionRouter {
 
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
+        refreshTabBar()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4867,7 +4872,7 @@ extension MainViewController: TabDelegate {
         refreshControls()
         themeColorManager.updateThemeColor()
         _ = tabManager.save()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
@@ -5310,7 +5315,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
 
         updateCurrentTab()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
@@ -5540,7 +5545,7 @@ extension MainViewController {
         }
         showBars()
         attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
 
         if !autoClearInProgress {
             // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet

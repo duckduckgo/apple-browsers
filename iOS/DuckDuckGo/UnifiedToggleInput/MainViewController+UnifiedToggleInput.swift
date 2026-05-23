@@ -20,6 +20,7 @@
 import AIChat
 import Bookmarks
 import Combine
+import Core
 import DesignResourcesKit
 import Subscription
 import Suggestions
@@ -252,12 +253,10 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
-                // is the same tone as the card. The card defines itself via its halo rim shadow.
-                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                rootBackgroundColor = UIColor(designSystemColor: .surface)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = .clear
+                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surface)
+                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }
 
@@ -998,10 +997,13 @@ private extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
+        }
+        if tapped {
+            onExperimentalAddressBarTapped()
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
         let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
@@ -1028,6 +1030,14 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
+    }
+
+    func unifiedToggleInputDidTapClearText() {
+        onExperimentalAddressBarClearPressed()
+    }
+
+    func unifiedToggleInputDidTapToActivate() {
+        onExperimentalAddressBarTapped()
     }
 
     func unifiedToggleInputDidRequestVoiceSearch() {
@@ -1143,6 +1153,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
         unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitToggleSidebarAction()
     }

@@ -2069,7 +2069,7 @@ public struct UserText {
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
-    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Source answers from the web", comment: "Subtitle for the web search tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
@@ -2079,8 +2079,8 @@ public struct UserText {
     public static let aiChatReasoningModeReasoningSubtitle = NSLocalizedString("aichat.reasoning.reasoning.subtitle", value: "For complex tasks", comment: "Subtitle for the reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedTitle = NSLocalizedString("aichat.reasoning.extended.title", value: "Extended Reasoning", comment: "Title for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
-    public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Attach Photo", comment: "Top-level attachment menu option to attach a photo to an AI chat message")
-    public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Attach File", comment: "Top-level attachment menu option to attach a file to an AI chat message")
+    public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
+    public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
@@ -2245,7 +2245,7 @@ public struct UserText {
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask anything privately", comment: "Placeholder text for the duck.ai input field")
 
-    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
+    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green.")

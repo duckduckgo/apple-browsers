@@ -106,7 +106,7 @@ struct DuckAIWideEventInstrumentationTests {
 
     private func makeData(
         modelId: String? = "claude-3",
-        userTier: String = "paid",
+        userTier: String = "plus",
         reasoningEffort: String? = "medium",
         entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint = .omnibar,
         inputMode: DuckAIPromptSubmissionWideEventData.InputMode = .keyboard,
@@ -680,22 +680,22 @@ struct DuckAIWideEventInstrumentationTests {
 
         let params = data.jsonParameters()
 
-        #expect(params["feature.data.ext.model_id"] == nil)
-        #expect(params["feature.data.ext.reasoning_effort"] == nil)
-        #expect(params["feature.data.ext.last_step"] == nil)
-        #expect(params["feature.data.ext.cancellation_reason"] == nil)
+        #expect(params["feature.data.ext.prompt.model_id"] == nil)
+        #expect(params["feature.data.ext.prompt.reasoning_effort"] == nil)
+        #expect(params["feature.data.ext.outcome.last_step"] == nil)
+        #expect(params["feature.data.ext.outcome.cancellation_reason"] == nil)
         #expect(params["feature.data.ext.delivery.did_send_bridge_message"] == nil)
-        #expect(params["feature.data.ext.user_tier"] as? String == "paid")
-        #expect(params["feature.data.ext.entry_point"] as? String == "omnibar")
-        #expect(params["feature.data.ext.input_mode"] as? String == "keyboard")
+        #expect(params["feature.data.ext.prompt.user_tier"] as? String == "plus")
+        #expect(params["feature.data.ext.prompt.entry_point"] as? String == "omnibar")
+        #expect(params["feature.data.ext.prompt.input_mode"] as? String == "keyboard")
         #expect(params["feature.data.ext.delivery.path"] as? String == "url_autosubmit")
-        #expect(params["feature.data.ext.fire_mode"] as? Bool == true)
-        #expect(params["feature.data.ext.is_first_prompt"] as? Bool == false)
+        #expect(params["feature.data.ext.prompt.fire_mode"] as? Bool == true)
+        #expect(params["feature.data.ext.prompt.is_first_prompt"] as? Bool == false)
         #expect(params["feature.data.ext.delivery.queued"] as? Bool == false)
         #expect(params["feature.data.ext.delivery.did_receive_bridge_message"] as? Bool == false)
-        #expect(params["feature.data.ext.has_page_context"] as? Bool == true)
-        #expect(params["feature.data.ext.tools_selected"] as? Bool == true)
-        #expect(params["feature.data.ext.attachments_selected"] as? Bool == true)
+        #expect(params["feature.data.ext.prompt.has_page_context"] as? Bool == true)
+        #expect(params["feature.data.ext.prompt.tools_selected"] as? Bool == true)
+        #expect(params["feature.data.ext.prompt.attachments_selected"] as? Bool == true)
     }
 
     @available(iOS 16, *)

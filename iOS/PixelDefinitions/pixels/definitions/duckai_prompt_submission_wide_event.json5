@@ -46,13 +46,13 @@
 
             // Outcome and progression
             {
-                "key": "feature.data.ext.cancellation_reason",
+                "key": "feature.data.ext.outcome.cancellation_reason",
                 "type": "string",
                 "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight; `switched_tabs` = user switched away from the Duck.ai tab while the response was still in flight, breaking the current native UI status connection; `superseded_by_new_submission` = another prompt was submitted in the same tab or contextual sheet before this flow reached a terminal outcome.",
                 "enum": ["stop_button", "tab_closed", "sheet_dismissed", "switched_tabs", "superseded_by_new_submission"]
             },
             {
-                "key": "feature.data.ext.last_step",
+                "key": "feature.data.ext.outcome.last_step",
                 "type": "string",
                 "description": "Where in the journey the flow was when it ended. Emitted on FAILURE, CANCELLED, and UNKNOWN outcomes (absent on SUCCESS). For CANCELLED outcomes, this is the latest observed page status before the user/system cancelled the flow. For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",
                 "enum": [
@@ -68,43 +68,43 @@
                 ]
             },
 
-            // Submission context
+            // Prompt, composer, and submission context
             {
-                "key": "feature.data.ext.model_id",
+                "key": "feature.data.ext.prompt.model_id",
                 "type": "string",
                 "description": "Identifier of the Duck.ai model selected at submit time (e.g. 'gpt-4o', 'claude-sonnet-4-5'). Absent if the user has not selected a specific model."
             },
             {
-                "key": "feature.data.ext.user_tier",
+                "key": "feature.data.ext.prompt.user_tier",
                 "type": "string",
                 "description": "The submitting user's Duck.ai subscription tier at the moment of submission.",
                 "enum": ["free", "plus", "pro", "internal"]
             },
             {
-                "key": "feature.data.ext.reasoning_effort",
+                "key": "feature.data.ext.prompt.reasoning_effort",
                 "type": "string",
                 "description": "The reasoning effort selected for this submission, derived from the user's reasoning-mode preference resolved against the model's supported efforts. Absent when the selected model does not support a reasoning picker.",
                 "enum": ["none", "minimal", "low", "medium", "high"]
             },
             {
-                "key": "feature.data.ext.entry_point",
+                "key": "feature.data.ext.prompt.entry_point",
                 "type": "string",
                 "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",
                 "enum": ["omnibar", "ai_tab", "contextual_chat"]
             },
             {
-                "key": "feature.data.ext.input_mode",
+                "key": "feature.data.ext.prompt.input_mode",
                 "type": "string",
                 "description": "How the user produced the prompt text. `keyboard` = typed/pasted in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",
                 "enum": ["keyboard", "voice"]
             },
             {
-                "key": "feature.data.ext.fire_mode",
+                "key": "feature.data.ext.prompt.fire_mode",
                 "type": "boolean",
                 "description": "Whether the submitting tab was a fire tab at submit time."
             },
             {
-                "key": "feature.data.ext.is_first_prompt",
+                "key": "feature.data.ext.prompt.is_first_prompt",
                 "type": "boolean",
                 "description": "Whether this submission was the first prompt in the chat session. True for prompts that initiate a new chat (no prior submissions and no pre-existing chat bound to the tab); false for follow-up prompts within an already-active chat. Disambiguates failure modes that differ between cold-start (page load + initial chat creation) and warm-start (existing chat) paths."
             },
@@ -132,20 +132,19 @@
                 "description": "Whether the Duck.ai frontend reported its `userDidSubmitPrompt` (or `userDidSubmitFirstPrompt`) metric back across the bridge for this submission before the flow ended. True confirms the frontend received and accepted the prompt; false means the prompt never landed on the frontend submission state machine - either WebKit dropped the JS call, the frontend rejected the message, or the flow terminated before the metric arrived."
             },
 
-            // Composer state at submit
             {
-                "key": "feature.data.ext.has_page_context",
+                "key": "feature.data.ext.prompt.has_page_context",
                 "type": "boolean",
                 "description": "Whether a page-context attachment was present at submit time (i.e. the user attached the current page's content to the prompt)."
             },
             {
-                "key": "feature.data.ext.tools_selected",
+                "key": "feature.data.ext.prompt.tools_selected",
                 "type": "boolean",
                 "description": "Whether the user had any tool selected at submit time. The iOS UI currently only exposes WebSearch and GenerateImage tools."
             },
 
             {
-                "key": "feature.data.ext.attachments_selected",
+                "key": "feature.data.ext.prompt.attachments_selected",
                 "type": "boolean",
                 "description": "Whether the user had any attachment (image, file, or attachment that failed validation) in the composer at submit time."
             },

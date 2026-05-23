@@ -150,6 +150,9 @@ final class DuckAIPromptWideEventData: WideEventData {
         /// tapped delete-chat, or the fire-button workflow cleared it) while
         /// the response was still in flight.
         case sheetDismissed = "sheet_dismissed"
+        /// User used the Fire button to clear the Duck.ai tab while the
+        /// response was still in flight.
+        case fireButton = "fire_button"
         /// User switched away from the Duck.ai tab while the response was
         /// still in flight, breaking the current native UI status connection.
         case switchedTabs = "switched_tabs"

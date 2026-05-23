@@ -3048,6 +3048,7 @@ private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumen
     func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {}
     func tabClosedDuringGeneration(tabID: TabUID) {}
     func tabSwitchedAwayDuringGeneration(tabID: TabUID) { tabSwitchedAwayCalls.append(tabID) }
+    func fireButtonClearedTabDuringGeneration(tabID: TabUID) {}
     func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {}
     func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {}
 }

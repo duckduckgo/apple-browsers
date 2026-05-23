@@ -5738,6 +5738,7 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+        reportDuckAIFireButtonClearedTabsIfNeeded(fireRequest)
 
         if #available(iOS 18.4, *) {
             let tabs: [Tab]
@@ -6528,6 +6529,27 @@ extension MainViewController {
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
         guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
         duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
+    }
+
+    fileprivate func reportDuckAIFireButtonClearedTabsIfNeeded(_ fireRequest: FireRequest) {
+        guard fireRequest.trigger == .manualFire else { return }
+
+        for tab in tabsClearedByFireButton(fireRequest.scope) {
+            duckAIWideEventInstrumentation.fireButtonClearedTabDuringGeneration(tabID: tab.uid)
+        }
+    }
+
+    private func tabsClearedByFireButton(_ scope: FireRequest.Scope) -> [Tab] {
+        switch scope {
+        case .all:
+            return tabManager.allTabsModel.tabs
+        case .fireMode:
+            return tabManager.tabsModel(for: .fire).tabs
+        case .normalMode:
+            return tabManager.tabsModel(for: .normal).tabs
+        case .tab(let viewModel):
+            return [viewModel.tab]
+        }
     }
 
     fileprivate func reportDuckAIFrontendSubmissionAcknowledged() {

@@ -559,6 +559,39 @@ struct DuckAIWideEventInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Fire button clearing the active tab cancels with fire_button", .timeLimit(.minutes(1)))
+    func fireButtonClearedTabCancelsMatchingTab() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.fireButtonClearedTabDuringGeneration(tabID: Self.activeTab)
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a cancellation completion")
+            return
+        }
+        #expect(completion.1 == .cancelled)
+        #expect(completion.0.cancellationReason == .fireButton)
+    }
+
+    @available(iOS 16, *)
+    @Test("Fire button cancellation is not overwritten by a later tab switch", .timeLimit(.minutes(1)))
+    func fireButtonCancellationWinsOverLaterTabSwitch() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.fireButtonClearedTabDuringGeneration(tabID: Self.activeTab)
+        sut.tabSwitchedAwayDuringGeneration(tabID: Self.activeTab)
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a cancellation completion")
+            return
+        }
+        #expect(wideEvent.completions.count == 1)
+        #expect(completion.0.cancellationReason == .fireButton)
+    }
+
+    @available(iOS 16, *)
     @Test("Switching away from a different tab does not cancel the active flow", .timeLimit(.minutes(1)))
     func tabSwitchedAwayDoesNotCancelDifferentTab() {
         let (sut, wideEvent, _) = makeSUT()
@@ -593,6 +626,7 @@ struct DuckAIWideEventInstrumentationTests {
         sut.stopGeneratingTapped(scope: .tab(Self.activeTab))
         sut.tabClosedDuringGeneration(tabID: Self.activeTab)
         sut.tabSwitchedAwayDuringGeneration(tabID: Self.activeTab)
+        sut.fireButtonClearedTabDuringGeneration(tabID: Self.activeTab)
         sut.sheetDismissedDuringGeneration(scope: .contextual(Self.contextualID))
 
         #expect(wideEvent.completions.isEmpty)

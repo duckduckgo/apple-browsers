@@ -2275,6 +2275,8 @@ extension TabViewController: WKNavigationDelegate {
 
     private func notifyDelegateIfDuckAINavigationFailed(error: Error) {
         let nsError = error as NSError
+        guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
+
         let failingURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
             ?? (nsError.userInfo[NSURLErrorFailingURLStringErrorKey] as? String).flatMap(URL.init(string:))
             ?? webView.url

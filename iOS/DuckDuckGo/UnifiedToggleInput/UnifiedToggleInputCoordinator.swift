@@ -2305,6 +2305,7 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
 
         $aiChatStatus
+            .removeDuplicates()
             .sink { [weak self] status in
                 guard let self, let scope = self.currentDuckAIWideEventFlowScope else { return }
                 self.duckAIWideEventInstrumentation?.chatStatusChanged(status, scope: scope)

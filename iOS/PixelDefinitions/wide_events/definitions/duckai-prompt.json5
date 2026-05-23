@@ -11,6 +11,11 @@
             "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Terminal reason accompanying UNKNOWN outcomes. Present when an orphaned flow from a previous app session is completed after app launch.",
+                        "enum": ["app_terminated"]
+                    },
                     "outcome": {
                         "type": "object",
                         "description": "Outcome-specific fields describing where and why the flow ended.",

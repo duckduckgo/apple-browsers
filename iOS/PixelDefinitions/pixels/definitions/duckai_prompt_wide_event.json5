@@ -37,6 +37,14 @@
                 "enum": ["duckai-prompt"]
             },
 
+            // Status reason emitted by the shared wide-event sender for UNKNOWN orphan cleanup.
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Terminal reason accompanying UNKNOWN outcomes. Present when an orphaned flow from a previous app session is completed after app launch.",
+                "enum": ["app_terminated"]
+            },
+
             // Optional human-readable description attached to the error capture (FAILURE / navigation_failed).
             {
                 "key": "feature.data.ext.error.error_description",

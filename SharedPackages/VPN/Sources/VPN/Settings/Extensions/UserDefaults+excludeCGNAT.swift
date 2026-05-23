@@ -24,6 +24,8 @@ extension UserDefaults {
         "networkProtectionSettingExcludeCGNAT"
     }
 
+    /// On by default. Internal testers get the carve-out today; everyone
+    /// gets it when the feature ships publicly.
     public static let excludeCGNATDefaultValue = true
 
     @objc

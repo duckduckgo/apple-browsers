@@ -46,7 +46,6 @@ struct NetworkProtectionVPNSettingsView: View {
                 if viewModel.isExcludeCGNATAvailable {
                     toggleSection(
                         text: UserText.netPExcludeCGNATSettingTitle,
-                        headerText: UserText.netPExcludeLocalNetworksSettingHeader,
                         footerText: UserText.netPExcludeCGNATSettingFooter
                     ) {
                         Toggle("", isOn: $viewModel.excludeCGNAT)
@@ -94,7 +93,7 @@ struct NetworkProtectionVPNSettingsView: View {
     }
 
     @ViewBuilder
-    func toggleSection(text: String, headerText: String, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
+    func toggleSection(text: String, headerText: String? = nil, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
         Section {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -108,7 +107,9 @@ struct NetworkProtectionVPNSettingsView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
             }
         } header: {
-            Text(headerText)
+            if let headerText {
+                Text(headerText)
+            }
         } footer: {
             Text(footerText)
                 .foregroundColor(.init(designSystemColor: .textSecondary))

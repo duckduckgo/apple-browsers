@@ -463,12 +463,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {
-        if case .attached = sessionState.chipState {
-            sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: true)
-        } else {
-            sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: false)
-        }
-
+        let hasPageContext: Bool
+        if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
+        sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         sessionState.handlePromptSubmission(prompt)
     }
 

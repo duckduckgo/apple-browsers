@@ -31,13 +31,13 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -45,8 +45,7 @@ protocol AIChatUserScriptProviding: AnyObject {
 }
 
 extension AIChatUserScriptProviding {
-    @discardableResult
-    func submitPrompt(_ prompt: String) -> Bool {
+    func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
 }
@@ -94,8 +93,7 @@ protocol AIChatContentHandling: AnyObject {
     func buildVoiceModeURL() -> URL
 
     /// Submits a prompt to the AI Chat with optional page context.
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -112,11 +110,15 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
+
+    /// True when the underlying user script is bound to both a web view and a broker. Read
+    /// immediately before a `submitPrompt` call to capture whether the bridge dispatch will
+    /// actually reach the frontend.
+    var canDispatchBridgeMessages: Bool { get }
 }
 
 extension AIChatContentHandling {
-    @discardableResult
-    func submitPrompt(_ prompt: String) -> Bool {
+    func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
 }
@@ -241,14 +243,17 @@ final class AIChatContentHandler: AIChatContentHandling {
         updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
     }
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) -> Bool {
+    var canDispatchBridgeMessages: Bool {
+        userScript?.canDispatchBridgeMessages ?? false
+    }
+
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
         } else {
             Logger.aiChat.debug("[PageContext] Prompt submitted without context")
         }
-        return userScript?.submitPrompt(prompt, pageContext: pageContext) ?? false
+        userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

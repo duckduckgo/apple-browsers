@@ -715,6 +715,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
+    var canDispatchBridgeMessages: Bool = true
 
     var delegateSet = false
     var webViewSet = false
@@ -753,12 +754,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         lastDisplayModeSet = displayMode
     }
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) -> Bool {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
-        return true
     }
 
     func submitStartChatAction() {

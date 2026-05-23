@@ -28,8 +28,6 @@ import os.log
 final class AIChatContextualUTIHost {
 
     private let coordinator: UnifiedToggleInputCoordinator
-    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
-    private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
     private let pageContextHandler: AIChatPageContextHandling
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let isAutoAttachEnabled: () -> Bool
@@ -39,6 +37,8 @@ final class AIChatContextualUTIHost {
     private var suppressExternalContextUntilNextAttach = false
     private var isBoundToUserScript = false
     private var cancellables = Set<AnyCancellable>()
+    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
+    private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
@@ -203,34 +203,6 @@ final class AIChatContextualUTIHost {
         isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
     }
 
-    func sheetDismissed() {
-        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)
-    }
-
-    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
-        duckAIWideEventInstrumentation.promptDeliveryUpdated(scope: duckAIWideEventFlowScope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
-    }
-
-    func frontendSubmissionAcknowledged() {
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: duckAIWideEventFlowScope)
-    }
-
-    func pageLoadFailed(error: Error) {
-        duckAIWideEventInstrumentation.pageLoadFailed(scope: duckAIWideEventFlowScope, error: error)
-    }
-
-    /// Called when the contextual sheet's native input submits the initial prompt of a chat,
-    /// which bypasses the UTI. Routes the wide-event start through the shared UTI coordinator
-    /// so the in-flight flow receives the JS status updates that follow.
-    func initialNativePromptSubmitted(hasPageContext: Bool) {
-        coordinator.recordExternalPromptSubmitted(
-            entryPoint: .contextualChat,
-            inputMode: .keyboard,
-            isFirstPrompt: true,
-            hasPageContext: hasPageContext
-        )
-    }
-
     func install(in contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
         coordinator.attachmentPresentingViewController = contextualChatViewController
@@ -258,5 +230,38 @@ final class AIChatContextualUTIHost {
     private func applyCurrentRenderState() {
         coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
         contextualChatViewController?.view.layoutIfNeeded()
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualUTIHost {
+
+    func sheetDismissed() {
+        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)
+    }
+
+    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        duckAIWideEventInstrumentation.promptDeliveryUpdated(scope: duckAIWideEventFlowScope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+    }
+
+    func frontendSubmissionAcknowledged() {
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: duckAIWideEventFlowScope)
+    }
+
+    func pageLoadFailed(error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: duckAIWideEventFlowScope, error: error)
+    }
+
+    /// Called when the contextual sheet's native input submits the initial prompt of a chat,
+    /// which bypasses the UTI. Routes the wide-event start through the shared UTI coordinator
+    /// so the in-flight flow receives the JS status updates that follow.
+    func initialNativePromptSubmitted(hasPageContext: Bool) {
+        coordinator.recordExternalPromptSubmitted(
+            entryPoint: .contextualChat,
+            inputMode: .keyboard,
+            isFirstPrompt: true,
+            hasPageContext: hasPageContext
+        )
     }
 }

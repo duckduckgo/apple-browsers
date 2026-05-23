@@ -287,27 +287,27 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - AI Chat Actions
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) -> Bool {
+    var canDispatchBridgeMessages: Bool {
+        webView != nil && broker != nil
+    }
+
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
         // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
         // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
         // matches the duck.ai sidebar's existing current-page semantics.
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
-        return push(.submitPrompt(promptPayload))
+        push(.submitPrompt(promptPayload))
     }
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    @discardableResult
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) -> Bool {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
         // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
         // in the `.single` variant of the union the schema now accepts.
         let promptPayload = AIChatNativePrompt.queryPrompt(
@@ -320,9 +320,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             pageContext: attachedPageContextProvider?().map(AIChatPageContextPayload.single),
             reasoningEffort: reasoningEffort
         )
-        let didPush = push(.submitPrompt(promptPayload))
+        push(.submitPrompt(promptPayload))
         onPromptSubmitted?()
-        return didPush
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -361,12 +360,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
-    @discardableResult
-    private func push(_ message: AIChatPushMessage) -> Bool {
-        guard let webView = webView else { return false }
+    private func push(_ message: AIChatPushMessage) {
+        guard let webView = webView else { return }
         let params: Encodable? = message.params
         broker?.push(method: message.methodName, params: params, for: self, into: webView)
-        return broker != nil
     }
 }
 

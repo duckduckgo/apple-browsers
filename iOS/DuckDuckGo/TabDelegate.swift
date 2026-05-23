@@ -126,8 +126,6 @@ protocol TabDelegate: AnyObject {
 
     func tabContentProcessDidTerminate(tab: TabViewController)
 
-    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
-
     /// User activated an in-page link in this tab.
     func tabDidEngageWithPage(_ tab: TabViewController)
     
@@ -165,6 +163,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 
     func tabDidRequestFireMode(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
 }
 
 extension TabDelegate {
@@ -173,8 +173,8 @@ extension TabDelegate {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
 
-    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
-
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
 }

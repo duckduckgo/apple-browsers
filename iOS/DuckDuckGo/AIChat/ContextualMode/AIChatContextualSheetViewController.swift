@@ -389,14 +389,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
-    func notifySheetDismissed() {
-        webViewController?.notifySheetDismissed()
-    }
-
-    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
-        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
-    }
-
     @objc private func recentChatsButtonTapped() {
         if recentChatsPopup != nil {
             dismissRecentChatsPopup()
@@ -1102,5 +1094,18 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualSheetViewController {
+
+    func notifySheetDismissed() {
+        webViewController?.notifySheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 }

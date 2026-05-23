@@ -5357,15 +5357,6 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
-    private func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
-        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
-        duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
-    }
-
-    fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
-        currentTab.map { .tab($0.tabModel.uid) }
-    }
-
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController) {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
@@ -6098,8 +6089,7 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
+        reportDuckAIFrontendSubmissionAcknowledged()
     }
 }
 
@@ -6131,8 +6121,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
+        reportDuckAIFrontendSubmissionAcknowledged()
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
@@ -6525,5 +6514,24 @@ extension ConsentStatusInfo {
             consentRule: consentRule,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension MainViewController {
+
+    fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
+        currentTab.map { .tab($0.tabModel.uid) }
+    }
+
+    fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
+        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
+        duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
+    }
+
+    fileprivate func reportDuckAIFrontendSubmissionAcknowledged() {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
 }

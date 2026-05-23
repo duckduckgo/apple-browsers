@@ -750,7 +750,7 @@ struct DuckAIWideEventInstrumentationTests {
         let decoded = try JSONDecoder().decode(DuckAIPromptSubmissionWideEventData.self, from: encoded)
 
         #expect(decoded.modelId == "claude-3")
-        #expect(decoded.userTier == "paid")
+        #expect(decoded.userTier == "plus")
         #expect(decoded.reasoningEffort == "medium")
         #expect(decoded.entryPoint == .omnibar)
         #expect(decoded.inputMode == .keyboard)

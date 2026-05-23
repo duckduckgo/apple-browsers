@@ -16,13 +16,19 @@
 //  limitations under the License.
 //
 
+import EventKit
 import Foundation
 
 /// Walks the lines inside a single VEVENT block (`KEY[;PARAMS]:VALUE` per line) and assembles
 /// an `ICSEvent`. The recognised VEVENT subset is documented in the package README.
 enum PropertyParser {
 
-    static func parseEvent(from lines: [String]) throws -> ICSEvent {
+    struct Outcome {
+        let event: ICSEvent
+        let warnings: [ICSParser.Warning]
+    }
+
+    static func parseEvent(from lines: [String]) throws -> Outcome {
         var title: String?
         var startDate: Date?
         var endDate: Date?
@@ -77,11 +83,15 @@ enum PropertyParser {
             durationRaw: durationRaw,
             isAllDay: isAllDay
         )
-        let recurrenceRule = try rRuleRaw.map {
-            try RecurrenceRuleParser.parse($0, startDate: resolvedStart)
+        var recurrenceRule: EKRecurrenceRule?
+        var warnings: [ICSParser.Warning] = []
+        if let rRuleRaw {
+            let parsed = try RecurrenceRuleParser.parse(rRuleRaw, startDate: resolvedStart)
+            recurrenceRule = parsed.rule
+            warnings = parsed.warnings
         }
 
-        return ICSEvent(
+        let event = ICSEvent(
             title: title,
             startDate: resolvedStart,
             endDate: resolvedEnd,
@@ -91,6 +101,7 @@ enum PropertyParser {
             url: url,
             recurrenceRule: recurrenceRule
         )
+        return Outcome(event: event, warnings: warnings)
     }
 
     /// Per RFC 5545 §3.2, parameter values may be DQUOTE-wrapped to contain `:`, `;`, or `,`.

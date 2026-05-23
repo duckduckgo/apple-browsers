@@ -30,8 +30,7 @@ struct LastUsedInputDefaults: Equatable {
 @MainActor
 protocol UnifiedInputStateStoring: AnyObject {
     /// Returns the current state for `uid`. If no entry exists, returns a fresh state
-    /// seeded from `lastUsed` (or `tab.preferredTextEntryMode` for the toggle slice
-    /// when seeded via `TabsModel` observation).
+    /// seeded from `lastUsed`.
     func state(for uid: TabUID) -> TabInputState
 
     /// Replaces the entry for `uid` without affecting `lastUsed` or global preference

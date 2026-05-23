@@ -111,6 +111,7 @@ public final class WideEvent: WideEventManaging {
         let globalID = data.globalData.id
 
         do {
+#if DEBUG
             let previousParameters: [String: String] = try Self.storageQueue.sync {
                 let previous: T = try storage.load(globalID: globalID)
                 let previousParameters = previous.pixelParameters()
@@ -118,6 +119,9 @@ public final class WideEvent: WideEventManaging {
                 return previousParameters
             }
             Self.logUpdate(featureName: T.metadata.featureName, previous: previousParameters, current: data.pixelParameters())
+#else
+            try Self.storageQueue.sync { try storage.update(data) }
+#endif
         } catch {
             if case WideEventError.flowNotFound = error {
                 Self.logger.info("Wide event update ignored for non-existent flow: \(T.metadata.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
@@ -148,6 +152,7 @@ public final class WideEvent: WideEventManaging {
     }
 
     private static func logUpdate(featureName: String, previous: [String: String], current: [String: String]) {
+#if DEBUG
         var added: [String: String] = [:]
         var modified: [String: String] = [:]
         var removed: [String: String] = [:]
@@ -172,6 +177,7 @@ public final class WideEvent: WideEventManaging {
         if lines.count == 1 { lines.append("  No changes") }
 
         logger.info("\(lines.joined(separator: "\n"), privacy: .public)")
+#endif
     }
 
     public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {

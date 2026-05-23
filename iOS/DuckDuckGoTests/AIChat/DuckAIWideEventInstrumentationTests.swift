@@ -276,6 +276,29 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
+    @available(iOS 16, *)
+    @Test("frontendSubmissionAcknowledged before any chat status still completes the flow as success", .timeLimit(.minutes(1)))
+    func frontendAckBeforeAnyStatusStillSucceeds() {
+        let (sut, wideEvent, clock) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        clock.advance(by: 1.0)
+        sut.frontendSubmissionAcknowledged(scope: .tab(Self.activeTab))
+        clock.advance(by: 1.0)
+        sut.chatStatusChanged(.loading, scope: .tab(Self.activeTab))
+        clock.advance(by: 2.0)
+        sut.chatStatusChanged(.ready, scope: .tab(Self.activeTab))
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a success completion")
+            return
+        }
+        #expect(completion.1 == .success())
+        #expect(completion.0.frontendSubmissionAckInterval.end == Self.baseNow.addingTimeInterval(1.0))
+        #expect(completion.0.startThinkingInterval.end == Self.baseNow.addingTimeInterval(2.0))
+        #expect(completion.0.endedInterval.end == Self.baseNow.addingTimeInterval(4.0))
+    }
+
     // MARK: - Chat status, success path
 
     @available(iOS 16, *)
@@ -607,6 +630,32 @@ struct DuckAIWideEventInstrumentationTests {
         sut.pageLoadFailed(scope: .tab(Self.activeTab), error: error)
 
         #expect(wideEvent.completions.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("pageLoadFailed after streaming preserves earlier interval ends", .timeLimit(.minutes(1)))
+    func pageLoadFailedAfterProgressionPreservesIntervals() {
+        let (sut, wideEvent, clock) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+        let error = NSError(domain: "TestDomain", code: 42)
+
+        clock.advance(by: 1.0)
+        sut.chatStatusChanged(.loading, scope: .tab(Self.activeTab))
+        clock.advance(by: 2.0)
+        sut.chatStatusChanged(.streaming, scope: .tab(Self.activeTab))
+        clock.advance(by: 2.0)
+        sut.pageLoadFailed(scope: .tab(Self.activeTab), error: error)
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a failure completion")
+            return
+        }
+        #expect(completion.1 == .failure)
+        #expect(completion.0.lastStep == .navigationFailed)
+        #expect(completion.0.startThinkingInterval.end == Self.baseNow.addingTimeInterval(1.0))
+        #expect(completion.0.startGeneratingInterval.end == Self.baseNow.addingTimeInterval(3.0))
+        #expect(completion.0.generatingCompletedInterval.end == nil)
+        #expect(completion.0.endedInterval.end == Self.baseNow.addingTimeInterval(5.0))
     }
 
     // MARK: - Orphan recovery on init

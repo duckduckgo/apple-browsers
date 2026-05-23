@@ -199,6 +199,11 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
+
+    /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
+    /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
+    /// trampoline if the SPI ever misbehaves.
+    case newErrorPageReload
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

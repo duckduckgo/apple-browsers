@@ -242,6 +242,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private static var hasUsedAIChatInSession = false
     private var backgroundObserver: NSObjectProtocol?
     private(set) var currentTabUID: TabUID?
+    private var lastActivatedTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
     /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;
@@ -573,6 +574,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
         currentTabUID = uid
+        lastActivatedTabUID = uid
         applyState(stateStore.state(for: uid))
     }
 
@@ -2343,7 +2345,7 @@ extension UnifiedToggleInputCoordinator {
         case .contextualChat:
             return duckAIWideEventFlowScope
         case .omnibar:
-            return currentTabUID.map(DuckAIWideEventFlowScope.tab)
+            return (currentTabUID ?? lastActivatedTabUID).map(DuckAIWideEventFlowScope.tab)
         }
     }
 

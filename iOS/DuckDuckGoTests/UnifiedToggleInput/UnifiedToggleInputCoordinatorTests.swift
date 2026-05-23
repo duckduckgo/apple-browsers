@@ -2444,6 +2444,18 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(instrumentation.tabSwitchedAwayCalls.isEmpty)
     }
 
+    func test_duckAISubmissionAfterHideUsesLastActivatedTabScope() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+        sut.activateForTab("tab-A")
+        sut.hide()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
+    }
+
     // Regression: applyState must always sync the live model store from per-tab
     // state, even when state values are nil. Otherwise the previous tab's reasoning
     // mode (or model id) leaks through preferences, and the next snapshot writes
@@ -3013,6 +3025,7 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
 }
 
 private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
+    private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
 
     func submissionStarted(scope: DuckAIWideEventFlowScope,
@@ -3026,7 +3039,9 @@ private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumen
                            frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            toolsSelected: Bool,
-                           attachmentsSelected: Bool) {}
+                           attachmentsSelected: Bool) {
+        submissionStartedScopes.append(scope)
+    }
     func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
     func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}
     func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {}

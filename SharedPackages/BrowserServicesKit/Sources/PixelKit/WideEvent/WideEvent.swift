@@ -133,6 +133,7 @@ public final class WideEvent: WideEventManaging {
 
     public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {
         do {
+#if DEBUG
             let (previousParameters, updatedData) = try Self.storageQueue.sync { () -> ([String: String], T) in
                 var data: T = try storage.load(globalID: globalID)
                 let previousParameters = data.pixelParameters()
@@ -140,8 +141,14 @@ public final class WideEvent: WideEventManaging {
                 try storage.update(data)
                 return (previousParameters, data)
             }
-
             Self.logUpdate(featureName: T.metadata.featureName, previous: previousParameters, current: updatedData.pixelParameters())
+#else
+            try Self.storageQueue.sync {
+                var data: T = try storage.load(globalID: globalID)
+                update(&data)
+                try storage.update(data)
+            }
+#endif
         } catch {
             if case WideEventError.flowNotFound = error {
                 Self.logger.info("Wide event update ignored for non-existent flow: \(T.metadata.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")

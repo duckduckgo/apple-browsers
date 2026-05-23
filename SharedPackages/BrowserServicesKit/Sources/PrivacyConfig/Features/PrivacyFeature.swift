@@ -248,8 +248,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    case fireproofingETLDPlus1
-
     case screenTimeCleaning
 
     case minimalChromeInLandscape

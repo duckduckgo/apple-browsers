@@ -25,6 +25,7 @@ import Testing
 @testable import DuckDuckGo
 
 @Suite("DuckAI Wide Event Instrumentation")
+@MainActor
 struct DuckAIWideEventInstrumentationTests {
 
     // MARK: - Test helpers

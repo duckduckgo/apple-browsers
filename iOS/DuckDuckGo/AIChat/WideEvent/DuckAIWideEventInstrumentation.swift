@@ -26,6 +26,7 @@ enum DuckAIWideEventFlowScope: Hashable {
     case contextual(UUID)
 }
 
+@MainActor
 protocol DuckAIWideEventInstrumentation: AnyObject {
 
     /// User submitted a Duck.ai prompt. Starts a new wide-event flow.
@@ -89,6 +90,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error)
 }
 
+@MainActor
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
 
     private struct ActiveFlow {

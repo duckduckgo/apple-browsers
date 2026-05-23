@@ -3024,6 +3024,7 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
     }
 }
 
+@MainActor
 private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []

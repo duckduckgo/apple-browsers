@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-duckai-prompt-submission" }, "version": { "const": "1.0.0" } }
+            "properties": { "type": { "const": "ios-duckai-prompt" }, "version": { "const": "1.0.0" } }
         },
         "app": {
             "type": "object",
@@ -45,7 +45,7 @@
             "required": ["name", "status", "data"],
             "additionalProperties": false,
             "properties": {
-                "name": { "type": "string", "description": "The feature name for this event", "enum": ["duckai_prompt_submission"] },
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["duckai-prompt"] },
                 "status": {
                     "type": "string",
                     "description": "The overall status of the operation",

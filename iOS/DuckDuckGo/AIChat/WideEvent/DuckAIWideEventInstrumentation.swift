@@ -33,11 +33,11 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
-                           entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
-                           inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+                           entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
-                           frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
+                           frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            toolsSelected: Bool,
                            attachmentsSelected: Bool)
@@ -87,7 +87,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
 final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
 
     private struct ActiveFlow {
-        var data: DuckAIPromptSubmissionWideEventData
+        var data: DuckAIPromptWideEventData
         var hasObservedNonReady = false
     }
 
@@ -110,17 +110,17 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            modelId: String?,
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
-                           entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
-                           inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+                           entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
-                           frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
+                           frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                            hasPageContext: Bool,
                            toolsSelected: Bool,
                            attachmentsSelected: Bool) {
         completeSupersededFlowIfNeeded(scope: scope)
 
-        let data = DuckAIPromptSubmissionWideEventData(
+        let data = DuckAIPromptWideEventData(
             modelId: modelId,
             userTier: userTier.rawValue,
             reasoningEffort: reasoningEffort?.rawValue,
@@ -205,7 +205,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         wideEvent.updateFlow(data)
     }
 
-    private static func lastStep(for status: AIChatStatusValue) -> DuckAIPromptSubmissionWideEventData.LastStep {
+    private static func lastStep(for status: AIChatStatusValue) -> DuckAIPromptWideEventData.LastStep {
         switch status {
         case .loading: return .loading
         case .streaming: return .streaming
@@ -249,7 +249,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         cancelFlow(scope: scope, reason: .supersededByNewSubmission)
     }
 
-    private func cancelFlow(scope: DuckAIWideEventFlowScope, reason: DuckAIPromptSubmissionWideEventData.CancellationReason) {
+    private func cancelFlow(scope: DuckAIWideEventFlowScope, reason: DuckAIPromptWideEventData.CancellationReason) {
         guard let activeFlow = activeFlows[scope] else { return }
         activeFlow.data.cancellationReason = reason
         activeFlow.data.endedInterval.end = dateProvider()
@@ -258,10 +258,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
     }
 
     private func completeOrphanedFlowsFromPreviousAppSession() {
-        for orphan in wideEvent.getAllFlowData(DuckAIPromptSubmissionWideEventData.self) {
+        for orphan in wideEvent.getAllFlowData(DuckAIPromptWideEventData.self) {
             wideEvent.completeFlow(
                 orphan,
-                status: .unknown(reason: DuckAIPromptSubmissionWideEventData.appTerminatedReason),
+                status: .unknown(reason: DuckAIPromptWideEventData.appTerminatedReason),
                 onComplete: { _, _ in })
         }
     }

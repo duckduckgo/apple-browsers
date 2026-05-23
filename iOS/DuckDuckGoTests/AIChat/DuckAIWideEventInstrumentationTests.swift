@@ -43,7 +43,7 @@ struct DuckAIWideEventInstrumentationTests {
     private func makeSUT(
         now: Date = baseNow,
         completeOrphanedFlowsOnInit: Bool = false,
-        seededFlows: [DuckAIPromptSubmissionWideEventData] = []
+        seededFlows: [DuckAIPromptWideEventData] = []
     ) -> (DefaultDuckAIWideEventInstrumentation, WideEventMock, TestClock) {
         let clock = TestClock(now)
         let wideEvent = WideEventMock()
@@ -90,35 +90,35 @@ struct DuckAIWideEventInstrumentationTests {
         )
     }
 
-    private func lastStartedData(_ wideEvent: WideEventMock) -> DuckAIPromptSubmissionWideEventData? {
-        wideEvent.started.compactMap { $0 as? DuckAIPromptSubmissionWideEventData }.last
+    private func lastStartedData(_ wideEvent: WideEventMock) -> DuckAIPromptWideEventData? {
+        wideEvent.started.compactMap { $0 as? DuckAIPromptWideEventData }.last
     }
 
-    private func lastCompletion(_ wideEvent: WideEventMock) -> (DuckAIPromptSubmissionWideEventData, WideEventStatus)? {
+    private func lastCompletion(_ wideEvent: WideEventMock) -> (DuckAIPromptWideEventData, WideEventStatus)? {
         guard let last = wideEvent.completions.last,
-              let data = last.0 as? DuckAIPromptSubmissionWideEventData else { return nil }
+              let data = last.0 as? DuckAIPromptWideEventData else { return nil }
         return (data, last.1)
     }
 
-    private func lastUpdatedData(_ wideEvent: WideEventMock) -> DuckAIPromptSubmissionWideEventData? {
-        wideEvent.updates.compactMap { $0 as? DuckAIPromptSubmissionWideEventData }.last
+    private func lastUpdatedData(_ wideEvent: WideEventMock) -> DuckAIPromptWideEventData? {
+        wideEvent.updates.compactMap { $0 as? DuckAIPromptWideEventData }.last
     }
 
     private func makeData(
         modelId: String? = "claude-3",
         userTier: String = "plus",
         reasoningEffort: String? = "medium",
-        entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint = .omnibar,
-        inputMode: DuckAIPromptSubmissionWideEventData.InputMode = .keyboard,
+        entryPoint: DuckAIPromptWideEventData.EntryPoint = .omnibar,
+        inputMode: DuckAIPromptWideEventData.InputMode = .keyboard,
         fireMode: Bool = true,
         isFirstPrompt: Bool = false,
-        frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath = .urlAutoSubmit,
+        frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath = .urlAutoSubmit,
         hasPageContext: Bool = true,
         toolsSelected: Bool = true,
         attachmentsSelected: Bool = true,
         startedAt: Date = Self.baseNow
-    ) -> DuckAIPromptSubmissionWideEventData {
-        DuckAIPromptSubmissionWideEventData(
+    ) -> DuckAIPromptWideEventData {
+        DuckAIPromptWideEventData(
             modelId: modelId,
             userTier: userTier,
             reasoningEffort: reasoningEffort,
@@ -314,7 +314,7 @@ struct DuckAIWideEventInstrumentationTests {
     @available(iOS 16, *)
     @Test("Every non-ready non-terminal chat status updates last_step", .timeLimit(.minutes(1)))
     func nonReadyNonTerminalStatusesUpdateLastStep() {
-        let cases: [(AIChatStatusValue, DuckAIPromptSubmissionWideEventData.LastStep)] = [
+        let cases: [(AIChatStatusValue, DuckAIPromptWideEventData.LastStep)] = [
             (.loading, .loading),
             (.streaming, .streaming),
             (.startStreamNewPrompt, .startStreamNewPrompt),
@@ -614,7 +614,7 @@ struct DuckAIWideEventInstrumentationTests {
     @available(iOS 16, *)
     @Test("Init with completeOrphanedFlowsOnInit=true completes seeded flows as unknown(app_terminated)", .timeLimit(.minutes(1)))
     func orphanRecoveryCompletesSeededFlows() {
-        let orphan = DuckAIPromptSubmissionWideEventData(
+        let orphan = DuckAIPromptWideEventData(
             modelId: nil,
             userTier: "free",
             reasoningEffort: nil,
@@ -637,13 +637,13 @@ struct DuckAIWideEventInstrumentationTests {
             Issue.record("Expected an orphan completion")
             return
         }
-        #expect(completion.1 == .unknown(reason: DuckAIPromptSubmissionWideEventData.appTerminatedReason))
+        #expect(completion.1 == .unknown(reason: DuckAIPromptWideEventData.appTerminatedReason))
     }
 
     @available(iOS 16, *)
     @Test("Init with completeOrphanedFlowsOnInit=false leaves seeded flows untouched", .timeLimit(.minutes(1)))
     func orphanRecoveryFlagOffDoesNotComplete() {
-        let orphan = DuckAIPromptSubmissionWideEventData(
+        let orphan = DuckAIPromptWideEventData(
             modelId: nil,
             userTier: "free",
             reasoningEffort: nil,
@@ -667,10 +667,10 @@ struct DuckAIWideEventInstrumentationTests {
     @available(iOS 16, *)
     @Test("Metadata exposes expected names and schema version", .timeLimit(.minutes(1)))
     func metadataExposesExpectedValues() {
-        #expect(DuckAIPromptSubmissionWideEventData.metadata.pixelName == "duckai_prompt_submission")
-        #expect(DuckAIPromptSubmissionWideEventData.metadata.featureName == "duckai_prompt_submission")
-        #expect(DuckAIPromptSubmissionWideEventData.metadata.type == "ios-duckai-prompt-submission")
-        #expect(DuckAIPromptSubmissionWideEventData.metadata.version == "1.0.0")
+        #expect(DuckAIPromptWideEventData.metadata.pixelName == "duckai_prompt")
+        #expect(DuckAIPromptWideEventData.metadata.featureName == "duckai-prompt")
+        #expect(DuckAIPromptWideEventData.metadata.type == "ios-duckai-prompt")
+        #expect(DuckAIPromptWideEventData.metadata.version == "1.0.0")
     }
 
     @available(iOS 16, *)
@@ -747,7 +747,7 @@ struct DuckAIWideEventInstrumentationTests {
         data.frontendSubmissionAckInterval.end = Self.baseNow.addingTimeInterval(5.0)
 
         let encoded = try JSONEncoder().encode(data)
-        let decoded = try JSONDecoder().decode(DuckAIPromptSubmissionWideEventData.self, from: encoded)
+        let decoded = try JSONDecoder().decode(DuckAIPromptWideEventData.self, from: encoded)
 
         #expect(decoded.modelId == "claude-3")
         #expect(decoded.userTier == "plus")

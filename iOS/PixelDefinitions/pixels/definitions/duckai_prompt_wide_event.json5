@@ -1,5 +1,5 @@
 {
-    "m_ios_wide_duckai_prompt_submission": {
+    "m_ios_wide_duckai_prompt": {
         "description": "Wide pixel sent at the end of a Duck.ai prompt submission journey on iOS, from the moment the user submits a prompt through the Unified Toggle Input until the page either delivers a response (status returns to `.ready`) or the journey is orphaned by app termination.",
         "owners": ["samsymons"],
         "triggers": ["other"],
@@ -26,7 +26,7 @@
                 "key": "meta.type",
                 "type": "string",
                 "description": "Wide event type identifier",
-                "enum": ["ios-duckai-prompt-submission"]
+                "enum": ["ios-duckai-prompt"]
             },
 
             // Feature identifier
@@ -34,7 +34,7 @@
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": ["duckai_prompt_submission"]
+                "enum": ["duckai-prompt"]
             },
 
             // Optional human-readable description attached to the error capture (FAILURE / navigation_failed).

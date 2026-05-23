@@ -1,5 +1,5 @@
 //
-//  DuckAIPromptSubmissionWideEventData.swift
+//  DuckAIPromptWideEventData.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,13 +21,13 @@ import Foundation
 import Common
 import PixelKit
 
-final class DuckAIPromptSubmissionWideEventData: WideEventData {
+final class DuckAIPromptWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
-        pixelName: "duckai_prompt_submission",
-        featureName: "duckai_prompt_submission",
-        mobileMetaType: "ios-duckai-prompt-submission",
-        desktopMetaType: "macos-duckai-prompt-submission",
+        pixelName: "duckai_prompt",
+        featureName: "duckai-prompt",
+        mobileMetaType: "ios-duckai-prompt",
+        desktopMetaType: "macos-duckai-prompt",
         version: "1.0.0"
     )
 
@@ -186,7 +186,7 @@ final class DuckAIPromptSubmissionWideEventData: WideEventData {
     static let appTerminatedReason = "app_terminated"
 }
 
-extension DuckAIPromptSubmissionWideEventData {
+extension DuckAIPromptWideEventData {
 
     /// Shared bucketing for all latency milestones in this event. Each duration
     /// is rounded up to the smallest bucket that contains it. Any duration over
@@ -197,29 +197,29 @@ extension DuckAIPromptSubmissionWideEventData {
 
     func jsonParameters() -> [String: Encodable] {
         var parameters: [String: Encodable] = Dictionary(compacting: [
-            (WideEventParameter.DuckAIPromptSubmissionFeature.modelId, modelId),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.userTier, userTier),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.reasoningEffort, reasoningEffort),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.entryPoint, entryPoint.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.inputMode, inputMode.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.lastStep, lastStep?.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.cancellationReason, cancellationReason?.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.didSendBridgeMessage, didSendBridgeMessage),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.startThinkingMs, startThinkingInterval.intValue(Self.latencyBucket)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.startGeneratingMs, startGeneratingInterval.intValue(Self.latencyBucket)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.generatingCompletedMs, generatingCompletedInterval.intValue(Self.latencyBucket)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.endedMs, endedInterval.intValue(Self.latencyBucket)),
-            (WideEventParameter.DuckAIPromptSubmissionFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptFeature.modelId, modelId),
+            (WideEventParameter.DuckAIPromptFeature.userTier, userTier),
+            (WideEventParameter.DuckAIPromptFeature.reasoningEffort, reasoningEffort),
+            (WideEventParameter.DuckAIPromptFeature.entryPoint, entryPoint.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.inputMode, inputMode.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.lastStep, lastStep?.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.cancellationReason, cancellationReason?.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.frontendDeliveryPath, frontendDeliveryPath.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.didSendBridgeMessage, didSendBridgeMessage),
+            (WideEventParameter.DuckAIPromptFeature.startThinkingMs, startThinkingInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptFeature.startGeneratingMs, startGeneratingInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptFeature.generatingCompletedMs, generatingCompletedInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptFeature.endedMs, endedInterval.intValue(Self.latencyBucket)),
+            (WideEventParameter.DuckAIPromptFeature.frontendSubmissionAckMs, frontendSubmissionAckInterval.intValue(Self.latencyBucket)),
         ])
 
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.fireMode] = fireMode
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.isFirstPrompt] = isFirstPrompt
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.frontendDeliveryQueued] = frontendDeliveryQueued
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.didReceiveBridgeMessage] = frontendSubmissionAckInterval.end != nil
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.hasPageContext] = hasPageContext
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.toolsSelected] = toolsSelected
-        parameters[WideEventParameter.DuckAIPromptSubmissionFeature.attachmentsSelected] = attachmentsSelected
+        parameters[WideEventParameter.DuckAIPromptFeature.fireMode] = fireMode
+        parameters[WideEventParameter.DuckAIPromptFeature.isFirstPrompt] = isFirstPrompt
+        parameters[WideEventParameter.DuckAIPromptFeature.frontendDeliveryQueued] = frontendDeliveryQueued
+        parameters[WideEventParameter.DuckAIPromptFeature.didReceiveBridgeMessage] = frontendSubmissionAckInterval.end != nil
+        parameters[WideEventParameter.DuckAIPromptFeature.hasPageContext] = hasPageContext
+        parameters[WideEventParameter.DuckAIPromptFeature.toolsSelected] = toolsSelected
+        parameters[WideEventParameter.DuckAIPromptFeature.attachmentsSelected] = attachmentsSelected
 
         return parameters
     }
@@ -227,7 +227,7 @@ extension DuckAIPromptSubmissionWideEventData {
 
 extension WideEventParameter {
 
-    enum DuckAIPromptSubmissionFeature {
+    enum DuckAIPromptFeature {
         static let modelId = "feature.data.ext.prompt.model_id"
         static let userTier = "feature.data.ext.prompt.user_tier"
         static let reasoningEffort = "feature.data.ext.prompt.reasoning_effort"

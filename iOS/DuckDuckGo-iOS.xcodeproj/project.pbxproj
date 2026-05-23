@@ -316,7 +316,7 @@
 		4B359FD52FB52B810020D70F /* PrivacyStatsDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FD22FB52B810020D70F /* PrivacyStatsDatabase.swift */; };
 		4B359FD62FB52B810020D70F /* PrivacyStatsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FD32FB52B810020D70F /* PrivacyStatsProviding.swift */; };
 		4B359FD82FB52B9A0020D70F /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FD72FB52B9A0020D70F /* InfoPanelView.swift */; };
-		4B359FDB2FB5321C0020D70F /* DuckAIPromptSubmissionWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FDA2FB5321C0020D70F /* DuckAIPromptSubmissionWideEventData.swift */; };
+		4B359FDB2FB5321C0020D70F /* DuckAIPromptWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */; };
 		4B359FDD2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */; };
 		4B37E0502B928CA6009E81CA /* vpn-light-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */; };
 		4B412ACC2BBB3D0900A39F5E /* LazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B412ACB2BBB3D0900A39F5E /* LazyView.swift */; };
@@ -2917,7 +2917,7 @@
 		4B359FD22FB52B810020D70F /* PrivacyStatsDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsDatabase.swift; sourceTree = "<group>"; };
 		4B359FD32FB52B810020D70F /* PrivacyStatsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsProviding.swift; sourceTree = "<group>"; };
 		4B359FD72FB52B9A0020D70F /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
-		4B359FDA2FB5321C0020D70F /* DuckAIPromptSubmissionWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptSubmissionWideEventData.swift; sourceTree = "<group>"; };
+		4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptWideEventData.swift; sourceTree = "<group>"; };
 		4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIWideEventInstrumentation.swift; sourceTree = "<group>"; };
 		4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		4B412ACB2BBB3D0900A39F5E /* LazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyView.swift; sourceTree = "<group>"; };
@@ -6477,7 +6477,7 @@
 		4B359FD92FB532100020D70F /* WideEvent */ = {
 			isa = PBXGroup;
 			children = (
-				4B359FDA2FB5321C0020D70F /* DuckAIPromptSubmissionWideEventData.swift */,
+				4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */,
 				4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */,
 			);
 			path = WideEvent;
@@ -12425,7 +12425,7 @@
 				F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */,
 				985818A02D8C297300993B04 /* AppKeyValueFileStoreService.swift in Sources */,
 				9FE59CE42E31E5F300C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift in Sources */,
-				4B359FDB2FB5321C0020D70F /* DuckAIPromptSubmissionWideEventData.swift in Sources */,
+				4B359FDB2FB5321C0020D70F /* DuckAIPromptWideEventData.swift in Sources */,
 				9FAD6C032E41D9A600C19EEA /* DefaultBrowserPromptUIProvider.swift in Sources */,
 				31DE43C42C2C60E800F8C51F /* DuckPlayerModalPresenter.swift in Sources */,
 				C1C18BF82D95925C00FFBA2E /* AutofillDeleteButtonCell.swift in Sources */,

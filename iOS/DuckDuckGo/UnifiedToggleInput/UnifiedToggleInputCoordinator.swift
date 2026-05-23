@@ -725,6 +725,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // The live state is no longer authoritative for the previous tab; clearing
         // currentTabUID prevents the next activateForTab from snapshotting the
         // (now tool-cleared) live state back over the previous tab's stored entry.
+        // Fire the wide-event cancellation here too — `activateForTab` skips it once
+        // currentTabUID is nil, so Duck.ai → non-AI transitions would otherwise orphan.
+        if let previousTabUID = currentTabUID {
+            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previousTabUID)
+        }
         currentTabUID = nil
         resetToolsSelection()
         clearAttachments()
@@ -2342,7 +2347,7 @@ extension UnifiedToggleInputCoordinator {
         }
     }
 
-    private var duckAIEntryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint {
+    private var duckAIEntryPoint: DuckAIPromptWideEventData.EntryPoint {
         switch host {
         case .contextualChat: return .contextualChat
         case .omnibar: return isOmnibarSession ? .omnibar : .aiTab
@@ -2353,8 +2358,8 @@ extension UnifiedToggleInputCoordinator {
     /// wide-event flow with the snapshot of state at submit time.
     func recordDuckAISubmissionStarted(modelId: String?,
                                        reasoningEffort: AIChatReasoningEffort?,
-                                       inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
-                                       frontendDeliveryPath: DuckAIPromptSubmissionWideEventData.FrontendDeliveryPath,
+                                       inputMode: DuckAIPromptWideEventData.InputMode,
+                                       frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                                        hasPageContext: Bool,
                                        toolsSelected: Bool,
                                        attachmentsSelected: Bool) {
@@ -2383,8 +2388,8 @@ extension UnifiedToggleInputCoordinator {
     /// Called by the contextual sheet's native-input path, which submits its initial prompt
     /// outside the UTI (no `userScript` bound yet). Opens the flow so the JS status updates
     /// that follow have a flow to attach to.
-    func recordExternalPromptSubmitted(entryPoint: DuckAIPromptSubmissionWideEventData.EntryPoint,
-                                       inputMode: DuckAIPromptSubmissionWideEventData.InputMode,
+    func recordExternalPromptSubmitted(entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                                       inputMode: DuckAIPromptWideEventData.InputMode,
                                        isFirstPrompt: Bool,
                                        hasPageContext: Bool) {
         guard let scope = currentDuckAIWideEventFlowScope else { return }

@@ -168,10 +168,15 @@ extension MainViewController {
     /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
         let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        let wasHidden = viewCoordinator.toolbar.isHidden
         if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
+        }
+        // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
+        if wasHidden != viewCoordinator.toolbar.isHidden {
+            setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
         }
     }
 

@@ -204,9 +204,12 @@ final class AIChatContextualWebViewController: UIViewController {
         }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
+            let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+            utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
+            utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -358,7 +361,9 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
+        let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     // MARK: - URL Observation
@@ -451,10 +456,35 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        handleNavigationFailure(error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleNavigationFailure(error)
+    }
+
+    private func handleNavigationFailure(_ error: Error) {
         loadingView.stopAnimating()
+        let nsError = error as NSError
+        guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
+
+        utiHost?.pageLoadFailed(error: error)
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualWebViewController {
+
+    func notifySheetDismissed() {
+        utiHost?.sheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+
+    func notifyFrontendPromptSubmissionAcknowledged() {
+        utiHost?.frontendSubmissionAcknowledged()
     }
 }

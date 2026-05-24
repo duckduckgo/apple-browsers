@@ -2368,7 +2368,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bild oder Datei hinzufügen"
+            "value" : "Bilder oder PDFs hinzufügen"
           }
         },
         "en" : {
@@ -2380,43 +2380,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir imagen o archivo"
+            "value" : "Añadir imágenes o archivos PDF"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter une image ou un fichier"
+            "value" : "Ajouter des images ou des PDF"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi immagine o file"
+            "value" : "Aggiungi immagini o PDF"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afbeelding of bestand toevoegen"
+            "value" : "Afbeeldingen of PDF's toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj obraz lub plik"
+            "value" : "Dodaj obrazy lub pliki PDF"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar Imagem ou Ficheiro"
+            "value" : "Adicionar Imagens ou PDFs"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить изображение или файл"
+            "value" : "Добавить изображения или PDF-файлы"
           }
         }
       }
@@ -2428,7 +2428,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine offenen Tabs"
+            "value" : "Kein Seiteninhalt verfügbar"
           }
         },
         "en" : {
@@ -2440,43 +2440,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No hay pestañas abiertas"
+            "value" : "No hay contenido de página disponible"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun onglet ouvert"
+            "value" : "Aucun contenu de page disponible"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna scheda aperta"
+            "value" : "Nessun contenuto della pagina disponibile"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geen open tabbladen"
+            "value" : "Geen pagina-inhoud beschikbaar"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak otwartych kart"
+            "value" : "Brak dostępnej zawartości strony"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nenhum separador aberto"
+            "value" : "Não há conteúdo disponível da página"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет открытых вкладок"
+            "value" : "Содержимое страницы недоступно"
           }
         }
       }
@@ -3565,10 +3565,58 @@
       "comment" : "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine passenden Tabs"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "No matching tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay pestañas coincidentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun onglet correspondant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna scheda corrispondente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen overeenkomende tabbladen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak pasujących kart"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum separador correspondente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет соответствующих вкладок"
           }
         }
       }
@@ -27760,6 +27808,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить Duck.ai?"
+          }
+        }
+      }
+    },
+    "duckai.duckai-settings.link" : {
+      "comment" : "Button to open the Duck.ai Settings in a new tab from Settings → AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Einstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ajustes de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paramètres Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-instellingen openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir as definições do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки Duck.ai"
           }
         }
       }

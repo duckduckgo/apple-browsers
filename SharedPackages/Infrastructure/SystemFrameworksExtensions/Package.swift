@@ -32,14 +32,28 @@ let package = Package(
             targets: ["FoundationExtensions"]
         ),
         .library(
+            name: "CombineExtensions",
+            targets: ["CombineExtensions"]
+        ),
+        .library(
             name: "UIKitExtensions",
             targets: ["UIKitExtensionsProxy"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
+    ],
     targets: [
         // MARK: - Shared Targets
         .target(
-            name: "FoundationExtensions"
+            name: "FoundationExtensions",
+            dependencies: [
+                .product(name: "Punycode", package: "PunycodeSwift"),
+            ],
+            exclude: ["README.md"]
+        ),
+        .target(
+            name: "CombineExtensions"
         ),
 
         // MARK: - Platform Specific Targets

@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import os.signpost
 import Persistence
 import Core
 
@@ -171,16 +170,7 @@ class TabsModelPersistence: TabsModelPersisting {
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }
-        // perf-1210995169065714: local measurement, strip before commit.
-        // Split signposts: `enqueued` = submit-to-start (queue wait + scheduling).
-        // `write` = work duration (disk I/O, plus any process suspension during it).
-        let sp = OSSignposter(subsystem: "com.duckduckgo.perf", category: "Tabs")
-        let id = sp.makeSignpostID()
-        let enqueuedState = sp.beginInterval("TabsModelPersistence.save.enqueued", id: id)
         persistQueue.async {
-            sp.endInterval("TabsModelPersistence.save.enqueued", enqueuedState)
-            let writeState = sp.beginInterval("TabsModelPersistence.save.write", id: id)
-            defer { sp.endInterval("TabsModelPersistence.save.write", writeState) }
             _ = self.write(data: data, into: targetStore)
         }
         return .success(())

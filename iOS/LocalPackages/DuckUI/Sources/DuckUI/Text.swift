@@ -76,17 +76,17 @@ private struct TextStylesGallery: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("Label4Style — default") {
-                    Text("Primary label using callout + textPrimary token.")
+                    Text(verbatim: "Primary label using callout + textPrimary token.")
                         .label4Style()
                 }
 
                 section("Label4Style — monospaced design") {
-                    Text("Primary label with monospaced design.")
+                    Text(verbatim: "Primary label with monospaced design.")
                         .label4Style(design: .monospaced)
                 }
 
                 section("Label4Style — custom foregrounds") {
-                    Text("Custom blue in light / orange in dark.")
+                    Text(verbatim: "Custom blue in light / orange in dark.")
                         .label4Style(
                             foregroundColorLight: .blue,
                             foregroundColorDark: .orange
@@ -94,9 +94,9 @@ private struct TextStylesGallery: View {
                 }
 
                 section("Label4SubtitleStyle") {
-                    Text("Subtitle label using callout + textSecondary token.")
+                    Text(verbatim: "Subtitle label using callout + textSecondary token.")
                         .modifier(Label4SubtitleStyle())
-                    Text("Subtitle label, monospaced design.")
+                    Text(verbatim: "Subtitle label, monospaced design.")
                         .modifier(Label4SubtitleStyle(design: .monospaced))
                 }
             }

@@ -247,6 +247,26 @@ enum DuckAiNativeStorageContainerMigration {
             return !children.isEmpty
         }
 
+        // `doneKey=true` without a marker means a pre-marker build, an iCloud
+        // restore (App Group came back, Application Support didn't), or a
+        // prior `.gaveUp` (source preserved). Trust the flag only when
+        // `oldURL` is gone — the unambiguous "migration ran" signal. Otherwise
+        // clear the state and fall through; the standard flow handles whichever
+        // configuration we actually find.
+        func reconcileLegacyDoneFlag() {
+            guard userDefaults.bool(forKey: doneKey), !markerExists() else { return }
+            if !fileManager.fileExists(atPath: oldURL.path) {
+                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] writing marker for pre-marker completed migration")
+                writeMarker()
+            } else {
+                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] done flag set without marker and oldURL still exists; resetting state to re-evaluate migration")
+                userDefaults.removeObject(forKey: doneKey)
+                userDefaults.removeObject(forKey: attemptsKey)
+                userDefaults.removeObject(forKey: protectionAppliedKey)
+                userDefaults.removeObject(forKey: protectionAttemptsKey)
+            }
+        }
+
         func ensureProtection() {
             guard !userDefaults.bool(forKey: protectionAppliedKey) else { return }
             guard fileManager.fileExists(atPath: newURL.path) else {
@@ -282,25 +302,7 @@ enum DuckAiNativeStorageContainerMigration {
             return .skip
         }
 
-        // `doneKey=true` without a marker means a pre-marker build, an iCloud
-        // restore (App Group came back, Application Support didn't), or a
-        // prior `.gaveUp` (source preserved). Trust the flag only when
-        // `oldURL` is gone — the unambiguous "migration ran" signal. Otherwise
-        // clear the state and fall through; the standard flow handles whichever
-        // configuration we actually find.
-        if userDefaults.bool(forKey: doneKey) && !markerExists() {
-            let oldExists = fileManager.fileExists(atPath: oldURL.path)
-            if !oldExists {
-                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] writing marker for pre-marker completed migration")
-                writeMarker()
-            } else {
-                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] done flag set without marker and oldURL still exists; resetting state to re-evaluate migration")
-                userDefaults.removeObject(forKey: doneKey)
-                userDefaults.removeObject(forKey: attemptsKey)
-                userDefaults.removeObject(forKey: protectionAppliedKey)
-                userDefaults.removeObject(forKey: protectionAttemptsKey)
-            }
-        }
+        reconcileLegacyDoneFlag()
 
         if markerExists() {
             // Migration is final on this device. Leave `oldURL` alone — when

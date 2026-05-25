@@ -191,7 +191,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @objc private func handleAIChatSettingsChanged() {
-        updateAIChatButtonVisibility()
+        // Hop to main: selector-based notification observers deliver on the
+        // posting thread, and updateAIChatButtonVisibility() touches UIKit.
+        DispatchQueue.main.async { [weak self] in
+            self?.updateAIChatButtonVisibility()
+        }
     }
 
     private func updateAIChatButtonVisibility() {

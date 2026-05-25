@@ -134,7 +134,7 @@ private extension NewTabPageView {
     }
 
     private var allowKeyboardDismissInEmptyView: Bool {
-        viewModel.escapeHatch != nil || !messagesModel.homeMessageViewModels.isEmpty
+        viewModel.escapeHatch != nil || !messagesModel.homeMessageViewModels.isEmpty || messagesModel.isFirePromotionVisible
     }
 
     @ViewBuilder

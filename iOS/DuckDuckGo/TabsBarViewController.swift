@@ -374,14 +374,6 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
         requestNewTab(type: .currentMode)
     }
-    
-    func launchNewNormalTab(_ button: TabSwitcherButton) {
-        requestNewTab(type: .normal)
-    }
-
-    func launchNewFireTab(_ button: TabSwitcherButton) {
-        requestNewTab(type: .fire)
-    }
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {

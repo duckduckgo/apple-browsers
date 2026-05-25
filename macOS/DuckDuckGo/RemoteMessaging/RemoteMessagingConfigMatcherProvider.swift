@@ -208,11 +208,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
+        let canUpgradeOS = SupportedOSChecker(featureFlagger: featureFlagger).osUpgradeCapability.canUpgradeOS
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild,
+                                                     canUpgradeOS: canUpgradeOS),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),

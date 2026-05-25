@@ -176,9 +176,11 @@ class TabsModelPersistence: TabsModelPersisting {
         return .success(())
     }
 
-    /// Always invoked from the persist queue.
+    /// Always invoked from the persist queue. Asserts we are off main so a future contributor
+    /// cannot accidentally introduce the `main -> queue.sync` / `queue -> main.sync` deadlock pair.
     @discardableResult
     private func write(data: Data, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
+        dispatchPrecondition(condition: .notOnQueue(.main))
         do {
             try targetStore.set(data, forKey: Constants.storageKey)
             return .success(())

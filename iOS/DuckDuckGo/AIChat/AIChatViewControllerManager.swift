@@ -34,6 +34,7 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager)
 }
 
 final class AIChatViewControllerManager {
@@ -566,6 +567,10 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
+        aiChatUserScript?.setOpenLinkHandler { [weak self] url in
+            guard let self, let chatViewController = self.chatViewController else { return }
+            self.aiChatViewController(chatViewController, didRequestToLoad: url)
+        }
         aiChatUserScript?.webView = chatViewController?.webView
     }
 }
@@ -632,6 +637,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            delegate?.aiChatViewControllerManagerDidReceivePromptSubmission(self)
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()

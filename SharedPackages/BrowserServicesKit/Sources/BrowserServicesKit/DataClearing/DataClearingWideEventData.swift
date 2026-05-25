@@ -297,6 +297,7 @@ extension DataClearingWideEventData {
     /// Entry point that triggered the data clearing flow (iOS only).
     public enum Source: String, Codable, CaseIterable {
         case browsing
+        case escapeHatch
         case tabSwitcher
         case settings
         case quickFire

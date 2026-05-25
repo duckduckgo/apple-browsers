@@ -83,6 +83,18 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertTrue(mockUserScript.payloadHandlerSet)
     }
 
+    func testSetupSetsOpenLinkHandler() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+
+        // When
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        // Then
+        XCTAssertTrue(mockUserScript.openLinkHandlerSet)
+    }
+
     func testSetupSetsWebView() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
@@ -573,6 +585,23 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didReceivePageContextRequestCallCount, 0)
     }
 
+    func testOpenLinkHandlerNotifiesDelegate() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        let mockDelegate = MockAIChatContentHandlingDelegate()
+        let url = URL(string: "https://duckduckgo.com/?q=cat%20breeds&t=duck_ai")!
+        handler.delegate = mockDelegate
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        // When
+        mockUserScript.openLinkHandler?(url)
+
+        // Then
+        XCTAssertEqual(mockDelegate.didRequestToOpenCallCount, 1)
+        XCTAssertEqual(mockDelegate.requestedOpenURL, url)
+    }
+
     func testDidReceiveVoiceSessionUserEndedNotifiesDelegate() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
@@ -686,10 +715,13 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
+    var canDispatchBridgeMessages: Bool = true
 
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
+    var openLinkHandlerSet = false
+    var openLinkHandler: ((URL) -> Void)?
     var pageContextProviderSet = false
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
@@ -703,6 +735,11 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
+    }
+
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
+        openLinkHandlerSet = true
+        self.openLinkHandler = openLinkHandler
     }
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
@@ -752,7 +789,11 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {}
+    func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {}

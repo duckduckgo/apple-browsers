@@ -20,7 +20,7 @@
 import Foundation
 
 protocol UnifiedToggleInputOmnibarActivating: AnyObject {
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool) -> UnifiedToggleInputActivationDecision
 }
 
 enum UnifiedToggleInputActivationDecision {

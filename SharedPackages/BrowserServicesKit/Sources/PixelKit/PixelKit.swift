@@ -597,6 +597,13 @@ public final class PixelKit {
     }
 
     private func printDebugInfo(pixelName: String, frequency: Frequency, parameters: [String: String], skipped: Bool = false) {
+        // Wide-event pixels (`m_mac_wide_*` / `m_ios_wide_*`) also log their parameters via the
+        // POST endpoint payload in `DefaultWideEventSender`; skip the params here to avoid the noise.
+        guard !pixelName.contains("_wide_") else {
+            logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public)")
+            return
+        }
+
         let params = parameters
             .filter { key, _ in key != "test" }
             .sorted { $0.key < $1.key }

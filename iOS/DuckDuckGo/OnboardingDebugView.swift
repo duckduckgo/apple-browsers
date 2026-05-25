@@ -31,7 +31,7 @@ struct OnboardingDebugView: View {
     private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
     @State private var selectedFlow: OnboardingDebugFlow
 
-    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping (OnboardingDebugFlow) -> Void) {
+    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping @MainActor (OnboardingDebugFlow) -> Void) {
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
         _selectedFlow = State(initialValue: initialFlow)
     }

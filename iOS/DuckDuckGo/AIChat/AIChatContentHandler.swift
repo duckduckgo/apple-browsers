@@ -31,7 +31,9 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
@@ -69,6 +71,8 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -106,6 +110,11 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
+
+    /// True when the underlying user script is bound to both a web view and a broker. Read
+    /// immediately before a `submitPrompt` call to capture whether the bridge dispatch will
+    /// actually reach the frontend.
+    var canDispatchBridgeMessages: Bool { get }
 }
 
 extension AIChatContentHandling {
@@ -117,6 +126,7 @@ extension AIChatContentHandling {
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
     func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -167,6 +177,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
+        self.userScript?.setOpenLinkHandler { [weak self] url in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didRequestToOpen: url)
+        }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
     }
@@ -227,6 +241,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     func buildVoiceModeURL() -> URL {
         updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
+    }
+
+    var canDispatchBridgeMessages: Bool {
+        userScript?.canDispatchBridgeMessages ?? false
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {

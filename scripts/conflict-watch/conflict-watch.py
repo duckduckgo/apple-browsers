@@ -102,6 +102,9 @@ Optional (defaults shown):
                            names instead of Asana @-mentions — no inbox
                            notification fires; useful for first-run pilots)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
+    CW_BRANCH_SKIP_PATTERNS=…
+                          (comma-separated fnmatch globs on branch name;
+                           default "release/*,hotfix/*")
     CW_USER_MAP_PATH=     (path to a flat YAML of github→asana gid)
 
 CLI flags
@@ -212,13 +215,24 @@ NO_MENTIONS = os.environ.get("CW_NO_MENTIONS", "0").lower() in ("1", "true", "ye
 DEFAULT_BOT_AUTHORS = (
     "dependabot[bot],"
     "renovate[bot],"
-    "github-actions[bot]"
+    "github-actions[bot],"
+    "daxtheduck,"
+    "ddg-automation-ci"
 )
 BOT_AUTHORS = {
     a.strip().lower()
     for a in os.environ.get("CW_BOT_AUTHORS", DEFAULT_BOT_AUTHORS).split(",")
     if a.strip()
 }
+
+DEFAULT_BRANCH_SKIP_PATTERNS = "release/*,hotfix/*"
+BRANCH_SKIP_PATTERNS = [
+    p.strip()
+    for p in os.environ.get(
+        "CW_BRANCH_SKIP_PATTERNS", DEFAULT_BRANCH_SKIP_PATTERNS
+    ).split(",")
+    if p.strip()
+]
 
 TITLE_PREFIX = "Likely merge conflict:"
 TITLE_SEP = " ↔ "
@@ -308,6 +322,7 @@ class RunSummary:
     branches_checked: int = 0
     branches_skipped_merged: int = 0
     branches_skipped_bot: int = 0
+    branches_skipped_pattern: int = 0
     branches_skipped_inactive_pr: int = 0
     pairs_probed: int = 0
     pairs_with_hard_conflicts: int = 0
@@ -434,6 +449,10 @@ def list_active_branches(within_hours: int, summary: RunSummary) -> list[Branch]
             continue
         name, iso, author_name, author_email, sha = parts
         if name == DEFAULT_BRANCH:
+            continue
+        if any(fnmatch.fnmatch(name, pat) for pat in BRANCH_SKIP_PATTERNS):
+            logger.debug("Skipping branch by pattern: %s", name)
+            summary.branches_skipped_pattern += 1
             continue
         try:
             ts = datetime.fromisoformat(iso)

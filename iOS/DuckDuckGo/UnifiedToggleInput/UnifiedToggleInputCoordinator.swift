@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Core
+import DDGSync
 import os.log
 import Subscription
 import UIKit
@@ -235,7 +236,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let toggleModeStorage: ToggleModeStoring
     private let stateStore: UnifiedInputStateStoring
+    private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+    private let aiChatSettings: AIChatSettingsProvider
+    private let sessionStateMetrics: SessionStateMetricsProviding
+    private static var hasUsedSearchInSession = false
+    private static var hasUsedAIChatInSession = false
+    private var backgroundObserver: NSObjectProtocol?
     private(set) var currentTabUID: TabUID?
+    private var lastActivatedTabUID: TabUID?
     private var isApplyingState = false
     /// True while a dismiss-time visible-text clear is in flight. The deferred
     /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;
@@ -332,6 +340,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentsChangeSubject.eraseToAnyPublisher()
     }
 
+    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation?
+    private let duckAIWideEventFlowScope: DuckAIWideEventFlowScope?
+
     // MARK: - Initialization
 
     init(
@@ -346,11 +357,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        stateStore: UnifiedInputStateStoring? = nil
+        stateStore: UnifiedInputStateStoring? = nil,
+        syncService: DDGSyncing? = nil,
+        switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
+        duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
+        self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.aiChatSettings = aiChatSettings
+        self.sessionStateMetrics = sessionStateMetrics
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
@@ -364,10 +384,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
+        self.duckAIWideEventInstrumentation = duckAIWideEventInstrumentation
+        self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
-            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            syncService: syncService
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
@@ -395,8 +418,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
+        subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
+        subscribeToDuckAIWideEventSignals()
         viewController.isToolsButtonHidden = true
 
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
@@ -411,6 +436,25 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             hasSubmittedPrompt = true
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
+        }
+
+        if host == .omnibar {
+            backgroundObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didEnterBackgroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.sessionStateMetrics.finalizeSession()
+                    Self.resetSessionFlags()
+                }
+            }
+        }
+    }
+
+    deinit {
+        if let backgroundObserver {
+            NotificationCenter.default.removeObserver(backgroundObserver)
         }
     }
 
@@ -528,10 +572,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
             stateStore.update(snapshot, for: previous)
+            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previous)
         } else {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
         currentTabUID = uid
+        lastActivatedTabUID = uid
         applyState(stateStore.state(for: uid))
     }
 
@@ -641,6 +687,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
         displayState = .aiTab(.expanded)
+        if host == .omnibar {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+        }
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
         viewController.handler.resetInteractionState()
@@ -680,6 +730,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // The live state is no longer authoritative for the previous tab; clearing
         // currentTabUID prevents the next activateForTab from snapshotting the
         // (now tool-cleared) live state back over the previous tab's stored entry.
+        // Fire the wide-event cancellation here too — `activateForTab` skips it once
+        // currentTabUID is nil, so Duck.ai → non-AI transitions would otherwise orphan.
+        if let previousTabUID = currentTabUID {
+            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previousTabUID)
+        }
         currentTabUID = nil
         resetToolsSelection()
         clearAttachments()
@@ -699,6 +754,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
+        if host == .omnibar {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+        }
         // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
         setInitialInputMode(isToggleEnabled ? inputMode : .search)
         self.cardPosition = cardPosition
@@ -834,6 +893,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
         if isDismissingOmnibarNewPromptToolbar {
             viewController.prepareToolbarSubmitStyleForDismissal()
+        }
+
+        if didModeChange && host == .omnibar {
+            fireModeSwitchedPixel(to: effectiveMode)
         }
 
         inputMode = effectiveMode
@@ -1028,13 +1091,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
+        recordDuckAISubmissionStarted(
+            modelId: configuration.modelId,
+            reasoningEffort: configuration.reasoningEffort,
+            inputMode: .voice,
+            frontendDeliveryPath: .userScript,
+            hasPageContext: userScript.attachedPageContextProvider?() != nil,
+            toolsSelected: false,
+            attachmentsSelected: false
+        )
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         showCollapsed()
+        let didSendBridgeMessage = userScript.canDispatchBridgeMessages
         userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+        recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -1557,6 +1631,47 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
+    // MARK: - Pixels
+
+    private func processSessionActivity(mode: TextEntryMode) {
+        guard host == .omnibar else { return }
+
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+
+        switch mode {
+        case .search:
+            Self.hasUsedSearchInSession = true
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+        case .aiChat:
+            Self.hasUsedAIChatInSession = true
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+        }
+
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
+        }
+    }
+
+    private func fireModeSwitchedPixel(to mode: TextEntryMode) {
+        let direction = mode == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText),
+            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
+    }
+
+    // MARK: - Session Management
+
+    @MainActor
+    private static func resetSessionFlags() {
+        hasUsedSearchInSession = false
+        hasUsedAIChatInSession = false
+    }
+
 }
 
 // MARK: - Tools Menu Selection
@@ -1580,6 +1695,9 @@ extension UnifiedToggleInputCoordinator {
 extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegate {
 
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController) {
+        if host == .omnibar {
+            delegate?.unifiedToggleInputDidTapToActivate()
+        }
         showExpanded(inputMode: inputMode)
     }
 
@@ -1592,6 +1710,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         switch mode {
         case .search:
+            if !URL.isValidAddressBarURLInput(text) {
+                switchBarSubmissionMetrics.process(text, for: .search)
+            }
+            processSessionActivity(mode: .search)
             clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
@@ -1601,19 +1723,34 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            let userScript = boundUserScript
+            let tools = toolsController.selectedToolsForSubmission()
+
             if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
                 presentAttachmentValidationError(validationMessage)
                 return
             }
 
-            let tools = toolsController.selectedToolsForSubmission()
+            switchBarSubmissionMetrics.process(text, for: .aiChat)
+            processSessionActivity(mode: .aiChat)
+
+            let configuration = promptSubmissionConfiguration
+            recordDuckAISubmissionStarted(
+                modelId: configuration.modelId,
+                reasoningEffort: configuration.reasoningEffort,
+                inputMode: .keyboard,
+                frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
+                hasPageContext: userScript?.attachedPageContextProvider?() != nil,
+                toolsSelected: !(tools?.isEmpty ?? true),
+                attachmentsSelected: !viewController.currentAttachments.isEmpty
+            )
+
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil
             let files = selectedModelSupportsFileUpload
                 ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
                 : nil
-            let configuration = promptSubmissionConfiguration
 
             resetToolsSelection()
             clearStoreEntryAfterSubmission()
@@ -1631,8 +1768,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 setText("")
                 showCollapsed()
             }
-            if let userScript = boundUserScript {
+            if let userScript {
+                let didSendBridgeMessage = userScript.canDispatchBridgeMessages
                 userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
             }
@@ -1672,6 +1811,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
+        if host == .omnibar {
+            Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed, withAdditionalParameters: ["mode": inputMode.rawValue])
+        }
         // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
         vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         contentViewController.onDismissRequested?()
@@ -2165,6 +2307,15 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
+    func subscribeToClearButtonTap() {
+        viewController.handler.clearButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self, host == .omnibar else { return }
+                delegate?.unifiedToggleInputDidTapClearText()
+            }
+            .store(in: &cancellables)
+    }
+
     func subscribeToSubscriptionChanges() {
         NotificationCenter.default.publisher(for: .subscriptionDidChange)
             .receive(on: DispatchQueue.main)
@@ -2185,5 +2336,98 @@ private extension NSCache where KeyType == NSString, ObjectType == NSString {
                 removeObject(forKey: key as NSString)
             }
         }
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension UnifiedToggleInputCoordinator {
+
+    private var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
+        switch host {
+        case .contextualChat:
+            return duckAIWideEventFlowScope
+        case .omnibar:
+            return (currentTabUID ?? lastActivatedTabUID).map(DuckAIWideEventFlowScope.tab)
+        }
+    }
+
+    private var duckAIEntryPoint: DuckAIPromptWideEventData.EntryPoint {
+        switch host {
+        case .contextualChat: return .contextualChat
+        case .omnibar: return isOmnibarSession ? .omnibar : .aiTab
+        }
+    }
+
+    /// Records a submission for the user's primary input path (voice or keyboard) - opens the
+    /// wide-event flow with the snapshot of state at submit time.
+    func recordDuckAISubmissionStarted(modelId: String?,
+                                       reasoningEffort: AIChatReasoningEffort?,
+                                       inputMode: DuckAIPromptWideEventData.InputMode,
+                                       frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
+                                       hasPageContext: Bool,
+                                       toolsSelected: Bool,
+                                       attachmentsSelected: Bool) {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation?.submissionStarted(
+            scope: scope,
+            modelId: modelId,
+            userTier: subscriptionState.userTier,
+            reasoningEffort: reasoningEffort,
+            entryPoint: duckAIEntryPoint,
+            inputMode: inputMode,
+            fireMode: viewController.handler.isFireTab,
+            isFirstPrompt: !hasSubmittedPrompt,
+            frontendDeliveryPath: frontendDeliveryPath,
+            hasPageContext: hasPageContext,
+            toolsSelected: toolsSelected,
+            attachmentsSelected: attachmentsSelected
+        )
+    }
+
+    func recordDuckAIPromptDelivered(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation?.promptDeliveryUpdated(scope: scope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+    }
+
+    /// Called by the contextual sheet's native-input path, which submits its initial prompt
+    /// outside the UTI (no `userScript` bound yet). Opens the flow so the JS status updates
+    /// that follow have a flow to attach to.
+    func recordExternalPromptSubmitted(entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                                       inputMode: DuckAIPromptWideEventData.InputMode,
+                                       isFirstPrompt: Bool,
+                                       hasPageContext: Bool) {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation?.submissionStarted(
+            scope: scope,
+            modelId: persistedModelId,
+            userTier: subscriptionState.userTier,
+            reasoningEffort: persistedReasoningEffort,
+            entryPoint: entryPoint,
+            inputMode: inputMode,
+            fireMode: viewController.handler.isFireTab,
+            isFirstPrompt: isFirstPrompt,
+            frontendDeliveryPath: entryPoint == .contextualChat ? .contextualNativeInput : .urlAutoSubmit,
+            hasPageContext: hasPageContext,
+            toolsSelected: false,
+            attachmentsSelected: false
+        )
+    }
+
+    func subscribeToDuckAIWideEventSignals() {
+        $aiChatStatus
+            .removeDuplicates()
+            .sink { [weak self] status in
+                guard let self, let scope = self.currentDuckAIWideEventFlowScope else { return }
+                self.duckAIWideEventInstrumentation?.chatStatusChanged(status, scope: scope)
+            }
+            .store(in: &cancellables)
+
+        viewController.handler.stopGeneratingButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self, let scope = self.currentDuckAIWideEventFlowScope else { return }
+                self.duckAIWideEventInstrumentation?.stopGeneratingTapped(scope: scope)
+            }
+            .store(in: &cancellables)
     }
 }

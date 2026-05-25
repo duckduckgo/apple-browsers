@@ -102,6 +102,13 @@ final class AIChatAttachmentsCarouselView: NSView {
     /// resize-replacement on image thumbnails).
     private var viewsByAttachmentId: [String: NSView] = [:]
 
+    /// The id of the attachment most recently appended in the latest `setAttachments` call.
+    /// Stashed here so the caller can scroll it into view after applying its own layout (the
+    /// carousel's outer height constraint is owned by the container VC, so the scroll has to
+    /// wait until the container has flipped it from 0 to `expandedHeight` and laid out).
+    /// Cleared inside `setAttachments` whenever no fresh id was added.
+    private var lastAddedAttachmentId: String?
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -146,8 +153,14 @@ final class AIChatAttachmentsCarouselView: NSView {
     /// Replaces the displayed cards/thumbnails to match `newAttachments`. View instances are
     /// keyed by `AIChatPanelAttachment.attachmentId` and reused across re-renders; on an image
     /// resize replacement (same id, fresh `NSImage`) the existing thumbnail is updated in place.
+    ///
+    /// Stashes the last newly-added attachment id in `lastAddedAttachmentId`; the caller is
+    /// expected to call `scrollLastAddedAttachmentIntoView()` after applying any layout that
+    /// would affect the carousel's own frame (the container VC owns the carousel's outer
+    /// height constraint and flips it from 0 → `expandedHeight`).
     func setAttachments(_ newAttachments: [AIChatPanelAttachment]) {
         guard newAttachments != attachments else { return }
+        let previousIds = Set(attachments.map(\.attachmentId))
         attachments = newAttachments
 
         let newIds = Set(newAttachments.map(\.attachmentId))
@@ -180,7 +193,22 @@ final class AIChatAttachmentsCarouselView: NSView {
             stackView.insertArrangedSubview(view, at: index)
         }
 
+        let addedIds = newIds.subtracting(previousIds)
+        lastAddedAttachmentId = newAttachments.last(where: { addedIds.contains($0.attachmentId) })?.attachmentId
+
         onAttachmentsChanged?()
+    }
+
+    /// Scrolls the carousel so the attachment most recently added in the previous
+    /// `setAttachments` call is visible. No-op when nothing was newly added (e.g. the user
+    /// removed a card or an image resize replaced an existing one in place).
+    ///
+    /// Caller must invoke this after any layout pass that updates the carousel's outer
+    /// frame — typically `layoutSubtreeIfNeeded()` on the carousel — so `scrollToVisible`
+    /// reads accurate frames.
+    func scrollLastAddedAttachmentIntoView() {
+        guard let id = lastAddedAttachmentId, let view = viewsByAttachmentId[id] else { return }
+        view.scrollToVisible(view.bounds)
     }
 
     // MARK: - Cursor management

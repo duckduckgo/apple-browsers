@@ -48,7 +48,7 @@ struct SettingsYouTubeAdBlockingView: View {
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 Section {
                     VStack(alignment: .center, spacing: 16) {
-                        Image(.settingsYoutubeHero)
+                        Image(rebrandable: "SettingsDuckPlayerHero")
                             .padding(.top, 8)
 
                         Text(UserText.youTubeAdBlockingTitle)
@@ -96,7 +96,6 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            viewModel.markYouTubeAdBlockingDisclosureHiddenIfExistingUser()
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }

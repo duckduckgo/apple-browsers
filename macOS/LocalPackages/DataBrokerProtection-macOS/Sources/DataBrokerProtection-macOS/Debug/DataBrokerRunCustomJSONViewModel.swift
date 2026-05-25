@@ -391,7 +391,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let dataBroker: DataBroker
         if let data = jsonString.data(using: .utf8),
            let decoded = try? JSONDecoder().decode(DataBroker.self, from: data) {
-            dataBroker = decoded
+            dataBroker = decoded.with(id: DebugHelper.stableId(for: decoded))
         } else {
             dataBroker = scanResult.dataBroker
         }

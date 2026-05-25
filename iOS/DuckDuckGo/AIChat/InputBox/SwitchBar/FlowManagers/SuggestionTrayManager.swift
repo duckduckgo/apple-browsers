@@ -65,7 +65,7 @@ final class SuggestionTrayManager: NSObject {
     // MARK: - Properties
     
     weak var delegate: SuggestionTrayManagerDelegate?
-    
+
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
     private var cancellables = Set<AnyCancellable>()
@@ -126,9 +126,8 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.setFavoritesSectionTitle(title)
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?, openTabCount: Int) {
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
         suggestionTrayViewController?.setEscapeHatch(model)
-        suggestionTrayViewController?.setOpenTabCount(openTabCount)
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
@@ -136,7 +135,7 @@ final class SuggestionTrayManager: NSObject {
     }
 
     /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil, openTabCount: Int = 0) {
+    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatchModel: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }
         
 
@@ -178,8 +177,7 @@ final class SuggestionTrayManager: NSObject {
             self.delegate?.suggestionTrayManagerDidUpdateVisibility(self)
         }
         controller.didMove(toParent: parentViewController)
-        controller.setEscapeHatch(escapeHatch)
-        controller.setOpenTabCount(openTabCount)
+        controller.setEscapeHatch(escapeHatchModel)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()

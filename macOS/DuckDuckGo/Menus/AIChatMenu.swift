@@ -260,7 +260,8 @@ extension AIChatMenu.Actions {
         remoteSettings: AIChatRemoteSettings,
         tabOpener: AIChatTabOpening,
         historyCleaner: AIChatHistoryCleaning,
-        windowControllersManager: WindowControllersManager
+        windowControllersManager: WindowControllersManagerProtocol,
+        aiChatSyncCleaner: @escaping () -> AIChatSyncCleaning?
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: {
@@ -283,6 +284,7 @@ extension AIChatMenu.Actions {
                     Logger.aiChat.error("Failed to delete all Duck.ai chats: \(error.localizedDescription)")
                     return
                 }
+                await aiChatSyncCleaner()?.recordLocalClear(date: Date())
                 for windowController in windowControllersManager.mainWindowControllers {
                     for tab in windowController.mainViewController.tabCollectionViewModel.tabs where tab.url?.isDuckAIURL == true {
                         tab.reload()

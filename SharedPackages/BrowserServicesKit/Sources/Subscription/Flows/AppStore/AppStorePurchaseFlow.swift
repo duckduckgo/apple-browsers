@@ -281,7 +281,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
     private func getExpiredSubscriptionID() async -> String? {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else { return nil }
             // Only return an externalID if the subscription is expired so to prevent creating multiple subscriptions in the same account
             if !subscription.isActive,
                subscription.platform != .apple {

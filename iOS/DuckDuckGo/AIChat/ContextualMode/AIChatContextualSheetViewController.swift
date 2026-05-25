@@ -847,11 +847,15 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // Coordinator handles state transitions
+        webViewController?.notifyFrontendPromptSubmissionAcknowledged()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
         webViewController?.markFrontendAsReady()
+    }
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
     }
 }
 
@@ -883,8 +887,7 @@ private extension AIChatContextualSheetViewController {
         case .nativeInput:
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
-                let defaultURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-                webVC.loadChatURL(defaultURL)
+                webVC.loadDefaultChatURL()
                 isWebViewVisible = false
             }
             fireButton.isHidden = true
@@ -1091,5 +1094,18 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualSheetViewController {
+
+    func notifySheetDismissed() {
+        webViewController?.notifySheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 }

@@ -793,7 +793,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: wideEvent,
             pixelHandler: FreeTrialPixelHandler(),
-            subscriptionFetcher: { try? await defaultSubscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            subscriptionFetcher: { try? await defaultSubscriptionManager.getSubscription() },
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()
@@ -840,20 +840,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
 
+        let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
 #endif
         notificationService = UserNotificationAuthorizationService()
 
@@ -876,6 +877,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             duckAiNativeStorageHandler = nil
             burnerDuckAiStorageRegistry = nil
+        }
+
+        // Runs independently of `aiChatNativeStorage`. The native-storage handler is an optional
+        // dependency used to clear the legacy in-app voice-mode consent for users who had a
+        // persisted `.deny`; the cleanup nil-checks it internally. The override is already
+        // installed above — the cleanup just reconciles the FE-side stale flag.
+        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) {
+            DuckAiVoiceChatLegacyConsentCleanup(
+                permissionManager: permissionManager,
+                storageHandler: duckAiNativeStorageHandler
+            ).runIfNeeded()
         }
 
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
@@ -1192,6 +1204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let returningUserProvider = AttributedMetricReturningUserProvider(
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         )
+        let installDateProvider = AttributedMetricATBInstallDateProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
@@ -1201,6 +1214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
+                                                               installDateProvider: installDateProvider,
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
@@ -1728,6 +1742,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 installDate: AppDelegate.firstLaunchDate,
                 persistor: persistor,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                isAppRelaunchingForUpdate: { [weak self] in
+                    self?.stateRestorationManager?.isRelaunchingAutomatically ?? false
+                },
+                isSystemQuitting: {
+                    NSAppleEventManager.shared().isQuittingForSystemEvent
+                },
+                resetRelaunchFlagOnCancel: { [weak self] in
+                    guard let stateRestorationManager = self?.stateRestorationManager,
+                          stateRestorationManager.isRelaunchingAutomatically else { return }
+                    stateRestorationManager.resetRelaunchFlag()
+                },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
                     let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
@@ -2410,6 +2435,10 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
         case .fileDeleteError(let error):
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+        case .lastUsedModelParseError:
+            break
+        case .lastUsedReasoningModeParseError:
+            break
         }
     }
 }

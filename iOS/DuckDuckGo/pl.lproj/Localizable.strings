@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopiuj";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopiuj czysty link";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopiuj link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Skopiowano adres URL";
 
@@ -240,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Utwórz obraz";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Znajdź aktualne informacje";
+"aichat.toolbar.tools.websearch.subtitle" = "Pobieraj odpowiedzi z internetu";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Wyszukiwanie w sieci";
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Ostatnio używana karta Fire";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Zakładka czyszczenia";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zamknij zakładkę";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Powrót do zakładki";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Więcej opcji";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Wróć do karty %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Karty prywatne";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2407,7 +2429,7 @@
 "input.field.placeholder.duckai" = "Zapytaj o cokolwiek prywatnie";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Zadaj pytanie uzupełniające...";
+"input.field.placeholder.duckai.followup" = "Odpowiedź...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Zainstaluj rozszerzenie";
@@ -2907,6 +2929,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Przenieś pasek adresowy na dół";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Przenieś pasek adresowy na górę";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Zarządzane pliki cookie";
 
@@ -3365,6 +3393,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Usunąć karty Fire i ich dane?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Usunąć kartę i dane witryny?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Usunąć karty i dane witryny?";
 
@@ -3373,6 +3405,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Usuń kartę";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Usuń ten czat";
@@ -3465,7 +3500,10 @@
 "settings.address.trackers.animation" = "Pokaż na pasku adresu";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz, gdy wrócisz po %@ braku aktywności.";
+"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz po powrocie do DuckDuckGo po %@ braku aktywności.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Wybierz, co zobaczysz po powrocie do DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 godzina";
@@ -3479,14 +3517,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d min";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Brak";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 s";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d s";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Timer bezczynności";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po braku aktywności";
+"settings.afterInactivity.label" = "Ekran startowy";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
@@ -4211,6 +4255,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Przywracanie subskrypcji...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Nie teraz";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo oferuje również **opcjonalną płatną subskrypcję**, z bezpieczną **siecią VPN** i **zaawansowaną, prywatną sztuczną inteligencją**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Usuń z tego urządzenia";
 
@@ -4904,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Dodaj plik";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Dodaj obraz";

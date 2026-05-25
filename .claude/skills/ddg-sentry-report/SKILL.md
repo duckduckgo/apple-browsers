@@ -45,7 +45,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 ### 1.0 Load MCP tools (via ToolSearch)
 
 - Sentry: `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`, `mcp__sentry__get_sentry_resource`
-- Asana: `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`, `mcp__plugin_asana_asana__asana_search_tasks`, `mcp__plugin_asana_asana__asana_create_task`, `mcp__plugin_asana_asana__asana_add_task_followers`
+- Asana: `asana_get_task`, `asana_update_task`, `asana_search_tasks`, `asana_create_task`, `asana_add_task_followers` — the namespace prefix varies by environment: `mcp__asana__` (Claude Agent SDK / direct Asana MCP) or `mcp__plugin_asana_asana__` (Claude Code with the Asana plugin). Pass whichever full name `ToolSearch` surfaces in the current session to `select:`; the rest of this skill refers to the short names only.
 
 ### 1.1 Resolve `<TIME_RANGE>`
 
@@ -170,11 +170,11 @@ Runs BEFORE culprit investigation. For each new-in-version cluster (after culpri
 asana_search_tasks(workspace="137249556945",
   projects.any="1214294661819890",
   sections.any="<PLATFORM_SECTION>",
-  custom_fields.1214294661819893.value="<SHORT_ID>",
+  custom_fields.1214294661819893.contains="<SHORT_ID>",
   opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name,completed")
 ```
 
-`completed` and `tags.name` are required for gating. The `value` filter is substring-match and the custom field is comma-separated, so **split the returned value on commas and require an exact element match** — substring matches like `APPLE-IOS-D6N` matching `APPLE-IOS-D6N6` are false positives. Fall back to `sections.any="1214294661819891"` only if the platform section misses.
+`completed` and `tags.name` are required for gating. Use `.contains` (substring match), not `.value` — `.value` is a literal **equals** match against the whole custom-field string, which fails as soon as a cluster's field holds multiple comma-separated short-IDs. `.contains` then necessarily over-matches (e.g. `APPLE-IOS-D6N` matches a task whose field contains `APPLE-IOS-D6N6`), so **split the returned value on commas and require an exact element match** client-side to discard those false positives. Fall back to `sections.any="1214294661819891"` only if the platform section misses.
 
 **Tag parsing.** Tag names look like `<platform>-app-release-X.Y.Z`. Strip the prefix; parse the remainder as semver-ish; compare numerically. If multiple version tags exist on one task, the **highest** wins.
 
@@ -298,6 +298,7 @@ Do **not** add the DRI as a follower of any per-issue tracking task created in s
 - **Subtask name format:** `Sentry summary - <platform> <version> - <YYYY-MM-DD>` (e.g. `Sentry summary - macOS 1.186 - 2026-04-30`).
 - **`asana_get_task` requires `opt_fields="tags,tags.name"`** — the data-protection hook rejects queries without it (`RETRY REQUIRED` error).
 - **Asana `html_notes` must be wrapped in `<body>...</body>`.** Use `<a href="...">` for plain links (not @-mentions). `<strong>`, `<em>`, `<code>`, `<hr>` supported. See the `asana-rich-text` skill for full syntax.
+- **Use literal Unicode characters, never HTML named entities.** `html_notes` is XML — Asana decodes only the five XML built-ins (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`). Any other named entity (`&bull;`, `&mdash;`, `&ndash;`, `&hellip;`, `&middot;`, `&nbsp;`, `&copy;`, `&trade;`, …) renders as its literal source text (e.g. `&bull;` shows as the eight characters `&bull;`, not `•`). Type the character itself: `•` `—` `–` `…` `·` (regular space) `©` `™`. The templates already use literal characters; preserve them through substitution and never "HTML-escape" typographic punctuation before passing the string to `asana_create_task` / `asana_update_task`. Numeric character references (`&#8226;`) have the same problem — use the literal character.
 - **Resolve parent task GID from URL:** numeric segment after `/task/` (e.g. `.../task/1214175611004136` → `1214175611004136`).
 
 ## Common mistakes
@@ -339,6 +340,7 @@ Top-bite rows. See [`references/common-mistakes-extended.md`](references/common-
 | Mistake | Fix |
 |---|---|
 | Overstating coverage in the report's headlines or "Recommended next step" | Anchor every finding to `<TIME_RANGE>`: "No new regressions in the last 24h", not "Zero new regressions in {version}". Never write "ship it / proceed with confidence / release looks healthy" — those are sign-off statements, not summaries. |
+| Emitting HTML named entities (`&bull;`, `&mdash;`, `&ndash;`, `&hellip;`, `&middot;`, `&nbsp;`) or numeric character references (`&#8226;`) into `html_notes` | Asana's `html_notes` is XML — it decodes only `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`. Everything else renders literally (`&bull;` becomes the eight characters `&bull;`, not `•`). The templates store the bullet/em-dash as literal Unicode — copy them through verbatim; do not "escape" typographic punctuation when substituting values. |
 
 ## Examples
 

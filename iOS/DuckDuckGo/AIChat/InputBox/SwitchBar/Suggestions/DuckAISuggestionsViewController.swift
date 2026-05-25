@@ -120,11 +120,10 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private struct EscapeHatch: Equatable {
         let model: EscapeHatchModel
-        let openTabCount: Int
-        let onTapped: () -> Void
-        let onTabSwitcherTapped: () -> Void
         static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool {
-            lhs.model == rhs.model && lhs.openTabCount == rhs.openTabCount
+            // Identity dedupe: SwiftUI `@ObservedObject` already redraws on the model's `openTabCount` changes,
+            // so the hosting-controller rebuild only needs to fire when the hatch identity actually changes.
+            lhs.model === rhs.model
         }
     }
 
@@ -210,18 +209,10 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Escape hatch
 
     /// No-op on identical model — called repeatedly from container layout/refresh paths.
-    func setEscapeHatch(_ model: EscapeHatchModel?,
-                        openTabCount: Int,
-                        onTapped: (() -> Void)?,
-                        onTabSwitcherTapped: (() -> Void)?) {
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
         let next: EscapeHatch?
-        if let model, let onTapped, let onTabSwitcherTapped {
-            next = EscapeHatch(
-                model: model,
-                openTabCount: openTabCount,
-                onTapped: onTapped,
-                onTabSwitcherTapped: onTabSwitcherTapped
-            )
+        if let model {
+            next = EscapeHatch(model: model)
         } else {
             next = nil
         }
@@ -234,6 +225,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         guard inset != additionalTopInset else { return }
         additionalTopInset = inset
         updateContentInset()
+        updateTableHeader()
     }
 
     /// Force-reloads so the "Recent Chats" header (gated on `hasSearchRow`) toggles immediately, ahead of the fetcher-settle reload-coalesce.
@@ -252,12 +244,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             escapeHatchHostingController = nil
         }
         if let hatch = currentEscapeHatch, !isQueryActive {
-            let view = EscapeHatchView(
-                model: hatch.model,
-                openTabCount: hatch.openTabCount,
-                onCardTap: hatch.onTapped,
-                onTabSwitcherTap: hatch.onTabSwitcherTapped
-            )
+            let view = EscapeHatchView(model: hatch.model)
             let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             addChild(hosting)
@@ -283,7 +270,8 @@ final class DuckAISuggestionsViewController: UIViewController {
 
         // Without this, the SwiftUI hosting view's first layout animates from a default position when the hatch reappears.
         UIView.performWithoutAnimation {
-            let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
+            let effectiveTopPadding = Constants.escapeHatchTopPadding + additionalTopInset
+            let totalHeight = effectiveTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
             let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
             let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
             container.backgroundColor = UIColor(designSystemColor: .background)
@@ -291,7 +279,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(hosting.view)
             var constraints = [
-                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
+                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: effectiveTopPadding),
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
             ]
 

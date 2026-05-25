@@ -50,6 +50,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     case voiceSessionStarted
     case voiceSessionEnded
+    /// Posted by the FE when `getUserMedia` rejects while attempting to start a Duck.ai
+    /// voice session. Native uses this to decide whether to surface a system-permission
+    /// remediation prompt (e.g. when the OS has denied microphone access to the app).
+    case voiceChatStartFailed
+    case voiceSessionUserEnded
 
     // Sync
     case getSyncStatus
@@ -60,5 +65,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case sendToSetupSync
     case setAIChatHistoryEnabled
     case submitSyncStatusChanged
+
+    /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
+    case submitOpenSettingsAction
 }
 // swiftlint:enable inclusive_language

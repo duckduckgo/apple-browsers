@@ -38,7 +38,7 @@ extension MainViewController {
         case .hide:
             handleHideIntent()
         }
-        updateFloatingSubmitVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
@@ -63,6 +63,13 @@ extension MainViewController {
               let attributed = textField.attributedPlaceholder,
               attributed.length > 0 else { return nil }
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+    }
+
+    /// Returns the NTP view's center Y in window coordinates, or nil if not available.
+    func ntpLogoWindowCenterY() -> CGFloat? {
+        guard let ntpView = newTabPageViewController?.view,
+              let window = ntpView.window else { return nil }
+        return ntpView.convert(CGPoint(x: 0, y: ntpView.bounds.midY), to: window).y
     }
 }
 
@@ -174,16 +181,39 @@ private extension MainViewController {
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
+        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        let ntpStartCenterY = ntpLogoWindowCenterY()
+        let isBottom = coordinator.cardPosition.isBottom
+
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
-        viewCoordinator.unifiedInputContentContainer.alpha = 0
 
-        if let omnibarPlaceholderWindowX {
-            coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+        if !isLogoToLogo {
+            viewCoordinator.unifiedInputContentContainer.alpha = 0
         }
 
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        if let omnibarPlaceholderWindowX {
+            coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
+        }
+
+        // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
+        // in one frame, then let the animation drive the UTI Logo to its final position.
+        if isLogoToLogo,
+           let ntpY = ntpStartCenterY,
+           let utiY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY {
+            let bottomLogoOffset = isBottom ? Constants.bottomDaxLogoTransitionYOffset : 0
+            let offset = ntpY - utiY + bottomLogoOffset
+            let naturalOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
+            coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset + offset)
+            coordinator.contentViewController.view.layoutIfNeeded()
+
+            coordinator.contentViewController.setLogoHidden(false)
+            newTabPageViewController?.setLogoHidden(true)
+            viewCoordinator.unifiedInputContentContainer.alpha = 1
+        }
+
+        let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -197,10 +227,17 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
-                // Lay out before pushContentInsets — it reads bar.frame.height.
+                // Reset top-bar handoff so the animation interpolates the logo from its
+                // SWAP position to its natural position. Bottom bar keeps the offset and
+                // lets the keyboard guide handle final positioning.
+                if isLogoToLogo, !isBottom {
+                    coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
+                }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                if !isLogoToLogo {
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                }
                 coordinator.viewController.setTextHorizontalShift(0)
             }
         )
@@ -228,7 +265,7 @@ private extension MainViewController {
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom)
             let slideUTIText: () -> Void = { [weak coordinator] in
                 guard let coordinator, let omnibarPlaceholderWindowX else { return }
-                coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: slideUTIText, completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {

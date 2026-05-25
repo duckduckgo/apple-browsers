@@ -544,10 +544,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             Self.makeUnprotectedFileStore(containerURL: $0, name: "vpn-loop-detector", fallback: UserDefaults.networkProtectionGroupDefaults)
         } ?? UserDefaults.networkProtectionGroupDefaults
 
-        let loopDetector = ConnectionFailureLoopDetector(
-            store: loopDetectorStore,
-            isFeatureEnabled: featureFlagger.isFeatureOn(.vpnConnectionFailureLoopDetection)
-        )
+        let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
         self.wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA

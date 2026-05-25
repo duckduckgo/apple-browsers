@@ -443,6 +443,16 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(provider, .mistral)
     }
 
+    func testWhenProviderIsMistralString_ThenMapsToMistral() {
+        let provider = AIChatModel.ModelProvider.from(id: "mistral-small-2603", providerString: "mistral")
+        XCTAssertEqual(provider, .mistral)
+    }
+
+    func testWhenProviderIsMistralAIString_ThenMapsToMistral() {
+        let provider = AIChatModel.ModelProvider.from(id: "ministral-3b", providerString: "mistralai")
+        XCTAssertEqual(provider, .mistral)
+    }
+
     func testWhenModelIdContainsGptOss_ThenMapsToOSS() {
         let provider = AIChatModel.ModelProvider.from(id: "openai_gpt-oss-120b", providerString: "togetherai")
         XCTAssertEqual(provider, .oss)

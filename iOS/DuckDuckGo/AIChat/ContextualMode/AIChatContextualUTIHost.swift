@@ -37,6 +37,8 @@ final class AIChatContextualUTIHost {
     private var suppressExternalContextUntilNextAttach = false
     private var isBoundToUserScript = false
     private var cancellables = Set<AnyCancellable>()
+    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
+    private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
@@ -46,15 +48,23 @@ final class AIChatContextualUTIHost {
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
         pageContextHandler: AIChatPageContextHandling,
-        isFireTab: Bool
+        isFireTab: Bool,
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
     ) {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent
+        )
+        self.duckAIWideEventInstrumentation = wideEventInstrumentation
         self.coordinator = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
-            isFireTab: isFireTab
+            isFireTab: isFireTab,
+            lastUsedModelProvider: lastUsedModelProvider,
+            duckAIWideEventInstrumentation: wideEventInstrumentation,
+            duckAIWideEventFlowScope: duckAIWideEventFlowScope
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -71,6 +81,12 @@ final class AIChatContextualUTIHost {
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
+
+        coordinator.intentPublisher
+            .sink { [weak self] _ in
+                self?.applyCurrentRenderState()
+            }
+            .store(in: &cancellables)
 
         // Out-of-band context (BEFORECHAT manual attach, FE-driven flows) reaches the chip
         // here; pick a delivery state from session timing — pre-chat = silent, active-chat =
@@ -160,13 +176,21 @@ final class AIChatContextualUTIHost {
     func bindToUserScript(_ userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
         isBoundToUserScript = true
-        coordinator.bindToTab(userScript)
+        let chatID = userScript.webView?.url?.duckAIChatID
+        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
+        if let chatID {
+            coordinator.restoreLastUsedModel(forChatID: chatID)
+        }
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.attachedContext?.contextData
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.chipViewModel.markPromptSubmitted()
         }
+    }
+
+    func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
+        coordinator.observeChatUpdates(publisher)
     }
 
     func markPromptSubmitted() {
@@ -197,8 +221,47 @@ final class AIChatContextualUTIHost {
             contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
             coordinator.viewController.didMove(toParent: contextualChatViewController)
             coordinator.showExpanded()
+            applyCurrentRenderState()
             contextualChatViewController.view.layoutIfNeeded()
         }
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
+    }
+
+    private func applyCurrentRenderState() {
+        coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
+        contextualChatViewController?.view.layoutIfNeeded()
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualUTIHost {
+
+    func sheetDismissed() {
+        duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)
+    }
+
+    func promptDeliveryUpdated(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        duckAIWideEventInstrumentation.promptDeliveryUpdated(scope: duckAIWideEventFlowScope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+    }
+
+    func frontendSubmissionAcknowledged() {
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: duckAIWideEventFlowScope)
+    }
+
+    func pageLoadFailed(error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: duckAIWideEventFlowScope, error: error)
+    }
+
+    /// Called when the contextual sheet's native input submits the initial prompt of a chat,
+    /// which bypasses the UTI. Routes the wide-event start through the shared UTI coordinator
+    /// so the in-flight flow receives the JS status updates that follow.
+    func initialNativePromptSubmitted(hasPageContext: Bool) {
+        coordinator.recordExternalPromptSubmitted(
+            entryPoint: .contextualChat,
+            inputMode: .keyboard,
+            isFirstPrompt: true,
+            hasPageContext: hasPageContext
+        )
     }
 }

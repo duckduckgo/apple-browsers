@@ -62,6 +62,12 @@ protocol TabDelegate: AnyObject {
              inheritingAttribution: AdClickAttributionLogic.State?)
 
     func tabLoadingStateDidChange(tab: TabViewController)
+
+    /// Called once per settled navigation: WKNavigationDelegate didFinish or didFail.
+    /// Fired regardless of whether the tab is current. Use this to persist tab state
+    /// after a navigation resolves, not on every loading-state tick.
+    func tabDidFinishNavigation(_ tab: TabViewController)
+
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage)
 
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?)
@@ -157,6 +163,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 
     func tabDidRequestFireMode(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
 }
 
 extension TabDelegate {
@@ -164,5 +172,9 @@ extension TabDelegate {
     func tabDidRequestClose(_ tab: TabViewController) {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
+
+    func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
 }

@@ -19,22 +19,19 @@
 
 import AIChat
 
-/// Per-tab unified address-bar configuration. Persisted with the tab via
-/// NSCoding so reopening the app restores the user's last-used input setup
-/// rather than falling back to the global default.
+/// Per-tab unified address-bar AI configuration. Persisted with the tab via
+/// NSCoding so reopening the app restores the tab's selected model/reasoning/tool
+/// rather than falling back to global defaults.
 public struct UnifiedInputTabState: Equatable {
-    public var preferredTextEntryMode: TextEntryMode
     public var selectedModelID: String?
     public var selectedReasoningMode: AIChatReasoningMode?
     public var selectedTool: AIChatRAGTool?
 
     public init(
-        preferredTextEntryMode: TextEntryMode = .search,
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil
     ) {
-        self.preferredTextEntryMode = preferredTextEntryMode
         self.selectedModelID = selectedModelID
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool

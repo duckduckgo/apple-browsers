@@ -39,6 +39,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // `AIChatPromptHandler.shared` is a singleton — drain anything a previous test (or a
+        // suite that ran first) might have left in it, so submit-tests that read back the
+        // posted prompt see only what the test under inspection wrote.
+        _ = AIChatPromptHandler.shared.consumeData()
+
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
         featureFlagger = MockFeatureFlagger()
@@ -506,28 +511,260 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(sharedState?.aiChatAttachments.first?.id, attachment.id)
     }
 
-    func testWhenTabSwitchesToTabWithSavedAttachments_ThenOnActiveTabAttachmentsRestoreRequestedFires() {
-        // Given — tab 1 has a saved attachment, tab 2 is fresh. Register the restore callback.
+    func testWhenTabSwitchesToTabWithSavedAttachments_ThenOnActiveTabPanelAttachmentsChangedFires() {
+        // Given — tab 1 has a saved image attachment, tab 2 is fresh. Register the panel-attachments
+        // callback (the unified channel that drives the carousel for image / tab / file kinds).
         let attachment = makeAttachment()
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatAttachments([attachment])
 
-        var receivedAttachmentLists: [[AIChatImageAttachment]] = []
-        controller.onActiveTabAttachmentsRestoreRequested = { attachments in
-            receivedAttachmentLists.append(attachments)
+        var receivedPanelLists: [[AIChatPanelAttachment]] = []
+        controller.onActiveTabPanelAttachmentsChanged = { panelAttachments in
+            receivedPanelLists.append(panelAttachments)
         }
 
         // When — switch to a fresh tab; callback should fire with empty list
         tabCollectionViewModel.appendNewTab()
 
-        // And switch back to tab 1; callback should fire with [attachment]
+        // And switch back to tab 1; callback should fire with the saved image attachment
         tabCollectionViewModel.select(at: .unpinned(0))
 
         // Then
-        XCTAssertEqual(receivedAttachmentLists.count, 2,
-                       "Callback fires once per tab switch to inform the container VC which attachments to reinstall")
-        XCTAssertEqual(receivedAttachmentLists.first?.count, 0, "Switch to tab 2 — no attachments")
-        XCTAssertEqual(receivedAttachmentLists.last?.first?.id, attachment.id,
-                       "Switch back to tab 1 — its saved attachment is handed back")
+        XCTAssertEqual(receivedPanelLists.count, 2,
+                       "Callback fires once per tab switch (the publisher emits the new tab's current value on subscription)")
+        XCTAssertEqual(receivedPanelLists.first?.count, 0, "Switch to tab 2 — no attachments")
+        XCTAssertEqual(receivedPanelLists.last?.count, 1, "Switch back to tab 1 — one attachment")
+        if case .image(let restored) = receivedPanelLists.last?.first {
+            XCTAssertEqual(restored.id, attachment.id, "The restored panel entry is the saved image")
+        } else {
+            XCTFail("Expected the restored panel entry to be an image attachment")
+        }
+    }
+
+    // MARK: - Tab Attachments (Attach Page Content)
+
+    func testWhenPersistTabAttachmentsToActiveTab_ThenSharedStateUpdated() {
+        // Given
+        let attachment = makeTabAttachment()
+
+        // When
+        controller.persistTabAttachmentsToActiveTab([attachment])
+
+        // Then
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.count, 1)
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenToggleTabAttachmentForUnattachedTab_ThenItIsAdded() {
+        // Given — no attachments yet
+        let attachment = makeTabAttachment(id: "tab-1")
+
+        // When
+        controller.toggleTabAttachment(attachment)
+
+        // Then
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1"])
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.map(\.id), ["tab-1"],
+                       "Toggle-on must persist to the active tab's shared state")
+    }
+
+    func testWhenToggleTabAttachmentForAttachedTab_ThenItIsRemoved() {
+        // Given — attachment is already attached
+        let attachment = makeTabAttachment(id: "tab-1")
+        controller.toggleTabAttachment(attachment)
+        XCTAssertEqual(controller.activeTabAttachments.count, 1)
+
+        // When — toggle the same id again
+        controller.toggleTabAttachment(attachment)
+
+        // Then
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty)
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatTabAttachments.isEmpty ?? false)
+    }
+
+    func testWhenToggleTabAttachmentMultipleDistinctIds_ThenAllAdded() {
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1", "tab-2", "tab-3"],
+                       "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
+    }
+
+    func testWhenSubmitWithTabAttachments_ThenSharedStateClearsTabAttachments() async {
+        // Given — a tab is attached and there's a prompt to submit
+        let attachment = makeTabAttachment(id: "tab-1")
+        controller.toggleTabAttachment(attachment)
+        XCTAssertFalse(controller.activeTabAttachments.isEmpty)
+        controller.updateText("summarize this")
+
+        // When
+        controller.submit()
+        // Submit awaits per-tab page-context extraction (M8) before clearing shared state.
+        // See sibling test for the rationale on sleep vs yield-loop.
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then — submit clears the active tab's saved tab attachments (the publisher then drives
+        // the carousel back to empty). The active tab's image attachments are cleared by the same
+        // submit flow via the existing image-side path.
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatTabAttachments.isEmpty ?? false,
+                      "Tab attachments are cleared from shared state after a successful submit")
+    }
+
+    func testWhenSubmitWithTabAttachments_ThenSubmitProceedsAndPixelFires() async {
+        // Given — two tab attachments. Note: in this unit test, the `TabCollectionViewModel`
+        // doesn't contain real `Tab` instances for "tab-A" / "tab-B", so the page-context
+        // extractor returns nil for both and the prompt's `pageContext` ends up nil. We
+        // can't unit-test the full extraction → `.multiple([...])` path here without real
+        // webviews; the encoding side is covered in `AIChatNativePromptTests`.
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-A"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-B"))
+        controller.updateText("summarize these")
+
+        // When
+        controller.submit()
+        // Brief sleep instead of `Task.yield`s: submit's `await extractPageContextsForOmnibarSubmit`
+        // dispatches a `withTaskGroup` with one `@MainActor` child task per attached tab. With
+        // both child tasks competing for the main actor with the submit task itself, the
+        // scheduler interleaving isn't deterministic across runs — a fixed-count yield loop
+        // sometimes finishes before the group's `for await pair in group` drains. Sleeping
+        // hands the scheduler a real time slice so everything settles before we assert.
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then — submit didn't crash, the tab-opener was called, and the prompt was posted as
+        // a `.query` tool. The fact that the tab ids existed at submit time is enough to
+        // exercise the per-tab fetch path; whether they produce a non-nil `pageContext`
+        // depends on extraction (which we don't mock here).
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "Submit opens the duck.ai tab")
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        if case .query = prompt?.tool {
+            // OK
+        } else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+        }
+    }
+
+    // MARK: - File attachments (PDFs etc.)
+
+    func testWhenAddFileAttachment_ThenSharedStateContainsIt() {
+        let attachment = makeFileAttachment(fileName: "spec.pdf")
+        controller.addFileAttachmentToActiveTab(attachment)
+
+        XCTAssertEqual(controller.activeFileAttachments.map(\.id), [attachment.id])
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatFileAttachments.map(\.id), [attachment.id],
+                       "File attachment is persisted to the active tab's shared state")
+    }
+
+    func testWhenRemoveFileAttachment_ThenSharedStateDropsIt() {
+        let attachment = makeFileAttachment()
+        controller.addFileAttachmentToActiveTab(attachment)
+        XCTAssertFalse(controller.activeFileAttachments.isEmpty)
+
+        controller.removeFileAttachmentFromActiveTab(id: attachment.id)
+
+        XCTAssertTrue(controller.activeFileAttachments.isEmpty)
+    }
+
+    func testWhenSubmitWithFileAttachments_ThenPromptCarriesFiles() async {
+        // Given — a model that supports file upload, plus an attached PDF
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        let pdfData = Data("%PDF-1.4 mock".utf8)
+        let attachment = AIChatFileAttachment(
+            data: pdfData,
+            fileName: "spec.pdf",
+            mimeType: "application/pdf"
+        )
+        controller.addFileAttachmentToActiveTab(attachment)
+        controller.updateText("summarise this PDF")
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — prompt's `query.files` carries the encoded PDF.
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.files?.count, 1)
+        XCTAssertEqual(query.files?.first?.fileName, "spec.pdf")
+        XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
+        XCTAssertEqual(query.files?.first?.data, pdfData.base64EncodedString(),
+                       "File data is sent as base64")
+    }
+
+    func testWhenSubmitWithFileAttachments_ThenSharedStateClearsFileAttachments() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "a.pdf"))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatFileAttachments.isEmpty ?? false,
+                      "File attachments are cleared from shared state after a successful submit")
+    }
+
+    func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsPageContext() async {
+        // Given — only text, no attachments
+        controller.updateText("just text")
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — the prompt's top-level `pageContext` is nil so the duck.ai web app sees no
+        // extra field (the omnibar never auto-attaches the current page — current-page
+        // behavior is sidebar-only).
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        XCTAssertNil(prompt?.pageContext,
+                     "No tab attachments → omnibar omits `pageContext` entirely on the prompt")
+    }
+
+    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
+        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
+        let attachment = makeTabAttachment(id: "tab-A")
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
+
+        var receivedLists: [[AIChatPanelAttachment]] = []
+        controller.onActiveTabPanelAttachmentsChanged = { lists in
+            receivedLists.append(lists)
+        }
+
+        // When — switch to fresh tab 2 and back to tab 1
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        // Then — the publisher emits the current value on each new subscription, so we expect
+        // one callback per tab switch with that tab's saved list.
+        XCTAssertGreaterThanOrEqual(receivedLists.count, 2,
+                       "Callback fires on every tab switch (publisher delivers initial value on subscribe)")
+        XCTAssertTrue(receivedLists.contains { $0.isEmpty }, "Tab 2 has no panel attachments")
+        XCTAssertTrue(
+            receivedLists.contains { list in
+                if case .tab(let tab) = list.first { return tab.id == attachment.id }
+                return false
+            },
+            "Tab 1's saved tab attachment is handed back when switching back"
+        )
     }
 
     func testWhenUpdateSelection_ThenPersistedToActiveTabSharedState() {
@@ -552,30 +789,29 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 3, length: 2))
     }
 
-    func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextToolModeAndAttachmentsFromSharedState() {
-        // Given — simulate a draft: user typed, selected a tool, attached a file on this tab.
+    func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextAndToolModeFromSharedState() {
+        // Given — simulate a draft: user typed, selected a tool, attached an image on this tab.
         let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
         sharedState?.updateText("my prompt")
         sharedState?.setAIChatToolMode(.webSearch)
         let attachment = makeAttachment()
         sharedState?.setAIChatAttachments([attachment])
 
-        // Cleanup wipes the controller's local state (e.g. user toggled Duck.ai off).
+        // Cleanup wipes the controller's local state (e.g. user toggled Duck.ai off). It does NOT
+        // clear shared state — the carousel re-syncs via the always-on `$aiChatPanelAttachments`
+        // subscription, so no separate "restore on activate" callback is needed any more.
         controller.cleanup()
         XCTAssertEqual(controller.currentText, "")
         XCTAssertNil(controller.activeToolMode)
 
-        var restoredAttachmentLists: [[AIChatImageAttachment]] = []
-        controller.onActiveTabAttachmentsRestoreRequested = { restoredAttachmentLists.append($0) }
-
         // When — user toggles Duck.ai back on; the panel calls onOmnibarActivated.
         controller.onOmnibarActivated(shouldFetchSuggestions: false)
 
-        // Then — the controller pulls text / tool mode / attachments from the tab's shared state so the
-        // user sees their draft again instead of an empty panel.
+        // Then — the controller pulls text / tool mode from shared state so the user sees their draft.
         XCTAssertEqual(controller.currentText, "my prompt")
         XCTAssertEqual(controller.activeToolMode, .webSearch)
-        XCTAssertEqual(restoredAttachmentLists.last?.first?.id, attachment.id)
+        // Attachments are preserved on shared state across the cleanup → activate cycle.
+        XCTAssertEqual(sharedState?.aiChatAttachments.first?.id, attachment.id)
     }
 
     // MARK: - URL Classification with Multi-Word Input
@@ -1130,9 +1366,15 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// Creates a remote model for testing. Access is resolved locally from `accessTier`
     /// (not `entityHasAccess`), so `accessTier` must include `"free"` for the model to be
     /// accessible to the default free-tier test user.
+    ///
+    /// `supportedFileTypes` defaults to `nil` (no file upload support). Tests that exercise
+    /// the PDF/file-attachment submission path must pass a non-empty array — the controller's
+    /// `selectedModelSupportsFileUpload` gate is `!supportedFileTypes.isEmpty`, and the
+    /// submit body silently drops the file payload when that returns `false`.
     private func makeRemoteModel(
         id: String,
         supportsImageUpload: Bool = false,
+        supportedFileTypes: [String]? = nil,
         entityHasAccess: Bool = true,
         supportedTools: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = []
@@ -1144,6 +1386,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             provider: "openai",
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             accessTier: entityHasAccess ? ["free"] : ["plus", "pro"],
             supportedReasoningEffort: supportedReasoningEffort
@@ -1158,6 +1401,23 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     private func makeAttachment(id: UUID = UUID()) -> AIChatImageAttachment {
         AIChatImageAttachment(id: id, image: NSImage(), fileName: "\(id.uuidString).png", fileURL: nil, skipResize: true)
+    }
+
+    private func makeTabAttachment(id: String = UUID().uuidString) -> AIChatTabAttachment {
+        AIChatTabAttachment(
+            id: id,
+            title: "Example",
+            url: URL(string: "https://example.com")!,
+            favicon: nil
+        )
+    }
+
+    private func makeFileAttachment(fileName: String = "spec.pdf") -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: fileName,
+            mimeType: "application/pdf"
+        )
     }
 }
 

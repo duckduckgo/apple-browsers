@@ -207,7 +207,6 @@ extension OnboardingRebranding {
             let tailDirection: BubbleTailDirection
             var additionalTopMargin: CGFloat = 0
             let isVisible: Bool
-            let showsStepCounter: Bool
         }
 
         var body: some View {
@@ -363,6 +362,7 @@ extension OnboardingRebranding {
                     content: content.restorePromptStepContent,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     restoreAction: {
                         model.restoreSyncAccountAction()
                         animateContentTransition {
@@ -382,6 +382,7 @@ extension OnboardingRebranding {
                     content: content,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
+                    skipTypingAnimation: $skipTypingAnimation,
                     continueAction: {
                         animateContentTransition {
                             model.startOnboardingAction(isResumingOnboarding: false)
@@ -424,13 +425,8 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
-                .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
-            } else {
-                .hidden
-            }
             let isIntroStep: Bool = if case .startOnboardingDialog = state.type { true } else { false }
-            return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
+            return makeBubbleView(configuration: configuration, stepInfo: state.step) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
                         .opacity(showBubbleContent ? 1 : 0)
@@ -474,7 +470,7 @@ extension OnboardingRebranding {
                 tailPosition: tail,
                 currentStep: stepInfo.currentStep,
                 totalSteps: stepInfo.totalSteps,
-                isVisible: configuration.showsStepCounter
+                isVisible: stepInfo != .hidden
             ) {
                 content()
             }
@@ -511,51 +507,44 @@ extension OnboardingRebranding {
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
-                    isVisible: model.introState.showIntroViewContent,
-                    showsStepCounter: false
+                    isVisible: model.introState.showIntroViewContent
                 )
             case .browsersComparisonDialog, .aiComparisonDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .addToDockPromoDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseAppIconDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .trailing,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseAddressBarPositionDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseSearchExperienceDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .duckAIQueryExperimentDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: false
+                    isVisible: true
                 )
             }
         }
@@ -680,7 +669,6 @@ extension OnboardingRebranding {
         ///   and bubble resize). `nil` for the initial fade-in.
         private func animateContentTransition(action: (() -> Void)? = nil) {
             showBubbleContent = false
-            skipTypingAnimation = false
 
             // Read the currently-displayed animation (not the model-derived one) so e.g. the
             // add-to-dock promo→tutorial in-place swap, where the overlay is already cleared,
@@ -694,7 +682,8 @@ extension OnboardingRebranding {
             )
 
             if action == nil {
-                // Initial appearance: pin the overlay to the current step.
+                // Initial appearance: pin the overlay.
+                skipTypingAnimation = false
                 currentDaxAnimation = activeDaxAnimation
                 daxPlayForward = true
                 daxAnimationID += 1
@@ -705,6 +694,7 @@ extension OnboardingRebranding {
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
+                    skipTypingAnimation = false
                     if hasAnyDaxExit {
                         // Don't update `currentDaxAnimation` yet — the old animation must stay
                         // rendered while its exit plays, even after `model.state` moves on.

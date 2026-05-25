@@ -117,7 +117,7 @@ extension OnboardingView {
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
             ),
             ImageSegmentedPickerItem(
-                text: UserText.searchInputToggleAIChatButtonTitle,
+                text: UserText.Onboarding.DuckAIQueryExperiment.toggleAILabel,
                 selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
             )

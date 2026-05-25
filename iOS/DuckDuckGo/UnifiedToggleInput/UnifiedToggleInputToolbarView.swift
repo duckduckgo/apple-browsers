@@ -28,13 +28,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let verticalPadding: CGFloat = 6
+        static let topPadding: CGFloat = 4
+        static let bottomPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
         static let selectedToolClearButtonSize: CGFloat = 24
         static let leftGroupSpacing: CGFloat = 4
-        static let rightGroupSpacing: CGFloat = 8
+        static let rightGroupSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
@@ -58,24 +59,40 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonState() }
     }
 
+    var usesNewPromptSubmitStyle: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     private var isFireTab: Bool = false
+    private var preservesSubmitStyleDuringDismissal = false
+    private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
-        // Apply fire-mode dark trait to content children only; submit keeps OS trait so `.fireModeAccent` tracks the OS.
-        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
-        [toolsButton, imageButton, modelChipButton, selectedToolChipView, stopButton].forEach {
-            $0.overrideUserInterfaceStyle = style
+        overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
+        updateSubmitButtonAppearance()
+    }
+
+    var isGenerating: Bool = false {
+        didSet {
+            updateGeneratingVisibility()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
+    func prepareForToolbarVisibilityChange(showToolbar: Bool) {
+        if showToolbar {
+            preservesSubmitStyleDuringDismissal = false
+        } else {
+            preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
         }
         updateSubmitButtonAppearance()
     }
 
-    var isSubmitButtonHidden: Bool = false {
-        didSet { updateGeneratingVisibility() }
-    }
-
-    var isGenerating: Bool = false {
-        didSet { updateGeneratingVisibility() }
+    func finalizeToolbarShown() {
+        guard preservesSubmitStyleDuringDismissal else { return }
+        preservesSubmitStyleDuringDismissal = false
+        updateSubmitButtonAppearance()
     }
 
     var modelName: String = "4o-mini" {
@@ -147,7 +164,10 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }
-        set { imageButton.isEnabled = newValue }
+        set {
+            isImageButtonAvailable = newValue
+            updateToolbarControlsEnabledState()
+        }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -352,13 +372,14 @@ private extension UnifiedToggleInputToolbarView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding),
-            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding),
+            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomPadding),
             modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
         updateChipVisibility()
         updateSubmitButtonState()
+        updateToolbarControlsEnabledState()
     }
 
     func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector?) -> UIButton {
@@ -415,12 +436,23 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
-        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
+        let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
+        let icon: UIImage? = {
+            if showVoice {
+                return DesignSystemImages.Glyphs.Size24.voice
+            } else if usesReturnKeyStyle {
+                return DesignSystemImages.Glyphs.Size24.arrowRight
+            } else {
+                return DesignSystemImages.Glyphs.Size24.arrowUp
+            }
+        }()
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
         if showVoice {
             submitButton.applyAIVoiceChatStyle()
+        } else if usesReturnKeyStyle {
+            submitButton.applyReturnKeyStyle()
         } else {
             submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
         }
@@ -432,8 +464,17 @@ private extension UnifiedToggleInputToolbarView {
             stopButton.isHidden = false
         } else {
             stopButton.isHidden = true
-            submitButton.isHidden = isSubmitButtonHidden
+            submitButton.isHidden = false
         }
+    }
+
+    func updateToolbarControlsEnabledState() {
+        let controlsAreEnabled = !isGenerating
+        imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
+        toolsButton.isEnabled = controlsAreEnabled
+        reasoningButton.isEnabled = controlsAreEnabled
+        modelChipButton.isEnabled = controlsAreEnabled
+        selectedToolClearButton.isEnabled = controlsAreEnabled
     }
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }

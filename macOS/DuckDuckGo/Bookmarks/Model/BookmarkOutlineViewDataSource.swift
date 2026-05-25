@@ -238,7 +238,8 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         let rowView = RoundedSelectionRowView()
 
         rowView.requiresAccentColors = contentMode != .foldersOnly
-        rowView.insets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        let horizontalInset: CGFloat = (contentMode == .bookmarksMenu && AppVersion.isLiquidGlassSupported) ? 10 : 8
+        rowView.insets = NSEdgeInsets(top: 0, left: horizontalInset, bottom: 0, right: horizontalInset)
 
         // observe row drag&drop target highlight state and update `targetRowForDropOperation`
         let cancellable = rowView.publisher(for: \.isTargetForDropOperation).sink { [weak self] isTargetForDropOperation in
@@ -324,11 +325,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         }
 
         let index = {
-            // for folders-only calculate new real index based on the nearest folder index
+            // for folders-only and clipped-items menus the outline doesn‘t show every sibling,
+            // so translate the visible outline index into a real index in the parent folder.
             if contentMode == .foldersOnly || representedObject is PseudoFolder,
                index > -1,
-               // get folder before the insertion point (or the first one)
-               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BookmarkFolder,
+               // get the entity before the insertion point (or the first one)
+               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BaseBookmarkEntity,
                // get all the children of a new parent folder (take actual bookmark list for the root)
                let siblings = ((representedObject is PseudoFolder ? nil : representedObject) as? BookmarkFolder)?.children ?? bookmarkManager.list?.topLevelEntities {
 

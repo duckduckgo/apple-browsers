@@ -195,8 +195,7 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
-            switchBarHandler: MockSwitchBarHandler(),
-            escapeHatch: nil
+            switchBarHandler: MockSwitchBarHandler()
         )
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
@@ -346,7 +345,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
@@ -358,7 +356,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     func microphoneButtonTapped() {}
     func markUserInteraction() {}
     func clearButtonTapped() {}
-    func searchGoToButtonTapped() {}
     func stopGeneratingButtonTapped() {}
     func updateBarPosition(isTop: Bool) {}
 }

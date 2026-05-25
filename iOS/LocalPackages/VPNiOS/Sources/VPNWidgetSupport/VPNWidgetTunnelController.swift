@@ -44,14 +44,17 @@ public struct VPNWidgetTunnelController: Sendable {
         }
     }
 
-    public func start() async throws {
+    public func start(settings: VPNSettings) async throws {
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         guard let manager = managers.first else {
             throw StartFailure.vpnNotConfigured
         }
 
+        // Re-apply configuration from current settings so route/exclusion changes
+        // the user made in-app actually reach the system VPN profile.
+        manager.applyDuckDuckGoConfiguration(from: settings)
         manager.isOnDemandEnabled = true
-        manager.isEnabled = true
+
         try await manager.saveToPreferences()
         try await manager.loadFromPreferences()
         try manager.connection.startVPNTunnel()

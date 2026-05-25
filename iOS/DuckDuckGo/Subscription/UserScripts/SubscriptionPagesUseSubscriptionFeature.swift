@@ -29,6 +29,8 @@ import os.log
 import Networking
 import PixelKit
 import PrivacyConfig
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
 
 struct SubscriptionPagesUseSubscriptionFeatureConstants {
     static let featureName = "useSubscription"
@@ -152,6 +154,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let tierEventReporter: SubscriptionTierEventReporting
     private let pendingTransactionHandler: PendingTransactionHandling
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
     private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
@@ -169,7 +172,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
          pendingTransactionHandler: PendingTransactionHandling,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting,
-         requestValidator: any ScriptRequestValidator) {
+         requestValidator: any ScriptRequestValidator,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { true }
+         )) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -182,6 +190,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.pendingTransactionHandler = pendingTransactionHandler
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter
         self.requestValidator = requestValidator
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -322,8 +331,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-            Logger.subscription.log("Subscription retrieved")
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                setTransactionError(.failedToSetSubscription)
+                markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
+                return nil
+            }
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
             markEmailAddressRestoreWideEventFlowAsSuccess()
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -545,6 +559,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             UniquePixel.fire(pixel: .subscriptionActivated)
             Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
+            fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
@@ -594,7 +609,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
 
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
         Logger.subscription.log("[TierChange] Starting from subscription: \(currentSubscription?.productId ?? "unknown", privacy: .public)")
@@ -844,6 +859,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
+    }
+
+    private func fireFreemiumUpsellPixel() {
+        guard freemiumDBPUserStateManager.didActivate, let pixelKit = PixelKit.shared else { return }
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS).fire(.freemiumUpsell)
     }
 }
 

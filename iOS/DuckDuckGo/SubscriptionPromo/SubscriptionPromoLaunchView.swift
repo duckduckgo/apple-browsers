@@ -28,7 +28,7 @@ struct SubscriptionPromoLaunchView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let title: String
-    let message: String
+    let message: AttributedString
     let ctaText: String
     let closeAction: () -> Void
     let ctaAction: () -> Void
@@ -79,13 +79,13 @@ private extension SubscriptionPromoLaunchView {
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
         let title: String
-        let message: String
+        let message: AttributedString
 
         var body: some View {
             VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(.sheetIcon)
+                Image(rebrandable: "SheetIcon")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)
@@ -164,7 +164,7 @@ private enum Metrics {
 #Preview {
     SubscriptionPromoLaunchView(
         title: "Did you know?",
-        message: "DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI.",
+        message: AttributedString("DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI."),
         ctaText: "Learn More",
         closeAction: {},
         ctaAction: {}

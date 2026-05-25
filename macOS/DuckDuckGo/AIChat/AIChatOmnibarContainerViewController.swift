@@ -65,7 +65,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
         static let attachmentsErrorHeight: CGFloat = 18
-        static let attachmentsDisplayCap: Int = AIChatImageAttachmentsContainerView.maxAttachments + 1
+        // Display caps mirror the per-conversation maxes (`max + 1`) so the picker can render
+        // exactly one item over the limit as a visible cue, with the error label calling it out.
+        static let imageAttachmentsDisplayCap: Int = AIChatOmnibarController.imageAttachmentsDisplayCap
+        static let fileAttachmentsDisplayCap: Int = AIChatOmnibarController.fileAttachmentsDisplayCap
+        /// Carousel's outer height when populated — includes the row content height plus an
+        /// internal shadow-margin band on top and bottom, so card shadows render without clipping.
+        static let attachmentsCarouselRowHeight: CGFloat = AIChatAttachmentsCarouselView.expandedHeight
+        /// Visible vertical spacing between the cards' bottom edge and the tools row.
+        static let attachmentsCarouselBottomSpacing: CGFloat = 8
+        /// Anchor offset for the carousel's bottom: the carousel's lower shadow-margin band
+        /// already provides part of the visual spacing, so the actual constraint constant is the
+        /// remaining gap = `bottomSpacing - shadowMargin`. Negated for the layout API.
+        static let attachmentsCarouselBottomAnchorOffset: CGFloat = -(attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
+        /// Total panel height the carousel + below-spacing reserves when populated.
+        static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         static let suggestionsBottomPadding: CGFloat = 4
     }
 
@@ -80,7 +94,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let webSearchActiveButton = AIChatOmnibarToolButton()
     private let reasoningPickerButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
-    private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
+    // No image-attachments container view: image / file / tab attachment data all lives on
+    // `AddressBarSharedTextState`, and the unified `AIChatAttachmentsCarouselView` is the
+    // sole rendering surface.
+    private let attachmentsCarouselView = AIChatAttachmentsCarouselView()
 
     private let attachmentsErrorLabel: NSTextField = {
         let label = NSTextField(labelWithString: UserText.aiChatAttachmentsLimitError)
@@ -94,22 +111,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
 
-    /// Tracks ongoing resize tasks by attachment ID. Used to ensure resizes complete before submission.
+    /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
-    /// When true, the attachments view is being reinstalled from the current tab's shared state (on tab switch).
-    /// Used to suppress the `onAttachmentsChanged` → `persistAttachmentsToActiveTab` writeback during that window.
-    private var isRestoringAttachmentsFromSharedState = false
-    /// True while `cleanup()` is tearing down the panel. The clear-attachments call inside cleanup must not
-    /// persist an empty list back to shared state — on a tab-switch dismissal, cleanup runs before the controller's
-    /// `$selectedTabViewModel` sink has swapped `sharedTextState` to the incoming tab, so any persist at this point
-    /// would zero out the *outgoing* tab's attachments.
-    private var isCleaningUp = false
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
-    /// Attachments container height constraint - 0 when empty
-    private var attachmentsHeightConstraint: NSLayoutConstraint?
+    /// Unified attachments carousel height constraint — 0 when both image and tab attachment
+    /// lists are empty, `attachmentsCarouselRowHeight + attachmentsCarouselBottomSpacing` otherwise.
+    /// (Named `attachmentsCarouselHeightConstraint` for the property's introduction history; it now
+    /// drives the combined image + tab row.)
+    private var attachmentsCarouselHeightConstraint: NSLayoutConstraint?
+
+    /// True while the attach menu is open. We defer the carousel's panel-reflow (height
+    /// constraint update + `onPassthroughHeightNeedsUpdate`) until the menu closes — otherwise
+    /// each toggle would push the panel down by a card-row's worth, and the menu (popped at the
+    /// button's pre-toggle position) would visually drift over the new card. The carousel's
+    /// data still updates immediately so the menu's checkmarks stay in sync; only the panel
+    /// growth is held back.
+    private var isDeferringCarouselLayout = false
 
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
@@ -212,17 +232,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
+    /// Combined "carousel + error label" reservation. Single source of truth so
+    /// `additionalContentHeight` and `totalPassthroughHeight` can't drift apart on the
+    /// gating rule (the carousel is populated only via tools UI today, but each method
+    /// previously open-coded the same arithmetic with subtly different gates).
+    private var attachmentRowReservation: CGFloat {
+        var height: CGFloat = 0
+        // The carousel filters out attachments the model can't accept, so its `attachments`
+        // count reflects what the user actually sees.
+        if !attachmentsCarouselView.attachments.isEmpty {
+            height += Constants.attachmentsCarouselTotalPanelReservation
+        }
+        if hasVisibleImageExcess || hasVisibleFileExcess {
+            height += Constants.attachmentsErrorHeight
+        }
+        return height
+    }
+
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        if (omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden) && !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
-            var height = Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
-            if attachmentsContainerView.hasExcessAttachments {
-                height += Constants.attachmentsErrorHeight
-            }
-            return height
-        }
-        return 0
+        attachmentRowReservation
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
@@ -236,16 +266,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
             height += Constants.toolButtonSize + Constants.toolButtonBottomInset
-
-            // Add attachments area when there are visible attachments
-            if !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
-                height += Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
-                if attachmentsContainerView.hasExcessAttachments {
-                    height += Constants.attachmentsErrorHeight
-                }
-            }
+            height += attachmentRowReservation
         }
         return height
+    }
+
+    /// True when the user has more image attachments than the cap AND the model can render them
+    /// in the carousel — i.e. the error label has visible cards to anchor against.
+    private var hasVisibleImageExcess: Bool {
+        (omnibarController.selectedModelSupportsImageUpload || omnibarController.isImageGenerationMode)
+            && omnibarController.hasExcessActiveTabImageAttachments
+    }
+
+    /// File-side analogue of `hasVisibleImageExcess`.
+    private var hasVisibleFileExcess: Bool {
+        omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
     }
 
     required init?(coder: NSCoder) {
@@ -350,7 +385,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
-        let hasBlockingExcess = canSendImages && attachmentsContainerView.hasExcessAttachments
+        let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
+        let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
+        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
@@ -451,6 +488,43 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
     }
 
+    /// Image picker has room for at least one more attachment.
+    private var canPickAdditionalImages: Bool {
+        shouldShowImageUpload && !omnibarController.isActiveTabImageAttachmentsFull
+    }
+
+    /// File picker has room for at least one more attachment (and the model supports files).
+    private var canPickAdditionalFiles: Bool {
+        omnibarController.selectedModelSupportsFileUpload && !isFileAttachmentsFull
+    }
+
+    /// File-side analogue of `omnibarController.isActiveTabImageAttachmentsFull` — at or above the per-conversation cap.
+    private var isFileAttachmentsFull: Bool {
+        omnibarController.activeFileAttachments.count >= AIChatOmnibarController.maxFileAttachments
+    }
+
+    /// File-side analogue of `omnibarController.hasExcessActiveTabImageAttachments` — strictly over cap.
+    private var hasExcessFileAttachments: Bool {
+        omnibarController.activeFileAttachments.count > AIChatOmnibarController.maxFileAttachments
+    }
+
+    /// The attach button is now multi-purpose: it triggers either the legacy image-and-file
+    /// picker (when only image upload is available) or a menu with both options (when the tab
+    /// picker is also enabled). It needs to be visible when *any* attach mode is available
+    /// — image upload, file upload (PDFs etc.), or the omnibar tab picker.
+    private var shouldShowAttachButton: Bool {
+        shouldShowImageUpload
+            || omnibarController.isOmnibarTabPickerEnabled
+            || omnibarController.selectedModelSupportsFileUpload
+    }
+
+    /// "Attach Image or File" is shown when *either* path can still accept one more attachment —
+    /// images (within cap) or files (within cap). When both are full, hiding the item avoids the
+    /// dead click that would otherwise just open a picker the user can't pick into.
+    private var shouldShowImageOrFileMenuItem: Bool {
+        canPickAdditionalImages || canPickAdditionalFiles
+    }
+
     private var shouldShowAttachments: Bool {
         shouldShowImageUpload
     }
@@ -465,14 +539,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
         webSearchActiveButton.isHidden = !shouldShowWebSearchChip
-        imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
-        imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+        imageUploadButton.isHidden = !shouldShowAttachButton
+        // Disable only when we'd be entering the legacy direct-file-picker path AND images are at
+        // cap. With the tab picker enabled the button always opens the menu (which conditionally
+        // omits the image item itself when full), so the outer button stays interactive.
+        imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull
         modelPickerButton.isHidden = !shouldShowModelPicker
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
 
-        attachmentsContainerView.isHidden = !shouldShowAttachments
+        // The carousel row's height is recomputed centrally via `updateAttachmentsCarouselLayout()`.
         if !shouldShowAttachments {
-            attachmentsHeightConstraint?.constant = 0
+            updateAttachmentsCarouselLayout()
         }
 
         updateToolsLeadingConstraint()
@@ -583,7 +660,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
         imageUploadButton.target = self
-        imageUploadButton.action = #selector(imageUploadButtonClicked)
+        imageUploadButton.action = #selector(attachButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
         imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
         imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
@@ -646,25 +723,47 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.onTabPressed = { [weak self] in self?.advanceFocusToVoiceSubmitOrText() }
         containerView.addSubview(modelPickerButton)
 
-        attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
-        attachmentsContainerView.onAttachmentsChanged = { [weak self] in
-            guard let self else { return }
-            self.updateAttachmentsLayout()
-            /// Skip the persist write during restore (tab switch reinstall — would echo back the list we just read)
-            /// and during cleanup (panel teardown — at that moment the controller's `sharedTextState` may still be
-            /// pointing at the outgoing tab, and persisting an empty list would wipe that tab's saved attachments).
-            if !self.isRestoringAttachmentsFromSharedState && !self.isCleaningUp {
-                self.omnibarController.persistAttachmentsToActiveTab(self.attachmentsContainerView.attachments)
-            }
-        }
-        attachmentsContainerView.onAttachmentWillRemove = { [weak self] id in
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
-            // Cancel and remove resize task if still pending
-            self?.resizeTasks[id]?.cancel()
-            self?.resizeTasks.removeValue(forKey: id)
-        }
-        containerView.addSubview(attachmentsContainerView)
         containerView.addSubview(attachmentsErrorLabel)
+
+        attachmentsCarouselView.translatesAutoresizingMaskIntoConstraints = false
+        attachmentsCarouselView.onAttachmentsChanged = { [weak self] in
+            self?.updateAttachmentsCarouselLayout()
+        }
+        // X clicks on a card route through the controller, which writes to shared state; the
+        // `$aiChatPanelAttachments` publisher then drives the carousel re-render. Single source
+        // of truth for the order; the carousel itself never mutates its own state.
+        attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
+            guard let self else { return }
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self.resizeTasks[id]?.cancel()
+            self.resizeTasks.removeValue(forKey: id)
+            self.omnibarController.removeImageAttachmentFromActiveTab(id: id)
+        }
+        attachmentsCarouselView.onTabAttachmentRemoveRequested = { [weak self] id in
+            // × on a tab card is the primary tab-removal action. The carousel doesn't
+            // remember whether the tab was attached via the "Add Page Content" submenu or
+            // the @-mention picker, so we fire `attach_tab_removed` here uniformly (the
+            // mention-specific `mention_tab_removed` continues to fire only when the user
+            // deselects through the @-picker UI, which keeps it as a clean signal of
+            // @-picker engagement).
+            PixelKit.fire(AIChatPixel.aiChatAddressBarAttachTabRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
+        }
+        attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
+            PixelKit.fire(AIChatPixel.aiChatAddressBarFileRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
+        }
+        containerView.addSubview(attachmentsCarouselView)
+
+        // Single subscription drives the carousel for both restore-on-tab-switch and live
+        // mutations. `@Published.sink` delivers the current value on subscribe so the initial
+        // render is automatic.
+        omnibarController.onActiveTabPanelAttachmentsChanged = { [weak self] panelAttachments in
+            self?.applyPanelAttachmentsFromSharedState(panelAttachments)
+        }
+        // Initial render — the controller's `$selectedTabViewModel` sink hasn't fired yet at
+        // this point, so seed manually from whatever the active tab already has.
+        applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -708,16 +807,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             webSearchActiveButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             webSearchActiveButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
-            attachmentsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
-            attachmentsContainerView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor),
+            // The unified attachments carousel sits directly above the tools row. It contains the
+            // image attachments view (leading) and the tab cards (trailing) — both flow into one
+            // horizontally-scrollable strip.
+            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
+            attachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
+            // The carousel's bottom shadow-margin band already accounts for part of the visual
+            // gap to the tools row; the constraint adds the remainder so the visible card-to-tools
+            // distance is `attachmentsCarouselBottomSpacing`.
+            attachmentsCarouselView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor, constant: Constants.attachmentsCarouselBottomAnchorOffset),
 
-            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: attachmentsContainerView.leadingAnchor),
-            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: attachmentsContainerView.topAnchor, constant: -2),
+            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: attachmentsCarouselView.leadingAnchor),
+            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: attachmentsCarouselView.topAnchor, constant: -2),
         ])
 
-        // Attachments container height: 0 when empty, expands when attachments are added
-        attachmentsHeightConstraint = attachmentsContainerView.heightAnchor.constraint(equalToConstant: 0)
-        attachmentsHeightConstraint?.isActive = true
+        // Carousel height: 0 when empty, `attachmentsCarouselRowHeight` when there's at least one
+        // image thumbnail or tab card. The row collapses to nothing when both kinds are empty.
+        attachmentsCarouselHeightConstraint = attachmentsCarouselView.heightAnchor.constraint(equalToConstant: 0)
+        attachmentsCarouselHeightConstraint?.isActive = true
 
         // Model picker trailing: next to submit button when visible, or near container edge when hidden
         // Submit button is always visible, so model picker always sits to its left
@@ -820,7 +927,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isSuggestionsCollapsedByUnfocus: Bool = false
 
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty || isSuggestionsCollapsedByUnfocus
+        omnibarController.isImageGenerationMode
+            || !omnibarController.activeImageAttachments.isEmpty
+            || !attachmentsCarouselView.attachments.isEmpty
+            || isSuggestionsCollapsedByUnfocus
     }
 
     /// Collapses/expands the suggestions row without affecting tools, submit button, or model picker.
@@ -835,7 +945,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
-        // Track the real height even when suppressed
+        // Record the real height even when suppressed
         if !shouldSuppressSuggestions {
             lastKnownSuggestionsHeight = newHeight
         }
@@ -872,8 +982,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
-        isCleaningUp = true
-        defer { isCleaningUp = false }
         backgroundView.stopListening()
         shadowView.removeFromSuperview()
         windowFrameObserver?.cancel()
@@ -881,8 +989,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         viewBoundsObserver?.cancel()
         viewBoundsObserver = nil
 
-        // Clear attachments and cancel pending resize tasks
-        clearAttachments()
+        // Cancel pending resize tasks. Attachment data on shared state is intentionally left
+        // intact — cleanup is panel teardown, not a user-driven clear.
+        cancelAllImageResizeTasks()
 
         // Restore model picker to persisted value
         modelPickerButton.modelName = persistedModelShortName
@@ -1020,34 +1129,202 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.toggleWebSearchMode()
     }
 
-    @objc private func imageUploadButtonClicked() {
+    /// Routes the attach-button click. When the omnibar tab picker is enabled, opens a menu
+    /// (Attach Image or File / Attach Page Content). Otherwise behaves as before — opens the
+    /// image-and-file picker directly. Keeps the legacy file-picker path 1-to-1 for users with
+    /// the new flag off.
+    @objc private func attachButtonClicked() {
+        if omnibarController.isOmnibarTabPickerEnabled {
+            let menu = buildAttachMenu()
+            menu.delegate = self
+            // Hold the panel layout still while the menu is up — see `isDeferringCarouselLayout`
+            // for the rationale. Carousel data still updates so the menu's checkmarks stay in sync.
+            isDeferringCarouselLayout = true
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: imageUploadButton)
+        } else {
+            presentImageFilePicker()
+        }
+    }
+
+    /// Opens the image-and-file picker. Pulled out of the legacy `imageUploadButtonClicked` so
+    /// both the legacy direct-click path and the new "Attach Image or File" menu item can share it.
+    private func presentImageFilePicker() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = allowedContentTypes(for: omnibarController.selectedModelImageFormats)
+        panel.allowedContentTypes = pickerAllowedContentTypes()
 
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            let remaining = Constants.attachmentsDisplayCap - self.attachmentsContainerView.attachments.count
-            for url in panel.urls.prefix(max(remaining, 0)) {
-                self.addImageAttachment(from: url)
+            // Hold per-kind slot consumption so we never overshoot either cap. Both kinds use
+            // a `displayCap = max + 1` so the carousel can render exactly one item past the
+            // limit as a visible cue, with the error label calling it out.
+            var imagesAdded = self.omnibarController.activeImageAttachments.count
+            let imageCap = Constants.imageAttachmentsDisplayCap
+            var filesAdded = self.omnibarController.activeFileAttachments.count
+            let fileCap = Constants.fileAttachmentsDisplayCap
+            for url in panel.urls {
+                let utType = UTType(filenameExtension: url.pathExtension.lowercased())
+                if let utType, utType.conforms(to: .image) {
+                    guard imagesAdded < imageCap else { continue }
+                    self.addImageAttachment(from: url)
+                    imagesAdded += 1
+                } else {
+                    guard filesAdded < fileCap else { continue }
+                    self.addFileAttachment(from: url)
+                    filesAdded += 1
+                }
             }
         }
     }
 
-    private func allowedContentTypes(for formats: [String]) -> [UTType] {
-        let types = formats.compactMap { UTType(filenameExtension: $0.lowercased()) }
-        return types.isEmpty ? [.jpeg, .png, .webP] : types
+    /// Union of the UTTypes the picker should allow:
+    /// - image formats from the model (extensions like `"png"`)
+    /// - file MIME types from the model (`"application/pdf"` etc.)
+    /// Defaults to image-only when both lists are empty so the picker never opens with no
+    /// allowed types (which would let the user pick anything).
+    private func pickerAllowedContentTypes() -> [UTType] {
+        var types: [UTType] = []
+        if canPickAdditionalImages {
+            let imageTypes = omnibarController.selectedModelImageFormats
+                .compactMap { UTType(filenameExtension: $0.lowercased()) }
+            types.append(contentsOf: imageTypes.isEmpty ? [.jpeg, .png, .webP] : imageTypes)
+        }
+        if omnibarController.selectedModelSupportsFileUpload {
+            let fileTypes = omnibarController.selectedModelSupportedFileTypes
+                .compactMap { UTType(mimeType: $0) }
+            types.append(contentsOf: fileTypes)
+        }
+        return types
+    }
+
+    /// Top-level attach menu: "Attach Image or File" (when image upload is supported by the
+    /// current model) and "Attach Page Content" (with the tabs submenu). The image item is
+    /// omitted when the model doesn't support image upload, because the omnibar attach button is
+    /// also visible in that case (purely for tab attachment), and showing a non-functional item
+    /// would be confusing.
+    private func buildAttachMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        if shouldShowImageOrFileMenuItem {
+            let imageItem = NSMenuItem(
+                title: UserText.aiChatAttachMenuImageOrFile,
+                action: #selector(attachMenuImageOrFileClicked),
+                keyEquivalent: ""
+            )
+            imageItem.target = self
+            imageItem.image = DesignSystemImages.Glyphs.Size16.folder
+            menu.addItem(imageItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+
+        let pageItem = NSMenuItem(
+            title: UserText.aiChatAttachMenuPageContent,
+            action: nil,
+            keyEquivalent: ""
+        )
+        pageItem.image = DesignSystemImages.Glyphs.Size16.pageContentAttach
+        pageItem.submenu = buildAttachTabsSubmenu()
+        menu.addItem(pageItem)
+
+        return menu
+    }
+
+    /// Observer installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
+    /// fire the picker-shown / picker-canceled pixels exactly once per open/close cycle. The
+    /// row's `onToggle` callback below flips the observer's `didMutateDuringSession` flag so
+    /// the canceled pixel is only fired when nothing was toggled during the session.
+    /// Retained on the VC because `NSMenu.delegate` is weak.
+    private var attachTabsSubmenuObserver: AttachTabsSubmenuObserver?
+
+    /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
+    /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
+    /// row stays-open-on-click via `AIChatTabPickerMenuRowView` so the user can multi-toggle
+    /// without dismissing the menu. When there are no tabs to show, the submenu drops the header
+    /// and shows only a disabled "No open tabs" placeholder.
+    private func buildAttachTabsSubmenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
+        // didClose when no row was toggled in between. Stored on the VC so its lifetime
+        // covers the menu's lifetime (NSMenu's delegate ref is weak).
+        let observer = AttachTabsSubmenuObserver()
+        attachTabsSubmenuObserver = observer
+        menu.delegate = observer
+
+        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+        let currentTabId = omnibarController.currentTabUUID
+
+        guard !candidates.isEmpty else {
+            let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
+            empty.isEnabled = false
+            menu.addItem(empty)
+            return menu
+        }
+
+        let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        menu.addItem(header)
+
+        // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
+        // "(Current Tab)" pinned on top.
+        for candidate in candidates {
+            let item = NSMenuItem()
+            let row = AIChatTabPickerMenuRowView(
+                attachment: candidate,
+                isAttached: attachedIds.contains(candidate.id),
+                isCurrentTab: candidate.id == currentTabId,
+                onToggle: { [weak omnibarController, weak observer] in
+                    guard let omnibarController else { return }
+                    // Read state BEFORE toggle so we know which pixel to fire — the toggle
+                    // flips it, so post-toggle we'd see the opposite of "what just happened".
+                    let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    omnibarController.toggleTabAttachment(candidate)
+                    let pixel: AIChatPixel = wasAttached
+                        ? .aiChatAddressBarAttachTabRemoved
+                        : .aiChatAddressBarAttachTabChosen
+                    PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    observer?.markDidMutate()
+                }
+            )
+            item.view = row
+            menu.addItem(item)
+        }
+
+        return menu
+    }
+
+    @objc private func attachMenuImageOrFileClicked() {
+        presentImageFilePicker()
     }
 
     /// Attempts to add an image attachment from a drag-and-drop operation.
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        guard attachmentsContainerView.attachments.count < Constants.attachmentsDisplayCap else { return false }
+        guard omnibarController.activeImageAttachments.count < Constants.imageAttachmentsDisplayCap else { return false }
         addImageAttachment(from: url)
         return true
+    }
+
+    /// Reads file bytes off disk and adds them to the active tab as a file attachment (PDFs etc.).
+    /// MIME type comes from the URL's UTType so the duck.ai server-side validation against the
+    /// model's `supportedFileTypes` (which are MIME types) matches.
+    private func addFileAttachment(from url: URL) {
+        guard let data = try? Data(contentsOf: url) else { return }
+        let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
+            ?? "application/octet-stream"
+        let attachment = AIChatFileAttachment(
+            data: data,
+            fileName: url.lastPathComponent,
+            mimeType: mimeType
+        )
+        omnibarController.addFileAttachmentToActiveTab(attachment)
+        PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func addImageAttachment(from url: URL) {
@@ -1061,7 +1338,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             fileURL: url,
             skipResize: true
         )
-        attachmentsContainerView.addAttachment(placeholder)
+        omnibarController.addImageAttachmentToActiveTab(placeholder)
         PixelKit.fire(AIChatPixel.aiChatAddressBarImageAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
         resizeTasks[placeholderId] = makeResizeTask(for: url, placeholderId: placeholderId)
@@ -1086,19 +1363,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             guard !Task.isCancelled else { return }
 
             await MainActor.run { [weak self] in
-                self?.attachmentsContainerView.replaceAttachment(id: placeholderId, with: resized)
+                self?.omnibarController.replaceImageAttachmentInActiveTab(id: placeholderId, with: resized)
                 self?.resizeTasks.removeValue(forKey: placeholderId)
             }
         }
     }
 
     private func setupAttachmentsProvider() {
-        omnibarController.attachmentsProvider = { [weak self] in
-            self?.attachmentsContainerView.attachments ?? []
-        }
+        // Submit-time clear callback: cancel any in-flight image-resize tasks. Data clearing
+        // is handled by the controller calling `persistAttachmentsToActiveTab([])` directly.
         omnibarController.onAttachmentsClearRequested = { [weak self] in
-            self?.clearAttachments()
+            self?.cancelAllImageResizeTasks()
         }
+        // Block submit until in-flight resize tasks finish so the prompt carries the resized
+        // image, not the placeholder.
         omnibarController.waitForAttachmentsReady = { [weak self] in
             guard let self else { return }
             let tasks = Array(self.resizeTasks.values)
@@ -1106,57 +1384,53 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 await task.value
             }
         }
-        omnibarController.onActiveTabAttachmentsRestoreRequested = { [weak self] attachments in
-            self?.restoreAttachmentsFromSharedState(attachments)
-        }
     }
 
-    /// Reinstalls the attachments view from the incoming tab's persisted list on tab switch.
-    /// Any in-flight resize tasks are cancelled because they were associated with the outgoing tab's
-    /// view instances; the persisted attachments already hold the best-available image we had for them.
-    private func restoreAttachmentsFromSharedState(_ attachments: [AIChatImageAttachment]) {
-        isRestoringAttachmentsFromSharedState = true
-        defer { isRestoringAttachmentsFromSharedState = false }
-
+    private func cancelAllImageResizeTasks() {
         for task in resizeTasks.values {
             task.cancel()
         }
         resizeTasks.removeAll()
-
-        attachmentsContainerView.removeAllAttachments()
-        for attachment in attachments {
-            attachmentsContainerView.addAttachment(attachment)
-        }
-    }
-
-    private func clearAttachments() {
-        // Cancel any pending resize tasks
-        for task in resizeTasks.values {
-            task.cancel()
-        }
-        resizeTasks.removeAll()
-
-        attachmentsContainerView.removeAllAttachments()
-        updateAttachmentsLayout()
     }
 
     private func updateAttachmentsLayout() {
-        let hasAttachments = !attachmentsContainerView.attachments.isEmpty
-        let hasExcess = attachmentsContainerView.hasExcessAttachments
-        let isFull = attachmentsContainerView.isFull
+        let hasAttachments = !omnibarController.activeImageAttachments.isEmpty
+        let isFull = omnibarController.isActiveTabImageAttachmentsFull
 
         omnibarController.hasImageAttachments = hasAttachments
 
-        attachmentsHeightConstraint?.constant = hasAttachments
-            ? Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
-            : 0
+        // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
+        // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
+        updateAttachmentsCarouselLayout()
 
-        attachmentsErrorLabel.isHidden = !hasExcess
+        // Gate the error label on model support — same `hasVisibleImageExcess` /
+        // `hasVisibleFileExcess` predicates that `attachmentRowReservation` already uses for
+        // the height reservation. Using the raw `hasExcess*` checks here would leave the label
+        // shown when the current model doesn't accept the kind of attachment in excess (cards
+        // get filtered out of the carousel but the excess persists in shared state from a
+        // prior model), and because no row height is reserved in that case the label would
+        // overlap the tools row below. Keeping the two decisions in sync prevents that.
+        let visibleImageExcess = hasVisibleImageExcess
+        let visibleFileExcess = hasVisibleFileExcess
+        // File excess takes priority — the file copy is more recently introduced and the more
+        // likely thing a user has just done; image copy fires when only images are over.
+        attachmentsErrorLabel.isHidden = !(visibleImageExcess || visibleFileExcess)
+        attachmentsErrorLabel.stringValue = visibleFileExcess
+            ? UserText.aiChatFileAttachmentsLimitError
+            : UserText.aiChatAttachmentsLimitError
 
-        // Disable the upload button when at max attachments and update tooltip
+        // Disable the upload button only when *no* attach path can accept one more attachment.
+        // The button stays enabled if image room remains, file room remains, OR the tab picker
+        // is on (the menu always has the Attach Page Content option).
         if omnibarController.isOmnibarToolsEnabled {
-            imageUploadButton.isEnabled = !isFull
-            imageUploadButton.toolTip = isFull
+            imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled
+                || !isFull
+                || canPickAdditionalFiles
+            // "Limit reached" tooltip only when the picker is the only path AND it's exhausted
+            // for both kinds — otherwise the default tooltip stays so the user knows they can
+            // still attach the other kind.
+            let allPickerPathsFull = isFull && (!omnibarController.selectedModelSupportsFileUpload || isFileAttachmentsFull)
+            imageUploadButton.toolTip = (allPickerPathsFull && !omnibarController.isOmnibarTabPickerEnabled)
                 ? UserText.aiChatAttachmentsLimitError
                 : UserText.aiChatImageUploadButtonTooltip
         }
@@ -1170,6 +1444,65 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         suggestionsHeight = -1
         updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
 
+        onPassthroughHeightNeedsUpdate?()
+    }
+
+    /// Pushes the unified attachments list (from `AddressBarSharedTextState.aiChatPanelAttachments`)
+    /// into the carousel, filtering out attachment kinds the current model can't accept so the
+    /// user doesn't see cards that would be silently stripped at submit time. The data itself
+    /// survives in shared state — switching back to a supporting model brings the cards back.
+    /// While the attach menu is open we skip the panel-reflow step; it runs once when the menu
+    /// closes. Otherwise we run the full `updateAttachmentsLayout()` so the error label,
+    /// attach-button enabled state, and submit-button state all refresh — this is the path that
+    /// fires when a file is added/removed via the picker (or a tab via X click).
+    private func applyPanelAttachmentsFromSharedState(_ attachments: [AIChatPanelAttachment]) {
+        let filtered = attachments.filter { entry in
+            switch entry {
+            case .image:
+                return omnibarController.selectedModelSupportsImageUpload || omnibarController.isImageGenerationMode
+            case .file:
+                return omnibarController.selectedModelSupportsFileUpload
+            case .tab:
+                // Tab attachments are page content, not model-typed payloads — always renderable.
+                return true
+            }
+        }
+        attachmentsCarouselView.setAttachments(filtered)
+        guard !isDeferringCarouselLayout else { return }
+        updateAttachmentsLayout()
+        // The height constraint just flipped to `expandedHeight` (when the carousel went
+        // from zero → some attachments). Force layout to settle on the new frame before
+        // scrolling, otherwise `scrollToVisible` reads the still-zero carousel height.
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
+    }
+
+    /// Re-applies the active tab's saved panel attachments through the carousel filter — used
+    /// by code paths that change *what the current model supports* without changing the
+    /// attachments themselves (model picker change, image-gen mode toggle), so cards for newly
+    /// unsupported kinds disappear and cards for newly supported kinds reappear.
+    private func refreshCarouselForCurrentModelSupport() {
+        applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
+    }
+
+    private func updateAttachmentsCarouselLayout() {
+        // Row collapses when there are no rendered cards in the carousel; expanded row otherwise.
+        // The carousel's own attachment list is the post-filter view of shared state (e.g.
+        // `applyPanelAttachmentsFromSharedState` drops image attachments when the selected
+        // model doesn't support image upload), so reading from it is the right "what will the
+        // user actually see" signal — checking `activeImageAttachments` here as well would
+        // reserve the expanded height for zero visible cards in that filtered-out scenario.
+        let hasAnyVisibleAttachment = !attachmentsCarouselView.attachments.isEmpty
+        attachmentsCarouselHeightConstraint?.constant = hasAnyVisibleAttachment
+            ? Constants.attachmentsCarouselRowHeight
+            : 0
+        // Adding/removing a tab attachment changes whether suggestions should be visible —
+        // mirroring the behavior of the image attachments path. (`shouldSuppressSuggestions`
+        // already factors both lists in.)
+        let suppress = shouldSuppressSuggestions
+        suggestionsView.isHidden = suppress
+        suggestionsHeight = -1
+        updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -1317,15 +1650,28 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
 
-        let showUpload = supportsImageUpload || omnibarController.isImageGenerationMode
-        imageUploadButton.isHidden = !showUpload
-        attachmentsContainerView.isHidden = !showUpload
-        if !showUpload {
-            attachmentsHeightConstraint?.constant = 0
-            attachmentsErrorLabel.isHidden = true
+        let showImageSide = supportsImageUpload || omnibarController.isImageGenerationMode
+        // The attach BUTTON should remain visible when *any* attach mode is available — image,
+        // file (PDFs etc.), or tab picker.
+        imageUploadButton.isHidden = !shouldShowAttachButton
+        if !showImageSide {
+            // Image side disappearing — recompute the shared row height; if tabs/files are
+            // present the carousel stays at row height, otherwise it collapses.
+            updateAttachmentsCarouselLayout()
+            // No explicit `attachmentsErrorLabel.isHidden = true` here — the call to
+            // `refreshCarouselForCurrentModelSupport()` below routes through
+            // `applyPanelAttachmentsFromSharedState` → `updateAttachmentsLayout`, which now
+            // evaluates the label visibility against `hasVisibleImageExcess` /
+            // `hasVisibleFileExcess` and will correctly hide the label when the new model
+            // doesn't support the kind of attachment in excess. Setting `isHidden = true`
+            // here would just be undone by that re-invocation a few lines down.
         } else {
             updateAttachmentsLayout()
         }
+
+        // Cards for kinds the new model can't accept disappear from the carousel here; the
+        // underlying shared-state list is left untouched so a switch back restores them.
+        refreshCarouselForCurrentModelSupport()
 
         updateSubmitButtonState(for: omnibarController.currentText)
         updateToolsLeadingConstraint()
@@ -1438,5 +1784,60 @@ final class AIChatSubmitButton: MouseOverButton {
 
     override func drawFocusRingMask() {
         NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
+    }
+}
+
+// MARK: - Attach menu delegate
+
+extension AIChatOmnibarContainerViewController: NSMenuDelegate {
+
+    /// `NSMenu` calls this when the entire menu chain (top-level menu + any open submenu) closes.
+    /// Used to release the carousel-layout deferral that was started in `attachButtonClicked` —
+    /// once unset, the panel reflows once with whatever toggles the user accumulated. Full
+    /// `updateAttachmentsLayout()` (vs. just the row layout) so error label / attach-button
+    /// state stay in sync with whatever the user attached while the menu was open.
+    func menuDidClose(_ menu: NSMenu) {
+        guard isDeferringCarouselLayout else { return }
+        isDeferringCarouselLayout = false
+        updateAttachmentsLayout()
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
+    }
+}
+
+// MARK: - "Add Page Content" submenu observer
+
+/// Observes one open/close cycle of the "Add Page Content" submenu so the picker-shown and
+/// picker-canceled pixels fire exactly once per session. Sits as the submenu's
+/// `NSMenuDelegate` (the VC's own conformance already handles the top-level attach menu's
+/// `menuDidClose`, so we keep this submenu-only logic separate to avoid mixing concerns).
+private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
+
+    /// `true` once any row's `onToggle` fired during the current open session. Reset on the
+    /// next `menuWillOpen` so each open/close pair is evaluated independently.
+    private var didMutateDuringSession = false
+
+    func menuWillOpen(_ menu: NSMenu) {
+        didMutateDuringSession = false
+        PixelKit.fire(
+            AIChatPixel.aiChatAddressBarAttachTabsPickerShown,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true
+        )
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard !didMutateDuringSession else { return }
+        PixelKit.fire(
+            AIChatPixel.aiChatAddressBarAttachPickerCanceled,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true
+        )
+    }
+
+    /// Called from the row's `onToggle` closure so the cancel pixel is suppressed when the
+    /// user actually picked or removed something during this session.
+    func markDidMutate() {
+        didMutateDuringSession = true
     }
 }

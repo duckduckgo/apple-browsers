@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "コピー";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "クリーンなリンクをコピー";
+
+/* Copy link action */
+"action.title.copy.link" = "リンクをコピー";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URLをコピーしました";
 
@@ -240,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "画像を作成";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "最新情報を検索";
+"aichat.toolbar.tools.websearch.subtitle" = "ウェブから回答を収集";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "ウェブ検索";
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "最後に使ったFireタブ";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "データを消去してタブを閉じる";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "タブを閉じる";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "タブに戻る";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "その他のオプション";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@に戻る";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@、%2$@ に戻る";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "プライベートタブ";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2407,7 +2429,7 @@
 "input.field.placeholder.duckai" = "非公開でなんでも聞いてください";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "フォローアップの質問をする...";
+"input.field.placeholder.duckai.followup" = "返信...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "拡張機能をインストール";
@@ -2907,6 +2929,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "アドレスバーを一番下に移動";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "アドレスバーを一番上に移動";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "管理対象のCookie";
 
@@ -3365,6 +3393,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Fireタブとそのデータを削除する？";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "タブとサイトデータを削除しますか？";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "タブとサイトデータを削除しますか？";
 
@@ -3373,6 +3405,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "すべて削除";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "タブを削除";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "このチャットを削除";
@@ -3465,7 +3500,10 @@
 "settings.address.trackers.animation" = "アドレスバーに表示";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、戻ってきたときに表示する内容を選択してください。";
+"settings.afterInactivity.footer.format" = "操作がない状態が%@続いた後、DuckDuckGoに戻ってきたときに表示する内容を選択してください。";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "DuckDuckGoに戻ったときに表示する内容を選択してください。";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1時間";
@@ -3479,14 +3517,20 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d 分";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "なし";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1秒";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d 秒";
 
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "非アクティブタイマー";
+
 /* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "操作がない状態が続いた後";
+"settings.afterInactivity.label" = "オープニングスクリーン";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "最後に使用したタブ";
@@ -4211,6 +4255,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "後で";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGoには**オプションの有料サブスクリプション**もあり、安全な**VPN**と**高度なプライベートAI**を備えています。";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";
 
@@ -4904,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "ファイルを追加";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "画像を追加";

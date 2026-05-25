@@ -147,9 +147,16 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
+    /// Prevents IME composition-confirm Return from submitting the address bar.
+    case addressBarIMEConfirmFix
+
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
+
+    /// Suppresses the first-time quit survey when termination wasn't initiated by the user
+    /// (Sparkle update relaunch, or system logout/restart/shutdown).
+    case firstTimeQuitSurveySkipNonUserQuit
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -189,6 +196,17 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
+    case bookmarksBarMenusCustomWindow
+
+    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
+    case onboardingRebranding
+
+    /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
+    /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
+    /// trampoline if the SPI ever misbehaves.
+    case newErrorPageReload
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -247,11 +265,27 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
+    case appRebranding
+
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
+    case omniBarLongPressMenu
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
+
+    /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
+    case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
+    case icsCalendarLinks
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -366,6 +400,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Duck.ai query experiment during onboarding
     case onboardingDuckAIQueryExperiment
 
+    /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
+    case onboardingDuckAIQueryTrackersDemoExperiment
+
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
@@ -401,6 +438,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
+    case settingsLinkInAiFeatures
+
     case sidebarResizable
 
     case sidebarFloating
@@ -423,8 +463,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
-    /// Enables attaching content from multiple open tabs to Duck.ai chat
-    case attachMoreTabs
+    /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
+    case sidebarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
+    case omnibarAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -470,6 +513,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
+
+    /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
+    /// auto-grants per-site mic permission at launch, locks the Permission Center row,
+    /// surfaces a "System microphone disabled" warning when the OS has denied access, and
+    /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
+    case nativeVoicePermissionFlow
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -515,10 +564,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
-
-    /// Connection failure loop detection for VPN
-    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
-    case connectionFailureLoopDetection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -542,6 +587,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
 }

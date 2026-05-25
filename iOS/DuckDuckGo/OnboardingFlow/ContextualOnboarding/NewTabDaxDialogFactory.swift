@@ -54,17 +54,21 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    private let onboardingFlowProvider: OnboardingFlowProviding
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+        onboardingFlowProvider: OnboardingFlowProviding = OnboardingManager()
+
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.onboardingFlowProvider = onboardingFlowProvider
     }
 
     @ViewBuilder
@@ -112,6 +116,8 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
+        let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .visitSite
+
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
@@ -132,8 +138,13 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            if isChatPath {
+                self?.daxDialogsFlowCoordinator.setChatPathVisitSiteSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTryVisitSiteUnique)
+            } else {
+                self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            }
             self?.onboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
@@ -201,7 +212,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
 
 private extension NewTabDaxDialogFactory {
     private func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
-
         return FadeInView {
             SubscriptionPromotionView(
                 title: UserText.SubscriptionPromotionOnboarding.Promo.title,
@@ -212,7 +222,8 @@ private extension NewTabDaxDialogFactory {
                 proceedAction: { [weak self] in
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    let featurePage: OnboardingSubscriptionPromotionPage? = self?.onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .duckAI : nil
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents(featurePage: featurePage)
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),

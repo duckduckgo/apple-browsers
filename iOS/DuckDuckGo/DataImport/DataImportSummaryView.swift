@@ -469,7 +469,7 @@ struct DataImportSummaryView: View {
         
         var body: some View {
             VStack(alignment: .center, spacing: 0) {
-                Image("Sync-Pending-96")
+                Image(rebrandable: "Sync-Pending-96")
                     .resizable()
                     .frame(width: Metrics.imageSize, height: Metrics.imageSize)
                     .padding(.top, 16)

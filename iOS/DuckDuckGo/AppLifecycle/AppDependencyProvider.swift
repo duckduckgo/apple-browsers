@@ -275,7 +275,7 @@ final class AppDependencyProvider: DependencyProvider {
         self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: wideEvent,
             pixelHandler: FreeTrialPixelHandler(),
-            subscriptionFetcher: { try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            subscriptionFetcher: { try? await subscriptionManager.getSubscription() },
             isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         self.freeTrialConversionService.startObservingSubscriptionChanges()

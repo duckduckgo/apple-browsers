@@ -1,0 +1,31 @@
+# ics_calendar_links_parse_failure_fallback.yaml
+# Malformed .ics should fall back to QuickLook (and show the parse-failure toast).
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.icsCalendarLinks: "true"
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-malformed.ics"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible:
+        id: "QLOverlayDoneButtonAccessibilityIdentifier"
+    timeout: 10000

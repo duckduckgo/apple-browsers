@@ -220,6 +220,30 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(manager.currentTabsModel.tabs[0] === newTab)
     }
 
+    func testWhenRemovingFireTabWhileCurrentModeIsNormalThenFireTabIsRemovedFromFireModel() throws {
+        // Guards the escape-hatch burn-immediate crash: `remove(tab:)` must target
+        // the tab's own `tab.mode` model, not `currentTabsModel`, or
+        // `TabsModel.validateTabMode` asserts when burning a fire tab from normal mode.
+        let fireTab = Tab(link: Link(title: "fire-target", url: URL(string: "https://fire-target.com")!), fireTab: true)
+        let normalTab = Tab(link: Link(title: "normal-current", url: URL(string: "https://normal-current.com")!))
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let normalModel = TabsModel(tabs: [normalTab], desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.normal, source: .tabSelection)
+
+        XCTAssertEqual(manager.tabsModel(for: .fire).count, 1)
+        XCTAssertEqual(manager.tabsModel(for: .normal).count, 1)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+
+        manager.remove(tab: fireTab)
+
+        XCTAssertEqual(manager.tabsModel(for: .fire).count, 0, "Fire tab should be removed from the fire model")
+        XCTAssertEqual(manager.tabsModel(for: .normal).count, 1, "Normal model should be untouched")
+        XCTAssertTrue(manager.tabsModel(for: .normal).tabs.first === normalTab, "Normal model should still contain the original tab instance")
+    }
+
     // MARK: - removeAll(browsingMode:) Isolation
 
     func testWhenRemoveAllWithFireMode() throws {

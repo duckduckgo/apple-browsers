@@ -1154,7 +1154,7 @@ final class MockOnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPro
         shouldDisplayValue
     }
 
-    func redirectURLComponents() -> URLComponents? {
+    func redirectURLComponents(featurePage: DuckDuckGo.OnboardingSubscriptionPromotionPage?) -> URLComponents? {
         return nil
     }
 

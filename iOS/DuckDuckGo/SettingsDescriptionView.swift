@@ -28,7 +28,7 @@ struct SettingsDescription {
     let explanation: String?
 
     init(imageName: String, title: String, status: StatusIndicator?, explanation: String?) {
-        self.image = Image(imageName)
+        self.image = Image(rebrandable: imageName)
         self.title = title
         self.status = status
         self.explanation = explanation

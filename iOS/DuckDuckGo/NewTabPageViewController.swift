@@ -651,6 +651,7 @@ extension NewTabPageViewController {
                     self?.setLogoHidden(true)
                     self?.chromeDelegate?.omniBar.endEditing()
                     self?.showNextDaxDialog()
+                    // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
                     self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                     return
                 }

@@ -100,6 +100,14 @@ extension MainViewController {
         }
 
         setUpAIChatTabChatHeader()
+
+        // If the Duck.ai fire onboarding flow armed its lock before the coordinator existed
+        // (coordinator creation is deferred until after linear onboarding completes), sync
+        // the persisted lock state to both freshly-created objects now.
+        if experimentDuckAIFireOnboardingFlow.controlsLocked {
+            coordinator.setOnboardingControlsLocked(true)
+            aiChatTabChatHeaderView?.setOnboardingLocked(true)
+        }
         installUnifiedInputContentViewController()
         installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()

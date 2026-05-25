@@ -728,6 +728,7 @@
 		83E2D2B4253CC16B005605F5 /* httpsMobileV2BloomSpec.json in Resources */ = {isa = PBXBuildFile; fileRef = 83E2D2B1253CC16B005605F5 /* httpsMobileV2BloomSpec.json */; };
 		83EDCC411F86B89C005CDFCD /* StatisticsLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EDCC3F1F86B895005CDFCD /* StatisticsLoaderTests.swift */; };
 		8453AA902F7D32950062888E /* DuckAIQueryExperimentMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8453AA8F2F7D32950062888E /* DuckAIQueryExperimentMode.swift */; };
+		847A387E2FC4673E00F97D54 /* ExperimentDuckAIFireOnboardingLockSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847A387D2FC4673E00F97D54 /* ExperimentDuckAIFireOnboardingLockSyncTests.swift */; };
 		84AD2FE12F87E95200151B7F /* OnboardingResumeStepStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AD2FE02F87E95200151B7F /* OnboardingResumeStepStore.swift */; };
 		84C529A12F7D67E200B075D8 /* MainViewController+DuckAIExperiment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C529A02F7D67E200B075D8 /* MainViewController+DuckAIExperiment.swift */; };
 		84D6780A2D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D678092D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift */; };
@@ -3271,6 +3272,7 @@
 		83E2D2B1253CC16B005605F5 /* httpsMobileV2BloomSpec.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = httpsMobileV2BloomSpec.json; sourceTree = "<group>"; };
 		83EDCC3F1F86B895005CDFCD /* StatisticsLoaderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatisticsLoaderTests.swift; sourceTree = "<group>"; };
 		8453AA8F2F7D32950062888E /* DuckAIQueryExperimentMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIQueryExperimentMode.swift; sourceTree = "<group>"; };
+		847A387D2FC4673E00F97D54 /* ExperimentDuckAIFireOnboardingLockSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentDuckAIFireOnboardingLockSyncTests.swift; sourceTree = "<group>"; };
 		84AD2FE02F87E95200151B7F /* OnboardingResumeStepStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingResumeStepStore.swift; sourceTree = "<group>"; };
 		84C529A02F7D67E200B075D8 /* MainViewController+DuckAIExperiment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+DuckAIExperiment.swift"; sourceTree = "<group>"; };
 		84D678092D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionJsonScenarioTests.swift; sourceTree = "<group>"; };
@@ -9272,6 +9274,7 @@
 			isa = PBXGroup;
 			children = (
 				C163DC952DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift */,
+				847A387D2FC4673E00F97D54 /* ExperimentDuckAIFireOnboardingLockSyncTests.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -11866,10 +11869,10 @@
 				4BC8948A2C7902E6009AA141 /* XCRemoteSwiftPackageReference "wireguard-apple" */,
 				84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */,
-				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "DuckUI" */,
-				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "AutomationServer" */,
+				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */,
+				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
-				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "DebugServer" */,
+				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -13913,6 +13916,7 @@
 				C185ED672BD43DA100BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift in Sources */,
 				310EEA2F2CFFCDC60043CA1A /* AIChatSettingsTests.swift in Sources */,
 				31D4CD4E2D4D3BF300BC27C6 /* ToolbarHandlerTests.swift in Sources */,
+				847A387E2FC4673E00F97D54 /* ExperimentDuckAIFireOnboardingLockSyncTests.swift in Sources */,
 				BBF1BDED2EA631AD00358243 /* WinBackOfferCoordinatorTests.swift in Sources */,
 				6F3529FF2CDCEDFF00A59170 /* OmniBarLoadingStateBearerTests.swift in Sources */,
 				C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */,
@@ -17778,15 +17782,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "DebugServer" */ = {
+		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
 		};
-		7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "AutomationServer" */ = {
+		7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
 		};
-		BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "DuckUI" */ = {
+		BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/DuckUI;
 		};
@@ -18170,7 +18174,7 @@
 		};
 		7B0752D82F21BFDB00ACA559 /* AutomationServer */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "AutomationServer" */;
+			package = 7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */;
 			productName = AutomationServer;
 		};
 		7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */ = {

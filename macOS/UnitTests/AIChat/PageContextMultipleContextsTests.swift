@@ -121,22 +121,17 @@ struct ConsumedFlagResetTests {
 
 // MARK: - Removal-After-Consume Guard Tests
 
-/// Guards against the regression where `togglePageContextTelemetry(false)` fired by the FE
-/// after a submit (the chip transitions from attached → absent as part of consume) would
-/// cause native to push `setPageContext(nil)`. That push makes the FE re-show
-/// "Add page content" on the same URL, defeating the just-completed submit.
 struct RemovalAfterConsumeTests {
 
-    /// Mirrors the guarded removal handler in `PageContextTabExtension`:
-    /// when context was just consumed by submit, skip the local-cache/nil-push cleanup.
+    /// Mirrors the removal-handler guard in PageContextTabExtension.
     private func shouldClearOnRemoval(consumed: Bool) -> Bool { !consumed }
 
-    @Test("Removal after submit (consumed=true) does NOT clear or push nil")
+    @Test("Consumed context skips removal cleanup", .timeLimit(.minutes(1)))
     func consumedSkipsCleanup() {
         #expect(shouldClearOnRemoval(consumed: true) == false)
     }
 
-    @Test("Removal without prior submit (consumed=false) clears and pushes nil")
+    @Test("Non-consumed context runs removal cleanup", .timeLimit(.minutes(1)))
     func notConsumedRunsCleanup() {
         #expect(shouldClearOnRemoval(consumed: false) == true)
     }

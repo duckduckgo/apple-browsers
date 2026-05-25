@@ -1817,6 +1817,15 @@ extension SettingsViewModel {
         )
     }
 
+    var aiChatNavigationBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
+            }
+        )
+    }
+
     var isAutomaticContextAttachmentEnabled: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },

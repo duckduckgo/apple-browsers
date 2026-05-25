@@ -735,29 +735,7 @@ final class SettingsViewModel: ObservableObject {
         adBlockingAvailability.isRemotelyDisabled
     }
 
-    /// Settings-pane open hook. For users with an explicit YouTube Ad Blocking
-    /// choice (storage non-nil), pin the disclosure once and preserve it across
-    /// rollout flips — their conscious decision was made with the disclosure
-    /// at its then-current state. For users with no explicit choice (storage
-    /// nil), re-pin to the current rollout default so the disclosure tracks
-    /// the effective state. Also refreshes
-    /// `state.youTubeAdBlockingDisclosureHidden` so external writes (e.g.
-    /// debug menu) are picked up.
-    func markYouTubeAdBlockingDisclosureHiddenIfExistingUser() {
-        let storageEnabled = try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
-        if let storageEnabled {
-            if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
-                try? youTubeAdBlockingStorage.set(storageEnabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-            }
-        } else {
-            try? youTubeAdBlockingStorage.set(state.youTubeAdBlockingEnabled,
-                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-        }
-        state.youTubeAdBlockingDisclosureHidden =
-            (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
-    }
-
-      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+    var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
                 return self.state.duckPlayerNativeYoutubeMode

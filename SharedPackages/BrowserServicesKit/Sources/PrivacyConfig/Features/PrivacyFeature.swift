@@ -272,6 +272,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1214542891270915
+    case tabSaveDebouncing
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

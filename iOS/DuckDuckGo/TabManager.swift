@@ -638,10 +638,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
-    /// the write on disk before returning must use `flushPendingSave()` instead.
+    /// the write on disk before returning must use `flushPendingSave()` instead. When the
+    /// `tabSaveDebouncing` feature flag is off, falls back to a synchronous save (old behavior).
     @MainActor
     @discardableResult
     func save() -> Result<Void, Error> {
+        guard featureFlagger.isFeatureOn(.tabSaveDebouncing) else {
+            return tabsModelProvider.flushPendingSave()
+        }
         scheduleDebouncedSave()
         return .success(())
     }

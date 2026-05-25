@@ -638,24 +638,25 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
-    /// the write on disk before returning must use `flushPendingSave()` instead. When the
-    /// `tabsSaveOptimization` feature flag is off, falls back to a synchronous save (old behavior).
+    /// the write on disk before returning, or that need the real write `Result`, must use
+    /// `flushPendingSave()` instead. When the `tabsSaveOptimization` feature flag is off, falls
+    /// back to a synchronous save (old behavior) but the result is still discarded.
     @MainActor
-    @discardableResult
-    func save() -> Result<Void, Error> {
+    func save() {
         guard featureFlagger.isFeatureOn(.tabsSaveOptimization) else {
-            return tabsModelProvider.flushPendingSave()
+            _ = tabsModelProvider.flushPendingSave()
+            return
         }
         scheduleDebouncedSave()
-        return .success(())
     }
 
     /// Cancels any pending debounced save and persists synchronously, blocking until the write
-    /// lands on disk. Used at lifecycle boundaries and the data-clearing path. Main-thread only:
-    /// the sync hops below can deadlock if invoked from a queue waiting on main.
+    /// lands on disk. Used at lifecycle boundaries and the data-clearing path. Must run on the
+    /// main actor: the inner `persistQueue.sync` would deadlock if invoked from a queue waiting
+    /// on main.
+    @MainActor
     @discardableResult
     func flushPendingSave() -> Result<Void, Error> {
-        dispatchPrecondition(condition: .onQueue(.main))
         cancelPendingSave()
         return tabsModelProvider.flushPendingSave()
     }
@@ -904,21 +905,25 @@ extension TabManager {
                                                object: nil)
     }
 
+    @MainActor
     @objc
     private func onApplicationBecameActive(_ notification: NSNotification) {
         assertTabPreviewCount()
     }
 
+    @MainActor
     @objc
     private func onApplicationWillResignActive(_ notification: NSNotification) {
         flushPendingSave()
     }
 
+    @MainActor
     @objc
     private func onApplicationWillTerminate(_ notification: NSNotification) {
         flushPendingSave()
     }
 
+    @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
         flushPendingSave()

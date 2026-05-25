@@ -277,7 +277,7 @@ final class TabManagerTests: XCTestCase {
         let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         for _ in 0..<10 {
-            _ = manager.save()
+            manager.save()
         }
 
         // Wait for the debounce window (300 ms) + persist queue.
@@ -299,7 +299,7 @@ final class TabManagerTests: XCTestCase {
         let start = Date()
         let firingDone = expectation(description: "sustained activity loop")
         func keepCalling() {
-            _ = manager.save()
+            manager.save()
             if Date().timeIntervalSince(start) < 1.5 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: keepCalling)
             } else {
@@ -325,7 +325,7 @@ final class TabManagerTests: XCTestCase {
                          placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, normalStore: countingStore)
 
-        _ = manager.save()
+        manager.save()
         // No wait. flushPendingSave should drain synchronously.
         _ = manager.flushPendingSave()
 

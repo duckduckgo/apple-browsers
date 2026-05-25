@@ -128,11 +128,15 @@ struct Launching: LaunchingHandling {
             }
         )
 
-        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,
             consentSeedSource: duckAiNativeStorageHandler,
-            appConfigurationGroupName: Global.appConfigurationGroupName
+            appConfigurationGroupName: Global.appConfigurationGroupName,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
@@ -372,7 +376,8 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
+    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,
+                                                 keyValueStore: ThrowingKeyValueStoring) -> DuckAiNativeStorageHandling? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
 
         let containerURL: URL
@@ -383,13 +388,14 @@ struct Launching: LaunchingHandling {
             containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
 
             if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
-                let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-                    from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
-                    to: containerURL,
+                let outcome = DuckAiNativeStorageContainerMigration(
+                    oldURL: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
+                    newURL: containerURL,
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
+                    keyValueStore: keyValueStore,
                     pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
-                )
+                ).run()
                 if outcome == .skip {
                     return nil
                 }

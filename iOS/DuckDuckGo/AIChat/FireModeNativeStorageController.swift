@@ -23,6 +23,7 @@ import Core
 import DuckAiDataStore
 import Foundation
 import os.log
+import Persistence
 import PrivacyConfig
 /// Owns the iOS fire-mode Duck.ai native storage handler and rotates it on burn.
 ///
@@ -70,6 +71,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
           dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared,
           consentSeedSource: DuckAiNativeStorageHandling?,
           appConfigurationGroupName: String,
+          keyValueStore: ThrowingKeyValueStoring,
           pixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter()) {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
 
@@ -81,13 +83,14 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             baseDirectoryURL = appSupportURL.appendingPathComponent(Constants.fireModeDirectoryName)
 
             if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) {
-                let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-                    from: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
-                    to: baseDirectoryURL,
+                let outcome = DuckAiNativeStorageContainerMigration(
+                    oldURL: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
+                    newURL: baseDirectoryURL,
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
                     label: .fireMode,
+                    keyValueStore: keyValueStore,
                     pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
-                )
+                ).run()
                 if outcome == .skip {
                     return nil
                 }

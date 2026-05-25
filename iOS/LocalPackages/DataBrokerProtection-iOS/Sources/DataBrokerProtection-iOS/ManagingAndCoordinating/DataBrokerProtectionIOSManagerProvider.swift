@@ -55,7 +55,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
-                                  contentBlocking: DBPWebViewContentBlocking? = nil) -> DataBrokerProtectionIOSManager? {
+                                  contentBlocking: DBPWebViewContentBlocking?) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 

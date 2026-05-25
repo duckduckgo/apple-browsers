@@ -1914,7 +1914,7 @@ class MainViewController: UIViewController {
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
     ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
     ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, completion: (() -> Void)? = nil) {
 
         func worker() {
             allowContentUnderflow = false
@@ -1928,6 +1928,7 @@ class MainViewController: UIViewController {
             // Check if an existing tab with the same URL should be reused.
             else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
                 selectTab(existing)
+                completion?()
                 return
             }
             // Check if a tab presenting a New Tab page should be reused.
@@ -1948,6 +1949,7 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            completion?()
         }
 
         if clearInProgress {
@@ -3403,25 +3405,29 @@ class MainViewController: UIViewController {
         if (unifiedToggleInputFeature.isAvailable || fromDeepLink),
            let currentTab,
            currentTab.tabModel.link != nil {
-            if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                let prompt = AIChatNativePrompt.queryPrompt(
-                    query,
-                    autoSubmit: autoSend,
-                    toolChoice: tools?.map(\.rawValue),
-                    images: images,
-                    files: files,
-                    modelId: modelId,
-                    reasoningEffort: reasoningEffort
-                )
-                AIChatPromptHandler.shared.setData(prompt)
-            }
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
-            loadUrlInNewTab(chatURL, inheritedAttribution: nil)
-            // Forward the SERP payload to the freshly-selected chat tab's content handler so the
-            // duck.ai handoff metadata survives the new-tab branch (the per-tab payload handler is
-            // not shared via AIChatPromptHandler.shared).
-            if payload != nil {
-                self.currentTab?.aiChatContentHandler.setPayload(payload: payload)
+            // Stage prompt and per-tab payload inside loadUrlInNewTab's worker so they run in
+            // lockstep with tab creation. This keeps the global AIChatPromptHandler.shared write
+            // tight against the URL load (avoiding an extended window when loadUrlInNewTab defers
+            // via postClear during clearInProgress) and ensures setPayload targets the freshly
+            // selected chat tab rather than the origin tab.
+            loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                guard let self else { return }
+                if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    let prompt = AIChatNativePrompt.queryPrompt(
+                        query,
+                        autoSubmit: autoSend,
+                        toolChoice: tools?.map(\.rawValue),
+                        images: images,
+                        files: files,
+                        modelId: modelId,
+                        reasoningEffort: reasoningEffort
+                    )
+                    AIChatPromptHandler.shared.setData(prompt)
+                }
+                if let payload {
+                    self.currentTab?.aiChatContentHandler.setPayload(payload: payload)
+                }
             }
             return
         }
@@ -3647,15 +3653,18 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     private func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false) {
-        let currentIsAI = currentTab?.isAITab == true
-        let currentHasContent = currentTab?.tabModel.link != nil
-        let targetIsAI = url.isDuckAIURL
-
-        if unifiedToggleInputFeature.isAvailable, currentHasContent, currentIsAI != targetIsAI {
+        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: url.isDuckAIURL,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        switch decision {
+        case .openInNewTab:
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
-            return
+        case .loadInPlace:
+            loadUrl(url, fromExternalLink: fromExternalLink)
         }
-        loadUrl(url, fromExternalLink: fromExternalLink)
     }
 
 

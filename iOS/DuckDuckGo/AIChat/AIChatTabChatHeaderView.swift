@@ -132,9 +132,9 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     /// Wraps both `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title)
-    /// so the "row crowded by back+forward arrows" rule can hide the title slot via a single
-    /// `isHidden` toggle on this wrapper, leaving `configure(isSubscriptionActive:)` to swap
-    /// just the two children inside.
+    /// so the entire title slot can be hidden via a single `isHidden` toggle on this wrapper
+    /// (used during voice mode), leaving `configure(isSubscriptionActive:)` to swap just the
+    /// two children inside.
     private lazy var titleHolder: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false

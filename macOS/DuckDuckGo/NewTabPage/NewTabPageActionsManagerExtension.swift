@@ -109,7 +109,10 @@ extension NewTabPageActionsManager {
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
-        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
+        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: NSApp.delegateTyped.searchPreferences
+        )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences
@@ -118,7 +121,8 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
-            aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor
+            aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
+            searchPreferences: NSApp.delegateTyped.searchPreferences
         )
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
@@ -131,7 +135,8 @@ extension NewTabPageActionsManager {
                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
                 ),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
-            )
+            ),
+            searchPreferences: NSApp.delegateTyped.searchPreferences
         )
         omnibarConfigProvider.configure(aiChatsProvider: aiChatsProvider)
         let stateProvider = NewTabPageStateProvider(

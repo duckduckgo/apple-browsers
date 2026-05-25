@@ -65,7 +65,9 @@ class TabsModelPersistence: TabsModelPersisting {
     private let legacyStore: KeyValueStoring
 
     /// Serial queue for off-main writes. Shared by normal and fire stores so `flush()` drains both.
-    private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .utility)
+    /// `userInitiated` QoS so the queue does not get starved by background work and
+    /// `flushPendingSave()` on terminate / resign-active does not block main on a backlog.
+    private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .userInitiated)
 
     convenience init() throws {
 

@@ -994,14 +994,24 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps,
-           // navigate in-place to preserve back-forward history
-           // launch navigation using javascript: URL navigation to prevent WebView from
-            // interpreting the action as user-initiated link navigation causing a new tab opening when Cmd is pressed
-            let redirectUrl = URL(string: "javascript:location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')") {
+           failingUrl.isHttp || failingUrl.isHttps {
 
+            // Use location.replace to retry the failed URL in-place without adding a back/forward
+            // entry. Invoke without user gesture so the resulting navigation arrives at the policy
+            // chain as user-initiated=false .other — PopupHandlingTabExtension would otherwise
+            // classify a user-initiated .other as a link activation and (for pinned, cross-origin
+            // navigations) cancel it.
+            let script = "location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')"
             self.content = .url(failingUrl, credential: nil, source: .reload)
-            webView.load(URLRequest(url: redirectUrl))
+            if featureFlagger.isFeatureOn(.newErrorPageReload),
+               webView.evaluateJavaScriptWithoutUserGesture(script) {
+                return nil
+            }
+            // Kill-switch fallback: legacy `javascript:` URL trampoline. Reintroduces the
+            // transient address-bar flash but preserves all the navigation semantics.
+            if let redirectUrl = URL(string: "javascript:\(script)") {
+                webView.load(URLRequest(url: redirectUrl))
+            }
             return nil
         }
 

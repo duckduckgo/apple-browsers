@@ -49,6 +49,13 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var isVoiceChatAccessEnabled: Bool { get }
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
+    /// Whether the inline "Ask Duck.ai: <query>" entry should be shown in the NTP omnibar's
+    /// suggestions dropdown. Mirrors the user's "Autocomplete suggestions" preference so the
+    /// dropdown matches the address bar. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the toggle flips, keeping an open NTP in sync.
+    var showAskAiSuggestion: Bool { get }
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { get }
+
     var selectedModelId: String? { get set }
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
 

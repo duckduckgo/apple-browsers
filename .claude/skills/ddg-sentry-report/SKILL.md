@@ -170,11 +170,11 @@ Runs BEFORE culprit investigation. For each new-in-version cluster (after culpri
 asana_search_tasks(workspace="137249556945",
   projects.any="1214294661819890",
   sections.any="<PLATFORM_SECTION>",
-  custom_fields.1214294661819893.value="<SHORT_ID>",
+  custom_fields.1214294661819893.contains="<SHORT_ID>",
   opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name,completed")
 ```
 
-`completed` and `tags.name` are required for gating. The `value` filter is substring-match and the custom field is comma-separated, so **split the returned value on commas and require an exact element match** — substring matches like `APPLE-IOS-D6N` matching `APPLE-IOS-D6N6` are false positives. Fall back to `sections.any="1214294661819891"` only if the platform section misses.
+`completed` and `tags.name` are required for gating. Use `.contains` (substring match), not `.value` — `.value` is a literal **equals** match against the whole custom-field string, which fails as soon as a cluster's field holds multiple comma-separated short-IDs. `.contains` then necessarily over-matches (e.g. `APPLE-IOS-D6N` matches a task whose field contains `APPLE-IOS-D6N6`), so **split the returned value on commas and require an exact element match** client-side to discard those false positives. Fall back to `sections.any="1214294661819891"` only if the platform section misses.
 
 **Tag parsing.** Tag names look like `<platform>-app-release-X.Y.Z`. Strip the prefix; parse the remainder as semver-ish; compare numerically. If multiple version tags exist on one task, the **highest** wins.
 

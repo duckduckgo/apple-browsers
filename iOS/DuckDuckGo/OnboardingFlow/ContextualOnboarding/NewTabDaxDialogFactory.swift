@@ -163,17 +163,10 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     private func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .trackerToEOJ
-                      && daxDialogsFlowCoordinator.isAIChatEnabled
-
-        let message = isChatPath
-            ? UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
-            : UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage
-
         return FadeInView {
             OnboardingFinalDialog(
                 logoPosition: .top,
-                message: message,
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: { [weak self] in
                     self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
@@ -189,11 +182,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            if isChatPath {
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-            } else {
-                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            }
+            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }

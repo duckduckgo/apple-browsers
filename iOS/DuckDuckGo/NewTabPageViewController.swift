@@ -566,11 +566,17 @@ extension NewTabPageViewController {
 
         let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
         let hostingController = UIHostingController(rootView: root)
-        self.hostingController = hostingController
         hostingController.view.backgroundColor = UIColor.clear
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        let container = mainVC.viewCoordinator.unifiedInputContentContainer!
+        guard let container = mainVC.viewCoordinator.unifiedInputContentContainer else {
+            assertionFailure("unifiedInputContentContainer is nil in UTI completion dialog path")
+            isShowingDuckAICompletionDialog = false
+            setLogoHidden(false)
+            coordinator.contentViewController.setLogoHidden(false)
+            return
+        }
+        self.hostingController = hostingController
         mainVC.addChild(hostingController)
         container.addSubview(hostingController.view)
         // In top-bar mode the UTI bar is above the content area: pin the dialog below the bar.

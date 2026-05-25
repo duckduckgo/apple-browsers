@@ -53,8 +53,6 @@ enum DuckAiNativeStorageContainerMigrationEvent {
 
 enum DuckAiNativeStorageContainerMigrationOutcome {
     case proceed
-    /// Caller MUST NOT create or open the destination — doing so makes the next
-    /// launch see the source as an orphan and delete it.
     case skip
 }
 
@@ -91,10 +89,6 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
 
 /// Runs the one-time move of a Duck.ai container from the shared App Group into
 /// the app's Application Support directory.
-///
-/// Letting callers fake the outcome means production code can stay tightly
-/// coupled to the concrete `DuckAiNativeStorageContainerMigration` while tests
-/// can substitute a mock that returns canned outcomes.
 protocol DuckAiNativeStorageContainerMigrating {
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome
@@ -173,10 +167,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         resetExhaustedAttemptsIfNeeded()
 
         if isMigrated {
-            // Migration is final on this device. Leave `oldURL` alone — when
-            // `migrated` was set via `destinationConflict`, the source may hold
-            // the only complete copy. Worst case is unused bytes in the App
-            // Group until app uninstall.
             ensureProtection()
             return .proceed
         }
@@ -227,8 +217,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     // MARK: - Static helpers
 
-    /// Default `isProtectedDataAvailable` source; safe to call from the
-    /// main-thread launch path used by both callers in this codebase.
     static func defaultIsProtectedDataAvailable() -> Bool {
         UIApplication.shared.isProtectedDataAvailable
     }
@@ -338,12 +326,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         try? keyValueStore.set(value, forKey: protectionAttemptsKey)
     }
 
-    /// A prior launch hit the retry cap and returned `.gaveUp` (attempts left
-    /// at the cap, not marked migrated). Clear the budget so this launch can
-    /// re-attempt with a fresh budget when conditions have improved. Protection
-    /// retries are also reset — the prior gaveUp marked protection "done"
-    /// against an absent destination; once we successfully move, protection
-    /// has to actually run.
     private func resetExhaustedAttemptsIfNeeded() {
         guard !isMigrated, attempts >= maxAttempts else { return }
         Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] prior launch exhausted retry budget; resetting attempts")
@@ -351,10 +333,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         try? keyValueStore.removeObject(forKey: protectionAttemptsKey)
     }
 
-    /// `protectionAttempts == maxAttempts` is the "done" sentinel — set either
-    /// by a successful apply or by exhausting the retry budget. Below the cap
-    /// we try again and fire `.protectionFailed` on each failure (including
-    /// the one that hits the cap).
     private func ensureProtection() {
         let priorAttempts = protectionAttempts
         guard priorAttempts < maxAttempts else { return }
@@ -376,9 +354,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         setAttempts(attempt)
         if attempt >= maxAttempts {
             Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] \(operation.rawValue, privacy: .public) failed (attempt \(attempt)/\(maxAttempts)); giving up: \(error.localizedDescription, privacy: .public)")
-            // attempts left at the cap — next launch resets the budget so
-            // transient failures get another full retry when conditions
-            // improve. Source is preserved either way (no sweep).
             pixelFiring.fire(.gaveUp(label: label, error: error))
             ensureProtection()
             return .proceed
@@ -388,9 +363,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         return .skip
     }
 
-    /// Identifies which filesystem step failed; tagged onto the retry / give-up
-    /// log lines so `moveItem` and the `removeItem(emptyDestination)` precursor
-    /// stay distinguishable.
     private enum FailingOperation: String {
         case move
         case removingEmptyDestination

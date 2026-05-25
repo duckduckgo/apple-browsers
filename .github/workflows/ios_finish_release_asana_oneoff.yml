@@ -1,0 +1,108 @@
+name: iOS - Finish Release Asana (one-off)
+
+# One-off recovery workflow for when `ios_tag_release_update_asana.yml`
+# completed the tag/GitHub release steps but did not run the
+# `update-asana-for-release` job (e.g. wrong Asana task URL was passed
+# and `tag_release` errored before the second job was triggered).
+#
+# This workflow runs only the four steps from `update-asana-for-release`
+# that touch Asana / send the release pixel:
+#   1. update_asana_for_release
+#   2. asana_add_comment (public-release-complete-ios)
+#   3. send-release-annotation-pixel
+#   4. send-release-notification-task
+
+defaults:
+  run:
+    working-directory: iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      asana-task-url:
+        description: "Asana release task URL (parent release task, e.g. iOS App Release X.Y.Z)"
+        required: true
+        type: string
+      tag:
+        description: "Release tag that was published (e.g. 7.221.0+ios)"
+        required: true
+        type: string
+
+jobs:
+  update-asana-for-release:
+
+    name: Update Asana for release
+
+    env:
+      RELEASE_TYPE: public
+      TAG: ${{ github.event.inputs.tag }}
+      asana-task-url: ${{ github.event.inputs.asana-task-url }}
+
+    runs-on: macos-26-xlarge
+    timeout-minutes: 10
+
+    steps:
+
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: main
+
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Extract Asana Task ID
+        id: task-id
+        run: bundle exec fastlane run asana_extract_task_id task_url:"${{ env.asana-task-url }}"
+
+      - name: Update Asana for the release
+        id: update-asana
+        continue-on-error: true
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          bundle exec fastlane run update_asana_for_release \
+            platform:ios \
+            release_type:public \
+            github_handle:"${{ github.actor }}" \
+            is_scheduled_release:"false" \
+            release_task_id:"${{ steps.task-id.outputs.asana_task_id }}" \
+            target_section_id:"${{ vars.IOS_APP_BOARD_DONE_SECTION_ID }}" \
+            tag:"${{ env.TAG }}"
+
+      - name: Add a comment to the release task
+        if: success()
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          bundle exec fastlane run asana_add_comment \
+            task_url:"${{ env.asana-task-url }}" \
+            template_name:"public-release-complete-ios"
+
+      - name: Send release annotation pixel
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ env.TAG }}
+          platform: "ios"
+
+      - name: Create Asana notification task
+        continue-on-error: true
+        uses: ./.github/actions/send-release-notification-task
+        with:
+          platform: ios
+          tag: ${{ env.TAG }}
+          asana-project: ${{ vars.APPLE_DEPLOYMENTS_ASANA_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_DEPLOYMENTS_SECTION_ID }}
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

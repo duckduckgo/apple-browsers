@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blokkerer invaderende sporere før de blir lastet inn, og dette eliminerer også annonser som er basert på sporing";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Annonseblokkering på YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Nederst";

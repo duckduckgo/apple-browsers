@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Blokiranje YouTube oglasa";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Dno";
@@ -4954,7 +4954,7 @@
 "youtube.ad.blocking.mode.disable-until-relaunch" = "Onemogući do ponovnog pokretanja";
 
 /* Title of the YouTube ad-block mode picker bottom sheet */
-"youtube.ad.blocking.picker.title" = "Blokiranje oglasa na YouTubeu";
+"youtube.ad.blocking.picker.title" = "Blokiranje YouTube oglasa";
 
 /* Settings screen title for Ad Blocking */
 "youtube.ad.blocking.title" = "Blokiranje oglasa";

@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blokuje invazívne sledovače skôr, než sa načítajú, čím efektívne eliminuje reklamy, ktoré sa spoliehajú na sledovanie.";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Blokovanie reklám na YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Spodná časť";

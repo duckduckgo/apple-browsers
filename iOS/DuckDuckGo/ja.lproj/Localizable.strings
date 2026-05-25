@@ -187,7 +187,7 @@
 "ad.blocking.description" = "侵入型トラッカーを読み込む前にブロックし、トラッキングを利用する広告を効果的に取り除きます。";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "YouTube広告ブロック";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "下部";

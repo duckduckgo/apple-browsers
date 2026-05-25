@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blochează tehnologiile de urmărire invazive înainte de a se încărca, eliminând eficient reclamele care se bazează pe urmărire";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Blocarea reclamelor pe YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Partea de jos";

@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blokeerib invasiivsed jälgijad enne nende laadimist, kõrvaldades tõhusalt reklaamid, mis tuginevad jälgimisele";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "YouTube'i reklaamide blokeerimine";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "All";
@@ -4942,7 +4942,7 @@
 "youtube.ad.blocking.menu.enable" = "Luba YouTube'i reklaamide blokeerimine";
 
 /* Browsing menu row that opens the YouTube ad-block mode picker */
-"youtube.ad.blocking.menu.toggle" = "Keela YouTube'i reklaamiblokeerija";
+"youtube.ad.blocking.menu.toggle" = "Keela YouTube'i reklaamide blokeerimine";
 
 /* Picker option keeping YouTube ad blocking always off */
 "youtube.ad.blocking.mode.always-off" = "Alati välja lülitatud";
@@ -4954,7 +4954,7 @@
 "youtube.ad.blocking.mode.disable-until-relaunch" = "Inaktiveeri kuni taaskäivitamiseni";
 
 /* Title of the YouTube ad-block mode picker bottom sheet */
-"youtube.ad.blocking.picker.title" = "YouTube’i reklaamiblokeerija";
+"youtube.ad.blocking.picker.title" = "YouTube'i reklaamide blokeerimine";
 
 /* Settings screen title for Ad Blocking */
 "youtube.ad.blocking.title" = "Reklaamide blokeerimine";

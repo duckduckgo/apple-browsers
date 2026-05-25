@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Bloque les traqueurs invasifs avant leur chargement, ce qui permet d'éliminer efficacement les publicités reposant sur le pistage";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Blocage des publicités sur YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "En bas";
@@ -4942,7 +4942,7 @@
 "youtube.ad.blocking.menu.enable" = "Activer le blocage des publicités sur YouTube";
 
 /* Browsing menu row that opens the YouTube ad-block mode picker */
-"youtube.ad.blocking.menu.toggle" = "Désactiver le bloqueur de publicités YouTube";
+"youtube.ad.blocking.menu.toggle" = "Désactiver le blocage des publicités YouTube";
 
 /* Picker option keeping YouTube ad blocking always off */
 "youtube.ad.blocking.mode.always-off" = "Toujours désactivé";

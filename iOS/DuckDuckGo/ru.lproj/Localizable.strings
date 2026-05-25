@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Блокировка рекламы на YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Внизу";

@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Αποκλείει επεμβατικά προγράμματα παρακολούθησης προτού φορτώσουν, εξαλείφοντας αποτελεσματικά διαφημίσεις που βασίζονται σε παρακολούθηση";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Αποκλεισμός διαφημίσεων YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Κάτω μέρος";
@@ -4942,7 +4942,7 @@
 "youtube.ad.blocking.menu.enable" = "Ενεργοποίηση αποκλεισμού διαφημίσεων στο YouTube";
 
 /* Browsing menu row that opens the YouTube ad-block mode picker */
-"youtube.ad.blocking.menu.toggle" = "Απενεργοποίηση αποκλεισμού διαφημίσεων στο YouTube";
+"youtube.ad.blocking.menu.toggle" = "Απενεργοποίηση αποκλεισμού διαφημίσεων YouTube";
 
 /* Picker option keeping YouTube ad blocking always off */
 "youtube.ad.blocking.mode.always-off" = "Πάντα ανενεργός";

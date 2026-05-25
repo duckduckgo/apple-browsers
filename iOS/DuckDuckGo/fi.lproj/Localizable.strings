@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Estää tunkeilevat seurantaohjelmat ennen niiden latautumista, mikä eliminoi tehokkaasti seurantaa käyttävät mainokset";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "YouTube-mainosten esto";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Alareuna";

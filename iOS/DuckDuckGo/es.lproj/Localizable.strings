@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "Bloqueo de anuncios en YouTube";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Inferior";
@@ -4942,7 +4942,7 @@
 "youtube.ad.blocking.menu.enable" = "Activar el bloqueo de anuncios de YouTube";
 
 /* Browsing menu row that opens the YouTube ad-block mode picker */
-"youtube.ad.blocking.menu.toggle" = "Desactivar el bloqueo de anuncios de YouTube";
+"youtube.ad.blocking.menu.toggle" = "Desactivar el bloqueo de anuncios en YouTube";
 
 /* Picker option keeping YouTube ad blocking always off */
 "youtube.ad.blocking.mode.always-off" = "Siempre desactivado";

@@ -187,7 +187,7 @@
 "ad.blocking.description" = "Blokuoja įkyrias sekimo priemones dar prieš jas įkeliant, todėl veiksmingai pašalina sekimu pagrįstas reklamas";
 
 /* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube";
+"ad.blocking.youtube.section.header" = "„YouTube“ reklamų blokavimas";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Apačia";

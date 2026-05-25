@@ -163,21 +163,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
-    // MARK: - Save debouncing
-    //
-    // `save()` is hot during active tab switching (~26-35 calls/min), and the underlying NSCoding
-    // encode at iPad 200-tab scale costs ~30 ms avg / 47 ms max on the main thread. We coalesce
-    // calls into a short idle window so the encode runs at most once per window, and we hand the
-    // encode + write off the main thread inside `TabsModelPersistence`. Lifecycle transitions
-    // (resign-active, terminate, memory warning) must force-flush so we never lose state if the
-    // app is suspended between debounce arming and the actual write landing.
-    //
-    // The debouncer also enforces a maximum wait so a website that keeps triggering
-    // `tabLoadingStateDidChange` faster than `saveDebounceInterval` (e.g. live-updating
-    // titles) cannot push the save out indefinitely. We fire after `saveDebounceInterval`
-    // of quiet OR `saveMaxWait` since the first call in the current burst, whichever comes
-    // first. Without the max wait, a crash or watchdog kill mid-burst would lose state back
-    // to the previous quiet window.
+    // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
+    // the first call in the burst (whichever comes first) so sustained activity cannot push
+    // the save out indefinitely.
     private static let saveDebounceInterval: DispatchTimeInterval = .milliseconds(300)
     private static let saveMaxWait: DispatchTimeInterval = .seconds(1)
     private var pendingSaveWorkItem: DispatchWorkItem?
@@ -645,11 +633,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
-    /// Schedules a debounced save. The actual encode + disk write happens on a background serial
-    /// queue inside `TabsModelPersistence`; this method coalesces bursts of calls so we encode at
-    /// most once per debounce window. The returned `Result` reflects only the dispatch step (it
-    /// does not wait for the write) so callers must not rely on synchronous persistence; for
-    /// callers that need the write to land before proceeding, use `flushPendingSave()`.
+    /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
+    /// the write on disk before returning must use `flushPendingSave()` instead.
     @MainActor
     @discardableResult
     func save() -> Result<Void, Error> {
@@ -657,11 +642,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return .success(())
     }
 
-    /// Cancels any pending debounced save, performs the save synchronously (which enqueues the
-    /// encode on the persistence layer's serial queue), and blocks until that queue drains.
-    /// Use at lifecycle boundaries (resign-active, terminate, memory warning) and from any caller
-    /// that genuinely needs the persisted state to be on disk before returning (e.g. data
-    /// clearing flows). Returns the synchronous `Result` from the underlying save.
+    /// Cancels any pending debounced save and persists synchronously, blocking until the write
+    /// lands on disk. Used at lifecycle boundaries and the data-clearing path.
     @discardableResult
     func flushPendingSave() -> Result<Void, Error> {
         cancelPendingSave()
@@ -669,19 +651,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     private func scheduleDebouncedSave() {
-        // Debouncer state is accessed only on the main queue to avoid cross-thread mutation of
-        // `pendingSaveWorkItem` and `pendingSaveBurstDeadline`. Callers may invoke `save()` from
-        // any thread; we always hop here.
+        // Debouncer state is main-queue only. Callers may invoke `save()` from any thread.
         let perform = { [weak self] in
             guard let self else { return }
             self.pendingSaveWorkItem?.cancel()
             let now = DispatchTime.now()
-            // First call in the burst sets the max-wait deadline; subsequent calls keep it.
             let burstDeadline = self.pendingSaveBurstDeadline ?? (now + Self.saveMaxWait)
             self.pendingSaveBurstDeadline = burstDeadline
-            // Fire at `debounce` ms from now OR at `burstDeadline`, whichever comes first.
-            let debounceTarget = now + Self.saveDebounceInterval
-            let fireAt = min(debounceTarget, burstDeadline)
+            let fireAt = min(now + Self.saveDebounceInterval, burstDeadline)
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self else { return }
                 self.pendingSaveWorkItem = nil
@@ -902,10 +879,7 @@ extension TabManager {
                                                selector: #selector(onApplicationBecameActive),
                                                name: UIApplication.didBecomeActiveNotification,
                                                object: nil)
-        // Force-flush at lifecycle boundaries so a debounced save can never be lost if the app is
-        // suspended between schedule and write. `willResignActive` covers backgrounding and the
-        // pre-suspension transition; `willTerminate` is best-effort. `didReceiveMemoryWarning`
-        // protects against an unloading scenario that bypasses the standard lifecycle.
+        // Force-flush at lifecycle boundaries so a debounced save is not lost on suspend.
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(onApplicationWillResignActive),
                                                name: UIApplication.willResignActiveNotification,

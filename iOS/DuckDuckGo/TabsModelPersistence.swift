@@ -32,18 +32,15 @@ protocol TabsModelPersisting {
     func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
     func clear(for key: TabsModelStorageKey)
     func clearAll()
-    /// Blocks the caller until any in-flight asynchronous save has finished writing to disk.
-    /// Conformers that perform synchronous writes can leave the default no-op.
+    /// Blocks the caller until any in-flight async save has finished writing.
     func flush()
-    /// Synchronously persists the model and returns the real outcome (the async `save(model:for:)`
-    /// path may return `.success` immediately and report errors only via telemetry).
+    /// Synchronously persists the model and returns the real outcome (the async `save(...)`
+    /// returns `.success` immediately and surfaces errors only via telemetry).
     func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
 }
 
 extension TabsModelPersisting {
     func flush() {}
-    /// Default implementation: defer to `save(model:for:)` for conformers whose `save` is already
-    /// synchronous (e.g. test mocks).
     func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         save(model: model, for: key)
     }
@@ -67,9 +64,7 @@ class TabsModelPersistence: TabsModelPersisting {
     private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
 
-    /// Serial queue used to encode + write tabs models off the main thread. All writes for both
-    /// stores funnel through this queue, so a `flush()` from any thread is guaranteed to wait for
-    /// any in-flight encode to finish.
+    /// Serial queue for off-main writes. Shared by normal and fire stores so `flush()` drains both.
     private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .utility)
 
     convenience init() throws {
@@ -160,9 +155,7 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
-        // Take a deep-copy on the caller's thread so `NSKeyedArchiver` iterates a frozen graph,
-        // safe to encode on any queue. Disk write hops to the persist queue. See
-        // `TabsModel.archivalSnapshot` for the race fix this builds on (PR #4828).
+        // `archivalSnapshot` freezes the graph so the encode is safe across threads (PR #4828).
         let targetStore = store(for: key)
         let snapshot = model.archivalSnapshot()
         let data: Data
@@ -181,8 +174,7 @@ class TabsModelPersistence: TabsModelPersisting {
         return .success(())
     }
 
-    /// Writes the pre-encoded data to the given store, returning the real outcome and reporting
-    /// failures via daily pixel + log. Always invoked from the persistence's serial queue.
+    /// Always invoked from the persist queue.
     @discardableResult
     private func write(data: Data, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
         do {
@@ -197,16 +189,10 @@ class TabsModelPersistence: TabsModelPersisting {
         }
     }
 
-    /// Blocks until any pending async write has finished.
     public func flush() {
         persistQueue.sync { }
     }
 
-    /// Synchronously persists the model: takes a `archivalSnapshot()` (race-safe deep copy) and
-    /// encodes inline on the caller's thread, then drains any queued async writes and writes the
-    /// freshly encoded data on the serial queue. Returns the actual outcome. Use when the caller
-    /// needs the real `Result` (e.g. data-clearing telemetry) rather than the always-success
-    /// placeholder returned by the debounced/async path.
     public func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         let targetStore = store(for: key)
         let snapshot = model.archivalSnapshot()

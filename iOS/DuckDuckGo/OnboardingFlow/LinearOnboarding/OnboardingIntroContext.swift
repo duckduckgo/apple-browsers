@@ -1,8 +1,8 @@
 //
-//  Onboarding.swift
+//  OnboardingIntroContext.swift
 //  DuckDuckGo
 //
-//  Copyright © 2019 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,22 +17,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
-import UserNotifications
-import AIChat
+import UIKit
 
-protocol Onboarding: UIViewController {
-    
-    var delegate: OnboardingDelegate? { get set }
-    
-}
-
-protocol OnboardingDelegate: NSObjectProtocol {
-
-    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude)
-    func onboardingCompleted(controller: UIViewController)
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType)
-    func searchFromOnboarding(for query: String)
-
+struct OnboardingIntroContext {
+    /// A weakly retained instance of the onboarding intro to remove from the navigation stack when an interlude starts.
+    weak var onboardingViewController: UIViewController?
+    /// The view model to use to resume the onboarding after an interlude.
+    var onboardingViewModel: OnboardingIntroViewModel
+    /// Identifies which interlude experience the host is currently running.
+    var activeInterlude: OnboardingIntroStep.Interlude?
 }

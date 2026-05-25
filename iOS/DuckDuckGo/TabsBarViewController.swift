@@ -87,6 +87,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
+        // Hidden until updateAIChatButtonVisibility() runs (viewWillAppear / settings change).
+        // Prevents a brief visible-then-hidden flicker if the flag or per-shortcut preference is off.
+        button.isHidden = true
         return button
     }()
 
@@ -238,7 +241,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         requestNewTab(type: .currentMode)
     }
 
-    @objc func onAIChatPressed() {
+    @objc private func onAIChatPressed() {
         delegate?.tabsBarDidRequestAIChat(self)
     }
 

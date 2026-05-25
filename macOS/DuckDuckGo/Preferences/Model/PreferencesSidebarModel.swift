@@ -197,7 +197,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
-                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureAvailable,
+                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
                 subscriptionState: currentSubscriptionFeatures
             )
         }

@@ -71,7 +71,7 @@ final class AdBlockingNavigationHandler: AdBlockingNavigationHandling {
     private func handleUnavailableDialog(for newURL: URL?) {
         guard availability.isRemotelyDisabled,
               availability.isEnabledByUser,
-              newURL?.isYoutube == true
+              newURL?.isPlayableYoutubeVideoContent == true
         else { return }
         onShouldShowAdBlockUnavailableDialog()
     }

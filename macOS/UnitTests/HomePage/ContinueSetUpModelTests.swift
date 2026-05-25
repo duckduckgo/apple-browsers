@@ -420,7 +420,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     // MARK: - YouTube Ad Blocking visibility
 
     @MainActor func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: false, isEnabledByUser: true)
+        let mock = MockAdBlockingAvailability(isFeatureSupported: false, isEnabledByUser: true)
         vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
 
         vm.shouldShowAllFeatures = true
@@ -429,7 +429,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     @MainActor func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: false)
+        let mock = MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: false)
         vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
 
         vm.shouldShowAllFeatures = true
@@ -438,7 +438,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     @MainActor func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
-        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        let mock = MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
         vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
 
         vm.shouldShowAllFeatures = true

@@ -20,7 +20,7 @@ import Foundation
 import WebExtensions
 
 struct MockAdBlockingAvailability: AdBlockingAvailabilityProviding {
-    var isFeatureAvailable: Bool = false
+    var isFeatureSupported: Bool = false
     var isEnabledByUser: Bool = false
     var shouldShowAnimationResult: Bool = false
     func shouldShowAnimation(for url: URL) -> Bool { shouldShowAnimationResult }

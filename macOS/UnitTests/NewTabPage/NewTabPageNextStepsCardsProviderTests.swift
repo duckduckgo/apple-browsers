@@ -211,7 +211,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             persistor: persistor,
             pixelHandler: pixelHandler,
             cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler(),
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
         )
         let testProvider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: model,

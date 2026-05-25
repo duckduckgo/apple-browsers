@@ -24,18 +24,44 @@ import SwiftUI
 struct AdBlockingDebugView: View {
 
     private let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys>
+    private let appGroupDefaults: UserDefaults?
+    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let isPhone = UIDevice.current.userInterfaceIdiom == .phone
 
-    @AppStorage(AdBlockingAvailability.remotelyDisabledOverrideKey) private var isRemotelyDisabled = false
+    @State private var youTubeAdBlockingEnabled: TriState = .unset
+    @State private var duckPlayerMode: DuckPlayerModeOption = .unset
+    @State private var duckPlayerNativeYoutubeMode: DuckPlayerNativeYoutubeModeOption = .unset
     @State private var youTubeAnalyticsEnabled: TriState = .unset
     @State private var shouldHideDisclosure: TriState = .unset
     @State private var unavailableNoticeShown: Bool?
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.storage = keyValueStore.throwingKeyedStoring()
+        self.appGroupDefaults = UserDefaults(suiteName: "group.com.duckduckgo.app")
+    }
+
+    private var rolloutDefaultsActive: Bool {
+        featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
     }
 
     var body: some View {
         List {
+            Section {
+                triStatePicker(title: "youTubeAdBlockingEnabled",
+                               selection: $youTubeAdBlockingEnabled,
+                               key: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled,
+                               defaultLabel: rolloutDefaultsActive ? "true" : "false")
+                if isPhone {
+                    duckPlayerNativeYoutubeModePicker
+                } else {
+                    duckPlayerModePicker
+                }
+            } header: {
+                Text(verbatim: "Settings")
+            } footer: {
+                Text(verbatim: "Raw stored values. Pick `nil` to clear so the rollout-aware defaults apply. Showing the picker for the active UI on this device.")
+            }
+
             Section {
                 triStatePicker(title: "youTubeAnalyticsEnabled",
                                selection: $youTubeAnalyticsEnabled,
@@ -43,19 +69,13 @@ struct AdBlockingDebugView: View {
                 triStatePicker(title: "shouldHideDisclosure",
                                selection: $shouldHideDisclosure,
                                key: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-            } header: {
-                Text(verbatim: "Flags")
-            }
-
-            Section {
-                Toggle(isOn: $isRemotelyDisabled) { Text(verbatim: "Remotely Disabled") }
                 resettableStatusRow(title: "Unavailable notice shown",
                                     value: unavailableNoticeShown,
                                     key: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
             } header: {
-                Text(verbatim: "Remote Disable Override")
+                Text(verbatim: "Flags")
             } footer: {
-                Text(verbatim: "Simulates the YouTube Ad Block feature being remotely disabled. Placeholder — replace once the real derivation lands.")
+                Text(verbatim: "Override the `adBlockingExtension` feature flag from the Feature Flags debug screen to simulate the YouTube Ad Blocking remote-disable contingency state.")
             }
 
             Section {
@@ -89,8 +109,9 @@ struct AdBlockingDebugView: View {
 
     private func triStatePicker(title: String,
                                 selection: Binding<TriState>,
-                                key: KeyPath<YouTubeAdBlockingKeys, StorageKey<Bool>>) -> some View {
-        Picker(title, selection: Binding(
+                                key: KeyPath<YouTubeAdBlockingKeys, StorageKey<Bool>>,
+                                defaultLabel: String? = nil) -> some View {
+        Picker(selection: Binding(
             get: { selection.wrappedValue },
             set: { newValue in
                 selection.wrappedValue = newValue
@@ -100,8 +121,80 @@ struct AdBlockingDebugView: View {
             ForEach(TriState.allCases) { state in
                 Text(state.label).tag(state)
             }
+        } label: {
+            pickerLabel(title: title,
+                        isUnset: selection.wrappedValue == .unset,
+                        defaultLabel: defaultLabel)
         }
         .pickerStyle(.menu)
+    }
+
+    private var duckPlayerModePicker: some View {
+        Picker(selection: Binding(
+            get: { duckPlayerMode },
+            set: { newValue in
+                duckPlayerMode = newValue
+                applyDuckPlayerMode(newValue)
+            }
+        )) {
+            ForEach(DuckPlayerModeOption.allCases) { option in
+                Text(option.label).tag(option)
+            }
+        } label: {
+            pickerLabel(title: "duckPlayerMode",
+                        isUnset: duckPlayerMode == .unset,
+                        defaultLabel: rolloutDefaultsActive ? "disabled" : "alwaysAsk")
+        }
+        .pickerStyle(.menu)
+    }
+
+    private func applyDuckPlayerMode(_ option: DuckPlayerModeOption) {
+        if let value = option.stringValue {
+            appGroupDefaults?.set(value, forKey: "com.duckduckgo.ios.duckPlayerMode")
+        } else {
+            appGroupDefaults?.removeObject(forKey: "com.duckduckgo.ios.duckPlayerMode")
+        }
+        refresh()
+    }
+
+    private var duckPlayerNativeYoutubeModePicker: some View {
+        Picker(selection: Binding(
+            get: { duckPlayerNativeYoutubeMode },
+            set: { newValue in
+                duckPlayerNativeYoutubeMode = newValue
+                applyDuckPlayerNativeYoutubeMode(newValue)
+            }
+        )) {
+            ForEach(DuckPlayerNativeYoutubeModeOption.allCases) { option in
+                Text(option.label).tag(option)
+            }
+        } label: {
+            pickerLabel(title: "duckPlayerNativeYoutubeMode",
+                        isUnset: duckPlayerNativeYoutubeMode == .unset,
+                        defaultLabel: rolloutDefaultsActive ? "never" : "ask")
+        }
+        .pickerStyle(.menu)
+    }
+
+    @ViewBuilder
+    private func pickerLabel(title: String, isUnset: Bool, defaultLabel: String?) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+            if isUnset, let defaultLabel {
+                Text(verbatim: "Default: \(defaultLabel)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func applyDuckPlayerNativeYoutubeMode(_ option: DuckPlayerNativeYoutubeModeOption) {
+        if let value = option.stringValue {
+            appGroupDefaults?.set(value, forKey: "com.duckduckgo.ios.duckPlayerNativeYoutubeMode")
+        } else {
+            appGroupDefaults?.removeObject(forKey: "com.duckduckgo.ios.duckPlayerNativeYoutubeMode")
+        }
+        refresh()
     }
 
     @ViewBuilder
@@ -138,6 +231,9 @@ struct AdBlockingDebugView: View {
     }
 
     private func refresh() {
+        youTubeAdBlockingEnabled = TriState.from(try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+        duckPlayerMode = DuckPlayerModeOption.from(appGroupDefaults?.string(forKey: "com.duckduckgo.ios.duckPlayerMode"))
+        duckPlayerNativeYoutubeMode = DuckPlayerNativeYoutubeModeOption.from(appGroupDefaults?.string(forKey: "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"))
         youTubeAnalyticsEnabled = TriState.from(try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled))
         shouldHideDisclosure = TriState.from(try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure))
         unavailableNoticeShown = try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
@@ -170,6 +266,72 @@ private extension AdBlockingDebugView {
             case nil: return .unset
             case true?: return .on
             case false?: return .off
+            }
+        }
+    }
+
+    enum DuckPlayerModeOption: Hashable, CaseIterable, Identifiable {
+        case unset
+        case enabled
+        case alwaysAsk
+        case disabled
+
+        var id: String { label }
+        var label: String {
+            switch self {
+            case .unset: return "nil"
+            case .enabled: return "enabled"
+            case .alwaysAsk: return "alwaysAsk"
+            case .disabled: return "disabled"
+            }
+        }
+        var stringValue: String? {
+            switch self {
+            case .unset: return nil
+            case .enabled: return "enabled"
+            case .alwaysAsk: return "alwaysAsk"
+            case .disabled: return "disabled"
+            }
+        }
+        static func from(_ value: String?) -> DuckPlayerModeOption {
+            switch value {
+            case "enabled": return .enabled
+            case "alwaysAsk": return .alwaysAsk
+            case "disabled": return .disabled
+            default: return .unset
+            }
+        }
+    }
+
+    enum DuckPlayerNativeYoutubeModeOption: Hashable, CaseIterable, Identifiable {
+        case unset
+        case auto
+        case ask
+        case never
+
+        var id: String { label }
+        var label: String {
+            switch self {
+            case .unset: return "nil"
+            case .auto: return "auto"
+            case .ask: return "ask"
+            case .never: return "never"
+            }
+        }
+        var stringValue: String? {
+            switch self {
+            case .unset: return nil
+            case .auto: return "auto"
+            case .ask: return "ask"
+            case .never: return "never"
+            }
+        }
+        static func from(_ value: String?) -> DuckPlayerNativeYoutubeModeOption {
+            switch value {
+            case "auto": return .auto
+            case "ask": return .ask
+            case "never": return .never
+            default: return .unset
             }
         }
     }

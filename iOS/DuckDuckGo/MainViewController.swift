@@ -4755,10 +4755,16 @@ extension MainViewController: TabDelegate {
             switch mode {
             case .alwaysOn:
                 self.adBlockingAvailability.clearDisableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOn,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
             case .disableUntilRelaunch:
                 self.adBlockingAvailability.disableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerDisableUntilRelaunch,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
             case .alwaysOff:
                 self.setYouTubeAdBlockingEnabled(false)
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOff,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
             }
             self.dismiss(animated: true) { [weak self, weak tab] in
                 switch mode {
@@ -4794,6 +4800,8 @@ extension MainViewController: TabDelegate {
     private func presentYouTubeAdBlockBreakageReport() {
         let view = YouTubeAdBlockBreakageReportView(
             onSend: { [weak self] in
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingBreakageReportEntered,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                 self?.dismiss(animated: true) { [weak self] in
                     self?.segueToReportBrokenSite()
                 }
@@ -4840,10 +4848,6 @@ extension MainViewController: TabDelegate {
         } else if disclosureVisibleAtToggle {
             try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
         }
-        DailyPixel.fireDailyAndCount(
-            pixel: enabled ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
-            pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-        )
         NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
     }
 

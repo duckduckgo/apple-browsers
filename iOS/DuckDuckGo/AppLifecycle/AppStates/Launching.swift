@@ -130,8 +130,9 @@ struct Launching: LaunchingHandling {
         let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
         let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
             featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled)) ?? false
+            isEnabledByUserProvider: { [featureFlagger] in
+                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled))
+                    ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
             }
         )
 

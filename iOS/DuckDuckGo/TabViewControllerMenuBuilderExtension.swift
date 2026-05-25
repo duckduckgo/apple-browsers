@@ -993,8 +993,8 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
 
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {
-        guard validLink?.url.isYoutube == true,
-              adBlockingAvailability.isFeatureAvailable,
+        guard validLink?.url.isPlayableYoutubeVideoContent == true,
+              adBlockingAvailability.isFeatureSupported,
               !adBlockingAvailability.isRemotelyDisabled
         else { return nil }
 
@@ -1006,8 +1006,12 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                         action: { [weak self] in
             guard let self else { return }
             if isEnabled {
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuDisableTapped,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                 self.delegate?.tabDidRequestYouTubeAdBlockPicker(tab: self)
             } else {
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuEnableTapped,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                 self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })

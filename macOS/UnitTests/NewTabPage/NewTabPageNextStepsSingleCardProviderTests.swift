@@ -657,7 +657,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testProvider = createProvider(
             persistor: testPersistor,
             featureFlagger: testFeatureFlagger,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true),
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
             isAppStoreBuild: false
         )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
@@ -673,7 +673,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testProvider = createProvider(
             persistor: testPersistor,
             featureFlagger: testFeatureFlagger,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true),
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
             isAppStoreBuild: true
         )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
@@ -916,19 +916,19 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     // MARK: - YouTube Ad Blocking visibility
 
     func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
-        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: false, isEnabledByUser: true))
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: false, isEnabledByUser: true))
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
 
     func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
-        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: false))
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: false))
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
 
     func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
-        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true))
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true))
 
         XCTAssertTrue(testProvider.cards.contains(.youtubeAdBlocking))
     }
@@ -940,7 +940,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testLegacyPersistor.shouldShowYouTubeAdBlockingSetting = false
         let testProvider = createProvider(
             legacyPersistor: testLegacyPersistor,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
         )
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))

@@ -289,7 +289,7 @@ final class MockAutoplaySettings: AutoplaySettings {
 }
 
 final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
-    var isFeatureAvailable: Bool = false
+    var isFeatureSupported: Bool = false
     var isEnabledByUser: Bool = false
     func shouldShowAnimation(for url: URL) -> Bool { false }
 }

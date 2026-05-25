@@ -135,6 +135,15 @@ struct Launching: LaunchingHandling {
             appConfigurationGroupName: Global.appConfigurationGroupName
         )
 
+        let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+        let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
+            featureFlagger: featureFlagger,
+            isEnabledByUserProvider: { [featureFlagger] in
+                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled))
+                    ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+        )
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -145,7 +154,8 @@ struct Launching: LaunchingHandling {
                                                             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                            fireModeStorageController: fireModeStorageController)
+                                                            fireModeStorageController: fireModeStorageController,
+                                                            adBlockingAvailability: adBlockingAvailability)
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,

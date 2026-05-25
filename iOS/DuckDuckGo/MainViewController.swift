@@ -937,10 +937,7 @@ class MainViewController: UIViewController {
 
         let controller = TabsBarViewController.createFromXib()
 
-        // Assign dependencies BEFORE accessing controller.view, which triggers viewDidLoad.
-        // viewDidLoad subscribes to .aiChatSettingsChanged; without dependencies in place, an early
-        // notification would see nils. (Not strictly a bug today — viewWillAppear re-computes — but
-        // this keeps the invariant clean.)
+        // Dependencies set before controller.view access — viewDidLoad subscribes to .aiChatSettingsChanged.
         controller.delegate = self
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing

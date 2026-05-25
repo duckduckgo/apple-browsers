@@ -35,6 +35,19 @@ enum DuckAIChromeShortcutVisibility {
     static func isSettingsRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
         isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
     }
+
+    /// Whether the Duck.ai chrome button (the pill in the iPad tabs bar) should be visible.
+    ///
+    /// Caller is expected to pass `aiChatSettings.isAIChatNavigationBarUserSettingsEnabled`, which is
+    /// itself gated on `aiChatSettings.isAIChatEnabled` — so the global Duck.ai toggle being off
+    /// already short-circuits this check.
+    static func isChromeButtonVisible(
+        featureFlagger: FeatureFlagger,
+        isAIChatNavigationBarUserSettingsEnabled: Bool
+    ) -> Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && isAIChatNavigationBarUserSettingsEnabled
+    }
 }
 
 struct SettingsAIChatShortcutsView: View {

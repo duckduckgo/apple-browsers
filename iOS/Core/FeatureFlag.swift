@@ -109,9 +109,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
     case dbpForegroundRunningOnAppActive
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
-    case dbpForegroundRunningWhenDashboardOpen
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
     case dbpContinuedProcessing
 
@@ -518,8 +515,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.emailConfirmationDecoupling))
         case .dbpForegroundRunningOnAppActive:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningOnAppActive))
-        case .dbpForegroundRunningWhenDashboardOpen:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .dbpContinuedProcessing:
             Config(source: .remoteReleasable(DBPSubfeature.continuedProcessing))
         case .dbpFreemiumPIR:
@@ -709,7 +704,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .omniBarLongPressMenu:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:

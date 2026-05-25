@@ -159,8 +159,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
     // MARK: - dashboardDidOpen routing
 
     func testDashboardDidOpen_authenticated_startsAllOperations() async {
-        let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
-                                                    isForegroundRunningWhenDashboardOpenFeatureOn: true)
+        let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false)
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
         dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
@@ -177,7 +176,6 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
     func testDashboardDidOpen_freemium_startsScanOnlyOperations() async {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
-                                                    isForegroundRunningWhenDashboardOpenFeatureOn: true,
                                                     isFreemiumPIREnabled: true)
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
         dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
@@ -221,7 +219,6 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
     func testDashboardDidOpen_freemiumFlagOff_startsAllOperations() async {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
-                                                    isForegroundRunningWhenDashboardOpenFeatureOn: true,
                                                     isFreemiumPIREnabled: false)
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
         dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()

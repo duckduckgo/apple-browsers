@@ -18,8 +18,9 @@
 
 import Combine
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import FeatureFlags
+import FoundationExtensions
 import PrivacyConfig
 import WebKit
 import XCTest

@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
 import FoundationExtensions
 import History
 import os.log

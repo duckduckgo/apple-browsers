@@ -26,6 +26,7 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
@@ -71,6 +72,7 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
@@ -89,6 +91,7 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
             ]
         ),

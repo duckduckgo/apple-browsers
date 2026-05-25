@@ -20,9 +20,10 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit

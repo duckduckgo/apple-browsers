@@ -18,9 +18,10 @@
 
 #if DEBUG
 
-import Foundation
 import Combine
 import Common
+import ConcurrencyExtensions
+import Foundation
 import FoundationExtensions
 
 final class PermissionManagerMock: PermissionManagerProtocol {

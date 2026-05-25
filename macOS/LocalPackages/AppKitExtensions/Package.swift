@@ -22,6 +22,7 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

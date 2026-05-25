@@ -91,6 +91,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "UserScript",
                 "ContentBlocking",
                 "SecureStorage",
@@ -124,6 +125,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -135,6 +137,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
                 "SecureStorage",
                 "GRDB",
@@ -158,6 +161,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ContentBlocking",
                 "Persistence",
             ],
@@ -180,6 +184,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
             ],
             resources: [
@@ -196,6 +201,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             resources: [
                 .process("CoreData/BrowsingHistory.xcdatamodeld")
@@ -210,6 +216,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -253,6 +260,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "CxxCrashHandler",
                 "Persistence"
             ]),
@@ -266,6 +274,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 "Networking",
@@ -294,6 +303,7 @@ let package = Package(
                 .product(name: "URLPredictor", package: "URLPredictor"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -314,6 +324,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
@@ -336,6 +347,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -347,6 +359,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "TrackerRadarKit",
                 "UserScript",
                 "ContentBlocking",
@@ -367,6 +380,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "PrivacyConfig",
             ],
@@ -381,6 +395,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -399,6 +414,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Configuration",
                 "Networking",
                 "Persistence",
@@ -425,6 +441,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "DDGSync",
                 "GRDB",
                 "Persistence",
@@ -440,6 +457,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "PixelKit",
                 "GRDB",
             ],
@@ -460,6 +478,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "UserScript",
                 "PixelKit",
@@ -478,6 +497,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "NetworkingTestingUtils",
             ]
         ),
@@ -487,6 +507,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence"
             ],
             exclude: [
@@ -508,6 +529,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "UserScript",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
@@ -523,6 +545,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ContentBlocking",
                 "PrivacyConfig",
             ],
@@ -536,6 +559,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "PixelKit",
                 "PrivacyConfig",
@@ -579,6 +603,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
                 "TrackerRadarKit"
             ],
@@ -595,6 +620,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
             ],
             swiftSettings: [
@@ -719,6 +745,7 @@ let package = Package(
                 "Common",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ]
         ),
         .testTarget(

@@ -661,7 +661,6 @@ private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContain
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
         case .notNeeded: firedEventNames.append("notNeeded")
-        case .orphanRemoved: firedEventNames.append("orphanRemoved")
         case .success: firedEventNames.append("success")
         case .attemptFailed: firedEventNames.append("attemptFailed")
         case .gaveUp: firedEventNames.append("gaveUp")

@@ -32,7 +32,6 @@ enum DuckAiNativeStorageContainerMigrationLabel: String {
 /// migration pixels (`duckAiNativeStorageMigration*`).
 enum DuckAiNativeStorageContainerMigrationEvent {
     case notNeeded(label: DuckAiNativeStorageContainerMigrationLabel)
-    case orphanRemoved(label: DuckAiNativeStorageContainerMigrationLabel)
     case success(label: DuckAiNativeStorageContainerMigrationLabel)
     case attemptFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
     case gaveUp(label: DuckAiNativeStorageContainerMigrationLabel, error: Error?)
@@ -71,8 +70,6 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
         switch event {
         case .notNeeded(let label):
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
-        case .orphanRemoved(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationOrphanRemoved(label: label.rawValue))
         case .success(let label):
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
         case .attemptFailed(let label, let error):
@@ -111,10 +108,6 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
 enum DuckAiNativeStorageContainerMigration {
 
     static let defaultMaxAttempts = 3
-
-    /// Existence sentinel for "destination holds migrated data", used by the
-    /// legacy transition for pre-marker users. Contents are not inspected.
-    private static let databaseFilename = "chats.db"
 
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo",
                                        category: "DuckAiNativeStorageContainerMigration")
@@ -232,6 +225,10 @@ enum DuckAiNativeStorageContainerMigration {
                 try fileManager.createDirectory(at: markerURL.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
                 try Data().write(to: markerURL, options: .atomic)
+                var url = markerURL
+                var resourceValues = URLResourceValues()
+                resourceValues.isExcludedFromBackup = true
+                try url.setResourceValues(resourceValues)
             } catch {
                 Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] failed to write marker at \(markerURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
@@ -241,8 +238,13 @@ enum DuckAiNativeStorageContainerMigration {
             fileManager.fileExists(atPath: markerURL.path)
         }
 
+        // Fire-mode stores DBs in `<UUID>/chats.db` subdirectories rather than at
+        // the root, so any non-empty `newURL` implies data that must not be wiped.
         func destinationHasData() -> Bool {
-            fileManager.fileExists(atPath: newURL.appendingPathComponent(Self.databaseFilename).path)
+            guard let children = try? fileManager.contentsOfDirectory(atPath: newURL.path) else {
+                return false
+            }
+            return !children.isEmpty
         }
 
         func ensureProtection() {

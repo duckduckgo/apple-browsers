@@ -101,20 +101,6 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_duck-ai_native-storage_container-migration_orphan-removed_default": {
-        "description": "Fires once when the new default container already had data so the orphaned app-group default copy was deleted",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_duck-ai_native-storage_container-migration_orphan-removed_fire-mode": {
-        "description": "Fires once when the new fire-mode container already had data so the orphaned app-group fire-mode copy was deleted",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "m_duck-ai_native-storage_container-migration_success_default": {
         "description": "Fires once when the default Duck.ai container was successfully moved from the app-group container into Application Support",
         "owners": ["Bunn"],

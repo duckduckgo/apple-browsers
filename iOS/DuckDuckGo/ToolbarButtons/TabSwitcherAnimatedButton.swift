@@ -25,8 +25,6 @@ protocol TabSwitcherButtonDelegate: AnyObject {
     
     func showTabSwitcher(_ button: TabSwitcherButton)
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton)
-    func launchNewNormalTab(_ button: TabSwitcherButton)
-    func launchNewFireTab(_ button: TabSwitcherButton)
 
 }
 

@@ -160,7 +160,7 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     let tabSwitcherButton: TabSwitcherStaticButton = {
-        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        let button = TabSwitcherStaticButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
         // The default `tabSwitcherDefault()` config uses `UIButton.Configuration.gray()` which

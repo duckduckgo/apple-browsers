@@ -1380,7 +1380,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1391,7 +1391,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
@@ -4184,20 +4184,6 @@ extension MainViewController: OmniBarDelegate {
         newTab()
     }
 
-    private func newFireTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
-        newTab()
-    }
-
-    private func newNormalTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
-        performCancel()
-        newTab()
-    }
-
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -5426,14 +5412,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton) {
         newTabShortcutAction()
-    }
-    
-    func launchNewNormalTab(_ button: any TabSwitcherButton) {
-        newNormalTabLongPressMenuAction()
-    }
-
-    func launchNewFireTab(_ button: TabSwitcherButton) {
-        newFireTabLongPressMenuAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

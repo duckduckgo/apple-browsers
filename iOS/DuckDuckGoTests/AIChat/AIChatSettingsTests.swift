@@ -180,12 +180,15 @@ class AIChatSettingsTests: XCTestCase {
 
     // MARK: - Navigation Bar shortcut (iPad Duck.ai chrome)
 
-    func testIsAIChatNavigationBarUserSettingsEnabled_returnsTrueByDefault() {
+    func testIsAIChatNavigationBarUserSettingsEnabled_returnsTrueByDefault_whenAIChatIsEnabled() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
+        // Pin the AI Chat global gate explicitly so the test only depends on
+        // showAIChatNavigationBarDefaultValue, not the isAIChatEnabled default.
+        settings.enableAIChat(enable: true)
 
         XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
     }

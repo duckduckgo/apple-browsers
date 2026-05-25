@@ -1914,6 +1914,11 @@ class MainViewController: UIViewController {
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
     ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
     ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
+    ///   - completion: Optional closure run once the new/selected tab is in place. When `clearInProgress`
+    ///     is true at call time, this fires only after the data clear completes (via `postClear`).
+    ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
+    ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
+    ///     on chrome state being settled inside the closure.
     func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, completion: (() -> Void)? = nil) {
 
         func worker() {
@@ -3406,6 +3411,12 @@ class MainViewController: UIViewController {
            let currentTab,
            currentTab.tabModel.link != nil {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
+            // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
+            // below fires this, so the new-tab branch must too — otherwise idle-session telemetry
+            // misses prompt submissions from content tabs once the unified-input boundary kicks in.
+            // The `barUsedFromNTP` half of `load()` does not apply here (this branch only fires when
+            // the current tab has content).
+            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
             // Stage prompt and per-tab payload inside loadUrlInNewTab's worker so they run in
             // lockstep with tab creation. This keeps the global AIChatPromptHandler.shared write
             // tight against the URL load (avoiding an extended window when loadUrlInNewTab defers

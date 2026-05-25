@@ -2381,6 +2381,14 @@ extension TabViewController: WKNavigationDelegate {
         // (target="_blank") link taps from a Duck.ai page; this branch covers in-frame links
         // in both directions. Skip when Command is held so the modifier-key handler below
         // can pick foreground vs. background tabs as usual.
+        //
+        // Ordering trade-off: this lands before `linkProtection.requestTrackingLinkRewrite`,
+        // `referrerTrimming.trimReferrer`, and `requestForDoNotSell` for the original navigation
+        // action. The new tab re-runs the full policy pipeline on its initial request, so the
+        // rewrites still apply — they just lose the originating frame's context (initiator URL,
+        // referrer chain). For our boundary-crossing use case (a chat citation outbound, or a
+        // SERP link inbound) this is acceptable: there is no upstream tracking history to lose
+        // because the boundary cross severs the origin/destination relationship anyway.
         if navigationAction.navigationType == .linkActivated,
            navigationAction.targetFrame?.isMainFrame == true,
            let linkURL = navigationAction.request.url,

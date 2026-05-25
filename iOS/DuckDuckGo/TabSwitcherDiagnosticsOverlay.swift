@@ -83,12 +83,6 @@ enum TabSwitcherDiagnosticsOverlay {
         return tapTimestamps.count >= tapThreshold
     }
 
-    /// Clear the tap counter — call from the `present` completion when the tab switcher
-    /// actually appears, so a subsequent tap doesn't carry stale history.
-    static func clearTapHistory() {
-        tapTimestamps.removeAll()
-    }
-
     /// Show the diagnostic overlay over the supplied MainViewController's key window.
     /// Logs the same content via `Logger.lifecycle.error` so it also appears in device logs.
     static func show(from mainVC: MainViewController) {
@@ -586,9 +580,9 @@ private final class OverlayView: UIView {
         let dismissButton = UIButton(type: .system)
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.setTitle("Dismiss", for: .normal)
-        dismissButton.addAction(UIAction { [weak self] _ in
+        dismissButton.addAction(UIAction { [weak self, handler = dismissHandler] _ in
             self?.removeFromSuperview()
-            self?.dismissHandler()
+            handler()
         }, for: .touchUpInside)
         card.addSubview(dismissButton)
 

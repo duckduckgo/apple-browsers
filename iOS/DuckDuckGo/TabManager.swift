@@ -259,6 +259,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         registerForNotifications()
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     private func resolvedTextEntryMode() -> TextEntryMode {
         aiChatSettings.defaultOmnibarMode
             .resolvedTextEntryMode { toggleModeStorage.restore() }

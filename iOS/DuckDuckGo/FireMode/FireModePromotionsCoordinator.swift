@@ -72,7 +72,6 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
     static let ntpExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
     static let menuExpirationInterval: TimeInterval = 14 * 24 * 60 * 60
-    static let menuMaxOpenCount = 5
     static let tabSwitcherTipExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
 
     private let fireModeCapability: FireModeCapable

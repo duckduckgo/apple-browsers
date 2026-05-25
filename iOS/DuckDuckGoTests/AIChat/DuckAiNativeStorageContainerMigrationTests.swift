@@ -31,6 +31,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
     private var doneKey: String { migrationKey + ".done" }
     private var attemptsKey: String { migrationKey + ".attempts" }
+    private var protectionAppliedKey: String { migrationKey + ".protectionApplied" }
+    private var protectionAttemptsKey: String { migrationKey + ".protectionAttempts" }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -304,6 +306,58 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["success", "protectionFailed"])
         XCTAssertEqual((pixelSpy.lastProtectionFailedError as NSError?)?.domain, FailingSetAttributesFileManager.errorDomain)
         XCTAssertEqual((pixelSpy.lastProtectionFailedError as NSError?)?.code, FailingSetAttributesFileManager.errorCode)
+        // Protection state must remain pending so the next launch retries it.
+        XCTAssertFalse(userDefaults.bool(forKey: protectionAppliedKey))
+        XCTAssertEqual(userDefaults.integer(forKey: protectionAttemptsKey), 1)
+    }
+
+    func testWhenProtectionFailsThenRetriedOnSubsequentLaunchAndSucceedsThenProtectionAppliedIsSet() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        // First launch: move succeeds, protection silently fails.
+        migrate(from: oldURL, to: newURL, fileManager: FailingSetAttributesFileManager(), maxAttempts: 3)
+        XCTAssertFalse(userDefaults.bool(forKey: protectionAppliedKey))
+
+        // Second launch (transient failure resolved): protection should retry and succeed.
+        migrate(from: oldURL, to: newURL, maxAttempts: 3)
+
+        XCTAssertTrue(userDefaults.bool(forKey: protectionAppliedKey))
+        XCTAssertEqual(userDefaults.integer(forKey: protectionAttemptsKey), 0)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success", "protectionFailed"])
+    }
+
+    func testWhenProtectionFailsRepeatedlyThenGivesUpAtMaxAttemptsAndStopsFiringPixel() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        // Three failing launches: pixel fires each time, last one caps and marks applied.
+        for _ in 0..<3 {
+            migrate(from: oldURL, to: newURL, fileManager: FailingSetAttributesFileManager(), maxAttempts: 3)
+        }
+        XCTAssertTrue(userDefaults.bool(forKey: protectionAppliedKey))
+        XCTAssertEqual(userDefaults.integer(forKey: protectionAttemptsKey), 3)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success", "protectionFailed", "protectionFailed", "protectionFailed"])
+
+        // Fourth launch must NOT fire another pixel even though the file system
+        // would still reject setAttributes — we've given up on this regression.
+        migrate(from: oldURL, to: newURL, fileManager: FailingSetAttributesFileManager(), maxAttempts: 3)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success", "protectionFailed", "protectionFailed", "protectionFailed"])
+    }
+
+    func testWhenMigrationIsNotNeededThenProtectionAppliedIsSetWithoutEnumeratingFiles() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+
+        migrate(from: oldURL, to: newURL)
+
+        // No data to protect → mark applied so we don't retry unnecessarily.
+        XCTAssertTrue(userDefaults.bool(forKey: protectionAppliedKey))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["notNeeded"])
     }
 
     func testWhenApplyDefaultFileProtectionSucceedsForAllPathsThenReturnsNil() throws {

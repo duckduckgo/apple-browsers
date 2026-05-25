@@ -157,10 +157,22 @@ enum DuckAiNativeStorageContainerMigration {
     /// Moves `oldURL` to `newURL`, retrying on failure across launches.
     ///
     /// Persistence in `userDefaults`:
-    /// - `migrationKey + ".done"` (Bool) — set when the migration reaches a terminal
-    ///   state (success, no-op, orphan-cleaned, or `maxAttempts` exhausted).
+    /// - `migrationKey + ".done"` (Bool) — set when the migration's *data* state is
+    ///   settled (success, no-op, orphan-cleaned, or `maxAttempts` exhausted).
     /// - `migrationKey + ".attempts"` (Int) — number of failed attempts so far
     ///   (move or orphan-removal). Cleared on success.
+    /// - `migrationKey + ".protectionApplied"` (Bool) — set when file protection
+    ///   at `newURL` is confirmed correct, or there's no data at `newURL` needing
+    ///   protection, or the retry cap has been reached.
+    /// - `migrationKey + ".protectionAttempts"` (Int) — number of failed
+    ///   `applyDefaultFileProtection` retries. Cleared on success.
+    ///
+    /// `done` and `protectionApplied` are tracked independently: a successful
+    /// move that fails to re-apply file protection sets `done=true` but leaves
+    /// `protectionApplied=false`, so each subsequent launch retries protection
+    /// until success or the cap. Otherwise the destination DB would keep its
+    /// original `NSFileProtectionComplete` class permanently — the 0xdead10cc
+    /// condition this migration exists to fix.
     ///
     /// `label` distinguishes the default vs. fire-mode container in logs and pixels.
     ///
@@ -178,9 +190,38 @@ enum DuckAiNativeStorageContainerMigration {
                                 maxAttempts: Int = defaultMaxAttempts) -> DuckAiNativeStorageContainerMigrationOutcome {
         let doneKey = migrationKey + ".done"
         let attemptsKey = migrationKey + ".attempts"
+        let protectionAppliedKey = migrationKey + ".protectionApplied"
+        let protectionAttemptsKey = migrationKey + ".protectionAttempts"
 
-        guard !userDefaults.bool(forKey: doneKey) else {
+        func ensureProtection() {
+            guard !userDefaults.bool(forKey: protectionAppliedKey) else { return }
+            guard fileManager.fileExists(atPath: newURL.path) else {
+                // Nothing at the destination yet — no protection to enforce.
+                userDefaults.set(true, forKey: protectionAppliedKey)
+                userDefaults.removeObject(forKey: protectionAttemptsKey)
+                return
+            }
+            if let error = applyDefaultFileProtection(at: newURL, fileManager: fileManager) {
+                let attempt = userDefaults.integer(forKey: protectionAttemptsKey) + 1
+                userDefaults.set(attempt, forKey: protectionAttemptsKey)
+                if attempt <= maxAttempts {
+                    pixelFiring.fire(.protectionFailed(label: label, error: error))
+                }
+                if attempt >= maxAttempts {
+                    // Stop retrying. We've fired the pixel `maxAttempts` times;
+                    // the user is left with the original protection class, but
+                    // continued churn would only spam telemetry.
+                    userDefaults.set(true, forKey: protectionAppliedKey)
+                }
+            } else {
+                userDefaults.set(true, forKey: protectionAppliedKey)
+                userDefaults.removeObject(forKey: protectionAttemptsKey)
+            }
+        }
+
+        if userDefaults.bool(forKey: doneKey) {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] skipping: already done")
+            ensureProtection()
             return .proceed
         }
 
@@ -192,6 +233,7 @@ enum DuckAiNativeStorageContainerMigration {
             userDefaults.set(true, forKey: doneKey)
             userDefaults.removeObject(forKey: attemptsKey)
             pixelFiring.fire(.notNeeded(label: label))
+            ensureProtection()
             return .proceed
         }
 
@@ -203,6 +245,7 @@ enum DuckAiNativeStorageContainerMigration {
                 userDefaults.set(true, forKey: doneKey)
                 userDefaults.removeObject(forKey: attemptsKey)
                 pixelFiring.fire(.orphanRemoved(label: label))
+                ensureProtection()
                 return .proceed
             } catch {
                 // newURL is intact and usable, but the old container still holds
@@ -218,6 +261,7 @@ enum DuckAiNativeStorageContainerMigration {
                     Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] orphan removal failed (attempt \(attempt)/\(maxAttempts)); will retry next launch: \(error.localizedDescription, privacy: .public)")
                     pixelFiring.fire(.attemptFailed(label: label, error: error))
                 }
+                ensureProtection()
                 return .proceed
             }
         }
@@ -226,14 +270,11 @@ enum DuckAiNativeStorageContainerMigration {
             try fileManager.createDirectory(at: newURL.deletingLastPathComponent(),
                                             withIntermediateDirectories: true)
             try fileManager.moveItem(at: oldURL, to: newURL)
-            let protectionError = applyDefaultFileProtection(at: newURL, fileManager: fileManager)
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] moved successfully")
             userDefaults.set(true, forKey: doneKey)
             userDefaults.removeObject(forKey: attemptsKey)
             pixelFiring.fire(.success(label: label))
-            if let protectionError {
-                pixelFiring.fire(.protectionFailed(label: label, error: protectionError))
-            }
+            ensureProtection()
             return .proceed
         } catch {
             let attempt = priorAttempts + 1
@@ -248,6 +289,7 @@ enum DuckAiNativeStorageContainerMigration {
                 try? fileManager.removeItem(at: oldURL)
                 userDefaults.set(true, forKey: doneKey)
                 pixelFiring.fire(.gaveUp(label: label, error: error))
+                ensureProtection()
                 return .proceed
             } else {
                 Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] move failed (attempt \(attempt)/\(maxAttempts)); will retry next launch: \(error.localizedDescription, privacy: .public)")

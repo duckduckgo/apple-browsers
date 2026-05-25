@@ -2483,10 +2483,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let permissions = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.permissions else {
-            assertionFailure("TabBarViewController: Failed to get permissions for tab bar view item")
+        guard let tabViewModel = tabBarViewItem.tabViewModel as? TabViewModel else {
+            assertionFailure("TabBarViewController: Failed to get view model for tab bar view item")
             return
         }
+        // permissionButton is hidden on pinned tabs by design (asserted in `layoutForPinnedMode`).
+        guard !tabViewModel.isPinned else { return }
+        let permissions = tabViewModel.tab.permissions
 
         if permissions.permissions.camera.isActive || permissions.permissions.microphone.isActive {
             permissions.set([.camera, .microphone], muted: true)

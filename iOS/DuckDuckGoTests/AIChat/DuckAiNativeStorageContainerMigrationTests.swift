@@ -597,7 +597,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
     private func runFactory(oldURL: URL,
                             newURL: URL,
                             fileManager: FileManager,
-                            isProtectedDataAvailable: () -> Bool = { true },
+                            isProtectedDataAvailable: @escaping () -> Bool = { true },
                             createHandler: () -> Void) -> AnyObject? {
         let outcome = migrate(from: oldURL,
                               to: newURL,

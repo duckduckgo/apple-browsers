@@ -127,11 +127,7 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         guard hasBurnedTabs else { return false }
         guard !hasVisitedFireMode else { return false }
         guard !isDismissed && !isEngaged && ntpFirstSeenDate == nil else { return false }
-
-        if let firstSeen = ntpFirstSeenDate {
-            guard Date().timeIntervalSince(firstSeen) < Self.ntpExpirationInterval else { return false }
-        }
-
+        // Expiration is no longer relevant as we only show it once.
         return true
     }
 

@@ -18,7 +18,10 @@
 //
 
 import Foundation
+import CoreGraphics
 import Combine
+import SwiftUI
+import Persistence
 import PrivacyConfig
 import Core
 
@@ -40,7 +43,8 @@ extension TabManager: EscapeHatchTabsSource {
 protocol EscapeHatchActionRouter: AnyObject {
     func escapeHatchDidRequestSwitch(to tab: Tab)
     func escapeHatchDidRequestClose(_ tab: Tab)
-    func escapeHatchDidRequestBurn(_ tab: Tab)
+    func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect)
+    func escapeHatchDidRequestBurnImmediately(_ tab: Tab)
     func escapeHatchDidRequestTabSwitcher()
 }
 
@@ -60,6 +64,7 @@ final class EscapeHatchModel: ObservableObject {
 
     @Published private(set) var openTabCount: Int = 0
     @Published private(set) var isTargetTabPresent: Bool = true
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     private var cancellables = [AnyCancellable]()
 
     let title: String
@@ -71,7 +76,8 @@ final class EscapeHatchModel: ObservableObject {
     let onCardTap: () -> Void
     let onTabSwitcherTap: () -> Void
     let onCloseTab: () -> Void
-    let onBurnTab: () -> Void
+    let onBurnTabWithConfirmation: (CGRect) -> Void
+    let onBurnTabImmediately: () -> Void
 
     init(title: String,
          subtitle: String,
@@ -80,27 +86,32 @@ final class EscapeHatchModel: ObservableObject {
          targetTab: Tab,
          tabsSource: some EscapeHatchTabsSource,
          isActionsEnabled: Bool,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          onCardTap: @escaping () -> Void,
          onTabSwitcherTap: @escaping () -> Void,
          onCloseTab: @escaping () -> Void,
-         onBurnTab: @escaping () -> Void) {
+         onBurnTabWithConfirmation: @escaping (CGRect) -> Void,
+         onBurnTabImmediately: @escaping () -> Void) {
         self.title = title
         self.subtitle = subtitle
         self.tabType = tabType
         self.domain = domain
         self.targetTab = targetTab
         self.isActionsEnabled = isActionsEnabled
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.onCardTap = onCardTap
         self.onTabSwitcherTap = onTabSwitcherTap
         self.onCloseTab = onCloseTab
-        self.onBurnTab = onBurnTab
+        self.onBurnTabWithConfirmation = onBurnTabWithConfirmation
+        self.onBurnTabImmediately = onBurnTabImmediately
 
         subscribeToTabsSource(tabsSource)
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
-    /// Builds the model with action closures wired to a router. The router is captured weakly so holders
-    /// of `EscapeHatchModel` don't pin its owner's lifecycle.
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger) {
+    /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
+    ///
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger, afterInactivityOptionAdapter: AfterInactivityOptionAdapter) {
         self.init(
             title: title,
             subtitle: subtitle,
@@ -109,6 +120,7 @@ final class EscapeHatchModel: ObservableObject {
             targetTab: targetTab,
             tabsSource: tabsSource,
             isActionsEnabled: featureFlagger.isFeatureOn(.escapeHatchActions),
+            afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             onCardTap: { [weak router] in
                 router?.escapeHatchDidRequestSwitch(to: targetTab)
             },
@@ -118,10 +130,40 @@ final class EscapeHatchModel: ObservableObject {
             onCloseTab: { [weak router] in
                 router?.escapeHatchDidRequestClose(targetTab)
             },
-            onBurnTab: { [weak router] in
-                router?.escapeHatchDidRequestBurn(targetTab)
+            onBurnTabWithConfirmation: { [weak router] sourceRect in
+                router?.escapeHatchDidRequestBurnWithConfirmation(targetTab, sourceRect: sourceRect)
+            },
+            onBurnTabImmediately: { [weak router] in
+                router?.escapeHatchDidRequestBurnImmediately(targetTab)
             }
         )
+    }
+}
+
+extension EscapeHatchModel {
+
+    /// Pairs the user-facing label for the primary swipe gesture with the closure it fires.
+    /// Bundled so the view can ask one question ("what does swipe do?") instead of branching
+    /// on tab type once per call site.
+    struct SwipeAction {
+        let label: String
+        let perform: () -> Void
+    }
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        afterInactivityOptionAdapter.afterInactivityOptionBinding
+    }
+
+    var isFireTab: Bool {
+        targetTab.mode == .fire
+    }
+
+    /// Fire tabs have no soft-close semantics, so swipe defaults to burn-immediately.
+    /// Everything else defaults to close.
+    var primarySwipeAction: SwipeAction {
+        isFireTab
+            ? SwipeAction(label: UserText.escapeHatchMenuBurnTab, perform: onBurnTabImmediately)
+            : SwipeAction(label: UserText.escapeHatchMenuCloseTab, perform: onCloseTab)
     }
 }
 
@@ -154,6 +196,17 @@ private extension EscapeHatchModel {
         if mode == .normal {
             openTabCount = allTabs.count
         }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOptionBinding` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        adapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 }
 

@@ -42,6 +42,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case contextualChat(onDelete: () -> Void)
         /// Duck AI onboarding experiment: single "Delete Chat" button scoped to the AI tab.
         case duckAIOnboarding
+        /// New-tab-page escape hatch single-tab burn: one "Delete Tab" button scoped to the target tab.
+        case singleTab
     }
 
     // MARK: - Constants
@@ -128,6 +130,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         switch fireContext {
         case .contextualChat:
             return true
+        case .singleTab:
+            return false
         case .duckAIOnboarding, .default:
             return isRefinementsEnabled && tabViewModel?.tab.isAITab == true
         }
@@ -163,6 +167,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                    accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
             }
             return []
+        case .singleTab:
+            // Single "Delete Tab" button burning only the target tab
+            let isDuckAI = tabViewModel?.tab.isAITab == true
+            let options: FireRequest.Options = isDuckAI ? [.aiChats, .tabs] : [.all]
+
+            return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteTabButton,
+                               style: .primary,
+                               action: { burnTab(tabViewModel: tabViewModel, options: options, source: source, onConfirm: onConfirm) },
+                               accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
         case .default:
             break
         }
@@ -232,6 +245,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         switch fireContext {
         case .contextualChat, .duckAIOnboarding:
             return UserText.contextualChatDeleteConfirmationTitle
+        case .singleTab:
+            return UserText.scopedFireConfirmationAlertSingleTabTitle
         case .default:
             if isSingleChatConfirmation {
                 return UserText.contextualChatDeleteConfirmationTitle
@@ -266,7 +281,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                         keyValueStore: KeyValueStoring,
                                         appSettings: AppSettings) -> String? {
         switch fireContext {
-        case .duckAIOnboarding, .contextualChat:
+        case .duckAIOnboarding, .contextualChat, .singleTab:
             return nil
         case .default(let daxDialogsManager) where daxDialogsManager.isShowingFireDialog:
             // Skip all subtitles if in onboarding

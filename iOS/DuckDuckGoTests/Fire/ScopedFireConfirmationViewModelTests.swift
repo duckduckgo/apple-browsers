@@ -463,6 +463,56 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.buttons[1].style, .secondary)
     }
 
+    // MARK: - Single Tab Context Tests
+
+    func testWhenSingleTabContextThenSingleDeleteTabButton() {
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel(), fireContext: .singleTab)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteTabButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+    }
+
+    func testWhenSingleTabContextThenTitleIsSingleTabAlertTitle() {
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel(), fireContext: .singleTab)
+
+        // Then
+        XCTAssertEqual(sut.headerTitle, UserText.scopedFireConfirmationAlertSingleTabTitle)
+    }
+
+    func testWhenSingleTabContextThenSubtitleIsNil() {
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel(), fireContext: .singleTab)
+
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+
+    func testWhenSingleTabContextButtonTappedThenBurnsTargetTab() {
+        // Given
+        var capturedRequest: FireRequest?
+        let tabViewModel = createTabViewModel()
+        let sut = makeSUT(tabViewModel: tabViewModel,
+                          fireContext: .singleTab,
+                          onConfirm: { capturedRequest = $0 })
+
+        // When
+        sut.buttons[0].action()
+
+        // Then
+        XCTAssertNotNil(capturedRequest)
+        XCTAssertEqual(capturedRequest?.options, .all)
+        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
+        if case .tab(let vm) = capturedRequest?.scope {
+            XCTAssertTrue(vm.tab == tabViewModel.tab)
+        } else {
+            XCTFail("Expected scope to be .tab with the target view model")
+        }
+    }
+
     // MARK: - Helpers
     
     private func makeSUT(tabViewModel: TabViewModel?,

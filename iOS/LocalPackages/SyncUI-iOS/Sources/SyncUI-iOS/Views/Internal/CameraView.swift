@@ -18,9 +18,10 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 public struct CameraView: View {
-    
+
     @ObservedObject var model: ScanOrPasteCodeViewModel
 
     public var body: some View {
@@ -90,7 +91,7 @@ public struct CameraView: View {
         if model.videoPermission == .denied {
             VStack(spacing: 0) {
 
-                Image("SyncCameraPermission")
+                Image(rebrandable: "SyncCameraPermission")
                     .padding(.top, 40)
                     .padding(.bottom, 20)
 
@@ -130,7 +131,7 @@ public struct CameraView: View {
         if model.videoPermission == .authorised && !model.showCamera {
             VStack(spacing: 0) {
 
-                Image("SyncCameraUnavailable")
+                Image(rebrandable: "SyncCameraUnavailable")
                     .padding(.top, 40)
                     .padding(.bottom, 20)
 

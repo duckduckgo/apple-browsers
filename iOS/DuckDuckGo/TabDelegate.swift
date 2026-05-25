@@ -163,6 +163,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 
     func tabDidRequestFireMode(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
 }
 
 extension TabDelegate {
@@ -172,5 +174,7 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
 }

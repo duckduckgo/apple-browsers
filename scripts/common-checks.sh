@@ -7,7 +7,7 @@ set -eu
 
 # Skip during SwiftUI Previews — those builds are noisy and we don't want
 # to spam the canvas with warnings.
-if [ "${ENABLE_PREVIEWS:-NO}" = "YES" ] || [ "${ENABLE_XOJIT_PREVIEWS:-NO}" = "YES" ]; then
+if [ "${ENABLE_PREVIEWS:-NO}" = "YES" ]; then
     exit 0
 fi
 

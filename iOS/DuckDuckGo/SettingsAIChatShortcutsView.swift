@@ -38,9 +38,16 @@ enum DuckAIChromeShortcutVisibility {
 
     /// Whether the Duck.ai chrome button (the pill in the iPad tabs bar) should be visible.
     ///
-    /// Caller is expected to pass `aiChatSettings.isAIChatNavigationBarUserSettingsEnabled`, which is
-    /// itself gated on `aiChatSettings.isAIChatEnabled` — so the global Duck.ai toggle being off
-    /// already short-circuits this check.
+    /// Intentionally does NOT take `isIPad`: the only caller — `TabsBarViewController` — is itself
+    /// iPad-only (loaded via `guard isPad` in `MainViewController.loadTabsBarIfNeeded`). If this
+    /// helper is ever reused on iPhone, add the idiom check at the call site or thread it through
+    /// here.
+    ///
+    /// Pass `aiChatSettings.isAIChatNavigationBarUserSettingsEnabled` for the second argument. The
+    /// production `AIChatSettings` getter ANDs the stored preference with the global
+    /// `isAIChatEnabled`, so disabling Duck.ai globally hides the chrome button automatically. Mock
+    /// conformers may not replicate that gating — tests that rely on the global gate should set it
+    /// explicitly rather than depending on the mock's pass-through.
     static func isChromeButtonVisible(
         featureFlagger: FeatureFlagger,
         isAIChatNavigationBarUserSettingsEnabled: Bool

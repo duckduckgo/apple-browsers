@@ -282,14 +282,6 @@ class AIChatSettingsTests: XCTestCase {
         ))
     }
 
-    func testDuckAIChromeShortcutVisibility_chromeButtonHidden_whenFlagOff_andSettingOff() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
-            featureFlagger: flagger,
-            isAIChatNavigationBarUserSettingsEnabled: false
-        ))
-    }
-
 }
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {

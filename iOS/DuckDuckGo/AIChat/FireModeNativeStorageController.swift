@@ -64,38 +64,45 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let keyStoreAccessGroup: String
 
-    /// Returns `nil` if `aiChatNativeStorage` is off, Application Support is unavailable,
-    /// or the underlying store can't be opened.
+    /// Returns `nil` if `aiChatNativeStorage` is off, the required container is
+    /// unavailable, or the underlying store can't be opened.
     init?(featureFlagger: FeatureFlagger,
           dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared,
           consentSeedSource: DuckAiNativeStorageHandling?,
           appConfigurationGroupName: String,
           pixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter()) {
-        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        let baseDirectoryURL = appSupportURL.appendingPathComponent(Constants.fireModeDirectoryName)
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
 
-        if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) {
-            let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-                from: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
-                to: baseDirectoryURL,
-                migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
-                label: .fireMode,
-                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
-            )
-            // A failed move retries next launch. If we create/open the destination
-            // now, the retry would see it as already-migrated and treat the old
-            // data as an orphan to delete.
-            if outcome == .skip {
+        let baseDirectoryURL: URL
+        if featureFlagger.isFeatureOn(.duckAINativeStoragePathMigration) {
+            guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
                 return nil
             }
-        }
+            baseDirectoryURL = appSupportURL.appendingPathComponent(Constants.fireModeDirectoryName)
 
-        DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL,
-                                                                label: .fireMode,
-                                                                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+            if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) {
+                let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+                    from: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
+                    to: baseDirectoryURL,
+                    migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
+                    label: .fireMode,
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                )
+                if outcome == .skip {
+                    return nil
+                }
+            }
+
+            DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL,
+                                                                    label: .fireMode,
+                                                                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+        } else {
+            // Path migration disabled: keep the legacy App Group container.
+            guard let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) else {
+                return nil
+            }
+            baseDirectoryURL = groupContainer.appendingPathComponent(Constants.fireModeDirectoryName)
+        }
 
         self.baseDirectoryURL = baseDirectoryURL
         self.dataStoreIDManager = dataStoreIDManager

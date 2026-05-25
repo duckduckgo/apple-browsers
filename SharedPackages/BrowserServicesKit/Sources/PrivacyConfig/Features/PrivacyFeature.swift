@@ -519,6 +519,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
     /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
     case nativeVoicePermissionFlow
+
+    /// Enables moving the AI Chat native-storage container from the shared App
+    /// Group into the app's Application Support directory on iOS. Off keeps the
+    /// legacy App Group path.
+    case nativeStoragePathMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

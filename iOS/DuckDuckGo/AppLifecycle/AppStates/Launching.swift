@@ -373,31 +373,38 @@ struct Launching: LaunchingHandling {
     }
 
     private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
-        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        let containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
 
-        if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
-            let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
-                from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
-                to: containerURL,
-                migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
-                label: .default,
-                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
-            )
-            // A failed move retries next launch. If we create/open the destination
-            // now, the retry would see it as already-migrated and treat the old
-            // data as an orphan to delete.
-            if outcome == .skip {
+        let containerURL: URL
+        if featureFlagger.isFeatureOn(.duckAINativeStoragePathMigration) {
+            guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
                 return nil
             }
-        }
+            containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
 
-        DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL,
-                                                                label: .default,
-                                                                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+            if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+                let outcome = DuckAiNativeStorageContainerMigration.migrateIfNeeded(
+                    from: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
+                    to: containerURL,
+                    migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
+                    label: .default,
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                )
+                if outcome == .skip {
+                    return nil
+                }
+            }
+
+            DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL,
+                                                                    label: .default,
+                                                                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+        } else {
+            // Path migration disabled: keep the legacy App Group container.
+            guard let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+                return nil
+            }
+            containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+        }
 
         let dbURL = containerURL.appendingPathComponent("chats.db")
         if !FileManager.default.fileExists(atPath: dbURL.path) {

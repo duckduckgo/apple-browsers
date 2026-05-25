@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import Core
+import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Suggestions
@@ -30,6 +31,7 @@ protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
+    func duckAISuggestionsDidRequestSyncSetup()
 }
 
 /// Three-section suggestions list under the Duck.ai-mode input: recent chats / top URL hits / "Search DuckDuckGo" row.
@@ -52,9 +54,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 56
-        static let escapeHatchTopPadding: CGFloat = 16
-        /// 24pt gap below the hatch — matches Search-side breathing room around section title.
-        static let escapeHatchBottomPadding: CGFloat = 24
+        static let escapeHatchTopPadding: CGFloat = 8
+        static let headerBottomPadding: CGFloat = 24
+        static let syncPromoInterCardSpacing: CGFloat = 20
         static let recentChatsHeaderHeight: CGFloat = 48
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
         static let recentChatsHeaderBottomPadding: CGFloat = 24
@@ -72,7 +74,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         )
 
         static let unifiedToggleInput = LayoutConfiguration(
-            tableHorizontalInset: 10,
+            tableHorizontalInset: 0,
             escapeHatchHorizontalInset: Constants.horizontalInset,
             escapeHatchMaxWidth: nil
         )
@@ -133,14 +135,25 @@ final class DuckAISuggestionsViewController: UIViewController {
     /// Hatch is hidden while typing — mirrors Search-side, where the autocomplete view covers the NTP+hatch.
     private var isQueryActive = false
 
+    private let syncService: DDGSyncing?
+    private let syncPromoViewModel: AIChatSyncPromoViewModel?
+    private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
+    private var isVisibleContent = false
+
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
          queryProvider: @escaping () -> String,
-         layoutConfiguration: LayoutConfiguration = .standard) {
+         layoutConfiguration: LayoutConfiguration = .standard,
+         syncPromoManager: SyncPromoManaging? = nil,
+         syncService: DDGSyncing? = nil,
+         syncPromoViewModel: AIChatSyncPromoViewModel? = nil) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
         self.layoutConfiguration = layoutConfiguration
+        self.syncService = syncService
+        self.syncPromoViewModel = syncPromoViewModel
+            ?? syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -165,8 +178,19 @@ final class DuckAISuggestionsViewController: UIViewController {
         let urlChanges = urlLoader.$topURLs.removeDuplicates().map { _ in () }.eraseToAnyPublisher()
         Publishers.MergeMany([chatChanges, urlChanges])
             .debounce(for: .milliseconds(Self.reloadCoalesceMilliseconds), scheduler: DispatchQueue.main)
-            .sink { [weak self] in self?.reload() }
+            .sink { [weak self] in
+                self?.rebuildHeader()
+                self?.reload()
+            }
             .store(in: &cancellables)
+
+        syncService?.authStatePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.rebuildHeader() }
+            .store(in: &cancellables)
+
+        rebuildHeader()
     }
 
     /// MUST stay computed: UITableView calls delegate methods with stale index paths during animated relayouts.
@@ -218,7 +242,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         }
         guard next != currentEscapeHatch else { return }
         currentEscapeHatch = next
-        rebuildHatch()
+        rebuildHeader()
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
@@ -232,11 +256,23 @@ final class DuckAISuggestionsViewController: UIViewController {
     func setQueryActive(_ active: Bool) {
         guard active != isQueryActive else { return }
         isQueryActive = active
-        rebuildHatch()
+        rebuildHeader()
         reload()
     }
 
-    private func rebuildHatch() {
+    func setIsVisibleContent(_ visible: Bool) {
+        guard visible != isVisibleContent else { return }
+        isVisibleContent = visible
+        recordSyncPromoImpressionIfNeeded()
+    }
+
+    // MARK: - Header (escape hatch + sync promo)
+
+    private var shouldShowSyncPromo: Bool {
+        syncPromoViewModel?.shouldShowPromo(isQueryActive: isQueryActive, chatCount: chats.count) ?? false
+    }
+
+    private func rebuildHeader() {
         if let existing = escapeHatchHostingController {
             existing.willMove(toParent: nil)
             existing.view.removeFromSuperview()
@@ -251,6 +287,24 @@ final class DuckAISuggestionsViewController: UIViewController {
             escapeHatchHostingController = hosting
             hosting.didMove(toParent: self)
         }
+
+        if let existing = syncPromoHostingController {
+            existing.willMove(toParent: nil)
+            existing.view.removeFromSuperview()
+            existing.removeFromParent()
+            syncPromoHostingController = nil
+        }
+        if shouldShowSyncPromo {
+            let view = AIChatSyncPromoView(
+                onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
+                onCloseTap: { [weak self] in self?.handleSyncPromoClose() }
+            )
+            let hosting = UIHostingController(rootView: view)
+            hosting.view.backgroundColor = .clear
+            addChild(hosting)
+            syncPromoHostingController = hosting
+            hosting.didMove(toParent: self)
+        }
         updateTableHeader()
         updateContentInset()
     }
@@ -263,72 +317,100 @@ final class DuckAISuggestionsViewController: UIViewController {
     private func updateTableHeader() {
         guard isViewLoaded else { return }
 
-        guard let hosting = escapeHatchHostingController else {
+        let hatchHosting = escapeHatchHostingController
+        let promoHosting = syncPromoHostingController
+
+        guard hatchHosting != nil || promoHosting != nil else {
             UIView.performWithoutAnimation { tableView.tableHeaderView = nil }
             return
         }
 
-        // Without this, the SwiftUI hosting view's first layout animates from a default position when the hatch reappears.
+        // Without this, the SwiftUI hosting views' first layout animates from a default position when (re)mounted.
         UIView.performWithoutAnimation {
             let effectiveTopPadding = Constants.escapeHatchTopPadding + additionalTopInset
-            let totalHeight = effectiveTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
             let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
-            let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
-            container.backgroundColor = UIColor(designSystemColor: .background)
+            let availableCardWidth = width - 2 * layoutConfiguration.escapeHatchHorizontalInset
+            let cardWidth = layoutConfiguration.escapeHatchMaxWidth.map { min(availableCardWidth, $0) } ?? availableCardWidth
 
-            hosting.view.translatesAutoresizingMaskIntoConstraints = false
-            container.addSubview(hosting.view)
-            var constraints = [
-                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: effectiveTopPadding),
-                hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
-            ]
-
-            if let maxWidth = layoutConfiguration.escapeHatchMaxWidth {
-                let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
-                preferredWidth.priority = .defaultHigh
-                let minimumLeading = hosting.view.leadingAnchor.constraint(
-                    greaterThanOrEqualTo: container.leadingAnchor,
-                    constant: layoutConfiguration.escapeHatchHorizontalInset
-                )
-                minimumLeading.priority = .required - 1
-                let minimumTrailing = hosting.view.trailingAnchor.constraint(
-                    lessThanOrEqualTo: container.trailingAnchor,
-                    constant: -layoutConfiguration.escapeHatchHorizontalInset
-                )
-                minimumTrailing.priority = .required - 1
-                constraints.append(contentsOf: [
-                    hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-                    hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-                    preferredWidth,
-                    minimumLeading,
-                    minimumTrailing
-                ])
-            } else {
-                constraints.append(contentsOf: [
-                    hosting.view.leadingAnchor.constraint(
-                        equalTo: container.leadingAnchor,
-                        constant: layoutConfiguration.escapeHatchHorizontalInset
-                    ),
-                    hosting.view.trailingAnchor.constraint(
-                        equalTo: container.trailingAnchor,
-                        constant: -layoutConfiguration.escapeHatchHorizontalInset
-                    )
-                ])
+            var hatchHeight: CGFloat = 0
+            if let hatchHosting {
+                hatchHeight = Constants.escapeHatchCardHeight
+                hatchHosting.view.frame.size = CGSize(width: cardWidth, height: hatchHeight)
+            }
+            var promoHeight: CGFloat = 0
+            if let promoHosting {
+                let target = CGSize(width: cardWidth, height: UIView.layoutFittingCompressedSize.height)
+                promoHeight = promoHosting.view.systemLayoutSizeFitting(
+                    target,
+                    withHorizontalFittingPriority: .required,
+                    verticalFittingPriority: .fittingSizeLevel
+                ).height
+                promoHosting.view.frame.size = CGSize(width: cardWidth, height: promoHeight)
             }
 
-            NSLayoutConstraint.activate(constraints)
-            container.layoutIfNeeded()
+            var totalHeight = effectiveTopPadding
+            if hatchHeight > 0 { totalHeight += hatchHeight }
+            if hatchHeight > 0 && promoHeight > 0 { totalHeight += Constants.syncPromoInterCardSpacing }
+            if promoHeight > 0 { totalHeight += promoHeight }
+            totalHeight += Constants.headerBottomPadding
+
+            let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
+            container.backgroundColor = UIColor(designSystemColor: .background)
+            container.autoresizingMask = [.flexibleWidth]
+
+            let cardOriginX = (width - cardWidth) / 2
+            var nextY = effectiveTopPadding
+
+            if let hatchHosting {
+                hatchHosting.view.frame = CGRect(x: cardOriginX, y: nextY, width: cardWidth, height: hatchHeight)
+                hatchHosting.view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin]
+                container.addSubview(hatchHosting.view)
+                nextY += hatchHeight
+                if promoHosting != nil { nextY += Constants.syncPromoInterCardSpacing }
+            }
+
+            if let promoHosting {
+                promoHosting.view.frame = CGRect(x: cardOriginX, y: nextY, width: cardWidth, height: promoHeight)
+                promoHosting.view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin]
+                container.addSubview(promoHosting.view)
+                nextY += promoHeight
+            }
+
             tableView.tableHeaderView = container
+
+            recordSyncPromoImpressionIfNeeded()
         }
+    }
+
+    private func recordSyncPromoImpressionIfNeeded() {
+        syncPromoViewModel?.recordImpressionIfNeeded(
+            isVisibleContent: isVisibleContent,
+            isPromoVisible: syncPromoHostingController != nil
+        )
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         // Header view's frame doesn't auto-size with the tableView's width; rebuild on layout.
-        guard escapeHatchHostingController != nil,
+        let hasHeaderHost = escapeHatchHostingController != nil || syncPromoHostingController != nil
+        guard hasHeaderHost,
               let header = tableView.tableHeaderView,
               header.frame.width != tableView.bounds.width else { return }
         updateTableHeader()
+    }
+
+    // MARK: - Sync promo callbacks
+
+    private func handleSyncPromoCTATap() {
+        if syncPromoViewModel?.handleCTATap() == .requestSyncSetup {
+            delegate?.duckAISuggestionsDidRequestSyncSetup()
+        }
+        rebuildHeader()
+    }
+
+    private func handleSyncPromoClose() {
+        syncPromoViewModel?.handleCloseTap()
+        rebuildHeader()
     }
 
     // MARK: - Cell config

@@ -56,6 +56,11 @@ extension MainViewController {
     }
 
     func setUpUnifiedToggleInputIfNeeded() {
+        // Defer setup until linear onboarding has completed, so that any experiment
+        // cohort enrollment that happens during onboarding is reflected in
+        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Returning users (who skip linear onboarding) fall through immediately.
+        guard !needsToShowOnboardingIntro() else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -75,7 +80,9 @@ extension MainViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
-            stateStore: stateStore
+            stateStore: stateStore,
+            syncService: syncService,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -685,7 +692,15 @@ private extension MainViewController {
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
-        headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
+        // Catch touches at the most upstream point — before UIControl tracking, before any
+        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
+        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
+        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
+            guard let self else { return }
+            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
+                TabSwitcherDiagnosticsOverlay.show(from: self)
+            }
+        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -1145,6 +1160,11 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
         unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(mode)
+    }
+
+    func unifiedInputEditingStateDidRequestSyncSetup() {
+        unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
     }
 }
 

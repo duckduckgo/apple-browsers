@@ -287,6 +287,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - AI Chat Actions
 
+    var canDispatchBridgeMessages: Bool {
+        webView != nil && broker != nil
+    }
+
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }

@@ -93,7 +93,9 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             }
         }
 
-        DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL)
+        DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL,
+                                                                label: .fireMode,
+                                                                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
 
         self.baseDirectoryURL = baseDirectoryURL
         self.dataStoreIDManager = dataStoreIDManager

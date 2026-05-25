@@ -19,42 +19,42 @@
 
 import Core
 import Foundation
+import UIKit
 import os.log
 
-/// Identifies which Duck.ai native-storage container is being migrated. The raw
-/// value is suffixed onto the pixel name (see `PixelEvent.swift`).
+/// Identifies the container being migrated. Raw value is suffixed onto pixel names.
 enum DuckAiNativeStorageContainerMigrationLabel: String {
     case `default`
     case fireMode = "fire-mode"
 }
 
-/// Outcome events for `DuckAiNativeStorageContainerMigration`. Distinct from the
-/// JS→native chat-data migration pixels (`duckAiNativeStorageMigration*`) — these
-/// track the iOS-only relocation of the on-disk store from the app group container
-/// into Application Support.
+/// Outcomes for the container relocation. Distinct from the JS→native chat-data
+/// migration pixels (`duckAiNativeStorageMigration*`).
 enum DuckAiNativeStorageContainerMigrationEvent {
     case notNeeded(label: DuckAiNativeStorageContainerMigrationLabel)
     case orphanRemoved(label: DuckAiNativeStorageContainerMigrationLabel)
     case success(label: DuckAiNativeStorageContainerMigrationLabel)
     case attemptFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
     case gaveUp(label: DuckAiNativeStorageContainerMigrationLabel, error: Error?)
-    /// Fired alongside `.success` when the move itself worked but at least one
-    /// `setAttributes` call in `applyDefaultFileProtection` failed — the DB ends
-    /// up at the new path with the original `NSFileProtectionComplete` class
-    /// still applied, which is the 0xdead10cc condition this migration exists
-    /// to prevent. Surfaces silently otherwise.
+    /// Move succeeded but `applyDefaultFileProtection` failed — the DB kept its
+    /// inherited `NSFileProtectionComplete` class (the 0xdead10cc condition).
     case protectionFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+    /// Destination has a `chats.db` but no marker — could be a partial move or
+    /// a DB created while the App Group entitlement was unavailable. The
+    /// destination is claimed going forward and the source is preserved.
+    case destinationConflict(label: DuckAiNativeStorageContainerMigrationLabel)
+    /// `isExcludedFromBackup` or the destination directory creation failed.
+    /// The encrypted DB may end up in iCloud backups.
+    case excludeFromBackupFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+    /// Deferred because protected data is unavailable (pre-first-unlock
+    /// background launch). No state is modified.
+    case protectedDataUnavailable(label: DuckAiNativeStorageContainerMigrationLabel)
 }
 
-/// Result of a `migrateIfNeeded` call. Callers MUST honor `.skip` by not creating
-/// or opening the destination directory — doing so would make the next launch
-/// treat the un-migrated old data as an orphan and delete it.
 enum DuckAiNativeStorageContainerMigrationOutcome {
-    /// Migration is complete (or unnecessary, or gave up after the retry cap).
-    /// Caller may create/open the destination.
     case proceed
-    /// A move attempt failed and the retry cap is not yet exhausted. Caller MUST
-    /// NOT touch the destination this launch; migration will retry next launch.
+    /// Caller MUST NOT create or open the destination — doing so makes the next
+    /// launch see the source as an orphan and delete it.
     case skip
 }
 
@@ -81,53 +81,78 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
         case .protectionFailed(let label, let error):
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
+        case .destinationConflict(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
+        case .excludeFromBackupFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
+        case .protectedDataUnavailable(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
         }
     }
 }
 
-/// One-time directory move from the shared app-group container into the app's
-/// Application Support directory.
+/// One-time move of the Duck.ai container from the shared App Group into the
+/// app's Application Support directory.
 ///
-/// Files in App Group containers default to `NSFileProtectionComplete`, which
-/// makes the SQLCipher DB and files folder inaccessible whenever the device
-/// locks while the app is still alive — yielding 0xdead10cc terminations on
-/// the next SQLite read (notably the background auto-clear path). Files in
-/// the app sandbox default to `NSFileProtectionCompleteUntilFirstUserAuthentication`,
-/// which stays available after first unlock.
+/// App Group files default to `NSFileProtectionComplete`, which makes the DB
+/// inaccessible whenever the device locks while the app is alive (0xdead10cc
+/// on the next SQLite read). The app sandbox defaults to
+/// `NSFileProtectionCompleteUntilFirstUserAuthentication`, which stays readable
+/// after first unlock.
 ///
-/// The helper retries the move up to `maxAttempts` times across launches; after that
-/// it marks the migration done and stops, accepting data loss rather than crashing
-/// in a retry loop.
+/// Completion is signalled by a marker file at
+/// `<Application Support>/.<migrationKey>.migrated`. The marker is excluded
+/// from iCloud backup so a cross-device restore re-runs the migration against
+/// the restored App Group data.
+///
+/// Retries the move up to `maxAttempts` times across launches. On `.gaveUp` the
+/// source is preserved (not deleted) so the user can recover on a later launch
+/// when conditions improve (e.g. disk pressure clears).
 enum DuckAiNativeStorageContainerMigration {
 
     static let defaultMaxAttempts = 3
 
+    /// Existence sentinel for "destination holds migrated data", used by the
+    /// legacy transition for pre-marker users. Contents are not inspected.
+    private static let databaseFilename = "chats.db"
+
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo",
                                        category: "DuckAiNativeStorageContainerMigration")
 
-    /// Ensures the directory at `url` exists and is excluded from iCloud
-    static func excludeFromBackup(_ url: URL) {
+    /// Default `isProtectedDataAvailable` source; safe to call from the
+    /// main-thread launch path used by both callers in this codebase.
+    static func defaultIsProtectedDataAvailable() -> Bool {
+        UIApplication.shared.isProtectedDataAvailable
+    }
+
+    /// Creates `url` if needed and marks it `isExcludedFromBackup`. Fires
+    /// `.excludeFromBackupFailed` on failure — silent inclusion of the
+    /// encrypted DB in iCloud backups is what this guards against.
+    static func excludeFromBackup(_ url: URL,
+                                  label: DuckAiNativeStorageContainerMigrationLabel,
+                                  pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring = NullDuckAiNativeStorageContainerMigrationPixelFiring(),
+                                  fileManager: FileManager = .default) {
         do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
             var url = url
             var resourceValues = URLResourceValues()
             resourceValues.isExcludedFromBackup = true
             try url.setResourceValues(resourceValues)
         } catch {
-            Self.logger.error("[NativeStorage] failed to exclude \(url.lastPathComponent, privacy: .public) from backup: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] failed to exclude \(url.lastPathComponent, privacy: .public) from backup: \(error.localizedDescription, privacy: .public)")
+            pixelFiring.fire(.excludeFromBackupFailed(label: label, error: error))
         }
     }
 
-    /// Recursively applies `completeUntilFirstUserAuthentication` protection to `url`
-    /// and every existing child. Files moved from an App Group container retain
-    /// their `NSFileProtectionComplete` attribute on the same volume, so without
-    /// this step a locked device can still trip 0xdead10cc on SQLite reads. Setting
-    /// the directory itself also fixes the default class new sidecars inherit.
+    /// Recursively applies `completeUntilFirstUserAuthentication` to `url` and
+    /// every child. Files moved from App Group keep their inherited
+    /// `NSFileProtectionComplete` attribute, so without this the locked-device
+    /// crash this migration exists to fix still happens. Setting it on the
+    /// directory also fixes the default class new sidecars inherit.
     ///
-    /// Returns the first `setAttributes` error encountered, or `nil` if every
-    /// path succeeded. Callers can surface this to detect a silent regression
-    /// where the move worked but the destination DB kept its original protection
-    /// class.
+    /// Returns the first error encountered, or `nil` on full success. A `nil`
+    /// enumerator is reported as an error so the caller retries — otherwise
+    /// we'd silently mark protection applied while children kept the wrong class.
     @discardableResult
     static func applyDefaultFileProtection(at url: URL, fileManager: FileManager = .default) -> Error? {
         let attributes: [FileAttributeKey: Any] = [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
@@ -144,41 +169,44 @@ enum DuckAiNativeStorageContainerMigration {
 
         apply(to: url.path)
 
-        guard let enumerator = fileManager.enumerator(at: url,
-                                                     includingPropertiesForKeys: nil,
-                                                     options: [],
-                                                     errorHandler: nil) else { return firstError }
+        let enumerator = fileManager.enumerator(at: url,
+                                                includingPropertiesForKeys: nil,
+                                                options: [],
+                                                errorHandler: { childURL, error in
+            Self.logger.error("[NativeStorage] enumerator error at \(childURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            if firstError == nil { firstError = error }
+            return true
+        })
+        guard let enumerator else {
+            return firstError ?? NSError(domain: "DuckAiNativeStorageContainerMigration",
+                                          code: -1,
+                                          userInfo: [NSLocalizedDescriptionKey: "Could not enumerate \(url.path)"])
+        }
         for case let childURL as URL in enumerator {
             apply(to: childURL.path)
         }
         return firstError
     }
 
-    /// Moves `oldURL` to `newURL`, retrying on failure across launches.
+    /// Moves `oldURL` to `newURL`, retrying across launches.
     ///
-    /// Persistence in `userDefaults`:
-    /// - `migrationKey + ".done"` (Bool) — set when the migration's *data* state is
-    ///   settled (success, no-op, orphan-cleaned, or `maxAttempts` exhausted).
-    /// - `migrationKey + ".attempts"` (Int) — number of failed attempts so far
-    ///   (move or orphan-removal). Cleared on success.
-    /// - `migrationKey + ".protectionApplied"` (Bool) — set when file protection
-    ///   at `newURL` is confirmed correct, or there's no data at `newURL` needing
-    ///   protection, or the retry cap has been reached.
-    /// - `migrationKey + ".protectionAttempts"` (Int) — number of failed
-    ///   `applyDefaultFileProtection` retries. Cleared on success.
+    /// State:
+    /// - Marker file at `<newURL parent>/.<migrationKey>.migrated` —
+    ///   authoritative completion signal. Excluded from iCloud backup so a
+    ///   cross-device restore re-runs the migration against restored App
+    ///   Group data.
+    /// - `<migrationKey>.done` (Bool) — legacy flag for pre-marker users.
+    ///   Without a marker it is trusted only when `oldURL` is gone.
+    /// - `<migrationKey>.attempts` (Int) — failed move attempts. Cleared on
+    ///   any terminal outcome.
+    /// - `<migrationKey>.protectionApplied` / `.protectionAttempts` —
+    ///   separate retry budget for `applyDefaultFileProtection`.
     ///
-    /// `done` and `protectionApplied` are tracked independently: a successful
-    /// move that fails to re-apply file protection sets `done=true` but leaves
-    /// `protectionApplied=false`, so each subsequent launch retries protection
-    /// until success or the cap. Otherwise the destination DB would keep its
-    /// original `NSFileProtectionComplete` class permanently — the 0xdead10cc
-    /// condition this migration exists to fix.
+    /// `label` segments logs and pixels by container (default vs. fire-mode).
     ///
-    /// `label` distinguishes the default vs. fire-mode container in logs and pixels.
-    ///
-    /// Returns `.skip` when a move attempt fails and retries remain — the caller
-    /// MUST NOT create or open `newURL` in that case, otherwise the next launch
-    /// will treat the still-present old data as an orphan and delete it.
+    /// Returns `.skip` on retryable failure or when protected data is
+    /// unavailable. See `DuckAiNativeStorageContainerMigrationOutcome.skip`
+    /// for the caller contract.
     @discardableResult
     static func migrateIfNeeded(from oldURL: URL,
                                 to newURL: URL,
@@ -187,11 +215,35 @@ enum DuckAiNativeStorageContainerMigration {
                                 userDefaults: UserDefaults = .standard,
                                 fileManager: FileManager = .default,
                                 pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring = NullDuckAiNativeStorageContainerMigrationPixelFiring(),
+                                isProtectedDataAvailable: () -> Bool = { defaultIsProtectedDataAvailable() },
                                 maxAttempts: Int = defaultMaxAttempts) -> DuckAiNativeStorageContainerMigrationOutcome {
+        // 0 / negative would give up on the first failure.
+        let maxAttempts = max(1, maxAttempts)
+
         let doneKey = migrationKey + ".done"
         let attemptsKey = migrationKey + ".attempts"
         let protectionAppliedKey = migrationKey + ".protectionApplied"
         let protectionAttemptsKey = migrationKey + ".protectionAttempts"
+        let markerURL = newURL.deletingLastPathComponent()
+            .appendingPathComponent(".\(migrationKey).migrated")
+
+        func writeMarker() {
+            do {
+                try fileManager.createDirectory(at: markerURL.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+                try Data().write(to: markerURL, options: .atomic)
+            } catch {
+                Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] failed to write marker at \(markerURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        func markerExists() -> Bool {
+            fileManager.fileExists(atPath: markerURL.path)
+        }
+
+        func destinationHasData() -> Bool {
+            fileManager.fileExists(atPath: newURL.appendingPathComponent(Self.databaseFilename).path)
+        }
 
         func ensureProtection() {
             guard !userDefaults.bool(forKey: protectionAppliedKey) else { return }
@@ -208,10 +260,10 @@ enum DuckAiNativeStorageContainerMigration {
                     pixelFiring.fire(.protectionFailed(label: label, error: error))
                 }
                 if attempt >= maxAttempts {
-                    // Stop retrying. We've fired the pixel `maxAttempts` times;
-                    // the user is left with the original protection class, but
-                    // continued churn would only spam telemetry.
+                    // Cap reached: stop retrying to avoid pixel spam. The user
+                    // is left with the original protection class.
                     userDefaults.set(true, forKey: protectionAppliedKey)
+                    userDefaults.removeObject(forKey: protectionAttemptsKey)
                 }
             } else {
                 userDefaults.set(true, forKey: protectionAppliedKey)
@@ -219,8 +271,40 @@ enum DuckAiNativeStorageContainerMigration {
             }
         }
 
-        if userDefaults.bool(forKey: doneKey) {
-            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] skipping: already done")
+        // Background launches before first unlock can't read
+        // `NSFileProtectionComplete` source bytes. Defer rather than burn
+        // retries on a transient condition.
+        guard isProtectedDataAvailable() else {
+            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
+            pixelFiring.fire(.protectedDataUnavailable(label: label))
+            return .skip
+        }
+
+        // `doneKey=true` without a marker means a pre-marker build, an iCloud
+        // restore (App Group came back, Application Support didn't), or a
+        // prior `.gaveUp` (source preserved). Trust the flag only when
+        // `oldURL` is gone — the unambiguous "migration ran" signal. Otherwise
+        // clear the state and fall through; the standard flow handles whichever
+        // configuration we actually find.
+        if userDefaults.bool(forKey: doneKey) && !markerExists() {
+            let oldExists = fileManager.fileExists(atPath: oldURL.path)
+            if !oldExists {
+                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] writing marker for pre-marker completed migration")
+                writeMarker()
+            } else {
+                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] done flag set without marker and oldURL still exists; resetting state to re-evaluate migration")
+                userDefaults.removeObject(forKey: doneKey)
+                userDefaults.removeObject(forKey: attemptsKey)
+                userDefaults.removeObject(forKey: protectionAppliedKey)
+                userDefaults.removeObject(forKey: protectionAttemptsKey)
+            }
+        }
+
+        if markerExists() {
+            // Migration is final on this device. Leave `oldURL` alone — when
+            // the marker was written via `destinationConflict`, the source may
+            // hold the only complete copy. Worst case is unused bytes in the
+            // App Group until app uninstall.
             ensureProtection()
             return .proceed
         }
@@ -232,37 +316,46 @@ enum DuckAiNativeStorageContainerMigration {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] no old directory; marking done")
             userDefaults.set(true, forKey: doneKey)
             userDefaults.removeObject(forKey: attemptsKey)
+            writeMarker()
             pixelFiring.fire(.notNeeded(label: label))
             ensureProtection()
             return .proceed
         }
 
         if fileManager.fileExists(atPath: newURL.path) {
-            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] new location already exists; removing orphan old")
-            do {
-                try fileManager.removeItem(at: oldURL)
-                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] orphan removed")
+            // Destination exists without a marker. If `chats.db` is present,
+            // treat it as a possibly-partial copy: claim the destination but
+            // keep the source for recovery. If empty, it's scaffolding from a
+            // prior `excludeFromBackup` on a skipped launch — remove and proceed.
+            if destinationHasData() {
+                Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] destination has data without marker; claiming new and preserving old for recovery")
                 userDefaults.set(true, forKey: doneKey)
                 userDefaults.removeObject(forKey: attemptsKey)
-                pixelFiring.fire(.orphanRemoved(label: label))
+                writeMarker()
+                pixelFiring.fire(.destinationConflict(label: label))
                 ensureProtection()
                 return .proceed
-            } catch {
-                // newURL is intact and usable, but the old container still holds
-                // sensitive data. Don't claim success — keep retrying deletion
-                // across launches until it works or we hit the attempt cap.
-                let attempt = priorAttempts + 1
-                userDefaults.set(attempt, forKey: attemptsKey)
-                if attempt >= maxAttempts {
-                    Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] orphan removal failed (attempt \(attempt)/\(maxAttempts)); giving up — old data may remain in app group: \(error.localizedDescription, privacy: .public)")
-                    userDefaults.set(true, forKey: doneKey)
-                    pixelFiring.fire(.gaveUp(label: label, error: error))
-                } else {
-                    Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] orphan removal failed (attempt \(attempt)/\(maxAttempts)); will retry next launch: \(error.localizedDescription, privacy: .public)")
-                    pixelFiring.fire(.attemptFailed(label: label, error: error))
+            } else {
+                Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] empty destination directory present; removing to clear path for move")
+                do {
+                    try fileManager.removeItem(at: newURL)
+                } catch {
+                    let attempt = priorAttempts + 1
+                    userDefaults.set(attempt, forKey: attemptsKey)
+                    if attempt >= maxAttempts {
+                        Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] failed to remove empty destination at cap; giving up: \(error.localizedDescription, privacy: .public)")
+                        userDefaults.set(true, forKey: doneKey)
+                        // No marker: the legacy transition resets state on the
+                        // next launch so the move can be re-attempted.
+                        pixelFiring.fire(.gaveUp(label: label, error: error))
+                        ensureProtection()
+                        return .proceed
+                    } else {
+                        Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] failed to remove empty destination; will retry: \(error.localizedDescription, privacy: .public)")
+                        pixelFiring.fire(.attemptFailed(label: label, error: error))
+                        return .skip
+                    }
                 }
-                ensureProtection()
-                return .proceed
             }
         }
 
@@ -273,6 +366,7 @@ enum DuckAiNativeStorageContainerMigration {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] moved successfully")
             userDefaults.set(true, forKey: doneKey)
             userDefaults.removeObject(forKey: attemptsKey)
+            writeMarker()
             pixelFiring.fire(.success(label: label))
             ensureProtection()
             return .proceed
@@ -281,13 +375,10 @@ enum DuckAiNativeStorageContainerMigration {
             userDefaults.set(attempt, forKey: attemptsKey)
             if attempt >= maxAttempts {
                 Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] move failed (attempt \(attempt)/\(maxAttempts)); giving up: \(error.localizedDescription, privacy: .public)")
-                // Best-effort sweep: once we give up, we'll never look at the
-                // old container again, so the sensitive chat content would sit
-                // in the app-group container indefinitely under NSFileProtectionComplete.
-                // Take one last shot at removing it — it may well succeed even
-                // when moveItem couldn't (different syscall, no destination required).
-                try? fileManager.removeItem(at: oldURL)
                 userDefaults.set(true, forKey: doneKey)
+                // Source preserved (no sweep) and no marker — the legacy
+                // transition resets state on the next launch, giving transient
+                // failures another full retry budget when conditions improve.
                 pixelFiring.fire(.gaveUp(label: label, error: error))
                 ensureProtection()
                 return .proceed

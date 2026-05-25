@@ -395,7 +395,9 @@ struct Launching: LaunchingHandling {
             }
         }
 
-        DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL)
+        DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL,
+                                                                label: .default,
+                                                                pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
 
         let dbURL = containerURL.appendingPathComponent("chats.db")
         if !FileManager.default.fileExists(atPath: dbURL.path) {

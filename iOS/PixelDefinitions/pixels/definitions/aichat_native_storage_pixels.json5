@@ -171,6 +171,48 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode"]
     },
+    "m_duck-ai_native-storage_container-migration_destination-conflict_default": {
+        "description": "Fires when the default Duck.ai destination directory already contains a chats.db at migration time but no migration marker is present — could indicate a partial moveItem copy that crashed, or a previous launch that created data while the App Group entitlement was unavailable; the new location is claimed going forward and the old App Group container is preserved so the user's pre-upgrade data remains recoverable",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_destination-conflict_fire-mode": {
+        "description": "Fires when the fire-mode Duck.ai destination directory already contains a chats.db at migration time but no migration marker is present — could indicate a partial moveItem copy that crashed, or a previous launch that created data while the App Group entitlement was unavailable; the new location is claimed going forward and the old App Group container is preserved so the user's pre-upgrade data remains recoverable",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_default": {
+        "description": "Fires when setting isExcludedFromBackup or creating the default container directory under Application Support failed — the database may end up in iCloud backups",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_fire-mode": {
+        "description": "Fires when setting isExcludedFromBackup or creating the fire-mode container directory under Application Support failed — the database may end up in iCloud backups",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_protected-data-unavailable_default": {
+        "description": "Fires when the default-container migration is deferred because UIApplication.isProtectedDataAvailable was false (pre-first-unlock background launch); no state is modified so the migration retries on a later launch",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_protected-data-unavailable_fire-mode": {
+        "description": "Fires when the fire-mode container migration is deferred because UIApplication.isProtectedDataAvailable was false (pre-first-unlock background launch); no state is modified so the migration retries on a later launch",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn"],

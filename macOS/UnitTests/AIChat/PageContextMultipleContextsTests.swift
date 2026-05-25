@@ -126,12 +126,12 @@ struct RemovalAfterConsumeTests {
     /// Mirrors the removal-handler guard in PageContextTabExtension.
     private func shouldClearOnRemoval(consumed: Bool) -> Bool { !consumed }
 
-    @Test("Consumed context skips removal cleanup", .timeLimit(.minutes(1)))
+    @Test("Consumed context skips removal cleanup")
     func consumedSkipsCleanup() {
         #expect(shouldClearOnRemoval(consumed: true) == false)
     }
 
-    @Test("Non-consumed context runs removal cleanup", .timeLimit(.minutes(1)))
+    @Test("Non-consumed context runs removal cleanup")
     func notConsumedRunsCleanup() {
         #expect(shouldClearOnRemoval(consumed: false) == true)
     }

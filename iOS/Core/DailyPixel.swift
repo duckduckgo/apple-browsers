@@ -103,12 +103,17 @@ public final class DailyPixel {
                                          onCountComplete: @escaping (Swift.Error?) -> Void = { _ in }) {
         let key: String = pixel.name
 
+        var newParams = params
+        if let error {
+            newParams.appendErrorPixelParams(error: error)
+        }
+
         if !hasBeenFiredToday(forKey: key, dailyPixelStore: dailyPixelStore) {
             do {
                 try updatePixelLastFireDate(forKey: key, dailyPixelStore: dailyPixelStore)
                 pixelFiring.fire(
                     pixelNamed: pixel.name + pixelNameSuffixes.dailySuffix,
-                    withAdditionalParameters: params,
+                    withAdditionalParameters: newParams,
                     includedParameters: includedParameters,
                     onComplete: onDailyComplete
                 )
@@ -120,10 +125,6 @@ public final class DailyPixel {
             }
         } else {
             onDailyComplete(Error.alreadyFired)
-        }
-        var newParams = params
-        if let error {
-            newParams.appendErrorPixelParams(error: error)
         }
         pixelFiring.fire(
             pixelNamed: pixel.name + pixelNameSuffixes.countSuffix,

@@ -26,6 +26,13 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private let tabSwitcherView = TabSwitcherStaticView()
     private var longPressRecognizer: UILongPressGestureRecognizer!
     weak var delegate: TabSwitcherButtonDelegate?
+
+    /// Fires the moment a touch lands on the button — *before* UIControl starts tracking
+    /// and before any gesture recognizer can cancel the touch. Set by the host (currently
+    /// the AI-chat header) to feed the unresponsive-tab-switcher diagnostic overlay's tap
+    /// counter; the standard `.touchUpInside` action wouldn't fire if tracking gets
+    /// cancelled, which is exactly the case we want to surface.
+    var onTouchDown: (() -> Void)?
     var showMenuOnLongPress: Bool {
         didSet {
             configureLongPressBehavior()
@@ -127,6 +134,11 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         }
 
         animator1.startAnimation()
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        onTouchDown?()
+        super.touchesBegan(touches, with: event)
     }
 
     override func tintColorDidChange() {

@@ -692,6 +692,15 @@ private extension MainViewController {
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
         headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
+        // Catch touches at the most upstream point — before UIControl tracking, before any
+        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
+        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
+        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
+            guard let self else { return }
+            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
+                TabSwitcherDiagnosticsOverlay.show(from: self)
+            }
+        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),

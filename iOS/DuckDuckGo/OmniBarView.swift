@@ -116,6 +116,15 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func refreshFireMode(fireMode: Bool)
     func prepareForMoveTransition()
     func moveTransitionCompleted()
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat)
+
+    /// Hides the bar's pill background, shadow, and text field while leaving icon subviews intact.
+    func hideBarChrome()
+
+    /// Restores bar pill background, shadow, and text field. Idempotent.
+    func restoreBarChrome()
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

@@ -122,6 +122,9 @@ final class MockOmniBar: OmniBar {
         func refreshLongPressMenuAvailability() { }
         func prepareForMoveTransition() { }
         func moveTransitionCompleted() { }
+        func setIconContainersAlpha(_ alpha: CGFloat) { }
+        func hideBarChrome() { }
+        func restoreBarChrome() { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?

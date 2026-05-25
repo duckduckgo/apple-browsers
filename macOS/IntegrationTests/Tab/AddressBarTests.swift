@@ -18,12 +18,14 @@
 
 import Carbon
 import Combine
+import FeatureFlags
 import Foundation
 import History
 import MaliciousSiteProtection
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
+import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities
@@ -56,6 +58,10 @@ class AddressBarTests: XCTestCase {
 
     var addressBarTextField: AddressBarTextField {
         mainViewController.navigationBarViewController.addressBarViewController!.addressBarTextField
+    }
+
+    var featureFlagger: MockFeatureFlagger {
+        NSApp.delegateTyped.featureFlagger as! MockFeatureFlagger
     }
 
     var contentBlockingMock: ContentBlockingMock!
@@ -111,6 +117,7 @@ class AddressBarTests: XCTestCase {
             NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
             NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .separate
+            (NSApp.delegateTyped.featureFlagger as? MockFeatureFlagger)?.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = nil
 
             HTTPStubs.removeAllStubs()
         }
@@ -352,6 +359,101 @@ class AddressBarTests: XCTestCase {
         viewModel.remove(at: .unpinned(1))
         wait(for: [firstResponderChangeExpectation], timeout: 5)
         XCTAssertEqual(window.firstResponder, tab.webView)
+    }
+
+    @MainActor
+    func testWhenReturnKeyPressedDuringIMEComposition_customKeyDownDoesNotHandleEvent() throws {
+        featureFlagger.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = true
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown,
+                                                   location: .zero,
+                                                   modifierFlags: [],
+                                                   timestamp: ProcessInfo.processInfo.systemUptime,
+                                                   windowNumber: window.windowNumber,
+                                                   context: nil,
+                                                   characters: "\r",
+                                                   charactersIgnoringModifiers: "\r",
+                                                   isARepeat: false,
+                                                   keyCode: UInt16(kVK_Return)))
+
+        XCTAssertFalse(mainViewController.customKeyDown(with: event))
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertEqual(tabViewModel.tab.content, .newtab)
+    }
+
+    @MainActor
+    func testWhenReturnKeyPressedDuringIMECompositionAndFeatureFlagIsDisabled_customKeyDownHandlesEvent() throws {
+        featureFlagger.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = false
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown,
+                                                   location: .zero,
+                                                   modifierFlags: [],
+                                                   timestamp: ProcessInfo.processInfo.systemUptime,
+                                                   windowNumber: window.windowNumber,
+                                                   context: nil,
+                                                   characters: "\r",
+                                                   charactersIgnoringModifiers: "\r",
+                                                   isARepeat: false,
+                                                   keyCode: UInt16(kVK_Return)))
+
+        XCTAssertTrue(mainViewController.customKeyDown(with: event))
+    }
+
+    @MainActor
+    func testWhenFieldEditorHasMarkedText_insertNewlineDelegatePathDoesNotSubmit() throws {
+        featureFlagger.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = true
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        // Defensive coverage for input paths that reach the field delegate while composition is still active.
+        let handled = addressBarTextField.control(addressBarTextField, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
+
+        XCTAssertFalse(handled)
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertEqual(tabViewModel.tab.content, .newtab)
+    }
+
+    @MainActor
+    func testWhenFieldEditorHasMarkedTextAndFeatureFlagIsDisabled_insertNewlineDelegatePathHandlesEvent() throws {
+        featureFlagger.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = false
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        ]))
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        addressBarTextField.makeMeFirstResponder()
+
+        let editor = try XCTUnwrap(addressBarTextField.editor)
+        editor.setMarkedText("tesuto", selectedRange: NSRange(location: 6, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+
+        let handled = addressBarTextField.control(addressBarTextField, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
+
+        XCTAssertTrue(handled)
     }
 
     @MainActor

@@ -51,7 +51,6 @@ public class Tab: NSObject, NSCoding {
         static let fireTab = "fireTab"
         static let isExternalLaunch = "isExternalLaunch"
         static let shouldSuppressTrackerAnimationOnFirstLoad = "shouldSuppressTrackerAnimationOnFirstLoad"
-        static let preferredTextEntryMode = "preferredTextEntryMode"
         static let selectedModelID = "selectedModelID"
         static let selectedReasoningMode = "selectedReasoningMode"
         static let selectedTool = "selectedTool"
@@ -94,6 +93,10 @@ public class Tab: NSObject, NSCoding {
         type == .aiChat
     }
 
+    var isHomeTab: Bool {
+        link == nil
+    }
+
     /// The conversation-specific title for Duck.ai tabs (e.g. "Pricing notation in decimals").
     ///
     /// Returns `nil` for non-AI tabs or when the page title hasn't loaded yet.
@@ -133,9 +136,8 @@ public class Tab: NSObject, NSCoding {
     /// Set based on launch source: suppressed for all tabs on cold start with standard launch.
     var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
 
-    /// Per-tab unified address-bar configuration: text-entry mode, AI Chat model,
-    /// and reasoning mode. Persisted via NSCoding so reopening the app restores
-    /// the tab's last-used input setup rather than falling back to global defaults.
+    /// Per-tab AI Chat configuration (model, reasoning mode, tool). Persisted via
+    /// NSCoding so reopening the app restores the tab's selected AI settings.
     var unifiedInputState: UnifiedInputTabState
 
     /// Type of tab: web or AI Chat, derived from the current URL
@@ -190,22 +192,12 @@ public class Tab: NSObject, NSCoding {
         // External launch flags are transient and always reset to false on decode
         let isExternalLaunch = false
         let shouldSuppressTrackerAnimationOnFirstLoad = false
-        let preferredTextEntryModeRaw = decoder.decodeObject(forKey: NSCodingKeys.preferredTextEntryMode) as? String
-        let preferredTextEntryMode: TextEntryMode
-        if let raw = preferredTextEntryModeRaw, let mode = TextEntryMode(rawValue: raw) {
-            preferredTextEntryMode = mode
-        } else {
-            // Legacy tab without stored mode — infer from URL
-            let isDuckAI = link?.url.isDuckAIURL(debugSettings: AIChatDebugSettings()) ?? false
-            preferredTextEntryMode = isDuckAI ? .aiChat : .search
-        }
         let selectedModelID = decoder.decodeObject(forKey: NSCodingKeys.selectedModelID) as? String
         let selectedReasoningModeRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedReasoningMode) as? String
         let selectedReasoningMode = selectedReasoningModeRaw.flatMap(AIChatReasoningMode.init(rawValue:))
         let selectedToolRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedTool) as? String
         let selectedTool = selectedToolRaw.flatMap(AIChatRAGTool.init(rawValue:))
         let unifiedInputState = UnifiedInputTabState(
-            preferredTextEntryMode: preferredTextEntryMode,
             selectedModelID: selectedModelID,
             selectedReasoningMode: selectedReasoningMode,
             selectedTool: selectedTool
@@ -228,7 +220,6 @@ public class Tab: NSObject, NSCoding {
         coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
         coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
-        coder.encode(unifiedInputState.preferredTextEntryMode.rawValue, forKey: NSCodingKeys.preferredTextEntryMode)
         coder.encode(unifiedInputState.selectedModelID, forKey: NSCodingKeys.selectedModelID)
         coder.encode(unifiedInputState.selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
         coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)

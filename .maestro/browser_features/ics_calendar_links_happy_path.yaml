@@ -1,0 +1,37 @@
+# ics_calendar_links_happy_path.yaml
+# Single-VEVENT .ics file should present EKEventEditViewController without a fallback toast.
+# Requires iOS 17+.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.icsCalendarLinks: "true"
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-single.ics"
+- pressKey: Enter
+
+# EKEventEditViewController shows "New Event" as the nav title across iOS versions.
+# Avoids the iOS 26 change that replaced "Cancel"/"Add" text buttons with icons.
+- extendedWaitUntil:
+    visible: "New Event"
+    timeout: 10000
+
+# No fallback toast for a happy-path single event.
+- assertNotVisible: "Multiple events aren't supported"
+- assertNotVisible: "This file can't be processed"

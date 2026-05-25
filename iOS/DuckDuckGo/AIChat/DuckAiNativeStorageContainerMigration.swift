@@ -38,6 +38,12 @@ enum DuckAiNativeStorageContainerMigrationEvent {
     case success(label: DuckAiNativeStorageContainerMigrationLabel)
     case attemptFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
     case gaveUp(label: DuckAiNativeStorageContainerMigrationLabel, error: Error?)
+    /// Fired alongside `.success` when the move itself worked but at least one
+    /// `setAttributes` call in `applyDefaultFileProtection` failed — the DB ends
+    /// up at the new path with the original `NSFileProtectionComplete` class
+    /// still applied, which is the 0xdead10cc condition this migration exists
+    /// to prevent. Surfaces silently otherwise.
+    case protectionFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
 }
 
 /// Result of a `migrateIfNeeded` call. Callers MUST honor `.skip` by not creating
@@ -73,6 +79,8 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
         case .gaveUp(let label, let error):
             Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
+        case .protectionFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
         }
     }
 }
@@ -115,14 +123,22 @@ enum DuckAiNativeStorageContainerMigration {
     /// their `NSFileProtectionComplete` attribute on the same volume, so without
     /// this step a locked device can still trip 0xdead10cc on SQLite reads. Setting
     /// the directory itself also fixes the default class new sidecars inherit.
-    static func applyDefaultFileProtection(at url: URL, fileManager: FileManager = .default) {
+    ///
+    /// Returns the first `setAttributes` error encountered, or `nil` if every
+    /// path succeeded. Callers can surface this to detect a silent regression
+    /// where the move worked but the destination DB kept its original protection
+    /// class.
+    @discardableResult
+    static func applyDefaultFileProtection(at url: URL, fileManager: FileManager = .default) -> Error? {
         let attributes: [FileAttributeKey: Any] = [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
+        var firstError: Error?
 
         func apply(to path: String) {
             do {
                 try fileManager.setAttributes(attributes, ofItemAtPath: path)
             } catch {
                 Self.logger.error("[NativeStorage] failed to set file protection on \(path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                if firstError == nil { firstError = error }
             }
         }
 
@@ -131,10 +147,11 @@ enum DuckAiNativeStorageContainerMigration {
         guard let enumerator = fileManager.enumerator(at: url,
                                                      includingPropertiesForKeys: nil,
                                                      options: [],
-                                                     errorHandler: nil) else { return }
+                                                     errorHandler: nil) else { return firstError }
         for case let childURL as URL in enumerator {
             apply(to: childURL.path)
         }
+        return firstError
     }
 
     /// Moves `oldURL` to `newURL`, retrying on failure across launches.
@@ -209,11 +226,14 @@ enum DuckAiNativeStorageContainerMigration {
             try fileManager.createDirectory(at: newURL.deletingLastPathComponent(),
                                             withIntermediateDirectories: true)
             try fileManager.moveItem(at: oldURL, to: newURL)
-            applyDefaultFileProtection(at: newURL, fileManager: fileManager)
+            let protectionError = applyDefaultFileProtection(at: newURL, fileManager: fileManager)
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] moved successfully")
             userDefaults.set(true, forKey: doneKey)
             userDefaults.removeObject(forKey: attemptsKey)
             pixelFiring.fire(.success(label: label))
+            if let protectionError {
+                pixelFiring.fire(.protectionFailed(label: label, error: protectionError))
+            }
             return .proceed
         } catch {
             let attempt = priorAttempts + 1

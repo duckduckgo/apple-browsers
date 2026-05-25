@@ -256,6 +256,47 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "orphanRemoved"])
     }
 
+    // MARK: - File protection failure surfacing
+
+    func testWhenMoveSucceedsButSetAttributesFailsThenSuccessAndProtectionFailedBothFire() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        let outcome = migrate(from: oldURL, to: newURL, fileManager: FailingSetAttributesFileManager(), maxAttempts: 3)
+
+        // The move itself succeeded so we proceed and mark done — data is at newURL.
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
+        XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("chats".utf8))
+        // But protection failed, so both pixels fire — `.success` then `.protectionFailed`.
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success", "protectionFailed"])
+        XCTAssertEqual((pixelSpy.lastProtectionFailedError as NSError?)?.domain, FailingSetAttributesFileManager.errorDomain)
+        XCTAssertEqual((pixelSpy.lastProtectionFailedError as NSError?)?.code, FailingSetAttributesFileManager.errorCode)
+    }
+
+    func testWhenApplyDefaultFileProtectionSucceedsForAllPathsThenReturnsNil() throws {
+        let url = sandbox.appendingPathComponent("DuckAi")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: url.appendingPathComponent("chats.db"))
+
+        let error = DuckAiNativeStorageContainerMigration.applyDefaultFileProtection(at: url)
+
+        XCTAssertNil(error)
+    }
+
+    func testWhenApplyDefaultFileProtectionFailsThenReturnsFirstError() throws {
+        let url = sandbox.appendingPathComponent("DuckAi")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: url.appendingPathComponent("chats.db"))
+
+        let error = DuckAiNativeStorageContainerMigration.applyDefaultFileProtection(at: url, fileManager: FailingSetAttributesFileManager())
+
+        XCTAssertEqual((error as NSError?)?.domain, FailingSetAttributesFileManager.errorDomain)
+        XCTAssertEqual((error as NSError?)?.code, FailingSetAttributesFileManager.errorCode)
+    }
+
     // MARK: - Caller-contract regression (Issue 4)
 
     /// Models the launch-time factory: if migration says `.skip`, do not call
@@ -353,6 +394,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
 private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring {
     private(set) var firedEventNames: [String] = []
+    private(set) var lastProtectionFailedError: Error?
 
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
@@ -361,6 +403,9 @@ private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContain
         case .success: firedEventNames.append("success")
         case .attemptFailed: firedEventNames.append("attemptFailed")
         case .gaveUp: firedEventNames.append("gaveUp")
+        case .protectionFailed(_, let error):
+            firedEventNames.append("protectionFailed")
+            lastProtectionFailedError = error
         }
     }
 }
@@ -374,5 +419,16 @@ private final class FailingMoveFileManager: FileManager {
 private final class FailingRemoveFileManager: FileManager {
     override func removeItem(at URL: URL) throws {
         throw NSError(domain: "DuckAiNativeStorageContainerMigrationTests", code: -2)
+    }
+}
+
+/// Lets `moveItem` and directory creation succeed but rejects `setAttributes`
+/// so `applyDefaultFileProtection` records a failure on every path.
+private final class FailingSetAttributesFileManager: FileManager {
+    static let errorDomain = "DuckAiNativeStorageContainerMigrationTests.setAttributes"
+    static let errorCode = -3
+
+    override func setAttributes(_ attributes: [FileAttributeKey: Any], ofItemAtPath path: String) throws {
+        throw NSError(domain: Self.errorDomain, code: Self.errorCode)
     }
 }

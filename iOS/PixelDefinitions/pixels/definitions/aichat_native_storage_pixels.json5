@@ -157,6 +157,20 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode"]
     },
+    "m_duck-ai_native-storage_container-migration_protection-failed_default": {
+        "description": "Fires alongside container-migration_success_default when at least one setAttributes call failed while applying NSFileProtectionCompleteUntilFirstUserAuthentication after the default container move — destination data may have retained the original NSFileProtectionComplete class",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
+    "m_duck-ai_native-storage_container-migration_protection-failed_fire-mode": {
+        "description": "Fires alongside container-migration_success_fire-mode when at least one setAttributes call failed while applying NSFileProtectionCompleteUntilFirstUserAuthentication after the fire-mode container move — destination data may have retained the original NSFileProtectionComplete class",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode"]
+    },
     "m_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn"],

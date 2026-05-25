@@ -202,16 +202,17 @@ class TabsModelPersistence: TabsModelPersisting {
         persistQueue.sync { }
     }
 
-    /// Synchronously persists the model: encodes inline on the caller's thread (so the encode is
-    /// race-free relative to main-thread mutations, since callers invoke this from main), then
-    /// drains any queued async writes and writes the freshly encoded data on the serial queue.
-    /// Returns the actual outcome. Use when the caller needs the real `Result` (e.g. data-clearing
-    /// telemetry) rather than the always-success placeholder returned by the debounced/async path.
+    /// Synchronously persists the model: takes a `archivalSnapshot()` (race-safe deep copy) and
+    /// encodes inline on the caller's thread, then drains any queued async writes and writes the
+    /// freshly encoded data on the serial queue. Returns the actual outcome. Use when the caller
+    /// needs the real `Result` (e.g. data-clearing telemetry) rather than the always-success
+    /// placeholder returned by the debounced/async path.
     public func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         let targetStore = store(for: key)
+        let snapshot = model.archivalSnapshot()
         let data: Data
         do {
-            data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+            data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,

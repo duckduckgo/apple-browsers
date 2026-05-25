@@ -66,10 +66,7 @@ protocol TabsModelProviding {
     /// Clears tabs for the given browsing mode, or all tabs if `nil`.
     func clearTabs(for browsingMode: BrowsingMode?)
     func save() -> Result<Void, Error>
-    /// Blocks the caller until any in-flight asynchronous save initiated by `save()` has finished
-    /// writing to disk, then performs an additional synchronous save and returns its real outcome.
-    /// Use at lifecycle boundaries (foreground/background/terminate) and from data-clearing flows
-    /// that need the persisted state on disk before continuing.
+    /// Drains any in-flight async save, then persists synchronously and returns the real outcome.
     func flushPendingSave() -> Result<Void, Error>
 }
 
@@ -121,8 +118,7 @@ class TabsModelProvider: TabsModelProviding {
     }
 
     func flushPendingSave() -> Result<Void, Error> {
-        // Drain any debounced async save first so it doesn't overwrite our synchronous result, then
-        // perform the synchronous save inline on the persistence queue and return its real outcome.
+        // Drain any async save so it can't overwrite the synchronous one.
         persistence.flush()
         let normalResult = persistence.saveSynchronously(model: _normalTabsModel, for: .normal)
         let fireResult = persistence.saveSynchronously(model: _fireModeTabsModel, for: .fire)

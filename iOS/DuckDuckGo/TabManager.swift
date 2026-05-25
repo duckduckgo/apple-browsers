@@ -171,8 +171,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     // encode + write off the main thread inside `TabsModelPersistence`. Lifecycle transitions
     // (resign-active, terminate, memory warning) must force-flush so we never lose state if the
     // app is suspended between debounce arming and the actual write landing.
+    //
+    // The debouncer also enforces a maximum wait so a website that keeps triggering
+    // `tabLoadingStateDidChange` faster than `saveDebounceInterval` (e.g. live-updating
+    // titles) cannot push the save out indefinitely. We fire after `saveDebounceInterval`
+    // of quiet OR `saveMaxWait` since the first call in the current burst, whichever comes
+    // first. Without the max wait, a crash or watchdog kill mid-burst would lose state back
+    // to the previous quiet window.
     private static let saveDebounceInterval: DispatchTimeInterval = .milliseconds(300)
+    private static let saveMaxWait: DispatchTimeInterval = .seconds(1)
     private var pendingSaveWorkItem: DispatchWorkItem?
+    private var pendingSaveBurstDeadline: DispatchTime?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -661,17 +670,26 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private func scheduleDebouncedSave() {
         // Debouncer state is accessed only on the main queue to avoid cross-thread mutation of
-        // `pendingSaveWorkItem`. Callers may invoke `save()` from any thread; we always hop here.
+        // `pendingSaveWorkItem` and `pendingSaveBurstDeadline`. Callers may invoke `save()` from
+        // any thread; we always hop here.
         let perform = { [weak self] in
             guard let self else { return }
             self.pendingSaveWorkItem?.cancel()
+            let now = DispatchTime.now()
+            // First call in the burst sets the max-wait deadline; subsequent calls keep it.
+            let burstDeadline = self.pendingSaveBurstDeadline ?? (now + Self.saveMaxWait)
+            self.pendingSaveBurstDeadline = burstDeadline
+            // Fire at `debounce` ms from now OR at `burstDeadline`, whichever comes first.
+            let debounceTarget = now + Self.saveDebounceInterval
+            let fireAt = min(debounceTarget, burstDeadline)
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self else { return }
                 self.pendingSaveWorkItem = nil
+                self.pendingSaveBurstDeadline = nil
                 _ = self.tabsModelProvider.save()
             }
             self.pendingSaveWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.saveDebounceInterval, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: fireAt, execute: workItem)
         }
         if Thread.isMainThread {
             perform()
@@ -685,6 +703,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             guard let self else { return }
             self.pendingSaveWorkItem?.cancel()
             self.pendingSaveWorkItem = nil
+            self.pendingSaveBurstDeadline = nil
         }
         if Thread.isMainThread {
             perform()

@@ -72,6 +72,15 @@ struct SettingsPrivacyProtectionsView: View {
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.emailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
+
+            // Ad Blocking
+            if viewModel.state.youTubeAdBlockingAvailable {
+                NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.youTubeAdBlockingTitle,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked),
+                                     statusIndicator: StatusIndicatorView(status: .on))
+                }
+            }
         }
 
     }

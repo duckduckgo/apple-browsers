@@ -104,8 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let featureFlagger: FeatureFlagger
     private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
         featureFlagger: featureFlagger,
-        isEnabledByUserProvider: {
-            UserDefaults.standard.object(forKey: UserDefaultsKeys.youTubeAdBlockingEnabled.rawValue) as? Bool ?? false
+        isEnabledByUserProvider: { [featureFlagger] in
+            UserDefaults.standard.object(forKey: UserDefaultsKeys.youTubeAdBlockingEnabled.rawValue) as? Bool
+                ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
         }
     )
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
@@ -926,7 +927,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayer = DuckPlayer(
             preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
-            internalUserDecider: internalUserDecider
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 

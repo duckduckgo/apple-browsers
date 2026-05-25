@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Core
 import Combine
 import Persistence
+import WebExtensions
 import WebKit
 
 protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
@@ -42,11 +43,13 @@ public final class ContentBlockingUpdating {
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         let keyValueStore: ThrowingKeyValueStoring
+        let adBlockingAvailability: AdBlockingAvailabilityProviding
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, keyValueStore] sourceProvider in
+            { [duckAiNativeStorageHandler, keyValueStore, adBlockingAvailability] sourceProvider in
                 UserScripts(with: sourceProvider,
                             keyValueStore: keyValueStore,
-                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                            adBlockingAvailability: adBlockingAvailability)
             }
         }
     }
@@ -58,14 +61,16 @@ public final class ContentBlockingUpdating {
 
     init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         keyValueStore: ThrowingKeyValueStoring) {
+         keyValueStore: ThrowingKeyValueStoring,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                              keyValueStore: keyValueStore)
+                              keyValueStore: keyValueStore,
+                              adBlockingAvailability: adBlockingAvailability)
         }
 
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {

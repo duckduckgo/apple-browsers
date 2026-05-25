@@ -760,6 +760,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Navigation",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Swifter", package: "swifter"),
             ],
             resources: [

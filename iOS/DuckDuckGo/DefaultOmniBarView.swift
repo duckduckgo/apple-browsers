@@ -309,6 +309,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)?
+    var longPressMenuProvider: (() -> UIMenu?)? {
+        didSet {
+            refreshLongPressMenuAvailability()
+        }
+    }
+    var onLongPressMenuDisplayed: (() -> Void)?
 
     // MARK: - Properties
 
@@ -399,6 +405,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
+    private var omniBarLongPressInteraction: UIContextMenuInteraction?
+    private let defaultBackgroundColor = UIColor(designSystemColor: .background)
+    fileprivate var savedBarChromeBackgroundColor: UIColor?
+    fileprivate var savedBarViewBackgroundColor: UIColor?
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
@@ -580,7 +590,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        backgroundColor = UIColor(designSystemColor: .background)
+        backgroundColor = defaultBackgroundColor
 
         searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -817,6 +827,37 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
+    func refreshLongPressMenuAvailability() {
+        guard longPressMenuProvider != nil else {
+            removeOmniBarLongPressInteraction()
+            return
+        }
+
+        addOmniBarLongPressInteractionIfNeeded()
+    }
+
+    func prepareForMoveTransition() {
+        backgroundColor = .clear
+    }
+
+    func moveTransitionCompleted() {
+        backgroundColor = defaultBackgroundColor
+    }
+
+    private func addOmniBarLongPressInteractionIfNeeded() {
+        guard omniBarLongPressInteraction == nil else { return }
+
+        let interaction = UIContextMenuInteraction(delegate: self)
+        searchContainer.addInteraction(interaction)
+        omniBarLongPressInteraction = interaction
+    }
+
+    private func removeOmniBarLongPressInteraction() {
+        guard let omniBarLongPressInteraction else { return }
+        searchContainer.removeInteraction(omniBarLongPressInteraction)
+        self.omniBarLongPressInteraction = nil
+    }
+
     /// Returns the expanded-area subview (text view or send button) at the given point.
     /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -997,6 +1038,68 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 }
 
+extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard let menu = longPressMenuProvider?() else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: { [weak self] in
+            self?.makeLongPressMenuPreviewController()
+        }) { _ in
+            menu
+        }
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willDisplayMenuFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        onLongPressMenuDisplayed?()
+    }
+
+    private func makeLongPressMenuPreviewController() -> UIViewController? {
+        OmniBarLongPressPreviewViewController(sourceView: searchContainer)
+    }
+}
+
+private final class OmniBarLongPressPreviewViewController: UIViewController {
+
+    private let sourceView: UIView
+
+    init(sourceView: UIView) {
+        self.sourceView = sourceView
+        super.init(nibName: nil, bundle: nil)
+        preferredContentSize = sourceView.bounds.size
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let containerView = UIView(frame: CGRect(origin: .zero, size: preferredContentSize))
+        containerView.backgroundColor = .clear
+        containerView.clipsToBounds = false
+        view = containerView
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        guard let snapshotView = sourceView.snapshotView(afterScreenUpdates: false) else { return }
+
+        snapshotView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(snapshotView)
+
+        NSLayoutConstraint.activate([
+            snapshotView.topAnchor.constraint(equalTo: view.topAnchor),
+            snapshotView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            snapshotView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            snapshotView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+}
+
 extension DefaultOmniBarView {
     static func activateItemSizeConstraints(for item: UIView) {
         item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
@@ -1050,6 +1153,34 @@ extension DefaultOmniBarView {
     func revealButtons() {
         privacyInfoContainer.alpha = 1
         searchAreaView.revealButtons()
+    }
+
+    func setIconContainersAlpha(_ alpha: CGFloat) { searchAreaView.setIconContainersAlpha(alpha) }
+
+    func hideBarChrome() {
+        if savedBarChromeBackgroundColor == nil {
+            savedBarChromeBackgroundColor = searchAreaContainerView.backgroundColor
+        }
+        if savedBarViewBackgroundColor == nil {
+            savedBarViewBackgroundColor = backgroundColor
+        }
+        searchAreaContainerView.backgroundColor = .clear
+        searchAreaContainerView.applyShadowOpacityMultiplier(0)
+        backgroundColor = .clear
+        textField.alpha = 0
+    }
+
+    func restoreBarChrome() {
+        if let saved = savedBarChromeBackgroundColor {
+            searchAreaContainerView.backgroundColor = saved
+            savedBarChromeBackgroundColor = nil
+        }
+        if let saved = savedBarViewBackgroundColor {
+            backgroundColor = saved
+            savedBarViewBackgroundColor = nil
+        }
+        searchAreaContainerView.applyShadowOpacityMultiplier(1)
+        textField.alpha = 1
     }
 
     /// Configures the omnibar UI for AI Chat mode. Shows AI Chat buttons, hides search elements.

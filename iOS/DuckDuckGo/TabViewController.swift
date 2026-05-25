@@ -147,7 +147,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
-    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature()
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -254,6 +254,7 @@ class TabViewController: UIViewController {
     
     var temporaryDownloadForPreviewedFile: Download?
     var mostRecentAutoPreviewDownloadID: UUID?
+    private var pendingCalendarPreview: CalendarEventPreviewHelper?
     private var blobDownloadTargetFrame: WKFrameInfo?
 
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
@@ -585,6 +586,7 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
@@ -627,6 +629,7 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -671,9 +674,11 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         productSurfaceTelemetry: productSurfaceTelemetry)
+                                                         productSurfaceTelemetry: productSurfaceTelemetry,
+                                                         unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -1806,7 +1811,10 @@ extension TabViewController: WKNavigationDelegate {
                 // First we need to trigger download to handle it then in webView:navigationAction:didBecomeDownload
                 return .download
             }
-        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) {
+        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) ||
+                    FilePreviewHelper.canAutoPreviewICSByExtension(url: navigationResponse.response.url,
+                                                                   filename: navigationResponse.response.suggestedFilename,
+                                                                   featureFlagger: featureFlagger) {
             // 2. For this MIME type we are able to provide a better custom preview via FilePreviewHelper so it takes priority
             let (policy, download) = await startDownload(with: navigationResponse)
             mostRecentAutoPreviewDownloadID = download?.id
@@ -1972,6 +1980,7 @@ extension TabViewController: WKNavigationDelegate {
 
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
+        delegate?.tabDidFinishNavigation(self)
 
         // Present the Dax dialog with a delay to mitigate issue where user script detec trackers after the dialog is show to the user
         // Debounce to avoid showing multiple animations on redirects. e.g. !image baby ducklings
@@ -2200,6 +2209,7 @@ extension TabViewController: WKNavigationDelegate {
         scheduleTrackerNetworksAnimation(collapsing: true)
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
+        notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 
     private func webpageDidFailToLoad() {
@@ -2212,8 +2222,9 @@ extension TabViewController: WKNavigationDelegate {
             privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
-        
+
         self.delegate?.tabLoadingStateDidChange(tab: self)
+        self.delegate?.tabDidFinishNavigation(self)
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -2258,6 +2269,21 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error page that webview navigation failed and show special error page if needed.
         specialErrorPageNavigationHandler.handleWebView(webView, didFailProvisionalNavigation: navigation, withError: error)
+
+        notifyDelegateIfDuckAINavigationFailed(error: error)
+    }
+
+    private func notifyDelegateIfDuckAINavigationFailed(error: Error) {
+        let nsError = error as NSError
+        guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
+
+        let failingURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
+            ?? (nsError.userInfo[NSURLErrorFailingURLStringErrorKey] as? String).flatMap(URL.init(string:))
+            ?? webView.url
+            ?? url
+
+        guard let failingURL, failingURL.isDuckAIURL else { return }
+        delegate?.tab(self, didFailDuckAINavigationFor: failingURL, error: error)
     }
 
     func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
@@ -2332,6 +2358,22 @@ extension TabViewController: WKNavigationDelegate {
 
         if navigationAction.navigationType != .reload, webView.url != navigationAction.request.mainDocumentURL {
             delegate?.tabDidRequestNavigationToDifferentSite(tab: self)
+        }
+
+        switch Self.aiChatNewWindowDecision(currentURL: webView.url, navigationAction: navigationAction) {
+        case .loadInTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            load(url: aiChatNewWindowURL)
+            return
+        case .openInNewTab(let aiChatNewWindowURL):
+            decisionHandler(.cancel)
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: aiChatNewWindowURL,
+                          openedByPage: true,
+                          inheritingAttribution: adClickAttributionLogic.state)
+            return
+        case .ignore:
+            break
         }
 
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
@@ -2770,8 +2812,17 @@ extension TabViewController {
         if case .blob = SchemeHandler.schemeType(for: url) {
             return (.download, nil)
         } else {
+            // ICS files must persist; other auto-previewable types stay temporary.
+            let persistICS = FilePreviewHelper.shouldPersistInDownloads(
+                mimeType: MIMEType(from: navigationResponse.response.mimeType),
+                url: navigationResponse.response.url,
+                filename: navigationResponse.response.suggestedFilename,
+                featureFlagger: featureFlagger
+            )
             do {
-                if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse, cookieStore: cookieStore) {
+                if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse,
+                                                                    cookieStore: cookieStore,
+                                                                    temporary: persistICS ? false : nil) {
                     downloadManager.startDownload(download)
                     return (.cancel, download)
                 }
@@ -2970,7 +3021,11 @@ extension TabViewController {
 
     @objc private func downloadDidStart(_ notification: Notification) {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download,
-              !download.temporary
+              !download.temporary,
+              !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                         url: download.url,
+                                                         filename: download.filename,
+                                                         featureFlagger: featureFlagger)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3003,7 +3058,11 @@ extension TabViewController {
         guard let download = notification.userInfo?[DownloadManager.UserInfoKeys.download] as? Download else { return }
 
         DispatchQueue.main.async {
-            if !download.temporary {
+            let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
+                                                                            url: download.location,
+                                                                            filename: download.filename,
+                                                                            featureFlagger: self.featureFlagger)
+            if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: attributedMessage, numberOfLines: 2, actionTitle: UserText.actionGenericShow,
@@ -3020,19 +3079,77 @@ extension TabViewController {
     }
 
     private func previewDownloadedFileIfNecessary(_ download: Download) {
+        let canAutoPreview = FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType) ||
+            FilePreviewHelper.canAutoPreviewICSByExtension(url: download.location,
+                                                           filename: download.filename,
+                                                           featureFlagger: featureFlagger)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
-              FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType),
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
+              canAutoPreview,
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {
+            retainCalendarPreviewIfNeeded(fileHandler)
             fileHandler.preview()
         } else {
             let pixelParameters = [PixelParameters.mimeType: download.mimeType.rawValue,
                                    PixelParameters.downloadListCount: "\(AppDependencyProvider.shared.downloadManager.downloadList.count)"]
             Pixel.fire(pixel: .downloadTriedToPresentPreviewWithoutTab, withAdditionalParameters: pixelParameters)
         }
+    }
+
+    private func retainCalendarPreviewIfNeeded(_ fileHandler: FilePreview) {
+        guard let calendarHandler = fileHandler as? CalendarEventPreviewHelper else { return }
+        pendingCalendarPreview = calendarHandler
+        calendarHandler.onDismiss = { [weak self] in
+            self?.pendingCalendarPreview = nil
+        }
+        calendarHandler.onSaved = { [weak self] in
+            self?.showCalendarAddedToast()
+        }
+        calendarHandler.onFailure = { [weak self] failure in
+            self?.showCalendarAddFailureToast(for: failure)
+        }
+    }
+
+    private func showCalendarAddedToast() {
+        ActionMessageView.present(
+            message: UserText.icsEventAddedToCalendar,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
+    }
+
+    private func showCalendarAddFailureToast(for failure: CalendarEventPreviewHelper.Failure) {
+        let message: String
+        switch failure {
+        case .multipleEvents:
+            message = UserText.icsAddToCalendarMultipleEvents
+        case .unrecognizedTimeZone:
+            message = UserText.icsAddToCalendarUnrecognizedTimeZone
+        case .parseFailure:
+            message = UserText.icsAddToCalendarParseFailure
+        }
+        ActionMessageView.present(
+            message: message,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
+            duration: 10,
+            onAction: { [weak self] in
+                guard let self else { return }
+                Pixel.fire(pixel: .downloadsListOpened,
+                           withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+                let openDownloads = { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabDidRequestDownloads(tab: self)
+                }
+                if let presented = self.presentedViewController {
+                    presented.dismiss(animated: true, completion: openDownloads)
+                } else {
+                    openDownloads()
+                }
+            }
+        )
     }
 }
 
@@ -3071,6 +3188,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        if webView.url?.isDuckAIURL == true {
+            DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
+        }
         Pixel.fire(pixel: .webKitDidTerminate)
         delegate?.tabContentProcessDidTerminate(tab: self)
     }
@@ -4187,6 +4307,14 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         contextualOnboardingLogic.setDaxDialogDismiss()
 
         dismissContextualOnboardingIfNeeded()
+
+        // Chat-first path: after the user taps "Got it" on the trackers-blocked dialog the
+        // phase transitions to .trackerToEOJ. Open a new tab so the NTP can surface the
+        // "You've got this!" end-of-journey dialog via presentChatPathOnboardingCompletionIfNeeded.
+        // setDaxDialogDismiss() does not affect chatPathPhase, so the check is still valid here.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
     func didNavigateAwayFromContextualOnboardingDialog() {
@@ -4196,6 +4324,11 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         // once the page finishes loading, which depends on `lastShownDaxDialogType` /
         // `lastVisitedOnboardingWebsiteURL` not being cleared.
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+
+        // Chat-first path: open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
 }

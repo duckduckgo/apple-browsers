@@ -29,7 +29,8 @@ tags:
 - assertVisible: "Storage Counter: 1"
 
 # Load a new tab
-- longPressOn: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 - tapOn: 

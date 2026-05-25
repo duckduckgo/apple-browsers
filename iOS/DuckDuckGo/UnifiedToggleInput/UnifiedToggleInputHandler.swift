@@ -27,12 +27,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - SwitchBarHandling — Fixed Values
 
-    var isTopBarPosition: Bool = false
+    private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
+    let usesExpandedAIChatTextEntryLayout: Bool = true
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
-    let modeParameters: [String: String] = [:]
+    var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
     var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State
@@ -226,7 +227,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         customizeResponsesButtonTappedSubject.send()
     }
 
-    func updateBarPosition(isTop: Bool) {}
+    func updateBarPosition(isTop: Bool) {
+        guard isTopBarPosition != isTop else { return }
+        isTopBarPosition = isTop
+        updateButtonState()
+    }
 
     // MARK: - Private
 

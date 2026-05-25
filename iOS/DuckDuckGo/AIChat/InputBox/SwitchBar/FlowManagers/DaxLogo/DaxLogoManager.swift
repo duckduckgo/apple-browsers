@@ -76,8 +76,7 @@ final class DaxLogoManager {
                                  asSubviewOf parentView: UIView,
                                  anchorView: UIView? = nil,
                                  isTopBarPosition: Bool,
-                                 escapeHatch: EscapeHatchModel? = nil,
-                                 onEscapeHatchTap: (() -> Void)? = nil) {
+                                 escapeHatch: EscapeHatchModel? = nil) {
 
         if !isFireTab && isTopBarPosition && anchorView == nil {
             assertionFailure("Non-fire top-bar Dax logo install requires an anchor view.")
@@ -89,7 +88,7 @@ final class DaxLogoManager {
         parentView.addSubview(logoContainerView)
 
         if isFireTab {
-            installFireTabContent(in: parentController, escapeHatch: escapeHatch, onEscapeHatchTap: onEscapeHatchTap)
+            installFireTabContent(in: parentController, escapeHatch: escapeHatch)
             installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         } else {
             installDaxLogoContent()
@@ -290,13 +289,10 @@ final class DaxLogoManager {
         ])
     }
 
-    private func installFireTabContent(in parentController: UIViewController,
-                                       escapeHatch: EscapeHatchModel?,
-                                       onEscapeHatchTap: (() -> Void)?) {
+    private func installFireTabContent(in parentController: UIViewController, escapeHatch: EscapeHatchModel?) {
         let hostingController = UIHostingController(
             rootView: FireModeEmptyStateView(type: .tab,
-                                             escapeHatch: escapeHatch,
-                                             onEscapeHatchTap: onEscapeHatchTap))
+                                             escapeHatch: escapeHatch))
         // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
         hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false

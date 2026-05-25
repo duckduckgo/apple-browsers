@@ -98,6 +98,13 @@ final class DefaultOmniBarSearchView: UIView {
 
         textField.alpha = 1
     }
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat) {
+        leftIconContainerPlaceholder.alpha = alpha
+        privacyInfoContainer.alpha = alpha
+        trailingItemsContainer.alpha = alpha
+    }
     
     func updateFireModeAppearance(fireMode: Bool) {
         textField.tintColor = fireMode

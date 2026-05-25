@@ -48,6 +48,7 @@ class MainViewCoordinator {
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var aiTabCollapsedTopSeparator: UIView!
+    private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
 
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
@@ -240,7 +241,6 @@ class MainViewCoordinator {
 
     func updateUnifiedToggleInputColors(inputView: UIView?) {
         inputView?.backgroundColor = .clear
-        unifiedToggleInputContainer.backgroundColor = .clear
     }
 
     @MainActor
@@ -275,6 +275,15 @@ class MainViewCoordinator {
     }
 
     func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
+        aiTabCollapsedTopSeparatorLogicallyVisible = visible
+        applyAITabCollapsedTopSeparatorVisibility()
+    }
+
+    /// Enforces the invariant: the separator can only be visible above a visible chrome. The
+    /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
+    /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
+    private func applyAITabCollapsedTopSeparatorVisibility() {
+        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
         guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
         aiTabCollapsedTopSeparator.isHidden = !visible
         if visible {
@@ -304,6 +313,14 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    func prepareOmnibarForInlineDismissReveal() {
+        guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
+        barView.hideBarChrome()
+        navigationBarCollectionView.alpha = 1
+        navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
@@ -324,10 +341,12 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
-            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(1)
         }
     }
 
@@ -379,6 +398,7 @@ class MainViewCoordinator {
     func setAITabBottomChromeHidden(_ hidden: Bool) {
         guard navigationBarContainer.isHidden != hidden else { return }
         navigationBarContainer.isHidden = hidden
+        applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
             setContentContainerBottomAnchorMode(.safeArea)
         } else if isNavigationChromeHidden {
@@ -477,9 +497,7 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            // Match the AI chat header's `.surfaceTertiary` background so the safe-area inset
-            // above it doesn't show as a different colour band.
-            UIColor(designSystemColor: .surfaceTertiary)
+            UIColor(designSystemColor: .surface)
         }
     }
 

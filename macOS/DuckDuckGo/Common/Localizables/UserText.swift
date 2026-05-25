@@ -655,6 +655,7 @@ struct UserText {
     static let hideAIGeneratedImagesSettings = NSLocalizedString("duckai.hide-ai-generated-images-settings", value: "Hide AI-Generated Images", comment: "The section name in preferences for Hide AI-Generated Images Settings")
     static let hideAIGeneratedImagesSettingsDescription = NSLocalizedString("duckai.hide-ai-generated-images-settings.description", value: "Filter out AI-generated images from image search results", comment: "Description of the section in Settings")
     static let searchAIFeaturesSettingsLink = NSLocalizedString("duckai.search-ai-features-settings.link", value: "Open Search AI Features", comment: "Button to open the Search AI Features Settings")
+    static let duckAiSettingsLink = NSLocalizedString("duckai.duckai-settings.link", value: "Open Duck.ai Settings", comment: "Button to open the Duck.ai Settings in a new tab from Settings → AI Features")
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarDetachButtonTooltip = NSLocalizedString("aichat.sidebar.detach-button.tooltip", value: "Move to separate window", comment: "Tooltip for button to detach the duck.ai sidebar into a floating window")
@@ -674,11 +675,12 @@ struct UserText {
     static let aiChatVoiceChatButtonTooltip = NSLocalizedString("aichat.voice-chat-button.tooltip", value: "Start a voice chat", comment: "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Add image", comment: "Tooltip for the image upload button in AI chat omnibar")
-    static let aiChatAttachMenuImageOrFile = NSLocalizedString("aichat.attach-menu.image-or-file", value: "Add Image or File", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker")
+    static let aiChatAttachMenuImageOrFile = NSLocalizedString("aichat.attach-menu.image-or-file", value: "Add Images or PDFs", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker. PDF is the only file format the menu currently accepts on the file side, so the copy names it explicitly rather than the more abstract 'file'.")
     static let aiChatAttachMenuPageContent = NSLocalizedString("aichat.attach-menu.page-content", value: "Add Page Content", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu")
     static let aiChatAttachMenuRecentTabsHeader = NSLocalizedString("aichat.attach-menu.recent-tabs-header", value: "Recent Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
-    static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No open tabs", comment: "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from")
+    static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
     static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "(Current Tab)", comment: "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab")
+    static let aiChatMentionPickerNoMatches = NSLocalizedString("aichat.mention-picker.no-matches", value: "No matching tabs", comment: "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
     static let aiChatImageGenButtonLabel = NSLocalizedString("aichat.image-gen-button.label", value: "Create Image", comment: "Label for the image generation toggle button in AI chat omnibar")
     static let aiChatImageGenToolSubtitle = NSLocalizedString("aichat.image-gen-tool.subtitle", value: "Turn text into images", comment: "Subtitle for Create Image tool in the tools dropdown menu")
@@ -1071,6 +1073,12 @@ struct UserText {
     static let locationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.location",
                                                                          value: "“%@“ website would like to use your current location.",
                                                                          comment: "Popover asking for domain %@ to use location")
+    static let microphonePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.microphone",
+                                                                           value: "“%@“ website would like to use your microphone.",
+                                                                           comment: "Popover asking for domain %@ to use the microphone")
+    static let duckAiVoiceChatMicrophonePrompt = NSLocalizedString("permission.authorization.microphone.duckai-voice-chat",
+                                                                   value: "Duck.ai voice chat requires microphone access.",
+                                                                   comment: "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai")
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
@@ -1146,6 +1154,8 @@ struct UserText {
     static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
     static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
     static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionSystemMicrophoneDisabled = NSLocalizedString("permission.system.microphone.disabled", value: "System microphone access disabled. Turn it on in ", comment: "Text shown when system microphone access was previously denied. Followed by a link to System Settings")
+    static let permissionSystemSettingsMicrophone = NSLocalizedString("permission.system.settings.microphone", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for microphone")
     static let permissionSystemNotificationEnable = NSLocalizedString("permission.system.notification.enable", value: "Enable System Notifications", comment: "Button to enable system notifications")
     static let permissionSystemNotificationWaiting = NSLocalizedString("permission.system.notification.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system notification permission dialog")
     static let permissionSystemNotificationEnabled = NSLocalizedString("permission.system.notification.enabled", value: "System notifications enabled!", comment: "Text shown after system notification permission has been granted")

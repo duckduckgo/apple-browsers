@@ -71,7 +71,7 @@ actor WideEventService {
 
     private func checkForCurrentEntitlements() async -> Bool {
         do {
-            let entitlements = try await subscriptionManager.currentSubscriptionFeatures()
+            let entitlements = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
             return !entitlements.isEmpty
         } catch {
             return false

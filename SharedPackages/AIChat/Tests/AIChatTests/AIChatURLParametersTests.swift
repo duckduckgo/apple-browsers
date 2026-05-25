@@ -86,4 +86,79 @@ final class AIChatURLParametersTests: XCTestCase {
         XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=image")
     }
 
+    func testNativeInputURLAppendsNativeInputParameter() {
+        let baseURL = URL(string: "https://duck.ai/chat")!
+        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?native-input=true")
+    }
+
+    func testNativeInputURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai/chat?mode=voice")!
+        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "mode", value: "voice")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "native-input", value: "true")))
+    }
+
+    func testNativeInputURLReplacesExistingNativeInputParameter() {
+        let baseURL = URL(string: "https://duck.ai/chat?native-input=false")!
+        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let nativeInputItems = (components.queryItems ?? []).filter { $0.name == "native-input" }
+        XCTAssertEqual(nativeInputItems.count, 1)
+        XCTAssertEqual(nativeInputItems.first?.value, "true")
+    }
+
+    func testRemovingNativeInputURLRemovesNativeInputParameter() {
+        let baseURL = URL(string: "https://duck.ai/chat?native-input=true&mode=voice")!
+        let result = AIChatURLParameters.removingNativeInputURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertFalse(queryItems.contains { $0.name == "native-input" })
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "mode", value: "voice")))
+    }
+
+    func testRemovingNativeInputURLRemovesTrailingQueryWhenNativeInputIsOnlyParameter() {
+        let baseURL = URL(string: "https://duck.ai/chat?native-input=true")!
+        let result = AIChatURLParameters.removingNativeInputURL(from: baseURL)
+
+        XCTAssertEqual(result.absoluteString, "https://duck.ai/chat")
+    }
+
+    func testUpdatingNativeInputURLAddsWhenAvailableAndSupported() {
+        let baseURL = URL(string: "https://duck.ai/chat")!
+        let result = AIChatURLParameters.updatingNativeInputURL(
+            from: baseURL,
+            isNativeInputAvailable: true,
+            isSupportedURL: true
+        )
+
+        XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?native-input=true")
+    }
+
+    func testUpdatingNativeInputURLRemovesWhenUnavailableAndSupported() {
+        let baseURL = URL(string: "https://duck.ai/chat?native-input=true")!
+        let result = AIChatURLParameters.updatingNativeInputURL(
+            from: baseURL,
+            isNativeInputAvailable: false,
+            isSupportedURL: true
+        )
+
+        XCTAssertEqual(result.absoluteString, "https://duck.ai/chat")
+    }
+
+    func testUpdatingNativeInputURLLeavesUnsupportedURLUnchanged() {
+        let baseURL = URL(string: "https://example.com/chat?native-input=true")!
+        let result = AIChatURLParameters.updatingNativeInputURL(
+            from: baseURL,
+            isNativeInputAvailable: false,
+            isSupportedURL: false
+        )
+
+        XCTAssertEqual(result, baseURL)
+    }
 }

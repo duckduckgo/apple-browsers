@@ -393,40 +393,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    /// Setups the tunnel manager if it's not set up already.
-    ///
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) {
-        tunnelManager.localizedDescription = "DuckDuckGo VPN"
-        tunnelManager.isEnabled = true
-
-        tunnelManager.protocolConfiguration = {
-            let protocolConfiguration = NETunnelProviderProtocol()
-            protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
-
-            protocolConfiguration.providerConfiguration = [:]
-
-            // always-on
-            protocolConfiguration.disconnectOnSleep = false
-
-            protocolConfiguration.enforceRoutes = settings.enforceRoutes
-            protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
-            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
-
-            if #available(iOS 16.4, *) {
-                protocolConfiguration.excludeAPNs = settings.excludeAPNs
-                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
-            }
-
-            if #available(iOS 17.4, *) {
-                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
-            }
-
-            return protocolConfiguration
-        }()
-
-        // reconnect on reboot
-        tunnelManager.onDemandRules = [NEOnDemandRuleConnect()]
+        tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
 
     // MARK: - Observing Configuration Changes

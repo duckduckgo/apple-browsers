@@ -176,6 +176,7 @@ final class AIChatContextualSheetCoordinator {
     }
     
     func clearActiveChat() {
+        sheetViewController?.notifySheetDismissed()
         sheetViewController = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
@@ -191,7 +192,7 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
-        if unifiedToggleInputFeature.isFeatureFlagEnabled { return }
+        if unifiedToggleInputFeature.isAvailable { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {
@@ -292,6 +293,7 @@ private extension AIChatContextualSheetCoordinator {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
             isFireTab: isFireTab,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             downloadHandler: downloadHandler,
@@ -461,6 +463,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {
+        let hasPageContext: Bool
+        if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
+        sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         sessionState.handlePromptSubmission(prompt)
     }
 

@@ -149,6 +149,16 @@ final class AddressBarViewController: NSViewController {
     private var mode: Mode = .editing(.text) {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
+            /// `shouldUseTallAddressBarLayout` keys off `mode.isEditing`, but the height-driving
+            /// `resizeAddressBar` only re-runs on tab content changes and focus transitions — not on
+            /// mode flips. When a window opens with a stored URL tab, the initial resize reads the
+            /// default `mode = .editing(.text)` and locks the bar at the tall focused height; once
+            /// the bar's value updates to the loaded URL `mode` flips to `.browsing` but nothing
+            /// re-evaluates the height. Trigger a resize on the editing-ness flip so the compact
+            /// layout applies immediately on session restore / "Open in New Window".
+            if oldValue.isEditing != mode.isEditing {
+                delegate?.resizeAddressBarForHomePage(self)
+            }
         }
     }
 
@@ -222,6 +232,13 @@ final class AddressBarViewController: NSViewController {
 
     /// Callback to check if a point (in window coordinates) is within the AI Chat omnibar
     var isPointInAIChatOmnibar: ((NSPoint) -> Bool)?
+
+    /// Called from `escapeKeyDown()` BEFORE any focus-resign work, so the duck.ai omnibar
+    /// can swallow Esc when its `@`-mention picker is visible. Returns `true` to indicate
+    /// the picker was open and got dismissed; in that case the address bar leaves its
+    /// focus / selection state alone. Returns `false` (or nil callback) to fall through
+    /// to the regular Esc behavior.
+    var aiChatOmnibarHandledEscape: (() -> Bool)?
 
     weak var delegate: AddressBarViewControllerDelegate?
 
@@ -954,9 +971,9 @@ final class AddressBarViewController: NSViewController {
             return
         }
 
-        self.passiveTextFieldMinXConstraint.constant = minX
+        self.passiveTextFieldMinXConstraint.constant = max(minX, duckAILeadingPadding)
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
-        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
+        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? max(minX, duckAILeadingPadding) : Constants.defaultActiveTextFieldMinX
 
         /// The negative offset compensates for the leading padding of the search icon so the typed text sits
         /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —
@@ -1057,6 +1074,14 @@ final class AddressBarViewController: NSViewController {
     // MARK: - Event handling
 
     func escapeKeyDown() -> Bool {
+        /// Duck.ai's `@`-mention picker gets first crack at Esc. When the picker is
+        /// visible, dismissing it is the user's intent — they don't expect Esc to also
+        /// resign the omnibar's focus or move the bar out of duck.ai mode. Returning
+        /// here short-circuits the entire focus-state machine below.
+        if aiChatOmnibarHandledEscape?() == true {
+            return true
+        }
+
         /// Second Escape press while unfocused in duck.ai mode: fully exit duck.ai for this tab, mirroring the
         /// "clear content and mode" step search mode performs. `addressBarTextField.escapeKeyDown()` resets the
         /// bar's value to the tab's URL (or empty for NTP) and calls `sharedTextState?.reset(clearingDuckAIState: true)`
@@ -1295,7 +1320,21 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
-            addressBarTextField.moveCursorToEnd()
+            /// Mirror of the capture in the `if isAIChatMode` branch: restore the selection that
+            /// Duck.ai's `textViewDidChangeSelection` persisted, so toggling back doesn't drop the
+            /// user's highlight. UTF-16 bounds check matches `focusTextViewRestoringCursorPosition`.
+            if let saved = sharedTextState?.selectionRange,
+               let editor = addressBarTextField.currentEditor() {
+                let utf16Length = (editor.string as NSString).length
+                if saved.location <= utf16Length {
+                    let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
+                    editor.selectedRange = NSRange(location: saved.location, length: clampedLength)
+                } else {
+                    addressBarTextField.moveCursorToEnd()
+                }
+            } else {
+                addressBarTextField.moveCursorToEnd()
+            }
 
             /// Force layout update after becoming first responder to update in case the window was resized
             layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)

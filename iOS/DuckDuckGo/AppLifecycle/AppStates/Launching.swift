@@ -19,6 +19,7 @@
 
 import AIChat
 import Core
+import DesignResourcesKitIcons
 import DuckAiDataStore
 import Persistence
 import PrivacyConfig
@@ -66,6 +67,13 @@ struct Launching: LaunchingHandling {
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+
+        // Wire the DesignSystem rebrand singleton to the live feature flag.
+        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
+        // so call sites don't need to read the flag directly.
+        AppRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
 
         favicons = Favicons(fireproofing: fireproofing)
 
@@ -468,6 +476,8 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
         case .lastUsedModelParseError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageLastUsedModelParseError, error: error)
+        case .lastUsedReasoningModeParseError(let error):
+            Pixel.fire(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError, error: error)
         }
     }
 }

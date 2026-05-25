@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n %@";
-
 /* Auto-Restore - Description */
 "auto.restore.description" = "Rakenduse uuesti installimisel taastatakse selle seadme andmed automaatselt.";
 

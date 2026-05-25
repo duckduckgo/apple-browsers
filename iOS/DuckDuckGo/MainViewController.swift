@@ -5516,6 +5516,13 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+
+        // This needs to be done before the fire burning process starts or the race condition
+        //  results in the promo not showing at the expected time.
+        if request.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -5815,10 +5822,6 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
-        if fireRequest.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
-
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {

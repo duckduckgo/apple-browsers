@@ -224,6 +224,16 @@ final class PageContextTabExtension {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
+                // `togglePageContextTelemetry(enabled: false)` is fired by the FE for BOTH
+                // user-initiated chip removal AND the auto-clear after a prompt submit.
+                // When the FE has just consumed the context, pushing setPageContext(nil)
+                // back makes the FE treat it as a context reset and re-show
+                // "Add page content" on the same URL. The stored snapshot was already
+                // cleared by `consumeData()` during submit, so nothing else to do here.
+                // The consumed flag is set first via `pageContextConsumedSubject` because
+                // the FE reports `userDidSubmitPrompt` before the chip-removed telemetry,
+                // and both publishers are serialized on the main queue.
+                guard !self.hasContextBeenConsumedByChat else { return }
                 self.userRemovedContext = true
                 self.cachedPageContext = nil
                 // Also clear the stored pageContext inside messageHandling. Otherwise a

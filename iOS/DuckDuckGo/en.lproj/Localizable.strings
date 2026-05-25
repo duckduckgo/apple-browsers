@@ -1630,12 +1630,6 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Browser Menu";
 
-/* Subtitle for the Navigation Bar toggle row in Manage Duck.ai Shortcuts settings */
-"duckai.settings.enable.navigation-bar-subtitle" = "Show in the browser navigation bar or address bar, depending on window size.";
-
-/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
-"duckai.settings.enable.navigation-bar-toggle" = "Navigation Bar";
-
 /* Toggle text to enable/disable Duck.ai in tab manager */
 "duckai.settings.enable.tab-switcher-toggle" = "Tabs Screen";
 

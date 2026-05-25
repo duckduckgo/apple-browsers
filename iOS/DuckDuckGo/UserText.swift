@@ -2205,9 +2205,11 @@ public struct UserText {
 
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
-    public static let aiChatSettingsEnableNavigationBarToggle = NSLocalizedString("duckai.settings.enable.navigation-bar-toggle", value: "Navigation Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
+    // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
+    public static let aiChatSettingsEnableNavigationBarToggle = NotLocalizedString("duckai.settings.enable.navigation-bar-toggle", value: "Navigation Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
 
-    public static let aiChatSettingsEnableNavigationBarSubtitle = NSLocalizedString("duckai.settings.enable.navigation-bar-subtitle", value: "Show in the browser navigation bar or address bar, depending on window size.", comment: "Subtitle for the Navigation Bar toggle row in Manage Duck.ai Shortcuts settings")
+    // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
+    public static let aiChatSettingsEnableNavigationBarSubtitle = NotLocalizedString("duckai.settings.enable.navigation-bar-subtitle", value: "Show in the browser navigation bar or address bar, depending on window size.", comment: "Subtitle for the Navigation Bar toggle row in Manage Duck.ai Shortcuts settings")
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
 
